@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>HỆ THỐNG QUẢN LÝ PHÒNG KHÁM</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/dashboard.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/welcome-intro.css?v={{ app_version }}">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/dashboard.js?v={{ app_version }}"></script>
+</head>
+
+<body class="dashboard-page">
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+
+			<main class="col-md-10 main-content">
+				<!-- Page Title -->
+				<div class="dashboard-page-title">TRANG CHỦ</div>
+
+				<!-- Admin Dashboard View -->
+				<div id="admin-dashboard-view" class="dashboard-hidden">
+					<!-- Dashboard Grid -->
+					<div class="dashboard-grid-v2">
+						<!-- Row 1 Col 1: Số lượt khám -->
+						<div class="dashboard-card revenue-card-full">
+							<div class="card-header-row">
+								<div>
+									<div class="card-title">Số lượt khám</div>
+								</div>
+								<div class="revenue-controls dashboard-controls-tight">
+									<span class="dashboard-date-label">Từ</span>
+									<input type="text" id="revFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+									<span class="dashboard-date-label">đến</span>
+									<input type="text" id="revToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+								</div>
+							</div>
+
+							<div class="chart-wrapper">
+								<div id="examStatsChart" class="dashboard-chart-fill"></div>
+							</div>
+						</div>
+
+						<!-- Row 1 Col 3: Lịch hẹn -->
+						<div class="dashboard-card">
+							<div class="card-header-row">
+								<div>
+									<div class="card-title">Lịch hẹn trong ngày</div>
+								</div>
+							</div>
+							<div id="appointmentList" class="appointment-list-v2">
+								<!-- Dynamic content from JS -->
+							</div>
+						</div>
+
+						<!-- Row 2: Thống kê ICD -->
+						<div class="dashboard-card icd-chart-card">
+							<div class="card-header-row">
+								<div>
+									<div class="card-title">Thống kê bệnh theo ICD</div>
+								</div>
+								<div class="revenue-controls dashboard-controls-tight">
+									<span class="dashboard-date-label">Từ</span>
+									<input type="text" id="icdFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+									<span class="dashboard-date-label">đến</span>
+									<input type="text" id="icdToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+									<button id="btnExportICD" class="dashboard-export-btn" onclick="window.dashboardManager.exportICDExcel()"
+										title="Xuất Excel ICD">
+										<i class="bi bi-file-earmark-excel"></i> Excel
+									</button>
+								</div>
+							</div>
+							<div id="icdChart" class="dashboard-chart-fill"></div>
+						</div>
+
+						<!-- Row 2 Col 3: Trạng thái online -->
+						<div class="dashboard-card">
+							<div class="card-header-row">
+								<div>
+									<div class="card-title">Trạng thái hoạt động</div>
+								</div>
+								<div id="onlineCount" class="online-badge">0 online</div>
+							</div>
+							<div id="staffOnlineList" class="staff-online-list">
+								<!-- Dynamic content from JS -->
+							</div>
+						</div>
+
+						<!-- Row 3: Nguồn giới thiệu -->
+						<div class="dashboard-card referral-source-card">
+							<div class="card-header-row">
+								<div>
+									<div class="card-title">Thống kê nguồn giới thiệu</div>
+									<div class="card-subtitle">Click vào từng nguồn để xem bệnh nhân, ngày khám và lý do khám</div>
+								</div>
+								<div class="revenue-controls dashboard-controls-tight">
+									<span class="dashboard-date-label">Từ</span>
+									<input type="text" id="referralSourceFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+									<span class="dashboard-date-label">đến</span>
+									<input type="text" id="referralSourceToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
+									<button id="btnExportReferralSource" class="dashboard-export-btn" onclick="window.dashboardManager.exportReferralSourceExcel()"
+										title="Xuất Excel nguồn giới thiệu">
+										<i class="bi bi-file-earmark-excel"></i> Excel
+									</button>
+								</div>
+							</div>
+							<div class="referral-source-chart-wrapper">
+								<div id="referralSourceChart" class="referral-source-chart"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- User Welcome/Introduction View -->
+				<div id="user-welcome-view" class="dashboard-hidden">
+					<div class="welcome-container">
+						<div class="welcome-header">
+							<h4 class="welcome-title">Nhiệm vụ của phòng khám</h4>
+						</div>
+						<div class="welcome-intro-text">
+							Sơn Tâm là phòng khám chuyên sâu về sức khỏe tâm thần với mô hình toàn diện kết hợp giữa chuyên khoa Tâm thần, Tâm lý lâm sàng, và Tâm lý cộng đồng – giúp người bệnh được tiếp cận và điều trị từ cả góc độ y khoa và tâm lý - xã hội.
+						</div>
+						<div class="welcome-tasks-list">
+							<!-- Nhiệm vụ 1 -->
+							<div class="welcome-task-row">
+								<div class="welcome-task-title-box">
+									<i class="bi bi-brain welcome-task-icon"></i>
+									<h5 class="welcome-task-title-text">Khám, chẩn đoán và điều trị các rối loạn tâm thần</h5>
+								</div>
+								<div class="welcome-task-content-box">
+									<ul class="welcome-task-points">
+										<li>Trầm cảm, lo âu, căng thẳng, rối loạn giấc ngủ.</li>
+										<li>Rối loạn lưỡng cực, tâm thần phân liệt.</li>
+										<li>Các vấn đề về cảm xúc và hành vi ở trẻ vị thành niên, người trẻ và người cao tuổi.</li>
+									</ul>
+								</div>
+							</div>
+							<!-- Nhiệm vụ 2 -->
+							<div class="welcome-task-row">
+								<div class="welcome-task-title-box">
+									<i class="bi bi-chat-dots welcome-task-icon"></i>
+									<h5 class="welcome-task-title-text">Thực hiện tham vấn tâm lý và giáo dục tâm lý</h5>
+								</div>
+								<div class="welcome-task-content-box">
+									<ul class="welcome-task-points">
+										<li>Trị liệu cá nhân, cặp đôi, gia đình.</li>
+										<li>Tư vấn hướng nghiệp, mối quan hệ, khủng hoảng, căng thẳng trong cuộc sống.</li>
+										<li>Nhóm trải nghiệm và giáo dục tâm lý.</li>
+									</ul>
+								</div>
+							</div>
+							<!-- Nhiệm vụ 3 -->
+							<div class="welcome-task-row">
+								<div class="welcome-task-title-box">
+									<i class="bi bi-lightbulb welcome-task-icon"></i>
+									<h5 class="welcome-task-title-text">Sàng lọc và phòng ngừa các vấn đề sức khỏe tâm thần</h5>
+								</div>
+								<div class="welcome-task-content-box">
+									<ul class="welcome-task-points">
+										<li>Triển khai chương trình sàng lọc tại cộng đồng, trường học, doanh nghiệp.</li>
+										<li>Tư vấn can thiệp sớm cho nhóm nguy cơ cao.</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+	<!-- Exam Detail Modal -->
+	<div class="modal fade dashboard-modal-top" id="examDetailModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content border-0 shadow-lg dashboard-modal-content">
+				<div class="modal-header text-white dashboard-modal-header-green">
+					<h5 class="modal-title font-medium">
+						<i class="bi bi-calendar2-check me-2"></i><span id="examDetailTitle">Chi tiết ca khám</span>
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body p-0">
+					<div id="examDetailLoading" class="p-5 text-center dashboard-hidden">
+						<div class="spinner-border text-primary" role="status"></div>
+						<p class="text-secondary mt-2 mb-0">Đang tải dữ liệu...</p>
+					</div>
+					<div id="examDetailContent" class="dashboard-hidden dashboard-modal-scroll">
+						<table class="table table-hover align-middle mb-0 dashboard-detail-table-sm">
+							<thead class="dashboard-detail-table-head-green">
+								<tr>
+									<th class="ps-3 py-2 text-secondary border-0 dashboard-col-time">Giờ</th>
+									<th class="py-2 text-secondary border-0">Bệnh nhân</th>
+									<th class="py-2 text-secondary border-0 dashboard-col-phone">SĐT</th>
+									<th class="py-2 text-secondary border-0">Bác sĩ</th>
+									<th class="py-2 text-secondary border-0">Dịch vụ</th>
+									<th class="pe-3 py-2 text-secondary border-0 text-center dashboard-col-status">Trạng thái</th>
+								</tr>
+							</thead>
+							<tbody id="examDetailTableBody"></tbody>
+						</table>
+					</div>
+					<div id="examDetailEmpty" class="p-4 text-center dashboard-hidden">
+						<p class="text-secondary mb-0">Không có ca khám nào trong ngày này</p>
+					</div>
+				</div>
+				<div class="modal-footer bg-light border-0">
+					<button type="button" class="btn btn-secondary px-4 py-2 dashboard-modal-close-btn" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ICD Detail Modal -->
+	<div class="modal fade dashboard-modal-top" id="icdDetailModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content border-0 shadow-lg dashboard-modal-content">
+				<div class="modal-header text-white dashboard-modal-header-green">
+					<h5 class="modal-title font-medium">
+						<i class="bi bi-clipboard2-pulse me-2"></i><span id="icdDetailTitle">Chi tiết ICD</span>
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body p-0">
+					<div id="icdDetailLoading" class="p-5 text-center dashboard-hidden">
+						<div class="spinner-border text-primary" role="status"></div>
+						<p class="text-secondary mt-2 mb-0">Đang tải dữ liệu...</p>
+					</div>
+					<div id="icdDetailContent" class="dashboard-hidden dashboard-modal-scroll">
+						<table class="table table-hover align-middle mb-0 dashboard-detail-table-sm">
+							<thead class="dashboard-detail-table-head-green">
+								<tr>
+									<th class="ps-3 py-2 text-secondary border-0 dashboard-col-index dashboard-nowrap">STT</th>
+									<th class="py-2 text-secondary border-0 dashboard-nowrap">Bệnh nhân</th>
+									<th class="py-2 text-secondary border-0 dashboard-nowrap">Bác sĩ</th>
+									<th class="py-2 text-secondary border-0 text-center dashboard-col-date dashboard-nowrap">Ngày khám</th>
+									<th class="pe-3 py-2 text-secondary border-0 text-center dashboard-col-hour dashboard-nowrap">Giờ</th>
+								</tr>
+							</thead>
+							<tbody id="icdDetailTableBody"></tbody>
+						</table>
+					</div>
+					<div id="icdDetailEmpty" class="p-4 text-center dashboard-hidden">
+						<p class="text-secondary mb-0">Không có dữ liệu</p>
+					</div>
+				</div>
+				<div class="modal-footer bg-light border-0">
+					<button type="button" class="btn btn-secondary px-4 py-2 dashboard-modal-close-btn" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Referral Source Detail Modal -->
+	<div class="modal fade dashboard-modal-top" id="referralSourceDetailModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-xl">
+			<div class="modal-content border-0 shadow-lg dashboard-modal-content">
+				<div class="modal-header text-white dashboard-modal-header-green">
+					<h5 class="modal-title font-medium">
+						<i class="bi bi-diagram-3 me-2"></i><span id="referralSourceDetailTitle">Chi tiết nguồn giới thiệu</span>
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body p-0">
+					<div id="referralSourceDetailLoading" class="p-5 text-center dashboard-hidden">
+						<div class="spinner-border text-primary" role="status"></div>
+						<p class="text-secondary mt-2 mb-0">Đang tải dữ liệu...</p>
+					</div>
+					<div id="referralSourceDetailContent" class="referral-source-detail-content dashboard-hidden">
+						<table class="table table-hover align-middle mb-0 referral-source-detail-table">
+							<colgroup>
+								<col class="dashboard-col-6">
+								<col class="dashboard-col-18">
+								<col class="dashboard-col-12">
+								<col class="dashboard-col-11">
+								<col class="dashboard-col-7">
+								<col class="dashboard-col-29">
+								<col class="dashboard-col-17">
+							</colgroup>
+							<thead>
+								<tr>
+									<th class="ps-3 py-2 text-secondary border-0 text-center">STT</th>
+									<th class="py-2 text-secondary border-0">Bệnh nhân</th>
+									<th class="py-2 text-secondary border-0">Điện thoại</th>
+									<th class="py-2 text-secondary border-0 text-center">Ngày khám</th>
+									<th class="py-2 text-secondary border-0 text-center">Giờ</th>
+									<th class="py-2 text-secondary border-0">Lý do khám</th>
+									<th class="pe-3 py-2 text-secondary border-0">Nguồn nhập</th>
+								</tr>
+							</thead>
+							<tbody id="referralSourceDetailTableBody"></tbody>
+						</table>
+					</div>
+					<div id="referralSourceDetailEmpty" class="p-4 text-center dashboard-hidden">
+						<p class="text-secondary mb-0">Không có dữ liệu trong khoảng thời gian này</p>
+					</div>
+				</div>
+				<div class="modal-footer bg-light border-0">
+					<button type="button" class="btn btn-secondary px-4 py-2 dashboard-modal-close-btn" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+
+</html>

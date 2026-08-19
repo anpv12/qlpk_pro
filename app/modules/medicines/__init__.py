@@ -1,0 +1,1 @@
+"""Medicine domain module islands."""

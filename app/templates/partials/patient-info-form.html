@@ -1,0 +1,270 @@
+{% set patient_intake_config = patient_intake_config | default({}, true) %}
+{% set patient_config = patient_intake_config.get('patient', {}) %}
+{% set patient_info_mode = patient_config.get('layout_mode', 'receptionist') %}
+{% set patient_info_title = patient_config.get('title', 'Thông tin hành chính') %}
+{% set patient_info_vitals_caption = patient_config.get('vitals_caption', 'Nhập tại tiếp nhận') %}
+{% set patient_info_show_reexam = patient_config.get('show_reexam', false) %}
+{% set patient_info_show_detail_actions = patient_config.get('show_detail_actions', false) %}
+{% set patient_info_show_joint_action = patient_config.get('show_joint_action', false) %}
+
+<aside class="qlpk-patient-info-card receptionist-card receptionist-card--patient" data-patient-info-mode="{{ patient_info_mode }}" aria-labelledby="{{ patient_info_mode }}IdentityHeading">
+	<div class="receptionist-section-heading receptionist-section-heading--main qlpk-patient-info-card__heading">
+		<div class="receptionist-section-title qlpk-patient-info-card__title" id="{{ patient_info_mode }}IdentityHeading">
+			<i class="bi bi-person-vcard qlpk-section-icon"></i>
+			<span>{{ patient_info_title }}</span>
+		</div>
+		{% if patient_info_show_reexam %}
+		<label class="receptionist-reexam-toggle qlpk-patient-info-card__reexam-toggle" for="reExaminationCheck">
+			<input class="form-check-input" type="checkbox" id="reExaminationCheck">
+			<span>Bệnh nhân tái khám</span>
+		</label>
+		{% endif %}
+	</div>
+	<section class="receptionist-form-cluster qlpk-patient-info-card__cluster" aria-label="Thông tin cá nhân bệnh nhân">
+		<div class="receptionist-patient-fields qlpk-patient-info-card__fields">
+			<div class="receptionist-field receptionist-field--full">
+				<label class="form-label required-field" for="fullName">Họ tên</label>
+				<div class="receptionist-input-with-action">
+					<input type="text" class="form-control" id="fullName" placeholder="Nhập họ tên">
+					{% if patient_info_show_joint_action %}
+					<button class="receptionist-icon-action" type="button" id="jointExamEditBtn"
+						title="Quản lý người đi khám cùng (CCCD, SĐT, quan hệ...)">
+						<i class="bi bi-people-fill qlpk-button-icon"></i>
+					</button>
+					{% endif %}
+				</div>
+			</div>
+			<div class="receptionist-patient-column receptionist-patient-column--left">
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--gender-parent">
+					<label class="form-label required-field" for="gender">Giới tính</label>
+					<div class="receptionist-input-with-action receptionist-smart-input-control">
+						<select class="form-select" id="gender">
+							<option value="male" selected>Nam</option>
+							<option value="female">Nữ</option>
+							<option value="other">Khác</option>
+						</select>
+						{% if patient_info_show_detail_actions %}
+						<button class="receptionist-icon-action" type="button" id="genderEditBtn" data-receptionist-inline-toggle="genderInlineDetailPanel" aria-controls="genderInlineDetailPanel" aria-expanded="false" title="Mở thông tin giới tính mở rộng">
+							<i class="bi bi-chevron-down qlpk-button-icon"></i>
+						</button>
+						{% endif %}
+					</div>
+				</div>
+				<div class="receptionist-field receptionist-field--full receptionist-inline-detail-panel receptionist-inline-detail-panel--gender" id="genderInlineDetailPanel" hidden>
+					<div class="receptionist-inline-detail-caption">Thông tin kèm theo giới tính</div>
+					<div class="receptionist-inline-detail-grid" aria-label="Thông tin giới tính mở rộng">
+						<div class="receptionist-field">
+							<label class="form-label" for="sexualOrientation">Xu hướng tính dục</label>
+							<div class="receptionist-smart-input-control">
+								<input type="text" class="form-control" id="sexualOrientation" placeholder="Nhập xu hướng tính dục" autocomplete="off">
+								<input type="hidden" id="sexualOrientationValue" value="">
+								<div class="occupation-dropdown" id="sexualOrientationDropdown"></div>
+							</div>
+						</div>
+						<div class="receptionist-field receptionist-field--checkbox-inline">
+							<label class="form-label" for="mangThai">Mang thai</label>
+							<label class="receptionist-inline-checkbox">
+								<input class="form-check-input" type="checkbox" id="mangThai">
+								<span>Có</span>
+							</label>
+						</div>
+						<div class="receptionist-field">
+							<label class="form-label" for="ngayDuSinh">Ngày dự sinh</label>
+							<input class="form-control js-datepicker" id="ngayDuSinh" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">
+						</div>
+						<div class="receptionist-field">
+							<label class="form-label" for="soTuanThai">Tuần thai</label>
+							<input type="text" class="form-control" id="soTuanThai" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="Tự tính" readonly>
+						</div>
+					</div>
+				</div>
+				<div class="receptionist-field">
+					<label class="form-label" for="dateOfBirth">Ngày sinh</label>
+					<input class="form-control js-datepicker" id="dateOfBirth" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">
+				</div>
+				<div class="receptionist-field">
+					<label class="form-label" for="phoneNumber">Điện thoại</label>
+					<input type="text" class="form-control" id="phoneNumber" placeholder="Nhập SĐT">
+				</div>
+				<div class="receptionist-field">
+					<label class="form-label" for="nickname">Tên thường gọi</label>
+					<input type="text" class="form-control" id="nickname" placeholder="">
+				</div>
+				<div class="receptionist-field">
+					<label class="form-label" for="maritalStatus">Hôn nhân</label>
+					<select class="form-select" id="maritalStatus">
+						<option value="">Chọn</option>
+						<option value="single">Độc thân</option>
+						<option value="married">Đã kết hôn</option>
+						<option value="divorced">Đã ly hôn</option>
+						<option value="widowed">Góa</option>
+						<option value="separated">Ly thân</option>
+						<option value="cohabiting">Sống như vợ/chồng</option>
+					</select>
+				</div>
+			</div>
+			<div class="receptionist-patient-column receptionist-patient-column--right">
+				<div class="receptionist-field">
+					<label class="form-label" for="age">Tuổi</label>
+					<input type="text" class="form-control" id="age" placeholder="Số tuổi" autocomplete="off">
+				</div>
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--identity-parent">
+					<label class="form-label" for="idCard">CMT/CCCD</label>
+					<div class="receptionist-input-with-action receptionist-smart-input-control">
+						<input type="text" class="form-control" id="idCard" placeholder="Nhập CMT/CCCD">
+						{% if patient_info_show_detail_actions %}
+						<button class="receptionist-icon-action" type="button" id="idCardEditBtn" data-receptionist-inline-toggle="identityInlineDetailPanel" aria-controls="identityInlineDetailPanel" aria-expanded="false" title="Mở thông tin CMT/CCCD mở rộng">
+							<i class="bi bi-chevron-down qlpk-button-icon"></i>
+						</button>
+						{% endif %}
+					</div>
+				</div>
+				<div class="receptionist-field receptionist-field--full receptionist-inline-detail-panel receptionist-inline-detail-panel--identity" id="identityInlineDetailPanel" hidden>
+					<div class="receptionist-inline-detail-caption">Thông tin kèm theo CMT/CCCD</div>
+					<div class="receptionist-inline-detail-grid" aria-label="Thông tin CMT/CCCD mở rộng">
+						<div class="receptionist-field">
+							<label class="form-label" for="nationality">Quốc tịch</label>
+							<div class="receptionist-smart-input-control">
+								<input type="text" class="form-control" id="nationality" placeholder="Nhập quốc tịch" autocomplete="off">
+								<input type="hidden" id="nationalityValue" value="">
+								<div class="occupation-dropdown" id="nationalityDropdown"></div>
+							</div>
+						</div>
+						<div class="receptionist-field">
+							<label class="form-label" for="religion">Tôn giáo</label>
+							<div class="receptionist-smart-input-control">
+								<input type="text" class="form-control" id="religion" placeholder="Nhập tôn giáo" autocomplete="off">
+								<input type="hidden" id="religionValue" value="">
+								<div class="occupation-dropdown" id="religionDropdown"></div>
+							</div>
+						</div>
+						<div class="receptionist-field">
+							<label class="form-label" for="ethnicity">Dân tộc</label>
+							<div class="receptionist-smart-input-control">
+								<input type="text" class="form-control" id="ethnicity" placeholder="Nhập dân tộc" autocomplete="off">
+								<input type="hidden" id="ethnicityValue" value="">
+								<div class="occupation-dropdown" id="ethnicityDropdown"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--occupation-parent">
+					<label class="form-label" for="occupation">Nghề nghiệp</label>
+					<div class="receptionist-input-with-action receptionist-smart-input-control">
+						<input type="text" class="form-control" id="occupation" placeholder="Nhập nghề nghiệp" autocomplete="off">
+						<div class="occupation-dropdown" id="occupationDropdown"></div>
+						{% if patient_info_show_detail_actions %}
+						<button class="receptionist-icon-action" type="button" id="occupationEditBtn" data-receptionist-inline-toggle="occupationInlineDetailPanel" aria-controls="occupationInlineDetailPanel" aria-expanded="false" title="Mở thông tin nghề nghiệp mở rộng">
+							<i class="bi bi-chevron-down qlpk-button-icon"></i>
+						</button>
+						{% endif %}
+					</div>
+				</div>
+				<div class="receptionist-field receptionist-field--full receptionist-inline-detail-panel receptionist-inline-detail-panel--occupation" id="occupationInlineDetailPanel" hidden>
+					<div class="receptionist-inline-detail-caption">Thông tin kèm theo nghề nghiệp</div>
+					<div class="receptionist-inline-detail-grid" aria-label="Thông tin nghề nghiệp mở rộng">
+						<div class="receptionist-field">
+							<label class="form-label" for="donViCongTac">Đơn vị công tác</label>
+							<input type="text" class="form-control" id="donViCongTac" placeholder="Nhập đơn vị công tác">
+						</div>
+						<div class="receptionist-field">
+							<label class="form-label" for="educationLevel">Trình độ học vấn</label>
+							<div class="receptionist-smart-input-control">
+								<input type="text" class="form-control" id="educationLevel" placeholder="Nhập trình độ học vấn" autocomplete="off">
+								<input type="hidden" id="educationLevelValue" value="">
+								<div class="occupation-dropdown" id="educationLevelDropdown"></div>
+							</div>
+						</div>
+						<div class="receptionist-field receptionist-field--full">
+							<label class="form-label" for="diaChiCongTy">Địa chỉ công ty</label>
+							<input type="text" class="form-control" id="diaChiCongTy" placeholder="Nhập địa chỉ công ty">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="receptionist-field receptionist-field--full receptionist-address-inline" aria-label="Địa chỉ bệnh nhân">
+				<label class="form-label" for="addressDetail">Địa chỉ</label>
+				<div class="receptionist-address-inline-grid">
+					<input type="text" class="form-control" id="addressDetail" placeholder="Số nhà, đường, khu phố..." autocomplete="off">
+					<div class="receptionist-address-autocomplete-field">
+						<input type="text" class="form-control" id="province" placeholder="Tỉnh/Thành phố" autocomplete="off">
+						<div class="receptionist-address-dropdown" id="provinceDropdown"></div>
+					</div>
+					<div class="receptionist-address-autocomplete-field">
+						<input type="text" class="form-control" id="ward" placeholder="Phường/Xã" autocomplete="off">
+						<div class="receptionist-address-dropdown" id="wardDropdown"></div>
+					</div>
+				</div>
+				<input type="hidden" id="address" value="">
+			</div>
+		</div>
+	</section>
+
+	<section class="receptionist-form-cluster receptionist-form-cluster--vitals qlpk-patient-info-card__cluster qlpk-patient-info-card__cluster--vitals" aria-labelledby="{{ patient_info_mode }}VitalsHeading">
+		<div class="receptionist-vitals-heading">
+			<div class="receptionist-section-title" id="{{ patient_info_mode }}VitalsHeading">
+				<i class="bi bi-activity qlpk-section-icon"></i>
+				<span>Chỉ số sinh hiệu</span>
+			</div>
+			<span class="receptionist-vitals-caption">{{ patient_info_vitals_caption }}</span>
+		</div>
+		<div class="receptionist-vital-fields">
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--breathing">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="breathing" placeholder="--">
+					<span>lần/phút</span>
+				</div>
+				<label class="form-label" for="breathing">Nhịp thở</label>
+				<small id="prevBreathing" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--pulse">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="pulse" placeholder="--">
+					<span>lần/phút</span>
+				</div>
+				<label class="form-label" for="pulse">Mạch</label>
+				<small id="prevPulse" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--blood-pressure">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="bloodPressure" placeholder="--/--">
+					<span>mmHg</span>
+				</div>
+				<label class="form-label" for="bloodPressure">Huyết áp</label>
+				<small id="prevBloodPressure" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--temperature">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="temperature" placeholder="--">
+					<span>°C</span>
+				</div>
+				<label class="form-label" for="temperature">Nhiệt độ</label>
+				<small id="prevTemperature" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--weight">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="weight" placeholder="--">
+					<span>kg</span>
+				</div>
+				<label class="form-label" for="weight">Cân nặng</label>
+				<small id="prevWeight" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-vital-field receptionist-vital-field--height">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="height" placeholder="--">
+					<span>cm</span>
+				</div>
+				<label class="form-label" for="height">Chiều cao</label>
+				<small id="prevHeight" class="receptionist-prev-vital-hint"></small>
+			</div>
+			<div class="receptionist-field receptionist-field--full receptionist-vital-field receptionist-vital-field--bmi">
+				<div class="receptionist-vital-value">
+					<input type="text" class="form-control" id="bmi" placeholder="--">
+					<span>kg/m²</span>
+				</div>
+				<label class="form-label" for="bmi">BMI</label>
+				<small id="prevBmi" class="receptionist-prev-vital-hint"></small>
+			</div>
+		</div>
+	</section>
+</aside>

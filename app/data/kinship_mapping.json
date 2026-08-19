@@ -1,0 +1,157 @@
+[
+  {
+    "kinship": "Cha",
+    "reverse_options": ["Con trai", "Con gái", "Con trai nuôi", "Con gái nuôi", "Con trai riêng", "Con gái riêng"],
+    "notes": "Cha của một bệnh nhân có thể là cha ruột. Phía đối diện có thể là con trai (ruột/nuôi/riêng) hoặc con gái (ruột/nuôi/riêng)."
+  },
+  {
+    "kinship": "Mẹ",
+    "reverse_options": ["Con trai", "Con gái", "Con trai nuôi", "Con gái nuôi", "Con trai riêng", "Con gái riêng"],
+    "notes": "Mẹ của một bệnh nhân có thể là mẹ ruột. Phía đối diện có thể là con trai (ruột/nuôi/riêng) hoặc con gái (ruột/nuôi/riêng)."
+  },
+  {
+    "kinship": "Cha dượng",
+    "reverse_options": ["Con trai riêng", "Con gái riêng"],
+    "notes": "Người chồng sau của mẹ bệnh nhân. Phía đối diện là con riêng (nam/nữ) của vợ."
+  },
+  {
+    "kinship": "Mẹ kế",
+    "reverse_options": ["Con trai riêng", "Con gái riêng"],
+    "notes": "Người vợ sau của cha bệnh nhân. Phía đối diện là con riêng (nam/nữ) của chồng."
+  },
+  {
+    "kinship": "Vợ",
+    "reverse_options": ["Chồng"],
+    "notes": "Người phối ngẫu hiện tại là nữ. Phía đối diện phải là chồng (nam)."
+  },
+  {
+    "kinship": "Chồng",
+    "reverse_options": ["Vợ"],
+    "notes": "Người phối ngẫu hiện tại là nam. Phía đối diện phải là vợ (nữ)."
+  },
+  {
+    "kinship": "Vợ cũ",
+    "reverse_options": ["Chồng cũ"],
+    "notes": "Người vợ đã ly hôn. Phía đối diện phải là chồng cũ (nam)."
+  },
+  {
+    "kinship": "Chồng cũ",
+    "reverse_options": ["Vợ cũ"],
+    "notes": "Người chồng đã ly hôn. Phía đối diện phải là vợ cũ (nữ)."
+  },
+  {
+    "kinship": "Con trai",
+    "reverse_options": ["Cha", "Mẹ"],
+    "notes": "Con ruột là nam. Phía đối diện là cha hoặc mẹ (ruột)."
+  },
+  {
+    "kinship": "Con gái",
+    "reverse_options": ["Cha", "Mẹ"],
+    "notes": "Con ruột là nữ. Phía đối diện là cha hoặc mẹ (ruột)."
+  },
+  {
+    "kinship": "Con trai riêng",
+    "reverse_options": ["Cha", "Mẹ", "Cha dượng", "Mẹ kế"],
+    "notes": "Con trai là con riêng. Phía đối diện là cha/mẹ ruột hoặc cha dượng/mẹ kế."
+  },
+  {
+    "kinship": "Con gái riêng",
+    "reverse_options": ["Cha", "Mẹ", "Cha dượng", "Mẹ kế"],
+    "notes": "Con gái là con riêng. Phía đối diện là cha/mẹ ruột hoặc cha dượng/mẹ kế."
+  },
+  {
+    "kinship": "Con trai nuôi",
+    "reverse_options": ["Cha", "Mẹ"],
+    "notes": "Con trai là con nuôi. Phía đối diện là cha hoặc mẹ (nuôi)."
+  },
+  {
+    "kinship": "Con gái nuôi",
+    "reverse_options": ["Cha", "Mẹ"],
+    "notes": "Con gái là con nuôi. Phía đối diện là cha hoặc mẹ (nuôi)."
+  },
+  {
+    "kinship": "Anh trai",
+    "reverse_options": ["Em trai", "Em gái", "Anh trai", "Chị gái"],
+    "notes": "Anh trai ruột. Phía đối diện thường là em trai/em gái, có thể chung mức anh/chị nếu tuổi gần nhau."
+  },
+  {
+    "kinship": "Em trai",
+    "reverse_options": ["Anh trai", "Chị gái", "Em trai", "Em gái"],
+    "notes": "Em trai ruột. Phía đối diện là anh/chị trai hoặc anh/chị gái."
+  },
+  {
+    "kinship": "Chị gái",
+    "reverse_options": ["Em trai", "Em gái", "Anh trai", "Chị gái"],
+    "notes": "Chị gái ruột. Phía đối diện thường là em trai/em gái, có thể chung mức anh/chị nếu tuổi gần nhau."
+  },
+  {
+    "kinship": "Em gái",
+    "reverse_options": ["Anh trai", "Chị gái", "Em trai", "Em gái"],
+    "notes": "Em gái ruột. Phía đối diện là anh/chị trai hoặc anh/chị gái."
+  },
+  {
+    "kinship": "Anh trai cùng cha khác mẹ",
+    "reverse_options": ["Em trai cùng cha khác mẹ", "Em gái cùng cha khác mẹ", "Anh trai cùng cha khác mẹ", "Chị gái cùng cha khác mẹ"],
+    "notes": "Anh cùng cha khác mẹ. Phía đối diện là anh/chị/em cùng cha khác mẹ."
+  },
+  {
+    "kinship": "Em trai cùng cha khác mẹ",
+    "reverse_options": ["Anh trai cùng cha khác mẹ", "Chị gái cùng cha khác mẹ", "Em trai cùng cha khác mẹ", "Em gái cùng cha khác mẹ"],
+    "notes": "Em cùng cha khác mẹ. Phía đối diện là anh/chị/em cùng cha khác mẹ."
+  },
+  {
+    "kinship": "Anh trai cùng mẹ khác cha",
+    "reverse_options": ["Em trai cùng mẹ khác cha", "Em gái cùng mẹ khác cha", "Anh trai cùng mẹ khác cha", "Chị gái cùng mẹ khác cha"],
+    "notes": "Anh cùng mẹ khác cha. Phía đối diện là anh/chị/em cùng mẹ khác cha."
+  },
+  {
+    "kinship": "Em trai cùng mẹ khác cha",
+    "reverse_options": ["Anh trai cùng mẹ khác cha", "Chị gái cùng mẹ khác cha", "Em trai cùng mẹ khác cha", "Em gái cùng mẹ khác cha"],
+    "notes": "Em cùng mẹ khác cha. Phía đối diện là anh/chị/em cùng mẹ khác cha."
+  },
+  {
+    "kinship": "Chị gái cùng cha khác mẹ",
+    "reverse_options": ["Em trai cùng cha khác mẹ", "Em gái cùng cha khác mẹ", "Anh trai cùng cha khác mẹ", "Chị gái cùng cha khác mẹ"],
+    "notes": "Chị cùng cha khác mẹ. Phía đối diện là anh/chị/em cùng cha khác mẹ."
+  },
+  {
+    "kinship": "Em gái cùng cha khác mẹ",
+    "reverse_options": ["Anh trai cùng cha khác mẹ", "Chị gái cùng cha khác mẹ", "Em trai cùng cha khác mẹ", "Em gái cùng cha khác mẹ"],
+    "notes": "Em cùng cha khác mẹ. Phía đối diện là anh/chị/em cùng cha khác mẹ."
+  },
+  {
+    "kinship": "Chị gái cùng mẹ khác cha",
+    "reverse_options": ["Em trai cùng mẹ khác cha", "Em gái cùng mẹ khác cha", "Anh trai cùng mẹ khác cha", "Chị gái cùng mẹ khác cha"],
+    "notes": "Chị cùng mẹ khác cha. Phía đối diện là anh/chị/em cùng mẹ khác cha."
+  },
+  {
+    "kinship": "Em gái cùng mẹ khác cha",
+    "reverse_options": ["Anh trai cùng mẹ khác cha", "Chị gái cùng mẹ khác cha", "Em trai cùng mẹ khác cha", "Em gái cùng mẹ khác cha"],
+    "notes": "Em cùng mẹ khác cha. Phía đối diện là anh/chị/em cùng mẹ khác cha."
+  },
+  {
+    "kinship": "Bạn",
+    "reverse_options": ["Bạn"],
+    "notes": "Quan hệ bạn bè mang tính đối xứng."
+  },
+  {
+    "kinship": "Bạn thân",
+    "reverse_options": ["Bạn thân"],
+    "notes": "Quan hệ bạn thân mang tính đối xứng."
+  },
+  {
+    "kinship": "Đồng nghiệp",
+    "reverse_options": ["Đồng nghiệp"],
+    "notes": "Quan hệ đồng nghiệp mang tính đối xứng."
+  },
+  {
+    "kinship": "Hàng xóm",
+    "reverse_options": ["Hàng xóm"],
+    "notes": "Quan hệ hàng xóm mang tính đối xứng."
+  },
+  {
+    "kinship": "Khác",
+    "reverse_options": ["Khác"],
+    "notes": "Quan hệ không rõ ràng hoặc không nằm trong danh sách. Đối xứng mặc định là 'Khác'."
+  }
+]

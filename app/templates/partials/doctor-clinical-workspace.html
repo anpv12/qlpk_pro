@@ -1,0 +1,486 @@
+{% from 'components/_icd_autocomplete.html' import render_icd_autocomplete %}
+<section class="doctor-clinical-workspace" id="doctorClinicalWorkspace" data-doctor-component="clinical-workspace" aria-labelledby="doctorClinicalHeading" hidden>
+	<form class="doctor-clinical-form" id="doctorClinicalForm" autocomplete="off">
+		<header class="doctor-patient-hero" aria-labelledby="doctorClinicalHeading">
+			<div class="doctor-patient-hero__summary">
+				<div class="doctor-patient-hero__body">
+					<div class="doctor-patient-hero__title-row">
+						<h2 id="doctorClinicalHeading">Chưa chọn bệnh nhân</h2>
+						<span class="doctor-patient-hero__code" id="doctorPatientCode"></span>
+						<span class="doctor-patient-hero__latest-visit" id="doctorPatientLatestVisit"></span>
+						<span class="doctor-patient-hero__history-view-label" id="doctorHistoryViewLabel" hidden>
+							<i class="bi bi-eye" aria-hidden="true"></i>
+							<span data-doctor-history-view-label-text>Đang xem lịch sử</span>
+						</span>
+					</div>
+					<p class="doctor-patient-hero__history" id="doctorPatientHistory" hidden>
+						<span class="doctor-patient-hero__history-item doctor-patient-hero__history-item--diagnosis">
+							<strong>Chẩn đoán:</strong>
+							<span class="doctor-patient-hero__history-value" id="doctorPatientLastDiagnosis"></span>
+						</span>
+						<span class="doctor-patient-hero__history-divider" aria-hidden="true">·</span>
+						<span class="doctor-patient-hero__history-item">
+							<strong>Đơn thuốc:</strong>
+							<span class="doctor-patient-hero__history-value" id="doctorPatientLastPrescription"></span>
+						</span>
+				</p>
+				</div>
+				<div class="doctor-patient-hero__actions">
+					<div class="doctor-patient-hero__action-buttons">
+						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorClinicalHistoryButton" data-doctor-clinical-action="history" aria-controls="patientSearchModal" title="Xem lịch sử khám" disabled>
+							<i class="bi bi-clock-history" aria-hidden="true"></i>
+							<span>Lịch sử</span>
+						</button>
+						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-history-view-exit hidden title="Quay lại lượt đang khám">
+							<i class="bi bi-arrow-left" aria-hidden="true"></i>
+							<span>Về lượt hiện tại</span>
+						</button>
+						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-workspace-action="save" aria-busy="false" aria-describedby="doctorWorkspaceSaveStatus">
+							<i class="bi bi-floppy" data-doctor-workspace-save-icon aria-hidden="true"></i>
+							<span data-doctor-workspace-save-label>Lưu</span>
+						</button>
+						<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-doctor-workspace-action="complete" aria-describedby="doctorWorkspaceSaveStatus">
+							<i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+							<span>Hoàn thành</span>
+						</button>
+						<span class="visually-hidden" id="doctorWorkspaceSaveStatus" role="status" aria-live="polite"></span>
+					</div>
+				</div>
+			</div>
+		</header>
+
+		<nav class="doctor-section-edge-nav" aria-label="Điều hướng khám">
+			<a href="#doctorReceptionistIntakePanel" class="doctor-section-edge-nav__item" title="Hành chính" aria-label="Hành chính" aria-controls="doctorReceptionistIntakePanel" data-doctor-section-target="doctorReceptionistIntakePanel">
+				<span class="doctor-section-edge-nav__label">
+					<strong>Hành chính</strong>
+				</span>
+			</a>
+			<a href="#doctorHistoryPanel" class="doctor-section-edge-nav__item" title="Tiền sử" aria-label="Tiền sử" aria-controls="doctorHistoryPanel" data-doctor-section-target="doctorHistoryPanel">
+				<span class="doctor-section-edge-nav__label">
+					<strong>Tiền sử</strong>
+				</span>
+			</a>
+			<a href="#doctorClinicalDecisionPanel" class="doctor-section-edge-nav__item is-active" title="Khám hiện tại" aria-label="Khám hiện tại" aria-current="true" aria-controls="doctorClinicalDecisionPanel" data-doctor-section-target="doctorClinicalDecisionPanel">
+				<span class="doctor-section-edge-nav__label">
+					<strong>Khám</strong>
+				</span>
+			</a>
+			<a href="#doctorServicePanel" class="doctor-section-edge-nav__item" title="Dịch vụ" aria-label="Dịch vụ" aria-controls="doctorServicePanel" data-doctor-section-target="doctorServicePanel">
+				<span class="doctor-section-edge-nav__label">
+					<strong>Dịch vụ</strong>
+				</span>
+			</a>
+			<a href="#doctorIndicationsPanel" class="doctor-section-edge-nav__item" title="Chỉ định" aria-label="Chỉ định" aria-controls="doctorIndicationsPanel" data-doctor-section-target="doctorIndicationsPanel">
+				<span class="doctor-section-edge-nav__label">
+					<strong>Chỉ định</strong>
+				</span>
+			</a>
+		</nav>
+
+		<div class="doctor-clinical-layout">
+			<div class="doctor-clinical-main">
+				<section class="doctor-draft-recovery" id="doctorDraftRecoveryBanner" role="status" aria-live="polite" hidden>
+					<div class="doctor-draft-recovery__message">
+						<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+						<span data-doctor-draft-message><span data-doctor-draft-message-prefix></span><strong class="doctor-draft-recovery__draft-count" data-doctor-draft-count></strong><span data-doctor-draft-message-suffix></span></span>
+					</div>
+					<div class="doctor-draft-recovery__actions">
+						<button type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="restore">Khôi phục</button>
+						<button type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="discard">Bỏ bản nháp</button>
+					</div>
+				</section>
+				<div class="doctor-workbench" aria-label="Phiếu khám bác sĩ">
+					<div class="doctor-workspace-stage">
+						<section class="doctor-workspace-section doctor-receptionist-intake-panel" id="doctorReceptionistIntakePanel" data-doctor-component="patient-intake" aria-label="Thông tin tiếp nhận bệnh nhân">
+								{% set patient_intake_config = {
+									'id': 'doctor-intake',
+									'patient': {
+										'layout_mode': 'receptionist',
+										'title': 'Thông tin hành chính',
+										'show_reexam': true,
+										'show_detail_actions': true,
+										'show_joint_action': true,
+										'vitals_caption': 'Nhập tại tiếp nhận'
+									},
+									'visit': {
+										'layout_mode': 'receptionist',
+										'title': 'Thông tin hỏi bệnh',
+										'heading_id': 'doctorReceptionistVisitHeading',
+										'section_id': 'doctorReceptionistMedicalInfoSection',
+										'show_admin': true,
+										'show_reason': true,
+										'show_main_symptoms': true
+									},
+									'relatives': {'aria_label': 'Người thân liên kết'},
+									'documents': {
+										'section_id': 'doctorDocumentsSection',
+										'heading_id': 'doctorDocumentsHeading',
+										'title': 'Danh sách tập tin đính kèm'
+									}
+								} %}
+								{% include 'partials/patient-intake-sections.html' %}
+						</section>
+
+						<section class="doctor-workspace-section doctor-history-workspace" id="doctorHistoryPanel" data-doctor-component="medical-history" aria-label="Tiền sử bệnh" data-medical-history-root hidden>
+							{% set inline_medical_history_variant = 'doctor_flat' %}
+							{% include 'components/_inline_medical_history.html' %}
+						</section>
+
+						<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--clinical" id="doctorClinicalDecisionPanel" data-doctor-component="clinical-examination" aria-label="Khám hiện tại" hidden>
+							<div class="doctor-workbench-panel__body doctor-workbench-panel__body--clinical">
+								<div class="doctor-clinical-flow">
+									<div class="doctor-clinical-flow__clinical-grid">
+									<section class="doctor-clinical-section doctor-clinical-section--decision doctor-clinical-form-card qlpk-patient-visit-card receptionist-card" id="doctorDecisionTreatmentTask" aria-labelledby="doctorDecisionTreatmentHeading">
+						<header class="doctor-clinical-form-card__header">
+							<div class="receptionist-section-title qlpk-patient-visit-card__title" id="doctorDecisionTreatmentHeading">
+								<i class="bi bi-clipboard2-pulse qlpk-section-icon" aria-hidden="true"></i>
+								<span>Khám &amp; xử trí</span>
+							</div>
+							<div class="doctor-clinical-form-card__header-actions">
+								<button type="button" class="doctor-clinical-section-jump doctor-clinical-history-action" data-prescription-history-action="toggle" aria-controls="doctorPrescriptionHistoryPanel" aria-expanded="false" hidden>
+									<i class="bi bi-clock-history" aria-hidden="true"></i>
+									<span>Lịch sử thuốc</span>
+								</button>
+								<button type="button" class="doctor-clinical-section-jump" data-prescription-navigation="jump" aria-controls="doctorPrescriptionWorkspace" aria-label="Đi đến vùng đơn thuốc">
+									<i class="bi bi-capsule" aria-hidden="true"></i>
+									<span>Đơn thuốc</span>
+									<strong id="doctorPrescriptionJumpCount">0</strong>
+								</button>
+							</div>
+						</header>
+										<div class="doctor-clinical-form-card__fields">
+											<label class="doctor-field doctor-field--full doctor-field--clinical-narrative receptionist-paper-field">
+												<span>1. Lý do khám <span class="doctor-required-mark" aria-hidden="true">*</span></span>
+														<textarea class="form-control" id="doctorClinicalReason" name="doctor_clinical_reason" rows="1"></textarea>
+											</label>
+											<label class="doctor-field doctor-field--full doctor-field--clinical-narrative receptionist-paper-field">
+												<span>2. Bệnh sử</span>
+														<textarea class="form-control" id="examDetailMedicalHistory" rows="1"></textarea>
+											</label>
+																			<label class="doctor-field doctor-field--full receptionist-paper-field">
+																				<span>3. Biểu hiện chung</span>
+																								<textarea class="form-control" id="examGeneralPresentation" name="bieu_hien_chung" rows="1"></textarea>
+																			</label>
+											<label class="doctor-field doctor-field--full receptionist-paper-field">
+												<span>4. KQ khám toàn thân</span>
+														<textarea class="form-control" id="examDetailGeneralExamination" rows="1"></textarea>
+											</label>
+												<div class="doctor-field doctor-field--full receptionist-paper-field">
+													<label class="doctor-field__label" for="diagnosis">5. Chẩn đoán (ICD-10) <span class="doctor-required-mark" aria-hidden="true">*</span></label>
+													{{ render_icd_autocomplete(
+														mode='diagnosis',
+														input_id='diagnosis',
+														input_name='diagnosis',
+														tags_id='diagnosisTags',
+														list_id='diagnosisList',
+														root_id='diagnosisIcdField',
+														dropdown_id='diagnosisDropdown',
+														root_class='doctor-icd-field'
+													) }}
+													<input type="hidden" id="diagnosisIds" value="">
+												</div>
+												<div class="doctor-field doctor-field--full receptionist-paper-field">
+													<label class="doctor-field__label" for="benhKemTheo">6. Bệnh kèm theo</label>
+													{{ render_icd_autocomplete(
+														mode='benhKemTheo',
+														input_id='benhKemTheo',
+														input_name='benh_kem_theo',
+														tags_id='benhKemTheoTags',
+														list_id='benhKemTheoList',
+														root_id='benhKemTheoIcdField',
+														dropdown_id='benhKemTheoDropdown',
+														root_class='doctor-icd-field'
+													) }}
+													<input type="hidden" id="benhKemTheoIds" value="">
+												</div>
+											<label class="doctor-field doctor-field--full receptionist-paper-field">
+												<span>7. Kết luận &amp; Hướng Đ.trị</span>
+														<textarea class="form-control" id="treatmentPlan" name="treatment_plan" rows="1"></textarea>
+											</label>
+											<label class="doctor-field doctor-field--full receptionist-paper-field">
+												<span>8. Thuốc đang dùng</span>
+														<textarea class="form-control" id="currentMedications" name="current_medications" rows="1"></textarea>
+											</label>
+											<label class="doctor-field doctor-field--full receptionist-paper-field">
+												<span>9. Lời dặn</span>
+														<textarea class="form-control" id="examinationNotes" name="loi_dan" rows="1"></textarea>
+											</label>
+										</div>
+									</section>
+
+									<section class="doctor-clinical-detail-panel qlpk-patient-visit-card receptionist-card" id="doctorClinicalDetailPanel" aria-labelledby="doctorClinicalDetailHeading">
+										<header class="doctor-clinical-detail-panel__header">
+											<div class="receptionist-section-title qlpk-patient-visit-card__title" id="doctorClinicalDetailHeading">
+												<i class="bi bi-clipboard2-check qlpk-section-icon" aria-hidden="true"></i>
+												<span>Khám chi tiết</span>
+											</div>
+										</header>
+										<div class="doctor-clinical-detail-panel__body">
+											<section class="doctor-clinical-detail-panel__group" aria-labelledby="doctorClinicalOrgansHeading">
+												<h4 id="doctorClinicalOrgansHeading">1. Các cơ quan</h4>
+												<div class="doctor-clinical-detail-panel__fields">
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralCirculation">
+														<span class="form-label">Tuần hoàn</span>
+														<textarea class="form-control" id="examGeneralCirculation" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralDigestive">
+														<span class="form-label">Tiêu hoá</span>
+														<textarea class="form-control" id="examGeneralDigestive" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralRenalUroGenital">
+														<span class="form-label">Thận-tiết niệu-sinh dục</span>
+														<textarea class="form-control" id="examGeneralRenalUroGenital" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralMusculoskeletal">
+														<span class="form-label">Cơ-xương-khớp</span>
+														<textarea class="form-control" id="examGeneralMusculoskeletal" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralENT">
+														<span class="form-label">Tai-mũi-họng</span>
+														<textarea class="form-control" id="examGeneralENT" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralEndocrineNutritionOthers">
+														<span class="form-label">Nội tiết-dinh dưỡng</span>
+														<textarea class="form-control" id="examGeneralEndocrineNutritionOthers" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--full doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralMental">
+														<span class="form-label">Thần kinh</span>
+														<textarea class="form-control" id="examGeneralMental" rows="1"></textarea>
+													</label>
+												</div>
+											</section>
+
+											<section class="doctor-clinical-detail-panel__group" aria-labelledby="doctorClinicalMentalHeading">
+												<h4 id="doctorClinicalMentalHeading">2. Khám tâm thần</h4>
+												<div class="doctor-clinical-detail-panel__fields">
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalOrientation">
+														<span class="form-label">Ý thức định hướng</span>
+														<textarea class="form-control" id="examMentalOrientation" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalEmotions">
+														<span class="form-label">Tình cảm, cảm xúc</span>
+														<textarea class="form-control" id="examMentalEmotions" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalPerception">
+														<span class="form-label">Tri giác</span>
+														<textarea class="form-control" id="examMentalPerception" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalThought">
+														<span class="form-label">Tư duy</span>
+														<textarea class="form-control" id="examMentalThought" rows="1"></textarea>
+													</label>
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalBehavior">
+														<span class="form-label">Hành vi tác phong</span>
+														<textarea class="form-control" id="examMentalBehavior" rows="1"></textarea>
+													</label>
+											<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalAttention">
+														<span class="form-label">Tập trung - chú ý</span>
+														<textarea class="form-control" id="examMentalAttention" rows="1"></textarea>
+											</label>
+											<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalIntelligence">
+														<span class="form-label">Trí năng</span>
+														<textarea class="form-control" id="examMentalIntelligence" rows="1"></textarea>
+											</label>
+											<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalMemory">
+														<span class="form-label">Trí nhớ</span>
+														<textarea class="form-control" id="examMentalMemory" rows="1"></textarea>
+											</label>
+												</div>
+											</section>
+										</div>
+									</section>
+									</div>
+
+							</div>
+
+					<section class="doctor-prescription-editor" id="doctorPrescriptionWorkspace" data-doctor-component="prescription" aria-labelledby="doctorPrescriptionHeading">
+						<div class="doctor-prescription-editor__layout">
+							<div class="doctor-prescription-editor__main">
+								<header class="doctor-prescription-editor__header">
+									<div class="doctor-prescription-editor__identity">
+										<span class="doctor-prescription-editor__icon" aria-hidden="true"><i class="bi bi-capsule"></i></span>
+										<div class="doctor-prescription-editor__title-copy">
+											<h3 id="doctorPrescriptionHeading">Đơn thuốc</h3>
+											<div class="doctor-prescription-editor__code" aria-label="Mã đơn thuốc">
+												<span>Mã đơn</span>
+												<strong id="doctorPrescriptionCode">Chưa cấp mã</strong>
+											</div>
+										</div>
+									</div>
+									<div class="doctor-prescription-editor__actions" aria-label="Thao tác đơn thuốc">
+										<div class="doctor-prescription-editor__summary" aria-label="Tóm tắt đơn thuốc">
+											<span><strong id="doctorPrescriptionItemsCount">0</strong> thuốc</span>
+											<span class="doctor-prescription-editor__save-status" id="doctorPrescriptionSaveStatus" data-status="idle" aria-live="polite">Chưa có thay đổi</span>
+										</div>
+										<button type="button" class="doctor-workspace-button" data-prescription-action="print">
+											<i class="bi bi-printer" aria-hidden="true"></i>
+											<span>In đơn</span>
+										</button>
+										<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-action="add-stock-row">
+											<i class="bi bi-plus-circle" aria-hidden="true"></i>
+											<span>Thêm thuốc</span>
+										</button>
+									</div>
+								</header>
+
+									<section class="doctor-prescription-editor__context" aria-labelledby="doctorPrescriptionContextHeading">
+										<h4 id="doctorPrescriptionContextHeading" class="visually-hidden">Thông tin đơn thuốc</h4>
+										<div class="doctor-prescription-overview">
+											<label class="doctor-prescription-summary-field doctor-prescription-summary-field--editable doctor-prescription-summary-field--mode" for="doctorPrescriptionUsageMode">
+												<span><i class="bi bi-calculator" aria-hidden="true"></i>Cách tính liều</span>
+												<select id="doctorPrescriptionUsageMode">
+													<option value="time_slots" selected>Theo buổi</option>
+													<option value="times_per_day">Theo lần/ngày</option>
+												</select>
+											</label>
+											<label class="doctor-prescription-summary-field doctor-prescription-summary-field--editable doctor-prescription-summary-field--days" for="doctorPrescriptionMedicineDays">
+												<span><i class="bi bi-calendar3" aria-hidden="true"></i>Số ngày điều trị</span>
+												<div class="doctor-prescription-summary-field__input-line">
+													<input type="number" id="doctorPrescriptionMedicineDays" min="0" step="1" inputmode="numeric">
+													<small>ngày</small>
+												</div>
+											</label>
+											<div class="doctor-prescription-summary-field doctor-prescription-summary-field--reexam">
+												<span><i class="bi bi-calendar-check" aria-hidden="true"></i>Hẹn tái khám</span>
+												<div class="doctor-prescription-reexam-value">
+													<div class="doctor-prescription-reexam-line">
+														<label class="doctor-prescription-reexam-toggle" for="doctorPrescriptionReExamToggle">
+															<input type="checkbox" id="doctorPrescriptionReExamToggle">
+															<span>Đặt lịch</span>
+														</label>
+														<label class="doctor-prescription-reexam-date" for="doctorPrescriptionReExamDateTime">
+															<span class="visually-hidden">Ngày giờ tái khám</span>
+															<input type="text" class="js-datepicker" id="doctorPrescriptionReExamDateTime" disabled
+																data-enable-time="true" data-date-format="Y-m-d H:i" data-alt-format="d/m/Y H:i"
+																data-min-date="today" placeholder="Chọn ngày giờ">
+														</label>
+														<span class="doctor-prescription-editor__reexam-status" id="doctorPrescriptionReExamStatus" data-status="idle" aria-live="polite">Chưa hẹn</span>
+													</div>
+													<p id="doctorPrescriptionReExamHint" class="doctor-prescription-editor__reexam-hint" aria-live="polite" hidden></p>
+												</div>
+											</div>
+										</div>
+									</section>
+
+								<section class="doctor-prescription-editor__medications" aria-labelledby="doctorPrescriptionMedicationsHeading">
+									<div class="doctor-prescription-medications-heading">
+										<h4 id="doctorPrescriptionMedicationsHeading"><i class="bi bi-capsule" aria-hidden="true"></i>Thuốc điều trị <em>(Medication)</em></h4>
+										<strong>Số lượng: <span id="doctorPrescriptionTotalQuantity">0 đơn vị</span></strong>
+									</div>
+									<div class="doctor-prescription-table-wrap" role="region" aria-label="Danh sách thuốc kê đơn" tabindex="0">
+										<table class="doctor-prescription-table" id="doctorPrescriptionTable">
+											<thead id="doctorPrescriptionTableHead"></thead>
+											<tbody id="doctorPrescriptionList"></tbody>
+										</table>
+									</div>
+									<div class="doctor-prescription-editor__empty" id="doctorPrescriptionEmptyState">
+										<i class="bi bi-capsule" aria-hidden="true"></i>
+										<strong>Chưa có thuốc nào</strong>
+										<span>Thêm thuốc để bắt đầu kê đơn.</span>
+									</div>
+								</section>
+
+								<footer class="doctor-prescription-editor__footer">
+									<span>Các thay đổi được lưu trong đơn hiện tại.</span>
+									<div class="doctor-prescription-editor__total">
+										<span>Tổng tiền đơn</span>
+										<strong id="doctorPrescriptionGrandTotal">0 ₫</strong>
+									</div>
+								</footer>
+							</div>
+							<div class="doctor-prescription-history-modal" id="doctorPrescriptionHistoryPanel" role="dialog" aria-modal="true" aria-labelledby="doctorPrescriptionHistoryHeading" aria-hidden="true" hidden>
+								<div class="doctor-prescription-history-modal__backdrop" data-prescription-history-action="close" aria-hidden="true"></div>
+								<section class="doctor-prescription-history-modal__dialog" role="document">
+									<header class="doctor-prescription-history-modal__header">
+										<div class="doctor-prescription-history-modal__title">
+											<span class="doctor-prescription-history-modal__icon" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
+											<div>
+												<h3 id="doctorPrescriptionHistoryHeading">Lịch sử thuốc</h3>
+												<p id="doctorPrescriptionHistoryPatient">Các đơn thuốc trước của bệnh nhân</p>
+											</div>
+										</div>
+										<button type="button" class="doctor-prescription-history-modal__close" data-prescription-history-action="close" aria-label="Đóng lịch sử thuốc">
+											<i class="bi bi-x-lg" aria-hidden="true"></i>
+										</button>
+									</header>
+									<div class="doctor-prescription-history-modal__body">
+										<aside class="doctor-prescription-history-modal__visits" aria-labelledby="doctorPrescriptionHistoryListHeading">
+											<header class="doctor-prescription-history-modal__section-header">
+												<div>
+													<h4 id="doctorPrescriptionHistoryListHeading">Các lần kê thuốc</h4>
+													<p>Chỉ hiển thị lượt khám đã có đơn</p>
+												</div>
+												<strong id="doctorPrescriptionHistoryCount">0 đơn</strong>
+											</header>
+											<div class="doctor-prescription-history-modal__list" id="doctorPrescriptionHistoryList"></div>
+										</aside>
+										<section class="doctor-prescription-history-modal__detail" aria-labelledby="doctorPrescriptionHistoryDetailHeading">
+											<div id="doctorPrescriptionHistoryDetail">
+												<div class="doctor-prescription-history-modal__empty">
+													<i class="bi bi-journal-medical" aria-hidden="true"></i>
+													<strong>Chưa có đơn trước</strong>
+													<span>Đơn đang kê nằm ở khu vực đơn thuốc.</span>
+												</div>
+											</div>
+										</section>
+									</div>
+									<footer class="doctor-prescription-history-modal__footer">
+										<span>Chọn một đơn để xem chi tiết hoặc áp dụng vào đơn hiện tại.</span>
+										<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-prescription-history-action="close">Đóng</button>
+									</footer>
+								</section>
+							</div>
+						</div>
+					</section>
+
+							</div>
+						</section>
+
+						<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--service" id="doctorServicePanel" data-doctor-component="services" aria-labelledby="doctorServiceCatalogHeading" hidden>
+							<div class="doctor-service-workspace doctor-service-workspace--split">
+								<section class="doctor-service-catalog" aria-labelledby="doctorServiceCatalogHeading">
+									<header class="doctor-service-section__header">
+										<h3 id="doctorServiceCatalogHeading">Dịch vụ</h3>
+									</header>
+									<div class="doctor-service-section__content">
+										<div class="doctor-service-catalog__list" id="doctorServiceCatalogList"></div>
+										<div class="doctor-support-empty" id="doctorServiceCatalogEmptyState">Chưa có dịch vụ trong danh mục.</div>
+										<nav class="doctor-service-catalog__pagination" id="doctorServiceCatalogPagination" aria-label="Phân trang danh mục dịch vụ" hidden>
+											<button type="button" data-service-catalog-page="previous" aria-label="Trang dịch vụ trước">Trước</button>
+											<label class="visually-hidden" for="doctorServiceCatalogPageSelect">Chọn trang danh mục dịch vụ</label>
+											<select id="doctorServiceCatalogPageSelect" aria-describedby="doctorServiceCatalogPageStatus"></select>
+											<span class="visually-hidden" id="doctorServiceCatalogPageStatus" aria-live="polite"></span>
+											<button type="button" data-service-catalog-page="next" aria-label="Trang dịch vụ sau">Sau</button>
+										</nav>
+									</div>
+								</section>
+								<section class="doctor-service-selection" aria-labelledby="doctorServiceSelectionHeading">
+									<header class="doctor-service-section__header doctor-service-selection__header">
+										<h3 id="doctorServiceSelectionHeading">Đã chọn</h3>
+										<div class="doctor-service-selection__column-labels" aria-hidden="true">
+											<span>Giá</span>
+											<span>SL</span>
+											<span></span>
+										</div>
+									</header>
+									<div class="doctor-service-section__content">
+										<div class="doctor-service-selection__list" id="doctorServiceSelectionList"></div>
+										<div class="doctor-support-empty" id="doctorServiceEmptyState">Chưa chọn dịch vụ.</div>
+									</div>
+									<footer class="doctor-service-selection__total" id="doctorServiceSelectionTotal" hidden>
+										<span class="doctor-service-selection__total-label">Tổng dự tính</span>
+										<strong class="doctor-service-selection__total-value" id="doctorServiceSelectionTotalValue" aria-live="polite">0 ₫</strong>
+									</footer>
+								</section>
+							</div>
+						</section>
+
+						{% include 'partials/doctor-indications-panel.html' %}
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+	</form>
+</section>

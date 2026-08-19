@@ -1,0 +1,260 @@
+/* Reset và CSS cơ bản */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background: #f7fafd;
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	min-height: 100vh;
+}
+
+/* Sidebar styles */
+.sidebar {
+	background: radial-gradient(120% 70% at -10% -15%, #eaf8ff 0 45%, transparent 46%), radial-gradient(90% 65% at 115% 110%, #e9fff3 0 50%, transparent 51%), linear-gradient(180deg, #ffffff 0%, #f7fbff 40%, #fafff7 100%);
+	border-right: 1px solid #e0e0e0;
+	min-height: 100vh;
+	padding: 0;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 250px;
+	z-index: 1000;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+/* Sidebar scrollbar styling */
+.sidebar::-webkit-scrollbar {
+	width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.1);
+	border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.sidebar .avatar {
+	width: 56px;
+	height: 56px;
+	object-fit: cover;
+	border-radius: 50%;
+	border: 2px solid #1976d2;
+	margin-bottom: 8px;
+}
+
+/* Sidebar user styles: Đã chuyển sang DRY sidebar template */
+
+.sidebar .nav-link {
+	color: #155CA2;
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	border-radius: 8px;
+	margin-bottom: 2px;
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+	transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+	background: #e3f0fa;
+	color: #155CA2;
+}
+
+.sidebar .nav-link.active,
+.sidebar .nav-link:focus {
+	background: #e3f0fa;
+	color: #155CA2;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.sidebar .nav-link i {
+	margin-right: 8px;
+}
+
+.sidebar .submenu {
+	padding-left: 0;
+	background: transparent;
+	border-radius: 0;
+	margin: 0;
+}
+
+.sidebar .submenu .nav-link {
+	padding: 8px 16px;
+	font-size: var(--qlpk-font-size-md, 14px);
+}
+
+.sidebar .logout-link {
+	color: #155CA2;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	margin-top: 24px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.sidebar .logout-link:hover {
+	color: #e53935;
+}
+
+/* Main content */
+.main-content {
+	padding: 0 32px 0 32px;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.header-bar {
+	background: #fff;
+	border-bottom: 1px solid #e0e0e0;
+	padding: 20px 0px 10px 20px;
+	margin-bottom: 18px;
+	border-radius: 1.2rem;
+}
+
+.breadcrumb {
+	background: none;
+	padding: 0;
+	margin-bottom: 0;
+	font-size: var(--qlpk-font-size-xl, 18px);
+}
+
+.breadcrumb-item+.breadcrumb-item::before {
+	content: '>';
+	color: #1976d2;
+}
+
+.page-title {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: #155CA2;
+	font-size: var(--qlpk-font-size-5xl, 32px);
+	margin-bottom: 0;
+}
+
+/* Footer */
+.footer-bar {
+	background: #fff;
+	border-top: 1px solid #e0e0e0;
+	color: #155CA2;
+	font-size: var(--qlpk-font-size-lg, 16px);
+	padding: 10px 32px 8px 32px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: auto;
+}
+
+.footer-bar .contact {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+}
+
+.footer-bar .help-link {
+	color: #155CA2;
+	text-decoration: underline;
+	font-weight: var(--qlpk-font-weight-medium, 500);
+}
+
+/* Content area */
+.content-area {
+	flex: 1;
+	padding: 20px 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+	.sidebar {
+		min-width: 100px;
+		width: 200px;
+	}
+
+	.main-content {
+		padding: 0 8px 0 208px;
+	}
+
+	.footer-bar {
+		padding: 10px 8px 8px 8px;
+	}
+}
+
+@media (max-width: 768px) {
+	.sidebar {
+		transform: translateX(-100%);
+		transition: transform 0.3s ease;
+	}
+
+	.sidebar.show {
+		transform: translateX(0);
+	}
+
+	.main-content {
+		padding: 0 8px;
+	}
+}
+
+/* Loading states */
+.loading {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 200px;
+	color: #155CA2;
+}
+
+/* Error states */
+.error-message {
+	background: #ffebee;
+	color: #c62828;
+	padding: 16px;
+	border-radius: 8px;
+	margin: 16px 0;
+	border-left: 4px solid #c62828;
+}
+
+/* Success states */
+.success-message {
+	background: #e8f5e8;
+	color: #2e7d32;
+	padding: 16px;
+	border-radius: 8px;
+	margin: 16px 0;
+	border-left: 4px solid #2e7d32;
+}
+
+/* Utility classes */
+.text-center {
+	text-align: center;
+}
+
+.mt-3 {
+	margin-top: 1rem;
+}
+
+.mt-5 {
+	margin-top: 3rem;
+}
+
+.fw-bold {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.lead {
+	font-size: var(--qlpk-font-size-2xl, 20px);
+	font-weight: var(--qlpk-font-weight-regular, 400);
+}

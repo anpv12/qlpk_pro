@@ -1,0 +1,108 @@
+.notes-inline-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.notes-inline-wrap #notes {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.notes-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    height: 2.05rem;
+    padding: 0 0.72rem;
+    border: 1px solid #f59e0b;
+    border-radius: 0.5rem;
+    background: #fef3c7;
+    color: #7c2d12;
+    font-size: var(--qlpk-font-size-md, 14px);
+    font-weight: var(--qlpk-font-weight-semibold, 600);
+    line-height: 1;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.notes-attachment-chip:hover {
+    background: #fde68a;
+    border-color: #d97706;
+    color: #7c2d12;
+}
+
+.notes-attachment-chip:focus,
+.notes-attachment-chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(148, 163, 184, 0.2);
+}
+
+.notes-attachment-chip i {
+    font-size: var(--qlpk-font-size-lg, 16px);
+}
+
+.notes-attachment-chip-count {
+    font-weight: var(--qlpk-font-weight-bold, 700);
+    min-width: 1ch;
+    color: #b91c1c;
+}
+
+.notes-attachment-chip-label {
+    color: #7c2d12;
+    font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.notes-attachment-chip.active-has-files {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #7c2d12;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
+    animation: notesPulse 1.2s ease-in-out infinite;
+}
+
+.notes-action-btn {
+    height: calc(1.5em + 0.75rem + 2px);
+    line-height: 1;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--qlpk-font-size-md, 14px);
+}
+
+@keyframes notesPulse {
+    0% {
+        transform: translateZ(0) scale(1);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
+    }
+
+    50% {
+        transform: translateZ(0) scale(1.025);
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.12);
+    }
+
+    100% {
+        transform: translateZ(0) scale(1);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    }
+}
+
+@media (max-width: 768px) {
+    .notes-inline-wrap {
+        align-items: stretch;
+    }
+
+    .notes-attachment-chip {
+        height: 1.95rem;
+        padding: 0 0.64rem;
+        font-size: var(--qlpk-font-size-md, 14px);
+    }
+
+    .notes-attachment-chip-label {
+        display: none;
+    }
+}

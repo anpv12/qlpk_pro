@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Lịch hẹn</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
+
+
+	{% include 'partials/flatpickr.html' %}
+	<link rel="stylesheet" href="/static/css/holiday-calendar.css?v={{ app_version }}">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js"></script>
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/appointment-management.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/icd-autocomplete.css?v={{ app_version }}">
+</head>
+
+<body>
+	<!-- Hidden sidebar container - sidebar-dry-loader needs this to avoid overlay -->
+	<div id="sidebar-container"></div>
+
+	<!-- Layout toàn màn hình -->
+	<div class="appointment-fullscreen">
+			<!-- TOP HEADER BAR -->
+			<div class="appt-header-bar">
+				<div class="appt-header-left">
+					<i class="bi bi-calendar-check"></i>
+				</div>
+			<div class="appt-search-wrapper">
+				<i class="bi bi-search search-icon"></i>
+				<input type="text" class="appt-calendar-search" id="calendarSearchInput" aria-label="Tìm theo tên, SĐT bệnh nhân" placeholder="Tìm theo tên, SĐT bệnh nhân...">
+				<button type="button" class="search-clear-btn" id="calendarSearchClear" title="Xóa" aria-label="Xóa tìm kiếm">&times;</button>
+			</div>
+			<div class="appt-header-filter">
+				<label class="appt-header-filter-label" for="doctorFilter">Bác sĩ</label>
+				<select class="form-select form-select-sm appt-header-doctor-select" id="doctorFilter">
+					<option value="">Tất cả bác sĩ</option>
+				</select>
+			</div>
+			<div class="appt-header-actions">
+				<button class="btn appointment-button appointment-button--header appointment-button--sm" id="syncCalendarBtn" data-bs-toggle="modal"
+					data-bs-target="#syncCalendarModal" title="Đồng bộ" aria-label="Đồng bộ lịch Google">
+					<i class="bi bi-arrow-repeat"></i> <span class="btn-text-label">Đồng bộ</span>
+				</button>
+				<div class="calendar-integration-section">
+					<div id="calendarStatus"></div>
+					<button class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="connectGoogleCalendarBtn" title="Kết nối Google Calendar" aria-label="Kết nối Google Calendar">
+						<i class="bi bi-google"></i> <span class="btn-text-label">Kết nối Google Calendar</span>
+					</button>
+					<button class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="disconnectGoogleCalendarBtn" title="Ngắt kết nối Google Calendar" aria-label="Ngắt kết nối Google Calendar">
+						<i class="bi bi-x-circle"></i> <span class="btn-text-label">Ngắt kết nối</span>
+					</button>
+				</div>
+				<button class="btn appointment-button appointment-button--header appointment-button--sm" data-bs-toggle="modal"
+					data-bs-target="#addAppointmentModal" title="Thêm lịch hẹn" aria-label="Thêm lịch hẹn">
+					<i class="bi bi-plus-circle"></i> <span class="btn-text-label">Thêm lịch hẹn</span>
+				</button>
+				<button class="btn appointment-button appointment-button--header appointment-button--sm" type="button" id="exportDataBtn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu lịch hẹn">
+					<i class="bi bi-download"></i> <span class="btn-text-label">Xuất dữ liệu</span>
+				</button>
+
+			</div>
+			<a href="/" class="appt-close-btn" title="Về trang chủ" aria-label="Về trang chủ">&times;</a>
+		</div>
+
+		<!-- BODY: Left Panel + Main -->
+		<div class="appt-body">
+			<!-- LEFT PANEL -->
+			<aside class="appt-left-panel">
+				<!-- Mini Calendar (Flatpickr inline) -->
+				<div class="appt-panel-section">
+					<div id="miniCalendar"></div>
+				</div>
+
+				<!-- Trạng thái -->
+				<div class="appt-panel-section appt-panel-section--status">
+					<label class="appt-panel-label">TRẠNG THÁI</label>
+					<div class="appt-status-list">
+						<div class="appt-status-item appointment-status-scheduled">
+							<span class="appt-status-badge badge-warning"></span>
+							<span class="appt-status-text">Chờ xác nhận:</span>
+							<span class="appt-status-count" id="pendingCount">0</span>
+						</div>
+						<div class="appt-status-item appointment-status-confirmed">
+							<span class="appt-status-badge badge-success"></span>
+							<span class="appt-status-text">Đã xác nhận:</span>
+							<span class="appt-status-count" id="confirmedCount">0</span>
+						</div>
+						<div class="appt-status-item appointment-status-no-show">
+							<span class="appt-status-badge badge-dark"></span>
+							<span class="appt-status-text">Không đến:</span>
+							<span class="appt-status-count" id="overdueCount">0</span>
+						</div>
+						<div class="appt-status-item appointment-status-cancelled">
+							<span class="appt-status-badge badge-danger"></span>
+							<span class="appt-status-text">Hủy:</span>
+							<span class="appt-status-count" id="cancelledCount">0</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Legend bác sĩ -->
+				<div class="appt-panel-section">
+					<label class="appt-panel-label">MÀU BÁC SĨ</label>
+					<div class="appt-doctor-legend" id="doctorLegendDoctor">
+						<!-- JS sẽ populate -->
+					</div>
+				</div>
+
+				<!-- Legend tâm lý gia -->
+				<div class="appt-panel-section">
+					<label class="appt-panel-label">MÀU TÂM LÝ GIA</label>
+					<div class="appt-doctor-legend" id="doctorLegendPsychologist">
+						<!-- JS sẽ populate -->
+					</div>
+				</div>
+
+			</aside>
+
+			<!-- MAIN CALENDAR AREA -->
+			<main class="appt-main">
+				<!-- Calendar View -->
+				<div id="calendarViewContainer">
+					<div class="calendar-container">
+						<div id="calendar"></div>
+					</div>
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+
+
+	{% include "partials/appointment-management-modals.html" %}
+
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+
+	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
+	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/status-format-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/filter-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/conflict-warning-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/patient-duplicate-warning-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/service-package-controls-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/doctor-controls-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/feedback-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/allergy-format-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/edit-modal-ui-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/add-modal-ui-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/icd-data-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/icd-multiselect-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/page-actions-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/doctor-legend-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-event-content-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-event-source-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-date-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/busy-schedule-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/busy-schedule-panel-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/busy-schedule-popup-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-connection-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-table-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-status-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-date-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-filter-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-controls-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-modal-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/calendar-sync-runtime-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management/page-interactions-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/appointment-management.js?v={{ app_version }}"></script>
+	<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
+
+	<script src="/static/js/appointment-management/mini-calendar-bootstrap-utils.js?v={{ app_version }}"></script>
+</body>
+
+</html>

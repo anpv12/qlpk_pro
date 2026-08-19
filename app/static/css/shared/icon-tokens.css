@@ -1,0 +1,160 @@
+:root {
+	--qlpk-icon-action-size: 1.95rem;
+	--qlpk-icon-action-radius: 0.45rem;
+	--qlpk-icon-action-border-width: 0.0625rem;
+	--qlpk-icon-action-surface-strength: 11%;
+	--qlpk-icon-action-border-strength: 34%;
+	--qlpk-icon-action-hover-surface-strength: 18%;
+	--qlpk-icon-action-shadow: 0 0.25rem 0.75rem rgba(53, 40, 33, 0.08);
+	--qlpk-icon-action-add: var(--qlpk-header-bg, #4b2719);
+	--qlpk-icon-action-view: #2563eb;
+	--qlpk-icon-action-edit: #5b4bc4;
+	--qlpk-icon-action-delete: #b42318;
+	--qlpk-icon-action-transfer: #2563eb;
+	--qlpk-icon-action-download: #2563eb;
+	--qlpk-icon-action-upload: #7c3aed;
+	--qlpk-icon-action-refresh: var(--qlpk-header-bg, #4b2719);
+	--qlpk-icon-action-save: #0f766e;
+	--qlpk-icon-action-cancel: var(--qlpk-header-bg, #4b2719);
+}
+
+.qlpk-icon-action {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-view);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--qlpk-icon-action-size);
+	block-size: var(--qlpk-icon-action-size);
+	min-inline-size: var(--qlpk-icon-action-size);
+	min-block-size: var(--qlpk-icon-action-size);
+	padding: 0;
+	border: var(--qlpk-icon-action-border-width) solid color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-border-strength), transparent);
+	border-radius: var(--qlpk-icon-action-radius);
+	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-surface-strength), #ffffff);
+	box-shadow: none;
+	color: var(--qlpk-icon-action-color);
+	line-height: 1;
+	text-decoration: none;
+	vertical-align: middle;
+	cursor: pointer;
+	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.qlpk-icon-action i,
+.qlpk-icon-action .bi,
+.qlpk-button-icon {
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+	line-height: 1;
+	color: currentColor;
+}
+
+.qlpk-icon-action:hover,
+.qlpk-icon-action:focus-visible {
+	border-color: color-mix(in srgb, var(--qlpk-icon-action-color) 54%, transparent);
+	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-hover-surface-strength), #ffffff);
+	box-shadow: var(--qlpk-icon-action-shadow);
+	color: var(--qlpk-icon-action-color);
+	transform: translateY(-0.0625rem);
+}
+
+.qlpk-icon-action:focus-visible {
+	outline: 0.125rem solid color-mix(in srgb, var(--qlpk-icon-action-color) 44%, transparent);
+	outline-offset: 0.125rem;
+}
+
+.qlpk-icon-action:disabled,
+.qlpk-icon-action.is-disabled {
+	opacity: 0.52;
+	pointer-events: none;
+	transform: none;
+}
+
+.qlpk-icon-action--add {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-add);
+}
+
+.qlpk-icon-action--view {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-view);
+}
+
+.qlpk-icon-action--edit {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-edit);
+}
+
+.qlpk-icon-action--delete,
+.qlpk-icon-action--danger {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-delete);
+}
+
+.qlpk-icon-action--transfer {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-transfer);
+}
+
+.qlpk-icon-action--download {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-download);
+}
+
+.qlpk-icon-action--upload {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-upload);
+}
+
+.qlpk-icon-action--refresh {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-refresh);
+}
+
+.qlpk-icon-action--save {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-save);
+}
+
+.qlpk-icon-action--cancel {
+	--qlpk-icon-action-color: var(--qlpk-icon-action-cancel);
+}
+
+.qlpk-icon-inline {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+.qlpk-icon-text-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	border: var(--qlpk-icon-action-border-width) solid var(--qlpk-header-bg, #4b2719);
+	border-radius: 999rem;
+	background: var(--qlpk-header-bg, #4b2719);
+	color: #ffffff;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.qlpk-icon-text-button:hover,
+.qlpk-icon-text-button:focus-visible {
+	background: var(--qlpk-header-surface, #6d3d27);
+	border-color: var(--qlpk-header-surface, #6d3d27);
+	color: #ffffff;
+	box-shadow: var(--qlpk-icon-action-shadow);
+	transform: translateY(-0.0625rem);
+}
+
+.qlpk-icon-text-button:disabled,
+.qlpk-icon-text-button.is-disabled {
+	opacity: 0.52;
+	pointer-events: none;
+	transform: none;
+}
+
+.qlpk-section-icon,
+.qlpk-source-icon,
+.qlpk-file-icon,
+.qlpk-feedback-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	color: currentColor;
+}

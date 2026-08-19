@@ -1,0 +1,189 @@
+<header class="qlpk-app-header" data-component="qlpk-app-header">
+    <div class="qlpk-app-header__brand-area">
+        <a class="qlpk-app-header__brand" href="/index.html" data-qlpk-open-tab="1" data-tab-label="Trang chủ">
+            <span class="qlpk-app-header__brand-logo-wrap">
+                <img class="qlpk-app-header__brand-logo" src="/static/assets/logo-sontam-clinic.png" alt="Son Tam Clinic">
+            </span>
+            <span class="qlpk-app-header__brand-copy">
+                <strong>Sơn Tâm Clinic</strong>
+                <small>Phòng khám Sơn Tâm</small>
+            </span>
+        </a>
+        <button class="qlpk-app-header__launcher-btn" type="button" id="qlpkAppLauncherButton"
+            aria-expanded="false" aria-controls="qlpkAppLauncherPanel" title="Ứng dụng">
+            <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>
+        </button>
+    </div>
+
+	<div class="qlpk-app-header__search-area" role="search">
+		<label class="visually-hidden" for="qlpkGlobalSearchInput">Tìm kiếm toàn hệ thống</label>
+		<div class="qlpk-app-header__search-box">
+			<select class="qlpk-app-header__scope" id="qlpkGlobalSearchScope" aria-label="Phạm vi tìm kiếm">
+				<option value="all">Toàn bộ</option>
+			</select>
+			<div class="qlpk-app-header__search-divider" aria-hidden="true"></div>
+			<i class="bi bi-search qlpk-app-header__search-icon" aria-hidden="true"></i>
+			<input id="qlpkGlobalSearchInput" class="qlpk-app-header__search-input" type="search"
+				placeholder="Tìm bệnh nhân theo tên, mã hồ sơ, SĐT..." autocomplete="off">
+		</div>
+		<section class="qlpk-app-header__global-search-panel" id="qlpkGlobalSearchPanel" aria-live="polite" aria-hidden="true">
+			<div class="qlpk-app-header__global-search-status" id="qlpkGlobalSearchStatus">Nhập ít nhất 2 ký tự để tìm kiếm.</div>
+			<div class="qlpk-app-header__global-search-results" id="qlpkGlobalSearchResults"></div>
+		</section>
+	</div>
+
+	<div class="qlpk-app-header__actions">
+		<button class="qlpk-app-header__icon-btn" type="button" id="qlpkHeaderFullscreenBtn"
+			aria-label="Phóng to toàn màn hình" aria-pressed="false" title="Phóng to toàn màn hình">
+			<i class="bi bi-arrows-fullscreen" id="qlpkHeaderFullscreenIcon" aria-hidden="true"></i>
+		</button>
+		<div class="dropdown qlpk-app-header__notification">
+			<button class="qlpk-app-header__icon-btn" type="button" id="qlpkHeaderNotificationButton"
+				data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+				aria-label="Thông báo" title="Thông báo">
+				<i class="bi bi-bell" aria-hidden="true"></i>
+				<span class="qlpk-app-header__badge qlpk-app-header__badge--hidden" id="qlpkHeaderNotificationBadge" aria-live="polite">0</span>
+			</button>
+			<section class="dropdown-menu dropdown-menu-end qlpk-app-header__notification-menu"
+				id="qlpkHeaderNotificationMenu" aria-labelledby="qlpkHeaderNotificationButton">
+				<div class="qlpk-app-header__notification-head">
+					<strong>Thông báo</strong>
+					<button class="qlpk-app-header__notification-read-all" type="button" id="qlpkHeaderNotificationReadAllBtn">Đánh dấu đã đọc</button>
+				</div>
+				<div class="qlpk-app-header__notification-list" id="qlpkHeaderNotificationList" aria-live="polite"></div>
+				<div class="qlpk-app-header__notification-empty" id="qlpkHeaderNotificationEmpty">
+					<i class="bi bi-bell-slash" aria-hidden="true"></i>
+					<span>Chưa có thông báo</span>
+				</div>
+				<div class="qlpk-app-header__notification-foot">
+					<button class="qlpk-app-header__notification-view-all" type="button" id="qlpkHeaderNotificationViewAllBtn">
+						<i class="bi bi-inbox" aria-hidden="true"></i>
+						Xem tất cả thông báo
+					</button>
+				</div>
+			</section>
+		</div>
+		<button class="qlpk-app-header__icon-btn" type="button" id="qlpkHeaderCalendarBtn" aria-label="Lịch hẹn" title="Lịch hẹn">
+			<i class="bi bi-calendar3" aria-hidden="true"></i>
+		</button>
+
+		<div class="dropdown qlpk-app-header__account">
+			<button class="qlpk-app-header__account-btn" type="button" id="qlpkHeaderAccountButton"
+				data-bs-toggle="dropdown" aria-expanded="false">
+				<span class="qlpk-app-header__avatar" id="qlpkHeaderAvatar">ST</span>
+				<span class="qlpk-app-header__account-copy">
+					<strong id="qlpkHeaderUserName">Đang tải...</strong>
+					<small id="qlpkHeaderUserRole">Người dùng</small>
+				</span>
+				<i class="bi bi-chevron-down qlpk-app-header__account-caret" aria-hidden="true"></i>
+			</button>
+			<ul class="dropdown-menu dropdown-menu-end qlpk-app-header__account-menu" aria-labelledby="qlpkHeaderAccountButton">
+				<li>
+					<div class="qlpk-app-header__account-role-row">
+						<span id="qlpkHeaderMenuUserRole">Người dùng</span>
+					</div>
+				</li>
+				<li><hr class="dropdown-divider"></li>
+				<li>
+					<button class="dropdown-item qlpk-app-header__menu-action" type="button" id="qlpkHeaderChangePasswordBtn">
+						<i class="bi bi-lock" aria-hidden="true"></i>
+						Đổi mật khẩu
+					</button>
+				</li>
+				<li><hr class="dropdown-divider"></li>
+				<li>
+					<button class="dropdown-item qlpk-app-header__menu-action qlpk-app-header__logout" type="button" id="qlpkHeaderLogoutBtn">
+						<i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+						Đăng xuất
+					</button>
+				</li>
+			</ul>
+		</div>
+	</div>
+</header>
+
+<div class="qlpk-app-launcher" id="qlpkAppLauncherPanel" aria-hidden="true">
+    <div class="qlpk-app-launcher__backdrop" data-qlpk-launcher-close="1"></div>
+    <section class="qlpk-app-launcher__panel" aria-label="Ứng dụng và chức năng">
+        <div class="qlpk-app-launcher__search" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input id="qlpkAppLauncherSearch" type="search" placeholder="Tìm chức năng..." autocomplete="off">
+        </div>
+        <div class="qlpk-app-launcher__body">
+            <div class="qlpk-app-launcher__grid" id="qlpkAppLauncherGrid"></div>
+        </div>
+    </section>
+</div>
+
+<section class="qlpk-notification-center-panel" id="qlpkNotificationCenterPanel" aria-labelledby="qlpkNotificationCenterTitle" aria-hidden="true">
+	<div class="qlpk-notification-center-panel__surface">
+		<div class="qlpk-notification-center-panel__head">
+			<div>
+				<h5 id="qlpkNotificationCenterTitle">Tất cả thông báo</h5>
+				<p class="qlpk-notification-center-panel__subtitle" id="qlpkNotificationCenterSummary">Tải tối đa 100 thông báo gần nhất</p>
+			</div>
+			<button type="button" class="qlpk-notification-center-panel__close" id="qlpkNotificationCenterCloseBtn" aria-label="Đóng">
+				<i class="bi bi-x-lg" aria-hidden="true"></i>
+			</button>
+		</div>
+		<div class="qlpk-notification-center-panel__toolbar" role="group" aria-label="Bộ lọc thông báo">
+			<button class="qlpk-notification-center-panel__filter is-active" type="button" data-qlpk-notification-filter="all">Tất cả</button>
+			<button class="qlpk-notification-center-panel__filter" type="button" data-qlpk-notification-filter="unread">Chưa đọc</button>
+		</div>
+		<div class="qlpk-notification-center-panel__body">
+			<div class="qlpk-notification-center-panel__status" id="qlpkNotificationCenterStatus">Đang tải thông báo...</div>
+			<div class="qlpk-notification-center-panel__list" id="qlpkNotificationCenterList" aria-live="polite"></div>
+			<div class="qlpk-notification-center-panel__empty" id="qlpkNotificationCenterEmpty">
+				<i class="bi bi-bell-slash" aria-hidden="true"></i>
+				<span>Không có thông báo phù hợp</span>
+			</div>
+		</div>
+		<div class="qlpk-notification-center-panel__foot">
+			<button type="button" class="btn btn-outline-secondary" id="qlpkNotificationCenterCloseFooterBtn">Đóng</button>
+			<button type="button" class="btn qlpk-notification-center-panel__read-all" id="qlpkNotificationCenterReadAllBtn">
+				<i class="bi bi-check2-circle" aria-hidden="true"></i>
+				Đánh dấu đã đọc
+			</button>
+		</div>
+	</div>
+</section>
+
+<nav class="qlpk-workspace-tabs" id="qlpkWorkspaceTabs" aria-label="Tab đang mở trong phần mềm"></nav>
+
+<div class="modal fade qlpk-password-modal" id="qlpkChangePasswordModal" tabindex="-1" aria-labelledby="qlpkChangePasswordModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<div>
+					<h5 class="modal-title" id="qlpkChangePasswordModalLabel">Đổi mật khẩu</h5>
+					<p class="qlpk-password-modal__subtitle">Cập nhật mật khẩu cho tài khoản hiện tại</p>
+				</div>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+			</div>
+			<form id="qlpkChangePasswordForm">
+				<div class="modal-body">
+					<div class="qlpk-password-modal__message qlpk-password-modal__message--hidden" id="qlpkChangePasswordMessage" role="alert"></div>
+					<div class="mb-3">
+						<label class="form-label" for="qlpkCurrentPassword">Mật khẩu hiện tại</label>
+						<input class="form-control" id="qlpkCurrentPassword" name="current_password" type="password" autocomplete="current-password" required>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="qlpkNewPassword">Mật khẩu mới</label>
+						<input class="form-control" id="qlpkNewPassword" name="new_password" type="password" autocomplete="new-password" minlength="6" required>
+					</div>
+					<div>
+						<label class="form-label" for="qlpkConfirmPassword">Nhập lại mật khẩu mới</label>
+						<input class="form-control" id="qlpkConfirmPassword" name="confirm_password" type="password" autocomplete="new-password" minlength="6" required>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button type="submit" class="btn qlpk-password-modal__submit" id="qlpkChangePasswordSubmitBtn">
+						<i class="bi bi-check2-circle" aria-hidden="true"></i>
+						Cập nhật
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

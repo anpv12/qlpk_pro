@@ -1,0 +1,120 @@
+<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--indications" id="doctorIndicationsPanel" data-doctor-component="indications" aria-labelledby="doctorIndicationsHeading" hidden>
+	<div class="doctor-indications-workspace" data-doctor-indications-ui="true">
+		<header class="doctor-indications-toolbar">
+			<h3 id="doctorIndicationsHeading">Tạo chỉ định</h3>
+			<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorIndicationsHistoryToggle" aria-expanded="false" aria-controls="doctorIndicationsHistory" disabled>
+				<i class="bi bi-clock-history qlpk-button-icon" aria-hidden="true"></i>
+				<span>Lịch sử</span>
+			</button>
+		</header>
+
+		<div class="doctor-indications-layout">
+			<div class="doctor-indications-form" id="doctorIndicationsForm" role="group" aria-labelledby="doctorIndicationsHeading">
+				<div class="doctor-indications-field">
+					<label for="doctorIndicationCatalog">Tên chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></label>
+					<div class="doctor-indications-autocomplete">
+						<i class="bi bi-search doctor-indications-autocomplete__icon" aria-hidden="true"></i>
+						<input type="text" id="doctorIndicationCatalog" name="indication_catalog" placeholder="Tìm tên chỉ định" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="doctorIndicationCatalogDropdown" aria-describedby="doctorIndicationsMessage" disabled>
+						<input type="hidden" id="doctorIndicationCatalogId" name="indication_catalog_id">
+						<div class="doctor-indications-autocomplete__dropdown order-autocomplete-dropdown" id="doctorIndicationCatalogDropdown" role="listbox" aria-label="Danh mục chỉ định" aria-hidden="true"></div>
+					</div>
+				</div>
+
+				<fieldset class="doctor-indications-field doctor-indications-fieldset" id="doctorIndicationLocationFieldset" disabled>
+					<legend>Nơi thực hiện <b class="doctor-required-mark" aria-hidden="true">*</b></legend>
+					<div class="doctor-indications-location" role="group" aria-label="Nơi thực hiện">
+						<label>
+							<input type="radio" name="doctorIndicationLocation" id="doctorIndicationLocationIn" value="in_house" checked>
+							<span>Trong cơ sở</span>
+						</label>
+						<label>
+							<input type="radio" name="doctorIndicationLocation" id="doctorIndicationLocationOut" value="external">
+							<span>Ngoài cơ sở</span>
+						</label>
+					</div>
+				</fieldset>
+
+				<label class="doctor-indications-field" for="doctorIndicationPerformer" id="doctorIndicationPerformerGroup">
+					<span>Đơn vị / người thực hiện</span>
+					<select id="doctorIndicationPerformer" name="indication_performer" disabled>
+						<option value="">Chưa có người thực hiện</option>
+					</select>
+				</label>
+
+				<label class="doctor-indications-field" for="doctorIndicationOutFacility" id="doctorIndicationOutFacilityGroup" hidden>
+					<span>Cơ sở ngoài <b class="doctor-required-mark" aria-hidden="true">*</b></span>
+					<input type="text" id="doctorIndicationOutFacility" name="indication_out_facility" placeholder="Nhập tên cơ sở thực hiện" disabled>
+				</label>
+
+				<label class="doctor-indications-field doctor-indications-field--date" for="doctorIndicationDate">
+					<span>Ngày chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></span>
+					<input type="date" id="doctorIndicationDate" name="indication_date" disabled>
+				</label>
+
+				<div class="doctor-indications-form__actions">
+					<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="doctorIndicationSubmit" disabled>
+					<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i>
+					<span>Thêm chỉ định</span>
+					</button>
+					<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorIndicationCancelEdit" hidden>Hủy sửa</button>
+				</div>
+				<p class="doctor-indications-message" id="doctorIndicationsMessage" role="status" aria-live="polite" hidden></p>
+			</div>
+
+			<section class="doctor-indications-list" aria-labelledby="doctorIndicationsListHeading">
+				<header class="doctor-indications-list__header">
+					<h3 id="doctorIndicationsListHeading">Trong lượt khám này</h3>
+					<span id="doctorIndicationsCount">0 chỉ định</span>
+				</header>
+				<div class="doctor-indications-table-wrap" role="region" aria-label="Danh sách chỉ định" tabindex="0">
+					<table class="doctor-indications-table">
+						<thead>
+							<tr>
+								<th scope="col">STT</th>
+								<th scope="col">Tên chỉ định</th>
+								<th scope="col">Nơi thực hiện</th>
+								<th scope="col">Ngày</th>
+								<th scope="col">Trạng thái</th>
+								<th scope="col"><span class="visually-hidden">Xử lý</span></th>
+							</tr>
+						</thead>
+						<tbody id="doctorIndicationsList">
+							<tr class="doctor-indications-table__empty">
+								<td colspan="6">
+									<i class="bi bi-clipboard2-x qlpk-section-icon" aria-hidden="true"></i>
+									<span>Chưa có chỉ định trong lượt khám này.</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<section class="doctor-indications-history" id="doctorIndicationsHistory" aria-labelledby="doctorIndicationsHistoryHeading" hidden>
+				<header class="doctor-indications-list__header">
+					<h3 id="doctorIndicationsHistoryHeading">Lịch sử các lần trước</h3>
+					<span id="doctorIndicationsHistoryCount">0 chỉ định</span>
+				</header>
+				<div class="doctor-indications-table-wrap" role="region" aria-label="Lịch sử chỉ định" tabindex="0">
+					<table class="doctor-indications-table doctor-indications-history-table">
+						<thead>
+							<tr>
+								<th scope="col">STT</th>
+								<th scope="col">Tên chỉ định</th>
+								<th scope="col">Lần khám</th>
+								<th scope="col">Nơi thực hiện</th>
+								<th scope="col">Ngày</th>
+								<th scope="col">Trạng thái</th>
+							</tr>
+						</thead>
+						<tbody id="doctorIndicationsHistoryList">
+							<tr class="doctor-indications-table__empty">
+								<td colspan="6">Chưa có lịch sử chỉ định.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</div>
+	</div>
+</section>

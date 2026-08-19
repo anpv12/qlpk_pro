@@ -1,0 +1,10 @@
+{% set patient_intake_config = patient_intake_config | default({}, true) %}
+
+<div class="receptionist-intake-content" data-patient-intake-form="{{ patient_intake_config.get('id', 'patient-intake') }}">
+	<div class="receptionist-intake-grid">
+		{% include 'partials/patient-info-form.html' %}
+		{% include 'partials/patient-visit-info-form.html' %}
+	</div>
+	{% include 'partials/patient-relatives-section.html' %}
+	{% include 'partials/patient-documents-section.html' %}
+</div>

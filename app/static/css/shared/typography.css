@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+:root {
+	--qlpk-font-family: "Roboto", Arial, sans-serif;
+	--qlpk-font-size-3xs: 8px;
+	--qlpk-font-size-2xs: 10px;
+	--qlpk-font-size-xs: 11px;
+	--qlpk-font-size-sm: 12px;
+	--qlpk-font-size-base: 13px;
+	--qlpk-font-size-md: 14px;
+	--qlpk-font-size-lg: 16px;
+	--qlpk-font-size-xl: 18px;
+	--qlpk-font-size-2xl: 20px;
+	--qlpk-font-size-3xl: 24px;
+	--qlpk-font-size-4xl: 28px;
+	--qlpk-font-size-5xl: 32px;
+	--qlpk-font-size-6xl: 36px;
+	--qlpk-font-size-display-sm: 40px;
+	--qlpk-font-size-display-md: 48px;
+	--qlpk-font-size-display-lg: 52px;
+	--qlpk-font-size-display-xl: 64px;
+	--qlpk-font-size-watermark: 120px;
+	--qlpk-font-size-fluid-title: clamp(18px, 2.5vw, 28px);
+	--qlpk-font-weight-regular: 400;
+	--qlpk-font-weight-medium: 500;
+	--qlpk-font-weight-semibold: 600;
+	--qlpk-font-weight-bold: 700;
+	--qlpk-line-height-tight: 1.2;
+	--qlpk-line-height-normal: 1.45;
+	--qlpk-line-height-relaxed: 1.6;
+	--qlpk-control-font-size: var(--qlpk-font-size-base);
+	--qlpk-control-font-size-sm: var(--qlpk-font-size-sm);
+	--qlpk-control-font-weight: var(--qlpk-font-weight-medium);
+	--qlpk-control-line-height: var(--qlpk-line-height-normal);
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+}
+
+body {
+	font-size: var(--qlpk-font-size-base, 13px);
+	font-weight: var(--qlpk-font-weight-regular, 400);
+	line-height: var(--qlpk-line-height-normal, 1.45);
+}
+
+.form-control,
+.form-select,
+textarea.form-control {
+	font-size: var(--qlpk-control-font-size, var(--qlpk-font-size-base, 13px));
+	font-weight: var(--qlpk-control-font-weight, var(--qlpk-font-weight-medium, 500));
+	line-height: var(--qlpk-control-line-height, var(--qlpk-line-height-normal, 1.45));
+}
+
+.form-control-sm,
+.form-select-sm {
+	font-size: var(--qlpk-control-font-size-sm, var(--qlpk-font-size-sm, 12px));
+}
+
+strong,
+b {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}

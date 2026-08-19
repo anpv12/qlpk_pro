@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tương tác thuốc</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+		rel="stylesheet">
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/catalog-crud-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/drug-interaction.css?v={{ app_version }}">
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content di-main-content">
+
+				<div class="card-wrap">
+					<!-- Toolbar -->
+					<div class="toolbar">
+						<div class="search-wrap">
+							<input type="text" id="di-search" placeholder="Tìm theo tên thuốc, hoạt chất...">
+						</div>
+						<div class="right-group">
+							<button class="btn-outline" id="btn-di-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
+							<button class="btn-outline" id="btn-di-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+							<button class="btn-add" id="btn-add-interaction"><i
+									class="bi bi-plus-circle"></i> Thêm tương tác</button>
+							<input type="file" id="di-import-file" accept=".xlsx, .xls" class="di-hidden-input">
+						</div>
+					</div>
+
+					<!-- Table -->
+					<table class="di-table">
+						<thead>
+							<tr>
+								<th class="di-col-stt">STT</th>
+								<th class="di-col-med">Hoạt chất 1</th>
+								<th class="di-col-separator"></th>
+								<th class="di-col-med">Hoạt chất 2</th>
+								<th class="di-col-type">Loại</th>
+								<th>Hậu quả</th>
+								<th class="di-col-action">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody id="di-table-body">
+							<tr>
+								<td colspan="7" class="text-center text-muted py-4">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal thêm/sửa -->
+	<div class="modal fade" id="diModal" tabindex="-1">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header di-modal-header">
+					<h6 class="modal-title mb-0" id="di-modal-title"><i class="bi bi-exclamation-triangle"></i>
+						Thêm tương tác thuốc</h6>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<form id="di-form">
+					<div class="modal-body di-modal-body">
+
+						<!-- Chọn 2 thuốc -->
+						<div class="drug-selector">
+							<div class="label">Chọn cặp hoạt chất tương tác</div>
+							<div class="drug-pair">
+								<div class="drug-box di-drug-box">
+									<label class="form-label mb-1 di-field-label">Hoạt chất 1</label>
+									<input type="text" class="form-control form-control-sm" id="di-med1"
+										placeholder="Nhập hoặc chọn hoạt chất..." autocomplete="off">
+									<input type="hidden" id="di-med1-id">
+								</div>
+								<div class="vs">⇄</div>
+								<div class="drug-box di-drug-box">
+									<label class="form-label mb-1 di-field-label">Hoạt chất 2</label>
+									<input type="text" class="form-control form-control-sm" id="di-med2"
+										placeholder="Nhập hoặc chọn hoạt chất..." autocomplete="off">
+									<input type="hidden" id="di-med2-id">
+								</div>
+							</div>
+						</div>
+
+						<!-- Loại tương tác -->
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-tag-fill"></i> Loại tương tác</div>
+							<div class="d-flex gap-2">
+								<label class="type-label type-contra">
+									<input type="radio" name="interaction_type" value="contraindicated"
+										id="di-type-contra" checked> <i class="bi bi-x-octagon-fill"></i>
+									Chống chỉ định
+								</label>
+								<label class="type-label type-approved">
+									<input type="radio" name="interaction_type" value="approved"
+										id="di-type-approved"> <i class="bi bi-check-circle-fill"></i>
+									Được đồng thuận
+								</label>
+							</div>
+						</div>
+
+						<!-- 3 field cố định -->
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-exclamation-circle-fill"></i> Hậu quả</div>
+							<textarea class="form-control form-control-sm" id="di-consequence" rows="2"
+								placeholder="Mô tả hậu quả khi dùng chung 2 thuốc..."></textarea>
+						</div>
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-gear-fill"></i> Cơ chế tương tác</div>
+							<textarea class="form-control form-control-sm" id="di-mechanism" rows="2"
+								placeholder="Mô tả cơ chế tương tác..."></textarea>
+						</div>
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-shield-check"></i> Cách xử trí</div>
+							<textarea class="form-control form-control-sm" id="di-management" rows="2"
+								placeholder="Hướng dẫn xử trí khi gặp tương tác..."></textarea>
+						</div>
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-chat-left-text"></i> Ghi chú</div>
+							<textarea class="form-control form-control-sm" id="di-notes" rows="2"
+								placeholder="Ghi chú thêm..."></textarea>
+						</div>
+
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-sm btn-secondary"
+							data-bs-dismiss="modal">Hủy</button>
+						<button type="submit" class="btn btn-sm di-save-btn">Lưu tương tác</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal xem chi tiết -->
+	<div class="modal fade" id="diViewModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header di-modal-header">
+					<h6 class="modal-title mb-0"><i class="bi bi-eye"></i> Chi tiết tương tác</h6>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body di-modal-body">
+					<div class="d-flex align-items-center gap-2 mb-3 di-view-pair">
+						<strong id="view-med1">—</strong>
+						<span class="text-muted">⇄</span>
+						<strong id="view-med2">—</strong>
+						<span class="ms-auto" id="view-type"></span>
+					</div>
+					<div class="view-field-label">Hậu quả</div>
+					<div class="view-field-value" id="view-consequence">—</div>
+					<div class="view-field-label">Cơ chế tương tác</div>
+					<div class="view-field-value" id="view-mechanism">—</div>
+					<div class="view-field-label">Cách xử trí</div>
+					<div class="view-field-value" id="view-management">—</div>
+					<div class="view-field-label">Ghi chú</div>
+					<div class="view-field-value" id="view-notes">—</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-secondary"
+						data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/drug-interaction.js?v={{ app_version }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,125 @@
+		/* Add/Import buttons */
+		.btn-action {
+			background: #0F766E;
+			color: #fff;
+			border: none;
+			border-radius: 8px;
+			padding: 7px 12px;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			font-size: var(--qlpk-font-size-base, 13px);
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			white-space: nowrap;
+		}
+
+		.btn-action:hover {
+			background: #0D6B63;
+			color: #fff;
+		}
+		
+		/* Modal compact */
+		.modal-header {
+			padding: 8px 10px;
+		}
+
+		.modal-footer {
+			padding: 8px 10px;
+		}
+
+		.info-section {
+			margin-bottom: 10px;
+		}
+		
+		.section-title {
+			font-size: var(--qlpk-font-size-base, 13px);
+			font-weight: var(--qlpk-font-weight-bold, 700);
+			color: #1E293B;
+			margin-bottom: 6px;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		.section-title i {
+			color: #0F766E;
+		}
+		
+		/* Switch toggle for status */
+		.form-switch .form-check-input {
+			width: 2.5em;
+			cursor: pointer;
+		}
+			.form-switch .form-check-input:checked {
+				background-color: #0F766E;
+				border-color: #0F766E;
+			}
+
+.catalog-dict-main {
+	padding: 16px 20px;
+}
+
+.catalog-dict-hidden,
+.catalog-dict-pagination.is-hidden {
+	display: none !important;
+}
+
+.catalog-dict-col-index {
+	width: 40px;
+}
+
+.catalog-dict-col-name {
+	width: 250px;
+}
+
+.catalog-dict-col-name-wide {
+	width: 260px;
+}
+
+.catalog-dict-col-actions {
+	width: 100px;
+	text-align: center;
+}
+
+.catalog-dict-pagination-info {
+	font-size: var(--qlpk-font-size-base, 13px);
+	color: #64748B;
+}
+
+.catalog-dict-page-btn {
+	padding: 4px 10px;
+}
+
+.catalog-dict-page-current {
+	font-size: var(--qlpk-font-size-base, 13px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.catalog-dict-modal-header {
+	background: #0F766E;
+	color: #fff;
+	border-radius: 8px 8px 0 0;
+}
+
+.catalog-dict-modal-body {
+	padding: 10px;
+}
+
+.catalog-dict-primary-btn {
+	background: #0F766E;
+	color: #fff;
+}
+
+.catalog-dict-name-cell {
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	color: #0F766E;
+}
+
+.catalog-dict-desc-cell {
+	white-space: pre-line;
+}
+
+.catalog-dict-action-cell {
+	text-align: center;
+}

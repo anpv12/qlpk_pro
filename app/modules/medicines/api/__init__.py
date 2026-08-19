@@ -1,0 +1,1 @@
+"""Medicine API module routes."""

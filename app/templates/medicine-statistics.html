@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Thống kê Thuốc</title>
+	<meta name="description" content="Trang thống kê thuốc - Phòng khám Sơn Tâm">
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/medicine-statistics.css?v={{ app_version }}">
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+				<!-- Bộ lọc -->
+				<div class="filter-card">
+					<div class="row g-3 align-items-end">
+						<div class="col-auto">
+							<label class="form-label fw-semibold" for="searchInput">Tìm kiếm</label>
+							<input type="text" id="searchInput" class="form-control filter-search"
+								placeholder="Tên thuốc, bệnh nhân..." aria-label="Tìm kiếm thuốc hoặc bệnh nhân">
+						</div>
+						<div class="col-auto">
+							<label class="form-label fw-semibold" for="doctorFilter">Bác sĩ</label>
+							<select id="doctorFilter" class="form-select filter-doctor" aria-label="Lọc theo bác sĩ">
+								<option value="">Tất cả</option>
+							</select>
+						</div>
+						<div class="col-auto">
+							<label class="form-label fw-semibold" for="medicineTypeFilter">Loại thuốc</label>
+							<select id="medicineTypeFilter" class="form-select filter-type"
+								aria-label="Lọc theo loại thuốc">
+								<option value="">Tất cả</option>
+								<option value="BASIC">Cơ bản</option>
+								<option value="H">Thuốc H</option>
+								<option value="N">Thuốc N</option>
+
+							</select>
+						</div>
+						<div class="col-auto">
+							<label class="form-label fw-semibold" for="dateFrom">Từ ngày</label>
+							<input type="text" id="dateFrom" class="form-control filter-date" placeholder="Chọn ngày"
+								aria-label="Ngày bắt đầu">
+						</div>
+						<div class="col-auto">
+							<label class="form-label fw-semibold" for="dateTo">Đến ngày</label>
+							<input type="text" id="dateTo" class="form-control filter-date" placeholder="Chọn ngày"
+								aria-label="Ngày kết thúc">
+						</div>
+						<div class="col-auto">
+							<button class="btn btn-export" id="btnExport" aria-label="Xuất dữ liệu ra file Excel">
+								<i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Thống kê tổng quan -->
+				<div class="row g-4 mb-2">
+					<div class="col-md-3">
+						<div class="stat-card">
+							<div class="d-flex align-items-center">
+								<div class="stat-icon blue me-3">
+									<i class="bi bi-prescription2"></i>
+								</div>
+								<div>
+									<div class="stat-value" id="totalPrescriptions">0</div>
+									<div class="stat-label">Tổng lượt khám</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card">
+							<div class="d-flex align-items-center">
+								<div class="stat-icon green me-3">
+									<i class="bi bi-hospital"></i>
+								</div>
+								<div>
+									<div class="stat-value" id="totalServiceRevenue">0</div>
+									<div class="stat-label">Doanh thu dịch vụ</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card">
+							<div class="d-flex align-items-center">
+								<div class="stat-icon orange me-3">
+									<i class="bi bi-capsule"></i>
+								</div>
+								<div>
+									<div class="stat-value" id="totalDispensed">0</div>
+									<div class="stat-label">Lượt bốc thuốc · <span id="totalDispensedQty" class="stat-label-qty">0</span> viên</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card">
+							<div class="d-flex align-items-center">
+								<div class="stat-icon purple me-3">
+									<i class="bi bi-currency-dollar"></i>
+								</div>
+								<div>
+									<div class="stat-value" id="totalRevenue">0</div>
+									<div class="stat-label">Doanh thu thuốc</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Tabs -->
+				<ul class="nav nav-tabs-custom mb-2" role="tablist">
+					<li class="nav-item" role="presentation">
+						<a class="nav-link" data-tab="prescriptions" data-bs-toggle="tab" href="#tab-prescription"
+							onclick="switchTab('prescriptions')" role="tab" aria-selected="false">
+							<i class="bi bi-list-ul me-1"></i> Bác sĩ, Tâm lý gia khám
+						</a>
+					</li>
+					<li class="nav-item" role="presentation">
+						<a class="nav-link" data-tab="inventory" data-bs-toggle="tab" href="#tab-medicine"
+							onclick="switchTab('inventory')" role="tab" aria-selected="false">
+							<i class="bi bi-capsule me-1"></i> Thống kê thuốc
+						</a>
+					</li>
+					<li class="nav-item" role="presentation">
+						<a class="nav-link" data-tab="prescription-history" data-bs-toggle="tab"
+							href="#tab-prescription-history" onclick="switchTab('prescription-history')" role="tab"
+							aria-selected="false">
+							<i class="bi bi-clock-history me-1"></i> Lịch sử kê thuốc
+						</a>
+					</li>
+				</ul>
+
+				<!-- Tab Content -->
+				<div class="tab-content">
+					<!-- Tab 1: Theo đơn thuốc (Group by Bác sĩ) -->
+					<div class="tab-pane fade" id="tab-prescription" role="tabpanel">
+						<div class="data-card">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<span><i class="bi bi-list-ul me-2"></i>Danh sách khám</span>
+							</div>
+							<div class="table-responsive">
+								<table class="table ms-table-fixed">
+									<colgroup>
+										<col class="col-patient">
+										<col class="col-date">
+										<col class="col-time">
+										<col class="col-service">
+										<col class="col-medicine">
+										<col class="col-days">
+										<col class="col-svc-amount">
+										<col class="col-total">
+										<col class="col-recheck">
+									</colgroup>
+									<thead>
+										<tr>
+											<th scope="col">Bệnh nhân</th>
+											<th scope="col">Ngày hẹn</th>
+											<th scope="col">Giờ hẹn</th>
+											<th scope="col">Dịch vụ</th>
+											<th scope="col">SL Thuốc</th>
+											<th scope="col">Tiền thuốc</th>
+											<th scope="col">Tiền dịch vụ</th>
+											<th scope="col">Tổng tiền</th>
+											<th scope="col">Ngày tái khám</th>
+										</tr>
+									</thead>
+									<tbody id="prescriptionsTableBody">
+										<!-- JS renders data from API -->
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+					<!-- Tab 2: Theo thuốc & Tồn kho -->
+					<div class="tab-pane fade" id="tab-medicine" role="tabpanel">
+						<div class="data-card">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<span><i class="bi bi-capsule me-2"></i>Thống kê theo thuốc & Tồn kho</span>
+								<div>
+									<span class="badge status-sufficient me-2" id="badgeSufficient">Đủ hàng: 0</span>
+									<span class="badge status-low me-2" id="badgeLow">Sắp hết: 0</span>
+									<span class="badge status-restock" id="badgeRestock">Cần nhập: 0</span>
+								</div>
+							</div>
+							<div class="table-responsive">
+								<table class="table">
+									<thead>
+										<tr>
+											<th scope="col" class="col-stt">STT</th>
+											<th scope="col" class="col-med-name">Tên thuốc</th>
+											<th scope="col" class="col-med-type">Loại</th>
+											<th scope="col" class="col-med-import">Giá nhập</th>
+											<th scope="col" class="col-med-price">Giá bán</th>
+											<th scope="col" class="col-med-export">Đã bốc</th>
+											<th scope="col" class="col-med-stock">Tồn kho</th>
+											<th scope="col" class="col-med-expiry">Hạn dùng</th>
+											<th scope="col" class="col-med-status">Trạng thái</th>
+										</tr>
+									</thead>
+									<tbody id="inventoryTableBody">
+										<!-- JS renders data from API -->
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+					<!-- Tab 3: Lịch sử kê thuốc -->
+					<div class="tab-pane fade" id="tab-prescription-history" role="tabpanel">
+						<!-- MASTER: Bảng thuốc tổng quan -->
+						<div class="data-card">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<span><i class="bi bi-capsule me-2"></i>Danh sách thuốc đã kê</span>
+								<small class="text-muted" id="historyMedicineCount"></small>
+							</div>
+							<div class="table-responsive ms-history-master-scroll">
+								<table class="table table-hover mb-0 ms-table-fixed">
+									<colgroup>
+										<col class="ms-history-master-name">
+										<col class="ms-history-master-generic">
+										<col class="ms-history-master-type">
+										<col class="ms-history-master-count">
+										<col class="ms-history-master-qty">
+										<col class="ms-history-master-amount">
+									</colgroup>
+									<thead class="ms-sticky-head">
+										<tr>
+											<th scope="col">Tên thuốc</th>
+											<th scope="col">Tên gốc/Biệt dược</th>
+											<th scope="col">Loại thuốc</th>
+											<th scope="col" class="text-center">Số lần kê</th>
+											<th scope="col" class="text-end">Tổng viên</th>
+											<th scope="col" class="text-end">Tổng tiền</th>
+										</tr>
+									</thead>
+									<tbody id="historyMasterTableBody">
+										<!-- JS renders -->
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<!-- DETAIL: Chi tiết thuốc được chọn -->
+						<div class="data-card mt-3 ms-history-detail-card" id="historyDetailCard">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<span>
+									<i class="bi bi-prescription2 me-2"></i>
+									Chi tiết: <strong id="historyDetailTitle"></strong>
+								</span>
+								<span>
+									<span class="badge bg-primary bg-opacity-10 text-primary me-2"
+										id="historyDetailQty"></span>
+									<span class="badge bg-success bg-opacity-10 text-success"
+										id="historyDetailAmount"></span>
+								</span>
+							</div>
+							<div class="table-responsive">
+								<table class="table mb-0">
+									<thead>
+										<tr>
+											<th class="ms-history-detail-doctor">Bác sĩ</th>
+											<th class="ms-history-detail-date">Ngày kê</th>
+											<th class="ms-history-detail-patient">Bệnh nhân</th>
+											<th class="ms-history-detail-code">Mã đơn</th>
+											<th class="text-end ms-history-detail-qty">Số viên</th>
+											<th class="ms-history-detail-source">Mua tại</th>
+											<th class="text-end ms-history-detail-amount">Thành tiền</th>
+										</tr>
+									</thead>
+									<tbody id="historyDetailTableBody">
+										<!-- JS renders on click -->
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</main>
+		</div>
+		<div class="footer-bar">
+			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
+			<div class="contact">
+				<span>Hỗ trợ: <b>0938549609</b></span>
+				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
+				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Load Flatpickr -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+	<!-- Load medicine statistics JS -->
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/medicine-statistics.js?v={{ app_version }}"></script>
+</body>
+
+</html>

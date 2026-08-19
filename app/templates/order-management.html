@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý chỉ định CLS</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/order-management.css?v={{ app_version }}">
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content om-main-content">
+
+				<div class="card-wrap">
+					<!-- Toolbar -->
+					<div class="toolbar">
+						<div class="search-wrap">
+							<input type="text" id="filterPatientName" placeholder="Tìm theo tên bệnh nhân...">
+						</div>
+						<input type="text" class="filter-date js-datepicker" id="filterFromDate"
+							data-alt-format="d/m/Y" data-date-format="Y-m-d" placeholder="Từ ngày">
+						<input type="text" class="filter-date js-datepicker" id="filterToDate" data-alt-format="d/m/Y"
+							data-date-format="Y-m-d" placeholder="Đến ngày">
+						<select class="filter-select" id="filterStatus"></select>
+						<div class="right-group">
+							<div class="stat-badge"><span id="stat-total">0</span> chỉ định</div>
+							<button class="btn-refresh" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i> Làm
+								mới</button>
+						</div>
+					</div>
+
+					<!-- Table -->
+					<table class="om-table">
+						<thead>
+							<tr>
+								<th>STT</th>
+								<th>Bệnh nhân</th>
+								<th>Tên chỉ định</th>
+								<th>Bác sĩ</th>
+								<th>Ngày tạo</th>
+								<th>Tình trạng</th>
+								<th>Tác vụ</th>
+							</tr>
+						</thead>
+						<tbody id="ordersTableBody">
+							<tr>
+								<td colspan="8" class="text-center text-navy om-loading-cell">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div class="order-card__footer" id="orderFooterInfo"></div>
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-xl om-detail-dialog">
+			<div class="modal-content">
+				<div class="modal-header om-modal-header">
+					<h6 class="modal-title mb-0" id="orderDetailModalLabel"><i class="bi bi-file-earmark-medical"></i> Chi tiết chỉ định</h6>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body om-modal-body">
+					<!-- Tabs Navigation -->
+					<ul class="nav nav-tabs" id="orderTabs" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info"
+								type="button" role="tab">
+								<i class="bi bi-info-circle me-1"></i>Thông tin
+							</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="survey-tab" data-bs-toggle="tab" data-bs-target="#survey"
+								type="button" role="tab">
+								<i class="bi bi-clipboard2-check me-1"></i>Khảo sát
+							</button>
+						</li>
+					</ul>
+
+					<!-- Tabs Content -->
+					<div class="tab-content" id="orderTabsContent">
+						<!-- Tab 1: Thông tin -->
+						<div class="tab-pane fade show active" id="info" role="tabpanel">
+							<div class="om-detail-grid">
+								<!-- Row 1 Left: Patient Info -->
+								<div class="card-wrap om-patient-card" id="orderPatientInfo">
+									<!-- Patient Info Rendered by JS -->
+								</div>
+
+								<!-- Row 1 Right: File đính kèm -->
+								<div class="card-wrap d-flex flex-column">
+									<div class="d-flex justify-content-between align-items-center mb-2">
+										<div class="d-flex align-items-center gap-2">
+											<div class="view-field-label m-0">File kết quả đính kèm</div>
+											<span class="badge bg-light text-dark border om-file-count-badge" id="fileCountBadge">0</span>
+										</div>
+										<button class="btn btn-sm text-white om-select-file-btn" id="selectFileBtn"><i class="bi bi-paperclip"></i> Đính kèm</button>
+									</div>
+									<div id="resultFilesUploadArea" class="om-dropzone flex-grow-1">
+										<i class="bi bi-cloud-arrow-up om-dropzone-icon"></i>
+										<div class="om-dropzone-title">Kéo thả file vào đây</div>
+										<div class="om-dropzone-hint">PDF, JPG, DOC — tối đa 25MB</div>
+									</div>
+									<input type="file" id="fileInput" class="om-hidden-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+									<div id="resultFilesListContainer"></div>
+								</div>
+
+								<!-- Row 2 Left: Tiến trình -->
+								<div class="card-wrap">
+									<div class="view-field-label mb-3 om-progress-title">Tiến trình chỉ định</div>
+									<div class="timeline" id="orderTimeline">
+										<!-- Timeline sẽ được load từ API -->
+									</div>
+								</div>
+
+								<!-- Row 2 Right: Ghi chú xử lý -->
+								<div class="card-wrap d-flex flex-column">
+									<div class="d-flex justify-content-between align-items-center mb-2">
+										<div class="view-field-label m-0">Ghi chú xử lý</div>
+										<div class="d-flex align-items-center gap-2">
+											<div class="view-field-label m-0">Trạng thái</div>
+											<select class="form-select form-select-sm om-status-select" id="orderStatusSelect">
+												<option value="sent" selected>Chuyển thực hiện</option>
+												<option value="completed">Hoàn thành</option>
+											</select>
+										</div>
+									</div>
+									<textarea class="form-control flex-grow-1 om-note-textarea" id="noteNurseTextarea" rows="3" placeholder="Nhập ghi chú xử lý tại đây..."></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Tab 2: Khảo sát -->
+						<div class="tab-pane fade" id="survey" role="tabpanel">
+							<div class="mt-2" id="surveyContent">
+								<div class="text-center text-navy om-loading-panel">
+									<i class="bi bi-clipboard2-check d-block om-survey-loading-icon"></i>
+									<p>Đang tải thông tin khảo sát...</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Flatpickr -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/order-management.js?v={{ app_version }}"></script>
+</body>
+
+</html>

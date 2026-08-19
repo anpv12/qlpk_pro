@@ -1,0 +1,260 @@
+/* Custom Modal Styles */
+.custom-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 9999;
+	backdrop-filter: blur(2px);
+}
+
+.custom-modal {
+	background: white;
+	border-radius: 12px;
+	padding: 30px;
+	max-width: 400px;
+	width: 90%;
+	text-align: center;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	animation: modalSlideIn 0.3s ease-out;
+}
+
+.custom-modal-overlay.is-closing .custom-modal {
+	animation: modalSlideOut 0.2s ease-in forwards;
+}
+
+@keyframes modalSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-50px) scale(0.9);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes modalSlideOut {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+
+	to {
+		opacity: 0;
+		transform: translateY(-50px) scale(0.9);
+	}
+}
+
+.custom-modal-icon {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	margin: 0 auto 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: var(--qlpk-font-size-5xl, 32px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.custom-modal-icon.warning {
+	background-color: #fff3cd;
+	border: 3px solid #ffc107;
+	color: #ffc107;
+}
+
+.custom-modal-icon.danger {
+	background-color: #f8d7da;
+	border: 3px solid #dc3545;
+	color: #dc3545;
+}
+
+.custom-modal-icon.success {
+	background-color: #d1edff;
+	border: 3px solid #0d6efd;
+	color: #0d6efd;
+}
+
+.custom-modal-title {
+	font-size: var(--qlpk-font-size-2xl, 20px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: #0d6efd;
+	margin-bottom: 15px;
+}
+
+.custom-modal-message {
+	font-size: var(--qlpk-font-size-lg, 16px);
+	color: #333;
+	margin-bottom: 25px;
+	line-height: 1.5;
+}
+
+.custom-modal-buttons {
+	display: flex;
+	gap: 15px;
+	justify-content: center;
+}
+
+.custom-modal-btn {
+	padding: 12px 24px;
+	border: none;
+	border-radius: 8px;
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	min-width: 100px;
+}
+
+.custom-modal-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.custom-modal-btn.cancel {
+	background-color: #0d6efd;
+	color: white;
+}
+
+.custom-modal-btn.cancel:hover {
+	background-color: #0b5ed7;
+}
+
+.custom-modal-btn.confirm {
+	background-color: #dc3545;
+	color: white;
+}
+
+.custom-modal-btn.confirm:hover {
+	background-color: #c82333;
+}
+
+.custom-modal-btn.success {
+	background-color: #198754;
+	color: white;
+}
+
+.custom-modal-btn.success:hover {
+	background-color: #157347;
+}
+
+/* Invoice confirmed state */
+.invoice-confirmed {
+	opacity: 0.7;
+	pointer-events: none;
+}
+
+/* Đảm bảo modal body vẫn có thể scroll ngay cả khi confirmed */
+.invoice-confirmed .modal-body {
+	pointer-events: auto !important;
+}
+
+.invoice-confirmed input,
+.invoice-confirmed select,
+.invoice-confirmed textarea,
+.invoice-confirmed button {
+	background-color: #f8f9fa !important;
+	color: #6c757d !important;
+	cursor: not-allowed !important;
+}
+
+.invoice-confirmed .btn {
+	opacity: 0.6;
+}
+
+/* Disabled form elements */
+.invoice-confirmed input:disabled,
+.invoice-confirmed select:disabled,
+.invoice-confirmed textarea:disabled {
+	background-color: #e9ecef !important;
+	border-color: #ced4da !important;
+	color: #6c757d !important;
+}
+
+/* Success button state */
+.btn-success {
+	background-color: #28a745;
+	border-color: #28a745;
+	color: white;
+}
+
+.btn-success:hover {
+	background-color: #218838;
+	border-color: #1e7e34;
+}
+
+.btn-success:disabled {
+	background-color: #6c757d;
+	border-color: #6c757d;
+	opacity: 0.6;
+}
+
+/* Print button always active */
+.invoice-confirmed #printInvoiceBtn {
+	opacity: 1 !important;
+	pointer-events: auto !important;
+	background-color: #17a2b8 !important;
+	border-color: #17a2b8 !important;
+	color: white !important;
+	cursor: pointer !important;
+}
+
+.invoice-confirmed #printInvoiceBtn:hover {
+	background-color: #138496 !important;
+	border-color: #138496 !important;
+	color: white !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+	.custom-modal {
+		padding: 20px;
+		margin: 20px;
+	}
+
+	.custom-modal-buttons {
+		flex-direction: column;
+	}
+
+	.custom-modal-btn {
+		width: 100%;
+	}
+}
+
+/* SweetAlert2 Danger Dialog Styles */
+.swal2-popup-danger {
+	border: 3px solid #dc3545 !important;
+	border-radius: 12px !important;
+	box-shadow: 0 0 20px rgba(220, 53, 69, 0.3), 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+	animation: dangerPulse 0.5s ease-in-out !important;
+}
+
+.swal2-title-danger {
+	color: #dc3545 !important;
+	font-weight: var(--qlpk-font-weight-bold, 700) !important;
+	font-size: var(--qlpk-font-size-3xl, 24px) !important;
+}
+
+@keyframes dangerPulse {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+	}
+
+	50% {
+		transform: scale(1.02);
+		box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+	}
+
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+	}
+}

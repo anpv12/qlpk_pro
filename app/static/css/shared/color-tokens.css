@@ -1,0 +1,71 @@
+:root {
+	--qlpk-color-white: #ffffff;
+	--qlpk-color-black: #000000;
+
+	--qlpk-color-page-bg: #fbf8f2;
+	--qlpk-color-surface: #ffffff;
+	--qlpk-color-surface-muted: #fff7ed;
+	--qlpk-color-surface-subtle: #fffaf3;
+	--qlpk-color-surface-warm: #fffdf9;
+
+	--qlpk-color-text: #352821;
+	--qlpk-color-text-muted: #566366;
+	--qlpk-color-muted: #566366;
+	--qlpk-color-neutral-700: #374151;
+	--qlpk-color-neutral-600: #4b5563;
+	--qlpk-color-neutral-500: #6b7280;
+	--qlpk-color-neutral-400: #9ca3af;
+	--qlpk-color-slate-600: #475569;
+
+	--qlpk-color-primary: #0f766e;
+	--qlpk-color-primary-strong: #07564f;
+	--qlpk-color-primary-soft: #e7f6f2;
+	--qlpk-color-primary-subtle: #f1f8f6;
+	--qlpk-color-primary-border: rgba(20, 128, 112, 0.34);
+	--qlpk-color-focus: #5bb3aa;
+
+	--qlpk-color-border: #e8dfd6;
+	--qlpk-color-border-strong: #d8ccbb;
+	--qlpk-color-border-light: rgba(75, 39, 25, 0.1);
+	--qlpk-color-line: rgba(75, 39, 25, 0.16);
+	--qlpk-color-line-strong: rgba(75, 39, 25, 0.28);
+
+	--qlpk-color-chocolate: #4b2719;
+	--qlpk-color-brown: #5a301f;
+	--qlpk-color-brown-soft: #f8f1e9;
+	--qlpk-color-gold: #d6a069;
+
+	/* Doctor workspace semantic theme. Components consume these aliases rather
+	 * than owning a second, page-specific palette. */
+	--qlpk-doctor-page-bg: var(--qlpk-color-page-bg);
+	--qlpk-doctor-surface: var(--qlpk-color-surface);
+	--qlpk-doctor-surface-soft: var(--qlpk-color-brown-soft);
+	--qlpk-doctor-text: var(--qlpk-color-text);
+	--qlpk-doctor-muted: var(--qlpk-color-chocolate);
+	--qlpk-doctor-primary: var(--qlpk-color-chocolate);
+	--qlpk-doctor-primary-strong: #32180e;
+	--qlpk-doctor-primary-soft: #fbf8f2;
+	--qlpk-doctor-on-primary: var(--qlpk-color-white);
+	--qlpk-doctor-surface-strong: var(--qlpk-color-surface);
+	--qlpk-doctor-header-muted: rgb(255 255 255 / 86%);
+	--qlpk-doctor-header-border: rgb(255 255 255 / 26%);
+	--qlpk-doctor-danger-soft: #fff3f3;
+	/* High-contrast semantic status colors for the dark Doctor headers. */
+	--qlpk-doctor-success: #4ade80;
+	--qlpk-doctor-warning-soft: #fff2e6;
+	--qlpk-doctor-focus-ring: var(--qlpk-color-focus);
+	--qlpk-doctor-shadow-color: rgb(75 39 25 / 10%);
+	--qlpk-doctor-line: var(--qlpk-color-line);
+	--qlpk-doctor-line-strong: var(--qlpk-color-line-strong);
+	--qlpk-doctor-danger: #d12f2f;
+	--qlpk-doctor-warning: #f26a21;
+	--qlpk-doctor-radius-sm: 0.375rem;
+	--qlpk-doctor-radius-md: 0.625rem;
+	--qlpk-doctor-radius-lg: 0.875rem;
+	--qlpk-doctor-space-1: 0.25rem;
+	--qlpk-doctor-space-2: 0.5rem;
+	--qlpk-doctor-space-3: 0.75rem;
+	--qlpk-doctor-space-4: 1rem;
+	--qlpk-doctor-shadow-sm: 0 0.125rem 0.5rem rgb(75 39 25 / 8%);
+	--qlpk-doctor-shadow-md: 0 0.5rem 1.25rem rgb(75 39 25 / 12%);
+}

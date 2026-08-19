@@ -1,0 +1,695 @@
+body {
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+}
+
+.receptionist-hidden {
+	display: none;
+}
+
+.receptionist-main-form-col {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	width: 100%;
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	overflow: hidden;
+}
+
+.receptionist-prev-vital-hint {
+	display: block;
+	min-width: 0;
+	margin-block-start: 0.1875rem;
+	overflow: hidden;
+	color: #67584f;
+	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-base));
+	line-height: 1.25;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@keyframes receptionist-appointment-error-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0.9375rem rgba(220, 53, 69, 0.8), inset 0 0 0.625rem rgba(220, 53, 69, 0.2);
+		transform: scale(1);
+	}
+
+	50% {
+		box-shadow: 0 0 1.5625rem rgba(220, 53, 69, 1), inset 0 0 0.9375rem rgba(220, 53, 69, 0.4);
+		transform: scale(1.02);
+	}
+}
+
+@keyframes receptionist-appointment-error-shake {
+	0%,
+	100% {
+		transform: translateY(-50%) rotate(0deg);
+	}
+
+	25% {
+		transform: translateY(-50%) rotate(-10deg);
+	}
+
+	75% {
+		transform: translateY(-50%) rotate(10deg);
+	}
+}
+
+@keyframes receptionist-appointment-error-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.3;
+	}
+}
+
+@keyframes receptionist-button-loading-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.appointment-error-highlight {
+	position: relative;
+	border-color: #dc3545;
+	background-color: #ffe6e6;
+	box-shadow: 0 0 0.9375rem rgba(220, 53, 69, 0.8), inset 0 0 0.625rem rgba(220, 53, 69, 0.2);
+	color: #dc3545;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	animation: receptionist-appointment-error-pulse 1.5s ease-in-out infinite;
+}
+
+.appointment-error-highlight::before {
+	content: "!";
+	position: absolute;
+	inset-block-start: 50%;
+	inset-inline-end: 0.625rem;
+	z-index: 10;
+	color: #dc3545;
+	font-size: var(--qlpk-font-size-2xl, 1.25rem);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	transform: translateY(-50%);
+	animation: receptionist-appointment-error-shake 0.5s ease-in-out infinite;
+}
+
+.error-warning-text {
+	display: inline-flex;
+	margin-inline-start: 0.625rem;
+	color: #dc3545;
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	animation: receptionist-appointment-error-blink 1s infinite;
+}
+
+	/* Table styles */
+	.table td {
+		vertical-align: middle;
+		border-bottom: 0.0625rem solid var(--receptionist-tone-line, #e4d4c1);
+		text-align: center;
+	}
+
+	/* Status badges */
+	.status-badge {
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.75rem;
+		font-size: var(--receptionist-font-text, var(--qlpk-font-size-lg, 1rem));
+		font-weight: var(--qlpk-font-weight-medium, 500);
+	}
+
+	/* Service Autocomplete Styles */
+	.service-autocomplete-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	.service-autocomplete-dropdown {
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		max-height: 18.75rem;
+		overflow-y: auto;
+		background: #ffffff;
+		border: 0.0625rem solid var(--receptionist-tone-line-strong, rgba(75, 39, 25, 0.28));
+		border-radius: 0 0 0.375rem 0.375rem;
+		z-index: 1050;
+		box-shadow: 0 0.5rem 1.125rem rgba(74, 51, 40, 0.12);
+	}
+
+	.service-autocomplete-dropdown.show {
+		display: block;
+	}
+
+	.service-autocomplete-item {
+		padding: 0.5rem 0.75rem;
+		cursor: pointer;
+		border-bottom: 0.0625rem solid var(--receptionist-tone-line, #e4d4c1);
+		color: var(--receptionist-tone-text, #352821);
+		font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) max-content;
+		gap: 0.75rem;
+		align-items: center;
+	}
+
+	.service-autocomplete-item:hover,
+	.service-autocomplete-item.active {
+		background: var(--receptionist-tone-surface-muted, #fff7ed);
+		color: var(--receptionist-tone-text, #352821);
+	}
+
+	.service-autocomplete-item:last-child {
+		border-bottom: none;
+	}
+
+	.service-autocomplete-item .service-name {
+		color: var(--receptionist-tone-text, #352821);
+		font-weight: var(--qlpk-font-weight-medium, 500);
+		line-height: var(--qlpk-line-height-normal);
+		min-width: 0;
+	}
+
+	.service-autocomplete-item .service-price {
+		justify-self: end;
+		padding: 0.125rem 0.45rem;
+		border: 0.0625rem solid rgba(15, 118, 110, 0.24);
+		border-radius: 999rem;
+		background: #e7f6f2;
+		color: #07564f;
+		font-size: var(--receptionist-font-meta, var(--qlpk-font-size-base));
+		font-variant-numeric: tabular-nums;
+		font-weight: var(--qlpk-font-weight-bold);
+		white-space: nowrap;
+	}
+
+	.service-autocomplete-no-results {
+		padding: 0.5rem 0.75rem;
+		color: var(--receptionist-tone-text, #352821);
+		font-style: italic;
+		font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	}
+
+/* Receptionist intake v2: one owner for header, patient card, visit card, and relatives panel. */
+body,
+.main-content,
+body.qlpk-workspace-shell .main-content,
+body.qlpk-workspace-shell .qlpk-workspace-main {
+	background: #fbf8f2;
+}
+
+.receptionist-intake-form {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-block-size: 0;
+	block-size: 100%;
+	margin: 0;
+	overflow: hidden;
+}
+
+.receptionist-intake-panel {
+	--receptionist-intake-gap: var(--receptionist-layout-gap, 0.75rem);
+	--receptionist-intake-pad: var(--receptionist-field-gap, 0.625rem);
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: var(--receptionist-intake-gap);
+	min-block-size: 0;
+	block-size: 100%;
+	container: receptionist-intake / inline-size;
+	padding: var(--receptionist-intake-pad);
+	border: 0.0625rem solid var(--receptionist-tone-line, rgba(75, 39, 25, 0.18));
+	border-radius: 0.625rem;
+	background: var(--receptionist-tone-surface, #ffffff);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	box-shadow: 0 0.625rem 1.5rem rgba(92, 48, 27, 0.065);
+	overflow: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.receptionist-intake-panel > * {
+	flex: 0 0 auto;
+}
+
+.receptionist-intake-panel-header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-areas:
+		"title"
+		"schedule"
+		"actions";
+	align-items: center;
+	gap: 0.32rem 0.65rem;
+	min-width: 0;
+	margin: calc(var(--receptionist-intake-pad) * -1) calc(var(--receptionist-intake-pad) * -1) 0;
+	padding: 0.28rem var(--receptionist-card-padding-x, 0.75rem) 0.32rem;
+	border-bottom: 0.0625rem solid rgba(214, 160, 105, 0.28);
+	background: linear-gradient(180deg, #6a3a25 0%, #4b2719 100%);
+	color: var(--qlpk-header-text, #fffaf3);
+}
+
+.receptionist-intake-panel-title-row {
+	grid-area: title;
+	display: flex;
+	align-items: center;
+	min-width: 0;
+}
+
+.receptionist-intake-panel-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	min-width: 0;
+	margin: 0;
+	color: var(--qlpk-header-text, #fffaf3);
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 1.18;
+}
+
+.receptionist-intake-panel-title i {
+	flex: 0 0 auto;
+	color: var(--qlpk-header-accent, #d6a069);
+}
+
+.receptionist-intake-panel-title span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.receptionist-appointment-card {
+	grid-area: schedule;
+	min-width: 0;
+	gap: var(--receptionist-inline-gap, 0.5rem);
+}
+
+.receptionist-appointment-fields {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.36rem 0.45rem;
+	align-items: end;
+	justify-content: end;
+	min-width: 0;
+}
+
+.receptionist-appointment-fields .receptionist-field {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	align-items: start;
+	column-gap: var(--receptionist-inline-gap, 0.5rem);
+	min-width: 0;
+}
+
+.receptionist-appointment-fields .receptionist-field--appointment-date,
+.receptionist-appointment-fields .receptionist-field--appointment-time {
+	display: inline-flex;
+	width: fit-content;
+	max-width: 100%;
+}
+
+.receptionist-intake-panel .receptionist-appointment-fields .receptionist-field .form-label {
+	margin: var(--receptionist-header-control-padding-block, 0.18rem) 0 0;
+	color: var(--qlpk-header-text, #fffaf3);
+	font-size: var(--receptionist-font-label, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	white-space: nowrap;
+}
+
+.receptionist-intake-panel .receptionist-appointment-fields .form-control,
+.receptionist-intake-panel .receptionist-appointment-fields .form-select {
+	block-size: var(--receptionist-header-control-block, 1.82rem);
+	border-color: rgba(255, 250, 243, 0.72);
+	background-color: #ffffff;
+	color: #352821;
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	line-height: 1.2;
+	padding-block: var(--receptionist-header-control-padding-block, 0.18rem);
+}
+
+.receptionist-intake-panel .receptionist-appointment-fields .form-control::placeholder {
+	color: #6f625c;
+}
+
+.receptionist-appointment-fields .form-control,
+.receptionist-appointment-fields .form-select,
+.receptionist-appointment-fields .service-autocomplete-wrapper {
+	min-width: 0;
+}
+
+.receptionist-intake-actions {
+	grid-area: actions;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--receptionist-header-action-gap, 0.4rem);
+}
+
+.receptionist-document-upload-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	padding: 0.4rem 0.7rem;
+	border: 0.0625rem solid rgba(107, 66, 44, 0.28);
+	border-radius: 0.5rem;
+	background: var(--receptionist-tone-bg);
+	color: var(--qlpk-header-text, #fffaf3);
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 1.2;
+	box-shadow: none;
+}
+
+.receptionist-document-upload-btn:hover,
+.receptionist-document-upload-btn:focus {
+	background: #5a301f;
+	color: var(--qlpk-header-text, #fffaf3);
+}
+
+.receptionist-intake-panel-header .receptionist-document-upload-btn {
+	block-size: var(--receptionist-header-control-block, 1.82rem);
+	padding-block: var(--receptionist-header-control-padding-block, 0.18rem);
+	padding-inline: var(--receptionist-header-button-padding-inline, 0.7rem);
+	border-color: rgba(255, 255, 255, 0.82);
+	background: #ffffff;
+	color: var(--receptionist-tone-bg, #4b2719);
+}
+
+.receptionist-intake-panel-header .receptionist-document-upload-btn:hover,
+.receptionist-intake-panel-header .receptionist-document-upload-btn:focus {
+	border-color: #ffffff;
+	background: #ffffff;
+	color: var(--receptionist-tone-bg, #4b2719);
+}
+
+.receptionist-field {
+	min-width: 0;
+}
+
+#saveInfoBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	block-size: var(--receptionist-header-control-block, 1.82rem);
+	padding: var(--receptionist-header-control-padding-block, 0.18rem) var(--receptionist-header-button-padding-inline, 0.68rem);
+	border-radius: 0.5rem;
+	border-color: rgba(255, 255, 255, 0.82);
+	background: #ffffff;
+	color: var(--receptionist-tone-bg, #4b2719);
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 1.2;
+	box-shadow: none;
+}
+
+#saveInfoBtn:hover,
+#saveInfoBtn:focus {
+	border-color: #ffffff;
+	background: #ffffff;
+	color: var(--receptionist-tone-bg, #4b2719);
+}
+
+#saveInfoBtn:disabled,
+#saveInfoBtn.is-loading,
+.receptionist-intake-panel-header .receptionist-document-upload-btn:disabled,
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading {
+	opacity: 1;
+	filter: none;
+	cursor: progress;
+	transform: none;
+}
+
+#saveInfoBtn.is-loading,
+#saveInfoBtn.is-loading:hover,
+#saveInfoBtn.is-loading:focus,
+#saveInfoBtn:disabled,
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading,
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:hover,
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:focus,
+.receptionist-intake-panel-header .receptionist-document-upload-btn:disabled {
+	border-color: rgba(255, 255, 255, 0.9);
+	background: #ffffff;
+	color: var(--receptionist-tone-bg, #4b2719);
+	box-shadow: inset 0 0 0 0.0625rem rgba(214, 160, 105, 0.24);
+}
+
+.qlpk-button-spinner {
+	display: inline-block;
+	flex: 0 0 auto;
+	inline-size: 0.9em;
+	block-size: 0.9em;
+	border: 0.12em solid currentColor;
+	border-inline-end-color: transparent;
+	border-radius: 999rem;
+	animation: receptionist-button-loading-spin 0.75s linear infinite;
+}
+
+.service-autocomplete-wrapper,
+.service-autocomplete-wrapper #serviceType {
+	width: 100%;
+}
+
+@media (min-width: 48rem) {
+	.receptionist-appointment-fields {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+		justify-content: stretch;
+	}
+
+	.receptionist-field--appointment-date .form-control {
+		inline-size: min(100%, 7.25rem);
+	}
+
+	.receptionist-field--appointment-time .form-control {
+		inline-size: min(100%, 5.5rem);
+	}
+
+	.receptionist-field--appointment-doctor .form-select {
+		inline-size: 100%;
+	}
+
+	.receptionist-field--appointment-service .service-autocomplete-wrapper {
+		inline-size: 100%;
+	}
+}
+
+@container receptionist-intake (min-width: 36rem) {
+	.receptionist-intake-panel-header {
+		grid-template-columns: max-content minmax(0, 1fr) max-content;
+		grid-template-areas:
+			"title . actions"
+			"schedule schedule schedule";
+	}
+
+	.receptionist-intake-actions {
+		align-self: center;
+		justify-content: flex-end;
+	}
+}
+
+@container receptionist-intake (min-width: 44rem) {
+	.receptionist-appointment-fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.32rem 0.4rem;
+		justify-content: stretch;
+	}
+
+	.receptionist-appointment-fields .receptionist-field {
+		column-gap: 0.32rem;
+	}
+
+	.receptionist-appointment-fields .receptionist-field--appointment-date,
+	.receptionist-appointment-fields .receptionist-field--appointment-time {
+		display: grid;
+		width: auto;
+	}
+
+	.receptionist-field--appointment-date .form-control,
+	.receptionist-field--appointment-time .form-control {
+		inline-size: 100%;
+	}
+}
+
+@container receptionist-intake (min-width: 62rem) {
+	.receptionist-intake-panel-header {
+		grid-template-columns: max-content minmax(0, 1fr) max-content;
+		grid-template-areas: "title schedule actions";
+		gap: 0.32rem clamp(0.48rem, 0.7cqi, 0.85rem);
+		padding-block: 0.24rem;
+	}
+
+	.receptionist-appointment-card,
+	.receptionist-intake-actions {
+		align-self: center;
+	}
+
+	.receptionist-appointment-card {
+		display: grid;
+		inline-size: min(100%, clamp(40rem, 70cqi, 58rem));
+		justify-self: center;
+	}
+
+	.receptionist-appointment-fields {
+		inline-size: 100%;
+		grid-template-columns:
+			minmax(10.2rem, 1fr)
+			minmax(7.8rem, 0.82fr)
+			minmax(11.2rem, 1.55fr)
+			minmax(13rem, 1.9fr);
+		align-items: center;
+		justify-content: center;
+		justify-self: center;
+		gap: 0.24rem clamp(0.42rem, 0.55cqi, 0.72rem);
+	}
+
+	.receptionist-appointment-fields .receptionist-field {
+		column-gap: clamp(0.22rem, 0.35cqi, 0.34rem);
+	}
+
+	.receptionist-appointment-fields .receptionist-field--appointment-date,
+	.receptionist-appointment-fields .receptionist-field--appointment-time {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		width: auto;
+	}
+
+	.receptionist-field--appointment-date .form-control {
+		inline-size: 100%;
+	}
+
+	.receptionist-field--appointment-time .form-control {
+		inline-size: 100%;
+	}
+
+	.receptionist-field--appointment-doctor .form-select,
+	.receptionist-field--appointment-service .service-autocomplete-wrapper {
+		inline-size: 100%;
+	}
+
+	.receptionist-intake-actions {
+		flex-wrap: nowrap;
+	}
+}
+
+@container receptionist-intake (min-width: 78rem) {
+	.receptionist-intake-panel-header {
+		gap: 0.38rem clamp(0.75rem, 1cqi, 1.25rem);
+		padding-block: 0.28rem;
+	}
+
+	.receptionist-appointment-card {
+		inline-size: min(100%, clamp(42rem, 60cqi, 58rem));
+	}
+
+	.receptionist-appointment-fields {
+		grid-template-columns:
+			minmax(9.8rem, 0.95fr)
+			minmax(7.6rem, 0.78fr)
+			minmax(13.4rem, 1.55fr)
+			minmax(15.4rem, 1.85fr);
+		gap: 0.26rem clamp(0.5rem, 0.58cqi, 0.82rem);
+	}
+}
+
+@media (max-width: 47.99rem) {
+	.receptionist-document-upload-btn {
+		width: 100%;
+	}
+
+	.receptionist-intake-actions {
+		width: 100%;
+	}
+
+	#saveInfoBtn {
+		flex: 1 1 auto;
+	}
+
+}
+
+/* Receptionist workflow tokens. Layout geometry is owned by workflow-two-pane.css. */
+.receptionist-workspace {
+	/* Surface contract: descendants consume these tokens instead of declaring one-off cream/brown backgrounds. */
+	--receptionist-page-bg: var(--qlpk-color-page-bg, #fbf8f2);
+	--receptionist-tone-bg: var(--qlpk-header-bg, var(--qlpk-color-chocolate, #4b2719));
+	--receptionist-tone-surface: var(--qlpk-color-surface, #ffffff);
+	--receptionist-tone-surface-muted: var(--qlpk-color-surface-muted, #fff7ed);
+	--receptionist-tone-surface-strong: var(--qlpk-color-surface, #ffffff);
+	--receptionist-tone-line: var(--qlpk-color-line, rgba(75, 39, 25, 0.16));
+	--receptionist-tone-line-strong: var(--qlpk-color-line-strong, rgba(75, 39, 25, 0.28));
+	--receptionist-tone-text: var(--qlpk-color-text, #352821);
+	--receptionist-tone-muted: var(--qlpk-color-text-muted, #566366);
+	--receptionist-tone-accent: var(--qlpk-header-accent, var(--qlpk-color-gold, #d6a069));
+	--receptionist-section-header-bg: var(--receptionist-tone-surface, #ffffff);
+	--receptionist-section-header-border: var(--qlpk-color-primary-border, rgba(20, 128, 112, 0.34));
+	--receptionist-section-header-accent: var(--qlpk-color-primary, #0f766e);
+	--receptionist-section-header-text: var(--qlpk-color-primary-strong, #07564f);
+	--receptionist-section-header-icon: var(--qlpk-color-primary, #0f766e);
+	--receptionist-layout-gap: 0.5rem;
+	--qlpk-workflow-gap: var(--receptionist-layout-gap);
+	--receptionist-card-padding-x: var(--receptionist-layout-gap);
+	--receptionist-card-padding-y: 0;
+	--receptionist-card-padding: var(--receptionist-card-padding-y) var(--receptionist-card-padding-x);
+	--receptionist-field-gap: 0.625rem;
+	--receptionist-inline-gap: 0.5rem;
+	--receptionist-header-control-block: 1.82rem;
+	--receptionist-header-control-padding-block: 0.18rem;
+	--receptionist-header-button-padding-inline: 0.7rem;
+	--receptionist-header-action-gap: 0.4rem;
+	--receptionist-paper-label-width: 9.25rem;
+	--receptionist-underline-input-padding-block: 0.22rem;
+	--receptionist-underline-input-padding-inline: 0.42rem;
+	--receptionist-font-text: var(--qlpk-font-size-base);
+	--receptionist-font-label: var(--qlpk-font-size-base);
+	--receptionist-font-meta: var(--qlpk-font-size-base);
+	--receptionist-font-chip: var(--qlpk-font-size-base);
+	--receptionist-font-counter: var(--qlpk-font-size-xs);
+	--receptionist-font-section-title: var(--qlpk-font-size-base);
+	--receptionist-font-panel-title: var(--qlpk-font-size-lg, 1rem);
+	--receptionist-queue-header-bg: linear-gradient(180deg, var(--qlpk-header-surface-strong, #7b472f) 0%, var(--qlpk-header-bg, #4b2719) 100%);
+	--receptionist-queue-header-border: rgba(214, 160, 105, 0.28);
+	--receptionist-queue-header-text: var(--qlpk-header-text, #fffaf3);
+	--receptionist-queue-search-bg: var(--receptionist-tone-surface);
+	--receptionist-queue-search-border: rgba(214, 160, 105, 0.48);
+}
+
+.receptionist-shell-placeholder {
+	display: none;
+}
+
+@media (min-width: 48rem) and (max-width: 96rem) {
+	.receptionist-workspace {
+		--receptionist-layout-gap: 0.5rem;
+		--receptionist-field-gap: 0.5rem;
+		--receptionist-inline-gap: 0.36rem;
+		--receptionist-header-control-block: 1.66rem;
+		--receptionist-header-control-padding-block: 0.12rem;
+		--receptionist-header-button-padding-inline: 0.55rem;
+		--receptionist-header-action-gap: 0.3rem;
+		--receptionist-paper-label-width: 8.25rem;
+		--receptionist-underline-input-padding-block: 0.16rem;
+		--receptionist-underline-input-padding-inline: 0.34rem;
+		--receptionist-font-text: var(--qlpk-font-size-sm);
+		--receptionist-font-label: var(--qlpk-font-size-sm);
+		--receptionist-font-meta: var(--qlpk-font-size-sm);
+		--receptionist-font-chip: var(--qlpk-font-size-sm);
+		--receptionist-font-section-title: var(--qlpk-font-size-sm);
+		--receptionist-font-panel-title: var(--qlpk-font-size-base);
+	}
+
+	.receptionist-intake-actions {
+		justify-content: flex-end;
+	}
+}

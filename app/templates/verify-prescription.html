@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Xác thực đơn thuốc - Phòng khám Sơn Tâm</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/patient-search-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/prescription.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/prescriptions/pages/verify-prescription.css?v={{ app_version }}">
+</head>
+
+<body class="verify-prescription-page" data-prescription-code="{{ prescription_code }}">
+	<div id="bannerArea"></div>
+	<div id="prescriptionPreviewArea">
+		<div class="verify-prescription-loading">
+			Đang tải dữ liệu gốc...
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+	<script src="/static/js/clinic-config.js?v={{ app_version }}"></script>
+	<script src="/static/js/prescriptions/shared/prescription-document-template.js?v={{ app_version }}&verify_context=2"></script>
+	<script src="/static/js/prescriptions/components/prescription-preview-scaler.js?v={{ app_version }}"></script>
+	<script src="/static/js/prescriptions/pages/verify-prescription.js?v={{ app_version }}"></script>
+</body>
+
+</html>

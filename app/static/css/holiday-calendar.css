@@ -1,0 +1,149 @@
+/* CSS riêng cho ngày lễ trong calendar */
+
+/* Đảm bảo all-day slot hiển thị */
+.fc .fc-daygrid-day-events {
+  min-height: 20px;
+}
+
+.fc .fc-timegrid-body {
+  min-height: 400px;
+}
+
+/* All-day slot styling */
+.fc .fc-daygrid-day-top {
+  padding: 2px 4px;
+}
+
+.fc .fc-daygrid-day-events {
+  margin: 0;
+  padding: 0;
+}
+
+/* Override FullCalendar styles cho ngày lễ */
+.fc-event.holiday-calendar {
+  background: transparent !important;
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.fc-event.holiday-calendar .fc-event-main {
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.fc-event.holiday-calendar .fc-event-main-frame {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Override tất cả các border có thể có */
+.fc-event.holiday-calendar * {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Override specific FullCalendar elements */
+.fc-event.holiday-calendar .fc-event-title {
+  border: none !important;
+  outline: none !important;
+}
+
+.fc-event.holiday-calendar .fc-event-title-container {
+  border: none !important;
+  outline: none !important;
+}
+
+.holiday-calendar .holiday-date {
+  position: relative;
+  display: inline-block;
+  width: auto;
+  height: auto;
+  cursor: default !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+.holiday-calendar .holiday-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(255, 182, 193, 0.2);
+  border-radius: 12px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: var(--qlpk-font-size-sm, 12px);
+  line-height: 1.2;
+}
+
+.holiday-calendar .holiday-icon {
+  width: 14px;
+  height: 14px;
+  background: #d63384;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.holiday-calendar .holiday-icon::before {
+  content: "★";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: var(--qlpk-font-size-3xs, 8px);
+  line-height: 1;
+}
+
+.holiday-calendar .holiday-text {
+  font-size: var(--qlpk-font-size-xs, 11px);
+  font-weight: var(--qlpk-font-weight-medium, 500);
+  color: #d63384;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .holiday-calendar .holiday-emoji {
+    font-size: var(--qlpk-font-size-sm, 12px);
+  }
+  
+  .holiday-calendar .holiday-text {
+    font-size: var(--qlpk-font-size-2xs, 10px);
+  }
+  
+  .holiday-calendar .holiday-content {
+    padding: 1px 4px;
+    gap: 2px;
+  }
+}
+
+/* Đảm bảo ngày lễ không bị ảnh hưởng bởi CSS khác */
+.holiday-calendar .holiday-date * {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* Override các class có thể conflict */
+.holiday-calendar .holiday-date.calendar-date,
+.holiday-calendar .holiday-date.appointment-date,
+.holiday-calendar .holiday-date.clickable {
+  pointer-events: none !important;
+  cursor: default !important;
+}

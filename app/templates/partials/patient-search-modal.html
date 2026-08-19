@@ -1,0 +1,254 @@
+
+<div class="modal fade patient-search-modal" id="patientSearchModal" data-doctor-component="patient-modal" tabindex="-1"
+	aria-label="Tìm kiếm bệnh nhân" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-body p-0 patient-search-modal__body">
+				<div class="row g-0 patient-search-modal__row">
+					<!-- CỘT 1: Tìm kiếm bệnh nhân + Lịch sử khám (Bên trái) -->
+					<div class="col-md-5 border-end patient-search-modal__left-column">
+						<div class="d-flex flex-column patient-search-modal__left-inner">
+							<!-- PHẦN 1: Tìm kiếm bệnh nhân -->
+							<div class="patient-search-modal__search-section">
+								<label class="form-label fw-semibold patient-search-modal__section-label">
+									<i class="bi bi-person-search me-2"></i>Tìm kiếm bệnh nhân
+								</label>
+								<div class="row g-2">
+									<div class="col-12">
+										<input type="text" class="form-control form-control-lg" id="modalPatientSearch"
+											placeholder="Nhập tên bệnh nhân hoặc số hồ sơ">
+									</div>
+								</div>
+							</div>
+
+							<!-- Bảng kết quả tìm kiếm -->
+							<div class="card patient-search-modal__results-card">
+								<div class="patient-search-modal__table-head">
+									<div
+										class="row border-bottom py-2 align-items-center modal-patient-item patient-search-modal__table-head-row fw-semibold">
+										<div class="col-2 text-center fw-semibold">Mã HS</div>
+										<div class="col-4 text-center fw-semibold">Họ tên</div>
+										<div class="col-2 text-center fw-semibold">Ngày sinh</div>
+										<div class="col-2 text-center fw-semibold">SĐT</div>
+										<div class="col-2 text-center fw-semibold">Xem lại</div>
+									</div>
+								</div>
+								<div class="card-body p-0 patient-search-modal__results-body">
+									<div id="modalSearchResults">
+										<div class="patient-search-modal__empty-state patient-search-modal__empty-state--search">
+											<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+												<i class="bi bi-search patient-search-modal__empty-icon"></i>
+											</span>
+											<p class="patient-search-modal__empty-title">Nhập tên hoặc mã hồ sơ để tìm kiếm bệnh nhân</p>
+											<small class="patient-search-modal__empty-description">Kết quả tìm kiếm sẽ hiển thị tại đây</small>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- PHẦN 2: Lịch sử khám -->
+							<div class="flex-grow-1 d-flex flex-column patient-search-modal__history-section">
+								<h6 class="patient-search-modal__history-heading fw-bold patient-search-modal__shrink">
+									<i class="bi bi-clock-history me-2"></i>Lịch sử khám
+								</h6>
+
+								<!-- Bảng lịch sử khám -->
+								<div class="card flex-grow-1 d-flex flex-column patient-search-modal__scroll-card">
+									<div class="patient-search-modal__table-head patient-search-modal__shrink">
+										<div
+											class="row border-bottom py-2 align-items-center modal-history-row modal-history-item patient-search-modal__table-head-row fw-semibold">
+											<div class="col-3 text-start col-history-date fw-semibold ps-3">Ngày
+												khám</div>
+											<div class="col-5 text-start col-history-diagnosis fw-semibold">Chẩn
+												đoán</div>
+											<div class="col-2 text-center col-history-payment fw-semibold">Trạng
+												thái</div>
+											<div class="col-2 text-center fw-semibold">Thao tác</div>
+										</div>
+									</div>
+									<div class="card-body p-0 flex-grow-1 patient-search-modal__scroll-body">
+										<div id="modalMedicalHistory">
+											<div class="patient-search-modal__empty-state patient-search-modal__empty-state--history">
+												<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+													<i class="bi bi-person patient-search-modal__empty-icon--sm"></i>
+												</span>
+												<p class="patient-search-modal__empty-title">Vui lòng chọn bệnh nhân</p>
+												<small class="patient-search-modal__empty-description">Lịch sử khám sẽ hiển thị theo hồ sơ đã chọn</small>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+			<!-- CỘT 2: Các tab chức năng (Bên phải) -->
+					<div class="col-md-7 patient-search-modal__right-column">
+						<div class="d-flex flex-column patient-search-modal__right-inner">
+							<!-- Tab Navigation -->
+							<div class="patient-search-modal__function-bar">
+							<ul class="nav nav-tabs function-tab-list" id="modalFunctionTabs" role="tablist">
+								<li class="nav-item" role="presentation">
+									<button class="nav-link active" id="prescription-tab" data-bs-toggle="tab"
+										data-bs-target="#prescription-content" type="button" role="tab">
+										<i class="bi bi-prescription me-1"></i>Toa thuốc
+									</button>
+									<button type="button" class="tab-print-btn" data-print-target="prescription-content"
+										title="In toa thuốc">
+										<i class="bi bi-printer-fill"></i>
+									</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="services-tab" data-bs-toggle="tab"
+										data-bs-target="#services-content" type="button" role="tab">
+										<i class="bi bi-gear me-1"></i>Dịch vụ
+									</button>
+									<button type="button" class="tab-print-btn" data-print-target="services-content"
+										title="In dịch vụ">
+										<i class="bi bi-printer-fill"></i>
+									</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="medical-record-tab" data-bs-toggle="tab"
+										data-bs-target="#medical-record-content" type="button" role="tab">
+										<i class="bi bi-file-medical me-1"></i>Bệnh án BS
+									</button>
+									<button type="button" class="tab-print-btn"
+										data-print-target="medical-record-content" title="In bệnh án BS">
+										<i class="bi bi-printer-fill"></i>
+									</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="medical-record-tlg-tab" data-bs-toggle="tab"
+										data-bs-target="#medical-record-tlg-content" type="button" role="tab">
+										<i class="bi bi-file-medical me-1"></i>Bệnh án TLG
+									</button>
+									<button type="button" class="tab-print-btn"
+										data-print-target="medical-record-tlg-content" title="In bệnh án TLG">
+										<i class="bi bi-printer-fill"></i>
+									</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="vital-signs-tab" data-bs-toggle="tab"
+										data-bs-target="#vital-signs-content" type="button" role="tab">
+										<i class="bi bi-activity me-1"></i>Sinh hiệu
+									</button>
+								</li>
+							</ul>
+								<button type="button" class="patient-modal-close-btn patient-search-modal__close-button" data-bs-dismiss="modal" aria-label="Đóng tìm kiếm bệnh nhân">
+									<i class="bi bi-x-lg" aria-hidden="true"></i>
+								</button>
+							</div>
+
+								<!-- Tab Content -->
+								<div class="tab-content flex-grow-1 patient-search-modal__tab-content" id="modalFunctionTabContent">
+									<div class="tab-pane fade show active patient-search-modal__tab-pane" id="prescription-content" role="tabpanel">
+										<div class="card h-100 patient-search-modal__tab-card">
+											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
+												<div id="modalContentArea">
+													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
+														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+															<i class="bi bi-prescription patient-search-modal__empty-icon"></i>
+														</span>
+														<p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem toa thuốc</p>
+														<small class="patient-search-modal__empty-description">Thông tin toa thuốc sẽ hiển thị trong vùng này</small>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane fade patient-search-modal__tab-pane-soft" id="services-content" role="tabpanel">
+										<div class="card h-100 patient-search-modal__tab-card-soft">
+											<div class="card-body p-0 d-flex flex-column patient-search-modal__tab-body patient-search-modal__tab-body-reset">
+												<div id="servicesContentArea" class="flex-grow-1 overflow-auto p-3 patient-search-modal__content-fill">
+													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
+														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+															<i class="bi bi-gear patient-search-modal__empty-icon"></i>
+														</span>
+														<p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem dịch vụ</p>
+														<small class="patient-search-modal__empty-description">Danh sách dịch vụ sẽ hiển thị tại đây</small>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane fade patient-search-modal__tab-pane" id="medical-record-content" role="tabpanel">
+										<div class="card h-100 patient-search-modal__tab-card">
+											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
+												<div id="medicalRecordContentArea">
+													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
+														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+															<i class="bi bi-file-medical patient-search-modal__empty-icon"></i>
+														</span>
+														<p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem bệnh án</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<!-- Tab Bệnh án TLG -->
+									<div class="tab-pane fade patient-search-modal__tab-pane" id="medical-record-tlg-content" role="tabpanel">
+										<div class="card h-100 patient-search-modal__tab-card">
+											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
+												<div id="medicalRecordTLGContentArea">
+													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
+														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+															<i class="bi bi-file-medical patient-search-modal__empty-icon"></i>
+														</span>
+														<p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem bệnh án TLG</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<!-- Tab Sinh hiệu -->
+									<div class="tab-pane fade patient-search-modal__tab-pane" id="vital-signs-content" role="tabpanel">
+										<div class="card h-100 patient-search-modal__tab-card">
+											<div class="card-body p-0 patient-search-modal__tab-body">
+												<div class="vital-chart-container">
+													<div class="vital-chart-header">
+														<div class="d-flex align-items-center gap-2">
+															<div class="time-range-selector">
+																<button class="time-range-btn" data-vital-time-range="1w">1 tuần</button>
+																<button class="time-range-btn" data-vital-time-range="1m">1 tháng</button>
+																<button class="time-range-btn" data-vital-time-range="3m">3 tháng</button>
+																<button class="time-range-btn active" data-vital-time-range="all">Tất cả</button>
+															</div>
+															<div class="btn-group btn-group-sm vital-view-mode-selector">
+																<button type="button" class="btn btn-sm btn-light active" id="btnVitalViewChart">
+																	<i class="bi bi-graph-up"></i> Đồ thị
+																</button>
+																<button type="button" class="btn btn-sm btn-light" id="btnVitalViewTable">
+																	<i class="bi bi-table"></i> Bảng số liệu
+																</button>
+															</div>
+														</div>
+													</div>
+													<div class="vital-chart-wrapper">
+														<div id="vitalSignsChartEmpty" class="vital-chart-empty patient-search-modal__empty-state patient-search-modal__empty-state--panel">
+															<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
+																<i class="bi bi-graph-up"></i>
+															</span>
+															<p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem lưu đồ sinh hiệu</p>
+														</div>
+														<div id="vitalSignsChartLayout" class="vital-signs-layout">
+															<div id="vitalSignsYAxisFixed" class="vital-signs-yaxis-fixed"></div>
+															<div id="vitalSignsChartScrollable" class="vital-signs-chart-scrollable">
+																<div id="vitalSignsHeaderTable" class="vital-chart-header-table"></div>
+																<div class="canvas-container"><canvas id="vitalSignsChart"></canvas></div>
+															</div>
+														</div>
+														<div id="vitalSignsTableWrapper"></div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

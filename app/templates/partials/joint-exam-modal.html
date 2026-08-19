@@ -1,0 +1,82 @@
+<!-- Modal: Quản lý người đi khám cùng - DRY -->
+<div class="modal fade" id="jointExamModal" tabindex="-1" aria-labelledby="jointExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jointExamModalLabel">
+                    <i class="bi bi-people-fill joint-exam-title-icon" aria-hidden="true"></i>Người đi khám cùng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="joint-exam-table-toolbar">
+                    <button type="button" class="btn-add-joint-exam joint-exam-add-btn">
+                        <i class="bi bi-plus-circle joint-exam-title-icon" aria-hidden="true"></i>Thêm người đi cùng
+                    </button>
+                </div>
+                <div class="joint-exam-table-body">
+                    <div class="joint-exam-table-scroll">
+                        <table class="joint-exam-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Họ tên</th>
+                                    <th>Quan hệ</th>
+                                    <th>CCCD/CMND</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Ngày đi cùng</th>
+                                    <th class="joint-exam-action-column">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jointExamTableBody">
+                                <!-- Sẽ được populate bởi JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="joint-exam-empty-state">
+                        <p class="joint-exam-empty-state__title">Chưa có người đi cùng</p>
+                        <p class="joint-exam-empty-state__subtitle">Thêm người đi cùng cho lần khám này.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="joint-exam-close-btn" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datalist cho Quan hệ (Kinship) - DRY -->
+<datalist id="joint-exam-kinship-list">
+    <option value="Cha">Cha</option>
+    <option value="Mẹ">Mẹ</option>
+    <option value="Cha dượng">Cha dượng</option>
+    <option value="Mẹ kế">Mẹ kế</option>
+    <option value="Vợ">Vợ</option>
+    <option value="Chồng">Chồng</option>
+    <option value="Vợ cũ">Vợ cũ</option>
+    <option value="Chồng cũ">Chồng cũ</option>
+    <option value="Con trai">Con trai</option>
+    <option value="Con gái">Con gái</option>
+    <option value="Con trai riêng">Con trai riêng</option>
+    <option value="Con gái riêng">Con gái riêng</option>
+    <option value="Con trai nuôi">Con trai nuôi</option>
+    <option value="Con gái nuôi">Con gái nuôi</option>
+    <option value="Anh trai">Anh trai</option>
+    <option value="Em trai">Em trai</option>
+    <option value="Chị gái">Chị gái</option>
+    <option value="Em gái">Em gái</option>
+    <option value="Anh trai cùng cha khác mẹ">Anh trai cùng cha khác mẹ</option>
+    <option value="Em trai cùng cha khác mẹ">Em trai cùng cha khác mẹ</option>
+    <option value="Anh trai cùng mẹ khác cha">Anh trai cùng mẹ khác cha</option>
+    <option value="Em trai cùng mẹ khác cha">Em trai cùng mẹ khác cha</option>
+    <option value="Chị gái cùng cha khác mẹ">Chị gái cùng cha khác mẹ</option>
+    <option value="Em gái cùng cha khác mẹ">Em gái cùng cha khác mẹ</option>
+    <option value="Chị gái cùng mẹ khác cha">Chị gái cùng mẹ khác cha</option>
+    <option value="Em gái cùng mẹ khác cha">Em gái cùng mẹ khác cha</option>
+    <option value="Bạn">Bạn</option>
+    <option value="Bạn thân">Bạn thân</option>
+    <option value="Đồng nghiệp">Đồng nghiệp</option>
+    <option value="Hàng xóm">Hàng xóm</option>
+    <option value="Khác">Khác</option>
+</datalist>

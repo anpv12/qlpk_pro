@@ -1,0 +1,181 @@
+/* Shared list/table shell for operational management pages. */
+
+.pw-toolbar,
+.stm-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+}
+
+.pw-toolbar-title,
+.stm-toolbar-title {
+	font-size: var(--qlpk-font-size-lg, 16px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--text-primary);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pw-toolbar-title i,
+.stm-toolbar-title i {
+	color: var(--accent);
+	font-size: var(--qlpk-font-size-xl, 18px);
+}
+
+.pw-toolbar-actions,
+.stm-toolbar-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.pw-btn,
+.stm-btn {
+	height: 32px;
+	padding: 0 14px;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	border-radius: var(--radius-sm);
+	border: 1px solid transparent;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: var(--transition);
+	white-space: nowrap;
+}
+
+.pw-btn--primary,
+.stm-btn--primary {
+	color: #fff;
+	background: var(--accent);
+	border-color: var(--accent);
+}
+
+.pw-btn--primary:hover,
+.stm-btn--primary:hover {
+	background: var(--accent-hover);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-md);
+}
+
+.pw-table-wrap,
+.stm-table-wrap {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+}
+
+.pw-table-wrap table,
+.stm-table-wrap table {
+	width: 100%;
+	height: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	margin: 0;
+}
+
+.pw-table-wrap table thead th,
+.stm-table-wrap table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	padding: 7px 14px;
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: #FFFFFF;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	background: var(--accent);
+	border-bottom: none;
+	white-space: nowrap;
+	height: 1px;
+}
+
+.pw-table-wrap table tbody td,
+.stm-table-wrap table tbody td {
+	padding: 9px 14px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	color: var(--text-primary);
+	border-bottom: 1px solid #F1F5F9;
+	vertical-align: middle;
+}
+
+.pw-table-wrap table tbody tr:hover td,
+.stm-table-wrap table tbody tr:hover td {
+	background: var(--accent-pale);
+}
+
+.pw-action-btn,
+.stm-action-btn {
+	width: 30px;
+	height: 30px;
+	border: none;
+	border-radius: var(--radius-sm);
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: var(--transition);
+	font-size: var(--qlpk-font-size-md, 14px);
+	padding: 0;
+}
+
+.pw-action-btn:hover,
+.stm-action-btn:hover {
+	background: var(--surface-dim);
+	color: var(--accent);
+}
+
+.pw-pagination,
+.stm-pagination-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	color: var(--text-secondary);
+}
+
+.pw-pagination .pagination,
+.stm-pagination-bar .pagination {
+	gap: 2px;
+	margin: 0;
+}
+
+.pw-pagination .page-link,
+.stm-pagination-bar .page-link {
+	border: none;
+	background: transparent;
+	color: var(--text-secondary);
+	border-radius: var(--radius-sm);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	padding: 5px 10px;
+	min-width: 30px;
+	text-align: center;
+}
+
+.pw-pagination .page-item.active .page-link,
+.stm-pagination-bar .page-item.active .page-link {
+	background: var(--accent);
+	color: #fff;
+}
+
+.pw-pagination .page-item:not(.active) .page-link:hover,
+.stm-pagination-bar .page-item:not(.active) .page-link:hover {
+	background: var(--surface-dim);
+	color: var(--text-primary);
+}
+
+.pw-pagination .page-item.disabled .page-link,
+.stm-pagination-bar .page-item.disabled .page-link {
+	color: var(--text-muted);
+	pointer-events: none;
+}

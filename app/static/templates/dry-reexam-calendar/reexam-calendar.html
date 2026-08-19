@@ -1,0 +1,127 @@
+<!-- REEXAM CALENDAR - DRY Template (Modal) -->
+<!-- Được load bởi reexam-calendar.js vào container, hiển thị dạng Bootstrap modal -->
+
+<div class="modal fade" id="reexamCalendarModal" tabindex="-1" aria-labelledby="reexamCalendarModalLabel"
+	aria-hidden="true">
+	<div class="modal-dialog reexam-modal-dialog">
+		<div class="modal-content reexam-modal-content">
+			<div class="modal-header reexam-modal-header">
+				<h5 class="modal-title reexam-modal-title" id="reexamCalendarModalLabel">
+					<i class="bi bi-calendar2-week me-2"></i>Lịch tái khám — Chọn ngày &amp; giờ
+				</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+					aria-label="Close"></button>
+			</div>
+			<div class="modal-body reexam-modal-body">
+
+				<!-- Calendar layout -->
+				<div class="reexam-cal-layout">
+					<!-- Sidebar -->
+					<div class="reexam-cal-sidebar">
+						<!-- Mini month calendar -->
+						<div class="reexam-mini-cal-header">
+							<h5 id="reexamMiniCalTitle"></h5>
+							<div class="reexam-mini-nav">
+								<button id="reexamMiniPrev"><i class="bi bi-chevron-left"></i></button>
+								<button id="reexamMiniNext"><i class="bi bi-chevron-right"></i></button>
+							</div>
+						</div>
+						<div class="reexam-mini-cal-grid" id="reexamMiniCalGrid">
+							<!-- Rendered by JS -->
+						</div>
+
+						<!-- Selection fields -->
+						<div class="reexam-sidebar-section">
+							<h6>Lịch tái khám</h6>
+							<div class="reexam-sidebar-row">
+								<div class="reexam-sidebar-field">
+									<label>Ngày</label>
+									<input type="text" id="reexamDateInput" readonly placeholder="--/--/----">
+								</div>
+								<div class="reexam-sidebar-field">
+									<label>Giờ</label>
+									<input type="time" id="reexamTimeInput" placeholder="--:--">
+								</div>
+							</div>
+						</div>
+
+						<!-- Service search -->
+						<div class="reexam-sidebar-section">
+							<h6>Dịch vụ</h6>
+							<div class="reexam-fg-auto reexam-sidebar-auto">
+								<i class="bi bi-search reexam-search-icon"></i>
+								<input type="text" id="reexamServiceSearch" placeholder="Tìm dịch vụ..."
+									autocomplete="off">
+								<div class="reexam-ac-dropdown" id="reexamServiceDropdown">
+									<!-- Items rendered by JS -->
+								</div>
+							</div>
+							<div class="reexam-selected-service reexam-hidden" id="reexamSelectedServiceDisplay">
+								<i class="bi bi-check-circle-fill"></i>
+								<span id="reexamSelectedServiceName"></span>
+							</div>
+						</div>
+
+						<!-- Status badges -->
+						<div class="reexam-sidebar-section">
+							<h6>Trạng thái</h6>
+							<div class="reexam-legend-col" id="reexamStatusBadges">
+								<span class="reexam-legend-tag pending active" data-status="pending">Chờ xác nhận: <span
+										class="reexam-badge-count">0</span></span>
+								<span class="reexam-legend-tag confirmed active" data-status="confirmed">Đã xác nhận:
+									<span class="reexam-badge-count">0</span></span>
+								<span class="reexam-legend-tag no-show active" data-status="no-show">Không đến: <span
+										class="reexam-badge-count">0</span></span>
+								<span class="reexam-legend-tag cancelled active" data-status="cancelled">Hủy: <span
+										class="reexam-badge-count">0</span></span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Main -->
+					<div class="reexam-cal-main">
+						<!-- Toolbar -->
+						<div class="reexam-cal-toolbar">
+							<div class="reexam-toolbar-left">
+								<button class="reexam-btn-today" id="reexamBtnToday">Hôm nay</button>
+								<button class="reexam-nav-btn" id="reexamPrevMonth"><i
+										class="bi bi-chevron-left"></i></button>
+								<button class="reexam-nav-btn" id="reexamNextMonth"><i
+										class="bi bi-chevron-right"></i></button>
+								<span class="reexam-cal-month-title" id="reexamMonthTitle"></span>
+							</div>
+							<div class="reexam-view-btns">
+								<button data-view="week">Tuần</button>
+								<button data-view="month" class="active">Tháng</button>
+							</div>
+						</div>
+
+						<!-- Month grid -->
+						<div class="reexam-month-grid" id="reexamMonthGrid">
+							<!-- Rendered by JS -->
+						</div>
+
+						<!-- Week grid -->
+						<div class="reexam-week-grid reexam-hidden" id="reexamWeekGrid">
+							<!-- Rendered by JS -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Modal footer with selection info + confirm -->
+			<div class="modal-footer reexam-modal-footer">
+				<div class="reexam-selected-text" id="reexamSelectedText">
+					<i class="bi bi-calendar-check"></i> &nbsp;Chưa chọn lịch tái khám
+				</div>
+				<input type="hidden" id="reexamSelectedServiceId" value="">
+				<div class="reexam-footer-actions">
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+					<button type="button" class="btn btn-success btn-sm reexam-confirm-btn" id="reexamBtnConfirm">
+						<i class="bi bi-check-lg"></i> Xác nhận lịch tái khám
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

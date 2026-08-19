@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+local.env
+credentials.json
+token_drive.json
+uploads/
+logs/
+_archive/
+backups/
+app/static/uploads/
+app/static/downloads/
+
+# Local QA artefacts and generated design/output files are not source code.
+tmp/
+output/
+designs/
+
+# Local development caches and test state.
+.pytest_cache/
+*.db
+*.sqlite
+*.sqlite3
+*.dump

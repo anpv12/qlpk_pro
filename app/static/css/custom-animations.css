@@ -1,0 +1,504 @@
+/* Custom animations for save buttons */
+
+/* Special animation for doctor examination save button */
+#saveExaminationForm {
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+#saveExaminationForm:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(210, 255, 176, 0.4);
+	background-color: #b8ff8a !important;
+}
+
+/* Animation for saveExaminationForm in examination section */
+#saveExaminationFormExamination {
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+#saveExaminationFormExamination:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(210, 255, 176, 0.4);
+	background-color: #b8ff8a !important;
+}
+
+/* Pulse animation for loading state */
+.btn-pulse {
+	animation: pulse 1.5s infinite;
+	position: relative;
+	overflow: hidden;
+}
+
+.btn-pulse::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+	animation: shimmer 2s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+	}
+
+	50% {
+		transform: scale(1.02);
+		box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+	}
+
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		left: -100%;
+	}
+
+	100% {
+		left: 100%;
+	}
+}
+
+/* Success animation */
+.btn-success-animation {
+	animation: successPulse 0.6s ease-out;
+	background: linear-gradient(45deg, #28a745, #20c997);
+	border: none;
+	color: white;
+}
+
+@keyframes successPulse {
+	0% {
+		transform: scale(1);
+	}
+
+	50% {
+		transform: scale(1.05);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Loading text animation */
+.loading-text {
+	animation: loadingDots 1.5s infinite;
+}
+
+@keyframes loadingDots {
+
+	0%,
+	20% {
+		content: "Đang lưu";
+	}
+
+	40% {
+		content: "Đang lưu.";
+	}
+
+	60% {
+		content: "Đang lưu..";
+	}
+
+	80%,
+	100% {
+		content: "Đang lưu...";
+	}
+}
+
+/* Success text animation */
+.success-text {
+	animation: successFade 0.5s ease-in;
+}
+
+/* Occupation Autocomplete Styles */
+.occupation-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	max-height: 200px;
+	overflow-y: auto;
+	z-index: 1050;
+	width: 100%;
+}
+
+/* Ensure parent containers have relative positioning */
+.col-6 {
+	position: relative;
+}
+
+/* Alternative positioning for dropdown */
+.occupation-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	width: 100%;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	max-height: 200px;
+	overflow-y: auto;
+	z-index: 1050;
+}
+
+.occupation-dropdown .occupation-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #f0f0f0;
+	transition: background-color 0.2s ease;
+}
+
+.occupation-dropdown .occupation-item:hover {
+	background-color: #f8f9fa;
+}
+
+.occupation-dropdown .occupation-item.selected {
+	background-color: #e3f2fd;
+	color: #1976d2;
+}
+
+.occupation-dropdown .occupation-item.new-occupation {
+	background-color: #fbf4e0;
+	color: #15721f;
+	border-left: 3px solid #ffbc00;
+}
+
+.occupation-dropdown .occupation-item.new-occupation:hover {
+	background-color: #ffeaa7;
+}
+
+.occupation-dropdown .no-results {
+	padding: 12px;
+	text-align: center;
+	color: #6c757d;
+	font-style: italic;
+}
+
+.autocomplete-dropdown.is-open,
+.occupation-dropdown.is-open,
+.modal-autocomplete-dropdown.is-open,
+.modal-occupation-dropdown.is-open {
+	display: block !important;
+}
+
+.modal-autocomplete-dropdown,
+.modal-occupation-dropdown {
+	position: fixed;
+	top: var(--autocomplete-floating-top);
+	left: var(--autocomplete-floating-left);
+	width: var(--autocomplete-floating-width);
+	max-height: var(--autocomplete-floating-max-height, 200px);
+	overflow-y: auto;
+	z-index: 1070;
+}
+
+/* Medicine autocomplete dropdowns */
+#categoryTypeDropdown,
+#storageUnitDropdown,
+#doseUnitDropdown,
+#administrationMethodDropdown,
+#importedTypeDropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	max-height: 200px;
+	overflow-y: auto;
+	z-index: 1000;
+}
+
+@keyframes successFade {
+	0% {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Button hover effects */
+.btn-primary:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+	transition: all 0.3s ease;
+}
+
+/* Disabled button style */
+.btn:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+	transform: none !important;
+	box-shadow: none !important;
+}
+
+/* Spinner animation enhancement */
+.spinner-border-sm {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+/* Icon animation for success */
+.bi-check-circle-fill {
+	animation: checkBounce 0.6s ease-out;
+}
+
+@keyframes checkBounce {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+
+	50% {
+		transform: scale(1.2);
+	}
+
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* Special animation for main save button in doctor examination */
+#saveReExaminationBtn {
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+#saveReExaminationBtn:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
+	background: linear-gradient(45deg, #0d6efd, #0b5ed7);
+}
+
+#saveReExaminationBtn:active {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+}
+
+/* Enhanced pulse for main save button */
+#saveReExaminationBtn.btn-pulse {
+	animation: mainButtonPulse 2s infinite;
+}
+
+@keyframes mainButtonPulse {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.8);
+	}
+
+	50% {
+		transform: scale(1.03);
+		box-shadow: 0 0 0 15px rgba(13, 110, 253, 0);
+	}
+
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+	}
+}
+
+/* Readonly fields styling */
+.readonly-field {
+	background-color: #f5f5f5 !important;
+	color: #6c757d !important;
+	cursor: not-allowed !important;
+	opacity: 0.8 !important;
+}
+
+.readonly-field:focus {
+	box-shadow: none !important;
+	border-color: #ced4da !important;
+}
+
+.readonly-field::placeholder {
+	color: #adb5bd !important;
+}
+
+/* Disable all interactions for readonly fields */
+.readonly-field,
+.readonly-field:hover,
+.readonly-field:active {
+	pointer-events: none !important;
+}
+
+/* Sidebar menu item animations */
+.sidebar .nav-link {
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.sidebar .nav-link:hover {
+	transform: translateX(5px);
+	background: #e3f0fa !important;
+	color: #155CA2 !important;
+	box-shadow: 0 2px 8px rgba(21, 92, 162, 0.2);
+}
+
+.sidebar .nav-link.active {
+	background: #e3f0fa !important;
+	color: #155CA2 !important;
+	font-weight: var(--qlpk-font-weight-bold, 700) !important;
+	transform: translateX(3px);
+	box-shadow: 0 2px 8px rgba(21, 92, 162, 0.15);
+}
+
+/* Special animation for "Bác sĩ" (Khám bệnh) button */
+.sidebar .nav-link[href="doctor-examination.html"] {
+	transition: all 0.3s ease;
+	position: relative;
+}
+
+.sidebar .nav-link[href="doctor-examination.html"]:hover {
+	transform: translateX(8px) scale(1.02);
+	background: linear-gradient(135deg, #e3f0fa 0%, #f0f8ff 100%) !important;
+	color: #155CA2 !important;
+	box-shadow: 0 4px 12px rgba(21, 92, 162, 0.3);
+}
+
+.sidebar .nav-link[href="doctor-examination.html"].active {
+	background: linear-gradient(135deg, #e3f0fa 0%, #f0f8ff 100%) !important;
+	color: #155CA2 !important;
+	font-weight: var(--qlpk-font-weight-bold, 700) !important;
+	transform: translateX(5px) scale(1.01);
+	box-shadow: 0 3px 10px rgba(21, 92, 162, 0.25);
+}
+
+/* Icon animation for sidebar items */
+.sidebar .nav-link i {
+	transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover i {
+	transform: scale(1.1);
+	color: #155CA2;
+}
+
+.sidebar .nav-link[href="doctor-examination.html"]:hover i {
+	transform: scale(1.15) rotate(5deg);
+	color: #155CA2;
+}
+
+/* Animation for other sidebar menu items */
+.sidebar .nav-link[href="receptionist-new.html"]:hover {
+	transform: translateX(6px) scale(1.01);
+	background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%) !important;
+	color: #28a745 !important;
+	box-shadow: 0 3px 10px rgba(40, 167, 69, 0.25);
+}
+
+.sidebar .nav-link[href="psychologist-examination.html"]:hover {
+	transform: translateX(6px) scale(1.01);
+	background: linear-gradient(135deg, #fff3e0 0%, #fff8f0 100%) !important;
+	color: #fd7e14 !important;
+	box-shadow: 0 3px 10px rgba(253, 126, 20, 0.25);
+}
+
+.sidebar .nav-link[href="appointment-management.html"]:hover {
+	transform: translateX(6px) scale(1.01);
+	background: linear-gradient(135deg, #f3e5f5 0%, #faf0ff 100%) !important;
+	color: #6f42c1 !important;
+	box-shadow: 0 3px 10px rgba(111, 66, 193, 0.25);
+}
+
+.sidebar .nav-link[href="payment-waiting.html"]:hover {
+	transform: translateX(6px) scale(1.01);
+	background: linear-gradient(135deg, #e0f2f1 0%, #f0fffe 100%) !important;
+	color: #20c997 !important;
+	box-shadow: 0 3px 10px rgba(32, 201, 151, 0.25);
+}
+
+/* Animation for left sidebar buttons in examination modal */
+.btn-sidebar {
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.btn-sidebar:hover {
+	transform: translateX(8px) scale(1.02);
+	background: rgba(255, 255, 255, 0.15) !important;
+	color: #ffffff !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-sidebar.active {
+	background: #ffffff !important;
+	color: #2c3e50 !important;
+	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
+	transform: translateX(5px) scale(1.01);
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Special animation for "Khám bệnh" button in left sidebar */
+.btn-sidebar[data-left-tab="examination"] {
+	transition: all 0.3s ease;
+	position: relative;
+}
+
+.btn-sidebar[data-left-tab="examination"]:hover {
+	transform: translateX(10px) scale(1.03);
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%) !important;
+	color: #ffffff !important;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn-sidebar[data-left-tab="examination"].active {
+	background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+	color: #2c3e50 !important;
+	font-weight: var(--qlpk-font-weight-bold, 700) !important;
+	transform: translateX(6px) scale(1.02);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Icon animation for left sidebar buttons */
+.btn-sidebar i {
+	transition: all 0.3s ease;
+}
+
+.btn-sidebar:hover i {
+	transform: scale(1.1);
+}
+
+.btn-sidebar[data-left-tab="examination"]:hover i {
+	transform: scale(1.15) rotate(5deg);
+}

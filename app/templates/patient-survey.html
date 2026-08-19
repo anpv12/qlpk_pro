@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Khảo sát Tâm lý</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+  <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/pages/patient-survey.css?v={{ app_version }}">
+</head>
+<body>
+  <!-- Alert container -->
+  <div id="alert-container"></div>
+  
+  <div class="container">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <div class="kicker"><div class="icon">🧠</div><span>Khảo sát Tâm lý</span></div>
+        <h1 id="title" class="title">Chào mừng bạn đến với khảo sát tâm lý</h1>
+        <div class="meta">
+          <span class="pill" id="survey-name">🛡️ Đang tải...</span>
+        </div>
+      </div>
+             <aside class="user" aria-label="Thông tin người làm khảo sát">
+         <div>
+           <div class="name">Họ tên: <span id="patient-name">Đang tải...</span></div>
+           <div class="phone">SĐT: <span id="patient-phone">Đang tải...</span></div>
+         </div>
+       </aside>
+    </section>
+
+    <div class="progress">
+      <div>📝 Câu <b id="cur">0</b>/<span id="total">0</span></div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="kpi" id="kpi">0%</div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loading-spinner">
+      <div>Đang tải câu hỏi khảo sát...</div>
+    </div>
+
+    <!-- Survey Content -->
+    <div id="survey-content">
+      <!-- Single question will be loaded here -->
+    </div>
+
+    <!-- No Survey Message -->
+    <div id="no-survey-message" class="card">
+      <p>Chưa có câu hỏi khảo sát nào được cấu hình.</p>
+    </div>
+
+    <div class="actions">
+      <div class="row">
+        <button id="start-over" class="btn btn-outline" type="button">Bắt đầu lại</button>
+        <button id="previous" class="btn btn-outline" type="button" disabled>Trước đó</button>
+        <button id="next" class="btn btn-primary" type="button" disabled>Tiếp theo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+      <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/patient-survey.js') }}?v=2.7"></script>
+  </body>
+  </html>

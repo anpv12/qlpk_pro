@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý tài khoản</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+	<!-- Flatpickr CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/user-management.css?v={{ app_version }}">
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Flatpickr JS -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/flatpickr-vn.js"></script>
+
+	<!-- Utils and Datepicker Init -->
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+</head>
+
+<body class="user-management-page">
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+				<div class="header-bar">
+					<nav aria-label="breadcrumb">
+						<ol class="breadcrumb mb-1">
+							<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
+							<li class="breadcrumb-item"><a href="index.html">QUẢN LÝ</a></li>
+							<li class="breadcrumb-item active" aria-current="page">TÀI KHOẢN</li>
+						</ol>
+					</nav>
+					<div class="d-flex justify-content-between align-items-center">
+						<h2 class="page-title">QUẢN LÝ TÀI KHOẢN</h2>
+						<button class="btn btn-primary" id="addUserBtn"><i class="bi bi-plus-lg"></i> Thêm mới tài
+							khoản</button>
+					</div>
+				</div>
+				<div class="filter-bar mt-2 mb-3">
+					<input type="text" class="form-control um-filter-search" id="searchInput" placeholder="Tìm kiếm...">
+					<select class="form-select um-filter-category" id="categoryFilter">
+						<option>Danh mục thuốc</option>
+						<option>Chọn</option>
+					</select>
+					<input type="text" class="form-control js-datepicker um-filter-date" id="dateFilter" placeholder="dd/mm/yyyy"
+						autocomplete="off">
+					<select class="form-select um-filter-status" id="statusFilter">
+						<option value="">Tình trạng</option>
+						<option value="active">Hoạt động</option>
+						<option value="inactive">Không hoạt động</option>
+					</select>
+					<button class="btn btn-primary" id="searchBtn">Tìm kiếm</button>
+					<button class="btn btn-outline-primary" id="resetBtn">Làm mới</button>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-bordered align-middle" id="userTable">
+						<thead>
+							<tr>
+								<th>STT</th>
+								<th>Họ Và Tên</th>
+								<th>Tên đăng nhập</th>
+								<th>Chức vụ</th>
+								<th>Địa Chỉ</th>
+								<th>Số Điện Thoại</th>
+								<th>Trạng thái</th>
+								<th>Thao Tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- Dữ liệu user sẽ được render ở đây bằng JS -->
+						</tbody>
+					</table>
+				</div>
+				<div class="d-flex justify-content-between align-items-center mt-2">
+					<div class="small text-muted" id="tableInfo">10 of 2100 items</div>
+					<nav>
+						<ul class="pagination mb-0" id="pagination">
+							<!-- Phân trang sẽ render ở đây -->
+						</ul>
+					</nav>
+				</div>
+			</main>
+		</div>
+		<div class="footer-bar">
+			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
+			<div class="contact">
+				<span>Hỗ trợ: <b>0938549609</b></span>
+				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
+				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Thêm/Sửa User -->
+	<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content um-modal-content-lg">
+				<form id="userForm">
+					<div class="modal-header border-0 pb-0">
+						<h4 class="modal-title w-100 text-center fw-bold um-modal-title" id="userModalLabel">THÊM TÀI KHOẢN</h4>
+					</div>
+					<div class="modal-body pt-0">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Ảnh đại diện</label>
+								<div class="d-flex align-items-center um-gap-12">
+									<img id="avatarPreview" src="/static/assets/images_doctor.jpg?v={{ app_version }}"
+										alt="avatar" class="um-avatar-preview" />
+									<input type="file" id="avatarFile" accept="image/*" class="form-control" />
+								</div>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">File chứng nhận hành
+									nghề</label>
+								<div class="d-flex flex-column um-gap-8">
+									<input type="file" id="licenseCertificateFile"
+										accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="form-control" />
+									<a id="licenseCertificateFileName" href="#" target="_blank"></a>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Số GP/Chứng chỉ hành
+									nghề</label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="license_number"
+									placeholder="Nhập số chứng chỉ">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Ngày cấp</label>
+								<input type="text" class="form-control rounded-4 py-2 px-3 js-datepicker"
+									name="license_issue_date" placeholder="dd/mm/yyyy" autocomplete="off">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Họ và tên <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="full_name"
+									placeholder="Nhập họ và tên" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Chức vụ <span
+										class="text-danger">*</span></label>
+								<select class="form-select rounded-4 py-2 px-3" name="role" required>
+									<option value="">Chọn chức vụ</option>
+									<option value="admin">Admin</option>
+									<option value="doctor">Bác sĩ</option>
+									<option value="staff">Nhân viên</option>
+									<option value="cashier">Thu ngân</option>
+									<option value="PSYCHOLOGIST">Tâm lý gia</option>
+								</select>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Giới tính <span
+										class="text-danger">*</span></label>
+								<select class="form-select rounded-4 py-2 px-3" name="gender" required>
+									<option value="">Chọn giới tính</option>
+									<option value="male">Nam</option>
+									<option value="female">Nữ</option>
+									<option value="other">Khác</option>
+								</select>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Địa chỉ <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="address"
+									placeholder="Nhập địa chỉ" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Số điện thoại <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="phone"
+									placeholder="Nhập số điện thoại">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Tên đăng nhập <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="username"
+									placeholder="Nhập tên đăng nhập" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Email</label>
+								<input type="email" class="form-control rounded-4 py-2 px-3" name="email"
+									placeholder="Nhập email">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Mật khẩu <span
+										class="text-danger" id="passwordRequired">*</span></label>
+								<input type="password" class="form-control rounded-4 py-2 px-3" name="password"
+									id="passwordInput" placeholder="Nhập mật khẩu" required>
+							</div>
+							<div class="col-12 mt-2">
+								<div class="form-check form-switch ps-0">
+									<input class="form-check-input ms-2" type="checkbox" name="is_active"
+										id="isActiveSwitch" checked>
+									<label class="form-check-label ms-4 fw-bold"
+										for="isActiveSwitch">Hoạt động</label>
+								</div>
+								<div class="form-check form-switch ps-0 mt-2">
+									<input class="form-check-input ms-2" type="checkbox" name="can_view_all_patients"
+										id="canViewAllPatientsSwitch">
+									<label class="form-check-label ms-4 fw-bold"
+										for="canViewAllPatientsSwitch">Xem tất cả bệnh nhân</label>
+								</div>
+									<div class="d-flex align-items-center gap-2 mt-2">
+									<label class="form-label fw-semibold mb-0">Màu lịch hẹn</label>
+									<input type="hidden" id="calendarColorPicker" name="calendar_color" value="">
+									<div id="colorSwatches">
+										<span class="color-swatch" data-color="#2196f3" title="Xanh dương"></span>
+										<span class="color-swatch" data-color="#4caf50" title="Xanh lá"></span>
+										<span class="color-swatch" data-color="#f44336" title="Đỏ"></span>
+										<span class="color-swatch" data-color="#ff9800" title="Cam"></span>
+										<span class="color-swatch" data-color="#9c27b0" title="Tím"></span>
+										<span class="color-swatch" data-color="#e91e63" title="Hồng"></span>
+										<span class="color-swatch" data-color="#00bcd4" title="Cyan"></span>
+										<span class="color-swatch" data-color="#795548" title="Nâu"></span>
+										<span class="color-swatch" data-color="#607d8b" title="Xám"></span>
+										<span class="color-swatch" data-color="#ff5722" title="Đỏ cam"></span>
+										<span class="color-swatch" data-color="#3f51b5" title="Chàm"></span>
+										<span class="color-swatch" data-color="#009688" title="Xanh ngọc"></span>
+										<button type="button" class="btn btn-sm btn-outline-secondary um-clear-color-btn" id="clearCalendarColor">Xóa</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="alert alert-danger mt-3 d-none" id="userFormError"></div>
+					</div>
+					<div class="modal-footer border-0 pt-0 justify-content-center um-footer-actions">
+						<button type="submit" class="btn px-5 py-2 fw-bold um-btn-primary-pill-lg">Lưu thông
+							tin</button>
+						<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold um-btn-pill-lg" data-bs-dismiss="modal">Huỷ</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal xác nhận xoá tài khoản -->
+	<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content um-modal-content-md">
+				<div class="modal-header border-0 pb-0">
+					<h5 class="modal-title fw-bold um-text-primary" id="confirmDeleteLabel">Xoá tài khoản</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+				</div>
+				<div class="modal-body text-center pt-0">
+					<div class="mb-3 um-text-lg">Bạn có chắc chắn muốn xoá tài khoản này ?</div>
+					<div class="d-flex justify-content-center gap-3 mt-3">
+						<button type="button" class="btn px-4 py-2 fw-bold um-btn-primary-pill-md" id="confirmDeleteBtn">Xác
+							nhận</button>
+						<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold um-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/user-management.js?v={{ app_version }}"></script>
+</body>
+
+</html>

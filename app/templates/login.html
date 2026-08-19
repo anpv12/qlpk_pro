@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/pages/login.css?v={{ app_version }}">
+</head>
+<body>
+
+  <!-- ── Main login area ──────────────────────────────────── -->
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <!-- Left branding panel -->
+      <div class="login-left">
+        <div class="login-brand">
+          <i class="bi bi-shield-check login-brand-icon"></i>
+          <span class="login-brand-text">Phòng khám Sơn Tâm</span>
+        </div>
+        <div class="login-brand-desc">Phần mềm quản lý phòng khám thông minh, chính xác và chuyên nghiệp.</div>
+        <ul class="login-features">
+          <li>Quản lý lịch hẹn & tiếp nhận</li>
+          <li>Khám bệnh & kê đơn điện tử</li>
+          <li>Quản lý thu chi & hóa đơn</li>
+          <li>Thống kê & báo cáo chuyên sâu</li>
+        </ul>
+      </div>
+
+      <!-- Right form panel -->
+      <div class="login-right">
+        <div class="login-box">
+          <div class="login-greeting">Chào mừng trở lại</div>
+          <div class="login-title">Đăng nhập</div>
+          <div class="login-sub">Bạn chưa có tài khoản ? <a href="#">Đăng ký ngay</a></div>
+
+          <form id="loginForm">
+            <label class="form-label">Tên đăng nhập</label>
+            <div class="login-input-wrap">
+              <i class="bi bi-person input-icon"></i>
+              <input type="text" class="form-control" name="username" placeholder="Tên đăng nhập" required autofocus>
+            </div>
+
+            <label class="form-label">Mật khẩu</label>
+            <div class="login-input-wrap">
+              <i class="bi bi-lock input-icon"></i>
+              <div class="input-group">
+                <input type="password" class="form-control" name="password" placeholder="Mật khẩu" required id="passwordInput">
+                <button type="button" class="toggle-pw" id="togglePassword"><i class="bi bi-eye-slash"></i></button>
+              </div>
+            </div>
+
+            <div class="login-options">
+              <div class="form-check form-check-inline mb-0">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">Nhớ mật khẩu</label>
+              </div>
+              <a href="#">Quên mật khẩu ?</a>
+            </div>
+
+            <div class="alert alert-danger d-none" id="loginError"></div>
+            <button type="submit" class="btn-login"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập</button>
+          </form>
+
+          <div class="login-policy">
+            <a href="https://qlpk.io.vn/privacy-policy">Privacy Policy</a>
+            &nbsp;·&nbsp;
+            <a href="https://qlpk.io.vn/terms-of-service">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Footer bar ──────────────────────────────────────── -->
+  <div class="login-footer">
+    <div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
+    <div class="contact">
+      <span>Hỗ trợ: <b>0938549609</b></span>
+      <span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
+      <span class="login-footer-separator">|</span>
+      <a href="/privacy-policy">Chính sách bảo mật</a>
+      <a href="/terms-of-service">Điều khoản dịch vụ</a>
+    </div>
+  </div>
+  <script src="/static/js/login.js?v={{ app_version }}"></script>
+</body>
+</html> 

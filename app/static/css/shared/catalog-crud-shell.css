@@ -1,0 +1,128 @@
+/* Shared shell for compact CRUD catalog pages. */
+
+body {
+	background: #F8FAFC;
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	margin: 0;
+}
+
+.main-content {
+	overflow-x: hidden;
+}
+
+#sidebar-container.col-md-2 {
+	flex: 0 0 16.66667% !important;
+	max-width: 16.66667% !important;
+}
+
+.main-content.col-md-10 {
+	flex: 0 0 83.33333% !important;
+	max-width: 83.33333% !important;
+}
+
+.card-wrap {
+	background: #fff;
+	border-radius: 12px;
+	border: 1px solid #E2E8F0;
+	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+}
+
+.toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+	gap: 12px;
+}
+
+.toolbar .search-wrap {
+	flex: 1;
+}
+
+.toolbar .search-wrap input {
+	width: 100%;
+	border: 1px solid #E2E8F0;
+	border-radius: 8px;
+	padding: 7px 12px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	outline: none;
+}
+
+.toolbar .search-wrap input:focus {
+	border-color: #0F766E;
+	box-shadow: 0 0 0 2px rgba(15, 118, 110, .1);
+}
+
+.toolbar .right-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.stat-badge {
+	border: 1px solid #99F6E4;
+	border-radius: 8px;
+	padding: 5px 10px;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	background: #F0FDFA;
+	color: #0F766E;
+	white-space: nowrap;
+}
+
+.stat-badge span {
+	font-size: var(--qlpk-font-size-lg, 16px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	margin-right: 3px;
+}
+
+.btn-outline {
+	background: transparent;
+	color: #0F766E;
+	border: 1px solid #0F766E;
+	border-radius: 8px;
+	padding: 7px 12px;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	font-size: var(--qlpk-font-size-base, 13px);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+}
+
+.btn-outline:hover {
+	background: #F0FDFA;
+}
+
+.ai-table,
+.di-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.ai-table th,
+.di-table th {
+	background: #F1F5F9;
+	padding: 8px 10px;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	color: #475569;
+	text-align: left;
+	border-bottom: 2px solid #E2E8F0;
+}
+
+.ai-table td,
+.di-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #F1F5F9;
+	vertical-align: middle;
+}
+
+.ai-table tr:hover td,
+.di-table tr:hover td {
+	background: #F0FDFA;
+}

@@ -1,0 +1,105 @@
+(function (window) {
+	'use strict';
+
+	function updateMedicalRecordTab(options = {}) {
+		const documentRef = options.document || window.document;
+		const logger = options.console || window.console;
+		const medicalRecordTab = documentRef.getElementById('medical-record-content');
+		if (!medicalRecordTab || !medicalRecordTab.classList.contains('active')) {
+			return false;
+		}
+
+		const selectedPatient = typeof options.getSelectedPatient === 'function' ? options.getSelectedPatient() : null;
+		if (!selectedPatient) return false;
+
+		try {
+			const loadedHistory = window.currentLoadedHistory || {};
+			const loadedDetail = window.currentLoadedExaminationDetail || {};
+			const loadedSections = window.currentLoadedExaminationDetailsBySection || {};
+			const historyWithDetail = { ...loadedHistory, ...loadedDetail };
+
+			const medicalRecordHtml = options.buildMedicalRecordHTML({
+				clinicInfo: options.getClinicInfoConfig(),
+				patient: selectedPatient,
+				history: historyWithDetail,
+				examinationDetailsBySection: loadedSections,
+				prescriptionData: window.currentLoadedPrescriptionData || null,
+				relatives: window.currentLoadedRelatives || [],
+				appointment: window.currentLoadedAppointment || null
+			});
+
+			medicalRecordTab.innerHTML = medicalRecordHtml;
+			if (typeof options.createBarcodesInElement === 'function') {
+				options.createBarcodesInElement(medicalRecordTab);
+			}
+			return true;
+		} catch (error) {
+			if (logger && typeof logger.error === 'function') {
+				logger.error('Error updating medical record tab realtime:', error);
+			}
+			return false;
+		}
+	}
+
+	function bindRealtimeUpdates(options = {}) {
+		const $ = options.$ || window.jQuery || window.$;
+		const documentRef = options.document || window.document;
+		if (typeof $ !== 'function') return false;
+
+		const updateFieldAndRefresh = (field, value) => {
+			const selectedPatient = typeof options.getSelectedPatient === 'function' ? options.getSelectedPatient() : null;
+			if (!selectedPatient || selectedPatient[field] === value) return false;
+			selectedPatient[field] = value;
+			if (typeof options.syncWindowState === 'function') options.syncWindowState();
+			if (typeof options.updateMedicalRecordTab === 'function') options.updateMedicalRecordTab();
+			return true;
+		};
+
+		$(documentRef).on('change', '#maritalStatus', function () {
+			updateFieldAndRefresh('marital_status', this.value);
+		});
+
+		$(documentRef).on('change', '#modalMaritalStatus', function () {
+			const value = this.value;
+			const mainElement = documentRef.getElementById('maritalStatus');
+			if (mainElement && mainElement.value !== value) mainElement.value = value;
+			updateFieldAndRefresh('marital_status', value);
+		});
+
+		$(documentRef).on('change input', '#educationLevel', function () {
+			updateFieldAndRefresh('education_level', this.value);
+		});
+
+		$(documentRef).on('change input', '#modalEducationLevel', function () {
+			const value = this.value;
+			const mainElement = documentRef.getElementById('educationLevel');
+			if (mainElement && mainElement.value !== value) mainElement.value = value;
+			updateFieldAndRefresh('education_level', value);
+		});
+
+		$(documentRef).on('autocomplete-select', '#modalEducationLevel', function (event, selectedValue) {
+			const value = selectedValue || this.value;
+			const mainElement = documentRef.getElementById('educationLevel');
+			if (mainElement) mainElement.value = value;
+			updateFieldAndRefresh('education_level', value);
+		});
+
+		return true;
+	}
+
+	function createMedicalRecordRealtimeAdapter(options = {}) {
+		const adapter = {};
+		adapter.updateMedicalRecordTab = () => updateMedicalRecordTab(options);
+		adapter.bindRealtimeUpdates = () => bindRealtimeUpdates({
+			...options,
+			updateMedicalRecordTab: adapter.updateMedicalRecordTab
+		});
+		return adapter;
+	}
+
+	window.PsychologistMedicalRecordRealtimeUtils = {
+		updateMedicalRecordTab,
+		bindRealtimeUpdates,
+		createMedicalRecordRealtimeAdapter
+	};
+})(window);

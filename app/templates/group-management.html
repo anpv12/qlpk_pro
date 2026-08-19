@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý nhóm phân quyền</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+	<!-- Flatpickr CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/group-management.css?v={{ app_version }}">
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Flatpickr JS -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/flatpickr-vn.js"></script>
+
+	<!-- Utils and Datepicker Init -->
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+				<div class="header-bar header-padding">
+					<nav aria-label="breadcrumb">
+						<ol class="breadcrumb mb-1">
+							<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
+							<li class="breadcrumb-item"><a href="#">QUẢN LÝ</a></li>
+							<li class="breadcrumb-item active" aria-current="page">NHÓM PHÂN QUYỀN</li>
+						</ol>
+					</nav>
+					<div class="d-flex justify-content-between align-items-center">
+						<h2 class="page-title">QUẢN LÝ NHÓM PHÂN QUYỀN</h2>
+						<button class="btn btn-primary" id="addGroupBtn"><i class="bi bi-plus-lg"></i> Thêm mới nhóm
+							quyền</button>
+					</div>
+				</div>
+				<div class="filter-bar mt-2 mb-3">
+					<input type="text" class="form-control gm-filter-search" id="searchInput" placeholder="Tìm kiếm...">
+					<select class="form-select gm-filter-category" id="categoryFilter">
+						<option>Danh mục thuốc</option>
+						<option>Chọn</option>
+					</select>
+					<input type="text" class="form-control js-datepicker gm-filter-date" id="dateFilter" placeholder="dd/mm/yyyy"
+						autocomplete="off">
+					<select class="form-select gm-filter-status" id="statusFilter">
+						<option value="">Tình trạng</option>
+						<option value="active">Hoạt động</option>
+						<option value="inactive">Không hoạt động</option>
+					</select>
+					<button class="btn btn-primary" id="searchBtn">Tìm kiếm</button>
+					<button class="btn btn-outline-primary" id="resetBtn">Làm mới</button>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-bordered align-middle" id="groupTable">
+						<thead>
+							<tr>
+								<th><input type="checkbox" id="selectAll"></th>
+								<th>Mã nhóm quyền</th>
+								<th>Tên nhóm quyền</th>
+								<th>Các quyền</th>
+								<th>Thao Tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- Dữ liệu nhóm quyền sẽ được render ở đây bằng JS -->
+						</tbody>
+					</table>
+				</div>
+				<div class="d-flex justify-content-between align-items-center mt-2">
+					<div class="small text-muted" id="tableInfo">10 of 2100 items</div>
+					<nav>
+						<ul class="pagination mb-0" id="pagination">
+							<!-- Phân trang sẽ render ở đây -->
+						</ul>
+					</nav>
+				</div>
+			</main>
+		</div>
+		<div class="footer-bar">
+			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
+			<div class="contact">
+				<span>Hỗ trợ: <b>0938549609</b></span>
+				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
+				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Thêm/Sửa nhóm quyền -->
+	<div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<form id="groupForm">
+					<div class="modal-header border-0 pb-0">
+						<h4 class="modal-title w-100 text-center fw-bold gm-modal-title-lg" id="groupModalLabel">Thêm mới nhóm quyền</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+					</div>
+					<div class="modal-body pt-0">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Mã nhóm quyền <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="code"
+									placeholder="Nhập mã nhóm quyền" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Tên nhóm quyền <span
+										class="text-danger">*</span></label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="name"
+									placeholder="Nhập tên nhóm quyền" required>
+							</div>
+							<div class="col-12">
+								<label class="form-label fw-semibold">Mô tả</label>
+								<input type="text" class="form-control rounded-4 py-2 px-3" name="desc"
+									placeholder="Nhập mô tả">
+							</div>
+							<div class="col-12">
+								<label class="form-label fw-semibold">Phân quyền <span
+										class="text-danger">*</span></label>
+								<div class="tree-perm" id="permTreeEdit">
+									<!-- Tree quyền sẽ render bằng JS -->
+								</div>
+							</div>
+						</div>
+						<div class="alert alert-danger mt-3 d-none" id="groupFormError"></div>
+					</div>
+					<div class="modal-footer border-0 pt-0 justify-content-end gm-modal-footer-wide">
+						<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold gm-pill-btn" data-bs-dismiss="modal">Trở về</button>
+						<button type="submit" class="btn px-5 py-2 fw-bold gm-pill-btn gm-primary-action">Lưu</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Xem chi tiết nhóm quyền -->
+	<div class="modal fade" id="viewGroupModal" tabindex="-1" aria-labelledby="viewGroupModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header border-0 pb-0">
+					<h4 class="modal-title w-100 text-center fw-bold gm-modal-title-lg" id="viewGroupModalLabel">Thông tin nhóm quyền</h4>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+				</div>
+				<div class="modal-body pt-0">
+					<div class="row g-3">
+						<div class="col-md-6">
+						<label class="form-label fw-semibold">Mã nhóm quyền <span
+									class="text-danger">*</span></label>
+							<input type="text" class="form-control rounded-4 py-2 px-3" name="code" readonly>
+						</div>
+						<div class="col-md-6">
+						<label class="form-label fw-semibold">Tên nhóm quyền <span
+									class="text-danger">*</span></label>
+							<input type="text" class="form-control rounded-4 py-2 px-3" name="name" readonly>
+						</div>
+						<div class="col-12">
+						<label class="form-label fw-semibold">Mô tả</label>
+							<input type="text" class="form-control rounded-4 py-2 px-3" name="desc" readonly>
+						</div>
+						<div class="col-12">
+						<label class="form-label fw-semibold">Phân quyền <span
+									class="text-danger">*</span></label>
+							<div class="tree-perm" id="permTreeView">
+								<!-- Tree quyền readonly sẽ render bằng JS -->
+							</div>
+						</div>
+					</div>
+				</div>
+			<div class="modal-footer border-0 pt-0 justify-content-end gm-modal-footer-wide">
+				<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold gm-pill-btn" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal xác nhận xoá nhóm quyền -->
+	<div class="modal fade" id="confirmDeleteGroupModal" tabindex="-1" aria-labelledby="confirmDeleteGroupLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+				<div class="modal-header border-0 pb-0">
+				<h5 class="modal-title fw-bold" id="confirmDeleteGroupLabel">Xoá nhóm quyền
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+				</div>
+				<div class="modal-body text-center pt-0">
+				<div class="mb-3 gm-confirm-text">Bạn có chắc chắn muốn xoá nhóm quyền này ?</div>
+					<div class="d-flex justify-content-center gap-3 mt-3">
+					<button type="button" class="btn px-4 py-2 fw-bold gm-pill-btn-sm gm-primary-action" id="confirmDeleteGroupBtn">Xác
+						nhận</button>
+				<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold gm-pill-btn-sm" data-bs-dismiss="modal">Huỷ bỏ</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/group-management.js?v={{ app_version }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+	/* Font-size 14px cho title "Khám bệnh" */
+	.card-header h5 {
+		font-size: var(--qlpk-font-size-lg, 16px) !important;
+		color: white !important;
+	}
+
+
+	.examination-label {
+		display: inline;
+		font-size: var(--qlpk-font-size-base, 13px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		color: #495057;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	/* CSS riêng cho nghề nghiệp autocomplete */
+	#occupationDropdown .occupation-item {
+		padding: 8px 12px;
+		cursor: pointer;
+		border-bottom: 1px solid #f1f3f4;
+		text-align: left;
+	}
+
+	#occupationDropdown .occupation-item:hover {
+		background-color: #f8f9fa;
+	}
+
+	#occupationDropdown .occupation-item.selected {
+		background-color: #007bff;
+		color: white;
+	}
+
+	#occupationDropdown .occupation-item.new-occupation {
+		color: #28a745;
+		font-weight: var(--qlpk-font-weight-medium, 500);
+	}
+
+	#occupationDropdown .occupation-item.no-results {
+		color: #6c757d;
+		font-style: italic;
+	}
+
+	/* CSS riêng cho xu hướng tính dục autocomplete */
+	#sexualOrientationDropdown .occupation-item {
+		padding: 8px 12px;
+		cursor: pointer;
+		border-bottom: 1px solid #f1f3f4;
+		text-align: left;
+	}
+
+	#sexualOrientationDropdown .occupation-item:hover {
+		background-color: #f8f9fa;
+	}
+
+	#sexualOrientationDropdown .occupation-item.selected {
+		background-color: #007bff;
+		color: white;
+	}
+
+	#sexualOrientationDropdown .occupation-item.new-occupation {
+		color: #28a745;
+		font-weight: var(--qlpk-font-weight-medium, 500);
+	}
+
+	#sexualOrientationDropdown .occupation-item.no-results {
+		color: #6c757d;
+		font-style: italic;
+	}
+
+	.icd-item.no-results {
+		color: #6c757d;
+		font-style: italic;
+		cursor: default;
+	}
+
+	.patient-header-left {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+
+
+	.patient-reexam-check {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 0;
+	}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Danh mục Dị nguyên</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/shared/catalog-crud-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/catalog-dictionary.css?v={{ app_version }}">
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content catalog-dict-main">
+
+				<div class="card-wrap">
+					<!-- Toolbar -->
+					<div class="toolbar">
+						<div class="search-wrap">
+							<input type="text" id="al-search" placeholder="Tìm kiếm tên dị nguyên...">
+						</div>
+						<div class="right-group">
+							<div class="stat-badge"><span id="stat-total">0</span> dị nguyên</div>
+							<button class="btn-outline" id="btn-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
+							<button class="btn-outline" id="btn-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+							<button class="btn-action" id="btn-add-allergen"><i class="bi bi-plus-circle"></i> Thêm mới</button>
+								<input type="file" id="al-import-file" accept=".xlsx, .xls" class="catalog-dict-hidden">
+						</div>
+					</div>
+
+					<!-- Table -->
+					<table class="ai-table">
+						<thead>
+							<tr>
+								<th class="catalog-dict-col-index">STT</th>
+								<th class="catalog-dict-col-name-wide">Tên dị nguyên</th>
+								<th>Mô tả</th>
+								<th class="catalog-dict-col-actions">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody id="al-table-body">
+							<tr>
+								<td colspan="4" class="text-center text-muted py-4">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<!-- Pagination -->
+					<div class="d-flex justify-content-between align-items-center mt-3 catalog-dict-pagination is-hidden" id="pagination-container">
+						<div class="catalog-dict-pagination-info">
+							Hiển thị <span id="page-start">0</span>-<span id="page-end">0</span> trong <span id="page-total">0</span> kết quả
+						</div>
+						<div class="d-flex gap-2 align-items-center">
+							<button class="btn btn-sm btn-outline catalog-dict-page-btn" id="btn-prev-page"><i class="bi bi-chevron-left"></i></button>
+							<span id="current-page-display" class="catalog-dict-page-current">1</span>
+							<button class="btn btn-sm btn-outline catalog-dict-page-btn" id="btn-next-page"><i class="bi bi-chevron-right"></i></button>
+						</div>
+					</div>
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal thêm/sửa -->
+	<div class="modal fade" id="alModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header catalog-dict-modal-header">
+					<h6 class="modal-title mb-0" id="al-modal-title"><i class="bi bi-droplet-half"></i> Thêm dị nguyên mới</h6>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<form id="al-form">
+					<div class="modal-body catalog-dict-modal-body">
+						<input type="hidden" id="al-id">
+
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-tag-fill"></i> Tên dị nguyên <span class="text-danger">*</span></div>
+							<input type="text" class="form-control form-control-sm" id="al-name" placeholder="Nhập tên dị nguyên..." required autocomplete="off">
+						</div>
+
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-card-text"></i> Mô tả</div>
+							<textarea class="form-control form-control-sm" id="al-desc" rows="3" placeholder="Nhập mô tả thêm..."></textarea>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button type="submit" class="btn btn-sm catalog-dict-primary-btn">Lưu dị nguyên</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/allergen.js?v={{ app_version }}"></script>
+</body>
+
+</html>

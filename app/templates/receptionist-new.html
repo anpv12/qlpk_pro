@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý khám - Lễ tân</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/relative-table.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/joint-exam-table.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/transfer-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/referral-source-control.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
+	<!-- Flatpickr CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+	<!-- jQuery -->
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+	<!-- Flatpickr JS -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/flatpickr-vn.js"></script>
+
+	<!-- DRY Datepicker Init -->
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
+	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
+
+	<!-- Autocomplete Scripts -->
+	<script src="/static/js/autocomplete-base.js?v={{ app_version }}"></script>
+	<script src="/static/js/occupation-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/sexual-orientation-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/education-level-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/nationality-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/religion-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/ethnicity-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/province-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/ward-autocomplete.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/clinical-workflow.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/waiting-queue-card.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/duplicate-patient-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/workflow-two-pane.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-info-form.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-visit-info-form.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-intake-support-sections.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/receptionist-new.css?v={{ app_version }}">
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+
+						<!-- Main Content -->
+						<div class="container-fluid receptionist-shell-placeholder"></div>
+						<div class="receptionist-workspace qlpk-workflow-two-pane" data-workflow-two-pane data-workflow-default-pane="main">
+							<div class="qlpk-workflow-two-pane__switch" role="tablist" aria-label="Chuyển vùng lễ tân">
+								<button type="button" class="qlpk-workflow-two-pane__switch-btn is-active"
+									data-workflow-pane="main" role="tab" aria-selected="true" aria-controls="receptionistIntakePane">
+									<i class="bi bi-person-plus qlpk-button-icon"></i>
+									<span>Tiếp nhận</span>
+								</button>
+								<button type="button" class="qlpk-workflow-two-pane__switch-btn"
+									data-workflow-pane="queue" role="tab" aria-selected="false" aria-controls="receptionistQueuePane">
+									<i class="bi bi-list-ul qlpk-button-icon"></i>
+									<span>Danh sách chờ</span>
+								</button>
+							</div>
+							<!-- VÙNG 2: Form tiếp nhận bệnh nhân -->
+							<div class="qlpk-workflow-two-pane__main is-active" id="receptionistIntakePane" data-workflow-pane-content="main" role="tabpanel">
+								<div class="receptionist-main-form-col">
+									<form id="patientForm" class="receptionist-intake-form">
+										<input type="hidden" id="patientId" name="patientId">
+										<section class="receptionist-intake-panel" id="vung2CardBody">
+											<div class="receptionist-intake-panel-header">
+												<div class="receptionist-intake-panel-title-row">
+													<h6 class="receptionist-intake-panel-title">
+												<i class="bi bi-person-plus qlpk-button-icon"></i>
+														<span>Tiếp nhận bệnh nhân</span>
+													</h6>
+												</div>
+												<div class="receptionist-appointment-card" aria-label="Lịch hẹn">
+															<div class="receptionist-appointment-fields">
+																<div class="receptionist-field receptionist-field--appointment-date">
+																	<label class="form-label required-field" for="appointmentDate">Ngày hẹn:</label>
+																	<input class="form-control js-datepicker" id="appointmentDate" data-date-format="Y-m-d"
+																		data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">
+																</div>
+																<div class="receptionist-field receptionist-field--appointment-time">
+																	<label class="form-label required-field" for="appointmentTime">Giờ hẹn:</label>
+																	<input type="time" class="form-control" id="appointmentTime">
+																</div>
+																<div class="receptionist-field receptionist-field--appointment-doctor">
+																	<label class="form-label required-field" for="doctorId">Bác sĩ:</label>
+																	<select class="form-select" id="doctorId">
+																		<option value="">Chọn BS</option>
+																	</select>
+																</div>
+																<div class="receptionist-field receptionist-field--appointment-service">
+																	<label class="form-label required-field" for="serviceType">Dịch vụ:</label>
+																	<div class="service-autocomplete-wrapper">
+																		<input type="text" class="form-control" id="serviceType" placeholder="Tìm dịch vụ..." autocomplete="off">
+																		<input type="hidden" id="serviceTypeId">
+																		<div class="service-autocomplete-dropdown" id="serviceTypeDropdown"></div>
+																	</div>
+																</div>
+													</div>
+												</div>
+												<div class="receptionist-intake-actions" aria-label="Thao tác tiếp nhận">
+											<button type="button" class="btn receptionist-document-upload-btn" id="uploadDocumentBtn">
+												<i class="bi bi-upload qlpk-button-icon"></i>
+												<span>Tải lên</span>
+											</button>
+											<input type="file" id="documentFileInput" class="receptionist-hidden" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+											<button type="button" class="btn" id="saveInfoBtn">
+												<i class="bi bi-save qlpk-button-icon"></i>
+												<span>Lưu</span>
+													</button>
+												</div>
+											</div>
+
+										{% set patient_intake_config = {
+											'id': 'receptionist-intake',
+											'patient': {
+												'layout_mode': 'receptionist',
+												'title': 'Thông tin hành chính',
+												'show_reexam': true,
+												'show_detail_actions': true,
+												'show_joint_action': true,
+												'vitals_caption': 'Nhập tại tiếp nhận'
+											},
+											'visit': {
+												'layout_mode': 'receptionist',
+												'title': 'Thông tin hỏi bệnh',
+												'heading_id': 'receptionistSupportHeading',
+												'section_id': 'receptionistMedicalInfoSection',
+												'show_admin': true,
+												'show_reason': true,
+												'show_main_symptoms': true
+											},
+											'relatives': {'aria_label': 'Người thân liên kết'},
+											'documents': {
+												'section_id': 'receptionistDocumentsSection',
+												'heading_id': 'receptionistDocumentsHeading',
+												'title': 'Danh sách tập tin đính kèm'
+											}
+										} %}
+										{% include 'partials/patient-intake-sections.html' %}
+										</section>
+									</form>
+								</div>
+							</div>
+
+						<!-- VÙNG 1: Danh sách chờ chuyển khám -->
+					<div class="qlpk-workflow-two-pane__queue" id="receptionistQueuePane" data-workflow-pane-content="queue" role="tabpanel">
+						<!-- Danh sách chờ chuyển khám -->
+						<div class="qlpk-queue-panel qlpk-queue-panel--receptionist">
+							{% set queue_title = 'Danh sách chờ chuyển khám' %}
+							{% set queue_search_id = 'waitingListPatientName' %}
+							{% include 'partials/waiting-queue-header.html' %}
+							<div class="qlpk-queue-panel__body">
+								<div id="waitingListTableBody" class="qlpk-queue-panel__list">
+									<!-- Danh sách sẽ được populate bởi JavaScript -->
+								</div>
+
+								<!-- Empty state -->
+								<div id="appointmentsEmptyState" class="qlpk-queue-panel__empty receptionist-hidden">
+									<i class="bi bi-inbox qlpk-queue-panel__empty-icon" aria-hidden="true"></i>
+									<p class="qlpk-queue-panel__empty-text">Chưa có lịch hẹn nào</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+
+						</div>
+				</main>
+		</div>
+	</div>
+
+		<div class="receptionist-hidden" aria-hidden="true">
+		<input type="hidden" id="addressSummary" value="">
+		<input type="hidden" id="provinceHidden" value="">
+		<input type="hidden" id="district" value="">
+	</div>
+
+
+	<!-- Duplicate Patient Modal -->
+	<div class="modal fade" id="duplicatePatientModal" tabindex="-1" aria-labelledby="duplicatePatientModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-md">
+			<div class="modal-content duplicate-patient-modal">
+				<div class="modal-header duplicate-patient-modal__header">
+					<h5 class="modal-title duplicate-patient-modal__title" id="duplicatePatientModalLabel">
+						<i class="bi bi-exclamation-triangle-fill qlpk-button-icon" aria-hidden="true"></i>
+						Tìm thấy bệnh nhân trùng lặp
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+				</div>
+				<div class="modal-body duplicate-patient-modal__body">
+					<div id="duplicateList" class="duplicate-patient-modal__list" aria-live="polite"></div>
+				</div>
+				<div class="modal-footer duplicate-patient-modal__footer">
+					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--ghost" data-bs-dismiss="modal">
+						<i class="bi bi-x-circle qlpk-button-icon" aria-hidden="true"></i>
+						<span>Huỷ</span>
+					</button>
+					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--secondary" data-duplicate-action="cancel">
+						<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i>
+						<span>Tạo mới</span>
+					</button>
+					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--primary" id="updateSelectedBtn"
+						data-duplicate-action="update" disabled>
+						<i class="bi bi-check-circle qlpk-button-icon" aria-hidden="true"></i>
+						<span>Cập nhật</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Chuyển Khám - Được load từ template /static/templates/transfer-modal.html bởi transfer-modal-dry.js -->
+
+	<!-- Modal: Quản lý người đi khám cùng - DRY -->
+	{% include 'partials/joint-exam-modal.html' %}
+
+
+		<!-- Custom JavaScript -->
+	<script src="/static/js/receptionist/formatters.js?v={{ app_version }}"></script>
+	<script src="/static/js/relative-table.js?v={{ app_version }}"></script>
+	<script src="/static/js/relative-link-handler.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/patient-relatives-table.js?v={{ app_version }}"></script>
+	<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
+	<script src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
+	<script src="/static/js/joint-exam-manager.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/joint-exam-orchestration.js?v={{ app_version }}"></script>
+		<script src="/static/js/vital-signs-validator.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/page-core-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/profile-autocomplete.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/address-main-form.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/patient-address-populate.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/component-dom-scope.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/patient-info-form.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/patient-visit-info-form.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/patient-intake-form.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/patient-vitals-history.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/service-package-selection.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/form-data-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/form-reset-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/form-bootstrap.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/catalog-loaders.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/appointment-prefill.js?v={{ app_version }}"></script>
+				<script src="/static/js/referral-source-control.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/medical-info-draft.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/document-attachment-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/document-attachment-list.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/document-attachment-controls.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/page-session-bootstrap.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/waiting-queue-card-ui.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/workflow-two-pane.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/appointment-list-controls.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/appointment-date-highlight.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/duplicate-patient-modal.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/form-calculations.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/form-input-guards.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/form-save-controls.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist/appointment-submit.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/receptionist-new.js?v={{ app_version }}"></script>
+	</body>
+
+</html>

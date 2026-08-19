@@ -1,0 +1,454 @@
+								{% from 'components/_icd_autocomplete.html' import render_icd_autocomplete %}
+								{% set inline_medical_history_variant = inline_medical_history_variant|default('default') %}
+								{% set inline_medical_history_is_doctor_flat = inline_medical_history_variant == 'doctor_flat' %}
+								<!-- ══ TIỀN SỬ BỆNH INLINE ══ -->
+								<div class="inline-tien-su{% if not inline_medical_history_is_doctor_flat %} mt-2 mb-2{% endif %}{% if inline_medical_history_is_doctor_flat %} inline-tien-su--doctor-flat{% endif %}"{% if inline_medical_history_is_doctor_flat %} data-medical-history-workbench-active="personal"{% endif %}>
+									<!-- Hidden authority fields — JS load/snapshot dùng trực tiếp -->
+									<input type="hidden" id="patientPhysicalHistory">
+									<input type="hidden" id="patientFamilyHistory">
+
+									<div class="medical-history-panel" id="medicalHistoryMedicalHistoryPanel">
+										{% if not inline_medical_history_is_doctor_flat %}
+										<div class="medical-history-panel-header">
+											<div class="medical-history-panel-title">
+												<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+												TIỀN SỬ BỆNH
+											</div>
+																		<button type="button" class="medical-history-panel-toggle" id="medicalHistoryMedicalHistoryToggle" data-medical-history-action="toggle-panel" aria-expanded="true" aria-controls="medicalHistoryMedicalHistoryBody" title="Thu gọn tiền sử bệnh">
+												<i class="bi bi-chevron-down" aria-hidden="true"></i>
+											</button>
+										</div>
+										{% endif %}
+											<div class="medical-history-panel-body" id="medicalHistoryMedicalHistoryBody">
+											{% if inline_medical_history_is_doctor_flat %}
+											<div class="medical-history-workbench" data-medical-history-workbench>
+												<span class="medical-history-workbench-summary__text" data-medical-history-workbench-summary-text aria-live="polite">Chưa ghi nhận tiền sử đáng chú ý</span>
+												<nav class="medical-history-workbench-nav" aria-label="Điều hướng tiền sử">
+													<button type="button" class="medical-history-workbench-nav__item is-active" data-medical-history-workbench-target="personal" aria-current="true">
+														<span>Bản thân</span>
+														<strong data-medical-history-workbench-count="personal">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="family">
+														<span>Gia đình</span>
+														<strong data-medical-history-workbench-count="family">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="allergy">
+														<span>Dị ứng thuốc</span>
+														<strong data-medical-history-workbench-count="allergy">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="substance">
+														<span>Tiền sử dùng chất</span>
+														<strong data-medical-history-workbench-count="substance">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="suicide">
+														<span>Tự sát / Tự hại</span>
+														<strong data-medical-history-workbench-count="suicide">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="risk">
+														<span>Đánh giá nguy cơ</span>
+														<strong data-medical-history-workbench-count="risk">0</strong>
+													</button>
+													<button type="button" class="medical-history-workbench-nav__item" data-medical-history-workbench-target="safety">
+														<span>Kế hoạch an toàn</span>
+														<strong data-medical-history-workbench-count="safety">0</strong>
+													</button>
+												</nav>
+												<div class="medical-history-workbench-main">
+											{% endif %}
+
+											<!-- ── BẢN THÂN ── -->
+											<div class="medical-history-section{% if inline_medical_history_is_doctor_flat %} medical-history-section--personal medical-history-workbench-pane is-active{% endif %}"{% if inline_medical_history_is_doctor_flat %} data-medical-history-workbench-pane="personal"{% endif %}>
+												<div class="medical-history-section-head">
+
+													<span class="medical-history-section-title" data-medical-history-workbench-title="personal">Bản thân</span>
+												</div>
+												<div class="medical-history-section-body">
+																		{{ render_icd_autocomplete(
+																			mode='physHistory',
+																			input_id='physHistorySearch',
+																			tags_id='physHistoryTags',
+																			list_id='physHistoryList',
+																			container_id='physHistoryContainer',
+																			dropdown_id='physHistoryDropdown',
+																			container_class='medical-history-icd-input-container',
+																			tags_class='medical-history-selected-icd-tags',
+																			input_class='form-control form-control-sm icd-search-inline',
+																			placeholder='Tìm mã ICD tiền sử bệnh cá nhân...',
+																			aria_label='Tìm mã ICD tiền sử bệnh cá nhân',
+																			dropdown_class='medical-history-icd-dropdown',
+																			list_class='medical-history-icd-list'
+																		) }}
+																	<div class="medical-history-micro-row">
+																		<input type="text" class="form-control form-control-sm" id="physHistoryTextInput"
+																			placeholder="Mô tả chi tiết / Tiền sử bản thân khác..."
+																			autocomplete="off">
+																	</div>
+
+													<div class="medical-history-tabs" id="banThanTabs">
+															<button type="button" class="medical-history-tab-btn active" data-medical-history-action="switch-tab" data-medical-history-tab-group="noi-khoa">Nội khoa</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="ngoai-khoa">Ngoại khoa</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="thoi-quen">Thói quen / Lối sống</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="di-ung">Dị ứng</button>
+														{% if not inline_medical_history_is_doctor_flat %}
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="loi-song">Tiền sử dụng chất</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="tu-sat">Tự sát / Tự hại</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="nguy-co">
+															Đánh giá nguy cơ
+																	<span class="medical-history-tab-warn-icon medical-history-hidden"><i class="fas fa-exclamation"></i></span>
+														</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-tab" data-medical-history-tab-group="ke-hoach-an-toan" id="safetyPlanTabBtn">
+															🛡 Kế hoạch an toàn
+														</button>
+														{% endif %}
+													</div>
+													<div class="medical-history-suggestion-box" id="banThanList">
+														<div data-bt-group="noi-khoa">
+															<div class="medical-history-group-label">Nhóm 1 · Bệnh lý Nội khoa</div>
+														</div>
+																<div data-bt-group="ngoai-khoa" class="medical-history-hidden">
+															<div class="medical-history-group-label">Nhóm 2 · Bệnh lý Ngoại khoa</div>
+														</div>
+																<div data-bt-group="thoi-quen" class="medical-history-hidden">
+															<div class="medical-history-group-label">Nhóm 3 · Thói quen / Lối sống</div>
+														</div>
+																<div data-bt-group="di-ung" class="medical-history-hidden">
+															<div class="medical-history-group-label">Nhóm 4 · Dị ứng và Phản ứng phụ</div>
+														</div>
+																<div data-bt-group="loi-song" class="medical-history-hidden">
+														</div>
+																<div data-bt-group="tu-sat" class="medical-history-hidden">
+														</div>
+																<div data-bt-group="nguy-co" class="medical-history-hidden">
+														</div>
+													</div>
+													<!-- ── BẢNG SỬ DỤNG CHẤT (ngoài suggestion-box để không bị bóp) ── -->
+															<div id="substanceTableWrap" class="medical-history-hidden">
+																<table class="medical-history-substance-table">
+															<thead>
+																<tr>
+																						<th class="medical-history-col-check"></th>
+																						<th class="medical-history-col-symbol">Ký hiệu</th>
+																						<th class="medical-history-col-note">Ghi chú</th>
+																						<th class="medical-history-col-check"></th>
+																						<th class="medical-history-col-symbol">Ký hiệu</th>
+																						<th class="medical-history-col-note">Ghi chú</th>
+																</tr>
+															</thead>
+															<tbody>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="tobacco_check" data-medical-history-action="substance-toggle" data-icd="F17" data-name="Thuốc lá"><span></span></label></td><td>Thuốc lá</td><td><input type="text" class="medical-history-sub-input" id="tobacco_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="inhalants_check" data-medical-history-action="substance-toggle" data-icd="F18" data-name="Chất hít"><span></span></label></td><td>Chất hít (keo, xăng, dung môi, khí cười...)</td><td><input type="text" class="medical-history-sub-input" id="inhalants_time" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="alcohol_check" data-medical-history-action="substance-toggle" data-icd="F10" data-name="Rượu, bia, đồ uống có cồn"><span></span></label></td><td>Rượu, bia, đồ uống có cồn</td><td><input type="text" class="medical-history-sub-input" id="alcohol_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="sedatives_check" data-medical-history-action="substance-toggle" data-icd="F13" data-name="Thuốc an thần"><span></span></label></td><td>Thuốc an thần / Thuốc ngủ</td><td><input type="text" class="medical-history-sub-input" id="sedatives_time" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="cannabis_check" data-medical-history-action="substance-toggle" data-icd="F12" data-name="Cần sa"><span></span></label></td><td>Cần sa</td><td><input type="text" class="medical-history-sub-input" id="cannabis_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="hallucinogens_check" data-medical-history-action="substance-toggle" data-icd="F16" data-name="Chất gây ảo giác"><span></span></label></td><td>Chất gây ảo giác</td><td><input type="text" class="medical-history-sub-input" id="hallucinogens_time" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="cocaine_check" data-medical-history-action="substance-toggle" data-icd="F14" data-name="Cocain"><span></span></label></td><td>Cocain</td><td><input type="text" class="medical-history-sub-input" id="cocaine_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="opioids_check" data-medical-history-action="substance-toggle" data-icd="F11" data-name="Thuốc phiện"><span></span></label></td><td>Chất dạng thuốc phiện (Heroin, Morphin, Codein...)</td><td><input type="text" class="medical-history-sub-input" id="opioids_time" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="stimulants_check" data-medical-history-action="substance-toggle" data-icd="F15" data-name="Chất kích thích"><span></span></label></td><td>Chất kích thích (ma túy đá, thuốc lắc...)</td><td><input type="text" class="medical-history-sub-input" id="stimulants_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="other_substance_check" data-medical-history-action="substance-toggle" data-icd="F19" data-name="Chất khác"><span></span></label></td><td>Chất khác</td><td><input type="text" class="medical-history-sub-input" id="other_substance_time" placeholder="Ghi chú..." disabled></td>
+																</tr>
+															</tbody>
+														</table>
+													</div>
+													<!-- ── BẢNG TỰ SÁT / TỰ HẠI ── -->
+															<div id="suicideTableWrap" class="medical-history-hidden">
+																<table class="medical-history-substance-table">
+															<thead>
+																<tr>
+																						<th class="medical-history-col-check"></th>
+																						<th class="medical-history-col-suicide-code">Mã ICD</th>
+																						<th class="medical-history-col-suicide-content">Nội dung</th>
+																	<th>Ghi chú</th>
+																</tr>
+															</thead>
+															<tbody>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_ideation_check" data-medical-history-action="suicide-toggle" data-icd="Z91.5" data-name="Ý tưởng / Tiền sử tự gây thương tích"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z91.5</span></td>
+																	<td>Ý tưởng / Tiền sử tự gây thương tích</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_ideation_note" placeholder="Ý nghĩ tự sát hoặc tiền sử tự gây thương tích..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_poison_check" data-medical-history-action="suicide-toggle" data-icd="X60" data-name="Cố ý tự gây nhiễm độc bằng thuốc"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X60</span></td>
+																	<td>Cố ý tự gây nhiễm độc bằng thuốc</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_poison_note" placeholder="Cần mã cụ thể theo loại thuốc (VD: X61 cho thuốc an thần)..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_hang_check" data-medical-history-action="suicide-toggle" data-icd="X70" data-name="Cố ý tự gây hại bằng treo cổ/ngạt"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X70</span></td>
+																	<td>Cố ý tự gây hại bằng treo cổ/ngạt</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_hang_note" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_sharp_check" data-medical-history-action="suicide-toggle" data-icd="X78" data-name="Cố ý tự gây hại bằng vật sắc nhọn"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X78</span></td>
+																	<td>Cố ý tự gây hại bằng vật sắc nhọn</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_sharp_note" placeholder="Ví dụ: Rạch tay..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_jump_check" data-medical-history-action="suicide-toggle" data-icd="X80" data-name="Tự nhảy từ trên cao"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X80</span></td>
+																	<td>Tự nhảy từ trên cao</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_jump_note" placeholder="Ghi chú..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_trauma_check" data-medical-history-action="suicide-toggle" data-icd="Z65.5" data-name="Sự kiện gây sang chấn tâm lý"><span></span></label></td>
+																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z65.5</span></td>
+																	<td>Sự kiện gây sang chấn tâm lý</td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_trauma_note" placeholder="Liên quan đến thiên tai, bạo lực hoặc thảm họa..." disabled></td>
+																</tr>
+																<tr>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_violence_check" data-medical-history-action="suicide-toggle" data-icd="Z61" data-name="Vấn đề liên quan đến bạo lực (nạn nhân)"><span></span></label></td>
+																			<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z61</span></td>
+																			<td>Vấn đề liên quan đến bạo lực (nạn nhân)</td>
+																			<td><input type="text" class="medical-history-sub-input" id="suicide_violence_note" placeholder="Bao gồm lạm dụng tình dục hoặc thể chất trong tuổi thơ..." disabled></td>
+																		</tr>
+															</tbody>
+														</table>
+													</div>
+													<!-- ── ĐÁNH GIÁ NGUY CƠ TỰ SÁT ── -->
+															<div id="riskAssessWrap" class="medical-history-hidden">
+														<!-- Panel lần trước — JS populate từ medical_history.previous_examination -->
+																<div id="prevRiskBadgeWrap" class="medical-history-hidden mb-2">
+															<div class="prev-risk-header">
+																<span class="prev-risk-label">📋 Đánh giá nguy cơ lần trước</span>
+																<span id="prevRiskBadge" class="prev-risk-badge"></span>
+															</div>
+															<ul id="prevRiskDetails" class="prev-risk-details"></ul>
+														</div>
+																<table class="medical-history-substance-table medical-history-risk-table">
+															<thead>
+																<tr>
+																						<th class="medical-history-col-risk-tight">Nội dung</th>
+																						<th class="medical-history-col-risk-tight">Đánh giá</th>
+																	<th>Chi tiết</th>
+																</tr>
+															</thead>
+															<tbody>
+																<tr>
+																						<td class="medical-history-nowrap">1. Ý tưởng tự sát</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_ideation" id="risk_ideation_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_ideation_note" data-risk-enable-note="false"><span></span>Không</label>
+																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_ideation" id="risk_ideation_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_ideation_note" data-risk-enable-note="true"><span></span>Có</label>
+																	</td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_ideation_note" placeholder="Tần suất/Nội dung..." disabled data-medical-history-action="risk-sync"></td>
+																</tr>
+																<tr>
+																						<td class="medical-history-nowrap">2. Kế hoạch tự sát</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_plan" id="risk_plan_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_plan_note" data-risk-enable-note="false"><span></span>Không</label>
+																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_plan" id="risk_plan_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_plan_note" data-risk-enable-note="true"><span></span>Có</label>
+																	</td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_plan_note" placeholder="Phương pháp..." disabled data-medical-history-action="risk-sync"></td>
+																</tr>
+																<tr>
+																						<td class="medical-history-nowrap">3. Toàn tính tự sát</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_intent" id="risk_intent_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_intent_note" data-risk-enable-note="false"><span></span>Không</label>
+																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_intent" id="risk_intent_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_intent_note" data-risk-enable-note="true"><span></span>Có</label>
+																	</td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_intent_note" placeholder="Thời điểm gần nhất..." disabled data-medical-history-action="risk-sync"></td>
+																</tr>
+																<tr>
+																						<td class="medical-history-nowrap">4. Hành vi tự hại khác</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_sh" id="risk_sh_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_sh_note" data-risk-enable-note="false"><span></span>Không</label>
+																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_sh" id="risk_sh_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_sh_note" data-risk-enable-note="true"><span></span>Có</label>
+																	</td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_sh_note" placeholder="Rạch tay / Nhịn ăn / Khác..." disabled data-medical-history-action="risk-sync"></td>
+																</tr>
+																<tr>
+																						<td class="medical-history-nowrap">5. Mức độ nguy cơ</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_level" id="risk_level_low" value="thap" data-medical-history-action="risk-sync"><span></span>Thấp</label>
+																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_level" id="risk_level_mid" value="trung_binh" data-medical-history-action="risk-sync"><span></span>Trung bình</label>
+																	</td>
+																						<td class="medical-history-nowrap">
+																	<label class="medical-history-risk-inline-check risk-high"><input type="radio" name="risk_level" id="risk_level_high" value="cao" data-medical-history-action="risk-sync"><span></span>Cao <span class="risk-note">(Cần nhập viện nội trú)</span></label>
+																	</td>
+																</tr>
+															</tbody>
+														</table>
+													</div>
+																										<!-- ── PANEL: KẾ HOẠCH AN TOÀN ── -->
+
+																	<!-- Header actions -->
+										<div class="safety-plan-actions-bar medical-history-hidden">
+															<div class="safety-plan-actions-copy">
+																<span class="safety-plan-actions-title">Tài liệu ký nhận</span>
+																<span class="safety-plan-actions-note">In mẫu hoặc lưu bản đã ký</span>
+															</div>
+															<button type="button" class="safety-plan-action-btn safety-plan-print-btn" id="safetyPlanPrintBtn" data-safety-plan-action="print">
+																<i class="bi bi-printer" aria-hidden="true"></i>
+																<span>In mẫu trắng</span>
+															</button>
+															<label class="safety-plan-action-btn safety-plan-upload-btn" for="safetyPlanFileInput">
+																<i class="bi bi-upload" aria-hidden="true"></i>
+																<span>Upload bản đã ký</span>
+															</label>
+																	<input type="file" id="safetyPlanFileInput" accept=".pdf,.jpg,.jpeg,.png" class="medical-history-hidden" data-safety-plan-action="upload">
+																	<span id="safetyPlanFileStatus" class="safety-plan-file-status medical-history-hidden">
+																<i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+																	<a id="safetyPlanFileLink" href="#" target="_blank" class="safety-plan-file-link" data-safety-plan-action="open-file">Xem file đã upload</a>
+															</span>
+														</div>
+
+														<!-- 4 fields -->
+										<div class="safety-plan-fields medical-history-hidden">
+
+															<!-- 1. Nhận diện -->
+															<div class="safety-plan-field-row">
+																<label class="safety-plan-field-label" for="safetyPlanNhanDien">Nhận diện dấu hiệu</label>
+																				<textarea class="safety-plan-textarea" id="safetyPlanNhanDien" placeholder="Ví dụ: Lo lắng, cô đơn, mất ngủ nhiều đêm liên tiếp..." rows="3"></textarea>
+															</div>
+
+															<!-- 2. Cách ứng phó -->
+															<div class="safety-plan-field-row">
+																<label class="safety-plan-field-label" for="safetyPlanCachUngPho">Cách tự ứng phó</label>
+																				<textarea class="safety-plan-textarea" id="safetyPlanCachUngPho" placeholder="Ví dụ: Đi bộ 15 phút, nghe nhạc, gọi người thân..." rows="3"></textarea>
+															</div>
+
+															<!-- 3. Người gọi hỗ trợ (3 slot) -->
+															<div class="safety-plan-field-row">
+																<label class="safety-plan-field-label">Người gọi hỗ trợ</label>
+																<div class="safety-plan-support-slots" id="safetyPlanSupportSlots">
+																	<!-- Slot 1 -->
+																	<div class="safety-plan-support-slot" data-order="1">
+																		<span class="safety-plan-slot-order">1</span>
+																		<div class="safety-plan-slot-select-wrap">
+																										<select class="safety-plan-member-select" id="safetyPlanSupport1" aria-label="Người hỗ trợ ưu tiên 1">
+																				<option value="">-- Chọn người thân --</option>
+																			</select>
+																		</div>
+																	</div>
+																	<!-- Slot 2 -->
+																	<div class="safety-plan-support-slot" data-order="2">
+																		<span class="safety-plan-slot-order">2</span>
+																		<div class="safety-plan-slot-select-wrap">
+																										<select class="safety-plan-member-select" id="safetyPlanSupport2" aria-label="Người hỗ trợ ưu tiên 2">
+																				<option value="">-- Chọn người thân --</option>
+																			</select>
+																		</div>
+																	</div>
+																	<!-- Slot 3 -->
+																	<div class="safety-plan-support-slot" data-order="3">
+																		<span class="safety-plan-slot-order">3</span>
+																		<div class="safety-plan-slot-select-wrap">
+																										<select class="safety-plan-member-select" id="safetyPlanSupport3" aria-label="Người hỗ trợ ưu tiên 3">
+																				<option value="">-- Chọn người thân --</option>
+																			</select>
+																		</div>
+																	</div>
+																</div>
+															</div>
+
+															<!-- 4. Động lực sống -->
+															<div class="safety-plan-field-row">
+																<label class="safety-plan-field-label" for="safetyPlanDongLuc">Lý do tiếp tục sống</label>
+																				<textarea class="safety-plan-textarea" id="safetyPlanDongLuc" placeholder="Ví dụ: Con cái, gia đình, công việc, niềm đam mê..." rows="3"></textarea>
+															</div>
+
+										</div><!-- /safety-plan-fields -->
+																				</div>
+											</div>
+
+
+											<!-- ── GIA ĐÌNH ── -->
+											<div class="medical-history-section{% if inline_medical_history_is_doctor_flat %} medical-history-section--family medical-history-workbench-pane{% endif %}"{% if inline_medical_history_is_doctor_flat %} data-medical-history-workbench-pane="family" hidden{% endif %}>
+												<div class="medical-history-section-head">
+
+													<span class="medical-history-section-title">Gia đình</span>
+												</div>
+												<div class="medical-history-section-body">
+																		{{ render_icd_autocomplete(
+																			mode='famHistory',
+																			input_id='famHistorySearch',
+																			tags_id='famHistoryTags',
+																			list_id='famHistoryList',
+																			container_id='famHistoryContainer',
+																			dropdown_id='famHistoryDropdown',
+																			container_class='medical-history-icd-input-container',
+																			tags_class='medical-history-selected-icd-tags',
+																			input_class='form-control form-control-sm icd-search-inline',
+																			placeholder='Tìm mã ICD tiền sử gia đình...',
+																			aria_label='Tìm mã ICD tiền sử gia đình',
+																			dropdown_class='medical-history-icd-dropdown',
+																			list_class='medical-history-icd-list'
+																		) }}
+																	<div class="medical-history-micro-row">
+																		<input type="text" class="form-control form-control-sm" id="famHistoryTextInput"
+																			placeholder="Mô tả chi tiết / Tiền sử gia đình khác..."
+																			autocomplete="off">
+													</div>
+
+													<div class="medical-history-tabs" id="giaDinhTabs">
+															<button type="button" class="medical-history-tab-btn active" data-medical-history-action="switch-family-tab" data-medical-history-family-tab="z80">U ác tính (Z80)</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-family-tab" data-medical-history-family-tab="z81">Tâm thần, hành vi (Z81)</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-family-tab" data-medical-history-family-tab="z82">Mạn tính (Z82)</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-family-tab" data-medical-history-family-tab="z83">Bệnh lý khác (Z83)</button>
+													</div>
+													<div class="medical-history-suggestion-box" id="giaDinhList">
+														<div data-gd-group="z80">
+															<div class="medical-history-group-label">Bệnh lý nan y (U ác tính)</div>
+														</div>
+																<div data-gd-group="z81" class="medical-history-hidden">
+															<div class="medical-history-group-label">Bệnh lý tâm thần & Chuyển hóa</div>
+														</div>
+																<div data-gd-group="z82" class="medical-history-hidden">
+															<div class="medical-history-group-label">Bệnh lý tim mạch & Mạn tính</div>
+														</div>
+																<div data-gd-group="z83" class="medical-history-hidden">
+															<div class="medical-history-group-label">Bệnh lý khác (Z83-Z84)</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+
+											<!-- ── DỊ ỨNG THUỐC ── -->
+											<div class="medical-history-section{% if inline_medical_history_is_doctor_flat %} medical-history-section--allergy medical-history-workbench-pane{% endif %}"{% if inline_medical_history_is_doctor_flat %} data-medical-history-workbench-pane="allergy" hidden{% endif %}>
+												<div class="medical-history-section-head">
+													<span class="medical-history-section-title">Dị ứng thuốc</span>
+												</div>
+												<div class="medical-history-section-body">
+													<div class="medical-history-tabs medical-history-tabs--allergy" id="drugAllergyTabs">
+															<button type="button" class="medical-history-tab-btn active" data-medical-history-action="switch-allergy-tab" data-allergy-tab="all">Tổng hợp</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-allergy-tab" data-allergy-tab="nghi_ngo">Nghi ngờ</button>
+															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-allergy-tab" data-allergy-tab="chac_chan">Chắc chắn</button>
+													</div>
+															<div class="medical-history-chip-area medical-history-chip-area--allergy" id="drugAllergyChips" data-medical-history-action="focus-allergy-input">
+																<input class="medical-history-chip-input" id="drugAllergyInput" placeholder="Gõ tên thuốc dị ứng rồi Enter..." data-medical-history-action="allergy-keydown">
+													</div>
+													<table class="medical-history-allergy-table" id="drugAllergyTable">
+														<thead>
+															<tr>
+																				<th class="medical-history-allergy-col-name">Dị nguyên / Thuốc</th>
+																				<th class="text-center medical-history-allergy-col-certainty">Nghi ngờ</th>
+																				<th class="text-center medical-history-allergy-col-certainty">Chắc chắn</th>
+																				<th class="medical-history-allergy-col-manifest">Biểu hiện lâm sàng</th>
+																				<th class="medical-history-allergy-col-action"></th>
+															</tr>
+														</thead>
+														<tbody id="drugAllergyBody">
+														</tbody>
+													</table>
+															<button type="button" class="medical-history-add-row-btn" data-medical-history-action="add-allergy-row">
+														<i class="fas fa-plus"></i> Thêm dòng
+													</button>
+												</div>
+											</div>
+											{% if inline_medical_history_is_doctor_flat %}
+												</div><!-- /medical-history-workbench-main -->
+											</div><!-- /medical-history-workbench -->
+											{% endif %}
+			</div>
+		</div><!-- /medical-history-panel-body -->

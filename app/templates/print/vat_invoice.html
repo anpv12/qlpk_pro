@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa đơn giá trị gia tăng</title>
+  <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/print/vat_invoice.css?v={{ app_version }}">
+</head>
+<body>
+    <div class="invoice-wrapper">
+        <div class="invoice-watermark">{{ clinic_info.watermark or buyer_info.company_name or seller_info.name }}</div>
+
+        <div class="header-line">
+            <div class="logo-block">
+                {% if clinic_info.logo_url %}
+                    <img src="{{ clinic_info.logo_url }}" alt="Clinic logo">
+                {% endif %}
+                <div class="qr-holder">
+                    {% if invoice_meta.qr_code_url %}
+                        <img src="{{ invoice_meta.qr_code_url }}" alt="QR code">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="title-block">
+                <h1>HÓA ĐƠN GIÁ TRỊ GIA TĂNG</h1>
+                <h2>(VAT INVOICE)</h2>
+                <div class="issue-date">
+                    Ngày (Date) {{ "%02d"|format(invoice_date.day) }} tháng {{ "%02d"|format(invoice_date.month) }} năm {{ invoice_date.year }}
+                </div>
+            </div>
+            <div class="serial-block">
+                <p><strong>Ký hiệu (Serial):</strong> {{ invoice_meta.symbol }}</p>
+                <p><strong>Số (No.):</strong> <span class="number">{{ invoice_meta.number }}</span></p>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+        <div class="seller-qr-wrapper">
+            <div class="party-block seller-block">
+                <div class="party-row">
+                    <span class="label">Đơn vị bán hàng <span class="en">(Seller)</span>:</span>
+                    <span class="value emphasis">{{ seller_info.name }}</span>
+                </div>
+                <div class="party-row">
+                    <span class="label">Mã số thuế <span class="en">(Tax code)</span>:</span>
+                    <span class="value">{{ seller_info.tax_id }}</span>
+                </div>
+                <div class="party-row">
+                    <span class="label">Địa chỉ <span class="en">(Address)</span>:</span>
+                    <span class="value">{{ seller_info.address }}</span>
+                </div>
+                <div class="party-row">
+                    <span class="label">Tài khoản <span class="en">(A/C number)</span>:</span>
+                    <span class="value">{{ seller_info.bank_account or '---' }}</span>
+                </div>
+            </div>
+            <div class="qr-holder">
+                {% if invoice_meta.qr_code_url %}
+                    <img src="{{ invoice_meta.qr_code_url }}" alt="QR code">
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="section-divider">
+        <div class="party-block buyer-block">
+            <div class="party-row">
+                <span class="label">Họ tên người mua hàng <span class="en">(Buyer)</span>:</span>
+                <span class="value">{{ buyer_info.person_name }}</span>
+            </div>
+            <div class="party-row">
+                <span class="label">Tên đơn vị <span class="en">(Company's name)</span>:</span>
+                <span class="value emphasis">{{ buyer_info.company_name }}</span>
+            </div>
+            <div class="party-row">
+                <span class="label">Mã số thuế <span class="en">(Tax code)</span>:</span>
+                <span class="value">{{ buyer_info.tax_id }}</span>
+            </div>
+            <div class="party-row">
+                <span class="label">Địa chỉ <span class="en">(Address)</span>:</span>
+                <span class="value">{{ buyer_info.address }}</span>
+            </div>
+            <div class="party-row">
+                <span class="label">Số tài khoản <span class="en">(A/C number)</span>:</span>
+                <span class="value">{{ buyer_info.bank_account or '---' }}</span>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+        <div class="party-block payment-row">
+            <div class="party-row">
+                <span class="label">Hình thức thanh toán <span class="en">(Payment method)</span>:</span>
+                <span class="value">{{ invoice_meta.payment_method or 'Tiền mặt/Chuyển khoản' }}</span>
+            </div>
+            <div class="party-row">
+                <span class="label">Đơn vị tiền tệ <span class="en">(Currency)</span>:</span>
+                <span class="value">VND</span>
+            </div>
+        </div>
+
+        <table class="goods-table">
+            <thead>
+                <tr>
+                    <th>STT<br>(No.)</th>
+                    <th>Tên hàng hóa, dịch vụ<br>(Description)</th>
+                    <th>Đơn vị tính<br>(Unit)</th>
+                    <th>Số lượng<br>(Quantity)</th>
+                    <th>Đơn giá<br>(Unit price)</th>
+                    <th>Chiết khấu<br>(Discount)</th>
+                    <th>Thuế GTGT<br>(VAT)</th>
+                    <th>Thành tiền<br>(Amount)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for service in services %}
+                <tr>
+                    <td>{{ service.stt }}</td>
+                    <td class="description">{{ service.name }}</td>
+                    <td>{{ service.unit }}</td>
+                    <td>{{ service.quantity }}</td>
+                    <td class="numeric">{{ service.unit_price }}</td>
+                    <td class="numeric">{{ service.discount_percent }}%</td>
+                    <td class="numeric">{{ service.tax_percent }}%</td>
+                    <td class="numeric">{{ service.amount }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="vat-invoice-empty-row">Chưa có dịch vụ nào</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="7" class="vat-invoice-summary-label">Cộng tiền hàng (Total amount):</td>
+                    <td class="numeric">{{ totals.subtotal }}</td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="vat-invoice-summary-label">Thuế suất GTGT (VAT rate): {{ totals.vat_rate }}%</td>
+                    <td class="numeric">{{ totals.tax }}</td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="vat-invoice-summary-label">Tổng cộng tiền thanh toán (Total payment):</td>
+                    <td class="numeric">{{ totals.total }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="amount-words">
+            <strong>Số tiền viết bằng chữ (Amount in words):</strong> {{ totals.amount_in_words }}.
+        </div>
+
+        <div class="signature-area">
+            <div>
+                <p><strong>Người mua hàng (Buyer)</strong></p>
+                <p><em>(Ký, ghi rõ họ tên)</em></p>
+            </div>
+            <div>
+                <p><strong>Người bán hàng (Seller)</strong></p>
+                <p><em>(Ký, ghi rõ họ tên)</em></p>
+                <div class="stamp-box">
+                    Signature Valid<br>
+                    Ký bởi: {{ seller_info.name }}<br>
+                    Ngày ký: {{ invoice_meta.signature_date or invoice_date.strftime('%d-%m-%Y') }}
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" onclick="window.print()">In hóa đơn</button>
+            <button type="button" onclick="window.close()">Đóng</button>
+        </div>
+    </div>
+</body>
+</html>

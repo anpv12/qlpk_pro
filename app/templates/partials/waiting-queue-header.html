@@ -1,0 +1,15 @@
+<div class="qlpk-queue-panel__header">
+	<div class="qlpk-queue-panel__header-inner">
+		<h6 class="qlpk-queue-panel__title">
+			<i class="bi bi-list-ul qlpk-section-icon" aria-hidden="true"></i>
+			<span>{{ queue_title }}</span>
+		</h6>
+		<div class="qlpk-queue-panel__filters">
+			<div class="qlpk-queue-panel__search">
+				<i class="bi bi-search qlpk-queue-panel__search-icon" aria-hidden="true"></i>
+				<input type="text" class="qlpk-queue-panel__search-input" id="{{ queue_search_id }}"
+					placeholder="{{ queue_search_placeholder | default('Tìm bệnh nhân...') }}">
+			</div>
+		</div>
+	</div>
+</div>

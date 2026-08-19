@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý Tài liệu</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/document-management.css?v={{ app_version }}">
+</head>
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+				<header class="page-header">
+					<h1><i class="bi bi-folder-symlink"></i> QUẢN LÝ TÀI LIỆU PHÒNG KHÁM</h1>
+				</header>
+				<div class="doc-container">
+					<!-- Cột trái: Cây thư mục -->
+					<aside class="tree-sidebar">
+						<div class="tree-header">
+							<h3>CẤU TRÚC THƯ MỤC</h3>
+							<button class="btn-custom admin-only-btn doc-create-folder-btn" id="btnCreateFolder">
+								<i class="bi bi-plus-lg"></i> Tạo
+							</button>
+						</div>
+						<div class="tree-content">
+							<ul class="tree-list" id="folderTree">
+								<!-- Cây thư mục sẽ được render bằng JS -->
+							</ul>
+						</div>
+					</aside>
+					<!-- Cột phải: Vùng làm việc -->
+					<div class="workspace">
+						<div class="workspace-header">
+							<div class="breadcrumb-custom" id="folderBreadcrumb">
+								<span>Chưa chọn thư mục</span>
+							</div>
+							<div class="d-flex gap-2">
+								<div class="input-group doc-search-group">
+									<input type="text" class="form-control doc-search-input" id="searchDocument" placeholder="Tìm file...">
+									<button class="btn btn-outline-secondary doc-search-button"><i class="bi bi-search"></i></button>
+								</div>
+							</div>
+						</div>
+						<div class="workspace-content">
+							<div class="upload-dropzone admin-only-btn" id="uploadDropzone">
+								<div class="upload-dropzone-info">
+									<i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+									<div class="upload-dropzone-text">
+										<h4>THÊM TÀI LIỆU VÀO THƯ MỤC NÀY</h4>
+										<p>Kéo thả file vào đây hoặc chọn tải lên / thêm Link từ Drive</p>
+									</div>
+								</div>
+								<div class="d-flex gap-2">
+									<button class="btn-custom doc-add-link-btn" id="btnAddLink">
+										<i class="bi bi-link-45deg"></i> Thêm Link (Drive/Web)
+									</button>
+									<button class="btn-custom doc-upload-file-btn" id="btnUploadFile">
+										<i class="bi bi-upload"></i> Chọn file từ máy tính
+									</button>
+									<input type="file" id="fileInputHidden" class="doc-hidden-input" multiple>
+								</div>
+							</div>
+							<table class="table-custom">
+								<thead>
+									<tr>
+										<th width="50%">TÊN TÀI LIỆU</th>
+										<th width="15%">KÍCH THƯỚC</th>
+										<th width="20%">NGÀY CẬP NHẬT</th>
+										<th width="15%" class="text-center admin-only-col">THAO TÁC</th>
+									</tr>
+								</thead>
+								<tbody id="documentTableBody">
+									<!-- Dữ liệu file sẽ render qua JS -->
+									<tr><td colspan="4" class="text-center doc-empty-cell">Vui lòng chọn thư mục</td></tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+
+
+	<!-- Modal Quản lý Thư mục -->
+	<div class="config-overlay doc-modal-layer" id="folderModal">
+		<div class="config-modal doc-folder-modal">
+			<div class="config-modal-header">
+				<h3 id="folderModalTitle"><i class="bi bi-folder-plus me-2"></i>Thêm Thư Mục</h3>
+				<i class="bi bi-x-lg doc-modal-close" onclick="$('#folderModal').removeClass('doc-modal-open')"></i>
+			</div>
+			<div class="config-modal-body">
+				<form id="folderForm">
+					<input type="hidden" id="folderId">
+					<input type="hidden" id="parentFolderId">
+					<div class="config-group">
+						<label>Tên thư mục <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="folderName" required placeholder="Nhập tên thư mục...">
+					</div>
+				</form>
+			</div>
+			<div class="config-modal-footer">
+				<button class="btn btn-outline-secondary" onclick="$('#folderModal').removeClass('doc-modal-open')">Hủy</button>
+				<button class="btn btn-primary doc-primary-action" id="btnSaveFolder">Lưu thư mục</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Thêm Link -->
+	<div class="config-overlay doc-modal-layer" id="linkModal">
+		<div class="config-modal doc-link-modal">
+			<div class="config-modal-header">
+				<h3 id="linkModalTitle"><i class="bi bi-link-45deg me-2"></i>Thêm Liên Kết (Link)</h3>
+				<i class="bi bi-x-lg doc-modal-close" onclick="$('#linkModal').removeClass('doc-modal-open')"></i>
+			</div>
+			<div class="config-modal-body">
+				<form id="linkForm">
+					<input type="hidden" id="linkId">
+					<div class="config-group">
+						<label>Tên hiển thị <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="linkName" required placeholder="Ví dụ: Tài liệu tập huấn">
+					</div>
+					<div class="config-group">
+						<label>Đường dẫn URL <span class="text-danger">*</span></label>
+						<input type="url" class="form-control" id="linkUrl" required placeholder="https://...">
+					</div>
+				</form>
+			</div>
+			<div class="config-modal-footer">
+				<button class="btn btn-outline-secondary" onclick="$('#linkModal').removeClass('doc-modal-open')">Hủy</button>
+				<button class="btn btn-primary doc-primary-action" id="btnSaveLink">Lưu liên kết</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/document-management.js?v={{ app_version }}"></script>
+</body>
+</html>

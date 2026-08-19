@@ -1,0 +1,466 @@
+#!/usr/bin/env python3
+"""Static owner and dependency guardrail for the Doctor examination screen."""
+
+from __future__ import annotations
+
+from html.parser import HTMLParser
+from pathlib import Path
+import subprocess
+from urllib.parse import urlsplit
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PAGE_TEMPLATE = ROOT / "app/templates/doctor-examination.html"
+WORKSPACE_TEMPLATES = (
+    ROOT / "app/templates/partials/doctor-clinical-workspace.html",
+    ROOT / "app/templates/partials/doctor-indications-panel.html",
+)
+ACTIVE_JS_ROOT = ROOT / "app/static/js/doctor-examination"
+ACTIVE_JS = (
+    ROOT / "app/static/js/doctor-examination.js",
+    *ACTIVE_JS_ROOT.glob("*.js"),
+    ROOT / "app/static/js/components/doctor-component-config.js",
+    ROOT / "app/static/js/components/medical-history-form.js",
+    ROOT / "app/static/js/components/medical-history-substance-fields.js",
+    ROOT / "app/static/js/components/clinical-examination-form.js",
+    ROOT / "app/static/js/components/doctor-services-form.js",
+    ROOT / "app/static/js/components/doctor-indications-form.js",
+)
+ATTACHMENT_JS = (
+    ROOT / "app/static/js/shared/confirmation-dialog.js",
+    ROOT / "app/static/js/receptionist/document-attachment-utils.js",
+    ROOT / "app/static/js/receptionist/document-attachment-list.js",
+    ROOT / "app/static/js/doctor-examination/document-attachments-bridge.js",
+    ROOT / "app/static/js/receptionist-new.js",
+)
+
+DOCTOR_ENTRY_ASSET = "/static/js/doctor-examination-entry.js"
+CLASSIC_SHARED_ASSETS = {
+    "/static/js/app-version-check.js",
+    "/static/js/flatpickr-vn.js",
+    "/static/js/datepicker-init.js",
+    "/static/js/permission-check.js",
+    "/static/js/shared/icon-system.js",
+    "/static/js/shared/confirmation-dialog.js",
+    "/static/js/sidebar-dry-loader.js",
+}
+
+ROOT_SECTION_IDS = (
+    "doctorReceptionistIntakePanel",
+    "doctorHistoryPanel",
+    "doctorClinicalDecisionPanel",
+    "doctorServicePanel",
+    "doctorIndicationsPanel",
+)
+
+REGISTRY_OWNERS = {
+    "doctorComponentConfig": "app/static/js/components/doctor-component-config.js",
+    "medicalHistoryForm": "app/static/js/components/medical-history-form.js",
+    "medicalHistorySubstanceFields": "app/static/js/components/medical-history-substance-fields.js",
+    "supportRuntime": "app/static/js/doctor-examination/support-runtime.js",
+    "prescriptionModel": "app/static/js/doctor-examination/prescription-model.js",
+    "prescriptionRows": "app/static/js/doctor-examination/prescription-row-renderer.js",
+    "prescriptionHistory": "app/static/js/doctor-examination/prescription-history-ui.js",
+    "prescriptionForm": "app/static/js/doctor-examination/prescription-ui.js",
+    "servicesForm": "app/static/js/components/doctor-services-form.js",
+    "indicationsForm": "app/static/js/components/doctor-indications-form.js",
+    "supportModulesUi": "app/static/js/doctor-examination/support-modules-ui.js",
+    "clinicalDetails": "app/static/js/doctor-examination/clinical-detail-persistence.js",
+    "clinicalExaminationForm": "app/static/js/components/clinical-examination-form.js",
+    "workspaceSaveController": "app/static/js/doctor-examination/workspace-save-controller.js",
+    "clinicalWorkspace": "app/static/js/doctor-examination/clinical-workspace-ui.js",
+    "draftRecovery": "app/static/js/doctor-examination/draft-recovery.js",
+    "documentAttachments": "app/static/js/doctor-examination/document-attachments-bridge.js",
+    "medicalHistoryBridge": "app/static/js/doctor-examination/medical-history-bridge.js",
+    "workspaceLeaveGuard": "app/static/js/doctor-examination/workspace-leave-guard.js",
+    "doctorPlatformBoundaries": "app/static/js/doctor-examination/platform-boundaries.js",
+}
+
+RETIRED_ALIASES = (
+    "QLPKDoctorComponentConfig",
+    "QLPKSupportRuntime",
+    "QLPKMedicalHistoryForm",
+    "QLPKMedicalHistorySubstanceFields",
+    "QLPKMedicalHistoryBridge",
+    "QLPKClinicalDetails",
+    "QLPKClinicalExaminationForm",
+    "QLPKPrescriptionForm",
+    "QLPKServicesForm",
+    "QLPKIndicationsForm",
+    "QLPKSupportModulesUi",
+    "QLPKClinicalWorkspace",
+    "QLPKDoctorWorkspaceSaveController",
+    "QLPKDoctorDraftRecovery",
+    "QLPKDoctorDocumentAttachments",
+	"QLPKDoctorClinicalWorkspace",
+    "QLPKDoctorSupportModulesUi",
+    "QLPKDoctorServicesForm",
+    "QLPKDoctorIndicationsForm",
+	"QLPKDoctorPrescriptionUi",
+	"QLPKDoctorMedicalHistoryBridge",
+	"QLPKDoctorSupportRuntime",
+	"QLPKDoctorPrescriptionModel",
+	"QLPKDoctorPrescriptionRows",
+	"QLPKDoctorPrescriptionHistory",
+)
+
+
+class MarkupContractParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.scripts: list[str] = []
+        self.module_scripts: list[str] = []
+        self.ids: list[str] = []
+        self.root_section_ids: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag.lower() == "script" and attributes.get("src"):
+            self.scripts.append(urlsplit(attributes["src"]).path)
+            if (attributes.get("type") or "").lower() == "module":
+                self.module_scripts.append(urlsplit(attributes["src"]).path)
+        if attributes.get("id"):
+            self.ids.append(attributes["id"])
+        classes = set((attributes.get("class") or "").split())
+        if "doctor-workspace-section" in classes and attributes.get("id"):
+            self.root_section_ids.append(attributes["id"])
+
+
+def read_markup() -> MarkupContractParser:
+    parser = MarkupContractParser()
+    parser.feed(PAGE_TEMPLATE.read_text(encoding="utf-8"))
+    for path in WORKSPACE_TEMPLATES:
+        parser.feed(path.read_text(encoding="utf-8"))
+    return parser
+
+
+def source_text() -> str:
+    paths = sorted({path for path in (*ACTIVE_JS, ROOT / "app/static/js/doctor-examination-entry.js") if path.exists()})
+    return "\n".join(path.read_text(encoding="utf-8", errors="ignore") for path in paths)
+
+
+def registry_registration_count(name: str) -> int:
+    marker = f"register('{name}'"
+    return sum(
+        text.count(marker)
+        for text in (
+            path.read_text(encoding="utf-8", errors="ignore")
+            for path in ACTIVE_JS
+            if path.exists()
+        )
+    )
+
+
+def main() -> int:
+    failures: list[str] = []
+    parser = read_markup()
+
+    duplicate_assets = sorted({asset for asset in parser.scripts if parser.scripts.count(asset) > 1})
+    if duplicate_assets:
+        failures.extend(f"duplicate script asset: {asset}" for asset in duplicate_assets)
+
+    if parser.module_scripts != [DOCTOR_ENTRY_ASSET]:
+        failures.append(
+            f"Doctor template must have exactly one module entry {DOCTOR_ENTRY_ASSET}; "
+            f"found {parser.module_scripts}"
+        )
+
+    classic_local_assets = [
+        asset for asset in parser.scripts
+        if asset.startswith("/static/js/")
+        and asset != DOCTOR_ENTRY_ASSET
+        and asset not in CLASSIC_SHARED_ASSETS
+    ]
+    if classic_local_assets:
+        failures.extend(f"Doctor local asset still loaded as classic script: {asset}" for asset in classic_local_assets)
+
+    entry_path = ROOT / "app/static/js/doctor-examination-entry.js"
+    entry_text = entry_path.read_text(encoding="utf-8", errors="ignore") if entry_path.exists() else ""
+    required_entry_imports = (
+        "./doctor-examination/module-registry.js",
+        "./components/doctor-component-config.js",
+        "./components/medical-history-form.js",
+        "./doctor-examination/medical-history-context.js",
+        "./doctor-examination/medical-history-core.js",
+        "./doctor-examination/medical-history-workbench.js",
+        "./doctor-examination/medical-history-allergy.js",
+        "./doctor-examination/medical-history-risk.js",
+        "./doctor-examination/medical-history-suggestions.js",
+        "./doctor-examination/safety-plan.js",
+        "./orders/order-autocomplete-utils.js",
+        "./doctor-examination/platform-boundaries.js",
+        "./doctor-examination.js",
+    )
+    for import_path in required_entry_imports:
+        if f"'{import_path}'" not in entry_text and f'"{import_path}"' not in entry_text:
+            failures.append(f"Doctor ESM entry missing import: {import_path}")
+
+    platform_import = "./doctor-examination/platform-boundaries.js"
+    root_import = "./doctor-examination.js"
+    if platform_import in entry_text and root_import in entry_text:
+        if entry_text.index(platform_import) > entry_text.index(root_import):
+            failures.append("platform boundaries phải được import trước page orchestrator")
+    else:
+        failures.append("Doctor entry thiếu thứ tự platform boundaries/page orchestrator")
+
+    for section_id in ROOT_SECTION_IDS:
+        count = parser.root_section_ids.count(section_id)
+        if count != 1:
+            failures.append(f"root section {section_id}: expected 1, found {count}")
+    if len(parser.root_section_ids) != len(ROOT_SECTION_IDS):
+        failures.append(
+            f"root section count: expected {len(ROOT_SECTION_IDS)}, found {len(parser.root_section_ids)}"
+        )
+    if parser.ids.count("doctorPrescriptionWorkspace") != 1:
+        failures.append(
+            f"doctorPrescriptionWorkspace: expected 1, found {parser.ids.count('doctorPrescriptionWorkspace')}"
+        )
+    for control_id in (
+        "doctorPrescriptionUsageMode",
+        "doctorPrescriptionMedicineDays",
+        "doctorPrescriptionReExamToggle",
+        "doctorPrescriptionReExamDateTime",
+    ):
+        if parser.ids.count(control_id) != 1:
+            failures.append(f"prescription overview control {control_id}: expected 1, found {parser.ids.count(control_id)}")
+    if parser.ids.count("doctorPrescriptionUsageInstructions"):
+        failures.append("retired Doctor prescription general-usage control returned")
+
+    indications_markup = (ROOT / "app/templates/partials/doctor-indications-panel.html").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    for marker in (
+        'id="doctorIndicationCatalog"',
+        'role="combobox"',
+        'aria-autocomplete="list"',
+        'id="doctorIndicationCatalogId"',
+        'id="doctorIndicationCatalogDropdown"',
+        'role="listbox"',
+    ):
+        if marker not in indications_markup:
+            failures.append(f"Doctor indication autocomplete thiếu markup contract: {marker}")
+    if '<select id="doctorIndicationCatalog"' in indications_markup:
+        failures.append("Doctor indication catalog quay lại native select")
+
+    indications_runtime = (ROOT / "app/static/js/components/doctor-indications-form.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    for marker in (
+        "setupOrderFormAutocomplete",
+        "includeCatalogWhenEmpty: true",
+        "normalizeSearch: true",
+        "selectFirstOnEnter: true",
+        "syncCatalogDropdownGeometry",
+        "--doctor-indication-dropdown-inline-start",
+        "--doctor-indication-dropdown-max-block-size",
+        "ownerDocument.addEventListener('scroll', syncIfOpen, true)",
+        "clearCatalogSelection(doc, { clearText: false, hide: false })",
+        "typedName !== orderName",
+        "STATE.catalogIndex = buildCatalogIndex(STATE.catalog);",
+    ):
+        if marker not in indications_runtime:
+            failures.append(f"Doctor indication autocomplete thiếu runtime contract: {marker}")
+
+    indications_css = (ROOT / "app/static/css/pages/doctor-indications.css").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    for marker in (
+        "position: fixed;",
+        "--doctor-indication-dropdown-inline-start",
+        "--doctor-indication-dropdown-inline-size",
+        "--doctor-indication-dropdown-max-block-size",
+        ".doctor-indications-autocomplete__dropdown--upward",
+    ):
+        if marker not in indications_css:
+            failures.append(f"Doctor indication autocomplete thiếu layout contract: {marker}")
+
+    runtime = source_text()
+    for alias in RETIRED_ALIASES:
+        if alias in runtime:
+            failures.append(f"retired Doctor alias still present: {alias}")
+
+    attachment_runtime = "\n".join(
+        path.read_text(encoding="utf-8", errors="ignore")
+        for path in ATTACHMENT_JS
+        if path.exists()
+    )
+    if "window.confirm" in attachment_runtime or "confirm: window.confirm" in attachment_runtime:
+        failures.append("attachment runtime still contains native window.confirm")
+    if "/static/js/shared/confirmation-dialog.js" not in parser.scripts:
+        failures.append("shared confirmation dialog is not loaded by Doctor template")
+
+    for module_name, relative_path in REGISTRY_OWNERS.items():
+        expected_path = ROOT / relative_path
+        count = registry_registration_count(module_name)
+        if count != 1:
+            failures.append(f"registry module {module_name}: expected 1 registration, found {count}")
+        if not expected_path.exists():
+            failures.append(f"registry owner file missing: {relative_path}")
+
+    support_modules = (ROOT / "app/static/js/doctor-examination/support-modules-ui.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    if "prescriptionRows" in support_modules or "renderPrescription" in support_modules:
+        failures.append("support-modules-ui.js contains prescription row/render ownership")
+
+    orchestrator = (ROOT / "app/static/js/doctor-examination.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    forbidden_orchestrator_fallbacks = (
+        "|| window.QLPKCurrentAppointment",
+        "window.QLPKPatientModalContract ||",
+        "window.setupPrescriptionTabPagination",
+    )
+    for fallback in forbidden_orchestrator_fallbacks:
+        if fallback in orchestrator:
+            failures.append(f"page orchestrator còn fallback global không hợp lệ: {fallback}")
+
+    draft_recovery = (ROOT / "app/static/js/doctor-examination/draft-recovery.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    required_draft_contracts = (
+        "function classifyDraftRecord",
+        "function mergeFailedSaveDraft",
+        "function resolveDraftRecord",
+        "if (sameValue(baseline, record.snapshot)) return 'redundant';",
+        "if (!sameValue(baseline, record.baseSnapshot)) return 'superseded';",
+        "if (disposition === 'superseded' && record.recoveryMode !== 'failed-save')",
+        "await deleteRecordIfMatches(record);",
+        "if (options.recoveryMode === 'failed-save') STATE.recoveryMode = 'failed-save';",
+        "recoveryMode: STATE.recoveryMode",
+    )
+    for marker in required_draft_contracts:
+        if marker not in draft_recovery:
+            failures.append(f"Doctor draft recovery thiếu contract: {marker}")
+    forbidden_draft_contracts = (
+        "baseConflict",
+        "confirmBaseConflict",
+        "Bản nháp đã cũ hơn dữ liệu hiện tại",
+        "Vẫn khôi phục",
+    )
+    for marker in forbidden_draft_contracts:
+        if marker in draft_recovery:
+            failures.append(f"Doctor draft recovery còn conflict UX đã loại bỏ: {marker}")
+
+    prescription_ui = (ROOT / "app/static/js/doctor-examination/prescription-ui.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    prescription_model = (ROOT / "app/static/js/doctor-examination/prescription-model.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    prescription_css = (ROOT / "app/static/css/pages/doctor-prescription.css").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    if "doctorPrescriptionUsageInstructions" in prescription_ui or "doctorPrescriptionUsageInstructions" in draft_recovery:
+        failures.append("retired Doctor prescription general-usage runtime returned")
+    for marker in (
+        "preservedGlobalUsage: ''",
+        "STATE.preservedGlobalUsage = usageState.globalUsage || '';",
+        "STATE.preservedGlobalUsage,",
+    ):
+        if marker not in prescription_ui:
+            failures.append(f"Doctor prescription thiếu bảo toàn general_usage legacy: {marker}")
+    if "delete candidate.usageInstructions;" not in draft_recovery:
+        failures.append("Doctor draft comparison chưa loại key general-usage đã nghỉ")
+    for marker in (
+        "const days = parseMedicineDays(medicineDays, 1);",
+    ):
+        if marker not in prescription_model:
+            failures.append(f"Doctor prescription quantity thiếu công thức ngày trống: {marker}")
+    for marker in (
+        "const medicineDaysMissing = parseMedicineDays(medicineDays) === null;",
+        "if (medicineDaysMissing && preserveWhenDaysMissing) return;",
+    ):
+        if marker not in prescription_ui:
+            failures.append(f"Doctor prescription quantity thiếu lifecycle bảo toàn đơn cũ: {marker}")
+    active_recalculation_marker = (
+        "syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });"
+    )
+    if prescription_ui.count(active_recalculation_marker) != 4:
+        failures.append(
+            "Doctor prescription quantity phải tính lại ở đúng 4 tương tác: "
+            "chọn thuốc, sửa liều, sửa số ngày và đổi cách tính liều"
+        )
+    for marker in (
+        "grid-template-columns: minmax(15rem, 0.85fr) minmax(15rem, 0.8fr) minmax(30rem, 2fr);",
+        "@container doctor-prescription-main (max-width: 60rem)",
+        "@container doctor-prescription-main (max-width: 38rem)",
+    ):
+        if marker not in prescription_css:
+            failures.append(f"Doctor prescription overview thiếu layout contract: {marker}")
+    for marker in (
+        ".doctor-prescription-summary-field__input-line input:focus",
+        ".doctor-prescription-summary-field--days .doctor-prescription-summary-field__input-line input:focus-visible",
+        "flex: 1 1 0;",
+        "inline-size: 0;",
+        "-moz-appearance: textfield;",
+        'input[type="number"]::-webkit-inner-spin-button',
+        "-webkit-appearance: none;",
+    ):
+        if marker not in prescription_css:
+            failures.append(f"Doctor prescription medicine-days input thiếu control contract: {marker}")
+
+    save_controller = (ROOT / "app/static/js/doctor-examination/workspace-save-controller.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    if save_controller.count("if (typeof afterSave === 'function') await afterSave();") != 2:
+        failures.append("Doctor save owner phải rebase/xóa nháp sau cả save có thay đổi và save sạch")
+    if "captureNow({ silent: true, recoveryMode: 'failed-save' })" not in save_controller:
+        failures.append("Doctor save failure phải đánh dấu nháp để rebase an toàn sau partial save")
+    if "return draftRecovery.rebaseAfterSave();" not in orchestrator:
+        failures.append("Doctor orchestrator không trả Promise xóa nháp cho save owner")
+
+    policy_check = subprocess.run(
+        ["node", "scripts/check_doctor_draft_recovery_policy.js"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if policy_check.returncode != 0:
+        failures.append(f"Doctor draft recovery policy failed:\n{policy_check.stdout.strip()}")
+
+    prescription_quantity_policy_check = subprocess.run(
+        ["node", "scripts/check_doctor_prescription_quantity_policy.js"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if prescription_quantity_policy_check.returncode != 0:
+        failures.append(
+            "Doctor prescription quantity policy failed:\n"
+            f"{prescription_quantity_policy_check.stdout.strip()}"
+        )
+
+    context_source = (ROOT / "app/static/js/doctor-examination/component-context.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    if "setCurrent" not in context_source or "getCurrent" not in context_source:
+        failures.append("Doctor component context thiếu current-context contract")
+
+    base_css = (ROOT / "app/static/css/components/doctor-component-base.css").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    for marker in ("[data-doctor-component]", "aria-busy", "focus-visible", "data-state='empty'"):
+        if marker not in base_css:
+            failures.append(f"Doctor component base thiếu state/layout contract: {marker}")
+
+    if failures:
+        print("Doctor examination contract failed:")
+        for failure in failures:
+            print(f"- {failure}")
+        return 1
+
+    print(f"[OK] Doctor assets: one ESM entry plus {len(CLASSIC_SHARED_ASSETS)} intentional shared classic boundaries")
+    print(f"[OK] Doctor root sections: {len(ROOT_SECTION_IDS)} unique sections")
+    print("[OK] Doctor registry modules: one registration each")
+    print("[OK] Retired aliases: none in active Doctor runtime")
+    print("[OK] Prescription owner: single state/render owner")
+    print(policy_check.stdout.strip())
+    print(prescription_quantity_policy_check.stdout.strip())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

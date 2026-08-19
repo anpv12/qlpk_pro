@@ -1,0 +1,1 @@
+"""Medicine service module helpers."""

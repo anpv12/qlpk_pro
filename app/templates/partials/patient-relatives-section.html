@@ -1,0 +1,7 @@
+{% set patient_intake_config = patient_intake_config | default({}, true) %}
+{% set relatives_config = patient_intake_config.get('relatives', {}) %}
+{% set patient_relatives_aria_label = relatives_config.get('aria_label', 'Người thân liên kết') %}
+
+<section class="receptionist-card--relatives" aria-label="{{ patient_relatives_aria_label }}">
+	<div class="relative-table-component"></div>
+</section>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Danh sách hóa đơn</title>
+
+	<!-- ── CDN ── -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+		rel="stylesheet">
+
+	<!-- ── Local CSS (chỉ giữ những gì thực sự cần) ── -->
+	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+
+	<!-- ── Scripts (head) ── -->
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="pw-page">
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<!-- Sidebar (DRY loaded) -->
+			<div id="sidebar-container" class="col-md-3 col-lg-2"></div>
+
+			<!-- Main Content -->
+			<div class="col-md-9 col-lg-10 pw-main">
+				<div class="pw-card">
+					<div class="pw-card-body">
+
+						<!-- ── Filter Bar ── -->
+						<div class="pw-filters">
+							<div class="pw-filter-group pw-filter-search-group">
+								<input type="text" class="pw-input pw-input--search" id="searchInput"
+									placeholder="🔍  Tên bệnh nhân, SĐT..." autocomplete="off">
+							</div>
+
+							<button class="pw-btn-refresh" id="refreshListBtn">
+								<i class="bi bi-arrow-clockwise"></i>Làm mới
+							</button>
+
+							<div class="pw-filters-divider"></div>
+
+							<div class="pw-filter-group">
+								<span class="pw-filter-label">Trạng thái</span>
+								<select class="pw-select pw-select--status" id="statusFilter">
+									<option value="">Tất cả</option>
+									<option value="UNPAID">Chờ thanh toán</option>
+									<option value="PAID">Đã thanh toán</option>
+								</select>
+							</div>
+
+							<div class="pw-filters-divider"></div>
+
+							<div class="pw-filter-group">
+								<span class="pw-filter-label">Từ</span>
+								<input type="text" class="pw-input pw-input--date js-datepicker" id="startDate"
+									data-alt-format="d/m/Y" data-date-format="Y-m-d" placeholder="dd/mm/yyyy">
+							</div>
+
+							<div class="pw-filter-group">
+								<span class="pw-filter-label">Đến</span>
+								<input type="text" class="pw-input pw-input--date js-datepicker" id="endDate"
+									data-alt-format="d/m/Y" data-date-format="Y-m-d" placeholder="dd/mm/yyyy">
+							</div>
+						</div>
+
+						<!-- ── Toolbar ── -->
+						<div class="pw-toolbar">
+							<div class="pw-toolbar-title">
+								<i class="bi bi-receipt-cutoff"></i>
+								Danh sách hóa đơn
+							</div>
+							<div class="pw-toolbar-actions">
+								<button class="pw-btn pw-btn--ghost" id="exportTableBtn">
+									<i class="bi bi-download"></i>Xuất dữ liệu
+								</button>
+								<button class="pw-btn pw-btn--primary" id="printBtn">
+									<i class="bi bi-file-earmark-text"></i>Hóa đơn
+								</button>
+							</div>
+						</div>
+
+						<!-- ── Data Table ── -->
+						<div class="pw-table-wrap">
+							<div class="loading-spinner" id="loadingSpinner">
+								<div class="spinner-border text-primary" role="status">
+									<span class="visually-hidden">Loading...</span>
+								</div>
+							</div>
+							<table class="pw-table" id="paymentTable">
+								<thead>
+									<tr>
+										<th class="text-center pw-col-checkbox">
+											<input type="checkbox" class="form-check-input" id="selectAll">
+										</th>
+										<th>Bệnh nhân</th>
+										<th>Số điện thoại</th>
+										<th>Ngày giờ</th>
+										<th>Bác sĩ khám</th>
+
+										<th class="text-center pw-col-status">Trạng thái</th>
+										<th class="text-center">Hành động</th>
+									</tr>
+								</thead>
+								<tbody id="paymentTableBody">
+									<!-- Data loaded by JS -->
+								</tbody>
+							</table>
+						</div>
+
+						<!-- ── Pagination ── -->
+						<div class="pw-pagination">
+							<div class="d-flex align-items-center gap-2">
+								<span>Hiển thị</span>
+								<select class="pw-select" id="perPageSelect">
+									<option value="10">10</option>
+									<option value="25">25</option>
+									<option value="50">50</option>
+									<option value="100">100</option>
+								</select>
+								<span>của <strong id="totalItems">0</strong> bản ghi</span>
+							</div>
+							<nav aria-label="Page navigation">
+								<ul class="pagination mb-0" id="pagination">
+									<!-- Generated by JS -->
+								</ul>
+							</nav>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ══════════════════════════════════════════════
+	     MODALS (giữ nguyên IDs cho JS binding)
+	     ══════════════════════════════════════════════ -->
+
+	<!-- Modal: Examination Detail (Invoice) -->
+	<div class="modal fade" id="examinationDetailModal" tabindex="-1" data-bs-backdrop="false">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">HÓA ĐƠN</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body invoice-modal-scrollable" id="examinationDetailContent">
+					<!-- Content loaded by JS -->
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn" id="printInvoiceBtn">
+						<i class="bi bi-printer me-1"></i>In hóa đơn
+					</button>
+					<button type="button" class="btn" id="exportInvoiceBtn">
+						Xác nhận hoá đơn
+					</button>
+					<button type="button" class="btn" data-bs-dismiss="modal">Huỷ</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal: Add Service -->
+	<div class="modal fade" id="addServiceModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Thêm dịch vụ</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label class="form-label">Chọn dịch vụ</label>
+						<select class="form-select" id="serviceSelect">
+							<option value="">Chọn dịch vụ</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Đơn giá (VNĐ)</label>
+						<input type="number" class="form-control" id="servicePrice" readonly>
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Chiết khấu (%)</label>
+						<input type="number" class="form-control" id="serviceDiscount" value="0" min="0" max="100">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Thuế (%)</label>
+						<input type="number" class="form-control" id="serviceTax" value="0" min="0" max="100">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button type="button" class="btn btn-primary" id="saveServiceBtn">Lưu</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ── Scripts (bottom) ── -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/shared/management-list-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/payment-waiting.css?v={{ app_version }}">
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/payment-waiting.js?v={{ app_version }}"></script>
+</body>
+
+</html>

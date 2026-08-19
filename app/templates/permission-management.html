@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phân quyền User</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/pages/permission-management.css?v={{ app_version }}">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<div class="container-fluid p-0">
+  <div class="row g-0">
+    <div id="sidebar-container" class="col-md-2"></div>
+    <main class="col-md-10 main-content">
+      <div class="header-bar">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
+            <li class="breadcrumb-item"><a href="index.html">QUẢN LÝ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">PHÂN QUYỀN USER</li>
+          </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="page-title">PHÂN QUYỀN USER</h2>
+        </div>
+      </div>
+      <div class="row mt-4 g-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm rounded-4 p-3 h-100">
+            <div class="fw-bold mb-2 permission-section-title">Danh sách Đơn vị/Người dùng</div>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="userSearchInput" placeholder="Tìm kiếm ...">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
+            <div class="user-tree permission-tree-panel" id="userTree"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card shadow-sm rounded-4 p-3 h-100 d-flex flex-column">
+            <div class="fw-bold mb-2 permission-section-title">Danh sách Nhóm vai trò / Vai trò</div>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="groupSearchInput" placeholder="Tìm kiếm ...">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
+            <div class="group-tree permission-tree-panel flex-grow-1 mb-3" id="groupTree"></div>
+            <div class="d-flex justify-content-start">
+              <button class="btn btn-primary save-btn px-5" id="savePermissionBtn"><i class="bi bi-save"></i> Lưu</button>
+            </div>
+            <div class="alert alert-success d-none mt-3" id="saveSuccess">Lưu phân quyền thành công!</div>
+            <div class="alert alert-danger d-none mt-3" id="saveError"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+<script src="/static/js/permission-management.js?v={{ app_version }}"></script>
+</body>
+</html> 

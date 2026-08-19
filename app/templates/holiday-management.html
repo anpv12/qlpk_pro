@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý ngày lễ</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+		rel="stylesheet">
+
+	<!-- Flatpickr CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/pages/holiday-management.css?v={{ app_version }}">
+
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+	<!-- Flatpickr JS -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="/static/js/flatpickr-vn.js"></script>
+
+	<!-- Utils and Datepicker Init -->
+	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
+
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2"></div>
+			<main class="col-md-10 main-content">
+				<div class="header-bar header-padding">
+					<nav aria-label="breadcrumb">
+						<ol class="breadcrumb mb-1">
+							<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
+							<li class="breadcrumb-item"><a href="index.html">QUẢN LÝ</a></li>
+							<li class="breadcrumb-item active" aria-current="page">QUẢN LÝ NGÀY LỄ</li>
+						</ol>
+					</nav>
+					<div class="d-flex justify-content-between align-items-center">
+						<h1 class="page-title">QUẢN LÝ NGÀY LỄ</h1>
+						<div class="d-flex gap-2">
+							<button class="btn btn-primary add-btn" data-bs-toggle="modal"
+								data-bs-target="#addHolidayModal">
+								<i class="bi bi-plus-circle me-2"></i>Thêm ngày lễ
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="card shadow-sm rounded-4">
+					<div class="card-header catalog-card-header d-flex justify-content-between align-items-center">
+						<div class="d-flex align-items-center">
+							<i class="bi bi-list-check me-2"></i>
+							<h5 class="mb-0">Danh sách ngày lễ</h5>
+						</div>
+						<div class="search-box">
+							<i class="bi bi-search"></i>
+							<input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm ngày lễ...">
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-hover mb-0">
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Tên ngày lễ</th>
+										<th>Ngày</th>
+										<th>Mô tả</th>
+										<th>Lặp lại</th>
+										<th>Thao tác</th>
+									</tr>
+								</thead>
+								<tbody id="holidayTableBody">
+									<!-- Data sẽ được load bằng JavaScript -->
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal thêm ngày lễ -->
+	<div class="modal fade" id="addHolidayModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Thêm ngày lễ mới</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<form id="addHolidayForm">
+					<div class="modal-body">
+						<div class="mb-3">
+							<label for="holidayName" class="form-label">Tên ngày lễ <span
+									class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="holidayName" required>
+							<div class="invalid-feedback" id="nameError"></div>
+						</div>
+						<div class="mb-3">
+							<label for="holidayDate" class="form-label">Ngày <span class="text-danger">*</span></label>
+							<input type="text" class="form-control js-datepicker" id="holidayDate"
+								placeholder="dd/mm/yyyy" autocomplete="off" required>
+							<div class="invalid-feedback" id="dateError"></div>
+						</div>
+						<div class="mb-3">
+							<label for="holidayDescription" class="form-label">Mô tả</label>
+							<textarea class="form-control" id="holidayDescription" rows="3"></textarea>
+						</div>
+						<div class="mb-3">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="holidayRecurring">
+								<label class="form-check-label" for="holidayRecurring">
+									Lặp lại hàng năm
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button type="submit" class="btn btn-primary">Thêm ngày lễ</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal sửa ngày lễ -->
+	<div class="modal fade" id="editHolidayModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Sửa ngày lễ</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<form id="editHolidayForm">
+					<div class="modal-body">
+						<input type="hidden" id="editHolidayId">
+						<div class="mb-3">
+							<label for="editHolidayName" class="form-label">Tên ngày lễ <span
+									class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="editHolidayName" required>
+							<div class="invalid-feedback" id="editNameError"></div>
+						</div>
+						<div class="mb-3">
+							<label for="editHolidayDate" class="form-label">Ngày <span
+									class="text-danger">*</span></label>
+							<input type="text" class="form-control js-datepicker" id="editHolidayDate"
+								placeholder="dd/mm/yyyy" autocomplete="off" required>
+							<div class="invalid-feedback" id="editDateError"></div>
+						</div>
+						<div class="mb-3">
+							<label for="editHolidayDescription" class="form-label">Mô tả</label>
+							<textarea class="form-control" id="editHolidayDescription" rows="3"></textarea>
+						</div>
+						<div class="mb-3">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="editHolidayRecurring">
+								<label class="form-check-label" for="editHolidayRecurring">
+									Lặp lại hàng năm
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button type="button" class="btn btn-primary" id="updateHolidayBtn">Cập nhật</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/holiday-management.js?v={{ app_version }}"></script>
+
+</body>
+
+</html>

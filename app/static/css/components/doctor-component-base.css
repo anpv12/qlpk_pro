@@ -1,0 +1,66 @@
+/* Canonical layout contract for the Doctor workspace.
+ * Page-specific styles may add visuals, but must not redefine these geometry
+ * and state rules. */
+body[data-doctor-ui] {
+	--doctor-component-gap: var(--qlpk-doctor-space-2);
+	--doctor-component-radius: var(--qlpk-doctor-radius-md);
+	--doctor-component-border: var(--qlpk-doctor-line);
+	--doctor-component-surface: var(--qlpk-doctor-surface);
+	--doctor-component-text: var(--qlpk-doctor-text);
+	--doctor-component-muted: var(--qlpk-doctor-muted);
+	--doctor-component-interactive: var(--qlpk-doctor-primary);
+	--doctor-component-focus: var(--qlpk-color-focus);
+}
+
+body[data-doctor-ui] [data-doctor-component] {
+	min-inline-size: 0;
+	box-sizing: border-box;
+	color: var(--doctor-component-text);
+}
+
+body[data-doctor-ui] [data-doctor-component] *,
+body[data-doctor-ui] [data-doctor-component] *::before,
+body[data-doctor-ui] [data-doctor-component] *::after {
+	box-sizing: inherit;
+}
+
+body[data-doctor-ui] [data-doctor-component][aria-busy='true'] {
+	cursor: progress;
+	pointer-events: none;
+}
+
+body[data-doctor-ui] [data-doctor-component][aria-disabled='true'],
+body[data-doctor-ui] [data-doctor-component] :where(button, input, select, textarea):disabled {
+	cursor: not-allowed;
+	opacity: 0.72;
+}
+
+body[data-doctor-ui] [data-doctor-component][data-load-state='error'] {
+	border-color: var(--qlpk-feedback-error, var(--qlpk-doctor-danger));
+}
+
+body[data-doctor-ui] [data-doctor-component] :where(button, input, select, textarea):focus-visible {
+	outline: 0.125rem solid var(--doctor-component-focus);
+	outline-offset: 0.125rem;
+}
+
+body[data-doctor-ui] .doctor-component-empty {
+	display: grid;
+	place-items: center;
+	min-block-size: 8rem;
+	padding: var(--qlpk-doctor-space-4);
+	color: var(--doctor-component-muted);
+	text-align: center;
+}
+
+body[data-doctor-ui] [data-doctor-component][data-state='loading'] {
+	background: var(--doctor-component-surface);
+}
+
+body[data-doctor-ui] [data-doctor-component][data-state='empty'] {
+	background: var(--doctor-component-surface-soft);
+}
+
+body[data-doctor-ui] .doctor-component--hidden {
+	display: none !important;
+}

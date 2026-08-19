@@ -1,0 +1,480 @@
+		:root {
+			--primary-blue: #155CA2;
+			--primary-dark: #0d4a7a;
+			--success-green: #059669;
+			--warning-orange: #f59e0b;
+			--danger-red: #dc2626;
+		}
+
+		body {
+			background: #f7fafd;
+			font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		}
+
+		.main-content {
+			overflow-x: hidden;
+			padding: 5px 10px;
+			background-color: #f8f9fa;
+		}
+
+		/* Ensure Bootstrap grid works correctly with DRY sidebar */
+		#sidebar-container.col-md-2 {
+			flex: 0 0 16.66667% !important;
+			max-width: 16.66667% !important;
+		}
+
+		.main-content.col-md-10 {
+			flex: 0 0 83.33333% !important;
+			max-width: 83.33333% !important;
+		}
+
+		/* ==================== Filter ==================== */
+		.filter-card {
+			background: white;
+			border-radius: 16px;
+			padding: 1rem;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+			margin-bottom: 0.5rem;
+		}
+
+		.filter-card .form-control,
+		.filter-card .form-select {
+			font-size: var(--qlpk-font-size-md, 14px);
+		}
+
+		.filter-search {
+			width: 300px;
+		}
+
+		.filter-doctor {
+			width: 180px;
+		}
+
+		.filter-type {
+			width: 140px;
+		}
+
+		.filter-date {
+			width: 140px;
+		}
+
+		/* ==================== Stat Cards ==================== */
+		.stat-card {
+			background: white;
+			border-radius: 12px;
+			padding: 0.75rem;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+			transition: transform 0.3s ease, box-shadow 0.3s ease;
+			height: 100%;
+		}
+
+		.stat-card:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+		}
+
+		.stat-card .stat-icon {
+			width: 40px;
+			height: 40px;
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: var(--qlpk-font-size-2xl, 20px);
+		}
+
+		.stat-card .stat-value {
+			font-size: var(--qlpk-font-size-2xl, 20px);
+			font-weight: var(--qlpk-font-weight-bold, 700);
+			color: #1e293b;
+		}
+
+		.stat-card .stat-label {
+			color: #0a713e;
+			font-style: italic;
+		}
+
+		.stat-label-qty {
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			font-size: var(--qlpk-font-size-lg, 16px);
+		}
+
+		.stat-icon.blue {
+			background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+			color: white;
+		}
+
+		.stat-icon.green {
+			background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+			color: white;
+		}
+
+		.stat-icon.orange {
+			background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+			color: white;
+		}
+
+		.stat-icon.red {
+			background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+			color: white;
+		}
+
+		.stat-icon.purple {
+			background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+			color: white;
+		}
+
+		/* ==================== Data Cards & Tables ==================== */
+		.data-card {
+			background: white;
+			border-radius: 16px;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+			overflow: hidden;
+		}
+
+		.data-card .card-header {
+			background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+			padding: 0.5rem 0.5rem;
+			border-bottom: 1px solid #e2e8f0;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			color: var(--primary-blue);
+		}
+
+		.table {
+			margin: 0;
+			font-size: var(--qlpk-font-size-md, 14px);
+		}
+
+		.table thead th {
+			background: #14479b;
+			border-bottom: 2px solid #0d3a7d;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			color: #fff;
+			padding: 0.5rem 0.75rem;
+			font-size: var(--qlpk-font-size-base, 13px);
+		}
+
+		.table tbody td {
+			padding: 0.5rem 0.75rem;
+			vertical-align: middle;
+			border-bottom: 1px solid #f1f5f9;
+		}
+
+		.table tbody tr:hover {
+			background: #f8fafc;
+		}
+
+		/* ==================== Buttons ==================== */
+		.btn-export {
+			background: linear-gradient(135deg, var(--success-green) 0%, #047857 100%);
+			color: white;
+			border: none;
+			padding: 0.5rem 1.25rem;
+			border-radius: 8px;
+			font-weight: var(--qlpk-font-weight-medium, 500);
+			transition: all 0.3s ease;
+		}
+
+		.btn-export:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+			color: white;
+		}
+
+		/* ==================== Medicine Summary (shared JS + Table) ==================== */
+		.summary-qty {
+			font-size: var(--qlpk-font-size-xl, 18px);
+			font-weight: var(--qlpk-font-weight-bold, 700);
+		}
+
+		.badge-type {
+			font-size: var(--qlpk-font-size-xs, 11px);
+			font-weight: var(--qlpk-font-weight-medium, 500);
+		}
+
+		.medicine-summary {
+			margin-top: 2px;
+		}
+
+		.medicine-summary-nested {
+			padding-left: 20px;
+		}
+
+		.medicine-stats-fixed-table {
+			table-layout: fixed;
+		}
+
+		.medicine-stats-clickable-row {
+			cursor: pointer;
+		}
+
+		.medicine-stats-loading {
+			opacity: 0.5;
+		}
+
+		.medicine-stats-hidden {
+			display: none !important;
+		}
+
+		/* Row variants */
+		.row-grand-total {
+			background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+		}
+
+		.row-doctor-header {
+			background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+			cursor: pointer;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+		}
+
+		/* Medicine toggle & detail */
+		.medicine-toggle {
+			cursor: pointer;
+			color: #0d6efd;
+			text-decoration: none;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.medicine-toggle:hover {
+			color: #0a58ca;
+		}
+
+		.medicine-detail-row {
+			background: #f8f9fa;
+		}
+
+		.medicine-detail-row td {
+			padding: 8px 12px !important;
+			border-top: none !important;
+		}
+
+		/* Detail sub-table */
+		.detail-table {
+			width: 100%;
+			font-size: var(--qlpk-font-size-base, 13px);
+			background: white;
+			border-radius: 6px;
+			border-collapse: collapse;
+			overflow: hidden;
+		}
+
+		.detail-table th {
+			padding: 6px 10px;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			background: #e2e8f0;
+			font-size: var(--qlpk-font-size-sm, 12px);
+		}
+
+		.detail-table td {
+			padding: 6px 10px;
+			border-bottom: 1px solid #f1f5f9;
+		}
+
+		.detail-table tr:last-child td {
+			border-bottom: none;
+		}
+
+		/* Status badges */
+		.status-sufficient {
+			background-color: #198754 !important;
+		}
+
+		.status-low {
+			background-color: #ffc107 !important;
+			color: #000 !important;
+		}
+
+		.status-restock {
+			background-color: #dc3545 !important;
+		}
+
+		/* ==================== Tabs ==================== */
+		.nav-tabs-custom {
+			border: none;
+			background: white;
+			border-radius: 12px;
+			padding: 0.5rem;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+		}
+
+		.nav-tabs-custom .nav-link {
+			border: none;
+			color: #000000;
+			font-weight: var(--qlpk-font-weight-medium, 500);
+			border-radius: 8px;
+			transition: all 0.3s ease;
+		}
+
+		.nav-tabs-custom .nav-link.active {
+			background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+			color: white;
+		}
+
+		.nav-tabs-custom .nav-link:hover:not(.active) {
+			background: #f1f5f9;
+			color: var(--primary-blue);
+		}
+
+		/* ==================== Colgroup widths ==================== */
+		.col-patient {
+			width: 16%;
+		}
+
+		.col-date {
+			width: 9%;
+		}
+
+		.col-time {
+			width: 6%;
+		}
+
+		.col-service {
+			width: 12%;
+		}
+
+		.col-medicine {
+			width: 14%;
+		}
+
+		.col-days {
+			width: 10%;
+		}
+
+		.col-svc-amount {
+			width: 10%;
+		}
+
+		.col-total {
+			width: 10%;
+		}
+
+		.col-recheck {
+			width: 10%;
+		}
+
+		.col-stt {
+			width: 3%;
+		}
+
+		.col-med-name {
+			width: 25%;
+		}
+
+		.col-med-type {
+			width: 10%;
+		}
+
+		.col-med-import {
+			width: 12%;
+		}
+
+		.col-med-price {
+			width: 12%;
+		}
+
+		.col-med-export {
+			width: 8%;
+		}
+
+		.col-med-stock {
+			width: 10%;
+		}
+
+		.col-med-expiry {
+			width: 12%;
+		}
+
+		.col-med-status {
+			width: 10%;
+		}
+
+		/* ==================== Footer ==================== */
+		.footer-bar {
+			background: #fff;
+			border-top: 1px solid #e0e0e0;
+			color: #155CA2;
+			font-size: var(--qlpk-font-size-lg, 16px);
+			padding: 10px 32px 8px 32px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.footer-bar .contact {
+			display: flex;
+			gap: 18px;
+			align-items: center;
+		}
+
+		.footer-bar .help-link {
+			color: #155CA2;
+			text-decoration: none;
+			font-weight: var(--qlpk-font-weight-medium, 500);
+		}
+
+.ms-table-fixed {
+	table-layout: fixed;
+}
+
+.ms-history-master-scroll {
+	max-height: 340px;
+	overflow-y: auto;
+}
+
+.ms-history-master-name {
+	width: 25%;
+}
+
+.ms-history-master-generic {
+	width: 18%;
+}
+
+.ms-history-master-type {
+	width: 11%;
+}
+
+.ms-history-master-count {
+	width: 13%;
+}
+
+.ms-history-master-qty {
+	width: 15%;
+}
+
+.ms-history-master-amount {
+	width: 18%;
+}
+
+.ms-sticky-head {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.ms-history-detail-card {
+	display: none;
+}
+
+.ms-history-detail-doctor {
+	width: 22%;
+}
+
+.ms-history-detail-date {
+	width: 12%;
+}
+
+.ms-history-detail-patient {
+	width: 20%;
+}
+
+.ms-history-detail-code {
+	width: 16%;
+}
+
+.ms-history-detail-qty,
+.ms-history-detail-source,
+.ms-history-detail-amount {
+	width: 10%;
+}

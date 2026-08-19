@@ -1,0 +1,71 @@
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+    <div class="modal-dialog transfer-dialog modal-dialog-centered">
+        <div class="modal-content transfer-modal">
+            <div class="modal-header transfer-modal__header">
+                <div class="transfer-modal__title-wrap">
+                    <span class="transfer-modal__title-icon" aria-hidden="true">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title transfer-modal__title" id="transferModalLabel">Chuyển khám</h5>
+                        <p class="transfer-modal__subtitle">Chọn nhóm tiếp nhận và người phụ trách mới.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white transfer-modal__close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body transfer-modal__body">
+                <section class="transfer-section" aria-labelledby="transferRoleLabel">
+                    <div class="transfer-section__heading">
+                        <span class="transfer-section__label" id="transferRoleLabel">Nhóm tiếp nhận</span>
+                        <span class="transfer-section__hint">Chọn nơi cần chuyển lượt khám</span>
+                    </div>
+                    <div class="transfer-role-tabs" role="group" aria-labelledby="transferRoleLabel">
+                        <button type="button" class="transfer-role-btn" data-role="doctor" aria-pressed="false">
+                            <span class="transfer-role-btn__icon transfer-role-btn__icon--doctor" aria-hidden="true">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </span>
+                            <span class="transfer-role-btn__text">Bác sĩ</span>
+                        </button>
+                        <button type="button" class="transfer-role-btn" data-role="psychologist" aria-pressed="false">
+                            <span class="transfer-role-btn__icon transfer-role-btn__icon--psychologist" aria-hidden="true">
+                                <i class="bi bi-person-heart"></i>
+                            </span>
+                            <span class="transfer-role-btn__text">Tâm lý gia</span>
+                        </button>
+                        <button type="button" class="transfer-role-btn" data-role="receptionist" aria-pressed="false">
+                            <span class="transfer-role-btn__icon transfer-role-btn__icon--receptionist" aria-hidden="true">
+                                <i class="bi bi-headset"></i>
+                            </span>
+                            <span class="transfer-role-btn__text">Lễ tân</span>
+                        </button>
+                    </div>
+                </section>
+
+                <section class="transfer-section" aria-labelledby="transferPersonLabel">
+                    <div class="transfer-section__heading">
+                        <span class="transfer-section__label" id="transferPersonLabel">Người nhận</span>
+                        <span class="transfer-section__hint">Chọn một người để hoàn tất chuyển khám</span>
+                    </div>
+                    <div id="personSelector" class="transfer-person-list" aria-live="polite">
+                        <div class="transfer-empty-state">
+                            <i class="bi bi-arrow-up-circle" aria-hidden="true"></i>
+                            <span>Chọn nhóm tiếp nhận trước</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="modal-footer transfer-modal__footer">
+                <button type="button" class="transfer-modal__cancel" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    <span>Hủy</span>
+                </button>
+                <button type="button" class="transfer-modal__confirm" id="confirmTransferBtn" disabled>
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                    <span>Chuyển khám</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

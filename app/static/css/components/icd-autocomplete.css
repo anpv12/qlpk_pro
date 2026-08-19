@@ -1,0 +1,187 @@
+/* Shared ICD autocomplete contract: one owner for layout, menu and interaction states. */
+.icd-autocomplete {
+	position: relative;
+	width: 100%;
+	min-width: 0;
+}
+
+.icd-autocomplete .icd-input-container {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+	min-height: 2.25rem;
+	padding: 0.25rem 0.45rem;
+	border: 0.0625rem solid #cbd5e1;
+	border-radius: 0.45rem;
+	background: #ffffff;
+	cursor: text;
+}
+
+.icd-autocomplete .icd-input-container:focus-within {
+	border-color: var(--doctor-brown, #4b2719);
+	box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--doctor-brown, #4b2719) 16%, transparent);
+}
+
+.icd-autocomplete [data-icd-autocomplete-tags] {
+	display: flex;
+	flex: 0 1 auto;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+}
+
+.icd-autocomplete [data-icd-autocomplete-input] {
+	flex: 1 1 10rem;
+	min-width: 8rem;
+	min-height: 1.75rem;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	box-shadow: none;
+	background: transparent;
+	color: #352821;
+	font-family: var(--qlpk-font-family, "Roboto", sans-serif);
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+}
+
+.icd-autocomplete [data-icd-autocomplete-input]:focus {
+	border: 0;
+	box-shadow: none;
+}
+
+.icd-autocomplete [data-icd-autocomplete-input]::placeholder {
+	color: #64748b;
+	opacity: 1;
+}
+
+.icd-autocomplete .icd-autocomplete__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	max-width: 100%;
+	padding: 0.18rem 0.35rem 0.18rem 0.5rem;
+	border: 0.0625rem solid #faf6e6;
+	border-radius: 0.35rem;
+	background: #faf6e6;
+	color: #4b2719;
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	line-height: 1.25;
+}
+
+.icd-autocomplete .icd-autocomplete__tag-label {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.icd-autocomplete .icd-autocomplete__remove {
+	flex: 0 0 auto;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #6b7280;
+	font-size: var(--qlpk-font-size-md, 0.875rem);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 1;
+	cursor: pointer;
+}
+
+.icd-autocomplete .icd-autocomplete__remove:hover,
+.icd-autocomplete .icd-autocomplete__remove:focus-visible {
+	color: #b42318;
+}
+
+.icd-autocomplete .dropdown-menu {
+	display: block;
+	position: absolute;
+	inset-block-start: calc(100% + 0.25rem);
+	inset-inline: 0;
+	z-index: var(--qlpk-z-dropdown, 1050);
+	max-block-size: min(24rem, 45dvh);
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 0.0625rem solid #d6c1b1;
+	border-radius: 0.45rem;
+	background: #ffffff;
+	box-shadow: 0 0.6rem 1.2rem rgb(53 40 33 / 16%);
+}
+
+.icd-autocomplete .dropdown-menu[hidden] {
+	display: none;
+}
+
+.icd-autocomplete [data-icd-autocomplete-list] {
+	max-block-size: inherit;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.icd-autocomplete .icd-autocomplete__option {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	width: 100%;
+	padding: 0.5rem 0.65rem;
+	border: 0;
+	border-bottom: 0.0625rem solid #eee7df;
+	background: #ffffff;
+	color: #352821;
+	text-align: left;
+	white-space: normal;
+	cursor: pointer;
+}
+
+.icd-autocomplete .icd-autocomplete__option:last-child {
+	border-bottom: 0;
+}
+
+.icd-autocomplete .icd-autocomplete__option:hover,
+.icd-autocomplete .icd-autocomplete__option:focus-visible,
+.icd-autocomplete .icd-autocomplete__option.is-active,
+.icd-autocomplete .icd-autocomplete__option.selected {
+	background: #fbf8f2;
+	color: #4b2719;
+}
+
+.icd-autocomplete .icd-autocomplete__code {
+	flex: 0 0 auto;
+	min-width: 3.25rem;
+	padding: 0.08rem 0.3rem;
+	border-radius: 0.25rem;
+	background: #f1e7de;
+	color: #4b2719;
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	line-height: 1.35;
+	text-align: center;
+}
+
+.icd-autocomplete .icd-autocomplete__name {
+	min-width: 0;
+	color: inherit;
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.icd-autocomplete .icd-autocomplete__message {
+	padding: 0.65rem;
+	color: #5f5148;
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+	line-height: 1.35;
+}
+
+@media (max-width: 47.99875rem) {
+	.icd-autocomplete [data-icd-autocomplete-input] {
+		min-width: 7rem;
+	}
+
+	.icd-autocomplete .dropdown-menu {
+		max-block-size: min(20rem, 52dvh);
+	}
+}

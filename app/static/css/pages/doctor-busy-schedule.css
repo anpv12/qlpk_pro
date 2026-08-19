@@ -1,0 +1,413 @@
+		body {
+			background: #f7fafd;
+			font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+			overflow-x: hidden;
+		}
+
+		/* Ensure Bootstrap grid works correctly with DRY sidebar */
+		#sidebar-container.col-md-2 {
+			flex: 0 0 16.66667% !important;
+			max-width: 16.66667% !important;
+		}
+
+		.main-content.col-md-10 {
+			flex: 0 0 83.33333% !important;
+			max-width: 83.33333% !important;
+		}
+
+		.main-content {
+			padding: 0 16px 0 16px;
+			overflow-x: hidden;
+		}
+
+		/* Header and other styles */
+		.header-bar {
+			background: #ffffff !important;
+			border-bottom: 1px solid #e0e0e0;
+			padding: 8px 0 4px 0;
+			margin-bottom: 8px;
+		}
+
+		.breadcrumb {
+			background: none;
+			padding: 0;
+			margin-bottom: 0;
+			font-size: var(--qlpk-font-size-xl, 18px);
+		}
+
+		.breadcrumb-item+.breadcrumb-item::before {
+			content: '>';
+			color: #1976d2;
+		}
+
+		.page-title {
+			font-weight: var(--qlpk-font-weight-bold, 700);
+			color: #1976d2;
+			font-size: var(--qlpk-font-size-5xl, 32px);
+			margin-bottom: 0;
+		}
+
+		.btn-primary {
+			background: #1976d2 !important;
+			border-color: #1976d2 !important;
+			color: #fff !important;
+		}
+
+		.btn-success {
+			background: #10aa36 !important;
+			border-color: #10aa36 !important;
+			color: #fff !important;
+		}
+
+		.btn-warning {
+			background: #ffe082 !important;
+			color: #333 !important;
+			border: none;
+		}
+
+		.btn-outline-primary {
+			color: #1976d2 !important;
+			border-color: #b0bec5 !important;
+			background: #fff !important;
+		}
+
+		.btn-outline-primary:hover {
+			background: #e3f0fa !important;
+			color: #155CA2 !important;
+		}
+
+		.table th {
+			background-color: #f8f9fa;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			color: #495057;
+			border-top: none;
+		}
+
+		.table td {
+			vertical-align: middle;
+		}
+
+		.status-badge {
+			padding: 4px 8px;
+			border-radius: 12px;
+			font-size: var(--qlpk-font-size-sm, 12px);
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+		}
+
+		.status-active {
+			background-color: #d4edda;
+			color: #155724;
+		}
+
+		.status-cancelled {
+			background-color: #f8d7da;
+			color: #721c24;
+		}
+
+		.reason-badge {
+			padding: 2px 6px;
+			border-radius: 8px;
+			font-size: var(--qlpk-font-size-md, 14px);
+			font-weight: var(--qlpk-font-weight-medium, 500);
+		}
+
+		/* Gradient backgrounds */
+		.bg-gradient-primary {
+			background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+		}
+
+		.bg-gradient-success {
+			background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+		}
+
+		/* Custom input styling */
+		.input-group-text {
+			transition: all 0.3s ease;
+		}
+
+		.form-control:focus {
+			box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+			border-color: #007bff;
+		}
+
+		/* Quick selector buttons */
+		.btn-outline-primary:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+		}
+
+		/* Compact form styling */
+		.form-label {
+			margin-bottom: 0.5rem;
+		}
+
+		.input-group-sm .form-control {
+			padding: 0.25rem 0.5rem;
+			font-size: var(--qlpk-font-size-md, 14px);
+		}
+
+		.input-group-sm .input-group-text {
+			padding: 0.25rem 0.5rem;
+		}
+
+		/* Table improvements */
+		.table th {
+			background-color: #f8f9fa;
+			border-bottom: 2px solid #dee2e6;
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			color: #495057;
+		}
+
+		.table-hover tbody tr:hover {
+			background-color: rgba(0, 123, 255, 0.05);
+		}
+
+		/* Status indicators */
+		.status-indicator .badge {
+			font-size: var(--qlpk-font-size-sm, 12px);
+			padding: 0.4em 0.6em;
+		}
+
+		/* Search input styling */
+		.placeholder-white::placeholder {
+			color: rgba(255, 255, 255, 0.7) !important;
+		}
+
+		/* Card shadows */
+		.shadow-sm {
+			box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+		}
+
+		/* Icon styling */
+		.fs-4 {
+			font-size: var(--qlpk-font-size-3xl, 24px) !important;
+		}
+
+		/* Header icon effects */
+		.card-header i.fs-4 {
+			opacity: 0.9;
+			transition: all 0.3s ease;
+		}
+
+		.card-header:hover i.fs-4 {
+			opacity: 1;
+			transform: scale(1.05);
+		}
+
+		/* Suggestions styling */
+		.suggestions-grid {
+			display: flex !important;
+			flex-wrap: nowrap !important;
+			gap: 4px;
+			overflow-x: auto;
+			padding: 2px 0;
+			width: 100%;
+		}
+
+		.suggestion-badge {
+			flex-shrink: 0 !important;
+			white-space: nowrap !important;
+			display: inline-block !important;
+		}
+
+		.suggestion-badge {
+			transition: all 0.2s ease;
+		}
+
+		.suggestions-content {
+			white-space: nowrap !important;
+			overflow-x: auto;
+			display: block !important;
+		}
+
+		#reasonSuggestionsContainer {
+			white-space: nowrap !important;
+			overflow-x: auto;
+		}
+
+		#reasonSuggestionsContainer {
+			white-space: nowrap !important;
+			overflow-x: auto !important;
+			width: 100% !important;
+		}
+
+		#reasonSuggestionsContainer * {
+			white-space: nowrap !important;
+		}
+
+		/* Override calendar-figma.css */
+		#reasonSuggestionsContainer .badge {
+			display: inline-block !important;
+			white-space: nowrap !important;
+		}
+
+		.suggestion-badge:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		}
+
+		/* Force single line - override Bootstrap and calendar-figma.css */
+		.suggestion-badge {
+			display: inline-block !important;
+			white-space: nowrap !important;
+		}
+
+		.badge.suggestion-badge {
+			display: inline-block !important;
+			white-space: nowrap !important;
+		}
+
+		.me-1 {
+			margin-right: 0.25rem !important;
+			margin-bottom: 0 !important;
+		}
+
+		/* Table layout for single line */
+		.suggestions-content table {
+			display: inline-table !important;
+			white-space: nowrap !important;
+			width: auto !important;
+		}
+
+		.suggestions-content td {
+			white-space: nowrap !important;
+			padding: 0 !important;
+		}
+
+		.suggestion-badge.bg-primary {
+			background-color: #007bff !important;
+			color: white !important;
+		}
+
+		.reason-meeting {
+			background-color: #e3f2fd;
+			color: #1565c0;
+		}
+
+		.reason-leave {
+			background-color: #fff3e0;
+			color: #ef6c00;
+		}
+
+		.reason-external {
+			background-color: #f3e5f5;
+			color: #7b1fa2;
+		}
+
+		.reason-training {
+			background-color: #e8f5e8;
+			color: #2e7d32;
+		}
+
+		.reason-other {
+			background-color: #fce4ec;
+			color: #c2185b;
+		}
+
+		.card {
+			border: none;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			border-radius: 12px;
+		}
+
+		.form-control,
+		.form-select {
+			border-radius: 8px;
+			border: 1px solid #e0e0e0;
+		}
+
+		.form-control:focus,
+		.form-select:focus {
+			border-color: #1976d2;
+			box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+		}
+
+		/* Validation messages */
+		.validation-message {
+			font-size: var(--qlpk-font-size-md, 14px);
+			margin-top: 0.25rem;
+		}
+
+		.validation-message i {
+			margin-right: 0.25rem;
+		}
+
+		/* Reason suggestions */
+		.suggestion-badge {
+			transition: all 0.2s ease;
+			border: 1px solid #dee2e6;
+		}
+
+		.suggestion-badge:hover {
+			background-color: #1976d2 !important;
+			color: white !important;
+			border-color: #1976d2;
+			transform: translateY(-1px);
+		}
+
+		/* Auto-complete styling */
+		#reasonSuggestions {
+			background: #f8f9fa;
+			border: 1px solid #e9ecef;
+			border-radius: 0.375rem;
+			padding: 0.75rem;
+			margin-top: 0.5rem;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		#reasonSuggestions small {
+			font-weight: var(--qlpk-font-weight-semibold, 600);
+			color: #6c757d;
+		}
+
+		.suggestion-badge {
+			cursor: pointer;
+			font-size: var(--qlpk-font-size-base, 13px);
+			padding: 0.4rem 0.6rem;
+			margin: 0.2rem;
+			border-radius: 0.5rem;
+			transition: all 0.2s ease;
+			display: inline-block;
+			white-space: nowrap;
+		}
+
+		.suggestion-badge:hover {
+			background-color: #1976d2 !important;
+			color: white !important;
+			border-color: #1976d2;
+			transform: translateY(-1px);
+			box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+		}
+
+		/* Responsive */
+		@media (max-width: 768px) {
+			.main-content {
+				padding: 0 8px 0 8px;
+			}
+		}
+
+.busy-reason-suggestions {
+	width: 100%;
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+.busy-search-group {
+	width: 200px;
+}
+
+.busy-search-input {
+	color: white !important;
+}
+
+.busy-status-filter {
+	width: auto;
+}
+
+.busy-schedule-table {
+	font-size: var(--qlpk-font-size-md, 14px);
+}
+
+.busy-empty-icon {
+	font-size: var(--qlpk-font-size-5xl, 32px);
+}

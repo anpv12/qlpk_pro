@@ -1,0 +1,88 @@
+{% set patient_intake_config = patient_intake_config | default({}, true) %}
+{% set visit_config = patient_intake_config.get('visit', {}) %}
+{% set patient_visit_mode = visit_config.get('layout_mode', 'receptionist') %}
+{% set patient_visit_title = visit_config.get('title', 'Thông tin hỏi bệnh') %}
+{% set patient_visit_heading_id = visit_config.get('heading_id', patient_visit_mode ~ 'VisitHeading') %}
+{% set patient_visit_section_id = visit_config.get('section_id', patient_visit_mode ~ 'MedicalInfoSection') %}
+{% set patient_visit_show_admin = visit_config.get('show_admin', false) %}
+{% set patient_visit_show_reason = visit_config.get('show_reason', true) %}
+{% set patient_visit_show_main_symptoms = visit_config.get('show_main_symptoms', true) %}
+{% set patient_visit_textarea_rows = 1 if patient_visit_mode == 'doctor' else 2 %}
+
+<section class="qlpk-patient-visit-card receptionist-card receptionist-card--visit"
+	data-patient-visit-mode="{{ patient_visit_mode }}"
+	data-patient-visit-form
+	aria-labelledby="{{ patient_visit_heading_id }}">
+	<div class="receptionist-section-title qlpk-patient-visit-card__title" id="{{ patient_visit_heading_id }}">
+		<i class="bi bi-journal-medical qlpk-section-icon"></i>
+		<span>{{ patient_visit_title }}</span>
+	</div>
+
+	<section class="receptionist-paper-section qlpk-patient-visit-card__section"
+		id="{{ patient_visit_section_id }}"
+		aria-label="Hỏi bệnh ban đầu">
+		<div class="receptionist-paper-fields qlpk-patient-visit-card__fields">
+			{% if patient_visit_show_reason %}
+				<div class="receptionist-paper-field receptionist-paper-field--full">
+					<label class="form-label required-field" for="mainReason">Lý do chính đến khám</label>
+					<textarea class="form-control" id="mainReason" rows="{{ patient_visit_textarea_rows }}" placeholder="Nhập lý do chính bệnh nhân đến khám..."></textarea>
+				</div>
+			{% endif %}
+			<div class="receptionist-paper-field">
+				<label class="form-label" for="problemStartTime">Thời gian bắt đầu vấn đề</label>
+				<input type="text" class="form-control" id="problemStartTime" placeholder="Nhập thời gian">
+			</div>
+			<div class="receptionist-paper-field">
+				<label class="form-label" for="severityLevel">Mức độ nghiêm trọng</label>
+				<select class="form-select" id="severityLevel">
+					<option value="">Chọn mức độ</option>
+					<option value="Nhẹ">Nhẹ</option>
+					<option value="Trung bình">Trung bình</option>
+					<option value="Nặng">Nặng</option>
+					<option value="Rất nặng">Rất nặng</option>
+				</select>
+			</div>
+			<div class="receptionist-paper-field receptionist-paper-field--full">
+				<label class="form-label" for="symptomProgression">Diễn biến triệu chứng</label>
+				<textarea class="form-control" id="symptomProgression" rows="{{ patient_visit_textarea_rows }}" placeholder="Nhập diễn biến triệu chứng..."></textarea>
+			</div>
+			{% if patient_visit_show_main_symptoms %}
+				<div class="receptionist-paper-field receptionist-paper-field--full">
+					<label class="form-label" for="mainSymptoms">Triệu chứng chính</label>
+					<textarea class="form-control" id="mainSymptoms" rows="{{ patient_visit_textarea_rows }}" placeholder="Nhập các triệu chứng chính..."></textarea>
+				</div>
+			{% endif %}
+			<div class="receptionist-paper-field receptionist-paper-field--full">
+				<label class="form-label" for="currentBehavior">Hành vi hiện tại</label>
+				<textarea class="form-control" id="currentBehavior" rows="{{ patient_visit_textarea_rows }}" placeholder="Nhập mô tả hành vi hiện tại..."></textarea>
+			</div>
+		</div>
+	</section>
+
+	{% if patient_visit_show_admin %}
+	<section class="receptionist-paper-section receptionist-paper-section--admin qlpk-patient-visit-card__section"
+		aria-label="Ghi chú hành chính">
+		<div class="receptionist-paper-fields receptionist-paper-fields--admin qlpk-patient-visit-card__fields">
+			<div class="receptionist-paper-field receptionist-paper-field--full">
+				<label class="form-label" for="notes">Ghi chú</label>
+				<textarea class="form-control" id="notes" rows="2" placeholder="Nhập ghi chú thêm..."></textarea>
+			</div>
+			<div class="receptionist-paper-field receptionist-paper-field--full receptionist-paper-field--referral-source">
+				<label class="form-label" for="referralSource">Nguồn giới thiệu</label>
+				<div class="referral-source-control">
+					<div class="referral-source-options" role="group" aria-label="Nguồn giới thiệu">
+						<button type="button" class="referral-source-option referral-source-facebook" data-referral-source-option="Facebook"><i class="bi bi-facebook referral-source-icon qlpk-source-icon qlpk-source-icon--facebook"></i>Facebook</button>
+						<button type="button" class="referral-source-option referral-source-website" data-referral-source-option="Website"><i class="bi bi-globe2 referral-source-icon qlpk-source-icon qlpk-source-icon--website"></i>Website</button>
+						<button type="button" class="referral-source-option referral-source-referral" data-referral-source-option="Người quen giới thiệu"><i class="bi bi-people-fill referral-source-icon qlpk-source-icon qlpk-source-icon--referral"></i>Người quen giới thiệu</button>
+						<button type="button" class="referral-source-option referral-source-medpro" data-referral-source-option="Medpro"><i class="bi bi-heart-pulse-fill referral-source-icon qlpk-source-icon qlpk-source-icon--medpro"></i>Medpro</button>
+						<button type="button" class="referral-source-option referral-source-walk-in" data-referral-source-option="Khách vãng lai"><i class="bi bi-door-open-fill referral-source-icon qlpk-source-icon qlpk-source-icon--walk-in"></i>Khách vãng lai</button>
+						<button type="button" class="referral-source-option referral-source-other" data-referral-source-option="Khác"><i class="bi bi-grid-3x3-gap-fill referral-source-icon qlpk-source-icon qlpk-source-icon--other"></i>Khác</button>
+					</div>
+					<input type="text" class="form-control referral-source-input" id="referralSource"
+						placeholder="Chọn nguồn giới thiệu hoặc chọn Khác để nhập" disabled>
+				</div>
+			</div>
+		</div>
+	</section>
+	{% endif %}
+</section>

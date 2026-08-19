@@ -1,0 +1,21 @@
+.patient-modal-close-btn {
+	background: rgb(0, 0, 0);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	border-radius: 50%;
+	width: 36px;
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-size: var(--qlpk-font-size-lg, 16px);
+	transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.patient-modal-close-btn:hover {
+	background: rgba(255, 255, 255, 0.35);
+	border-color: rgba(255, 255, 255, 0.6);
+	color: #fff;
+	transform: scale(1.05);
+}

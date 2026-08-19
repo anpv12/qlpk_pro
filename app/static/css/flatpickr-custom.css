@@ -1,0 +1,12 @@
+/* Flatpickr Custom Styles */
+
+/* Fix z-index để Flatpickr calendar hiển thị trên modal */
+.flatpickr-calendar {
+	z-index: 99999 !important;
+}
+
+.flatpickr-calendar input[type=number]::-webkit-inner-spin-button,
+.flatpickr-calendar input[type=number]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}

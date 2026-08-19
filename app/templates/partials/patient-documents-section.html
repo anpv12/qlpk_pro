@@ -1,0 +1,14 @@
+{% set patient_intake_config = patient_intake_config | default({}, true) %}
+{% set documents_config = patient_intake_config.get('documents', {}) %}
+{% set patient_documents_section_id = documents_config.get('section_id', 'patientDocumentsSection') %}
+{% set patient_documents_heading_id = documents_config.get('heading_id', patient_documents_section_id ~ 'Heading') %}
+{% set patient_documents_title = documents_config.get('title', 'Danh sách tập tin đính kèm') %}
+
+<section class="receptionist-card--documents" id="{{ patient_documents_section_id }}" aria-labelledby="{{ patient_documents_heading_id }}">
+	<div class="receptionist-documents-header" id="{{ patient_documents_heading_id }}">
+		<i class="bi bi-paperclip qlpk-section-icon"></i>
+		<span>{{ patient_documents_title }}</span>
+		<span class="receptionist-documents-count" id="documentsCountBadge">0</span>
+	</div>
+	<div class="receptionist-documents-list" id="documentsList"></div>
+</section>

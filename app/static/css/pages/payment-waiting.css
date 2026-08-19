@@ -1,0 +1,776 @@
+	/* ==========================================================
+	   PAYMENT WAITING — "Minimal Pro" Design System
+	   Single source of truth. Không external CSS conflict.
+	   ========================================================== */
+
+	/* ── DESIGN TOKENS ── */
+	:root {
+		--accent: #0F766E;
+		--accent-hover: #0D6B63;
+		--accent-light: #CCFBF1;
+		--accent-pale: #F0FDFA;
+
+		--surface: #FFFFFF;
+		--surface-dim: #FAFFFE;
+		--page-bg: #F0FDFA;
+
+		--text-primary: #134E4A;
+		--text-secondary: #115E59;
+		--text-muted: #94A3B8;
+
+		--border: #E2E8F0;
+		--border-focus: #0F766E;
+
+		--success: #16A34A;
+		--success-bg: #DCFCE7;
+		--danger: #DC2626;
+		--danger-bg: #FEF2F2;
+
+		--radius: 10px;
+		--radius-sm: 6px;
+		--radius-pill: 100px;
+
+		--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+		--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+		--shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+
+		--transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* ── FOUNDATION ── */
+	html,
+	body {
+		height: 100%;
+		margin: 0;
+		overflow: hidden;
+		background: var(--page-bg);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-base, 13px);
+		color: var(--text-primary);
+	}
+
+	/* ── VIEWPORT-FIT LAYOUT CHAIN ── */
+	.pw-page .container-fluid { height: 100%; }
+	.pw-page .container-fluid > .row { height: 100%; }
+
+	.pw-page .pw-main {
+		position: relative; /* positioning context giữ card nằm trong layout */
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		padding: 0 !important;
+	}
+
+	/* ── SIDEBAR GRID ── */
+	#sidebar-container.col-md-3 {
+		flex: 0 0 25% !important;
+		max-width: 25% !important;
+	}
+
+	#sidebar-container.col-lg-2 {
+		flex: 0 0 16.66667% !important;
+		max-width: 16.66667% !important;
+	}
+
+	.pw-main.col-md-9 {
+		flex: 0 0 75% !important;
+		max-width: 75% !important;
+	}
+
+	.pw-main.col-lg-10 {
+		flex: 0 0 83.33333% !important;
+		max-width: 83.33333% !important;
+	}
+
+	/* ── MAIN CARD ── */
+	.pw-card {
+		position: absolute;
+		inset: 10px;
+		display: flex;
+		flex-direction: column;
+		background: var(--surface);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-sm);
+		border: 1px solid var(--border);
+		overflow: hidden;
+	}
+
+	.pw-card-body {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		padding: 16px 20px 12px;
+		gap: 10px;
+	}
+
+	/* ── FILTER BAR ── */
+	.pw-filters {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+		flex-shrink: 0;
+	}
+
+	.pw-filters .pw-filter-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.pw-filter-search-group {
+		flex: 1;
+		min-width: 200px;
+	}
+
+	.pw-filter-label {
+		font-size: var(--qlpk-font-size-xs, 11px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		white-space: nowrap;
+	}
+
+	.pw-input,
+	.pw-select {
+		height: 34px;
+		padding: 0 12px;
+		font-size: var(--qlpk-font-size-base, 13px);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		color: var(--text-primary);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		outline: none;
+		transition: var(--transition);
+	}
+
+	.pw-input:focus,
+	.pw-select:focus {
+		border-color: var(--border-focus);
+		box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+	}
+
+	.pw-input::placeholder {
+		color: var(--text-muted);
+	}
+
+	.pw-input--search {
+		flex: 1;
+		min-width: 200px;
+	}
+
+	.pw-select--status {
+		width: 170px;
+		cursor: pointer;
+	}
+
+	.pw-input--date {
+		width: 130px;
+		text-align: left;
+	}
+
+	/* Nút Làm mới */
+	.pw-btn-refresh {
+		height: 34px;
+		padding: 0 14px;
+		font-size: var(--qlpk-font-size-sm, 12px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		color: var(--accent);
+		background: var(--accent-pale);
+		border: 1px solid var(--accent-light);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		transition: var(--transition);
+		white-space: nowrap;
+	}
+
+	.pw-btn-refresh:hover {
+		background: var(--accent-light);
+		border-color: var(--accent);
+	}
+
+	.pw-filters-divider {
+		width: 1px;
+		height: 20px;
+		background: var(--border);
+		flex-shrink: 0;
+	}
+
+	/* ── TABLE TOOLBAR ── */
+	.pw-btn--ghost {
+		color: var(--text-secondary);
+		background: var(--surface-dim);
+		border-color: var(--border);
+	}
+
+	.pw-btn--ghost:hover {
+		background: var(--border);
+		color: var(--text-primary);
+	}
+
+	/* ── DATA TABLE ── */
+	.pw-col-checkbox {
+		width: 40px;
+	}
+
+	.pw-col-status {
+		width: 140px;
+	}
+
+	.pw-table-wrap table tbody td {
+		white-space: nowrap;
+	}
+
+	.pw-table-wrap table tbody tr {
+		transition: background-color 0.15s;
+	}
+
+	.pw-empty-row {
+		pointer-events: none;
+	}
+
+	.pw-empty-icon {
+		font-size: var(--qlpk-font-size-5xl, 32px);
+	}
+
+	.pw-error-icon {
+		font-size: var(--qlpk-font-size-display-md, 48px);
+	}
+
+	/* Checkbox */
+	.pw-table-wrap table .form-check-input {
+		width: 16px;
+		height: 16px;
+		border-radius: 4px;
+		border: 2px solid #CBD5E1;
+		cursor: pointer;
+		margin: 0;
+	}
+
+	.pw-table-wrap table thead .form-check-input {
+		border-color: rgba(255, 255, 255, 0.6);
+	}
+
+	.pw-table-wrap table .form-check-input:checked {
+		background-color: var(--accent);
+		border-color: var(--accent);
+	}
+
+	/* Status Badge */
+	.pw-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 4px 12px;
+		font-size: var(--qlpk-font-size-xs, 11px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		border-radius: var(--radius-pill);
+		white-space: nowrap;
+	}
+
+	.pw-badge--waiting {
+		color: #B45309;
+		background: #FEF3C7;
+	}
+
+	.pw-badge--waiting::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #F59E0B;
+		animation: pulse-dot 1.5s ease-in-out infinite;
+	}
+
+	.pw-badge--paid {
+		color: var(--success);
+		background: var(--success-bg);
+	}
+
+	.pw-badge--paid::before {
+		content: '✓';
+		font-size: var(--qlpk-font-size-2xs, 10px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+	}
+
+	.pw-payment-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		font-size: var(--qlpk-font-size-sm, 12px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+	}
+
+	.pw-payment-status--paid {
+		color: #16A34A;
+	}
+
+	.pw-payment-status--waiting {
+		color: #D97706;
+	}
+
+	@keyframes pulse-dot {
+
+		0%,
+		100% {
+			opacity: 1;
+		}
+
+		50% {
+			opacity: 0.3;
+		}
+	}
+
+	/* Action Buttons trong table */
+	.pw-action-btn--danger:hover {
+		background: var(--danger-bg);
+		color: var(--danger);
+	}
+
+	/* ── PAGINATION ── */
+	.pw-pagination .pw-select {
+		height: 30px;
+		padding: 0 8px;
+		font-size: var(--qlpk-font-size-sm, 12px);
+		width: auto;
+	}
+
+	/* ── LOADING ── */
+	.loading-spinner {
+		display: none;
+		text-align: center;
+		padding: 20px;
+	}
+
+	/* ── MODAL — Invoice Detail ── */
+	#examinationDetailModal .modal-dialog {
+		max-width: 95%;
+		margin: 1vh auto;
+	}
+
+	#examinationDetailModal .modal-content {
+		height: 96vh;
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+		overflow: hidden;
+	}
+
+	#examinationDetailModal .modal-header {
+		background: var(--surface);
+		border-bottom: 1px solid var(--border);
+		padding: 10px 16px;
+	}
+
+	#examinationDetailModal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--accent);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		flex-grow: 1;
+		text-align: center;
+	}
+
+	#examinationDetailModal .modal-body {
+		padding: 16px 20px;
+		background: var(--surface);
+		overflow-y: auto;
+		overflow-x: auto;
+	}
+
+	#examinationDetailModal .modal-footer {
+		border-top: 1px solid var(--border);
+		padding: 10px 16px;
+		display: flex;
+		justify-content: center;
+		gap: 8px;
+	}
+
+	#examinationDetailModal .section-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		color: var(--accent);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		font-size: var(--qlpk-font-size-base, 13px);
+		text-transform: uppercase;
+		margin-bottom: 8px;
+	}
+
+	#examinationDetailModal .form-label {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		color: var(--accent);
+		font-weight: var(--qlpk-font-weight-medium, 500);
+		font-size: var(--qlpk-font-size-sm, 12px);
+		margin-bottom: 4px;
+	}
+
+	#examinationDetailModal .required-field::after {
+		content: " *";
+		color: var(--danger);
+	}
+
+	#examinationDetailModal .form-control,
+	#examinationDetailModal .form-select {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		background: #F1F5F9;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		font-size: var(--qlpk-font-size-base, 13px);
+		height: 32px;
+	}
+
+	#examinationDetailModal .form-control:focus,
+	#examinationDetailModal .form-select:focus {
+		background: var(--surface);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+	}
+
+	#examinationDetailModal .table th {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		background: var(--surface-dim);
+		color: var(--text-secondary);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-sm, 12px);
+		padding: 8px 10px;
+		white-space: nowrap;
+	}
+
+	#examinationDetailModal .table td {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		color: var(--text-primary);
+		font-size: var(--qlpk-font-size-base, 13px);
+		padding: 8px 10px;
+		vertical-align: middle;
+	}
+
+	/* Modal Buttons */
+	#printInvoiceBtn {
+		background: var(--surface-dim);
+		border: 1px solid var(--border);
+		color: var(--text-primary);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	}
+
+	#printInvoiceBtn:hover {
+		background: var(--border);
+	}
+
+	#exportInvoiceBtn {
+		background: var(--accent);
+		border: 1px solid var(--accent);
+		color: #fff;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	}
+
+	#exportInvoiceBtn:hover {
+		background: var(--accent-hover);
+	}
+
+	#examinationDetailModal .modal-footer .btn[data-bs-dismiss="modal"] {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	}
+
+	.financial-summary {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		align-items: flex-end;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.pw-financial-row {
+		height: 26px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		color: #0A517D;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		font-size: var(--qlpk-font-size-md, 14px);
+	}
+
+	.pw-financial-value {
+		margin-left: 10px;
+	}
+
+	.pw-money-input {
+		width: 80px;
+		height: 24px;
+		padding: 2px 4px;
+		font-size: var(--qlpk-font-size-xs, 11px);
+		text-align: right;
+		margin-left: 10px;
+	}
+
+	.pw-invoice-col-stt {
+		width: 60px;
+	}
+
+	.pw-invoice-col-name {
+		width: 200px;
+	}
+
+	.pw-invoice-col-price {
+		width: 120px;
+	}
+
+	.pw-invoice-col-percent {
+		width: 100px;
+	}
+
+	.pw-invoice-col-actions {
+		width: 80px;
+	}
+
+	.pw-readonly-input {
+		background-color: #f8f9fa;
+	}
+
+	/* ── MODAL — Add Service ── */
+	#addServiceModal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	#addServiceModal .modal-header {
+		border-bottom: 1px solid var(--border);
+		padding: 12px 16px;
+	}
+
+	#addServiceModal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--text-primary);
+	}
+
+	#addServiceModal .form-label {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-sm, 12px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		color: var(--text-secondary);
+	}
+
+	#addServiceModal .form-control,
+	#addServiceModal .form-select {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		border-radius: var(--radius-sm);
+		font-size: var(--qlpk-font-size-base, 13px);
+	}
+
+	#addServiceModal .modal-footer {
+		border-top: 1px solid var(--border);
+		padding: 10px 16px;
+	}
+
+	/* ── MODAL — Edit Service (dynamic) ── */
+	#editServiceModal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	#editServiceModal .modal-header {
+		background: var(--accent);
+		border-bottom: none;
+		padding: 12px 16px;
+	}
+
+	#editServiceModal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: #fff;
+	}
+
+	#editServiceModal .modal-header .btn-close {
+		filter: brightness(0) invert(1);
+	}
+
+	#editServiceModal .modal-body {
+		padding: 20px;
+	}
+
+	#editServiceModal .form-label {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-xs, 11px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--accent);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	#editServiceModal .form-control {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		font-size: var(--qlpk-font-size-base, 13px);
+		height: 36px;
+		transition: var(--transition);
+	}
+
+	#editServiceModal .form-control:focus {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+	}
+
+	#editServiceModal .form-control[readonly] {
+		background: var(--accent-pale);
+		color: var(--text-primary);
+	}
+
+	#editServiceModal .modal-footer {
+		border-top: 1px solid var(--border);
+		padding: 12px 16px;
+	}
+
+	#editServiceModal .modal-footer .btn-secondary {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+	}
+
+	#editServiceModal .modal-footer .btn-primary {
+		background: var(--accent);
+		border: 1px solid var(--accent);
+		color: #fff;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+	}
+
+	#editServiceModal .modal-footer .btn-primary:hover {
+		background: var(--accent-hover);
+	}
+
+	/* ── MODAL — Action Selection (dynamic) ── */
+	#actionSelectionModal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	#actionSelectionModal .modal-header {
+		background: var(--accent);
+		border-bottom: none;
+		padding: 12px 16px;
+	}
+
+	#actionSelectionModal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: #fff;
+	}
+
+	#actionSelectionModal .modal-header .btn-close {
+		filter: brightness(0) invert(1);
+	}
+
+	#actionSelectionModal .modal-body .btn {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+		border-radius: var(--radius-sm);
+		padding: 10px 16px;
+	}
+
+	/* ── RESPONSIVE ── */
+	@media (max-width: 992px) {
+		.pw-filters {
+			flex-wrap: wrap;
+		}
+
+		.pw-input--search {
+			width: 100%;
+		}
+
+		.pw-filters-divider {
+			display: none;
+		}
+	}
+
+	@media (max-width: 768px) {
+
+		html,
+		body {
+			overflow: auto !important;
+		}
+
+		.pw-page .pw-main {
+			height: auto;
+			overflow: auto;
+		}
+
+		.pw-card {
+			margin: 6px;
+			border-radius: var(--radius-sm);
+		}
+
+		.pw-card-body {
+			padding: 10px 12px;
+		}
+
+		.pw-filters {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.pw-filter-group {
+			width: 100%;
+		}
+
+		.pw-input--search,
+		.pw-select--status,
+		.pw-input--date {
+			width: 100% !important;
+		}
+
+		.pw-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 8px;
+		}
+
+		.pw-toolbar-actions {
+			width: 100%;
+		}
+
+		.pw-toolbar-actions .pw-btn {
+			flex: 1;
+			justify-content: center;
+		}
+
+		.pw-pagination {
+			flex-direction: column;
+			gap: 8px;
+			align-items: center;
+		}
+
+		#examinationDetailModal .modal-dialog {
+			max-width: 100%;
+			margin: 4px;
+		}
+
+		#examinationDetailModal .modal-content {
+			height: calc(100vh - 8px);
+		}
+	}
