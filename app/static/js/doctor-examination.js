@@ -257,37 +257,23 @@
 		return true;
 	}
 
-	function initializePatientHistoryModal() {
-		const modalBase = requireModule('patientModalContract');
-
-		patientHistoryModal = modalBase.getOrCreate({
+	function initializePatientHistoryBridge() {
+		const historyBridge = requireModule('patientHistoryBridge');
+		patientHistoryModal = historyBridge.create({
 			document: DOM,
 			context: COMPONENT_CONTEXT,
 			apiCall,
 			showToast: showCustomToast,
-			buildContextOptions: () => ({
-				exposeLegacyWindowState: false,
-				getCurrentPatientData: () => state.currentPatientData,
-				getCurrentAppointmentId: () => state.currentAppointmentId,
-				getFormatDateDisplay: () => formatDateDisplay,
-				showPatientAction: false,
-				setCurrentPatientId,
-				activeStatuses: ['doctor_exam', 'conclusion'],
-				getHistoryDescription: exam => exam.diagnosis || exam.main_symptoms || '',
-				formatHistoryDate: formatDateDisplay,
-				getExaminationStatusBadgeClass: getDoctorHistoryStatusClass,
-				getExaminationStatusText: getDoctorHistoryStatusText,
-				showCopyAction: true,
-				showDeleteAction: false
-			}),
-			controlOptions: { copyHistory: selectHistoryResult },
-			triggers: [{
-				id: 'doctorClinicalHistoryButton',
-				prefillCurrent: true,
-				beforeOpen: () => Boolean(state.currentPatientId && !state.isLoadingExaminationData)
-			}]
+			formatDateDisplay,
+			getCurrentPatientData: () => state.currentPatientData,
+			getCurrentAppointmentId: () => state.currentAppointmentId,
+			setCurrentPatientId,
+			getExaminationStatusBadgeClass: getDoctorHistoryStatusClass,
+			getExaminationStatusText: getDoctorHistoryStatusText,
+			copyHistory: selectHistoryResult,
+			beforeOpen: () => Boolean(state.currentPatientId && !state.isLoadingExaminationData)
 		});
-
+		return patientHistoryModal;
 	}
 
 	function bindHistoryViewControls() {
@@ -624,6 +610,7 @@
 				'draftRecovery',
 				'workspaceLeaveGuard',
 				'patientModalContract',
+				'patientHistoryBridge',
 				'modalPatientSearchUi',
 				'modalFunctionTabsUi',
 				'modalMedicalHistoryListUi',
@@ -710,7 +697,7 @@
 		}
 
 		initializePatientSupportSections();
-		initializePatientHistoryModal();
+		initializePatientHistoryBridge();
 		bindHistoryViewControls();
 		if (patientHistoryModal) COMPONENT_CONTEXT.mount('patientHistoryModal', patientHistoryModal);
 

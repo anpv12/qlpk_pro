@@ -47,6 +47,7 @@ import './prescriptions/components/prescription-modal-preview.js';
 import './components/modal-history-data-runtime.js';
 import './components/modal-history-print-controller.js';
 import './components/patient-history-modal.js';
+import './doctor-examination/patient-history-bridge.js';
 import './doctor-examination/support-runtime.js';
 import './orders/order-autocomplete-utils.js';
 import './orders/order-status-utils.js';

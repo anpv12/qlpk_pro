@@ -67,3 +67,35 @@
 - Start with module islands and view models/services before moving templates/static assets.
 - Keep old URLs and template paths stable until a workflow-specific smoke check proves the move is safe.
 - Do not treat the target tree as a command to move everything at once; it is a migration roadmap.
+
+## Runtime Boundary And Cleanup (2026-08-23)
+
+- Active frontend entrypoints remain the Jinja page templates and their page
+  orchestrators: `doctor-examination.js`, `psychologist-examination.js`,
+  `receptionist-new.js`, `order-management.js`, and the explicitly loaded
+  shared components listed by each template. The active orders frontend
+  boundary is intentionally small: status, selection-state, and autocomplete
+  helpers are loaded where needed; catalog/tree/performer/print orchestration
+  stays with the page owners until a separate contract justifies extraction.
+- Retired dead code removed after caller/static-reference audit on 2026-08-23:
+  the unused component/order helper cluster under
+  `app/static/js/components/` and `app/static/js/orders/`, the legacy
+  `notes-attachment-chip.js` and `reexam-calendar.js`, their unused CSS, the
+  old global `style.css`, and the detached dry re-examination-calendar
+  template. These files had no active template link, import, route, or runtime
+  caller; historical notes may still mention them as former owners.
+- Compatibility wrappers are not dead code. Keep the appointment service
+  wrappers, prescription public/view-model wrappers, and old orders API
+  wrappers until their import-path migration has a dedicated contract and
+  smoke check. They delegate to the canonical module owners and must not gain
+  new logic.
+- `_archive/`, `backups/`, `uploads/`, `data/`, `tmp/`, `designs/`, and
+  `output/` are retained intentionally as operational/archive boundaries;
+  cleanup does not delete them. The same applies to the currently loaded
+  Doctor module set and shared patient-history bridges.
+- New extraction rule: create a helper/module only when it has a distinct
+  lifecycle or contract owner, or is consumed by at least two active workflow
+  owners. A small function that has one caller stays next to that caller;
+  every extracted module must be listed in this map and in its workflow module
+  context. Do not keep a compatibility wrapper for a file that has no active
+  caller.

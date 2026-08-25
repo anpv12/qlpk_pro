@@ -3,8 +3,12 @@
 <div class="receptionist-intake-content" data-patient-intake-form="{{ patient_intake_config.get('id', 'patient-intake') }}">
 	<div class="receptionist-intake-grid">
 		{% include 'partials/patient-info-form.html' %}
-		{% include 'partials/patient-visit-info-form.html' %}
+		{% if patient_intake_config.get('show_visit', true) %}
+			{% include 'partials/patient-visit-info-form.html' %}
+		{% endif %}
 	</div>
 	{% include 'partials/patient-relatives-section.html' %}
-	{% include 'partials/patient-documents-section.html' %}
+	{% if patient_intake_config.get('show_documents', true) %}
+		{% include 'partials/patient-documents-section.html' %}
+	{% endif %}
 </div>

@@ -2595,7 +2595,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	background: color-mix(in srgb, var(--appointment-calendar-header-bg) 70%, var(--appointment-color-white));
 }
 
-/* Compact event — matching reexam-calendar.css exactly */
+/* Compact event — shared appointment calendar treatment */
 .appointment-fullscreen .fc-daygrid-event,
 .appointment-fullscreen .fc-event,
 .appointment-fullscreen .fc-h-event {

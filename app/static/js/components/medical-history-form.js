@@ -429,9 +429,9 @@
     substanceIds: DEFAULT_SUBSTANCE_IDS
 	});
 
-	getOrCreate(
-		window.QLPKMedicalHistoryBootstrapConfig
+		const bootstrapConfig = window.QLPKMedicalHistoryBootstrapConfig
 			|| window.QLPKDoctorModuleRegistry.get('doctorComponentConfig')?.history
-			|| {}
-	);
-})(window, document);
+			|| {};
+		const bootstrapInstance = getOrCreate(bootstrapConfig);
+		if (bootstrapInstance && bootstrapConfig.autoInit !== false) bootstrapInstance.init();
+	})(window, document);

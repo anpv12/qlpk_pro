@@ -46,6 +46,11 @@ Từ 2026-08-09, `partials/doctor-clinical-workspace.html` là workspace khám �
 
 Nguồn chọn ca: danh sách chờ bên trái. Sau khi đã chọn ca, section navigation trong `#doctorClinicalWorkspace` chỉ chuyển vùng làm việc của cùng appointment; nó không thay thế queue hoặc app workspace tabs.
 
+Trong modal `Tìm kiếm bệnh nhân`, kết quả chỉ gồm bệnh nhân có ít nhất một
+appointment `CONFIRMED` chưa xóa mềm. Appointment `SCHEDULED`, `CANCELLED`,
+`NO_SHOW` hoặc đã xóa không đủ điều kiện để làm hồ sơ xuất hiện trong danh sách;
+`last_appointment` cũng chỉ lấy từ các appointment `CONFIRMED` đó.
+
 Được hiển thị:
 - Tên bệnh nhân.
 - Appointment id hoặc số thứ tự nếu cần phân biệt.
@@ -65,7 +70,7 @@ Không nên hiển thị:
 | Khám | `doctorClinicalDecisionPanel` | Vùng mặc định có grid Khám & xử trí + Khám chi tiết, tiếp theo là block đơn thuốc inline; lịch sử đơn thuốc mở từ nút tại block này. |
 | Tiền sử | `doctorHistoryPanel` | Xem tiền sử, dị ứng, nguy cơ và kế hoạch an toàn. |
 | Dịch vụ | `doctorServicePanel` | Thêm/sửa/lưu dịch vụ đi kèm theo appointment; không thuộc Đơn thuốc. |
-| Chỉ định | `doctorIndicationsPanel` | Tạo/sửa/xóa chỉ định theo appointment, chọn catalog/người thực hiện, xem lịch sử bệnh nhân và lưu qua Doctor global save. |
+| Chỉ định | `doctorIndicationsPanel` | Tạo/sửa/xóa chỉ định theo appointment từ một trong ba nguồn: danh mục, nhập text tự do hoặc mẫu khảo sát; chọn người thực hiện, xem lịch sử bệnh nhân và lưu qua Doctor global save. |
 Dịch vụ là root section độc lập, dùng service-state owner nhưng không có summary/nút mở trong Đơn thuốc. Tài liệu đính kèm thuộc vùng Hành chính và dùng shared attachment components; lịch sử đơn thuốc thuộc `prescription-ui.js`. Khám chi tiết không là entry, pane hay modal; nó là card cùng grid với Khám & xử trí, dùng `examination_details` đúng section và không thay thế chín field quyết định lâm sàng. Đơn thuốc nằm full-width sau grid này, không thuộc riêng một trong hai card; lịch sử đơn thuốc mở dạng panel nội bộ.
 
 ### Tầng 1 - Patient Context Header

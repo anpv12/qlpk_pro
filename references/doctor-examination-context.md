@@ -43,6 +43,9 @@ Last reconciled with runtime: 2026-08-13.
   tương thích có chủ đích, không phải owner thứ hai.
 - `components/patient-history-modal.js` là lifecycle owner duy nhất của modal
   `#patientSearchModal`; `patient-modal-contract.js` chỉ là public delegator.
+  `doctor-examination/patient-history-bridge.js` là composition owner của
+  Doctor: nhận callback/state từ page và cấu hình shared modal; page không gọi
+  `getOrCreate()` trực tiếp. Không thêm modal instance thứ hai.
   Preview toa của modal phải được tạo với template và barcode helper qua
   registry, không gọi `setupPrescriptionTabPagination` global của dry helper.
 - `components/doctor-component-base.css` là owner cho geometry/state/focus
@@ -89,29 +92,30 @@ Doctor-private modules in this order (shared assets between them are omitted):
 14. `doctor-examination/medical-history-bindings.js`
 15. `doctor-examination/safety-plan.js`
 16. `doctor-examination/medical-history-bridge.js`
-17. `doctor-examination/support-runtime.js`
-18. `doctor-examination/prescription-model.js`
-19. `doctor-examination/prescription-row-renderer.js`
-20. `doctor-examination/prescription-history-ui.js`
-21. `doctor-examination/prescription-ui.js`
-22. `components/doctor-services-form.js`
-23. `components/doctor-indications-form.js`
-24. `doctor-examination/support-modules-ui.js`
-25. `doctor-examination/clinical-detail-persistence.js`
-26. `components/clinical-examination-form.js`
-27. `doctor-examination/workspace-save-controller.js`
-28. `doctor-examination/clinical-workspace-ui.js`
-29. `doctor-examination/draft-recovery.js`
-30. `doctor-examination/document-attachments-bridge.js`
-31. `doctor-examination/workspace-leave-guard.js`
-32. `doctor-examination/platform-boundaries.js`
-33. `doctor-examination.js`
+17. `doctor-examination/patient-history-bridge.js`
+18. `doctor-examination/support-runtime.js`
+19. `doctor-examination/prescription-model.js`
+20. `doctor-examination/prescription-row-renderer.js`
+21. `doctor-examination/prescription-history-ui.js`
+22. `doctor-examination/prescription-ui.js`
+23. `components/doctor-services-form.js`
+24. `components/doctor-indications-form.js`
+25. `doctor-examination/support-modules-ui.js`
+26. `doctor-examination/clinical-detail-persistence.js`
+27. `components/clinical-examination-form.js`
+28. `doctor-examination/workspace-save-controller.js`
+29. `doctor-examination/clinical-workspace-ui.js`
+30. `doctor-examination/draft-recovery.js`
+31. `doctor-examination/document-attachments-bridge.js`
+32. `doctor-examination/workspace-leave-guard.js`
+33. `doctor-examination/platform-boundaries.js`
+34. `doctor-examination.js`
 
 The route also loads shared components for queue cards, patient/intake forms,
 medical-history controls, documents, ICD data, relatives, and modal shells.
 Those components are supporting owners, not a second Doctor-workspace owner.
 
-There are now twenty-six live Doctor-private files under `app/static/js/doctor-examination/`
+There are now twenty-seven live Doctor-private files under `app/static/js/doctor-examination/`
 in this snapshot, plus shared component owners under
 `app/static/js/components/` and the page orchestrator `doctor-examination.js`. Do not add
 script tags or documentation references for retired
@@ -124,6 +128,7 @@ files unless a separately approved runtime slice reintroduces them.
 | --- | --- | --- |
 | Doctor page runtime | `app/static/js/doctor-examination/page-runtime.js` | Canonical page auth header, API caller, login redirect, toast, and date display formatter. Shared Doctor-loaded components use this runtime first; legacy global aliases remain only as compatibility bridges. |
 | Page selection/load/clear | `app/static/js/doctor-examination.js` | Queue loading, selected appointment state, load token, page-level clear/load sequence, module initialization, realtime refresh, and the canonical `QLPKCurrentAppointment.getPatientId()` bridge for patient-level modules. |
+| Doctor patient-history composition | `app/static/js/doctor-examination/patient-history-bridge.js`, registry key `patientHistoryBridge` | Configures the shared patient-history modal with Doctor status/current-patient callbacks, copy-history action, and trigger guard; returns the canonical modal instance to the page. It does not own appointment loading or history data. |
 | Main clinical workspace shell | `app/static/js/doctor-examination/clinical-workspace-ui.js`, registry key `clinicalWorkspace` | Context render, shared-form composition, top-level section activation, dirty aggregation, and global save wiring. |
 | Clinical detail persistence | `app/static/js/doctor-examination/clinical-detail-persistence.js` | `examination_details` field map, stale-safe hydration, and section saves. |
 | Clinical examination form component | `app/static/js/components/clinical-examination-form.js` | Khám field render/collect/clear, ICD/current-medication normalization, detail dirty sections, detail load/save delegation, and draft snapshot. |

@@ -751,7 +751,14 @@
 			firstDate.getFullYear() === secondDate.getFullYear();
 	}
 
-	function buildVisitBadge({ isCurrentExam, isToday, paymentStatus }) {
+	function isExaminingStatus(status) {
+		return ['DOCTOR_EXAM', 'PSYCHOLOGIST_EXAM'].includes(String(status || '').trim().toUpperCase());
+	}
+
+	function buildVisitBadge({ isCurrentExam, isExamining, isToday, paymentStatus }) {
+		if (isExamining) {
+			return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--examining modal-history-visit-badge"><i class="bi bi-activity me-1"></i>Đang khám</span>';
+		}
 		if (isCurrentExam) {
 			return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--current modal-history-visit-badge"><i class="bi bi-activity me-1"></i>Đang khám</span>';
 		}
@@ -776,10 +783,12 @@
 		const index = options.index || 0;
 		const selectedIndex = options.selectedIndex;
 		const isCurrentExam = isCurrentAppointmentMatch(options.currentAppointmentId, exam.appointment_id);
+		const isExamining = isExaminingStatus(exam.status);
+		const isWaitingPayment = String(exam.status || '').trim().toUpperCase() === 'WAITING_PAYMENT';
 		const displayDate = getDisplayDate(exam);
 		const isToday = isSameDate(displayDate, new Date());
-		const isPastHistory = !isCurrentExam && !(isToday && exam.payment_status !== 'PAID');
-		const statusBadge = buildVisitBadge({ isCurrentExam, isToday, paymentStatus: exam.payment_status });
+		const isPastHistory = !isCurrentExam && !isExamining && !(isToday && exam.payment_status !== 'PAID');
+		const statusBadge = buildVisitBadge({ isCurrentExam, isExamining, isToday, paymentStatus: exam.payment_status });
 		const getDescription = typeof options.getDescription === 'function'
 			? options.getDescription
 			: item => item.diagnosis || '';
@@ -793,7 +802,7 @@
 
 		if (showCopyAction) {
 			actionButtons.push(`
-						<button class="btn btn-sm patient-search-modal__history-copy-button ${isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''}" data-action="copy-history" data-index="${index}" title="${isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
+						<button class="btn btn-sm patient-search-modal__history-copy-button ${isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
                             <i class="bi ${isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}"></i>
                         </button>
                     `);
@@ -811,6 +820,7 @@
 			'modal-history-row', 'modal-history-item',
 			selectedIndex === index ? 'modal-history-item-active' : '',
 			isCurrentExam ? 'current-exam-highlight' : '',
+			isExamining ? 'modal-history-item--examining' : '',
 			isPastHistory ? 'past-exam-history' : ''
 		].filter(Boolean).join(' ');
 
@@ -824,7 +834,7 @@
                         <span class="d-block text-truncate" title="${description}">${description}</span>
 					</div>
 					<div class="col-2 text-center col-history-payment">
-						<span class="badge patient-search-modal__exam-status-badge">
+						<span class="badge patient-search-modal__exam-status-badge${isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
 							${getStatusText(exam.status)}
 						</span>
                     </div>
@@ -1053,6 +1063,7 @@
 		buildDeleteExaminationCatchMessage,
 		deleteExaminationCore,
 		cleanupSweetAlertDialog,
+		isExaminingStatus,
 		buildVisitBadge,
 		buildHistoryRowHtml,
 		renderHistoryList,

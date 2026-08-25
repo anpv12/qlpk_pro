@@ -53,7 +53,11 @@ overflow.
 
 The top-level rail contains five root sections: Hành chính, Tiền sử, Khám, Dịch vụ, and Chỉ định. The Chỉ định pane is owned by `components/doctor-indications-form.js`; it loads the appointment rows and active catalog, keeps one dirty state, and is composed into `supportModulesUi` so Doctor global save remains the only save transaction. Its inline history reads the patient-scoped orders endpoint and excludes the current appointment. Tài liệu đính kèm remains in Hành chính and prescription history remains inside the prescription workspace; there is no nested support navigation.
 
-The Chỉ định catalog menu is a viewport-anchored autocomplete popover, not a
+The Chỉ định pane supports three explicit sources: `Danh mục` chọn từ
+`order_items`, `Nhập text` lưu tên tự do, và `Khảo sát` chọn từ
+`/api/survey-templates-for-orders`. Catalog and survey sources require a
+selection; custom text does not. The Chỉ định catalog menu is a
+viewport-anchored autocomplete popover, not a
 fixed-height child list of the left form column. Its width must remain equal to
 the input width. Its block size follows the usable viewport space and it opens
 upward when that side has more room. The anchor is resynchronized while the
@@ -177,17 +181,28 @@ delete or replace other persisted detail sections.
 
 - Above `86.24875rem`, the top navigation is a vertical edge rail beside the clinical stage. It uses intrinsic height and must not scroll internally.
 - At or below `86.24875rem`, it becomes a horizontal, overflow-x scrollable row below the main clinical stage; labels return to normal horizontal writing.
-- Detail-field groups use two equal columns from `48rem` and one column below that breakpoint; Thần kinh spans both desktop columns. Normal detail fields place their primary-text labels above their full-width textarea within that half-column, preventing the shared horizontal label/input rule from constricting clinical text entry. Their textarea has `padding-inline-start: 0`, so the label and entered text start on one vertical reading axis; the end padding remains for the resize control. All 15 detail controls deliberately omit a `placeholder`: the visible label is the only field cue and an empty entry surface remains blank. Both cards share the compact dark-green header/white title-icon treatment of the prescription workspace; their white entry surfaces retain teal strong for group titles, teal for add actions and focus, teal for the fixed numbered `1.`–`9.` decision labels, primary text for normal field labels and entered values, and two matching teal tints for dividers and entry underlines. The desktop root-rail uses the same teal family: active uses the primary teal, inactive uses a readable muted teal, and hover/focus uses the strong teal. Short labels with the explicit `doctor-clinical-detail-field--inline` modifier (`Tuần hoàn`, `Tiêu hoá`, `Thần kinh`, `Tri giác`, `Tư duy`, `Trí nhớ`, `Trí năng`) are the deliberate exception: their non-wrapping text label and textarea share one responsive row through `max-content minmax(0, 1fr)`. Every free-text control in both cards is a semantic textarea with an initial/minimum height of `1.65rem` and native vertical resizing for multiline entry; ICD diagnosis controls remain the shared autocomplete component. The label margin block-start and textarea padding block-start consume the same `--doctor-clinical-detail-entry-block-start` token so every inline label begins on the textarea's first text line. From `64rem`, the paired cards stretch to the taller content-driven card height; the form rows remain content-sized rather than distributing residual height into textareas. There is no JS-measured or fixed card height. Below `64rem`, the paired Khám grid becomes one column and keeps the document order Khám & xử trí, Khám chi tiết, then the full-width prescription block. At or below `47.99875rem`, the workspace returns to document flow rather than forcing a fixed-height panel.
+- Detail-field groups use two equal columns from `48rem` and one column below that breakpoint; Thần kinh spans both desktop columns. Normal detail fields place their primary-text labels above their full-width textarea within that half-column, preventing the shared horizontal label/input rule from constricting clinical text entry. Their textarea has `padding-inline-start: 0`, so the label and entered text start on one vertical reading axis; the end padding remains for the resize control. All 15 detail controls deliberately omit a `placeholder`: the visible label is the only field cue and an empty entry surface remains blank. Both cards share the compact dark-green header/white title-icon treatment of the prescription workspace; their white entry surfaces retain teal strong for group titles, teal for add actions and focus, teal for the fixed numbered `1.`–`9.` decision labels, primary text for normal field labels and entered values, and two matching teal tints for dividers and entry underlines. The desktop root-rail uses the same teal family: active uses the primary teal, inactive uses a readable muted teal, and hover/focus uses the strong teal. Short labels with the explicit `doctor-clinical-detail-field--inline` modifier (`Tuần hoàn`, `Tiêu hoá`, `Thần kinh`, `Tri giác`, `Tư duy`, `Trí nhớ`, `Trí năng`) are the deliberate exception: their non-wrapping text label and textarea share one responsive row through `max-content minmax(0, 1fr)`. Every free-text control in both cards is a semantic textarea with an initial/minimum height of `1.65rem` and native vertical resizing for multiline entry; ICD diagnosis controls remain the shared autocomplete component. The label margin block-start and textarea padding block-start consume the same `--doctor-clinical-detail-entry-block-start` token so every inline label begins on the textarea's first text line. From `64rem`, the paired cards stretch to the taller content-driven card height; the form rows remain content-sized rather than distributing residual height into textareas. There is no JS-measured or fixed card height. Below `64rem`, the paired Khám grid becomes one column and keeps the document order Khám & xử trí, Khám chi tiết, then the full-width prescription block. At or below `47.99875rem`, the workspace remains bounded to the viewport; the page and clinical layout do not scroll, while the active panel body owns vertical overflow for dense clinical content. The mobile two-pane switch and narrow section rail may still scroll horizontally as navigation controls.
 - Active links/buttons must expose `.is-active` and `aria-current="true"`; inactive sections/panes must be hidden and receive `aria-hidden="true"` where the top-level section owner manages it.
 - Preserve the explicit `aria-controls`/target ID relationship. Do not replace labels with icon-only controls unless an accessible name remains and visual QA confirms the clinical meaning is obvious.
 
 ## Current Slice And QA State
 
+QA cập nhật 2026-08-22 cho viewport-bound Khám: CSS giữ `doctor-workspace` và
+chuỗi clinical parent ở chiều cao khả dụng của viewport trên desktop, tablet và
+mobile; `doctor-clinical-layout`/`doctor-clinical-main` không còn là scroll owner,
+chỉ `.doctor-workbench-panel__body--clinical` scroll khi nội dung dài. Browser
+với ca thật Võ Vương Cao Sáng xác nhận ở `1280x720`, `768x1024` và `390x844`
+body/html không có overflow (scrollHeight bằng clientHeight), khung Khám không
+vượt viewport và console error/warn rỗng. Tâm lý gia nạp lại
+`examination-detail-modal.css` để indicator `Đã lưu` là fixed, không tạo thêm
+chiều cao trang.
+
 The active doctor UI slice keeps five root sections in
 `doctor-section-edge-nav`: Hành chính, Tiền sử, Khám, Dịch vụ, and Chỉ định. The
 prescription workspace is inline below Khám and its history panel is opened by
 the local `Xem lịch sử` action. Chỉ định is mounted as a separate data-backed
-pane with current appointment rows, catalog selection, edit/delete actions,
+pane with current appointment rows, three source choices (catalog, custom text,
+survey), edit/delete actions,
 inline patient history, and one global-save owner. Documents remain in Hành
 chính and prescription history remains inside Đơn thuốc.
 

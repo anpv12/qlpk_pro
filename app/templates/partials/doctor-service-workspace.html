@@ -1,0 +1,36 @@
+<div class="doctor-service-workspace doctor-service-workspace--split">
+	<section class="doctor-service-catalog" aria-labelledby="doctorServiceCatalogHeading">
+		<header class="doctor-service-section__header">
+			<h3 id="doctorServiceCatalogHeading">Dịch vụ</h3>
+		</header>
+		<div class="doctor-service-section__content">
+			<div class="doctor-service-catalog__list" id="doctorServiceCatalogList"></div>
+			<div class="doctor-support-empty" id="doctorServiceCatalogEmptyState">Chưa có dịch vụ trong danh mục.</div>
+			<nav class="doctor-service-catalog__pagination" id="doctorServiceCatalogPagination" aria-label="Phân trang danh mục dịch vụ" hidden>
+				<button type="button" data-service-catalog-page="previous" aria-label="Trang dịch vụ trước">Trước</button>
+				<label class="visually-hidden" for="doctorServiceCatalogPageSelect">Chọn trang danh mục dịch vụ</label>
+				<select id="doctorServiceCatalogPageSelect" aria-describedby="doctorServiceCatalogPageStatus"></select>
+				<span class="visually-hidden" id="doctorServiceCatalogPageStatus" aria-live="polite"></span>
+				<button type="button" data-service-catalog-page="next" aria-label="Trang dịch vụ sau">Sau</button>
+			</nav>
+		</div>
+	</section>
+	<section class="doctor-service-selection" aria-labelledby="doctorServiceSelectionHeading">
+		<header class="doctor-service-section__header doctor-service-selection__header">
+			<h3 id="doctorServiceSelectionHeading">Đã chọn</h3>
+			<div class="doctor-service-selection__column-labels" aria-hidden="true">
+				<span>Giá</span>
+				<span>SL</span>
+				<span></span>
+			</div>
+		</header>
+		<div class="doctor-service-section__content">
+			<div class="doctor-service-selection__list" id="doctorServiceSelectionList"></div>
+			<div class="doctor-support-empty" id="doctorServiceEmptyState">Chưa chọn dịch vụ.</div>
+		</div>
+		<footer class="doctor-service-selection__total" id="doctorServiceSelectionTotal" hidden>
+			<span class="doctor-service-selection__total-label">Tổng dự tính</span>
+			<strong class="doctor-service-selection__total-value" id="doctorServiceSelectionTotalValue" aria-live="polite">0 ₫</strong>
+		</footer>
+	</section>
+</div>

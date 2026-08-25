@@ -15,6 +15,7 @@
 		catalog: 'doctorIndicationCatalog',
 		catalogId: 'doctorIndicationCatalogId',
 		catalogDropdown: 'doctorIndicationCatalogDropdown',
+		sourceFieldset: 'doctorIndicationSourceFieldset',
 		locationFieldset: 'doctorIndicationLocationFieldset',
 		performerGroup: 'doctorIndicationPerformerGroup',
 		performer: 'doctorIndicationPerformer',
@@ -35,9 +36,11 @@
 	const DEFAULT_ENDPOINTS = {
 		appointment: ({ appointmentId }) => `/api/chi-dinh/appointment/${appointmentId}`,
 		catalog: '/api/order-items?include_inactive=true',
+		surveyTemplates: '/api/survey-templates-for-orders',
 		performers: '/users/doctors',
 		history: ({ patientId, appointmentId }) => `/api/chi-dinh/patient/${patientId}?exclude_appointment_id=${appointmentId || ''}`
 	};
+	const MAX_ORDER_NAME_LENGTH = 255;
 
 	const DEFAULT_CONFIG = {
 		rootId: DEFAULT_DOM.root,
@@ -80,11 +83,16 @@
 			appointmentId: null,
 			patientId: null,
 			defaultDate: '',
+			source: 'catalog',
 			isLoading: null,
 			rows: [],
 			catalog: [],
 			catalogIndex: new Map(),
 			selectedCatalog: null,
+			surveyTemplates: [],
+			surveyIndex: new Map(),
+			selectedSurvey: null,
+			surveyLoaded: false,
 			autocomplete: null,
 			syncCatalogDropdownGeometry: null,
 			performers: [],
@@ -129,6 +137,34 @@
 			return value === 'out' || value === 'external' ? 'out' : 'in';
 		}
 
+		function normalizeSource(value) {
+			return ['catalog', 'custom', 'survey'].includes(String(value || '').toLowerCase())
+				? String(value).toLowerCase()
+				: 'catalog';
+		}
+
+		function sourceForRow(row = {}) {
+			if (normalizeId(row.survey_template_id)) return 'survey';
+			if (normalizeId(row.order_id || row.order_item_id)) return 'catalog';
+			return 'custom';
+		}
+
+		function getSelectedSource(doc) {
+			const selected = doc.querySelector('input[name="doctorIndicationSource"]:checked');
+			return normalizeSource(selected?.value || STATE.source);
+		}
+
+		function buildSurveyIndex(items = []) {
+			const index = new Map();
+			items.forEach(item => {
+				const id = normalizeId(item.id);
+				const name = textOf(item.name);
+				if (!id || !name) return;
+				index.set(Number(id), { ...item, id: Number(id), name });
+			});
+			return index;
+		}
+
 		function formatDate(value) {
 			if (!value) return '—';
 			const raw = String(value).slice(0, 10);
@@ -146,6 +182,18 @@
 			return row.location_type === 'in'
 				? (row.in_house_unit || '')
 				: (row.out_facility || '');
+		}
+
+		function getSourceConfig(row = {}) {
+			const source = normalizeSource(row.source || sourceForRow(row));
+			if (source === 'survey') return { label: 'Khảo sát', className: 'doctor-indications-source-badge--survey' };
+			if (source === 'custom') return { label: 'Nhập text', className: 'doctor-indications-source-badge--custom' };
+			return { label: 'Danh mục', className: 'doctor-indications-source-badge--catalog' };
+		}
+
+		function renderSourceBadge(row) {
+			const config = getSourceConfig(row);
+			return `<span class="doctor-indications-source-badge ${config.className}">${config.label}</span>`;
 		}
 
 		function buildCatalogIndex(items = []) {
@@ -166,6 +214,7 @@
 
 		function clearCatalogSelection(doc, options = {}) {
 			STATE.selectedCatalog = null;
+			STATE.selectedSurvey = null;
 			const input = el(doc, 'catalog');
 			const hidden = el(doc, 'catalogId');
 			if (hidden) hidden.value = '';
@@ -174,6 +223,45 @@
 				input.removeAttribute('aria-invalid');
 			}
 			if (options.hide !== false && STATE.autocomplete?.hide) STATE.autocomplete.hide();
+		}
+
+		function setSurveySelection(doc, item = {}) {
+			const id = normalizeId(item.id || item.survey_template_id);
+			const name = textOf(item.name || item.order_name);
+			if (!id || !name) {
+				clearCatalogSelection(doc);
+				return false;
+			}
+			STATE.selectedCatalog = null;
+			STATE.selectedSurvey = { ...item, id: Number(id), name };
+			const input = el(doc, 'catalog');
+			const hidden = el(doc, 'catalogId');
+			if (hidden) hidden.value = '';
+			if (input) {
+				input.value = name;
+				input.removeAttribute('aria-invalid');
+			}
+			return true;
+		}
+
+		function setSource(doc, source, options = {}) {
+			const nextSource = normalizeSource(source);
+			STATE.source = nextSource;
+			const input = el(doc, 'catalog');
+			const hidden = el(doc, 'catalogId');
+			const selectedControls = doc.querySelectorAll('input[name="doctorIndicationSource"]');
+			selectedControls.forEach(control => {
+				control.checked = control.value === nextSource;
+			});
+			STATE.selectedCatalog = null;
+			STATE.selectedSurvey = null;
+			if (hidden) hidden.value = '';
+			if (input) {
+				if (!options.preserveText) input.value = '';
+				input.removeAttribute('aria-invalid');
+			}
+			if (STATE.autocomplete?.hide) STATE.autocomplete.hide();
+			renderCatalog(doc);
 		}
 
 		function setCatalogSelection(doc, item = {}) {
@@ -188,6 +276,7 @@
 				name,
 				group_path: textOf(item.group_path || item.breadcrumb || item.category_name)
 			};
+			STATE.selectedSurvey = null;
 			const input = el(doc, 'catalog');
 			const hidden = el(doc, 'catalogId');
 			if (input) {
@@ -260,18 +349,27 @@
 				document: doc,
 				nameInput: input,
 				dropdown,
-				getOrderIndex: () => STATE.catalogIndex,
+				getOrderIndex: () => STATE.source === 'catalog' ? STATE.catalogIndex : new Map(),
+				getSurveyTemplates: () => STATE.source === 'survey' ? STATE.surveyTemplates : [],
+				isEnabled: () => STATE.source !== 'custom',
 				includeCatalogWhenEmpty: true,
 				emptyCatalogLimit: 30,
 				normalizeSearch: true,
 				includeMetadataSearch: true,
 				selectFirstOnEnter: true,
+				showSurveyDescription: false,
 				emptyText: 'Không tìm thấy chỉ định phù hợp.',
 				escapeHtml,
 				onInput: () => clearCatalogSelection(doc, { clearText: false, hide: false }),
 				onOrderSelect: (orderId, context) => {
 					const item = STATE.catalogIndex.get(Number(orderId));
 					if (!item || !setCatalogSelection(doc, item)) return;
+					context.hide();
+					setMessage(doc);
+				},
+				onSurveySelect: (surveyId, context) => {
+					const item = STATE.surveyIndex.get(Number(surveyId));
+					if (!item || !setSurveySelection(doc, item)) return;
 					context.hide();
 					setMessage(doc);
 				}
@@ -304,6 +402,7 @@
 				id,
 				tempId,
 				order_id: orderId,
+				source: normalizeSource(item.source || sourceForRow(item)),
 				order_name: textOf(item.order_name || item.name),
 				location_type: normalizeLocation(item.location_type),
 				in_house_unit_id: normalizeId(item.in_house_unit_id),
@@ -325,12 +424,14 @@
 			if (typeof ORDER_STATE_UTILS.buildOrdersSavePayload === 'function') {
 				return ORDER_STATE_UTILS.buildOrdersSavePayload(STATE.rows, {
 					nullEmptyInHouseUnitId: true,
-					emptyStringInHouseUnit: true
+					emptyStringInHouseUnit: true,
+					includeSurveyTemplate: true
 				});
 			}
 			return STATE.rows.map(row => ({
 				id: row.id || undefined,
 				order_id: row.order_id,
+				survey_template_id: row.survey_template_id || null,
 				order_name: row.order_name,
 				location_type: row.location_type,
 				in_house_unit_id: row.in_house_unit_id || null,
@@ -363,6 +464,8 @@
 				const control = el(doc, name);
 				if (control) control.disabled = !ready;
 			});
+			const sourceFieldset = el(doc, 'sourceFieldset');
+			if (sourceFieldset) sourceFieldset.disabled = !ready;
 			const fieldset = el(doc, 'locationFieldset');
 			if (fieldset) fieldset.disabled = !ready;
 			const historyToggle = el(doc, 'historyToggle');
@@ -389,8 +492,12 @@
 			const input = el(doc, 'catalog');
 			if (!input) return;
 			if (!STATE.appointmentId) input.placeholder = 'Chưa chọn lượt khám';
-			else if (!STATE.catalogLoaded) input.placeholder = 'Đang tải danh mục chỉ định...';
-			else if (STATE.catalogIndex.size === 0) input.placeholder = 'Chưa có danh mục chỉ định';
+			else if (STATE.source === 'custom') input.placeholder = 'Nhập tên chỉ định';
+			else if (STATE.source === 'survey' && !STATE.surveyLoaded) input.placeholder = 'Đang tải mẫu khảo sát...';
+			else if (STATE.source === 'survey' && STATE.surveyIndex.size === 0) input.placeholder = 'Chưa có mẫu khảo sát';
+			else if (STATE.source === 'catalog' && !STATE.catalogLoaded) input.placeholder = 'Đang tải danh mục chỉ định...';
+			else if (STATE.source === 'catalog' && STATE.catalogIndex.size === 0) input.placeholder = 'Chưa có danh mục chỉ định';
+			else if (STATE.source === 'survey') input.placeholder = 'Tìm tên mẫu khảo sát';
 			else input.placeholder = 'Tìm tên chỉ định';
 		}
 
@@ -422,7 +529,7 @@
 				const group = row.group_path ? `<small class="doctor-indications-table__group">${escapeHtml(row.group_path)}</small>` : '';
 				return `<tr data-doctor-indication-row="${escapeAttr(row.tempId)}">
 					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong>${group}</td>
+					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong> ${renderSourceBadge(row)}${group}</td>
 					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
 					<td>${formatDate(row.scheduled_for)}</td>
 					<td><span class="doctor-indications-status ${escapeAttr(status.className || '')}">${escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
@@ -450,7 +557,7 @@
 				const performer = getPerformerName(row) || '—';
 				return `<tr>
 					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong>${row.group_path ? `<small class="doctor-indications-table__group">${escapeHtml(row.group_path)}</small>` : ''}</td>
+					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong> ${renderSourceBadge(row)}${row.group_path ? `<small class="doctor-indications-table__group">${escapeHtml(row.group_path)}</small>` : ''}</td>
 					<td>${escapeHtml(appointment.appointment_code || `Lượt khám #${row.appointment_id || '—'}`)}</td>
 					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
 					<td>${formatDate(appointment.appointment_date || row.scheduled_for)}</td>
@@ -482,6 +589,7 @@
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
 			const inLocation = doc.getElementById('doctorIndicationLocationIn');
+			setSource(doc, 'catalog');
 			clearCatalogSelection(doc);
 			if (performer) performer.value = '';
 			if (outFacility) outFacility.value = '';
@@ -506,7 +614,14 @@
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
 			const catalogItem = STATE.catalog.find(item => String(item.id) === String(row.order_id));
-			setCatalogSelection(doc, catalogItem || row);
+			const source = normalizeSource(row.source || sourceForRow(row));
+			setSource(doc, source, { preserveText: true });
+			if (source === 'catalog') setCatalogSelection(doc, catalogItem || row);
+			else if (source === 'survey') setSurveySelection(doc, STATE.surveyIndex.get(Number(row.survey_template_id)) || row);
+			else {
+				const input = el(doc, 'catalog');
+				if (input) input.value = row.order_name || '';
+			}
 			if (performer) performer.value = row.in_house_unit_id ? String(row.in_house_unit_id) : '';
 			if (outFacility) outFacility.value = row.out_facility || '';
 			if (date) date.value = row.scheduled_for || '';
@@ -532,18 +647,37 @@
 			const date = el(doc, 'date');
 			const selectedLocation = doc.querySelector('input[name="doctorIndicationLocation"]:checked');
 			const locationType = normalizeLocation(selectedLocation && selectedLocation.value);
+			const source = getSelectedSource(doc);
 			const selectedCatalog = STATE.selectedCatalog;
+			const selectedSurvey = STATE.selectedSurvey;
 			const orderId = normalizeId(catalogId && catalogId.value);
-			const orderName = textOf(selectedCatalog && selectedCatalog.name);
 			const typedName = textOf(catalog && catalog.value);
+			const orderName = source === 'catalog'
+				? textOf(selectedCatalog && selectedCatalog.name)
+				: source === 'survey'
+					? textOf(selectedSurvey && selectedSurvey.name)
+					: typedName;
+			const surveyTemplateId = source === 'survey' ? normalizeId(selectedSurvey && selectedSurvey.id) : null;
+			if (orderName.length > MAX_ORDER_NAME_LENGTH) {
+				if (catalog) catalog.setAttribute('aria-invalid', 'true');
+				return { valid: false, message: `Tên chỉ định tối đa ${MAX_ORDER_NAME_LENGTH} ký tự.`, focus: catalog };
+			}
 			const scheduledFor = textOf(date && date.value);
 			const outFacilityName = textOf(outFacility && outFacility.value);
 			const performerId = normalizeId(performer && performer.value);
 			const performerOption = performer && performer.selectedOptions ? performer.selectedOptions[0] : null;
 			const performerName = textOf(performerOption && (performerOption.dataset.userName || performerOption.textContent));
-			if (!orderId || !orderName || String(orderId) !== String(selectedCatalog?.id) || typedName !== orderName) {
+			if (source === 'catalog' && (!orderId || !orderName || String(orderId) !== String(selectedCatalog?.id) || typedName !== orderName)) {
 				if (catalog) catalog.setAttribute('aria-invalid', 'true');
 				return { valid: false, message: 'Chọn một chỉ định từ danh mục.', focus: catalog };
+			}
+			if (source === 'survey' && (!surveyTemplateId || !orderName || typedName !== orderName)) {
+				if (catalog) catalog.setAttribute('aria-invalid', 'true');
+				return { valid: false, message: 'Chọn một mẫu khảo sát.', focus: catalog };
+			}
+			if (source === 'custom' && !typedName) {
+				if (catalog) catalog.setAttribute('aria-invalid', 'true');
+				return { valid: false, message: 'Nhập tên chỉ định.', focus: catalog };
 			}
 			if (!scheduledFor) return { valid: false, message: 'Chọn ngày chỉ định.', focus: date };
 			if (locationType === 'in' && !performerId) return { valid: false, message: 'Chọn người thực hiện trong cơ sở.', focus: performer };
@@ -551,14 +685,18 @@
 			return {
 				valid: true,
 				data: {
-					order_id: orderId,
+					order_id: source === 'catalog' ? orderId : null,
+					survey_template_id: surveyTemplateId,
 					order_name: orderName,
 					location_type: locationType,
 					in_house_unit_id: locationType === 'in' ? performerId : null,
 					in_house_unit: locationType === 'in' ? performerName : '',
 					out_facility: locationType === 'out' ? outFacilityName : '',
 					scheduled_for: scheduledFor,
-					group_path: textOf(selectedCatalog.group_path),
+					group_path: source === 'catalog'
+						? textOf(selectedCatalog.group_path)
+						: source === 'survey' ? 'Khảo sát Tâm lý' : '',
+					source,
 					status: 'sent',
 					is_completed: false
 				}
@@ -650,6 +788,27 @@
 			}
 		}
 
+		async function loadSurveyTemplates(context) {
+			const { doc, token, appointmentId } = context;
+			try {
+				const data = await requestJson(endpoint('surveyTemplates'), { method: 'GET' });
+				if (!currentToken(token, appointmentId)) return false;
+				STATE.surveyTemplates = Array.isArray(data?.data) ? data.data : [];
+				STATE.surveyIndex = buildSurveyIndex(STATE.surveyTemplates);
+				STATE.surveyLoaded = true;
+				renderCatalog(doc);
+				return true;
+			} catch (error) {
+				if (currentToken(token, appointmentId)) {
+					STATE.surveyTemplates = [];
+					STATE.surveyIndex = new Map();
+					STATE.surveyLoaded = true;
+					renderCatalog(doc);
+				}
+				return true;
+			}
+		}
+
 		async function loadPerformers(context) {
 			const { doc, token, appointmentId } = context;
 			try {
@@ -709,6 +868,11 @@
 			STATE.catalog = [];
 			STATE.catalogIndex = new Map();
 			STATE.selectedCatalog = null;
+			STATE.surveyTemplates = [];
+			STATE.surveyIndex = new Map();
+			STATE.selectedSurvey = null;
+			STATE.surveyLoaded = false;
+			STATE.source = 'catalog';
 			STATE.performers = [];
 			STATE.catalogLoaded = false;
 			STATE.performersLoaded = false;
@@ -811,6 +975,12 @@
 			root.querySelectorAll('input[name="doctorIndicationLocation"]').forEach(input => {
 				input.addEventListener('change', () => updateLocationFields(doc));
 			});
+			root.querySelectorAll('input[name="doctorIndicationSource"]').forEach(input => {
+				input.addEventListener('change', () => {
+					setSource(doc, input.value);
+					setFormReady(doc);
+				});
+			});
 			STATE.bound = true;
 			render(doc);
 			return true;
@@ -840,6 +1010,7 @@
 			return Promise.allSettled([
 				loadCurrent({ doc, token, appointmentId }),
 				loadCatalog({ doc, token, appointmentId }),
+				loadSurveyTemplates({ doc, token, appointmentId }),
 				loadPerformers({ doc, token, appointmentId })
 			]).then(results => {
 				if (currentToken(token, appointmentId)) setFormReady(doc);

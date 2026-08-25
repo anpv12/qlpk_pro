@@ -1,6 +1,275 @@
 # QLPK Refactor Progress
 
-Last updated: 2026-08-16.
+Last updated: 2026-08-23.
+
+### Source Cleanup And Runtime Map (2026-08-23)
+
+- Đã audit và xóa 29 file dead không còn template link, import, route hoặc
+  caller active: 22 JS helper trong `components/` và `orders/`, 2 JS legacy
+  (`notes-attachment-chip.js`, `reexam-calendar.js`), 6 CSS legacy và 1
+  template dry re-examination calendar. Tổng phần bỏ khỏi source khoảng
+  333 KB/10.381 dòng.
+- Không xóa các owner đang chạy: `patient-search-modal-dry.js`,
+  `personal-detail-modal-dry.js`, `transfer-modal-dry.js`, patient-history
+  bridges, 27 Doctor modules, backend compatibility wrappers, hoặc các thư
+  mục archive/operational (`_archive/`, `backups/`, `uploads/`, `data/`,
+  `tmp/`, `designs/`, `output/`).
+- Orders frontend sau cleanup chỉ ghi nhận các helper đang được template load
+  (`order-status-utils.js`, `order-selection-state-utils.js`,
+  `order-autocomplete-utils.js`); catalog/tree/performer/print orchestration
+  nằm ở page owner cho đến khi có contract/lifecycle dùng chung thực sự.
+- `references/architecture-map.md` đã bổ sung active/dead/compatibility
+  boundary và quy tắc không tạo micro-module nếu không có lifecycle riêng
+  hoặc ít nhất hai workflow owner. `references/modules/orders.md` đã phân
+  biệt owner active với các entry lịch sử đã nghỉ.
+- QA sau cleanup: static caller/path scan không còn tham chiếu runtime; 202 JS
+  active syntax pass; `pytest -q tests` 10 passed; frontend/Doctor/Lễ tân/
+  patient-history contracts, HTTP smoke và `git diff --check` pass. Browser
+  Doctor + tab Chỉ định với ca thật không có console warning/error, không
+  overflow và không tải file retired. Browser Tâm lý gia/Lễ tân trong phiên
+  hiện tại bị redirect vì tài khoản đang là role Bác sĩ; hai màn vẫn được
+  kiểm qua static/template/HTTP contract, chưa kết luận visual riêng cho role
+  đó.
+
+### Psychologist Patient History Bridge Extraction (2026-08-23)
+
+- Tách phần khởi tạo modal lịch sử bệnh nhân, global search actions, realtime
+  bệnh án và copy-form adapter khỏi page orchestrator sang
+  `app/static/js/psychologist-examination/patient-history-bridge.js`.
+- `psychologist-examination.js` còn 469 dòng (trước lát này 547 dòng); page chỉ
+  compose dependency/callback. Không đổi URL, payload, modal partial, global
+  bridge tương thích hoặc data owner.
+- `check_patient_history_modal_contract.py` đã nhận owner bridge canonical thay
+  vì bắt page gọi factory trực tiếp, tránh checker cũ ngăn refactor đúng owner.
+- QA: Node syntax, 8 pytest, frontend/smoke/Doctor/history/receptionist,
+  schema/Alembic/auth và `git diff --check` đạt. Browser ca Võ Vương Cao Sáng
+  mở Lịch sử thật, đổi sang Phạm Khôi rồi quay lại; modal hiển thị, dữ liệu
+  không stale, desktop `1280x720` và mobile `390x844` không overflow, console
+  error/warn rỗng.
+
+### Psychologist Runtime Contract Tests (2026-08-22)
+
+- `tests/test_workflow_contracts.py` là bộ regression test tự động đầu tiên cho
+  lát workflow Tâm lý gia: kiểm tra smoke/frontend contracts, field map một
+  owner, runtime load writer và không còn caller tới adapter đã xóa.
+- `tests/psychologist_workspace_runtime.test.js` chạy bằng Node VM với component
+  stub để kiểm chứng load/clear, context token chống response cũ và trạng thái
+  stale khi đổi nhanh lượt khám; không gọi database hoặc ghi dữ liệu thật.
+- `examDetailMedicalHistory` đã được map đúng vào
+  `tam_ly_gia_kham_tien_su.medical_history`, đồng nhất với backend/detail-modal
+  contract. Hai bridge đã xác nhận không còn caller (`loadPreviousVitals` và
+  alias `uploadFile`) được gỡ khỏi orchestrator; các bridge có caller thật vẫn
+  giữ nguyên.
+- QA: `pytest -q tests/test_workflow_contracts.py` (8 passed), Node syntax,
+  frontend/Doctor/medical-history/patient-history contracts, schema, Alembic,
+  auth, HTTP smoke và `git diff --check` đều đạt. Browser kiểm ca Võ Vương Cao
+  Sáng ↔ Phạm Khôi ở desktop `1280x720` và mobile `390x844`: load/clear không
+  rò dữ liệu, accordion đúng, body/html không overflow, console error/warn rỗng.
+
+### Clinical Workspace Viewport Bound (2026-08-22)
+
+- Khung Khám Doctor/Tâm lý gia được giữ trong chiều cao viewport khả dụng ở
+  mọi breakpoint. `doctor-clinical-layout` và `doctor-clinical-main` không còn
+  scroll; khi nội dung nhiều, chỉ `doctor-workbench-panel__body--clinical` cuộn
+  nội bộ. Mobile không còn chuyển clinical workspace sang document flow và
+  grid main dùng `minmax(0, 1fr)` để không nở theo min-content.
+- `psychologist-examination.html` nạp lại `examination-detail-modal.css`, là
+  owner presentation của `autoSaveIndicator`; indicator fixed nên không tạo
+  thêm overflow trang.
+- Browser QA ca thật Võ Vương Cao Sáng ở `1280x720`, `1920x1080`, `768x1024`
+  và `390x844`: form nằm trong viewport, body/html không overflow, scroll chỉ
+  ở clinical body khi cần, screenshot desktop/mobile đúng bố cục, console
+  error/warn rỗng. `check_frontend_contract.py`, `check_receptionist_fe_contract.py`,
+  `smoke_health.py` và `git diff --check` đạt.
+
+### Psychologist Clinical Responsive Accordion (2026-08-22)
+
+- Hai nhóm `Khám & đánh giá tâm lý` và `Khám tâm thần` vẫn dùng nguyên field
+  ID, section/payload và lifecycle hiện có; presentation chuyển sang một
+  disclosure owner duy nhất trong `psychologist-clinical-workspace.html`.
+- Desktop từ `64rem` mở đồng thời hai card bằng Grid `repeat(2,
+  minmax(0, 1fr))`; tablet/mobile xếp một cột và chỉ mở một nhóm, không dùng
+  JS đo kích thước. Field rows dùng `minmax(0, 1fr)`, textarea tự cuộn khi
+  văn bản dài để không đẩy form hoặc tạo document overflow.
+- Browser QA ca thật Võ Vương Cao Sáng tại `1783x822`, `1920x1080`,
+  `1280x720`, `768x1024` và `390x844`: card desktop cân bằng, accordion
+  chuyển nhóm đúng, mobile một cột không chồng label/input, nội dung dài chỉ
+  cuộn trong textarea, body/html không overflow, đổi ca Võ Vương ↔ Phạm Khôi
+  không rò dữ liệu, console error/warn rỗng. Jinja parse, Node syntax,
+  frontend/receptionist/Doctor/medical-history/patient-history contracts,
+  `smoke_health.py` và `git diff --check` đạt.
+
+### Psychologist Patient Hero DOM Alignment (2026-08-22)
+
+- `doctor-patient-hero__body` của Tâm lý gia đã dùng cùng thứ tự DOM với
+  Doctor: `title-row` chứa tên bệnh nhân, mã hồ sơ và lượt khám. Không đưa
+  các dữ liệu riêng của Doctor như chẩn đoán/đơn thuốc vào role TLG.
+- Không đổi ID, API hoặc action buttons. Browser chọn ca Võ Vương Cao Sáng
+  hiển thị đúng tên/mã/lượt khám, body/html không overflow và console
+  error/warn rỗng; Jinja parse, frontend contract, HTTP smoke và diff check
+  đạt.
+
+### Psychologist Clinical Input Sizing (2026-08-21)
+
+- Không thêm field hoặc nghiệp vụ mới. Vùng Khám Tâm lý gia giữ nguyên hai
+  nhóm hiện có nhưng tăng chiều cao tối thiểu và khoảng cách cho textarea để
+  ghi nhận nội dung dài dễ hơn; CSS được scope vào
+  `#psychologistClinicalDecisionPanel`, không ảnh hưởng mật độ Doctor.
+- Parent chain giữ nguyên: clinical panel → `doctor-workbench-panel__body`
+  scroll nội bộ → clinical flow; không dùng JS đo pixel và không làm tràn
+  toàn trang.
+- Browser QA desktop `1280x720`: ô narrative 68px, ô trạng thái tâm thần
+  56px, nội dung dài có scroll nội bộ, body không overflow, console sạch.
+  Mobile `390x844`: body width bằng viewport, các field vẫn nhập được, console
+  error/warn rỗng.
+
+### Psychologist Legacy Branch Cleanup (2026-08-21)
+
+- Tâm lý gia chỉ còn dùng `workspace-runtime.js` làm lifecycle owner cho
+  Hành chính, Tiền sử, Khám, Dịch vụ và Chỉ định; đã gỡ khỏi template và
+  orchestrator các modal/adapter legacy trùng lặp (duplicate patient, Hỏi
+  bệnh, Khám chi tiết, Dịch vụ và order catalog cũ).
+- Template chỉ còn nạp asset cần cho workspace mới và các tab lịch sử dùng
+  chung; renderer tài liệu vẫn dùng owner Lễ tân/Doctor dùng chung. Không đổi
+  API, payload, schema hoặc xóa dữ liệu bệnh nhân/tài liệu.
+- Static QA: Node syntax, frontend/receptionist contracts, smoke health và
+  `git diff --check` đạt. Browser QA desktop và mobile: chọn ca 1/4 tài liệu,
+  đổi ca không giữ dữ liệu cũ, đủ 5 tab hoạt động, không còn bốn modal legacy,
+  không overflow và console error/warn rỗng. Ca Võ Vương vẫn hiển thị giá trị
+  `QA temporary value` đã tồn tại từ lần QA trước; không tự ý xóa dữ liệu đó.
+
+### Psychologist Shared Clinical Workspace (2026-08-20)
+
+- Tâm lý gia dùng cùng composition/shell với Bác sĩ: queue/main, patient
+  intake, section rail, `doctor-workbench`, `doctor-workspace-stage` và các
+  surface/token chung; chỉ vùng field nghiệp vụ nằm riêng tại
+  `partials/psychologist-clinical-workspace.html`.
+- Vùng Khám chỉ render field của Tâm lý gia và section `tam_ly_gia_*`: lý do
+  khai thác, đánh giá/diễn tiến, triệu chứng-hành vi, nhận định, kế hoạch,
+  khám tâm thần và ghi chú. Chẩn đoán ICD, khám cơ quan, thuốc và đơn thuốc
+  của Bác sĩ không còn xuất hiện trên DOM TLG.
+- `psychologist-component-config.js` là field/section map; `workspace-ui.js`
+  sở hữu chuyển vùng, show/clear theo patient lifecycle. Các field tâm thần
+  inline vẫn dùng autosave owner hiện tại và không đổi API/schema.
+- Static QA: Jinja render/duplicate ID, Node syntax, frontend contract,
+  smoke health, patient-history/medical-history contract đạt. Browser QA bằng
+  tài khoản role Tâm lý gia đã kiểm empty/populated, header patient, chuyển
+  bệnh nhân không giữ field cũ, rail Khám/Dịch vụ/Chỉ định, mở modal Chỉ định,
+  viewport desktop và `390x844`; console sạch. Khi đổi ca trong QA đã phát
+  hiện autosave của field thử nghiệm, cần dọn dữ liệu thử trước khi chốt pass
+  workflow save/load.
+
+### Psychologist Indications Shared Stylesheet (2026-08-21)
+
+- Tâm lý gia đã nạp `pages/doctor-indications.css`, đúng owner presentation
+  của component Chỉ định dùng chung; không tạo CSS/logic riêng theo role.
+- Browser QA ca thật đã kiểm Hành chính, Tiền sử, Khám, Dịch vụ và Chỉ định;
+  mobile `390x844` không tràn trang, form Chỉ định tách hàng rõ, ba nguồn
+  Danh mục/Nhập text/Khảo sát và lịch sử hoạt động, đổi ca không giữ dữ liệu
+  ca trước. Desktop `1280px` khớp wrapper; console error/warn rỗng.
+
+### Psychologist–Doctor Visual Reconciliation (2026-08-21)
+
+- Đối soát browser cùng viewport `1280x720` và `390x844` bằng ca thật, không
+  chỉ contract: Hành chính, Tiền sử, Khám, Dịch vụ, Chỉ định, mở/đóng Lịch sử
+  và đổi ca đều được kiểm tra.
+- Tâm lý gia đã dùng cùng presentation queue Doctor (timeline card, không
+  action legacy), header chỉ còn `Lịch sử/Lưu/Hoàn thành`; rail vẫn giữ đủ 5
+  vùng nghiệp vụ. Không đổi API/payload hay field Khám riêng của TLG.
+- Các selector màu legacy `#historyBtn/#orderBtn/#documentBtn/
+  #completeExaminationBtn` trong `shared/examination-workflow.css` đã scope
+  vào `.patient-header-actions`, tránh thắng palette Doctor workspace. Browser
+  xác nhận hai role cùng màu nâu–kem, không overflow, console error/warn rỗng;
+  đổi ca TLG không giữ dữ liệu ca trước.
+
+### Doctor Indications Action Column Label (2026-08-20)
+
+- Header cột thao tác của bảng Chỉ định hiện hiển thị rõ `Thao tác` ngay sau
+  `Trạng thái`; giữ nguyên các nút Sửa/Xóa và không đổi dữ liệu hay payload.
+- Browser QA xác nhận đủ 6 header, không overflow trang và console không có
+  error/warn.
+
+### Doctor Indications Desktop Table Fit (2026-08-20)
+
+- Bảng Chỉ định desktop không còn ép `min-inline-size: 48rem` trong vùng chỉ
+  còn khoảng 721px; bảng co theo parent và không hiện thanh scroll ngang.
+- Sáu cột dùng tỉ lệ desktop đủ cho tên/nơi thực hiện xuống dòng và dành 12%
+  cho cụm Sửa/Xóa. Viewport hẹp vẫn giữ table tối thiểu 44rem và scroll nội
+  bộ để không làm chữ/cột bị ép quá mức.
+- Browser QA desktop 1280px: table width khớp wrapper, `scrollWidth ===
+  clientWidth`, không overflow trang. Mobile 390px: scroll nội bộ vẫn hoạt
+  động, không overflow trang. Static frontend/Doctor/smoke HTTP và diff check
+  đạt.
+
+### Doctor Indications Three Sources (2026-08-20)
+
+- Màn Bác sĩ Chỉ định có một form duy nhất với ba nguồn: `Danh mục` chọn từ
+  `order_items`, `Nhập text` lưu tên tự do, và `Khảo sát` chọn từ
+  `/api/survey-templates-for-orders`. Danh mục/khảo sát bắt buộc chọn đúng
+  item/template; nhập text không tạo ID catalog/survey. Bảng hiện badge nguồn,
+  edit/clear vẫn nạp lại đúng nguồn, và global Doctor `Lưu` vẫn là writer duy
+  nhất.
+- Giữ nguyên `chi_dinh` schema/API; `order_name` được giới hạn 255 ký tự ở
+  HTML và validation JS trước khi đưa vào state/payload.
+- Static QA: Node syntax, Doctor contract, frontend contract, smoke health,
+  HTTP smoke và `git diff --check` đạt. Browser QA ca thật `Ngô Hiển Đạt /
+  HS00267` đã kiểm đủ catalog autocomplete, nhập text, khảo sát autocomplete,
+  validation ngày/tên dài, edit/hủy sửa, badge/list và viewport 390px; console
+  error/warn rỗng, không bấm Lưu hay ghi dữ liệu thật.
+
+### Doctor Survey Dropdown Polish (2026-08-20)
+
+- Dropdown Khảo sát trên màn Bác sĩ không còn render mô tả dài; vẫn giữ tên
+  mẫu, icon và số câu hỏi để chọn nhanh.
+- Presentation chuyển về palette nâu–kem của Doctor: nền item nhẹ, viền nhấn
+  nâu, hover/active dễ phân biệt và không thay đổi API, dữ liệu hay luồng chọn.
+- Shared autocomplete chỉ thêm option `showSurveyDescription`; các màn khác
+  không truyền option nên vẫn giữ mô tả hiện có.
+- Browser QA desktop/390px kiểm dropdown nhiều mẫu, chọn mẫu và console;
+  không có error/warn, không ghi dữ liệu thật.
+
+### Shared Admin Catalogue UI Shell (2026-08-20)
+
+- Chuẩn hóa presentation cho 14 màn quản trị: Tài khoản, Phân quyền, Nhóm
+  phân quyền, Từ viết tắt, Danh mục dịch vụ, Dịch vụ, Gói dịch vụ, Danh mục
+  chỉ định, Mẫu khảo sát, ICD, Ngày lễ, Hoạt chất, Dị nguyên và Tương tác
+  thuốc theo ngôn ngữ giao diện của Danh mục thuốc DAV/Tủ thuốc.
+- Shared owner là `app/static/css/shared/admin-management-ui.css`, scope bằng
+  `.qlpk-admin-page`; các template giữ nguyên ID, JS hook, endpoint, quyền,
+  payload và lifecycle nghiệp vụ. Các màn Bác sĩ, Lễ tân, Tâm lý gia, Lịch
+  hẹn, Thanh toán và Thống kê thuốc không nạp shell này.
+- Chuẩn hóa page header, surface, toolbar/filter, button, table, badge, action,
+  pagination, modal/form và responsive; thêm page header cho Hoạt chất, Dị
+  nguyên và Tương tác thuốc. Không đổi logic/API/backend.
+- Static QA: frontend contract, smoke health/HTTP, user feedback contract và
+  `git diff --check` đạt. Browser QA với `?embed=1` kiểm populated/empty, dense
+  table, modal, desktop/mobile; không có overflow ngang ngoài ý muốn. Route
+  Danh mục dịch vụ vẫn có lỗi API `Error loading categories: Object` trong
+  môi trường QA hiện tại, không phát sinh từ CSS shell và không được sửa trong
+  lát UI này.
+
+### Shared Admin Catalogue UI QA Follow-up (2026-08-20)
+
+- Khóa baseline `.qlpk-admin-page` về Roboto, `13px`, line-height token; title
+  quản trị giữ `24px` desktop và `20px` mobile, bảng/control/modal dùng cùng
+  scale compact.
+- Sửa Mẫu khảo sát để chiếm 100% workspace thay vì còn `83.33%`, thêm page
+  header chuẩn và cho bảng dài scroll nội bộ; các bảng quản trị dài khác cũng
+  giữ min-width đọc được trên mobile, không làm tràn toàn trang.
+- Browser QA sau sửa: 14 màn desktop đều có Roboto và baseline `13px`, title
+  `24px`; Mẫu khảo sát desktop full width, mobile title `20px`; Tài khoản,
+  Danh mục chỉ định, Từ viết tắt và Mẫu khảo sát mobile không tràn ngang toàn
+  trang, bảng scroll đúng vùng. Modal Tài khoản, Chỉ định, Khảo sát và Tương
+  tác thuốc mở đúng màu teal, font Roboto, body scroll nội bộ.
+
+### Service Catalog Auth Asset Fix (2026-08-20)
+
+- `service-category.html` và `service-management.html` đã nạp
+  `/static/js/utils.js` sau jQuery để shared `ajaxSend` gắn JWT cho các request
+  jQuery.
+- Trước sửa, `GET /service-categories/` và `GET /services/` trả `401` vì thiếu
+  `Authorization`; sau sửa browser QA tải được 3 danh mục và 287 dịch vụ, không
+  còn console error/warn. Không đổi API/backend/payload.
 
 ### Doctor Patient History Modal Actions (2026-08-16)
 
@@ -1845,3 +2114,22 @@ details remain in the three Doctor workflow references.
 - `scripts/check_user_feedback_contract.py` khóa runtime include, shared owner,
   API error code và raw technical value tại UI sink; check đã được nối vào
   frontend contract tổng.
+
+## Doctor Patient History Bridge Slice - 2026-08-23
+
+- Tách cấu hình/caller của modal Lịch sử bệnh nhân khỏi
+  `doctor-examination.js` sang `app/static/js/doctor-examination/patient-history-bridge.js`;
+  module đăng ký bằng `patientHistoryBridge` trong Doctor registry và trả lại
+  đúng instance do `components/patient-history-modal.js` sở hữu.
+- Orchestrator vẫn giữ `selectHistoryResult()`, `viewHistoryAppointment()`,
+  `reset()`, `getState().medicalHistoryData` và mount lifecycle vì các phần này
+  phụ thuộc load token/state của Doctor; nó chỉ truyền callback/state vào bridge,
+  không còn gọi `.getOrCreate()` trực tiếp.
+- Không đổi modal markup/CSS, API URL, payload, DB/schema, trigger
+  `doctorClinicalHistoryButton`, status filter, copy/delete policy hoặc patient
+  switch clear order.
+- Thêm `tests/doctor_patient_history_bridge.test.js` và contract assertion để
+  khóa dependency, trigger guard, callback `copyHistory` và one-owner caller.
+- Static QA lát này: `node --check`, bridge lifecycle test, Patient History
+  Modal contract và `pytest -q tests` đều đạt (`10 passed`). Browser QA Doctor
+  sau lát tách này còn phải chạy lại với ca thật trước khi kết luận hoàn tất.

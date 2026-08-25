@@ -18,6 +18,8 @@
 	--patient-modal-line: rgb(75 39 25 / 14%);
 	--patient-modal-line-strong: rgb(75 39 25 / 28%);
 	--patient-modal-shadow: 0 0.5rem 1.25rem rgb(53 40 33 / 10%);
+	--patient-modal-info: var(--qlpk-feedback-info, #2563eb);
+	--patient-modal-info-soft: var(--qlpk-feedback-info-bg, #eff6ff);
 	--patient-modal-error: var(--qlpk-feedback-error, #dc2626);
 	--patient-modal-error-soft: var(--qlpk-feedback-error-bg, #fef2f2);
 
@@ -191,6 +193,14 @@
 	color: var(--patient-modal-on-primary);
 }
 
+.patient-search-modal__history-copy-button--examining,
+.patient-search-modal__history-copy-button--examining:hover,
+.patient-search-modal__history-copy-button--examining:focus-visible {
+	border-color: var(--patient-modal-info);
+	background: var(--patient-modal-info);
+	color: var(--patient-modal-on-primary);
+}
+
 .patient-search-modal__status-badge {
 	display: inline-flex;
 	align-items: center;
@@ -205,6 +215,12 @@
 .patient-search-modal__status-badge--current {
 	border-color: var(--patient-modal-deep);
 	background: var(--patient-modal-deep);
+	color: var(--patient-modal-on-primary);
+}
+
+.patient-search-modal__status-badge--examining {
+	border-color: var(--patient-modal-info);
+	background: var(--patient-modal-info);
 	color: var(--patient-modal-on-primary);
 }
 
@@ -997,6 +1013,18 @@
 	line-height: 1.2;
 }
 
+.patient-search-modal__exam-status-badge--examining {
+	border-color: color-mix(in srgb, var(--patient-modal-info) 46%, transparent);
+	background: var(--patient-modal-info-soft);
+	color: var(--patient-modal-info);
+}
+
+.patient-search-modal__exam-status-badge--waiting-payment {
+	border-color: color-mix(in srgb, var(--qlpk-feedback-success) 46%, transparent);
+	background: var(--qlpk-feedback-success-bg);
+	color: var(--qlpk-feedback-success);
+}
+
 .vital-view-mode-selector {
 	border: 1px solid var(--patient-modal-line-strong);
 	border-radius: 6px;
@@ -1694,6 +1722,21 @@
 
 .patient-search-modal .modal-history-item.current-exam-highlight.modal-history-item-active:not(.patient-search-modal__table-head-row) {
 	background-color: var(--patient-modal-primary-soft);
+}
+
+.patient-search-modal .modal-history-item.modal-history-item--examining:not(.patient-search-modal__table-head-row),
+.patient-search-modal .modal-history-item.modal-history-item--examining.modal-history-item-active:not(.patient-search-modal__table-head-row) {
+	border-left: 0.25rem solid var(--patient-modal-info);
+	background-color: var(--patient-modal-info-soft);
+}
+
+.patient-search-modal .modal-history-item.modal-history-item--examining:hover:not(.patient-search-modal__table-head-row) {
+	background-color: color-mix(in srgb, var(--patient-modal-info-soft) 78%, #ffffff);
+}
+
+.patient-search-modal .modal-history-item--examining .col-history-date {
+	color: var(--patient-modal-info);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 
 .patient-search-modal .past-exam-history .col-history-date {

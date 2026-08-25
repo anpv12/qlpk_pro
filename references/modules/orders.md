@@ -10,6 +10,13 @@ Tài liệu này là context ngắn cho workflow chỉ định cận lâm sàng/
 - `survey_templates`: có thể được tham chiếu khi chỉ định là khảo sát tâm lý.
 - `appointments`, `patients`, `examinations`: chỉ được đọc để enrich response orders; không dùng orders để ghi đè dữ liệu khám/bệnh nhân.
 
+Trên màn Bác sĩ, một `chi_dinh` có ba nguồn hợp lệ: `catalog` chọn từ
+`order_items` (lưu `order_item_id`), `custom` nhập tên tự do (để
+`order_item_id` và `survey_template_id` là `NULL`, chỉ lưu `order_name`), hoặc
+`survey` chọn từ `/api/survey-templates-for-orders` (lưu `survey_template_id`).
+Mọi nguồn vẫn dùng `order_name` làm tên hiển thị; tên này không vượt quá 255
+ký tự theo schema.
+
 Không lưu thông tin chẩn đoán, lời dặn hay dữ liệu khám chính vào `chi_dinh`. Diagnosis trong response đọc chỉ là display/enrichment từ appointment/examination.
 
 ## Module Island Hiện Tại
@@ -24,20 +31,17 @@ Không lưu thông tin chẩn đoán, lời dặn hay dữ liệu khám chính v
 - `app/modules/orders/view_models/clinical_order.py`: owner cho response shape đọc/list/detail của `chi_dinh`, gồm appointment/patient/doctor enrichment và diagnosis display contract.
 - `app/modules/orders/view_models/catalog.py`: owner cho serializer cây danh mục, category row, order item/group path và survey template cho orders.
 - `app/static/js/orders/order-status-utils.js`: shared frontend helper thuần cho nhãn và CSS class của trạng thái chỉ định ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-tree-utils.js`: shared frontend helper thuần cho build/sort cây danh mục chỉ định từ flat order items ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-catalog-state-utils.js`: shared frontend helper cho default expansion, toggle expanded category, rebuild index và sync selected orders theo catalog index ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-catalog-loader-utils.js`: shared frontend/API helper cho fetch và normalize dữ liệu catalog chỉ định + survey templates ở màn bác sĩ/tâm lý gia; orchestrator vẫn giữ state assignment, build tree, render và error/toast.
 - `app/static/js/orders/order-selection-state-utils.js`: shared frontend helper thuần cho remove/clear/update status, upsert từ form submit, build payload save, merge trạng thái completed từ server, apply response save và map server orders về selected orders ở màn bác sĩ/tâm lý gia; orchestrator vẫn gán state, render, toast, gọi API save/load và gọi save/autosave.
-- `app/static/js/orders/order-catalog-render-utils.js`: shared frontend helper cho render HTML node cây chỉ định, render node mẫu khảo sát, build HTML section cây danh mục, loading/error UI, đếm chỉ định con và event delegation click cây danh mục ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-form-ui-utils.js`: shared frontend helper cho UI form thêm chỉ định, gồm toggle trong/ngoài cơ sở, reset form, trạng thái nút submit, đọc/validate form submit, fill form từ autocomplete item, fill form từ catalog tree item, fill survey template và find+fill từ catalog tree selection ở màn bác sĩ/tâm lý gia.
 - `app/static/js/orders/order-autocomplete-utils.js`: shared frontend helper cho search match, render HTML dropdown, keyboard navigation, hover active state và hide/reset autocomplete form chỉ định ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-performer-loader-utils.js`: shared frontend helper cho load danh sách người thực hiện trong cơ sở vào select form chỉ định ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-selected-table-ui-utils.js`: shared frontend helper cho render bảng chỉ định đã chọn và cập nhật CSS class dropdown trạng thái ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-performer-utils.js`: shared frontend helper thuần cho nhãn cơ sở thực hiện, tên người/cơ sở thực hiện và group selected orders theo performer ở màn bác sĩ/tâm lý gia.
-- `app/static/js/orders/order-print-ui-utils.js`: shared frontend helper cho UI in phiếu chỉ định ở màn bác sĩ/tâm lý gia, chỉ render performer options, selected state, nút in và preview; không sở hữu API fetch, autosave, selected order state hay A4 print side effects.
 - `app/api/chi_dinh.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
 - `app/api/order_catalog.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
 - `main.py`: register blueprint từ module path mới nhưng giữ nguyên URL prefix.
+
+Các helper catalog/tree/performer/selected-table/print đã từng được tách ra
+trong các lát lịch sử 2026-06-04 nhưng không còn caller active trong runtime
+hiện tại. Chúng được xóa ở cleanup slice 2026-08-23; phần orchestration tương
+ứng quay về owner trang để tránh micro-module không có lifecycle riêng. Các
+đoạn validation lịch sử bên dưới vẫn giữ để truy nguyên quyết định cũ.
 
 ## Mapping Phase 5
 

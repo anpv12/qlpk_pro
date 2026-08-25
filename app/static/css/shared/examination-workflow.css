@@ -459,27 +459,27 @@ textarea.examination-input:disabled {
 	box-shadow: none;
 }
 
-#historyBtn {
+.patient-header-actions #historyBtn {
 	border-color: #d5def0;
 	color: #0d6efd;
 }
 
-#orderBtn {
+.patient-header-actions #orderBtn {
 	border-color: #d9d6ff;
 	color: #4f46e5;
 }
 
-#documentBtn {
+.patient-header-actions #documentBtn {
 	border-color: #d5def0;
 	background: #ffffff;
 	color: #273142;
 }
 
-#documentBtn i {
+.patient-header-actions #documentBtn i {
 	color: inherit;
 }
 
-#completeExaminationBtn {
+.patient-header-actions #completeExaminationBtn {
 	border-color: #15815f;
 	background: #1f9d6b;
 	color: #ffffff;

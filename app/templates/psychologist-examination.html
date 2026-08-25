@@ -13,12 +13,13 @@
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/examination-detail-modal.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<!-- CSS riêng cho modal Khám chi tiết -->
-	<link rel="stylesheet" href="/static/css/examination-detail-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/relative-table.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/notes-attachment-chip.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/joint-exam-table.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/transfer-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/personal-detail-modal.css?v={{ app_version }}">
@@ -27,6 +28,7 @@
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
+	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -46,547 +48,28 @@
 	<script src="/static/js/clinic-config.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/shared/clinical-workflow.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/examination-workflow.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/doctor-component-base.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/workflow-two-pane.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-info-form.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-intake-support-sections.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/patient-visit-info-form.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/doctor-examination.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/doctor-indications.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/patient-sidebar.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/waiting-queue-card.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/components/service-modal.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/pages/psychologist-examination.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/inline-tien-su.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/components/order-entry-modal.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/components/duplicate-patient-modal.css?v={{ app_version }}">
 </head>
 
-<body data-joint-exam-context="psychologist">
+<body data-doctor-ui="true" data-joint-exam-context="psychologist">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content">
-
-				<!-- Main Content -->
-				<div class="container-fluid"></div>
-				<!-- VÙNG 1 & 2: Tìm nhanh + Form thông tin bệnh nhân -->
-				<div class="row mb-4 exam-workspace-row">
-					<!-- VÙNG 1: Tìm nhanh (15% tổng width = 17.65% main-content) -->
-						<div class="qlpk-exam-queue-column">
-							<div class="qlpk-queue-panel qlpk-queue-panel--exam" id="vung1Card">
-								{% set queue_title = 'Danh sách chờ khám' %}
-								{% set queue_search_id = 'patientSearch' %}
-								{% include 'partials/waiting-queue-header.html' %}
-								<div class="qlpk-queue-panel__body">
-
-								<!-- Danh sách bệnh nhân đang chờ -->
-									<div id="waitingListTableBody" class="qlpk-queue-panel__list">
-									<!-- Danh sách sẽ được populate bởi JavaScript -->
-								</div>
-
-								<!-- Empty state -->
-									<div id="appointmentsEmptyState" class="qlpk-queue-panel__empty exam-initially-hidden">
-										<i class="bi bi-inbox qlpk-queue-panel__empty-icon" aria-hidden="true"></i>
-										<p class="qlpk-queue-panel__empty-text">Chưa có lịch hẹn nào</p>
-								</div>
-
-
-							</div>
-						</div>
-					</div>
-
-					<!-- VÙNG 2: Form thông tin bệnh nhân (70% tổng width = 82.35% main-content) -->
-					<div class="col-md-9 exam-main-column">
-						<div class="card">
-							<div class="card-header patient-header">
-								<div class="patient-header-left">
-									<div class="exam-inline-center">
-
-										<h5 class="exam-heading-reset">
-											<i class="bi bi-person-circle me-2"></i>
-											Khám bệnh
-											<i class="bi bi-arrow-clockwise ms-2 exam-clickable-icon"
-												title="Làm mới"></i>
-										</h5>
-									</div>
-									<div class="form-check patient-reexam-check">
-										<input class="form-check-input" type="checkbox" id="reExaminationCheck">
-										<label class="form-check-label text-uppercase" for="reExaminationCheck">
-											Bệnh nhân Tái khám
-										</label>
-									</div>
-								</div>
-								<div class="patient-header-actions">
-									<button type="button" class="btn btn-secondary btn-sm exam-initially-hidden" id="editHistoryBtn">
-										<i class="bi bi-pencil-square"></i> Chỉnh sửa lịch sử
-									</button>
-									<button type="button" class="btn btn-info btn-sm exam-initially-hidden" id="historyBtn">
-										<i class="bi bi-clock-history"></i> Lịch sử khám
-									</button>
-									<button type="button" class="btn btn-success btn-sm exam-initially-hidden" id="saveInfoBtn">
-										<i class="fas fa-save"></i> Lưu
-									</button>
-									<button type="button" class="btn btn-outline-primary btn-sm" id="orderBtn">
-										<i class="bi bi-journal-medical"></i> Chỉ định
-									</button>
-									<button type="button" class="btn btn-warning btn-sm" id="documentBtn">
-										<i class="fas fa-file-alt"></i> Tài liệu
-									</button>
-									<button type="button" class="btn btn-primary btn-sm" id="completeExaminationBtn">
-										<i class="bi bi-check-circle"></i> Hoàn thành
-									</button>
-								</div>
-							</div>
-						</div>
-						<!-- Card Body -->
-						<div>
-							<form id="patientForm" class="patient-form-section">
-								<!-- Hidden field để lưu patient ID -->
-								<input type="hidden" id="patientId" name="patientId">
-
-
-
-								<!-- Row 1: Họ tên | Ngày sinh | Tuổi | ✓ Bệnh nhân cũ | Nghề nghiệp -->
-								<div class="row mb-4">
-									<div class="col-md-3">
-										<label class="form-label text-uppercase required-field">Họ tên </label>
-										<div class="position-relative">
-											<input type="text" class="form-control" id="fullName"
-												placeholder="Nhập họ tên">
-											<button
-												class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-												type="button" id="jointExamEditBtn"
-												title="Quản lý người đi khám cùng (CCCD, SĐT, quan hệ...)">
-												<i class="bi bi-people-fill text-muted"></i>
-											</button>
-										</div>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Ngày sinh</label>
-										<input type="text" class="form-control js-datepicker" id="dateOfBirth"
-											placeholder="dd/mm/yyyy" autocomplete="off">
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Tuổi</label>
-										<input type="text" class="form-control" id="age" placeholder="Số tuổi"
-											autocomplete="off">
-									</div>
-									<div class="col-md-3">
-										<label class="form-label text-uppercase">Nghề nghiệp</label>
-										<div class="position-relative">
-											<input type="text" class="form-control exam-passive-icon" id="occupation"
-												placeholder="Nhập nghề nghiệp" readonly disabled>
-											<button
-												class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-												type="button" id="occupationEditBtn"
-												title="Chỉnh sửa nghề nghiệp, đơn vị công tác, địa chỉ công ty, trình độ học vấn...">
-												<i class="bi bi-pencil-square text-muted"></i>
-											</button>
-											<div class="autocomplete-dropdown exam-initially-hidden" id="occupationDropdown"></div>
-										</div>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Tên thường gọi</label>
-										<input type="text" class="form-control" id="nickname" placeholder="">
-									</div>
-
-								</div>
-
-								<!-- Row 2: Giới tính | Địa chỉ | 🏠 | Tỉnh/TP | Điện thoại | Hôn nhân -->
-								<div class="row mb-4">
-									<div class="col-md-2">
-										<label class="form-label text-uppercase required-field">Giới tính </label>
-										<div class="position-relative">
-											<select class="form-select exam-passive-icon" id="gender" readonly>
-												<option value="male" selected>Nam</option>
-												<option value="female">Nữ</option>
-												<option value="other">Khác</option>
-											</select>
-											<button
-												class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-												type="button" id="genderEditBtn"
-												title="Chỉnh sửa thông tin giới tính, mang thai, xu hướng tính dục...">
-												<i class="bi bi-pencil-square text-muted"></i>
-											</button>
-										</div>
-									</div>
-									<div class="col-md-6">
-										<label class="form-label text-uppercase">Địa chỉ</label>
-										<div class="position-relative">
-											<input type="text" class="form-control" id="address"
-												placeholder="Nhập địa chỉ" readonly>
-											<button
-												class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-												type="button" id="addressEditBtn"
-												title="Chỉnh sửa địa chỉ chi tiết, tỉnh/thành phố, quận/huyện, phường/xã...">
-												<i class="bi bi-pencil-square text-muted"></i>
-											</button>
-										</div>
-										<select class="form-select d-none" id="province">
-											<option value="">Chọn tỉnh/thành phố</option>
-										</select>
-									</div>
-
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Điện thoại</label>
-										<input type="text" class="form-control" id="phoneNumber" placeholder="Nhập SĐT">
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Hôn nhân</label>
-										<select class="form-select exam-select-compact" id="maritalStatus">
-											<option value="">Chọn</option>
-											<option value="single">Độc thân</option>
-											<option value="married">Đã kết hôn</option>
-											<option value="divorced">Đã ly hôn</option>
-											<option value="widowed">Góa</option>
-											<option value="separated">Ly thân</option>
-											<option value="cohabiting">Sống như vợ/chồng</option>
-										</select>
-									</div>
-								</div>
-
-								<!-- Row 3: Nhịp thở | Mạch | Huyết áp | Nhiệt độ | Cân nặng | Chiều cao | BMI -->
-								<div class="row mb-4">
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Nhịp thở</label>
-										<input type="text" class="form-control" id="breathing" placeholder="lần/phút">
-										<small id="prevBreathing" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-1">
-										<label class="form-label text-uppercase">Mạch</label>
-										<input type="text" class="form-control" id="pulse" placeholder="0">
-										<small id="prevPulse" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Huyết áp</label>
-										<input type="text" class="form-control" id="bloodPressure" placeholder="mmHg">
-										<small id="prevBloodPressure" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Nhiệt độ</label>
-										<input type="text" class="form-control" id="temperature" placeholder="0">
-										<small id="prevTemperature" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Cân nặng</label>
-										<input type="text" class="form-control" id="weight" placeholder="0">
-										<small id="prevWeight" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">Chiều cao</label>
-										<input type="text" class="form-control" id="height" placeholder="0">
-										<small id="prevHeight" class="exam-previous-vital-hint"></small>
-									</div>
-									<div class="col-md-1">
-										<label class="form-label text-uppercase">BMI</label>
-										<input type="text" class="form-control" id="bmi" placeholder="0">
-										<small id="prevBmi" class="exam-previous-vital-hint"></small>
-									</div>
-								</div>
-
-								<!-- Row 4: CMT/CCCD | Ghi chú | [Hỏi bệnh] -->
-								<div class="row mb-4">
-									<div class="col-md-2">
-										<label class="form-label text-uppercase">CMT/CCCD</label>
-										<div class="position-relative">
-											<input type="text" class="form-control" id="idCard" placeholder="">
-											<button
-												class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-												type="button" id="idCardEditBtn"
-												title="Chỉnh sửa CMT/CCCD, quốc tịch, tôn giáo, dân tộc...">
-												<i class="bi bi-pencil-square text-muted"></i>
-											</button>
-										</div>
-									</div>
-									<div class="col-md-8">
-										<!-- UI ↔ Backend mapping: 'Ghi chú' → appointment.notes (hành chính/chung) -->
-										<label class="form-label text-uppercase">Ghi chú</label>
-										<div class="notes-inline-wrap">
-											<textarea class="form-control" id="notes" rows="1"
-												placeholder="Nhập ghi chú thêm..."></textarea>
-											<button type="button" class="notes-attachment-chip" id="notesUploadBtn"
-												title="Xem tài liệu đính kèm">
-												<i class="bi bi-paperclip"></i>
-												<span id="notesAttachmentCount"
-													class="notes-attachment-chip-count">0</span>
-												<span class="notes-attachment-chip-label">tệp</span>
-											</button>
-										</div>
-									</div>
-									<div class="col-md-2 d-flex align-items-end gap-2">
-										<button type="button" class="btn btn-info notes-action-btn"
-											id="medicalHistoryBtn">
-											Hỏi bệnh
-										</button>
-									</div>
-								</div>
-
-									<!-- Row 5: Nguồn giới thiệu -->
-									<div class="row mb-4">
-										<div class="col-md-12">
-											<label class="form-label text-uppercase">Nguồn giới thiệu</label>
-											<div class="referral-source-control">
-												<div class="referral-source-options" role="group" aria-label="Nguồn giới thiệu">
-													<button type="button" class="referral-source-option referral-source-facebook" data-referral-source-option="Facebook"><i class="bi bi-facebook referral-source-icon"></i>Facebook</button>
-													<button type="button" class="referral-source-option referral-source-website" data-referral-source-option="Website"><i class="bi bi-globe2 referral-source-icon"></i>Website</button>
-												<button type="button" class="referral-source-option referral-source-referral" data-referral-source-option="Người quen giới thiệu"><i class="bi bi-people-fill referral-source-icon"></i>Người quen giới thiệu</button>
-												<button type="button" class="referral-source-option referral-source-medpro" data-referral-source-option="Medpro"><i class="bi bi-heart-pulse-fill referral-source-icon"></i>Medpro</button>
-												<button type="button" class="referral-source-option referral-source-walk-in" data-referral-source-option="Khách vãng lai"><i class="bi bi-door-open-fill referral-source-icon"></i>Khách vãng lai</button>
-												<button type="button" class="referral-source-option referral-source-other" data-referral-source-option="Khác"><i class="bi bi-grid-3x3-gap-fill referral-source-icon"></i>Khác</button>
-												</div>
-												<input type="text" class="form-control referral-source-input" id="referralSource"
-													placeholder="Chọn nguồn giới thiệu hoặc chọn Khác để nhập" disabled>
-											</div>
-										</div>
-									</div>
-
-								<div class="relative-table-section mt-2">
-									<div class="relative-table-component" data-readonly="true"></div>
-								</div>
-
-							</form>
-
-							<!-- Modal Khám chi tiết: tách biệt hẳn với Hỏi bệnh (id/class riêng) -->
-							<div class="modal fade examination-detail-modal" id="examinationDetailModal" tabindex="-1"
-								aria-labelledby="examinationDetailModalLabel" aria-hidden="true">
-								<div class="modal-dialog modal-xl exam-detail-modal-dialog">
-									<div class="modal-content exam-detail-modal-content">
-										<div class="modal-header exam-modal-header-compact">
-											<h5 class="modal-title" id="examinationDetailModalLabel">Khám chi tiết</h5>
-											<button type="button" class="btn-close" data-bs-dismiss="modal"
-												aria-label="Close"></button>
-										</div>
-										<div class="modal-body exam-modal-body-scroll">
-											<div class="tab-content" id="examinationDetailTabContent">
-												<div class="tab-pane fade show active" id="exam-detail-pane"
-													role="tabpanel" aria-labelledby="exam-detail-tab">
-													<form id="examinationDetailForm">
-														<div class="row g-3">
-															<!-- I. Hỏi bệnh -->
-															<div class="col-md-12">
-																<label class="form-label fw-bold text-danger d-none">I. HỎI BỆNH</label>
-
-
-
-																<!-- II. Khám bệnh -->
-																<div class="col-md-12">
-																	<label class="form-label fw-bold text-danger d-none">II. KHÁM BỆNH</label>
-
-																	<!-- 1. Kết quả khám toàn thân - ĐÃ DI DỜI RA NGOÀI LAYOUT CHÍNH -->
-
-																	<!-- 2. Khám tâm thần -->
-																	<div class="mb-3">
-																		<label class="form-label fw-semibold d-none">2. Khám tâm thần</label>
-																		<!-- ĐÁNH GIÁ BAN ĐẦU - ĐÃ DI DỜI RA NGOÀI LAYOUT CHÍNH -->
-
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Ý thức định
-																					hướng:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalOrientation" rows="1"
-																					placeholder="Không gian, Thời gian, Bản thân"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Tình cảm, cảm
-																					xúc:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalEmotions" rows="1"
-																					placeholder="Nhập"></textarea></div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Tri
-																					giác:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalPerception" rows="1"
-																					placeholder="Khả năng nhận thức thực tại khách quan, các rối loạn"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Tư
-																					duy:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalThought" rows="1"
-																					placeholder="Hình thức, Nội dung"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Hành vi tác
-																					phong:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalBehavior" rows="1"
-																					placeholder="Hoạt động có ý chí, Hoạt động bản năng"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Trí
-																					nhớ:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalMemory" rows="1"
-																					placeholder="Nhớ máy móc, Nhớ thông hiểu"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Trí
-																					năng:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalIntelligence" rows="1"
-																					placeholder="Khả năng phân tích, Khả năng tổng hợp"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start mb-2">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Tập trung -
-																					chú ý:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalAttention" rows="1"
-																					placeholder="Đánh giá khả năng tập trung, chú ý"></textarea>
-																			</div>
-																		</div>
-																		<div class="row g-2 align-items-start">
-																			<div class="col-md-2 col-5"><label
-																					class="col-form-label">Ghi
-																					chú:</label></div>
-																			<div class="col-md-10 col-7"><textarea
-																					class="form-control"
-																					id="examMentalNotes" rows="1"
-																					placeholder="Nhập ghi chú"></textarea>
-																			</div>
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</form>
-												</div>
-											</div>
-										</div>
-										<!-- Modal footer ẩn vì đã có auto-save -->
-									<div class="modal-footer exam-initially-hidden">
-											<button type="button" class="btn btn-secondary"
-												data-bs-dismiss="modal">Đóng</button>
-											<!-- Nút Lưu sẽ được xử lý bởi JS riêng, tách biệt với Hỏi bệnh -->
-											<button type="button" class="btn btn-primary"
-												id="examinationDetailSaveBtn">Lưu</button>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Thông tin khám bệnh -->
-							<!-- LAYOUT MỚI: CSS RIÊNG BIỆT CHO TẤT CẢ FIELD -->
-							<div class="examination-new-layout">
-
-								<!-- Row 1: Lý do khám -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field">
-											<label class="examination-label required">Lý do khám:</label>
-											<input type="text" class="examination-input" id="examinationMainReason"
-												placeholder="Nhập lý do đến khám...">
-										</div>
-									</div>
-								</div>
-
-								<!-- Row 1.5: Bệnh sử (moved from modal) -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field exam-inline-full">
-											<label class="examination-label">Bệnh sử:</label>
-											<textarea class="form-control auto-resize-textarea exam-textarea-fluid"
-												id="examDetailMedicalHistory" placeholder="Nhập bệnh sử chi tiết..."></textarea>
-										</div>
-									</div>
-								</div>
-
-
-								<!-- Row 1.55: ĐÁNH GIÁ BAN ĐẦU (moved from modal) -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field exam-inline-full">
-											<label class="examination-label">ĐÁNH GIÁ BAN ĐẦU:</label>
-											<textarea class="form-control auto-resize-textarea exam-textarea-fluid"
-												id="examMentalGeneralManifestations"
-												placeholder="Nhập đánh giá ban đầu..."></textarea>
-										</div>
-									</div>
-								</div>
-
-								<!-- Row 1.6: Diễn tiến trong phiên khám (moved from modal) -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field exam-inline-full">
-											<label class="examination-label">Diễn tiến trong phiên khám:</label>
-											<textarea class="form-control auto-resize-textarea exam-textarea-fluid"
-												id="examDetailGeneralExamination"
-												placeholder="Nhập diễn tiến trong phiên khám..."></textarea>
-											<button type="button" class="btn btn-primary btn-sm examination-button"
-												id="detailedExaminationBtn">
-												<i class="fas fa-stethoscope"></i> Khám chi tiết
-											</button>
-										</div>
-									</div>
-								</div>
-
-								<!-- Row 3: TRIỆU CHỨNG VÀ HÀNH VI HIỆN TẠI -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field exam-inline-top">
-											<label class="examination-label required exam-label-top">TRIỆU
-												CHỨNG VÀ HÀNH VI HIỆN TẠI:</label>
-											<textarea class="form-control auto-resize-textarea exam-textarea-flex" id="diagnosis"
-												placeholder="Nhập triệu chứng và hành vi hiện tại..."></textarea>
-										</div>
-									</div>
-								</div>
-
-								<!-- Row 3.5: Nhận định chung -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field exam-inline-top">
-											<label class="examination-label exam-label-top">Nhận định
-												chung:</label>
-											<textarea class="form-control auto-resize-textarea exam-textarea-flex" id="benhKemTheo"
-												placeholder="Nhập nhận định chung..."></textarea>
-										</div>
-									</div>
-								</div>
-
-								<!-- Row 4: Kết luận -->
-								<div class="examination-row">
-									<div class="examination-field-full">
-										<div class="examination-inline-field">
-											<label class="examination-label">KẾ HOẠCH CAN THIỆP:</label>
-											<input type="text" class="examination-input" id="treatmentPlan"
-												placeholder="Nhập kế hoạch can thiệp...">
-										</div>
-									</div>
-								</div>
-
-							</div>
-
-						</div>
-
-					</div>
-				</div>
+				{% include 'partials/psychologist-clinical-workspace.html' %}
+			</main>
 		</div>
 	</div>
 
-	</div>
-
-	</div>
-	</main>
-	</div>
-	</div>
 
 	<!-- Hidden elements required by shared clinical helpers -->
 	<div class="exam-initially-hidden">
@@ -605,25 +88,10 @@
 		<input id="printAppointmentTicket" type="checkbox">
 		<input id="printPatientInfo" type="checkbox">
 
-		<!-- Hidden fields for address data -->
-		<input type="hidden" id="addressDetail" value="">
+		<!-- Compatibility fields not rendered by the shared patient card -->
 		<input type="hidden" id="addressSummary" value="">
 		<input type="hidden" id="provinceHidden" value="">
 		<input type="hidden" id="district" value="">
-		<input type="hidden" id="ward" value="">
-		<!-- Hidden fields for personal info synced from modal -->
-		<input type="hidden" id="nationality" value="">
-		<input type="hidden" id="religion" value="">
-		<input type="hidden" id="ethnicity" value="">
-		<input type="hidden" id="educationLevel" value="">
-		<!-- Hidden fields for occupation data -->
-		<input type="hidden" id="donViCongTac" value="">
-		<input type="hidden" id="diaChiCongTy" value="">
-		<!-- Hidden fields for gender/pregnancy data -->
-		<input type="hidden" id="sexualOrientation" value="">
-		<input type="hidden" id="mangThai" value="">
-		<input type="hidden" id="ngayDuSinh" value="">
-		<input type="hidden" id="soTuanThai" value="">
 		<!-- Hidden fields for medical history helper state -->
 		<input type="hidden" id="hiddenSymptomProgression" value="">
 		<input type="hidden" id="hiddenProblemStartTime" value="">
@@ -634,462 +102,15 @@
 
 	<!-- Modal Thông tin đầy đủ - Được load từ DRY module (personal-detail-modal-dry.js) -->
 
-	<!-- Modal Hỏi bệnh -->
-	<div class="modal fade" id="medicalHistoryModal" tabindex="-1" aria-labelledby="medicalHistoryModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog exam-medical-history-dialog">
-			<div class="modal-content">
-				<div class="modal-header exam-modal-header-compact">
-					<h5 class="modal-title" id="medicalHistoryModalLabel">Hỏi bệnh - Thông tin chi tiết</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-
-				<!-- Topsidebar Tabs -->
-				<div class="modal-tabs">
-					<ul class="nav nav-tabs" id="medicalHistoryTabs" role="tablist">
-						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="medical-info-tab" data-bs-toggle="tab"
-								data-bs-target="#medical-info" type="button" role="tab" aria-controls="medical-info"
-								aria-selected="true">
-								Hỏi bệnh
-							</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents"
-								type="button" role="tab" aria-controls="documents" aria-selected="false">
-								Tài liệu đính kèm
-							</button>
-						</li>
-					</ul>
-				</div>
-
-				<div class="modal-body">
-					<div class="tab-content" id="medicalHistoryTabContent">
-						<!-- Tab 1: Hỏi bệnh -->
-						<div class="tab-pane fade show active" id="medical-info" role="tabpanel"
-							aria-labelledby="medical-info-tab">
-							<form id="medicalHistoryForm">
-								<!-- 1. LÝ DO TỚI KHÁM -->
-								<div class="mb-4">
-									<h6 class="text-danger">1. LÝ DO TỚI KHÁM</h6>
-									<div class="row">
-										<div class="col-md-6 mb-3">
-											<label class="form-label">Lý do chính đến khám <span
-													class="text-danger">*</span></label>
-											<textarea class="form-control" id="mainReason" rows="1"
-												placeholder="Nhập lý do chính bệnh nhân đến khám..."></textarea>
-										</div>
-										<div class="col-md-6 mb-3">
-											<label class="form-label">Diễn biến các triệu chứng</label>
-											<textarea class="form-control" id="symptomProgression" rows="1"
-												placeholder="Nhập diễn biến các triệu chứng..."></textarea>
-										</div>
-										<div class="col-md-6 mb-3">
-											<label class="form-label">Thời gian bắt đầu vấn đề</label>
-											<input type="text" class="form-control" id="problemStartTime"
-												placeholder="Nhập thời gian">
-										</div>
-									</div>
-								</div>
-
-								<!-- 2. TRIỆU CHỨNG VÀ HÀNH VI HIỆN TẠI -->
-								<div class="mb-4">
-									<h6 class="text-danger">2. TRIỆU CHỨNG VÀ HÀNH VI HIỆN TẠI</h6>
-									<div class="row">
-										<div class="col-md-6 mb-3">
-											<label class="form-label">Triệu chứng chính</label>
-											<textarea class="form-control" id="mainSymptoms" rows="1"
-												placeholder="Nhập các triệu chứng chính..."></textarea>
-										</div>
-										<div class="col-md-6 mb-3">
-											<label class="form-label">Hành vi hiện tại</label>
-											<textarea class="form-control" id="currentBehavior" rows="1"
-												placeholder="Nhập mô tả hành vi hiện tại..."></textarea>
-										</div>
-										<div class="col-md-12 mb-3">
-											<label class="form-label">Mức độ nghiêm trọng</label>
-											<select class="form-select" id="severityLevel">
-												<option value="">Chọn mức độ</option>
-												<option value="Nhẹ">Nhẹ</option>
-												<option value="Trung bình">Trung bình</option>
-												<option value="Nặng">Nặng</option>
-												<option value="Rất nặng">Rất nặng</option>
-											</select>
-										</div>
-									</div>
-								</div>
-							</form>
-						</div>
-
-						<!-- Tab 2: Tài liệu đính kèm -->
-						<div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-							<div class="documents-section">
-								<div class="d-flex justify-content-between align-items-center mb-3">
-									<h6 class="text-danger mb-0">TÀI LIỆU ĐÍNH KÈM</h6>
-									<button type="button" class="btn btn-primary btn-sm" id="uploadDocumentBtn">
-										<i class="bi bi-upload me-1"></i>Tải lên
-									</button>
-								</div>
-
-								<!-- Upload Area -->
-								<div class="upload-area mb-4 exam-initially-hidden" id="uploadArea">
-									<div class="border border-dashed border-primary rounded p-4 text-center">
-										<input type="file" id="documentFileInput" multiple
-											accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="exam-initially-hidden">
-										<i class="bi bi-cloud-upload text-primary exam-document-upload-icon"></i>
-										<p class="mt-2 mb-0">Kéo thả file vào đây hoặc click để chọn file</p>
-										<small class="text-muted">Hỗ trợ: PDF, DOC, DOCX, JPG, PNG (Tối đa 10MB)</small>
-									</div>
-								</div>
-
-								<!-- Documents List -->
-								<div class="documents-list" id="documentsList">
-									<div class="text-center text-muted py-4">
-										<i class="bi bi-file-earmark-text exam-document-empty-icon"></i>
-										<p class="mt-2 mb-0">Chưa có tài liệu nào được tải lên</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-				</div>
-			</div>
-		</div>
-	</div>
 
 
 
-	<!-- Modal Chỉ định -->
-	<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
-		<div class="modal-dialog exam-order-dialog">
-			<div class="modal-content">
-				<div class="modal-header exam-modal-header-compact">
-					<h5 class="modal-title" id="orderModalLabel">Quản lý Chỉ định của bệnh nhân</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-
-				<div class="modal-tabs">
-					<ul class="nav nav-tabs" id="orderTabs" role="tablist">
-						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="order-create-tab" data-bs-toggle="tab"
-								data-bs-target="#order-create" type="button" role="tab" aria-controls="order-create"
-								aria-selected="true">
-								Tạo phiếu chỉ định
-							</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="order-history-tab" data-bs-toggle="tab"
-								data-bs-target="#order-history" type="button" role="tab" aria-controls="order-history"
-								aria-selected="false">
-								Lịch sử
-							</button>
-						</li>
-					</ul>
-				</div>
-
-				<div class="modal-body">
-					<div class="tab-content" id="orderTabContent">
-						<div class="tab-pane fade show active" id="order-create" role="tabpanel"
-							aria-labelledby="order-create-tab">
-							<div class="row g-3">
-								<div class="col-lg-4">
-									<div class="card shadow-sm h-100">
-										<div class="card-body">
-											<div class="order-entry-panel">
-												<div class="order-entry-panel__content">
-													<div class="order-entry-panel__form-new">
-														<div class="d-flex justify-content-between align-items-start">
-															<div>
-																<p class="text-uppercase small text-muted mb-1">Thông
-																	tin chỉ định</p>
-															</div>
-															<button type="button"
-																class="btn btn-link btn-sm text-decoration-none"
-																id="orderFormNewResetBtn">
-																<i class="bi bi-arrow-counterclockwise me-1"></i>Làm mới
-															</button>
-														</div>
-														<form id="orderFormNew">
-															<div class="mb-3">
-																<label class="form-label">Tên chỉ định <span
-																		class="text-danger">*</span></label>
-																<div class="position-relative">
-																	<input type="text" class="form-control"
-																		id="orderFormNewName"
-																		placeholder="Chọn từ danh mục hoặc nhập mới"
-																		autocomplete="off">
-															<div class="autocomplete-dropdown order-autocomplete-dropdown"
-																id="orderFormNewNameDropdown">
-																	</div>
-																</div>
-																<div class="form-text" id="orderFormNewPathHint">Chưa
-																	chọn chỉ định nào.</div>
-															</div>
-															<div class="mb-3">
-																<label class="form-label d-block">Người thực hiện <span
-																		class="text-danger">*</span></label>
-																<div class="btn-group w-100" role="group"
-																	aria-label="Người thực hiện">
-																	<input type="radio" class="btn-check"
-																		name="orderFormNewLocation"
-																		id="orderFormNewLocationIn" value="in" checked>
-																	<label class="btn btn-outline-primary"
-																		for="orderFormNewLocationIn">
-																		<i class="bi bi-hospital me-1"></i>Trong cơ sở
-																	</label>
-																	<input type="radio" class="btn-check"
-																		name="orderFormNewLocation"
-																		id="orderFormNewLocationOut" value="out">
-																	<label class="btn btn-outline-secondary"
-																		for="orderFormNewLocationOut">
-																		<i class="bi bi-geo-alt me-1"></i>Ngoài cơ sở
-																	</label>
-																</div>
-															</div>
-															<div class="mb-3" id="orderFormNewInHouseGroup">
-																<label class="form-label">Đơn vị/Người thực hiện trong
-																	cơ sở</label>
-																<select class="form-select"
-																	id="orderFormNewInHouseUnit">
-																	<option value="">-- Chọn người thực hiện --</option>
-																</select>
-															</div>
-															<div class="mb-3 d-none" id="orderFormNewOutFacilityGroup">
-																<label class="form-label">Cơ sở ngoài</label>
-																<input type="text" class="form-control"
-																	id="orderFormNewOutFacility"
-																	placeholder="VD: Bệnh viện C, Trung tâm X...">
-															</div>
-															<div class="mb-3">
-																<label class="form-label">Ngày chỉ định <span
-																		class="text-danger">*</span></label>
-																<input type="text" class="form-control js-datepicker"
-																	id="orderFormNewDate" required
-																	placeholder="dd/mm/yyyy">
-															</div>
-															<div class="d-flex justify-content-end gap-2">
-																<button type="button" class="btn btn-outline-secondary"
-																	id="orderFormNewCancelBtn">Hủy</button>
-																<button type="submit" class="btn btn-success"
-																	id="orderFormNewSubmitBtn">
-																	<i class="bi bi-plus-circle me-1"></i>Thêm vào danh
-																	sách
-																</button>
-															</div>
-														</form>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<div class="col-lg-8">
-									<div class="card shadow-sm h-100">
-										<div class="card-body">
-											<div
-												class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-2">
-												<div>
-													<p class="text-uppercase small text-muted mb-1">Danh sách chỉ định
-													</p>
-												</div>
-												<div class="btn-group btn-group-sm flex-shrink-0">
-													<button type="button" class="btn btn-success" id="orderAddNewBtn">
-														<i class="bi bi-plus-circle me-1"></i>Thêm chỉ định
-													</button>
-													<button type="button" class="btn btn-outline-danger"
-														id="orderClearBtn">
-														<i class="bi bi-trash me-1"></i>Xoá hết
-													</button>
-												</div>
-											</div>
-											<div class="order-selection-table table-responsive">
-												<table class="table table-sm align-middle" id="orderSelectionsTable">
-													<thead>
-														<tr>
-															<th>STT</th>
-															<th>Tên chỉ định</th>
-															<th>Thực hiện</th>
-															<th>Ngày</th>
-															<th>Trạng thái</th>
-															<th class="text-end">Thao tác</th>
-														</tr>
-													</thead>
-													<tbody id="orderSelectionsTableBody"></tbody>
-												</table>
-											</div>
-											<div class="text-center text-muted small py-4"
-												id="orderSelectionsEmptyState">
-												Chưa có chỉ định nào được tạo.
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="tab-pane fade" id="order-history" role="tabpanel"
-							aria-labelledby="order-history-tab">
-							<div class="card border-0 shadow-sm">
-								<div class="card-body">
-									<div class="d-flex justify-content-between align-items-center mb-3">
-										<h6 class="text-uppercase text-muted small mb-0">Lịch sử chỉ định</h6>
-										<div class="input-group input-group-sm exam-input-group-compact">
-											<span class="input-group-text"><i class="bi bi-search"></i></span>
-											<input type="text" class="form-control" placeholder="Tìm kiếm chỉ định...">
-										</div>
-									</div>
-									<div class="text-center text-muted py-4">
-										<i class="bi bi-journal-medical order-empty-history-icon"></i>
-										<p class="mb-0 mt-2">Chưa có lịch sử chỉ định nào.</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal: Chọn Thực Hiện Để In Phiếu Chỉ Định -->
-	<div class="modal fade" id="selectPerformerModal" tabindex="-1" aria-labelledby="selectPerformerModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-header order-performer-modal-header">
-					<h5 class="modal-title" id="selectPerformerModalLabel">
-						<i class="bi bi-printer"></i> Chọn Thực Hiện Để In Phiếu Chỉ Định
-					</h5>
-					<button type="button" class="patient-modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
-						<i class="bi bi-x-lg"></i>
-					</button>
-				</div>
-				<div class="modal-body order-performer-modal-body">
-					<p class="text-muted mb-4">
-						Vui lòng chọn <strong>thực hiện</strong> để in phiếu chỉ định tương ứng:
-					</p>
-					<div id="performerOptionsContainer">
-						<!-- Options sẽ được render động ở đây -->
-					</div>
-					<div class="alert alert-warning mt-3 mb-0 order-performer-note">
-						<i class="bi bi-info-circle"></i>
-						<strong>Lưu ý:</strong> Mỗi lần chỉ có thể in <strong>1 thực hiện</strong>.
-						Để in nhiều thực hiện, vui lòng thực hiện nhiều lần.
-					</div>
-				</div>
-				<div class="modal-footer order-performer-modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-						<i class="bi bi-x-circle"></i> Hủy
-					</button>
-					<button type="button" class="btn btn-primary order-performer-print-btn" id="btnPrintSelectedPerformer" disabled>
-						<i class="bi bi-printer"></i> In Phiếu
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Duplicate Patient Modal -->
-	<div class="modal fade" id="duplicatePatientModal" tabindex="-1" aria-labelledby="duplicatePatientModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog modal-md">
-			<div class="modal-content">
-				<div class="modal-header bg-warning text-dark">
-					<h5 class="modal-title" id="duplicatePatientModalLabel">
-						<i class="bi bi-exclamation-triangle-fill me-2"></i>
-						Tìm thấy bệnh nhân trùng lặp
-					</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<div id="duplicateList" class="mb-3">
-						<!-- Duplicate patients will be listed here -->
-					</div>
-
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-light" data-bs-dismiss="modal">
-						<i class="bi bi-x-circle me-2"></i>Huỷ
-					</button>
-					<button type="button" class="btn btn-secondary" data-duplicate-choice="cancel">
-						<i class="bi bi-plus-circle me-2"></i>Tạo mới
-					</button>
-					<button type="button" class="btn btn-primary" id="updateSelectedBtn" data-duplicate-choice="update" disabled>
-						<i class="bi bi-check-circle me-2"></i>Cập nhật
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Custom CSS for Duplicate Patient Modal -->
 
 
 	<!-- Modal Chuyển Khám - Được load từ template /static/templates/transfer-modal.html bởi transfer-modal-dry.js -->
 
 	<!-- Shared Patient History Modal: canonical markup, page chỉ truyền adapter TLG -->
 	{% include 'partials/patient-search-modal.html' %}
-	<!-- Modal Dịch vụ phòng khám -->
-	<div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
-		<div class="modal-dialog service-modal-xl">
-			<div class="modal-content">
-				<div class="modal-header service-modal-header">
-					<h5 class="modal-title" id="serviceModalLabel">Dịch vụ phòng khám</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<div class="service-modal-layout">
-						<!-- Cột trái: Dịch vụ hệ thống -->
-						<div class="system-services-column">
-							<div class="search-input-group">
-								<input type="text" class="form-control" id="serviceNameInput"
-									placeholder="Tìm kiếm dịch vụ">
-							</div>
-							<div id="systemServicesList">
-								<!-- Danh sách dịch vụ sẽ được tải động từ backend -->
-							</div>
-							<div class="system-services-pagination service-pagination-initially-hidden d-flex justify-content-between align-items-center"
-								id="systemServicesPagination">
-								<div class="text-muted small">
-									Hiển thị <span id="systemServicesRange"></span> trong tổng số <span
-										id="systemServicesTotal"></span> dịch vụ
-								</div>
-								<div class="btn-group">
-									<button type="button" class="btn btn-outline-secondary btn-sm"
-										id="systemServicesPrevBtn">
-										<i class="bi bi-chevron-left"></i>
-									</button>
-									<span class="btn btn-sm btn-outline-secondary disabled"
-										id="systemServicesCurrentPage">1</span>
-									<button type="button" class="btn btn-outline-secondary btn-sm"
-										id="systemServicesNextBtn">
-										<i class="bi bi-chevron-right"></i>
-									</button>
-								</div>
-							</div>
-						</div>
-
-						<!-- Cột phải: Dịch vụ đã chọn -->
-						<div class="selected-services-column">
-							<div class="selected-services-title">Dịch vụ đã chọn</div>
-							<div id="selectedServicesList">
-								<!-- Danh sách dịch vụ sẽ được thêm động -->
-							</div>
-							<div class="total-amount">
-								Tổng tiền dịch vụ: <span id="totalServiceAmount">0</span> VND
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer service-modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-				</div>
-			</div>
-		</div>
-	</div>
 
 	<!-- Auto-save indicator -->
 	<div id="autoSaveIndicator" class="auto-save-indicator">
@@ -1101,6 +122,20 @@
 		<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
 		<!-- Shared module registry is loaded before the canonical patient modal owner. -->
 		<script src="/static/js/doctor-examination/module-registry.js?v={{ app_version }}"></script>
+		<script src="/static/js/doctor-examination/page-runtime.js?v={{ app_version }}"></script>
+		<script src="/static/js/doctor-examination/support-runtime.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/psychologist-component-config.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/workflow-two-pane.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/component-dom-scope.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/patient-info-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/patient-visit-info-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/patient-intake-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/medical-history-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/medical-history-substance-fields.js?v={{ app_version }}"></script>
+		<script src="/static/js/doctor-examination/medical-history-icd-bridge.js?v={{ app_version }}"></script>
+		<script src="/static/js/doctor-examination/clinical-detail-persistence.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/clinical-examination-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/psychologist-examination/workspace-ui.js?v={{ app_version }}"></script>
 		<!-- Canonical patient modal contract; legacy page helpers remain compatibility-only. -->
 		<script src="/static/js/components/modal-function-tabs-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/modal-medical-history-list-ui.js?v={{ app_version }}"></script>
@@ -1114,29 +149,21 @@
 		<script src="/static/js/patient-search-modal-dry.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/components/prescription-modal-preview.js?v={{ app_version }}"></script>
 		<script src="/static/js/prescriptions/components/prescription-modal-print.js?v={{ app_version }}"></script>
-		<script src="/static/js/notes-attachment-chip.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/waiting-queue-card-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/examination-waiting-list-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/examination-action-buttons-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/icd-data-loader.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/sidebar-user-info-ui.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/textarea-ui-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/form-dom-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/examination-field-defaults-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/examination-detail-modal-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/examination-form-clear-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/examination-form-lock-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/medical-history-modal-controls.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/medical-history-autosave-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/patient-medical-data-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/form-dom-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/examination-form-lock-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/address-draft-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/address-hierarchy-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/document-attachment-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/document-attachment-list.js?v={{ app_version }}"></script>
+		<script src="/static/js/receptionist/document-attachment-controls.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/document-file-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/document-section-ui-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/duplicate-patient-modal-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/vital-calculation-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/service-selection-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/components/service-modal-ui-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/prescription-history-tab-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/service-history-tab-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/medical-record-history-tab-ui.js?v={{ app_version }}"></script>
@@ -1144,22 +171,17 @@
 		<script src="/static/js/referral-source-control.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/page-core-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/orders/order-status-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-tree-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-catalog-state-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/orders/order-selection-state-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-catalog-loader-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-catalog-render-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-form-ui-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/orders/order-autocomplete-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-performer-loader-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-selected-table-ui-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-performer-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-print-ui-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/orders/order-page-bridge-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/doctor-services-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/doctor-indications-form.js?v={{ app_version }}"></script>
+		<script src="/static/js/psychologist-examination/workspace-runtime.js?v={{ app_version }}"></script>
 		<script src="/static/js/psychologist-examination/core-utils.js?v={{ app_version }}"></script>
-		<script src="/static/js/psychologist-examination/examination-data-load-flow-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/psychologist-examination/medical-record-realtime-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/psychologist-examination/patient-history-bridge.js?v={{ app_version }}"></script>
 		<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+		<script src="/static/js/doctor-examination/platform-boundaries.js?v={{ app_version }}"></script>
+		<script type="module" src="/static/js/psychologist-examination-entry.js?v={{ app_version }}"></script>
 		<script src="/static/js/psychologist-examination.js?v={{ app_version }}"></script>
 
 

@@ -11,10 +11,12 @@
 			notesAttachmentChip.update();
 			return;
 		}
-		const countEl = getDocument(options).getElementById('notesAttachmentCount');
+		const doc = getDocument(options);
+		const countEl = doc.getElementById('notesAttachmentCount') || doc.getElementById('documentsCountBadge');
 		if (!countEl) return;
 		const total = typeof options.getTotalCount === 'function' ? options.getTotalCount() : 0;
 		countEl.textContent = `${total}`;
+		countEl.setAttribute('aria-label', `${total} tập tin đính kèm`);
 	}
 
 	function bindNotesUploadButton(options = {}) {
@@ -270,40 +272,6 @@
 		return showConfirmationDialog(buildDocumentDeleteConfirmationOptions());
 	}
 
-	async function deleteServerAttachment(attachmentId, options = {}) {
-		const ensureEditingAllowed = options.ensureEditingAllowed || function () { return true; };
-		if (!attachmentId || !ensureEditingAllowed()) return false;
-
-		const confirmed = await confirmDocumentDelete(options);
-		if (!confirmed) return false;
-
-		const apiCall = options.apiCall;
-		const showSuccess = options.showSuccess || function () {};
-		const showError = options.showError || function () {};
-		const loadAttachments = options.loadAttachments || async function () {};
-		const logger = options.console || window.console;
-		if (typeof apiCall !== 'function') return false;
-
-		try {
-			const res = await apiCall(`/attachments/${attachmentId}`, { method: 'DELETE' });
-			if (res.ok) {
-				showSuccess('Đã xóa tài liệu');
-				await loadAttachments();
-				return true;
-			}
-
-			const errorData = await res.json().catch(() => ({}));
-			showError(errorData.detail || 'Không thể xóa tài liệu');
-			return false;
-		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error('Error deleting attachment:', error);
-			}
-			showError('Lỗi khi xóa tài liệu');
-			return false;
-		}
-	}
-
 	async function uploadAttachmentForCurrentPatient(file, options = {}) {
 		const ensureEditingAllowed = options.ensureEditingAllowed || function () { return true; };
 		if (!ensureEditingAllowed()) return false;
@@ -322,245 +290,53 @@
 		return options.uploadFile(file, currentPatientId, { isDraft: false, showToast: true });
 	}
 
-	function resolveAttachmentFilename(attachmentId, options = {}) {
-		const numericId = Number(attachmentId);
-		const attachments = typeof options.getAttachments === 'function' ? options.getAttachments() : [];
-		if (Array.isArray(attachments)) {
-			const meta = attachments.find(item => Number(item.id) === numericId);
-			if (meta) {
-				return meta.original_filename || meta.filename || null;
-			}
-		}
-
-		const documents = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
-		if (Array.isArray(documents)) {
-			const meta = documents.find(item => Number(item?.id) === numericId);
-			if (meta) {
-				return meta.name || meta.original_filename || meta.filename || null;
-			}
-		}
-		return null;
-	}
-
-	function getFilenameFromContentDisposition(response) {
-		const contentDisposition = response.headers.get('Content-Disposition') || '';
-		const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/);
-		return match ? decodeURIComponent(match[1] || match[2]) : null;
-	}
-
-	async function fetchAndDownloadAttachment(attachmentId, options = {}) {
-		if (!attachmentId) return false;
-		let filename = resolveAttachmentFilename(attachmentId, options);
-		const apiCall = options.apiCall;
-		const showError = options.showError || function () {};
-		const logger = options.console || window.console;
-		if (typeof apiCall !== 'function') return false;
-
-		try {
-			const response = await apiCall(`/attachments/${attachmentId}/download`, { method: 'GET' });
-			if (!response.ok) {
-				showError('Không thể tải tài liệu');
-				return false;
-			}
-			const blob = await response.blob();
-			if (!filename) {
-				filename = getFilenameFromContentDisposition(response);
-			}
-			if (!filename) {
-				filename = `attachment_${attachmentId}`;
-			}
-
-			const doc = getDocument(options);
-			const urlApi = options.URL || window.URL;
-			const url = urlApi.createObjectURL(blob);
-			const link = doc.createElement('a');
-			link.href = url;
-			link.download = filename;
-			doc.body.appendChild(link);
-			link.click();
-			doc.body.removeChild(link);
-			urlApi.revokeObjectURL(url);
-			return true;
-		} catch (error) {
+	function renderSharedDocumentList(options = {}) {
+		const renderer = window.ReceptionistDocumentAttachmentList;
+		if (!renderer || typeof renderer.renderDocumentsList !== 'function') {
+			const logger = options.console || window.console;
 			if (logger && typeof logger.error === 'function') {
-				logger.error('Error downloading attachment:', error);
+				logger.error('Thiếu renderer tài liệu dùng chung');
 			}
-			showError('Lỗi khi tải tài liệu');
 			return false;
 		}
-	}
 
-	function renderSavedAttachmentsList(options = {}) {
 		const doc = getDocument(options);
-		const list = doc.getElementById('documentsList');
-		if (!list) return false;
-
-		const attachments = typeof options.getAttachments === 'function' ? options.getAttachments() : [];
-		const updateCount = options.updateNotesAttachmentCount || function () {};
-		if (!attachments || attachments.length === 0) {
-			list.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-file-earmark-text exam-document-empty-icon"></i>
-                <p class="mt-2 mb-0">Chưa có tài liệu nào được tải lên</p>
-            </div>
-        `;
-			updateCount();
-			return true;
+		const attachmentUtils = window.ReceptionistDocumentAttachmentUtils;
+		if (!attachmentUtils) {
+			const logger = options.console || window.console;
+			if (logger && typeof logger.error === 'function') logger.error('Thiếu tiện ích tài liệu dùng chung');
+			return false;
 		}
+		const showToast = typeof options.showToast === 'function' ? options.showToast : function () {};
+		const openAttachmentPreviewInNewTab = options.openAttachmentPreviewInNewTab || (
+			typeof attachmentUtils.openAttachmentPreviewInNewTab === 'function'
+				? (attachmentId, filename) => attachmentUtils.openAttachmentPreviewInNewTab(attachmentId, filename, {
+					window,
+					document: doc,
+					URL: options.URL || window.URL,
+					fetch: options.fetch || window.fetch.bind(window),
+					getAuthHeader: options.getAuthHeader,
+					showToast
+				})
+				: null
+		);
+		if (typeof openAttachmentPreviewInNewTab !== 'function') return false;
 
-		const getFileIcon = options.getFileIcon || function () { return 'bi-file-earmark-text'; };
-		const formatFileSize = options.formatFileSize || function (value) { return `${value}`; };
-		list.innerHTML = attachments.map(att => `
-        <div class="document-item" data-doc-id="${att.id}">
-            <div class="document-info">
-                <div class="document-icon">
-                    <i class="bi ${getFileIcon(att.file_type || '')}"></i>
-                </div>
-                <div class="document-details">
-                    <div class="document-name">${att.original_filename || att.filename}</div>
-                    <div class="document-size">${formatFileSize(Number(att.file_size || 0))}</div>
-                </div>
-                <div class="document-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="download" data-id="${att.id}"><i class="bi bi-download"></i></button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${att.id}"><i class="bi bi-trash"></i></button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-		updateCount();
-
-		list.querySelectorAll('button[data-action="download"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = btn.getAttribute('data-id');
-				if (!id) return;
-				if (typeof options.fetchAndOpenAttachment === 'function') {
-					options.fetchAndOpenAttachment(id);
-				}
-			});
+		renderer.renderDocumentsList({
+			document: doc,
+			utils: attachmentUtils,
+			getAttachments: options.getAttachments,
+			getUploadedDocuments: options.getUploadedDocuments,
+			formatDateDisplay: options.formatDateDisplay || options.formatDraftDate,
+			openAttachmentPreviewInNewTab,
+			apiCall: options.apiCall,
+			showToast,
+			showConfirmationDialog: options.showConfirmationDialog,
+			loadAttachmentsForCurrentPatient: options.loadAttachmentsForCurrentPatient || options.loadAttachments,
+			downloadDraftDocument: options.downloadDraftDocument || options.downloadDocument,
+			deleteDraftDocument: options.deleteDraftDocument || options.deleteDocument
 		});
-		list.querySelectorAll('button[data-action="delete"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = Number(btn.getAttribute('data-id'));
-				if (!Number.isNaN(id) && typeof options.handleServerAttachmentDelete === 'function') {
-					options.handleServerAttachmentDelete(id);
-				}
-			});
-		});
-		if (typeof options.setLockState === 'function') {
-			options.setLockState(options.isLocked);
-		}
-		return true;
-	}
 
-	function renderDocumentList(options = {}) {
-		const doc = getDocument(options);
-		const documentsList = doc.getElementById('documentsList');
-		if (!documentsList) return false;
-
-		const uploadedDocuments = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
-		const attachments = typeof options.getAttachments === 'function' ? options.getAttachments() : [];
-		const updateCount = options.updateNotesAttachmentCount || function () {};
-		if (uploadedDocuments.length === 0 && (!attachments || attachments.length === 0)) {
-			documentsList.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-file-earmark-text exam-document-empty-icon"></i>
-                <p class="mt-2 mb-0">Chưa có tài liệu nào được tải lên</p>
-            </div>
-        `;
-			updateCount();
-			return true;
-		}
-
-		const getFileIcon = options.getFileIcon || function () { return 'bi-file-earmark-text'; };
-		const formatFileSize = options.formatFileSize || function (value) { return `${value}`; };
-		const formatDraftDate = options.formatDraftDate || function (documentItem) { return documentItem.uploadDate || ''; };
-		const serverHtml = (attachments || []).map(att => `
-        <div class="document-item" data-doc-id="${att.id}">
-            <div class="document-info">
-                <div class="document-icon">
-                    <i class="bi ${getFileIcon(att.file_type || '')}"></i>
-                </div>
-                <div class="document-details">
-                    <div class="document-name">${att.original_filename || att.filename}</div>
-                    <div class="document-size">${formatFileSize(Number(att.file_size || 0))}</div>
-                </div>
-                <div class="document-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="server-open" data-id="${att.id}">
-                        <i class="bi bi-download"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="server-delete" data-id="${att.id}">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-
-		const draftHtml = uploadedDocuments.map(documentItem => `
-        <div class="document-item" data-doc-id="${documentItem.id}">
-            <div class="document-info">
-                <div class="document-icon">
-                    <i class="bi ${getFileIcon(documentItem.type)}"></i>
-                </div>
-                <div class="document-details">
-                    <div class="document-name">${documentItem.name}</div>
-                    <div class="document-size">${formatFileSize(documentItem.size)} - ${formatDraftDate(documentItem)} <span class="badge bg-secondary ms-2">Nháp</span></div>
-                </div>
-                <div class="document-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="draft-download" data-id="${documentItem.id}">
-                        <i class="bi bi-download"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-role="draft-delete" data-id="${documentItem.id}">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-
-		documentsList.innerHTML = serverHtml + draftHtml;
-		updateCount();
-		documentsList.querySelectorAll('button[data-action="server-open"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = btn.getAttribute('data-id');
-				if (!id) return;
-				if (typeof options.fetchAndOpenAttachment === 'function') {
-					options.fetchAndOpenAttachment(id);
-				} else if (typeof window.fetchAndOpenAttachment === 'function') {
-					window.fetchAndOpenAttachment(id);
-				}
-			});
-		});
-		documentsList.querySelectorAll('button[data-action="server-delete"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = Number(btn.getAttribute('data-id'));
-				if (!Number.isNaN(id) && typeof options.handleServerAttachmentDelete === 'function') {
-					options.handleServerAttachmentDelete(id);
-				}
-			});
-		});
-		documentsList.querySelectorAll('button[data-action="draft-download"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = Number(btn.getAttribute('data-id'));
-				if (Number.isNaN(id)) return;
-				if (typeof options.downloadDocument === 'function') {
-					options.downloadDocument(id);
-				} else if (typeof window.downloadDocument === 'function') {
-					window.downloadDocument(id);
-				}
-			});
-		});
-		documentsList.querySelectorAll('button[data-role="draft-delete"]').forEach(btn => {
-			btn.addEventListener('click', () => {
-				const id = Number(btn.getAttribute('data-id'));
-				if (Number.isNaN(id)) return;
-				if (typeof options.deleteDocument === 'function') {
-					options.deleteDocument(id);
-				} else if (typeof window.deleteDocument === 'function') {
-					window.deleteDocument(id);
-				}
-			});
-		});
 		if (typeof options.setLockState === 'function') {
 			options.setLockState(options.isLocked);
 		}
@@ -719,18 +495,6 @@
 			return setDocumentSectionLockState(locked, { document: doc });
 		};
 
-		adapter.handleServerAttachmentDelete = function (attachmentId) {
-			return deleteServerAttachment(attachmentId, {
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				apiCall: options.apiCall,
-				loadAttachments: adapter.loadAttachmentsForCurrentPatient,
-				showSuccess: message => showToast('success', message),
-				showError: message => showToast('error', message),
-				console: options.console || window.console,
-				showConfirmationDialog: options.showConfirmationDialog
-			});
-		};
-
 		adapter.initializeDocumentUpload = function () {
 			if (typeof options.getUploadInitialized === 'function' && options.getUploadInitialized()) return false;
 			if (typeof options.setUploadInitialized === 'function') options.setUploadInitialized(true);
@@ -786,20 +550,23 @@
 		};
 
 		adapter.renderDocumentsList = function () {
-			return renderDocumentList({
+			return renderSharedDocumentList({
 				document: doc,
 				getUploadedDocuments,
 				getAttachments,
-				getFileIcon: options.getFileIcon,
-				formatFileSize: options.formatFileSize,
+				formatDateDisplay: options.formatDisplayDate,
 				formatDraftDate: options.formatDraftDate,
-				updateNotesAttachmentCount: adapter.updateNotesAttachmentCount,
-				handleServerAttachmentDelete: adapter.handleServerAttachmentDelete,
-				fetchAndOpenAttachment: adapter.fetchAndOpenAttachment,
-				downloadDocument: adapter.downloadDocument,
-				deleteDocument: adapter.deleteDocument,
+				apiCall: options.apiCall,
+				fetch: options.fetch,
+				getAuthHeader: options.getAuthHeader,
+				showToast,
+				showConfirmationDialog: options.showConfirmationDialog,
+				loadAttachmentsForCurrentPatient: adapter.loadAttachmentsForCurrentPatient,
+				downloadDraftDocument: adapter.downloadDocument,
+				deleteDraftDocument: adapter.deleteDocument,
 				setLockState: adapter.setDocumentSectionLockState,
-				isLocked: getIsLocked()
+				isLocked: getIsLocked(),
+				console: options.console || window.console
 			});
 		};
 
@@ -818,17 +585,7 @@
 		};
 
 		adapter.renderAttachmentsList = function () {
-			return renderSavedAttachmentsList({
-				document: doc,
-				getAttachments,
-				getFileIcon: options.getFileIcon,
-				formatFileSize: options.formatFileSize,
-				updateNotesAttachmentCount: adapter.updateNotesAttachmentCount,
-				fetchAndOpenAttachment: adapter.fetchAndOpenAttachment,
-				handleServerAttachmentDelete: adapter.handleServerAttachmentDelete,
-				setLockState: adapter.setDocumentSectionLockState,
-				isLocked: getIsLocked()
-			});
+			return adapter.renderDocumentsList();
 		};
 
 		adapter.uploadAttachmentForCurrentPatient = function (file) {
@@ -845,18 +602,6 @@
 				document: doc,
 				URL: options.URL || window.URL,
 				getUploadedDocuments
-			});
-		};
-
-		adapter.fetchAndOpenAttachment = function (attachmentId) {
-			return fetchAndDownloadAttachment(attachmentId, {
-				document: doc,
-				URL: options.URL || window.URL,
-				apiCall: options.apiCall,
-				getAttachments,
-				getUploadedDocuments,
-				showError: message => showToast('error', message),
-				console: options.console || window.console
 			});
 		};
 
@@ -920,11 +665,7 @@
 		deleteDraftDocument,
 		buildDocumentDeleteConfirmationOptions,
 		confirmDocumentDelete,
-		deleteServerAttachment,
 		uploadAttachmentForCurrentPatient,
-		fetchAndDownloadAttachment,
-		renderDocumentList,
-		renderSavedAttachmentsList,
 		loadAttachmentsForCurrentPatient,
 		uploadFileToPatient,
 		uploadDraftDocumentsForPatient,

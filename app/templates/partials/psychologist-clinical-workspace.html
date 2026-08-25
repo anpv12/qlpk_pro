@@ -1,0 +1,197 @@
+{% set patient_intake_config = {
+	'id': 'psychologist-intake',
+	'show_visit': true,
+	'show_documents': true,
+	'patient': {
+		'layout_mode': 'receptionist',
+		'title': 'Thông tin hành chính',
+		'show_reexam': true,
+		'show_detail_actions': true,
+		'show_joint_action': true,
+		'vitals_caption': 'Thông tin tham khảo'
+	},
+	'visit': {
+		'layout_mode': 'receptionist',
+		'title': 'Thông tin hỏi bệnh',
+		'heading_id': 'psychologistVisitHeading',
+		'section_id': 'psychologistVisitSection',
+		'show_admin': true,
+		'show_reason': true,
+		'show_main_symptoms': true
+	},
+	'documents': {
+		'section_id': 'psychologistDocumentsSection',
+		'heading_id': 'psychologistDocumentsHeading',
+		'title': 'Danh sách tập tin đính kèm'
+	},
+	'relatives': {'aria_label': 'Người thân liên kết'}
+} %}
+
+{# Outer shell and layout are intentionally the same as Doctor. #}
+<div class="doctor-workspace qlpk-workflow-two-pane"
+	data-workflow-two-pane data-workflow-default-pane="main" data-psychologist-component="workspace">
+	<div class="qlpk-workflow-two-pane__switch" role="tablist" aria-label="Chuyển vùng Tâm lý gia">
+		<button type="button" class="qlpk-workflow-two-pane__switch-btn is-active"
+			data-workflow-pane="main" role="tab" aria-selected="true" aria-controls="psychologistMainPane">
+			<i class="bi bi-clipboard2-pulse qlpk-button-icon" aria-hidden="true"></i><span>Khám bệnh</span>
+		</button>
+		<button type="button" class="qlpk-workflow-two-pane__switch-btn"
+			data-workflow-pane="queue" role="tab" aria-selected="false" aria-controls="psychologistQueuePane">
+			<i class="bi bi-list-ul qlpk-button-icon" aria-hidden="true"></i><span>Danh sách chờ</span>
+		</button>
+	</div>
+
+	<div class="qlpk-workflow-two-pane__queue" id="psychologistQueuePane"
+		data-workflow-pane-content="queue" role="tabpanel">
+		<div class="qlpk-queue-panel qlpk-queue-panel--exam" id="vung1Card" data-psychologist-component="waiting-queue">
+			{% set queue_title = 'Danh sách chờ khám' %}
+			{% set queue_search_id = 'patientSearch' %}
+			{% include 'partials/waiting-queue-header.html' %}
+			<div class="qlpk-queue-panel__body">
+				<div id="waitingListTableBody" class="qlpk-queue-panel__list"></div>
+				<div id="appointmentsEmptyState" class="qlpk-queue-panel__empty exam-initially-hidden">
+					<i class="bi bi-inbox qlpk-queue-panel__empty-icon" aria-hidden="true"></i>
+					<p class="qlpk-queue-panel__empty-text">Chưa có lịch hẹn nào</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<section class="doctor-exam-surface qlpk-workflow-two-pane__main is-active"
+		id="psychologistMainPane" data-psychologist-component="exam-surface"
+		data-workflow-pane-content="main" role="tabpanel" aria-label="Khu vực khám Tâm lý gia">
+		<div class="doctor-exam-surface__inner is-empty" id="psychologistExamSurface">
+			<div class="doctor-exam-empty-state" id="psychologistExamEmptyState">
+				<i class="bi bi-clipboard2-pulse doctor-exam-empty-state__icon" aria-hidden="true"></i>
+				<p class="doctor-exam-empty-state__text">Chưa chọn lịch hẹn</p>
+			</div>
+
+			<section class="doctor-clinical-workspace" id="psychologistClinicalWorkspace"
+				data-psychologist-component="clinical-workspace"
+				aria-labelledby="psychologistClinicalHeading" hidden>
+				<form class="doctor-clinical-form" id="patientForm" autocomplete="off">
+					<input type="hidden" id="patientId" name="patientId">
+
+					<header class="doctor-patient-hero" aria-labelledby="psychologistClinicalHeading">
+						<div class="doctor-patient-hero__summary">
+							<div class="doctor-patient-hero__body">
+								<div class="doctor-patient-hero__title-row">
+									<h2 id="psychologistClinicalHeading">Chưa chọn bệnh nhân</h2>
+									<span class="doctor-patient-hero__code" id="psychologistPatientCode" hidden></span>
+									<span class="doctor-patient-hero__latest-visit" id="psychologistPatientLatestVisit"></span>
+								</div>
+							</div>
+							<div class="doctor-patient-hero__actions">
+								<div class="doctor-patient-hero__action-buttons">
+									<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="historyBtn">
+										<i class="bi bi-clock-history" aria-hidden="true"></i><span>Lịch sử</span>
+									</button>
+									<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="saveInfoBtn">
+										<i class="bi bi-floppy" aria-hidden="true"></i><span>Lưu</span>
+									</button>
+									<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="completeExaminationBtn">
+										<i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Hoàn thành</span>
+									</button>
+								</div>
+							</div>
+						</div>
+					</header>
+
+					<nav class="doctor-section-edge-nav" aria-label="Điều hướng khám Tâm lý gia">
+						{% for section in [
+							{'id': 'psychologistReceptionistIntakePanel', 'label': 'Hành chính'},
+							{'id': 'psychologistHistoryPanel', 'label': 'Tiền sử'},
+							{'id': 'psychologistClinicalDecisionPanel', 'label': 'Khám'},
+							{'id': 'doctorServicePanel', 'label': 'Dịch vụ'},
+							{'id': 'doctorIndicationsPanel', 'label': 'Chỉ định'}
+						] %}
+							{% set section_active = section.id == 'psychologistClinicalDecisionPanel' %}
+							<a href="#{{ section.id }}" class="doctor-section-edge-nav__item{% if section_active %} is-active{% endif %}"
+								title="{{ section.label }}" aria-label="{{ section.label }}"
+								aria-controls="{{ section.id }}" data-psychologist-section-target="{{ section.id }}"
+								aria-current="{{ 'true' if section_active else 'false' }}">
+								<span class="doctor-section-edge-nav__label"><strong>{{ section.label }}</strong></span>
+							</a>
+						{% endfor %}
+					</nav>
+
+					<div class="doctor-clinical-layout">
+						<div class="doctor-clinical-main">
+							<div class="doctor-workbench" aria-label="Phiếu khám Tâm lý gia">
+								<div class="doctor-workspace-stage">
+										<section class="doctor-workspace-section" id="psychologistReceptionistIntakePanel"
+											data-psychologist-workspace-section data-doctor-component="patient-intake"
+											aria-label="Thông tin hành chính" hidden>
+											{% include 'partials/patient-intake-sections.html' %}
+										</section>
+
+										<section class="doctor-workspace-section doctor-workbench-panel" id="psychologistHistoryPanel"
+											data-psychologist-workspace-section data-doctor-component="medical-history"
+											aria-label="Tiền sử" data-medical-history-root hidden>
+											{% set inline_medical_history_variant = 'doctor_flat' %}
+											{% include 'components/_inline_medical_history.html' %}
+										</section>
+
+									<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--clinical"
+										id="psychologistClinicalDecisionPanel" data-psychologist-workspace-section
+										data-doctor-component="clinical-examination" aria-label="Khám tâm lý" hidden>
+										<div class="doctor-workbench-panel__body doctor-workbench-panel__body--clinical">
+											<div class="doctor-clinical-flow">
+												<div class="doctor-clinical-flow__clinical-grid">
+																								<details class="doctor-clinical-section doctor-clinical-form-card qlpk-patient-visit-card receptionist-card psychologist-clinical-accordion" data-psychologist-clinical-accordion="assessment" open aria-labelledby="psychologistClinicalFormHeading">
+																										<summary class="doctor-clinical-form-card__header">
+																											<div class="receptionist-section-title qlpk-patient-visit-card__title" id="psychologistClinicalFormHeading">
+																												<i class="bi bi-person-heart qlpk-section-icon" aria-hidden="true"></i><span>Khám &amp; đánh giá tâm lý</span>
+																											</div>
+																											<span class="psychologist-clinical-accordion__indicator" aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+																										</summary>
+																										<div class="doctor-clinical-form-card__fields">
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="examinationMainReason"><span>Lý do khai thác <span class="doctor-required-mark" aria-hidden="true">*</span></span><textarea class="form-control" id="examinationMainReason" rows="1" placeholder="Nhập lý do khai thác..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="examDetailMedicalHistory"><span>Bệnh sử</span><textarea class="form-control" id="examDetailMedicalHistory" rows="1" placeholder="Ghi nhận bệnh sử liên quan đến buổi tham vấn..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="examMentalGeneralManifestations"><span>Đánh giá ban đầu</span><textarea class="form-control" id="examMentalGeneralManifestations" rows="1" placeholder="Nhập đánh giá ban đầu..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="examDetailGeneralExamination"><span>Diễn tiến trong phiên khám</span><textarea class="form-control" id="examDetailGeneralExamination" rows="1" placeholder="Ghi nhận diễn tiến trong phiên khám..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="diagnosis"><span>Triệu chứng và hành vi hiện tại <span class="doctor-required-mark" aria-hidden="true">*</span></span><textarea class="form-control" id="diagnosis" data-psychologist-field="trieu_chung_va_hanh_vi_hien_tai" rows="1" placeholder="Nhập triệu chứng và hành vi hiện tại..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="benhKemTheo"><span>Nhận định chung</span><textarea class="form-control" id="benhKemTheo" data-psychologist-field="nhan_dinh_chung" rows="1" placeholder="Nhập nhận định chung..."></textarea></label>
+															<label class="doctor-field doctor-field--full receptionist-paper-field" for="treatmentPlan"><span>Kế hoạch can thiệp</span><textarea class="form-control" id="treatmentPlan" data-psychologist-field="ke_hoach_can_thiep" rows="1" placeholder="Nhập kế hoạch can thiệp..."></textarea></label>
+														</div>
+																									</details>
+
+																								<details class="doctor-clinical-detail-panel qlpk-patient-visit-card receptionist-card psychologist-clinical-accordion" data-psychologist-clinical-accordion="mental" open aria-labelledby="psychologistMentalHeading">
+																										<summary class="doctor-clinical-detail-panel__header">
+																											<div class="receptionist-section-title qlpk-patient-visit-card__title" id="psychologistMentalHeading"><i class="bi bi-brain qlpk-section-icon" aria-hidden="true"></i><span>Khám tâm thần</span></div>
+																											<span class="psychologist-clinical-accordion__indicator" aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+																										</summary>
+																										<div class="doctor-clinical-detail-panel__body">
+															<div class="doctor-clinical-detail-panel__fields">
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalOrientation"><span class="form-label">Ý thức định hướng</span><textarea class="form-control" id="examMentalOrientation" rows="1" placeholder="Không gian, thời gian, bản thân"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalEmotions"><span class="form-label">Tình cảm, cảm xúc</span><textarea class="form-control" id="examMentalEmotions" rows="1" placeholder="Nhập ghi nhận"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalPerception"><span class="form-label">Tri giác</span><textarea class="form-control" id="examMentalPerception" rows="1" placeholder="Nhập ghi nhận"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalThought"><span class="form-label">Tư duy</span><textarea class="form-control" id="examMentalThought" rows="1" placeholder="Hình thức, nội dung"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalBehavior"><span class="form-label">Hành vi tác phong</span><textarea class="form-control" id="examMentalBehavior" rows="1" placeholder="Hoạt động có ý chí, bản năng"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalMemory"><span class="form-label">Trí nhớ</span><textarea class="form-control" id="examMentalMemory" rows="1" placeholder="Nhớ máy móc, nhớ thông hiểu"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalAttention"><span class="form-label">Tập trung - chú ý</span><textarea class="form-control" id="examMentalAttention" rows="1" placeholder="Nhập ghi nhận"></textarea></label>
+																<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalIntelligence"><span class="form-label">Trí năng</span><textarea class="form-control" id="examMentalIntelligence" rows="1" placeholder="Khả năng phân tích, tổng hợp"></textarea></label>
+																<label class="doctor-clinical-detail-field doctor-clinical-detail-field--full receptionist-paper-field" for="examMentalNotes"><span class="form-label">Ghi chú</span><textarea class="form-control" id="examMentalNotes" rows="1" placeholder="Nhập ghi chú"></textarea></label>
+															</div>
+														</div>
+																					</details>
+												</div>
+											</div>
+										</div>
+									</section>
+
+										<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--service" id="doctorServicePanel" data-psychologist-workspace-section data-doctor-component="services" aria-label="Dịch vụ" hidden>
+											{% include 'partials/doctor-service-workspace.html' %}
+										</section>
+
+										{% set psychologist_workspace_section = true %}
+										{% include 'partials/doctor-indications-panel.html' %}
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</section>
+		</div>
+	</section>
+</div>

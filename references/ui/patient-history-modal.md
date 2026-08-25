@@ -77,3 +77,14 @@ Base này là read-only history/search shell. Việc mở một bệnh nhân/lư
 copy dữ liệu vào form hoặc xóa lượt khám chỉ tồn tại khi adapter của workflow
 truyền action và quyền tương ứng; base không tự tạo API ghi, save owner hoặc
 suy luận quyền từ text hiển thị.
+
+### Search visibility contract
+
+Danh sách `Tìm kiếm bệnh nhân` chỉ trả hồ sơ có ít nhất một appointment
+`CONFIRMED` và `is_deleted = false`. Các hồ sơ chỉ có appointment
+`SCHEDULED`, `CANCELLED`, `NO_SHOW` hoặc đã xóa mềm không xuất hiện; lịch
+`CONFIRMED` gần nhất mới được dùng cho `last_appointment`.
+
+Trong bảng lịch sử, badge `Chờ thanh toán` (`WAITING_PAYMENT`) dùng semantic
+feedback success màu xanh lá; `Đang khám` vẫn dùng màu xanh dương và các trạng
+thái lịch sử khác giữ màu trung tính.

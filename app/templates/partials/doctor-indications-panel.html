@@ -1,4 +1,4 @@
-<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--indications" id="doctorIndicationsPanel" data-doctor-component="indications" aria-labelledby="doctorIndicationsHeading" hidden>
+<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--indications" id="doctorIndicationsPanel" data-doctor-component="indications"{% if psychologist_workspace_section|default(false) %} data-psychologist-workspace-section{% endif %} aria-labelledby="doctorIndicationsHeading" hidden>
 	<div class="doctor-indications-workspace" data-doctor-indications-ui="true">
 		<header class="doctor-indications-toolbar">
 			<h3 id="doctorIndicationsHeading">Tạo chỉ định</h3>
@@ -10,11 +10,28 @@
 
 		<div class="doctor-indications-layout">
 			<div class="doctor-indications-form" id="doctorIndicationsForm" role="group" aria-labelledby="doctorIndicationsHeading">
+				<fieldset class="doctor-indications-field doctor-indications-source-fieldset" id="doctorIndicationSourceFieldset">
+					<legend>Loại chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></legend>
+					<div class="doctor-indications-source-picker" role="group" aria-label="Loại chỉ định">
+						<label>
+							<input type="radio" name="doctorIndicationSource" value="catalog" checked>
+							<span><i class="bi bi-list-check" aria-hidden="true"></i> Danh mục</span>
+						</label>
+						<label>
+							<input type="radio" name="doctorIndicationSource" value="custom">
+							<span><i class="bi bi-pencil-square" aria-hidden="true"></i> Nhập text</span>
+						</label>
+						<label>
+							<input type="radio" name="doctorIndicationSource" value="survey">
+							<span><i class="bi bi-clipboard2-check" aria-hidden="true"></i> Khảo sát</span>
+						</label>
+					</div>
+				</fieldset>
 				<div class="doctor-indications-field">
 					<label for="doctorIndicationCatalog">Tên chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></label>
 					<div class="doctor-indications-autocomplete">
 						<i class="bi bi-search doctor-indications-autocomplete__icon" aria-hidden="true"></i>
-						<input type="text" id="doctorIndicationCatalog" name="indication_catalog" placeholder="Tìm tên chỉ định" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="doctorIndicationCatalogDropdown" aria-describedby="doctorIndicationsMessage" disabled>
+						<input type="text" id="doctorIndicationCatalog" name="indication_catalog" placeholder="Tìm tên chỉ định" maxlength="255" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="doctorIndicationCatalogDropdown" aria-describedby="doctorIndicationsMessage" disabled>
 						<input type="hidden" id="doctorIndicationCatalogId" name="indication_catalog_id">
 						<div class="doctor-indications-autocomplete__dropdown order-autocomplete-dropdown" id="doctorIndicationCatalogDropdown" role="listbox" aria-label="Danh mục chỉ định" aria-hidden="true"></div>
 					</div>
@@ -75,7 +92,7 @@
 								<th scope="col">Nơi thực hiện</th>
 								<th scope="col">Ngày</th>
 								<th scope="col">Trạng thái</th>
-								<th scope="col"><span class="visually-hidden">Xử lý</span></th>
+								<th scope="col">Thao tác</th>
 							</tr>
 						</thead>
 						<tbody id="doctorIndicationsList">

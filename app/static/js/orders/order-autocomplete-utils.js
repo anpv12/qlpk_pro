@@ -109,6 +109,9 @@
 				const pricingHtml = options.showSurveyPricing
 					? `<div class="text-muted small order-autocomplete-pricing"><i class="bi bi-currency-dollar"></i> ${pricingInfo}</div>`
 					: '';
+				const descriptionHtml = options.showSurveyDescription !== false && item.description
+					? `<div class="text-muted small order-autocomplete-survey-description">${escapeHtml(item.description)}</div>`
+					: '';
 
 				return `
 					<div class="autocomplete-item survey-item ${activeClass}"
@@ -122,7 +125,7 @@
 							<span class="fw-semibold order-autocomplete-survey-name">${escapeHtml(item.name || '')}</span>
 							<span class="badge order-autocomplete-survey-badge">${questionCount} câu hỏi</span>
 						</div>
-						${item.description ? `<div class="text-muted small order-autocomplete-survey-description">${escapeHtml(item.description)}</div>` : ''}
+						${descriptionHtml}
 						${pricingHtml}
 					</div>
 				`;
@@ -215,7 +218,8 @@
 			selectedIndex: options.selectedIndex,
 			escapeHtml: options.escapeHtml,
 			formatCurrency: options.formatCurrency,
-			showSurveyPricing: options.showSurveyPricing
+			showSurveyPricing: options.showSurveyPricing,
+			showSurveyDescription: options.showSurveyDescription
 		});
 		setAutocompleteDropdownVisible(dropdown, options.displayValue !== 'none');
 
@@ -275,6 +279,7 @@
 			escapeHtml: options.escapeHtml,
 			formatCurrency: options.formatCurrency,
 			showSurveyPricing: options.showSurveyPricing,
+			showSurveyDescription: options.showSurveyDescription,
 			emptyText: options.emptyText,
 			onSelectedIndexChange: setSelectedIndex,
 			onSurveySelect: (surveyId, item) => {
@@ -305,6 +310,8 @@
 			getSelectedIndex: () => selectedIndex,
 			onSelectedIndexChange: setSelectedIndex,
 			onInput: options.onInput,
+			isEnabled: options.isEnabled,
+			hide: () => hide({ pathHint }),
 			selectFirstOnEnter: Boolean(options.selectFirstOnEnter)
 		});
 
@@ -385,8 +392,17 @@
 		const getSelectedIndex = typeof options.getSelectedIndex === 'function'
 			? options.getSelectedIndex
 			: () => -1;
+		const isEnabled = typeof options.isEnabled === 'function'
+			? options.isEnabled
+			: () => true;
+		const ensureEnabled = () => {
+			if (isEnabled()) return true;
+			if (typeof options.hide === 'function') options.hide();
+			return false;
+		};
 
 		const inputHandler = function () {
+			if (!ensureEnabled()) return;
 			if (setSelectedIndex) setSelectedIndex(-1);
 			if (typeof options.onInput === 'function') options.onInput(this.value, this);
 			const isEmpty = !this.value || this.value.trim() === '';
@@ -394,10 +410,12 @@
 		};
 
 		const focusHandler = function () {
+			if (!ensureEnabled()) return;
 			performSearch(this.value, { showAllIfEmpty: true });
 		};
 
 		const keydownHandler = function (event) {
+			if (!ensureEnabled()) return;
 			const nextIndex = handleAutocompleteKeydown(event, dropdown, getSelectedIndex(), {
 				selectFirstOnEnter: Boolean(options.selectFirstOnEnter)
 			});

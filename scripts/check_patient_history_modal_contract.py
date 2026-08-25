@@ -13,7 +13,10 @@ BASE_COMPONENT = ROOT / "app/static/js/components/patient-history-modal.js"
 CANONICAL_CSS = ROOT / "app/static/css/patient-search-modal.css"
 DOCTOR_TEMPLATE = ROOT / "app/templates/doctor-examination.html"
 DOCTOR_ENTRY = ROOT / "app/static/js/doctor-examination-entry.js"
+DOCTOR_PAGE = ROOT / "app/static/js/doctor-examination.js"
+DOCTOR_HISTORY_BRIDGE = ROOT / "app/static/js/doctor-examination/patient-history-bridge.js"
 PSYCHOLOGIST_TEMPLATE = ROOT / "app/templates/psychologist-examination.html"
+PSYCHOLOGIST_HISTORY_BRIDGE = ROOT / "app/static/js/psychologist-examination/patient-history-bridge.js"
 CANONICAL_INCLUDE = "{% include 'partials/patient-search-modal.html' %}"
 
 
@@ -34,7 +37,10 @@ def main() -> int:
         CANONICAL_CSS,
         DOCTOR_TEMPLATE,
         DOCTOR_ENTRY,
+        DOCTOR_PAGE,
+        DOCTOR_HISTORY_BRIDGE,
         PSYCHOLOGIST_TEMPLATE,
+        PSYCHOLOGIST_HISTORY_BRIDGE,
     )
     for path in required_files:
         if not path.exists():
@@ -85,9 +91,27 @@ def main() -> int:
     if "./components/patient-history-modal.js" not in read(DOCTOR_ENTRY):
         failures.append("Doctor entry chưa import Patient History Modal base")
 
+    if "./doctor-examination/patient-history-bridge.js" not in read(DOCTOR_ENTRY):
+        failures.append("Doctor entry chưa import Patient History bridge")
+
+    doctor_page_source = read(DOCTOR_PAGE)
+    doctor_bridge_source = read(DOCTOR_HISTORY_BRIDGE)
+    if ".getOrCreate" in doctor_page_source:
+        failures.append("Doctor orchestrator không được gọi Patient History Modal factory trực tiếp")
+    if "REGISTRY.register('patientHistoryBridge'" not in doctor_bridge_source:
+        failures.append("Doctor Patient History bridge chưa đăng ký module owner")
+    if ".getOrCreate" not in doctor_bridge_source:
+        failures.append("Doctor Patient History bridge chưa gọi shared modal contract")
+    if "copyHistory: options.copyHistory" not in doctor_bridge_source:
+        failures.append("Doctor Patient History bridge chưa giữ callback copyHistory")
+
     psychologist_asset = "/static/js/components/patient-history-modal.js"
     if psychologist_asset not in read(PSYCHOLOGIST_TEMPLATE):
         failures.append("Psychologist template chưa tải Patient History Modal base")
+
+    psychologist_bridge_asset = "/static/js/psychologist-examination/patient-history-bridge.js"
+    if psychologist_bridge_asset not in read(PSYCHOLOGIST_TEMPLATE):
+        failures.append("Psychologist template chưa tải owner patient-history bridge")
 
     modal_css = read(CANONICAL_CSS)
     qr_image_rule = re.search(
@@ -106,10 +130,7 @@ def main() -> int:
         if not re.search(r"block-size:\s*auto\s*;", qr_rule_body):
             failures.append("QR HTML modal phải giữ đúng tỷ lệ ảnh khi tự co")
 
-    for path in (
-        ROOT / "app/static/js/doctor-examination.js",
-        ROOT / "app/static/js/psychologist-examination.js",
-    ):
+    for path in (DOCTOR_HISTORY_BRIDGE, PSYCHOLOGIST_HISTORY_BRIDGE):
         source = read(path)
         # Pages may consume the public patient-modal contract, which delegates
         # to the canonical history-modal base.  Keep accepting the explicit

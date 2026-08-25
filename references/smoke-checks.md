@@ -288,6 +288,8 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 
 Áp dụng khi sửa `app/api/examination*.py`, `app/utils/examination_utils.py`, form khám bác sĩ/tâm lý gia, modal khám chi tiết, chuyển trạng thái khám, hoặc response detail lượt khám.
 
+- [ ] `pytest -q tests/test_workflow_contracts.py` đạt; test Node lifecycle của
+  Tâm lý gia phải kiểm load/clear và response stale khi đổi nhanh ca.
 - [ ] `GET /api/examination-id/<appointment_id>` trả đúng `examination_id`, `appointment_id`, `status` trong phiên đăng nhập.
 - [ ] `GET /api/examination-details/<examination_id>/section/<section>` trả đúng field của section bác sĩ hoặc tâm lý gia, không trộn section cũ/sai context.
 - [ ] `POST /api/examination-details` chỉ ghi field được gửi, không xóa nhầm toàn bộ section khi caller chỉ auto-save một field.

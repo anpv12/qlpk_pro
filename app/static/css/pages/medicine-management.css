@@ -667,3 +667,362 @@
 .medicine-management-page .lot-item {
   margin-top: 4px;
 }
+
+/* ===== Inventory surface — đồng bộ với Danh mục thuốc DAV ===== */
+.medicine-management-page {
+  background: #F8FAFC;
+  color: #1E293B;
+}
+
+.medicine-management-page .mm-main-content-shell {
+  padding: 0;
+  background: #F8FAFC;
+  overflow-x: hidden;
+}
+
+.medicine-management-page .mm-page-header {
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #FFFFFF;
+}
+
+.medicine-management-page .mm-page-heading {
+  margin: 0;
+  color: #0F766E;
+  font-size: var(--qlpk-font-size-3xl, 24px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  line-height: 1.25;
+}
+
+.medicine-management-page .mm-page-subtitle {
+  margin-top: 4px;
+  color: #64748B;
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page .mm-surface {
+  margin: 12px 20px 0;
+  padding: 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.medicine-management-page .mm-summary-surface {
+  margin-top: 16px;
+}
+
+.medicine-management-page .mm-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.medicine-management-page .mm-summary-pill {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid #CCFBF1;
+  border-radius: 8px;
+  background: #F0FDFA;
+  color: #0F766E;
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.medicine-management-page .mm-summary-pill--value {
+  border-color: #DBEAFE;
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.medicine-management-page .mm-summary-pill--warning {
+  border-color: #FDE68A;
+  background: #FFFBEB;
+  color: #B45309;
+}
+
+.medicine-management-page .mm-summary-pill--batches {
+  border-color: #BBF7D0;
+  background: #F0FDF4;
+  color: #15803D;
+}
+
+.medicine-management-page .mm-summary-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: var(--qlpk-font-size-md, 14px);
+}
+
+.medicine-management-page .mm-summary-value {
+  font-size: var(--qlpk-font-size-lg, 16px);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.medicine-management-page .mm-summary-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicine-management-page .mm-toolbar-surface {
+  padding-bottom: 14px;
+}
+
+.medicine-management-page .mm-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.medicine-management-page .mm-action-row .btn,
+.medicine-management-page #searchBtn {
+  min-height: 36px;
+  border-radius: 6px;
+  font-size: var(--qlpk-font-size-base, 13px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.medicine-management-page #addMedicineBtn,
+.medicine-management-page #importWarehouseBtn,
+.medicine-management-page #searchBtn {
+  border-color: #0F766E;
+  background: #0F766E;
+  color: #FFFFFF;
+}
+
+.medicine-management-page #addMedicineBtn:hover,
+.medicine-management-page #importWarehouseBtn:hover,
+.medicine-management-page #searchBtn:hover {
+  border-color: #075E57;
+  background: #075E57;
+}
+
+.medicine-management-page #importBtn,
+.medicine-management-page #reportBtn {
+  border-color: #15803D;
+  background: #15803D;
+  color: #FFFFFF;
+}
+
+.medicine-management-page #inventoryCountBtn {
+  border-color: #0E7490;
+  background: #0E7490;
+  color: #FFFFFF;
+}
+
+.medicine-management-page #exportDataBtn {
+  border-color: #B45309;
+  background: #B45309;
+  color: #FFFFFF;
+}
+
+.medicine-management-page .mm-filter-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 160px 210px 96px;
+  gap: 10px;
+  align-items: end;
+}
+
+.medicine-management-page .mm-filter-field {
+  min-width: 0;
+}
+
+.medicine-management-page .mm-filter-field .form-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748B;
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.medicine-management-page .mm-filter-field .form-control,
+.medicine-management-page .mm-filter-field .form-select {
+  min-height: 38px;
+  border-color: #CBD5E1;
+  border-radius: 6px;
+  color: #1E293B;
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page .mm-filter-field .form-control:focus,
+.medicine-management-page .mm-filter-field .form-select:focus {
+  border-color: #0F766E;
+  box-shadow: 0 0 0 0.18rem rgba(15, 118, 110, 0.12);
+}
+
+.medicine-management-page .mm-table-surface {
+  padding-bottom: 12px;
+}
+
+.medicine-management-page .mm-table-surface .table-responsive {
+  margin: 0;
+}
+
+.medicine-management-page .mm-inventory-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #1E293B;
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page .mm-inventory-table th {
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid #E2E8F0;
+  background: #F1F5F9;
+  color: #475569;
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  white-space: nowrap;
+}
+
+.medicine-management-page .mm-inventory-table td {
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.medicine-management-page .mm-inventory-table tbody tr:hover td {
+  background: #F8FAFC;
+}
+
+.medicine-management-page .mm-inventory-table tbody tr.table-warning td {
+  background: #FFFBEB;
+}
+
+.medicine-management-page .mm-inventory-table .medicine-link {
+  color: #0F766E;
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  text-decoration: none;
+}
+
+.medicine-management-page .mm-inventory-table .medicine-link:hover {
+  color: #075E57;
+  text-decoration: underline;
+}
+
+.medicine-management-page .mm-inventory-table .action-btn {
+  margin-right: 6px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: #0F766E;
+  font-size: var(--qlpk-font-size-lg, 16px);
+}
+
+.medicine-management-page .mm-inventory-table .action-btn.delete {
+  color: #DC2626;
+}
+
+.medicine-management-page .mm-inventory-table .stock-detail-badge {
+  border: 1px solid #BAE6FD;
+  background: #E0F2FE !important;
+  color: #0369A1;
+  font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.medicine-management-page .mm-inventory-table .medicine-stock-normal {
+  color: #0F766E;
+}
+
+.medicine-management-page #deleteSelectedBtn {
+  border-radius: 6px;
+}
+
+.medicine-management-page .mm-pagination-surface {
+  margin-bottom: 24px;
+  padding: 12px 14px;
+}
+
+.medicine-management-page .mm-pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #64748B;
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page #pagination {
+  margin: 0;
+}
+
+.medicine-management-page #pagination .page-link {
+  border-color: #CBD5E1;
+  color: #475569;
+  font-size: var(--qlpk-font-size-sm, 12px);
+}
+
+.medicine-management-page #pagination .page-item.active .page-link {
+  border-color: #0F766E;
+  background: #0F766E;
+  color: #FFFFFF;
+}
+
+.medicine-management-page #pagination .page-item.disabled .page-link {
+  color: #94A3B8;
+}
+
+.medicine-management-page .footer-bar {
+  border-top-color: #E2E8F0;
+  background: #FFFFFF;
+  color: #64748B;
+  font-size: var(--qlpk-font-size-sm, 12px);
+}
+
+@media (max-width: 900px) {
+  .medicine-management-page .mm-summary-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .medicine-management-page .mm-filter-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .medicine-management-page .mm-filter-field:first-child,
+  .medicine-management-page .mm-filter-field:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 576px) {
+  .medicine-management-page .mm-page-header {
+    padding: 14px 12px 10px;
+  }
+
+  .medicine-management-page .mm-surface {
+    margin-right: 12px;
+    margin-left: 12px;
+    padding: 10px;
+  }
+
+  .medicine-management-page .mm-summary-row,
+  .medicine-management-page .mm-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .medicine-management-page .mm-filter-field:first-child,
+  .medicine-management-page .mm-filter-field:last-child {
+    grid-column: auto;
+  }
+
+  .medicine-management-page .mm-summary-pill {
+    padding: 7px 8px;
+  }
+
+  .medicine-management-page .mm-pagination-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
