@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models.survey_template import SurveyTemplate
 from app.models.user import User
+from app.api.survey_templates import resolve_default_performer_id
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.search_normalization import normalized_contains
 from typing import List, Optional
 import json
 import uuid
@@ -26,7 +28,7 @@ def get_survey_templates(user):
         query = db.query(SurveyTemplate)
         
         if search:
-            query = query.filter(SurveyTemplate.name.contains(search))
+            query = query.filter(normalized_contains(SurveyTemplate.name, search))
         
         templates = query.offset(skip).limit(limit).all()
         
@@ -38,6 +40,8 @@ def get_survey_templates(user):
                 'description': template.description,
                 'content': template.content,
                 'created_by': template.created_by,
+                'default_performer_id': template.default_performer_id,
+                'default_performer_name': template.default_performer.full_name if template.default_performer else None,
                 'created_at': template.created_at.isoformat() if template.created_at else None,
                 'updated_at': template.updated_at.isoformat() if template.updated_at else None,
                 'is_active': template.is_active
@@ -68,6 +72,8 @@ def get_survey_template(user, template_id):
             'description': template.description,
             'content': template.content,
             'created_by': template.created_by,
+            'default_performer_id': template.default_performer_id,
+            'default_performer_name': template.default_performer.full_name if template.default_performer else None,
             'created_at': template.created_at.isoformat() if template.created_at else None,
             'updated_at': template.updated_at.isoformat() if template.updated_at else None,
             'is_active': template.is_active
@@ -97,6 +103,9 @@ def create_survey_template(user):
             description=data.get('description', ''),
             content=data['content'],
             created_by=data.get('created_by', 1),
+            default_performer_id=resolve_default_performer_id(
+                db, data.get('default_performer_id')
+            ),
             is_active=data.get('is_active', True)
         )
         
@@ -111,6 +120,8 @@ def create_survey_template(user):
             'description': template.description,
             'content': template.content,
             'created_by': template.created_by,
+            'default_performer_id': template.default_performer_id,
+            'default_performer_name': template.default_performer.full_name if template.default_performer else None,
             'created_at': template.created_at.isoformat() if template.created_at else None,
             'updated_at': template.updated_at.isoformat() if template.updated_at else None,
             'is_active': template.is_active
@@ -119,6 +130,10 @@ def create_survey_template(user):
         db.close()
         return jsonify({'success': True, 'data': result}), 201
         
+    except ValueError as e:
+        db.rollback()
+        db.close()
+        return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -145,6 +160,10 @@ def update_survey_template(user, template_id):
             template.content = data['content']
         if data.get('is_active') is not None:
             template.is_active = data['is_active']
+        if 'default_performer_id' in data:
+            template.default_performer_id = resolve_default_performer_id(
+                db, data.get('default_performer_id')
+            )
         
         template.updated_at = datetime.utcnow()
         db.commit()
@@ -157,6 +176,8 @@ def update_survey_template(user, template_id):
             'description': template.description,
             'content': template.content,
             'created_by': template.created_by,
+            'default_performer_id': template.default_performer_id,
+            'default_performer_name': template.default_performer.full_name if template.default_performer else None,
             'created_at': template.created_at.isoformat() if template.created_at else None,
             'updated_at': template.updated_at.isoformat() if template.updated_at else None,
             'is_active': template.is_active
@@ -165,6 +186,10 @@ def update_survey_template(user, template_id):
         db.close()
         return jsonify({'success': True, 'data': result})
         
+    except ValueError as e:
+        db.rollback()
+        db.close()
+        return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -217,6 +242,7 @@ def duplicate_survey_template(user, template_id):
             description=original_template.description,
             content=original_template.content,
             created_by=created_by,
+            default_performer_id=original_template.default_performer_id,
             is_active=True
         )
         
@@ -251,7 +277,7 @@ def public_get_survey_templates():
         query = db.query(SurveyTemplate).filter(SurveyTemplate.is_active == True)
 
         if search:
-            query = query.filter(SurveyTemplate.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(SurveyTemplate.name, search))
 
         total   = query.count()
         pages   = max(1, (total + per_page - 1) // per_page)
@@ -267,7 +293,9 @@ def public_get_survey_templates():
                 'name':         template.name,
                 'description':  template.description,
                 'created_at':   template.created_at.isoformat() if template.created_at else None,
-                'creator_name': 'Admin QLPK'
+                'creator_name': 'Admin QLPK',
+                'default_performer_id': template.default_performer_id,
+                'default_performer_name': template.default_performer.full_name if template.default_performer else None,
             })
 
         db.close()
@@ -285,4 +313,3 @@ def public_get_survey_templates():
     except Exception as e:
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500
-

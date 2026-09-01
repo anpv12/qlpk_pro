@@ -3,6 +3,7 @@ from app.core.database import get_db
 from app.models.dosage_form import DosageForm
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def get_dosage_forms(user):
         
         # Apply search filter
         if search:
-            query = query.filter(DosageForm.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(DosageForm.name, search))
         
         # Order by name
         dosage_forms = query.order_by(DosageForm.name).all()

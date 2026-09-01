@@ -230,36 +230,61 @@ def main() -> int:
         encoding="utf-8", errors="ignore"
     )
     for marker in (
-        'id="doctorIndicationCatalog"',
+        'id="doctorIndicationName"',
+        'placeholder="Tìm khảo sát hoặc nhập tên"',
         'role="combobox"',
         'aria-autocomplete="list"',
-        'id="doctorIndicationCatalogId"',
-        'id="doctorIndicationCatalogDropdown"',
+        'id="doctorIndicationNameDropdown"',
         'role="listbox"',
     ):
         if marker not in indications_markup:
-            failures.append(f"Doctor indication autocomplete thiếu markup contract: {marker}")
-    if '<select id="doctorIndicationCatalog"' in indications_markup:
-        failures.append("Doctor indication catalog quay lại native select")
+            failures.append(f"Doctor indication source/autocomplete thiếu markup contract: {marker}")
+    for marker in (
+        'value="catalog"',
+        'doctorIndicationCatalog',
+        'doctorIndicationCatalogId',
+        'doctorIndicationSource',
+        'doctorIndicationSourceFieldset',
+        'Loại chỉ định',
+    ):
+        if marker in indications_markup:
+            failures.append(f"Doctor indication còn markup legacy/selector đã bỏ: {marker}")
 
     indications_runtime = (ROOT / "app/static/js/components/doctor-indications-form.js").read_text(
         encoding="utf-8", errors="ignore"
     )
     for marker in (
         "setupOrderFormAutocomplete",
-        "includeCatalogWhenEmpty: true",
         "normalizeSearch: true",
         "selectFirstOnEnter: true",
-        "syncCatalogDropdownGeometry",
         "--doctor-indication-dropdown-inline-start",
         "--doctor-indication-dropdown-max-block-size",
         "ownerDocument.addEventListener('scroll', syncIfOpen, true)",
-        "clearCatalogSelection(doc, { clearText: false, hide: false })",
-        "typedName !== orderName",
-        "STATE.catalogIndex = buildCatalogIndex(STATE.catalog);",
+        "const VALID_SOURCES = Object.freeze(['custom', 'survey']);",
+        "getSurveyTemplates: () => STATE.surveyTemplates",
+        "isEnabled: () => Boolean(STATE.appointmentId && STATE.ordersLoaded && STATE.surveyLoaded && !STATE.saving)",
+        "showSurveyDescription: false",
+        "setSurveySelection(doc, item)",
+        "STATE.surveyIndex = buildSurveyIndex(STATE.surveyTemplates);",
+        "const hasSelectedSurvey = Boolean(selectedSurveyId && selectedSurveyName && typedName === selectedSurveyName);",
+        "const source = hasSelectedSurvey ? 'survey' : 'custom';",
     ):
         if marker not in indications_runtime:
-            failures.append(f"Doctor indication autocomplete thiếu runtime contract: {marker}")
+            failures.append(f"Doctor indication source/autocomplete thiếu runtime contract: {marker}")
+    for marker in (
+        "includeCatalogWhenEmpty",
+        "syncCatalogDropdownGeometry",
+        "clearCatalogSelection",
+        "STATE.catalogIndex",
+        "buildCatalogIndex",
+        "/api/order-items",
+        "doctorIndicationSource",
+        "STATE.source",
+        "setSource",
+        "allowedSources",
+    ):
+        if marker in indications_runtime:
+            failures.append(f"Doctor indication còn runtime catalog đã nghỉ: {marker}")
 
     indications_css = (ROOT / "app/static/css/pages/doctor-indications.css").read_text(
         encoding="utf-8", errors="ignore"
@@ -273,6 +298,13 @@ def main() -> int:
     ):
         if marker not in indications_css:
             failures.append(f"Doctor indication autocomplete thiếu layout contract: {marker}")
+    for marker in (
+        "doctor-indications-source-badge",
+        "renderSourceBadge",
+        "getSourceConfig",
+    ):
+        if marker in indications_runtime or marker in indications_css:
+            failures.append(f"Doctor indication không được render badge nguồn: {marker}")
 
     runtime = source_text()
     for alias in RETIRED_ALIASES:
@@ -302,6 +334,10 @@ def main() -> int:
     )
     if "prescriptionRows" in support_modules or "renderPrescription" in support_modules:
         failures.append("support-modules-ui.js contains prescription row/render ownership")
+    if "catalogLoaded" in support_modules:
+        failures.append("support-modules-ui.js còn kiểm tra cờ catalog đã nghỉ")
+    if "surveyLoaded" not in support_modules:
+        failures.append("support-modules-ui.js thiếu readiness check surveyLoaded")
 
     orchestrator = (ROOT / "app/static/js/doctor-examination.js").read_text(
         encoding="utf-8", errors="ignore"

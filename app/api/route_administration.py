@@ -3,6 +3,7 @@ from app.core.database import get_db
 from app.models.route_administration import RouteAdministration
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def get_route_administrations(user):
         
         # Apply search filter
         if search:
-            query = query.filter(RouteAdministration.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(RouteAdministration.name, search))
         
         # Order by name
         route_administrations = query.order_by(RouteAdministration.name).all()

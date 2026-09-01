@@ -47,7 +47,6 @@ $(function () {
 				{ id: 'ql-nhomquyen', label: 'Nhóm phân quyền', icon: 'bi bi-people', color: '' },
 				{ id: 'ql-tu-viettat', label: 'Từ viết tắt', icon: 'bi bi-type', color: '' },
 				{ id: 'ql-danhmuc-dichvu', label: 'Danh mục dịch vụ', icon: 'bi bi-list-check', color: '' },
-				{ id: 'ql-danhmuc-chidinh', label: 'Danh mục chỉ định', icon: 'bi bi-journal-medical', color: '' },
 				{ id: 'ql-dichvu', label: 'Dịch vụ', icon: 'bi bi-briefcase', color: '' },
 				{ id: 'ql-goi-dichvu', label: 'Gói dịch vụ', icon: 'bi bi-gift', color: '' },
 				{ id: 'ql-mau-khaosat', label: 'Mẫu khảo sát', icon: 'bi bi-clipboard2-check', color: '' },

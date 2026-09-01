@@ -44,6 +44,8 @@ const ORDER_STATUS_OPTIONS = [
 	{ value: 'completed', label: 'Hoàn thành' },
 	{ value: 'processing', label: 'Đang xử lý' },
 ];
+const RESULT_FILE_MAX_BYTES = 25 * 1024 * 1024;
+const RESULT_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']);
 const FILTER_INPUT_DEBOUNCE_MS = 200; // Giảm từ 400ms xuống 200ms để search nhanh hơn
 let filterInputTimer = null;
 let patientInputHandler = null; // Store handler reference for cleanup
@@ -614,14 +616,20 @@ async function handleSurveyTabShow() {
 		return;
 	}
 
-	isSurveyTabLoading = true;
-
 	const appointment = currentOrderDetail.appointment;
 	const appointmentId = appointment.id;
 	if (!appointmentId) {
 		renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>');
 		return;
 	}
+
+	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
+	if (!indicationTemplateId) {
+		renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Chỉ định này nhập text, không gắn mẫu khảo sát.</p></div>');
+		return;
+	}
+
+	isSurveyTabLoading = true;
 
 	// Show loading
 	renderSurveyTabContent(`
@@ -664,14 +672,17 @@ async function handleSurveyTabShow() {
 			return;
 		}
 
-		// Load survey templates first
-		const templateResponse = await apiCall('/api/survey-templates/active/public');
+		// The indication is the canonical source for the survey template.
+		const templateResponse = await apiCall(`/api/survey-templates/${indicationTemplateId}/public`);
 		if (!templateResponse.ok) {
 			throw new Error('Lỗi khi tải mẫu khảo sát');
 		}
 
 		const templateData = await templateResponse.json();
-		const templates = templateData.data || [];
+		const templates = templateData.data ? [templateData.data] : [];
+		if (!templates.length) {
+			throw new Error('Không tìm thấy mẫu khảo sát của chỉ định');
+		}
 
 		// Get survey session status
 		let surveySession = null;
@@ -710,7 +721,8 @@ async function handleSurveyTabShow() {
 						const baseUrl = window.location.origin;
 						const patientId = currentOrderDetail.patient?.id;
 						if (patientId) {
-							surveySession.survey_url = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}`;
+							const templateParam = indicationTemplateId ? `&template_id=${indicationTemplateId}` : '';
+							surveySession.survey_url = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}${templateParam}`;
 						}
 					}
 				}
@@ -798,6 +810,7 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 	const patient = currentOrderDetail.patient || {};
 	const patientId = patient.id;
 	const orderDate = currentOrderDetail.created_at;
+	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
 
 	// Get survey session details (URL and QR code)
 	let surveyUrl = '';
@@ -812,7 +825,8 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 		// If no URL but have session_token, generate URL
 		if (!surveyUrl && surveySession.session_token && examinationId) {
 			const baseUrl = window.location.origin;
-			surveyUrl = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}`;
+			const templateParam = indicationTemplateId ? `&template_id=${indicationTemplateId}` : '';
+			surveyUrl = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}${templateParam}`;
 		}
 
 		if (surveySession.expires_at) {
@@ -826,7 +840,6 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 	let hasActiveSession = !!(surveyUrl || qrCode || (surveySession && surveySession.session_token));
 
 	let statusBadge = '';
-	let statusText = 'Chưa gửi';
 
 	// Get session status for conditional rendering
 	let sessionStatus = null;
@@ -834,13 +847,10 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 		sessionStatus = surveySession.status || surveySession.data?.status;
 		if (sessionStatus === 'pending' || sessionStatus === 'not_started') {
 			statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Chờ bệnh nhân điền</span>';
-			statusText = 'Chờ bệnh nhân điền';
 		} else if (sessionStatus === 'in_progress') {
 			statusBadge = '<span class="survey-status-badge in-progress small"><i class="bi bi-hourglass-split"></i> Đang điền</span>';
-			statusText = 'Đang điền';
 		} else if (sessionStatus === 'closed' || sessionStatus === 'completed') {
 			statusBadge = '<span class="survey-status-badge completed small"><i class="bi bi-check-circle"></i> Đã hoàn thành</span>';
-			statusText = 'Đã hoàn thành';
 		} else {
 			// Session exists but no status - still consider it active (cached data)
 			statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Đã gửi</span>';
@@ -852,32 +862,9 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 		statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-x-circle"></i> Chưa gửi</span>';
 	}
 
-	// Get selected template_id from surveySession or cached data
-	let selectedTemplateId = null;
-	if (surveySession && surveySession.template_id) {
-		selectedTemplateId = surveySession.template_id;
-	} else {
-		// Try to get from cached session data
-		const cachedSessionKey = `survey_session_${examinationId || ''}`;
-		if (examinationId) {
-			const cachedData = sessionStorage.getItem(cachedSessionKey);
-			if (cachedData) {
-				try {
-					const cached = JSON.parse(cachedData);
-					selectedTemplateId = cached.template_id;
-				} catch (e) {
-					// Ignore parse error
-				}
-			}
-		}
-	}
-
-	// Build template options
-	let templateOptions = '<option value="">-- Chọn mẫu khảo sát --</option>';
-	templates.forEach(template => {
-		const selected = selectedTemplateId && selectedTemplateId == template.id ? 'selected' : '';
-		templateOptions += `<option value="${template.id}" ${selected}>${escapeHtml(template.name || '—')}</option>`;
-	});
+	// Only the template linked to this indication is valid here.
+	const linkedTemplate = templates[0];
+	const templateOptions = `<option value="${linkedTemplate.id}" selected>${escapeHtml(linkedTemplate.name || '—')}</option>`;
 
 	// Build QR and Link section HTML
 	let qrAndLinkHtml = '';
@@ -954,10 +941,10 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
             
             <div class="card-wrap mb-3">
                 <label class="view-field-label">Mẫu khảo sát</label>
-                <select class="form-select om-survey-template-select" id="surveyTemplateSelect">
+                <select class="form-select om-survey-template-select" id="surveyTemplateSelect" disabled>
                     ${templateOptions}
                 </select>
-                <small class="text-navy d-block mt-1 om-survey-helper-text">${hasActiveSession && !selectedTemplateId ? 'Không thể thay đổi sau khi đã gửi cho bệnh nhân' : 'Chọn mẫu khảo sát để gửi cho bệnh nhân'}</small>
+                <small class="text-navy d-block mt-1 om-survey-helper-text">Mẫu khảo sát lấy từ chỉ định đã chọn.</small>
             </div>
             
             ${qrAndLinkHtml}
@@ -966,41 +953,19 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 
 	renderSurveyTabContent(html);
 
-	// Attach event listeners - always enable "Gửi link khảo sát" button to allow selecting new template
+	// The linked template is read-only; only the send action is interactive.
 	try {
 		const sendBtn = document.getElementById('sendSurveyLinkBtn');
-		const templateSelect = document.getElementById('surveyTemplateSelect');
 		const closeBtn = document.getElementById('closeSurveySessionBtn');
 		const copyBtn = document.getElementById('copySurveyLinkBtn');
 
-		if (sendBtn && templateSelect) {
+		if (sendBtn) {
 			sendBtn.addEventListener('click', async () => {
 				try {
-					const templateId = templateSelect?.value;
-					if (!templateId) {
-						showCustomToast('error', 'Vui lòng chọn mẫu khảo sát');
-						return;
-					}
-					await sendSurveyLink(examinationId, patientId, templateId);
+					await sendSurveyLink(examinationId, patientId, indicationTemplateId);
 				} catch (error) {
 					console.error('Error in send survey link handler:', error);
 					showCustomToast('error', 'Lỗi khi gửi link khảo sát');
-				}
-			});
-
-			// Auto gen link mới khi chọn mẫu khảo sát khác
-			templateSelect.addEventListener('change', async () => {
-				try {
-					const templateId = templateSelect?.value;
-					if (!templateId) {
-						return; // Không làm gì nếu chưa chọn template
-					}
-					// Tự động gen link mới và reset khảo sát
-					showCustomToast('info', 'Đang tạo link khảo sát mới...');
-					await sendSurveyLink(examinationId, patientId, templateId);
-				} catch (error) {
-					console.error('Error auto-generating survey link on template change:', error);
-					showCustomToast('error', 'Lỗi khi tạo link khảo sát mới');
 				}
 			});
 		}
@@ -1037,6 +1002,11 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 	try {
 		if (!templateId) {
 			showCustomToast('error', 'Vui lòng chọn mẫu khảo sát');
+			return;
+		}
+		const linkedTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
+		if (linkedTemplateId && Number(templateId) !== linkedTemplateId) {
+			showCustomToast('error', 'Mẫu khảo sát không khớp với chỉ định.');
 			return;
 		}
 
@@ -1184,13 +1154,17 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 		const dateB = new Date(b.created_at || b.updated_at || 0);
 		return dateB - dateA; // Latest first
 	});
+	const indicationTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
+	const linkedResponses = indicationTemplateId
+		? uniqueResponses.filter(response => Number(response.survey_template_id) === indicationTemplateId)
+		: [];
 
 	// Debug: Log all responses with their template_id and total_scores
 
 
 	// Tìm response mới nhất có total_scores không rỗng
 	let latestResponse = null;
-	for (const response of uniqueResponses) {
+	for (const response of linkedResponses) {
 		const hasScores = response.total_scores && Object.keys(response.total_scores).length > 0;
 		if (hasScores) {
 			latestResponse = response;
@@ -1199,8 +1173,8 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 	}
 
 	// Fallback: Nếu không có response nào có scores, dùng response mới nhất
-	if (!latestResponse && uniqueResponses.length > 0) {
-		latestResponse = uniqueResponses[0];
+	if (!latestResponse && linkedResponses.length > 0) {
+		latestResponse = linkedResponses[0];
 		console.warn(`⚠️ [FALLBACK] Không tìm thấy response có total_scores, dùng response mới nhất ID ${latestResponse.id} (total_scores: ${JSON.stringify(latestResponse.total_scores)})`);
 	}
 
@@ -1209,8 +1183,7 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 		return;
 	}
 
-	const latestTemplateId = latestResponse.survey_template_id;
-	const latestTemplate = templates.find(t => String(t.id) === String(latestTemplateId) || t.id === latestTemplateId);
+	const latestTemplate = templates.find(template => Number(template.id) === indicationTemplateId);
 
 	if (!latestTemplate) {
 		renderSurveySelectionUI(null, templates, surveySession, appointment);
@@ -1219,7 +1192,7 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 
 	// Debug: Log template match
 
-	// Render header and template dropdown ONCE
+	// Render header and the read-only linked template once.
 	const orderDate = currentOrderDetail.created_at;
 	const completedAt = latestResponse.updated_at;
 
@@ -1230,14 +1203,9 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 		statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Chờ bệnh nhân điền</span>';
 	}
 
-	// Build template options for dropdown - hiển thị TẤT CẢ templates, selected template hiện tại
-	let templateOptions = '<option value="">-- Chọn mẫu khảo sát --</option>';
-	templates.forEach(template => {
-		const selected = latestTemplate && String(template.id) === String(latestTemplate.id) ? 'selected' : '';
-		templateOptions += `<option value="${template.id}" ${selected}>${escapeHtml(template.name || '—')}</option>`;
-	});
+	const templateOptions = `<option value="${latestTemplate.id}" selected>${escapeHtml(latestTemplate.name || '—')}</option>`;
 
-	// Render header and dropdown ONCE
+	// Render header and the read-only linked template once.
 	let html = `
         <div class="mt-2">
             <div class="row g-3 mb-4 align-items-center">
@@ -1273,10 +1241,10 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
             <div class="row g-3 mb-4">
                 <div class="col-md-12">
                     <label class="form-label fw-semibold">Mẫu khảo sát</label>
-                    <select class="form-select" id="surveyTemplateSelectResults">
+                    <select class="form-select" id="surveyTemplateSelectResults" disabled>
                         ${templateOptions}
                     </select>
-                    <small class="text-navy d-block mt-1">Chọn mẫu khảo sát khác để tự động tạo link mới</small>
+                    <small class="text-navy d-block mt-1">Mẫu khảo sát lấy từ chỉ định đã chọn.</small>
                 </div>
             </div>
     `;
@@ -1297,10 +1265,9 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 		loadSavedSurveyLevels(latestResponse.examination_id);
 	}, 150);
 
-	// Attach event listeners for template select and "Gửi link khảo sát" button in results view
+	// Attach only the send action; the linked template is read-only.
 	try {
 		const sendBtnResults = document.getElementById('sendSurveyLinkBtnResults');
-		const templateSelectResults = document.getElementById('surveyTemplateSelectResults');
 		const appointmentData = currentOrderDetail.appointment || {};
 		const patientId = currentOrderDetail.patient?.id;
 		const appointmentId = appointmentData.id;
@@ -1318,50 +1285,19 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 			return examId;
 		};
 
-		// Helper function to send survey link
-		const handleSendSurveyLink = async (templateId) => {
-			if (!templateId) {
-				showCustomToast('error', 'Vui lòng chọn mẫu khảo sát');
-				return;
-			}
-
+		const handleSendSurveyLink = async () => {
 			const examId = await getExaminationId();
 			if (examId) {
-				await sendSurveyLink(examId, patientId, templateId);
+				await sendSurveyLink(examId, patientId, indicationTemplateId);
 			} else {
 				showCustomToast('error', 'Không tìm thấy lần khám để gửi link khảo sát');
 			}
 		};
 
-		// Event listener: Tự động tạo link mới khi chọn template khác
-		if (templateSelectResults && appointmentId && patientId) {
-			// Lưu template hiện tại để so sánh
-			const currentTemplateId = latestTemplate ? String(latestTemplate.id) : null;
-
-			templateSelectResults.addEventListener('change', async (event) => {
-				try {
-					const selectedTemplateId = event.target.value;
-
-					// Bỏ qua nếu chọn option rỗng hoặc chọn lại template hiện tại
-					if (!selectedTemplateId || selectedTemplateId === currentTemplateId) {
-						return;
-					}
-
-					// Tự động tạo link mới với template mới
-					await handleSendSurveyLink(selectedTemplateId);
-				} catch (error) {
-					console.error('Error in template select change handler:', error);
-					showCustomToast('error', 'Lỗi khi tạo link khảo sát');
-				}
-			});
-		}
-
-		// Event listener: Nút "Gửi link khảo sát" (vẫn giữ lại để user có thể gửi lại với template hiện tại)
-		if (sendBtnResults && templateSelectResults && appointmentId && patientId) {
+		if (sendBtnResults && appointmentId && patientId) {
 			sendBtnResults.addEventListener('click', async () => {
 				try {
-					const templateId = templateSelectResults?.value;
-					await handleSendSurveyLink(templateId);
+					await handleSendSurveyLink();
 				} catch (error) {
 					console.error('Error in send survey link handler (results view):', error);
 					showCustomToast('error', 'Lỗi khi gửi link khảo sát');
@@ -1670,14 +1606,7 @@ async function handleDrop(e) {
 	// Process first file only
 	const file = files[0];
 
-	// Validate file type
-	const allowedTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
-	const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-
-	if (!allowedTypes.includes(fileExtension)) {
-		showCustomToast('error', 'Loại file không được hỗ trợ. Chỉ chấp nhận: PDF, JPG, PNG, DOC, DOCX');
-		return;
-	}
+	if (!validateResultFile(file)) return;
 
 	await uploadResultFile(currentOrderDetail.id, file);
 }
@@ -1691,6 +1620,19 @@ function formatFileSize(bytes) {
 	return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
+function validateResultFile(file) {
+	const extension = String(file?.name || '').split('.').pop().toLowerCase();
+	if (!RESULT_FILE_EXTENSIONS.has(extension)) {
+		showCustomToast('error', 'Loại file không được hỗ trợ. Chỉ chấp nhận: PDF, JPG, PNG, DOC, DOCX');
+		return false;
+	}
+	if (Number(file?.size || 0) > RESULT_FILE_MAX_BYTES) {
+		showCustomToast('error', 'File không được vượt quá 25MB');
+		return false;
+	}
+	return true;
+}
+
 // Handle file select
 async function handleFileSelect(event) {
 	const file = event.target.files[0];
@@ -1700,6 +1642,7 @@ async function handleFileSelect(event) {
 		showCustomToast('error', 'Vui lòng chọn chỉ định trước');
 		return;
 	}
+	if (!validateResultFile(file)) return;
 
 	await uploadResultFile(currentOrderDetail.id, file);
 	event.target.value = ''; // Reset input
@@ -1843,18 +1786,30 @@ function renderTimeline(order) {
 
 	const timeOnly = order.created_at ? formatDisplayDate(order.created_at).split(' ')[1] : '';
 
-	const steps = [
-		{ title: 'Tạo chỉ định', sub: timeOnly ? `Hoàn thành lúc ${timeOnly}` : '', status: 'done' },
-		{ title: 'Gửi khảo sát', sub: 'Đang thực hiện...', status: 'active' },
-		{ title: 'Bệnh nhân hoàn thành', sub: '', status: 'pending' },
-		{ title: 'Có kết quả', sub: '', status: 'pending' },
-	];
+	const isSurveyOrder = Number(order.survey_template_id) > 0;
+	const steps = isSurveyOrder
+		? [
+			{ title: 'Tạo chỉ định', sub: timeOnly ? `Hoàn thành lúc ${timeOnly}` : '', status: 'done' },
+			{ title: 'Gửi khảo sát', sub: 'Chưa gửi', status: 'active' },
+			{ title: 'Bệnh nhân hoàn thành', sub: '', status: 'pending' },
+			{ title: 'Có kết quả', sub: '', status: 'pending' },
+		]
+		: [
+			{ title: 'Tạo chỉ định', sub: timeOnly ? `Hoàn thành lúc ${timeOnly}` : '', status: 'done' },
+			{ title: 'Chuyển thực hiện', sub: order.status === 'processing' ? 'Đang xử lý' : 'Đã chuyển', status: order.status === 'processing' ? 'active' : 'done' },
+			{ title: 'Có kết quả', sub: '', status: 'pending' },
+		];
 
-	if (order.status === 'completed') {
+	if (isSurveyOrder && order.status === 'completed') {
 		const updateTimeOnly = order.updated_at ? formatDisplayDate(order.updated_at).split(' ')[1] : '';
 		steps[1] = { title: 'Gửi khảo sát', sub: 'Hoàn thành', status: 'done' };
 		steps[2] = { title: 'Bệnh nhân hoàn thành', sub: 'Hoàn thành', status: 'done' };
 		steps[3] = { title: 'Có kết quả', sub: updateTimeOnly ? `Lúc ${updateTimeOnly}` : '', status: 'done' };
+	}
+	if (!isSurveyOrder && order.status === 'completed') {
+		const updateTimeOnly = order.updated_at ? formatDisplayDate(order.updated_at).split(' ')[1] : '';
+		steps[1] = { title: 'Chuyển thực hiện', sub: 'Hoàn thành', status: 'done' };
+		steps[2] = { title: 'Có kết quả', sub: updateTimeOnly ? `Lúc ${updateTimeOnly}` : '', status: 'done' };
 	}
 
 	timelineEl.innerHTML = steps.map(step => `

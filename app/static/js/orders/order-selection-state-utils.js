@@ -110,15 +110,13 @@
 				id: order.id,
 				tempId: order.tempId,
 				order_name: order.order_name,
-				order_id: order.order_id,
 				location_type: order.location_type,
 				in_house_unit_id: options.nullEmptyInHouseUnitId ? (order.in_house_unit_id || null) : order.in_house_unit_id,
 				in_house_unit: options.emptyStringInHouseUnit ? (order.in_house_unit || '') : order.in_house_unit,
 				out_facility: order.out_facility,
 				scheduled_for: order.scheduled_for,
 				status: order.status,
-				is_completed: order.is_completed,
-				group_path: order.group_path
+				is_completed: order.is_completed
 			};
 
 			if (options.includeSurveyTemplate) {
@@ -241,7 +239,6 @@
 			const order = {
 				id: item.id,
 				tempId: item.id || createTempId(item),
-				order_id: item.order_item_id,
 				order_name: item.order_name,
 				location_type: item.location_type,
 				in_house_unit_id: item.in_house_unit_id || null,
@@ -250,8 +247,7 @@
 				out_facility: item.out_facility,
 				scheduled_for: item.scheduled_for,
 				status: item.status || 'sent',
-				is_completed: item.is_completed || false,
-				group_path: item.group_path
+				is_completed: item.is_completed || false
 			};
 
 			if (options.includeSurveyTemplate) {

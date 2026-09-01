@@ -5,12 +5,31 @@ from app.core.database import get_db
 from app.models.icd import ICD
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 icd_router = Blueprint('icd', __name__)
+
+DEFAULT_PAGE_SIZE = 100
+MAX_PAGE_SIZE = 1000
+
+
+def _parse_pagination_params():
+    """Parse and validate the public ICD pagination contract."""
+    try:
+        skip = int(request.args.get('skip', 0))
+        limit = int(request.args.get('limit', DEFAULT_PAGE_SIZE))
+    except (TypeError, ValueError):
+        raise ValueError('Tham số phân trang ICD không hợp lệ')
+
+    if skip < 0 or limit < 1 or limit > MAX_PAGE_SIZE:
+        raise ValueError(
+            f'Tham số phân trang ICD phải có skip >= 0 và limit từ 1 đến {MAX_PAGE_SIZE}'
+        )
+    return skip, limit
 
 @icd_router.route("/", methods=['GET'])
 @require_auth
@@ -21,8 +40,10 @@ def get_icd_list(user):
         db = next(get_db())
         
         # Lấy tham số từ query string
-        skip = int(request.args.get('skip', 0))
-        limit = int(request.args.get('limit', 100))
+        try:
+            skip, limit = _parse_pagination_params()
+        except ValueError as error:
+            return jsonify({'error': str(error)}), 400
         search = request.args.get('search', '').strip()
         disease_group = request.args.get('disease_group', '').strip()
         
@@ -49,20 +70,20 @@ def get_icd_list(user):
         # Tìm kiếm theo mã ICD, tên bệnh
         if search:
             search_filter = or_(
-                ICD.icd_code.ilike(f"%{search}%"),
-                ICD.disease_name.ilike(f"%{search}%")
+                normalized_contains(ICD.icd_code, search),
+                normalized_contains(ICD.disease_name, search),
             )
             query = query.filter(search_filter)
         
         # Lọc theo nhóm bệnh
         if disease_group:
-            query = query.filter(ICD.disease_group.ilike(f"%{disease_group}%"))
+            query = query.filter(normalized_contains(ICD.disease_group, disease_group))
         
         # Sắp xếp theo mã ICD
         query = query.order_by(ICD.icd_code)
         
-        # Đếm tổng số records
-        total_count = query.count()
+        # Đếm trên cùng bộ lọc nhưng bỏ ORDER BY để không sort toàn bộ tập kết quả.
+        total_count = query.order_by(None).count()
         
         # Phân trang
         icd_list = query.offset(skip).limit(limit).all()

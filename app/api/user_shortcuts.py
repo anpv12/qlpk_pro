@@ -27,7 +27,6 @@ ALLOWED_TARGET_URLS = {
     '/holiday-management.html',
     '/doctor-busy-schedule.html',
     '/survey-template-management.html',
-    '/order-catalog.html',
     '/chi-tieu',
     '/shortcut-settings.html'
 }

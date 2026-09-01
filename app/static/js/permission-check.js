@@ -154,7 +154,7 @@ $(function() {
     // Xử lý menu "Quản lý"
     const qlPermissions = [
       'ql-taikhoan', 'ql-phanquyen', 'ql-nhomquyen', 'ql-tu-viettat',
-      'ql-danhmuc-dichvu', 'ql-danhmuc-thuoc', 'ql-danhmuc-chidinh', 'ql-dichvu', 'ql-goi-dichvu',
+      'ql-danhmuc-dichvu', 'ql-danhmuc-thuoc', 'ql-dichvu', 'ql-goi-dichvu',
       'ql-mau-khaosat', 'ql-danhmuc-icd', 'ql-ngayle'
     ];
     const hasAnyQlPermission = hasAnySubmenuPermission('submenu-quanly', qlPermissions);

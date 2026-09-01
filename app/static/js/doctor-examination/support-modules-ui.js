@@ -193,7 +193,7 @@
 					label: 'Chỉ định',
 					isDirty: indications.hasUnsavedChanges(),
 					isLoaded: Boolean(indications.getState?.()?.ordersLoaded
-						&& indications.getState?.()?.catalogLoaded
+						&& indications.getState?.()?.surveyLoaded
 						&& indications.getState?.()?.performersLoaded)
 				}
 			];

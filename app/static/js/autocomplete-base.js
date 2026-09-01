@@ -3,6 +3,11 @@
  * Class cơ sở cho các autocomplete component
  */
 
+function normalizeAutocompleteText(value) {
+    return window.QLPKSearchNormalization?.normalizeSearchText(value)
+        || String(value || '').toLowerCase().trim();
+}
+
 class AutocompleteBase {
     constructor(inputId, dropdownId, apiEndpoint) {
         this.input = document.getElementById(inputId);
@@ -105,9 +110,9 @@ class AutocompleteBase {
         if (!query.trim()) {
             this.filteredItems = [...this.items];
         } else {
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = normalizeAutocompleteText(query);
             this.filteredItems = this.items.filter(item => 
-                item && item.name && item.name.toLowerCase().includes(lowerQuery)
+                item && item.name && normalizeAutocompleteText(item.name).includes(lowerQuery)
             );
         }
         

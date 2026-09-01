@@ -212,7 +212,6 @@ def emit_catalog_changed(action="changed", entity=None, entity_id=None, extra=No
             "page:service-management",
             "page:service-category",
             "page:package-management",
-            "page:order-catalog",
             "page:icd-management",
             "page:survey-template-management",
             "page:survey-template-create",

@@ -75,7 +75,9 @@
 - Per-visit clinical data belongs in `examinations`.
 - Flexible modal/detail fields belong in `examination_details` with the correct section name.
 - Prescriptions belong in `prescriptions` / `prescription_items`.
-- Orders/clinical indications belong in `chi_dinh` and order catalog tables.
+- Orders/clinical indications belong in `chi_dinh`; survey-backed indications
+  reference `survey_templates` and free-text indications keep their snapshot
+  name in `chi_dinh.order_name`.
 
 Read `references/data-contracts.md` before changing any of these boundaries.
 

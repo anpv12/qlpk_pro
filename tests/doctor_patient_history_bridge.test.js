@@ -13,7 +13,15 @@ const source = fs.readFileSync(
 async function main() {
   const registrations = new Map();
   const calls = [];
-  const modalInstance = { reset() {}, getState() { return {}; } };
+  const openedPatients = [];
+  const modalInstance = {
+    reset() {},
+    getState() { return {}; },
+    openPatient(patientId) {
+      openedPatients.push(patientId);
+      return { status: 'opened', patientId };
+    }
+  };
   const modalContract = {
     getOrCreate(options) {
       calls.push(options);
@@ -39,6 +47,8 @@ async function main() {
 
   let patientId = 42;
   let appointmentId = 1051;
+  let appointments = [{ id: 1051 }];
+  const selectedAppointments = [];
   let loading = false;
   const copyHistory = () => true;
   const formatDateDisplay = value => `date:${value}`;
@@ -51,6 +61,11 @@ async function main() {
     getCurrentPatientData: () => ({ id: patientId }),
     getCurrentAppointmentId: () => appointmentId,
     setCurrentPatientId(next) { patientId = next; },
+    getAppointments: () => appointments,
+    selectPatientCard(next) {
+      selectedAppointments.push(next);
+      return { status: 'selected', appointmentId: next };
+    },
     getExaminationStatusBadgeClass: () => 'status',
     getExaminationStatusText: () => 'Đang khám',
     copyHistory,
@@ -80,6 +95,28 @@ async function main() {
   assert.deepEqual([...context.activeStatuses], ['doctor_exam', 'conclusion']);
   assert.equal(context.showCopyAction, true);
   assert.equal(context.showDeleteAction, false);
+
+  const globalActions = window.QLPKGlobalSearchActions;
+  assert.ok(globalActions);
+  assert.deepEqual(globalActions.handleAction({
+    kind: 'open_patient_history',
+    payload: { patient_id: 42 }
+  }), { status: 'opened', patientId: 42 });
+  assert.deepEqual(openedPatients, [42]);
+
+  assert.deepEqual(globalActions.handleAction({
+    kind: 'open_appointment',
+    payload: { appointment_id: 1051, patient_id: 42 }
+  }), { status: 'selected', appointmentId: 1051 });
+  assert.deepEqual(selectedAppointments, [1051]);
+
+  appointments = [];
+  assert.deepEqual(globalActions.handleAction({
+    kind: 'open_appointment',
+    payload: { appointment_id: 990, patient_id: 42 }
+  }), { status: 'opened', patientId: 42 });
+  assert.deepEqual(openedPatients, [42, 42]);
+  assert.equal(globalActions.handleAction({ kind: 'unsupported' }), false);
   console.log('doctor patient history bridge lifecycle: ok');
 }
 

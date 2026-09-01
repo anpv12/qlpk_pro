@@ -1,6 +1,32 @@
 """Response builders for clinical indication APIs."""
 
-from app.utils.examination_utils import build_icd_display_contract
+from app.utils.examination_utils import build_icd_display_contract, current_examination
+
+
+def serialize_survey_template_for_order(template):
+    """Build the compact survey shape consumed by the indication form."""
+    question_count = 0
+    if isinstance(template.content, list):
+        question_count = len(template.content)
+    elif template.content and isinstance(template.content, dict):
+        question_count = len(template.content.get('questions', []))
+
+    return {
+        "id": template.id,
+        "name": template.name,
+        "description": template.description,
+        "question_count": question_count,
+        "service_id": template.service_id,
+        "service_name": template.service.name if template.service else None,
+        "pricing_type": template.pricing_type,
+        "price_per_minute": float(template.price_per_minute) if template.price_per_minute else None,
+        "min_price": float(template.min_price) if template.min_price else None,
+        "max_price": float(template.max_price) if template.max_price else None,
+        "default_performer_id": template.default_performer_id,
+        "default_performer_name": template.default_performer.full_name if template.default_performer else None,
+        "is_survey": True,
+    }
+
 
 def build_chi_dinh_list_item(db, chi_dinh):
     """Build one legacy list item for GET /api/chi-dinh."""
@@ -34,6 +60,7 @@ def build_chi_dinh_list_item(db, chi_dinh):
     } if doctor else None
 
     return item_dict
+
 
 def build_chi_dinh_detail_response(db, chi_dinh):
     """Build the legacy detail response for GET /api/chi-dinh/<id>."""
@@ -80,17 +107,16 @@ def build_chi_dinh_history_item(chi_dinh):
     return result
 
 def _resolve_diagnosis(db, appointment):
-    diagnosis_text = None
-    diagnosis_ids = []
-    if appointment and appointment.diagnosis:
-        diagnosis_text = appointment.diagnosis.main_disease
-    elif appointment and appointment.examinations:
-        exam = appointment.examinations[0] if appointment.examinations else None
-        if exam:
-            diagnosis_contract = build_icd_display_contract(db, exam.diagnosis)
-            diagnosis_text = diagnosis_contract['text']
-            diagnosis_ids = diagnosis_contract['ids']
-    return diagnosis_text, diagnosis_ids
+    """Resolve diagnosis from the appointment's canonical examination owner."""
+    examination = current_examination(appointment)
+    if not examination:
+        return None, []
+
+    diagnosis_contract = build_icd_display_contract(
+        db,
+        getattr(examination, 'diagnosis', None),
+    )
+    return diagnosis_contract['text'] or None, diagnosis_contract['ids']
 
 def _doctor_display_name(doctor):
     return (

@@ -105,7 +105,7 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 - [ ] Xác nhận thanh toán hoặc trả trạng thái examination làm payment-waiting, lễ tân, bác sĩ/TLG liên quan cập nhật.
 - [ ] Tạo/sửa bệnh nhân, thân nhân hoặc người nhà đi kèm làm lễ tân/bác sĩ/TLG liên quan cập nhật qua `patient.changed` nhưng không ghi đè form khám đang nhập.
 - [ ] Lưu đơn thuốc có thay đổi tồn kho làm medicine-management và medicine-statistics cập nhật qua `inventory.changed`.
-- [ ] Tạo/sửa/xóa service/package/user/ICD/order catalog/survey template/text expansion hoặc danh mục cá nhân làm các màn liên quan refresh qua `catalog.changed`.
+- [ ] Tạo/sửa/xóa service/package/user/ICD/survey template/text expansion hoặc danh mục cá nhân làm các màn liên quan refresh qua `catalog.changed`.
 - [ ] Tạo/sửa/xóa lịch bận làm appointment-management và doctor-busy-schedule cập nhật.
 - [ ] Upload/link/xóa tài liệu hoặc folder làm document-management cập nhật qua `document.changed`.
 - [ ] Tạo/sửa/xóa khoản chi hoặc cấu hình cột thu chi làm `chi-tieu.html` cập nhật qua `finance.changed`; nếu đang nhập trong ô bảng thì reload phải chờ blur để không mất focus.
@@ -213,6 +213,8 @@ curl -sS -D - -o /tmp/prescription-verification-qr.png http://localhost:8000/api
 - [ ] Không có màn đọc/print/history hiển thị raw numeric ID thay vì ICD text.
 - [ ] Frontend không tự đoán display text từ raw IDs nếu backend có thể trả text.
 - [ ] Search/filter theo chẩn đoán không gọi text function trực tiếp trên JSONB ICD IDs; resolve qua ICD catalog hoặc filter theo IDs.
+- [ ] Từ khóa có hơn một page (`pagination.has_next=true`) hiển thị `Tải thêm`; FE
+  gửi `skip` page tiếp theo và không cắt mảng kết quả bằng `.slice()`.
 
 ## Doctor Examination Patient Switch
 
@@ -274,7 +276,8 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 - [ ] Rail root có đúng năm mục Hành chính, Tiền sử, Khám, Dịch vụ và Chỉ định; đơn thuốc nằm inline dưới Khám và lịch sử đơn thuốc mở bằng nút local; không có support nav hoặc pane lặp lại.
 - [ ] Trong Khám, action local `Đơn thuốc` hiển thị cùng vùng `Khám & xử trí`, số thuốc lấy từ state đã load, và click cuộn tới `#doctorPrescriptionWorkspace` trong cùng scroll container; không mở modal hay đổi root nav.
 - [ ] Tài liệu đính kèm vẫn nằm trong Hành chính; Chỉ định là root pane độc lập, không tạo support nav hoặc save path thứ hai.
-- [ ] Tab Chỉ định có ca đang chọn tải catalog, người thực hiện và rows từ API thật; ca không có rows hiển thị empty state nhưng form không còn disabled sau khi load thành công.
+- [ ] Tab Chỉ định có ca đang chọn tải mẫu khảo sát, người thực hiện và rows từ API thật; ca không có rows hiển thị empty state nhưng input chung không còn disabled sau khi load thành công.
+- [ ] Input Chỉ định luôn gợi ý mẫu khảo sát; chọn một gợi ý lưu `survey_template_id`, còn nhập text không chọn gợi ý lưu `order_name` tự do.
 - [ ] Thêm, sửa và xóa row chỉ làm dirty state local; Doctor global `Lưu` gửi đúng một `POST /api/chi-dinh/appointment/<id>` và reload giữ đúng rows.
 - [ ] Nút `Lịch sử` gọi patient-scoped endpoint, loại current appointment, hiển thị rows lịch sử và không query theo display name.
 - [ ] Link/button active có `.is-active` và `aria-current="true"`; section/pane inactive bị hidden, top-level section có `aria-hidden="true"`.
@@ -353,6 +356,27 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 - [ ] Người đi khám cùng/pending joint exam vẫn được lưu sau khi tạo appointment mới.
 - [ ] Màn lễ tân không còn hidden controls giả cho in/số thứ tự hàng đợi (`printQueueBtn`, `nextQueueBtn`, `currentQueueNumber`, `waitingCount`, `printPreview`) và không còn include `receptionist/queue-print-controls.js`.
 - [ ] Lưu thành công ở màn lễ tân không reload browser tab; form quay về trạng thái tạo mới, danh sách chờ refresh tại chỗ, tab workspace hiện tại vẫn giữ nguyên, danh sách order theo `appointments.updated_at` từ database và chỉ một lịch vừa sửa mới nhất có nhãn `Vừa cập nhật`.
+
+## Clinic Medicine Inventory
+
+Áp dụng khi sửa danh mục thuốc, nhập lô, kiểm kê, lịch sử giao dịch hoặc
+prescription stock integration.
+
+- [ ] Tạo thuốc mới luôn trả `stock_quantity=0`; payload có field tồn trực
+  tiếp bị từ chối.
+- [ ] `PUT /api/medicines/<id>` có `stock_quantity` bị từ chối; form danh mục
+  hiển thị tồn read-only và không gửi field này.
+- [ ] Tạo lô đặt `remaining_quantity=quantity`, khóa aggregate và tạo đúng một
+  movement `import` có `batch_id` trong cùng transaction.
+- [ ] Import-order nhiều dòng validate toàn bộ trước khi ghi; một dòng lỗi
+  rollback toàn request, không silently skip.
+- [ ] Kiểm kê hiển thị từng lô; chênh lệch cần lý do và cập nhật lô, aggregate,
+  movement `adjustment` cùng transaction.
+- [ ] PUT số dư lô, POST ledger trực tiếp và xóa lô đã có movement đều bị chặn.
+- [ ] Excel catalog không bơm tồn trực tiếp; cột tồn dương bị bỏ qua kèm hướng
+  dẫn nhập lô.
+- [ ] Lịch sử giao dịch lọc được theo tên thuốc và số lô; movement import/
+  adjustment hiển thị đúng loại, lô, người thực hiện và ghi chú.
 
 ## Medicine Reference Catalog
 

@@ -379,22 +379,26 @@ function medicalHistorySwitchTabGD(group, btn) {
 }
 
 function medicalHistoryBanThanFilter(query) {
-  const q = query.trim().toLowerCase();
-  medicalHistoryGetComponent().queryAll('#banThanList [data-bt-group]').forEach(grp => medicalHistorySetVisible(grp, true));
-  if (!q) return;
-  medicalHistoryGetComponent().queryAll('#banThanList .medical-history-suggestion-item').forEach(item => {
-    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    const q = query.trim();
+    medicalHistoryGetComponent().queryAll('#banThanList [data-bt-group]').forEach(grp => medicalHistorySetVisible(grp, true));
+    if (!q) return;
+    medicalHistoryGetComponent().queryAll('#banThanList .medical-history-suggestion-item').forEach(item => {
+    const matches = window.QLPKSearchNormalization?.contains(item.textContent, q)
+      ?? item.textContent.toLowerCase().includes(q.toLowerCase());
+    item.style.display = matches ? '' : 'none';
   });
 }
 
 // medicalHistoryBanThanKeydown đã được xóa — field BẢN THÂN không còn cho phép nhập text tự do
 
 function medicalHistoryGiaDinhFilter(query) {
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
   medicalHistoryGetComponent().queryAll('#giaDinhList [data-gd-group]').forEach(grp => medicalHistorySetVisible(grp, true));
   if (!q) return;
   medicalHistoryGetComponent().queryAll('#giaDinhList .medical-history-suggestion-item').forEach(item => {
-    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    const matches = window.QLPKSearchNormalization?.contains(item.textContent, q)
+      ?? item.textContent.toLowerCase().includes(q.toLowerCase());
+    item.style.display = matches ? '' : 'none';
   });
 }
 

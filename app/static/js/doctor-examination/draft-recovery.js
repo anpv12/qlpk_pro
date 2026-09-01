@@ -433,7 +433,7 @@
 		if (!sameValue(baseSupport.indications, draftSupport.indications)) {
 			targets.push({
 				sectionId: 'doctorIndicationsPanel',
-				resolve: currentDoc => getFirstVisibleElement(currentDoc, '#doctorIndicationsPanel .is-draft-restored, #doctorIndicationCatalog, #doctorIndicationsList'),
+				resolve: currentDoc => getFirstVisibleElement(currentDoc, '#doctorIndicationsPanel .is-draft-restored, #doctorIndicationName, #doctorIndicationsList'),
 				fallback: currentDoc => currentDoc.getElementById('doctorIndicationsPanel'),
 				order: targets.length
 			});
@@ -576,7 +576,7 @@
 		const baseIndications = baseSupport.indications || {};
 		const draftIndications = draftSupport.indications || {};
 		if (!sameValue(baseIndications.rows, draftIndications.rows)) {
-			addRestoredControlMarker(doc.querySelector('#doctorIndicationsList .doctor-indications-table__empty, #doctorIndicationsList tr, #doctorIndicationCatalog'));
+			addRestoredControlMarker(doc.querySelector('#doctorIndicationsList .doctor-indications-table__empty, #doctorIndicationsList tr, #doctorIndicationName'));
 		}
 	}
 

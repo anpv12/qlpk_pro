@@ -7,6 +7,7 @@ from app.models.administrative_region import AdministrativeRegion
 from app.models.administrative_unit import AdministrativeUnit
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.search_normalization import normalize_search_text, normalized_contains
 import requests
 import logging
 
@@ -26,7 +27,7 @@ def get_regions():
         query = db.query(AdministrativeRegion)
         
         if search:
-            query = query.filter(AdministrativeRegion.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(AdministrativeRegion.name, search))
         
         regions = query.order_by(AdministrativeRegion.name).all()
         result = [region.to_dict() for region in regions]
@@ -62,7 +63,7 @@ def get_units_by_region(region_code):
         query = db.query(AdministrativeUnit).filter(AdministrativeUnit.province_code == region_code)
         
         if search:
-            query = query.filter(AdministrativeUnit.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(AdministrativeUnit.name, search))
         
         units = query.order_by(AdministrativeUnit.name).all()
         result = [unit.to_dict() for unit in units]
@@ -172,7 +173,7 @@ def get_provinces():
         
         # Apply search filter
         if search:
-            query = query.filter(Province.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(Province.name, search))
         
         # Order by name
         provinces = query.order_by(Province.name).all()
@@ -210,7 +211,7 @@ def get_districts_by_province_name():
             }), 400
         
         # Find province by name
-        province = db.query(Province).filter(Province.name.ilike(f'%{province_name}%')).first()
+        province = db.query(Province).filter(normalized_contains(Province.name, province_name)).first()
         if not province:
             return jsonify({
                 'success': False,
@@ -222,7 +223,7 @@ def get_districts_by_province_name():
         
         # Apply search filter
         if search:
-            query = query.filter(District.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(District.name, search))
         
         # Order by name
         districts = query.order_by(District.name).all()
@@ -257,7 +258,7 @@ def get_districts_by_province_code(province_code):
         
         # Apply search filter
         if search:
-            query = query.filter(District.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(District.name, search))
         
         # Order by name
         districts = query.order_by(District.name).all()
@@ -296,11 +297,11 @@ def get_wards_by_district_name():
             }), 400
         
         # Find district by name
-        district_query = db.query(District).filter(District.name.ilike(f'%{district_name}%'))
+        district_query = db.query(District).filter(normalized_contains(District.name, district_name))
         
         # If province is provided, filter by province
         if province_name:
-            province = db.query(Province).filter(Province.name.ilike(f'%{province_name}%')).first()
+            province = db.query(Province).filter(normalized_contains(Province.name, province_name)).first()
             if province:
                 district_query = district_query.filter(District.province_code == province.code)
         
@@ -316,7 +317,7 @@ def get_wards_by_district_name():
         
         # Apply search filter
         if search:
-            query = query.filter(Ward.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(Ward.name, search))
         
         # Order by name
         wards = query.order_by(Ward.name).all()
@@ -351,7 +352,7 @@ def get_wards_by_district_code(district_code):
         
         # Apply search filter
         if search:
-            query = query.filter(Ward.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(Ward.name, search))
         
         # Order by name
         wards = query.order_by(Ward.name).all()
@@ -387,7 +388,7 @@ def get_ward_by_name():
         db = next(get_db())
 
         # Tìm tất cả phường/xã trùng tên (không phân biệt hoa thường)
-        wards = db.query(Ward).filter(Ward.name.ilike(f'%{name}%')).all()
+        wards = db.query(Ward).filter(normalized_contains(Ward.name, name)).all()
         if not wards:
             return jsonify({'success': True, 'data': None}), 200
 
@@ -399,7 +400,7 @@ def get_ward_by_name():
                 if not d:
                     continue
                 p = db.query(Province).filter(Province.code == d.province_code).first()
-                if p and p.name and p.name.strip().lower() == province_name.strip().lower():
+                if p and p.name and normalize_search_text(p.name) == normalize_search_text(province_name):
                     selected = (w, d, p)
                     break
 

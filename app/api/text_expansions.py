@@ -5,6 +5,7 @@ from app.models.text_expansion import TextExpansion
 from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.search_normalization import normalized_contains
 from pydantic import BaseModel
 from typing import Optional, List
 import pandas as pd
@@ -60,8 +61,8 @@ def get_text_expansions(current_user):
         
         if search:
             query = query.filter(
-                (TextExpansion.abbreviation.ilike(f'%{search}%')) |
-                (TextExpansion.full_text.ilike(f'%{search}%'))
+                normalized_contains(TextExpansion.abbreviation, search) |
+                normalized_contains(TextExpansion.full_text, search)
             )
         
         if is_active is not None:

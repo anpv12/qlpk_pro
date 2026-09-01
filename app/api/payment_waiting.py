@@ -10,6 +10,7 @@ from app.models.patient import Patient
 from app.models.user import User
 from app.models.appointment_service import AppointmentService
 from app.utils.upload_storage import upload_dir
+from app.utils.search_normalization import normalize_search_text, normalized_contains
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 import logging
@@ -100,7 +101,7 @@ def get_payment_waiting_list(user):
         per_page = request.args.get('per_page', 10, type=int)
         status_filter = request.args.get('status', None)
         
-        search_query = request.args.get('search', '').strip().lower()
+        search_query = request.args.get('search', '').strip()
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
         
@@ -131,18 +132,19 @@ def get_payment_waiting_list(user):
                 for row in db.query(ICD.id).filter(
                     ICD.is_deleted == False,
                     or_(
-                        func.lower(ICD.icd_code).contains(search_query),
-                        func.lower(ICD.disease_name).contains(search_query)
+                        normalized_contains(ICD.icd_code, search_query),
+                        normalized_contains(ICD.disease_name, search_query),
                     )
                 ).all()
             ]
             diagnosis_filters = [Examination.diagnosis.contains([icd_id]) for icd_id in matching_icd_ids]
-            if search_query.isdigit():
-                diagnosis_filters.append(Examination.diagnosis.contains([int(search_query)]))
+            normalized_query = normalize_search_text(search_query)
+            if normalized_query.isdigit():
+                diagnosis_filters.append(Examination.diagnosis.contains([int(normalized_query)]))
 
             query = query.filter(or_(
-                func.lower(Patient.full_name).contains(search_query),
-                Patient.phone.contains(search_query),
+                normalized_contains(Patient.full_name, search_query),
+                normalized_contains(Patient.phone, search_query),
                 *diagnosis_filters
             )
             )

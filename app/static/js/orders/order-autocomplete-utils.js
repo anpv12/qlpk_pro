@@ -1,15 +1,19 @@
 (function () {
 	'use strict';
 
+	function sharedNormalizeSearchText(value) {
+		const helper = typeof window !== 'undefined' ? window.QLPKSearchNormalization : null;
+		return helper?.normalizeSearchText
+			? helper.normalizeSearchText(value)
+			: String(value || '').toLowerCase().trim();
+	}
+
 	function normalizeQuery(query) {
-		return String(query || '').toLowerCase().trim();
+		return sharedNormalizeSearchText(query);
 	}
 
 	function normalizeVietnameseQuery(query) {
-		return normalizeQuery(query)
-			.normalize('NFD')
-			.replace(/[\u0300-\u036f]/g, '')
-			.replace(/đ/g, 'd');
+		return sharedNormalizeSearchText(query);
 	}
 
 	function toSurveyMatch(template) {
@@ -26,18 +30,6 @@
 		};
 	}
 
-	function sortOrderMatches(a, b, queryLower = '', normalize = normalizeQuery) {
-		const aName = normalize(a.name);
-		const bName = normalize(b.name);
-		if (queryLower) {
-			const aStarts = aName.startsWith(queryLower);
-			const bStarts = bName.startsWith(queryLower);
-			if (aStarts && !bStarts) return -1;
-			if (!aStarts && bStarts) return 1;
-		}
-		return aName.localeCompare(bName);
-	}
-
 	function buildSurveyMatches(surveyTemplates = [], queryLower = '', normalize = normalizeQuery) {
 		return (surveyTemplates || [])
 			.filter(template => {
@@ -47,51 +39,12 @@
 			.map(toSurveyMatch);
 	}
 
-	function buildOrderMatches(orderIndex, queryLower = '', options = {}) {
-		const matches = [];
-		if (!orderIndex) return matches;
-		const normalize = options.normalize || normalizeQuery;
-
-		for (const [id, data] of orderIndex.entries()) {
-			const searchFields = options.includeMetadataSearch
-				? [data.name, data.code, data.breadcrumb, data.description, data.performer]
-				: [data.name];
-			const searchableText = normalize(searchFields.filter(Boolean).join(' '));
-			if (!queryLower || searchableText.includes(queryLower)) {
-				matches.push({ id, ...data, isSurvey: false });
-			}
-		}
-
-		return matches.sort((a, b) => sortOrderMatches(a, b, queryLower, normalize));
-	}
-
 	function buildOrderAutocompleteMatches(options = {}) {
 		const normalize = options.normalizeSearch ? normalizeVietnameseQuery : normalizeQuery;
 		const queryLower = normalize(options.query);
 		const surveyMatches = buildSurveyMatches(options.surveyTemplates, queryLower, normalize);
 		const maxResults = Number.isFinite(options.maxResults) ? options.maxResults : 10;
-
-		if (!queryLower) {
-			if (!options.includeCatalogWhenEmpty) {
-				return surveyMatches;
-			}
-
-			const emptyCatalogLimit = Number.isFinite(options.emptyCatalogLimit) ? options.emptyCatalogLimit : 20;
-			const remaining = Math.max(0, emptyCatalogLimit - surveyMatches.length);
-			return [
-				...surveyMatches,
-				...buildOrderMatches(options.orderIndex, '', {
-					normalize,
-					includeMetadataSearch: Boolean(options.includeMetadataSearch)
-				}).slice(0, remaining)
-			];
-		}
-
-		const orderMatches = buildOrderMatches(options.orderIndex, queryLower, {
-			normalize,
-			includeMetadataSearch: Boolean(options.includeMetadataSearch)
-		});
-		return [...surveyMatches, ...orderMatches.slice(0, maxResults - surveyMatches.length)];
+		return surveyMatches.slice(0, maxResults);
 	}
 
 	function renderOrderAutocompleteDropdownHtml(matches = [], options = {}) {
@@ -101,45 +54,30 @@
 
 		return (matches || []).map((item, index) => {
 			const activeClass = index === selectedIndex ? 'active' : '';
-			if (item.isSurvey) {
-				const questionCount = item.question_count || 0;
-				const pricingInfo = item.pricing_type === 'time_based'
-					? `${formatCurrency(item.price_per_minute || 0)}/phút`
-					: (item.service_name || 'Chưa liên kết dịch vụ');
-				const pricingHtml = options.showSurveyPricing
-					? `<div class="text-muted small order-autocomplete-pricing"><i class="bi bi-currency-dollar"></i> ${pricingInfo}</div>`
-					: '';
-				const descriptionHtml = options.showSurveyDescription !== false && item.description
-					? `<div class="text-muted small order-autocomplete-survey-description">${escapeHtml(item.description)}</div>`
-					: '';
-
-				return `
-					<div class="autocomplete-item survey-item ${activeClass}"
-						 data-survey-id="${item.surveyTemplateId}"
-						 data-is-survey="true"
-						 data-index="${index}"
-						 role="option"
-						 aria-selected="${index === selectedIndex}">
-						<div class="d-flex align-items-center gap-2">
-							<i class="bi bi-clipboard-pulse order-autocomplete-survey-icon"></i>
-							<span class="fw-semibold order-autocomplete-survey-name">${escapeHtml(item.name || '')}</span>
-							<span class="badge order-autocomplete-survey-badge">${questionCount} câu hỏi</span>
-						</div>
-						${descriptionHtml}
-						${pricingHtml}
-					</div>
-				`;
-			}
+			const questionCount = item.question_count || 0;
+			const pricingInfo = item.pricing_type === 'time_based'
+				? `${formatCurrency(item.price_per_minute || 0)}/phút`
+				: (item.service_name || 'Chưa liên kết dịch vụ');
+			const pricingHtml = options.showSurveyPricing
+				? `<div class="text-muted small order-autocomplete-pricing"><i class="bi bi-currency-dollar"></i> ${pricingInfo}</div>`
+				: '';
+			const descriptionHtml = options.showSurveyDescription !== false && item.description
+				? `<div class="text-muted small order-autocomplete-survey-description">${escapeHtml(item.description)}</div>`
+				: '';
 
 			return `
-				<div class="autocomplete-item ${activeClass}"
-					 data-order-id="${item.id}"
-					 data-is-survey="false"
+				<div class="autocomplete-item survey-item ${activeClass}"
+					 data-survey-id="${item.surveyTemplateId}"
 					 data-index="${index}"
 					 role="option"
 					 aria-selected="${index === selectedIndex}">
-					<div class="fw-semibold order-autocomplete-order-name">${escapeHtml(item.name || '')}</div>
-					${item.breadcrumb ? `<div class="text-muted small order-autocomplete-breadcrumb">${escapeHtml(item.breadcrumb)}</div>` : ''}
+					<div class="d-flex align-items-center gap-2">
+						<i class="bi bi-clipboard-pulse order-autocomplete-survey-icon"></i>
+						<span class="fw-semibold order-autocomplete-survey-name">${escapeHtml(item.name || '')}</span>
+						<span class="badge order-autocomplete-survey-badge">${questionCount} câu hỏi</span>
+					</div>
+					${descriptionHtml}
+					${pricingHtml}
 				</div>
 			`;
 		}).join('');
@@ -185,18 +123,9 @@
 		if (!dropdown) return;
 		dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
 			item.addEventListener('click', function () {
-				const isSurvey = this.getAttribute('data-is-survey') === 'true';
-				if (isSurvey) {
-					const surveyId = Number(this.getAttribute('data-survey-id'));
-					if (typeof options.onSurveySelect === 'function') {
-						options.onSurveySelect(surveyId, this);
-					}
-					return;
-				}
-
-				const orderId = Number(this.getAttribute('data-order-id'));
-				if (typeof options.onOrderSelect === 'function') {
-					options.onOrderSelect(orderId, this);
+				const surveyId = Number(this.getAttribute('data-survey-id'));
+				if (typeof options.onSurveySelect === 'function') {
+					options.onSurveySelect(surveyId, this);
 				}
 			});
 		});
@@ -225,8 +154,7 @@
 
 		bindAutocompleteItemHover(dropdown, options.onSelectedIndexChange);
 		bindAutocompleteItemSelection(dropdown, {
-			onSurveySelect: options.onSurveySelect,
-			onOrderSelect: options.onOrderSelect
+			onSurveySelect: options.onSurveySelect
 		});
 
 		return true;
@@ -256,12 +184,9 @@
 
 		const searchOrders = (query, searchOptions = {}) => buildOrderAutocompleteMatches({
 			query,
-			orderIndex: typeof options.getOrderIndex === 'function' ? options.getOrderIndex() : options.orderIndex,
 			surveyTemplates: typeof options.getSurveyTemplates === 'function' ? options.getSurveyTemplates() : options.surveyTemplates,
-			includeCatalogWhenEmpty: Boolean(searchOptions.includeCatalogWhenEmpty),
-			emptyCatalogLimit: options.emptyCatalogLimit,
 			normalizeSearch: Boolean(options.normalizeSearch),
-			includeMetadataSearch: Boolean(options.includeMetadataSearch)
+			maxResults: options.maxResults
 		});
 
 		const getCallbackContext = (item) => ({
@@ -282,23 +207,15 @@
 			showSurveyDescription: options.showSurveyDescription,
 			emptyText: options.emptyText,
 			onSelectedIndexChange: setSelectedIndex,
-			onSurveySelect: (surveyId, item) => {
-				if (typeof options.onSurveySelect === 'function') {
-					options.onSurveySelect(surveyId, getCallbackContext(item));
+				onSurveySelect: (surveyId, item) => {
+					if (typeof options.onSurveySelect === 'function') {
+						options.onSurveySelect(surveyId, getCallbackContext(item));
+					}
 				}
-			},
-			onOrderSelect: (orderId, item) => {
-				if (typeof options.onOrderSelect === 'function') {
-					options.onOrderSelect(orderId, getCallbackContext(item));
-				}
-			}
 		});
 
 		const performSearch = createAutocompleteSearchRunner({
 			search: searchOrders,
-			getEmptyMatches: options.includeCatalogWhenEmpty
-				? () => searchOrders('', { includeCatalogWhenEmpty: true })
-				: undefined,
 			render: renderDropdown,
 			hide: () => hide({ pathHint })
 		});
@@ -494,43 +411,6 @@
 		setTimeout(dispatchEvents, delay);
 	}
 
-	function setupOrderFormNewAutocompleteShell(options = {}) {
-		return setupOrderFormAutocomplete({
-			document: options.document || document,
-			getOrderIndex: options.getOrderIndex,
-			getSurveyTemplates: options.getSurveyTemplates,
-			includeCatalogWhenEmpty: Boolean(options.includeCatalogWhenEmpty),
-			emptyCatalogLimit: options.emptyCatalogLimit,
-			normalizeSearch: Boolean(options.normalizeSearch),
-			includeMetadataSearch: Boolean(options.includeMetadataSearch),
-			selectFirstOnEnter: Boolean(options.selectFirstOnEnter),
-			escapeHtml: options.escapeHtml,
-			formatCurrency: options.formatCurrency,
-			showSurveyPricing: Boolean(options.showSurveyPricing),
-			onSurveySelect: (surveyId, context) => {
-				if (typeof options.addSurveyTemplateToSelection === 'function') {
-					options.addSurveyTemplateToSelection(surveyId);
-				}
-				context.hide();
-			},
-			onOrderSelect: (orderId, context) => {
-				const orderIndex = typeof options.getOrderIndex === 'function' ? options.getOrderIndex() : null;
-				const orderData = orderIndex?.get?.(orderId);
-				if (!orderData) return;
-				if (typeof options.applyOrderCatalogItemToForm === 'function') {
-					options.applyOrderCatalogItemToForm(orderData, {
-						document: options.document || document,
-						nameInput: context.nameInput,
-						pathHint: context.pathHint,
-						updateLocationFields: options.updateLocationFields,
-						loadOrderPerformers: options.loadOrderPerformers
-					});
-				}
-				context.hide();
-			}
-		});
-	}
-
 	function handleAutocompleteKeydown(event, dropdown, selectedIndex = -1, options = {}) {
 		if (!event || !dropdown) return selectedIndex;
 		if (event.key === 'Escape') {
@@ -580,7 +460,6 @@
 		bindAutocompleteInputHandlers,
 		bindAutocompleteDismissHandlers,
 		focusAutocompleteInput,
-		setupOrderFormNewAutocompleteShell,
 		handleAutocompleteKeydown
 	};
 

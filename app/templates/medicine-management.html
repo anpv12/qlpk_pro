@@ -245,9 +245,13 @@
 								<!-- Card 2: Quy cách đóng gói & Số lượng tồn -->
 								<div class="card border-primary mb-2 mm-card-muted">
 									<div class="card-body p-2">
-										<h6 class="card-title mb-2 mm-card-title-primary">
-											<i class="bi bi-box-seam"></i> Quy cách đóng gói
-										</h6>
+									<h6 class="card-title mb-2 mm-card-title-primary">
+										<i class="bi bi-box-seam"></i> Quy cách đóng gói
+									</h6>
+									<div class="small text-muted mb-2">
+										<i class="bi bi-lock-fill me-1"></i>
+										Tồn kho chỉ thay đổi qua nhập hoặc kiểm kê theo từng lô thuốc.
+									</div>
 										<div class="row g-2">
 											<!-- Row 1: Đóng gói, Số đơn vị, Vỉ tồn, Viên tồn, Tổng (viên) -->
 											<div class="col-12">
@@ -275,32 +279,31 @@
 															min="0" step="1"
 															oninput="updatePackagingInfo(); updateStockQuantityFromBoxes();">
 													</div>
-													<div class="col">
-														<label class="form-label fw-semibold mb-1 mm-label-primary-sm">Tổng (viên)</label>
-														<input type="number"
-															class="form-control form-control-sm rounded-3 py-1 px-2"
-															id="stockQuantitySummaryDisplay" placeholder="0" min="0"
-															step="0.01" oninput="updateBoxesFromTotal()">
-													</div>
-													<div class="col">
-														<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
-															id="stockQuantityBoxesLabel">{Đơn vị đóng gói} tồn</label>
-														<input type="number"
-															class="form-control form-control-sm rounded-3 py-1 px-2"
-															id="stockQuantityBoxes" placeholder="0" min="0" step="0.01"
-															oninput="updateStockQuantityFromBoxes()">
-													</div>
-													<div class="col">
-														<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
-															id="stockQuantityRemainingLabel">{Đơn vị dùng} tồn</label>
-														<input type="number"
-															class="form-control form-control-sm rounded-3 py-1 px-2"
-															id="stockQuantityRemaining" placeholder="0" min="0"
-															step="0.01" oninput="updateBoxesFromRemaining()">
-													</div>
-												</div>
-												<input type="hidden" name="stock_quantity" id="stockQuantityInput"
-													required>
+									<div class="col">
+										<label class="form-label fw-semibold mb-1 mm-label-primary-sm">Tổng (viên)</label>
+						<input type="number"
+							class="form-control form-control-sm rounded-3 py-1 px-2"
+							id="stockQuantitySummaryDisplay" placeholder="0" min="0"
+							step="0.01" readonly aria-readonly="true">
+									</div>
+									<div class="col">
+										<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
+											id="stockQuantityBoxesLabel">{Đơn vị đóng gói} tồn</label>
+						<input type="number"
+							class="form-control form-control-sm rounded-3 py-1 px-2"
+							id="stockQuantityBoxes" placeholder="0" min="0" step="0.01"
+							readonly aria-readonly="true">
+									</div>
+									<div class="col">
+										<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
+											id="stockQuantityRemainingLabel">{Đơn vị dùng} tồn</label>
+						<input type="number"
+							class="form-control form-control-sm rounded-3 py-1 px-2"
+							id="stockQuantityRemaining" placeholder="0" min="0"
+							step="0.01" readonly aria-readonly="true">
+									</div>
+								</div>
+								<input type="hidden" id="stockQuantityInput" aria-hidden="true">
 												<input type="hidden" id="packagingDisplay" name="packaging">
 												<input type="hidden" id="pillsPerUnit" name="pills_per_unit" value="0">
 											</div>
@@ -467,10 +470,11 @@
 							<i class="bi bi-download me-1"></i>Tải mẫu Excel
 						</a>
 					</div>
-					<div class="alert alert-info">
-						<i class="bi bi-info-circle"></i>
-						<strong>Lưu ý:</strong> Vui lòng tải file mẫu để xem định dạng dữ liệu trước khi import.
-					</div>
+						<div class="alert alert-info">
+							<i class="bi bi-info-circle"></i>
+							<strong>Lưu ý:</strong> File Excel chỉ tạo danh mục thuốc và bắt đầu tồn bằng 0.
+							Muốn nhập số lượng, dùng chức năng <strong>Nhập kho theo lô</strong>.
+						</div>
 					<div class="alert alert-danger d-none" id="importError"></div>
 				</div>
 				<div class="modal-footer border-0 pt-0 justify-content-center mm-gap-16">
@@ -874,8 +878,8 @@
 				<div class="modal-body pt-0">
 					<div class="alert alert-info mb-3">
 						<i class="bi bi-info-circle"></i>
-						<strong>Hướng dẫn:</strong> Nhập số lượng thực tế kiểm đếm được. Hệ thống sẽ tự động tính chênh
-						lệch và điều chỉnh tồn kho.
+						<strong>Hướng dẫn:</strong> Nhập số lượng thực tế theo từng lô. Hệ thống sẽ tự động tính chênh
+						lệch, cập nhật lô và tồn tổng, đồng thời ghi lịch sử điều chỉnh.
 					</div>
 
 					<!-- Thanh tìm kiếm -->
@@ -885,7 +889,7 @@
 								<i class="bi bi-search"></i>
 							</span>
 							<input type="text" class="form-control mm-input-attached-right" id="inventoryCountSearchInput"
-								placeholder="Tìm kiếm theo tên thuốc...">
+								placeholder="Tìm theo tên thuốc hoặc số lô...">
 						</div>
 					</div>
 
@@ -894,6 +898,7 @@
 							<thead class="mm-sticky-head">
 								<tr>
 									<th class="mm-w-250">Tên thuốc</th>
+									<th class="mm-w-120">Số lô</th>
 									<th class="mm-w-120">SL hệ thống</th>
 									<th class="mm-w-120">SL thực tế</th>
 									<th class="mm-w-100">Chênh lệch</th>
@@ -1091,6 +1096,7 @@
 							<select class="form-select" id="filterTransactionType">
 								<option value="">Tất cả</option>
 								<option value="import">Nhập kho</option>
+								<option value="export">Xuất kho</option>
 								<option value="adjustment">Điều chỉnh</option>
 							</select>
 						</div>

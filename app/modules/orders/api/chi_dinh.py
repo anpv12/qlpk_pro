@@ -1,6 +1,9 @@
 """Clinical indication routes for appointment orders."""
 
-from flask import Blueprint, request, jsonify, current_app, send_file
+import logging
+
+from flask import Blueprint, current_app, jsonify, request, send_file
+
 from app.core.database import get_db
 from app.api.auth import require_auth
 from app.models.appointment import Appointment
@@ -8,6 +11,7 @@ from app.modules.orders.services.clinical_order_mutation import (
     AppointmentNotFound,
     ChiDinhNotFound,
     InvalidBatchDelete,
+    InvalidChiDinhPayload,
     delete_chi_dinh_batch,
     delete_chi_dinh_by_id,
     get_chi_dinh_batch_for_delete,
@@ -16,8 +20,11 @@ from app.modules.orders.services.clinical_order_mutation import (
     sync_chi_dinh_for_appointment,
     update_chi_dinh_fields,
 )
-from app.modules.orders.services.clinical_order_query import get_chi_dinh_list_result
-from app.modules.orders.services.clinical_order_query import get_chi_dinh_for_patient
+from app.modules.orders.services.clinical_order_query import (
+    InvalidPagination,
+    get_chi_dinh_for_patient,
+    get_chi_dinh_list_result,
+)
 from app.modules.orders.view_models.clinical_order import build_chi_dinh_history_item
 from app.utils.clinical_access import appointment_access_error, patient_access_error
 from app.modules.orders.services.result_file_service import (
@@ -27,6 +34,7 @@ from app.modules.orders.services.result_file_service import (
     ResultFileMissingOnDisk,
     ResultFileNotFound,
     UnsupportedFileType,
+    FileTooLarge,
     delete_result_file_for_chi_dinh,
     delete_result_files_for_chi_dinh_list,
     get_result_file_download,
@@ -37,7 +45,6 @@ from app.modules.orders.view_models.clinical_order import (
     build_chi_dinh_list_item,
 )
 from app.realtime.events import emit_order_changed
-import logging
 
 router = Blueprint('chi_dinh', __name__)
 logger = logging.getLogger(__name__)
@@ -51,6 +58,17 @@ def _get_accessible_appointment(db, user, appointment_id):
     if access_error:
         return None, access_error
     return appointment, None
+
+
+def _get_accessible_chi_dinh(db, user, chi_dinh_id):
+    chi_dinh = get_chi_dinh_by_id(db, chi_dinh_id)
+    appointment = chi_dinh.appointment
+    if not appointment:
+        return None, 'Không tìm thấy lịch hẹn của chỉ định này.'
+    access_error = appointment_access_error(user, appointment)
+    if access_error:
+        return None, access_error
+    return chi_dinh, None
 
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth
@@ -83,8 +101,12 @@ def save_chi_dinh_by_appointment(user, appointment_id):
         _, access_error = _get_accessible_appointment(db, user, appointment_id)
         if access_error:
             return jsonify({'detail': access_error}), 403
-        data = request.get_json()
-        chi_dinh_list = data.get('chi_dinh', [])
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise InvalidChiDinhPayload('Dữ liệu chỉ định không hợp lệ')
+        if 'chi_dinh' not in data:
+            raise InvalidChiDinhPayload('Thiếu danh sách chỉ định')
+        chi_dinh_list = data['chi_dinh']
 
         result_list = sync_chi_dinh_for_appointment(db, appointment_id, chi_dinh_list)
         db.commit()
@@ -102,6 +124,9 @@ def save_chi_dinh_by_appointment(user, appointment_id):
         }), 200
     except AppointmentNotFound:
         return jsonify({'detail': 'Không tìm thấy lịch hẹn'}), 404
+    except InvalidChiDinhPayload as e:
+        db.rollback()
+        return jsonify({'detail': str(e)}), 400
     except Exception as e:
         db.rollback()
         logger.error(f"Error saving chi_dinh: {e}")
@@ -155,6 +180,8 @@ def get_chi_dinh_list(user):
             'total_pages': chi_dinh_result.total_pages
         }), 200
 
+    except InvalidPagination as e:
+        return jsonify({'detail': str(e)}), 400
     except Exception as e:
         logger.error(f"Error in get_chi_dinh_list: {e}", exc_info=True)
         return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
@@ -168,7 +195,9 @@ def get_chi_dinh_detail(user, chi_dinh_id):
     """Lấy chi tiết chỉ định"""
     db = next(get_db())
     try:
-        chi_dinh = get_chi_dinh_by_id(db, chi_dinh_id)
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         result = build_chi_dinh_detail_response(db, chi_dinh)
         return jsonify(result), 200
     except ChiDinhNotFound:
@@ -186,7 +215,12 @@ def update_chi_dinh(user, chi_dinh_id):
     """Cập nhật chỉ định"""
     db = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise InvalidChiDinhPayload('Dữ liệu cập nhật chỉ định không hợp lệ')
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         chi_dinh = update_chi_dinh_fields(db, chi_dinh_id, data)
         db.commit()
         db.refresh(chi_dinh)
@@ -198,6 +232,9 @@ def update_chi_dinh(user, chi_dinh_id):
         }), 200
     except ChiDinhNotFound:
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
+    except InvalidChiDinhPayload as e:
+        db.rollback()
+        return jsonify({'detail': str(e)}), 400
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating chi_dinh: {e}")
@@ -212,7 +249,9 @@ def delete_chi_dinh(user, chi_dinh_id):
     """Xóa chỉ định"""
     db = next(get_db())
     try:
-        chi_dinh = get_chi_dinh_by_id(db, chi_dinh_id)
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         appointment_id = chi_dinh.appointment_id
         delete_chi_dinh_by_id(db, chi_dinh_id)
         db.commit()
@@ -234,6 +273,9 @@ def upload_result_file(user, chi_dinh_id):
     """Upload file kết quả cho chỉ định"""
     db = next(get_db())
     try:
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         file = request.files.get('file')
         file_info, chi_dinh = upload_result_file_for_chi_dinh(
             db,
@@ -251,12 +293,17 @@ def upload_result_file(user, chi_dinh_id):
             'file': file_info,
             'chi_dinh': chi_dinh.to_dict()
         }), 200
-    except ResultChiDinhNotFound:
+    except (ResultChiDinhNotFound, ChiDinhNotFound):
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
     except NoFileSelected:
         return jsonify({"detail": "Không có file được chọn"}), 400
     except UnsupportedFileType:
         return jsonify({"detail": "Loại file không được hỗ trợ"}), 400
+    except InvalidChiDinhPayload as e:
+        db.rollback()
+        return jsonify({'detail': str(e)}), 400
+    except FileTooLarge:
+        return jsonify({'detail': 'File không được vượt quá 25MB'}), 400
     except Exception as e:
         db.rollback()
         logger.error(f"Error uploading result file: {e}")
@@ -271,6 +318,9 @@ def delete_result_file(user, chi_dinh_id, file_id):
     """Xóa file kết quả của chỉ định"""
     db = next(get_db())
     try:
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         chi_dinh = delete_result_file_for_chi_dinh(
             db,
             chi_dinh_id,
@@ -285,7 +335,7 @@ def delete_result_file(user, chi_dinh_id, file_id):
             'message': 'Xóa file thành công',
             'chi_dinh': chi_dinh.to_dict()
         }), 200
-    except ResultChiDinhNotFound:
+    except (ResultChiDinhNotFound, ChiDinhNotFound):
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
     except NoResultFiles:
         return jsonify({'detail': 'Không có file nào để xóa'}), 404
@@ -305,10 +355,16 @@ def batch_delete_chi_dinh(user):
     """Xóa nhiều chỉ định cùng lúc"""
     db = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise InvalidBatchDelete()
         chi_dinh_ids = data.get('ids', [])
 
         chi_dinh_list = get_chi_dinh_batch_for_delete(db, chi_dinh_ids)
+        for chi_dinh in chi_dinh_list:
+            access_error = appointment_access_error(user, chi_dinh.appointment)
+            if access_error:
+                return jsonify({'detail': access_error}), 403
         appointment_ids = sorted({item.appointment_id for item in chi_dinh_list if item.appointment_id})
         delete_result_files_for_chi_dinh_list(chi_dinh_list, current_app.root_path, logger=logger)
         deleted_count = delete_chi_dinh_batch(db, chi_dinh_list)
@@ -341,6 +397,9 @@ def download_result_file(user, chi_dinh_id, file_id):
     """Download file kết quả"""
     db = next(get_db())
     try:
+        chi_dinh, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
         file_path, original_filename = get_result_file_download(
             db,
             chi_dinh_id,
@@ -352,7 +411,7 @@ def download_result_file(user, chi_dinh_id, file_id):
             as_attachment=True,
             download_name=original_filename
         )
-    except ResultChiDinhNotFound:
+    except (ResultChiDinhNotFound, ChiDinhNotFound):
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
     except NoResultFiles:
         return jsonify({'detail': 'Không có file nào'}), 404

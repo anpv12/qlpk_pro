@@ -10,30 +10,12 @@
 
 		<div class="doctor-indications-layout">
 			<div class="doctor-indications-form" id="doctorIndicationsForm" role="group" aria-labelledby="doctorIndicationsHeading">
-				<fieldset class="doctor-indications-field doctor-indications-source-fieldset" id="doctorIndicationSourceFieldset">
-					<legend>Loại chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></legend>
-					<div class="doctor-indications-source-picker" role="group" aria-label="Loại chỉ định">
-						<label>
-							<input type="radio" name="doctorIndicationSource" value="catalog" checked>
-							<span><i class="bi bi-list-check" aria-hidden="true"></i> Danh mục</span>
-						</label>
-						<label>
-							<input type="radio" name="doctorIndicationSource" value="custom">
-							<span><i class="bi bi-pencil-square" aria-hidden="true"></i> Nhập text</span>
-						</label>
-						<label>
-							<input type="radio" name="doctorIndicationSource" value="survey">
-							<span><i class="bi bi-clipboard2-check" aria-hidden="true"></i> Khảo sát</span>
-						</label>
-					</div>
-				</fieldset>
 				<div class="doctor-indications-field">
-					<label for="doctorIndicationCatalog">Tên chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></label>
+					<label for="doctorIndicationName">Tên chỉ định <b class="doctor-required-mark" aria-hidden="true">*</b></label>
 					<div class="doctor-indications-autocomplete">
 						<i class="bi bi-search doctor-indications-autocomplete__icon" aria-hidden="true"></i>
-						<input type="text" id="doctorIndicationCatalog" name="indication_catalog" placeholder="Tìm tên chỉ định" maxlength="255" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="doctorIndicationCatalogDropdown" aria-describedby="doctorIndicationsMessage" disabled>
-						<input type="hidden" id="doctorIndicationCatalogId" name="indication_catalog_id">
-						<div class="doctor-indications-autocomplete__dropdown order-autocomplete-dropdown" id="doctorIndicationCatalogDropdown" role="listbox" aria-label="Danh mục chỉ định" aria-hidden="true"></div>
+						<input type="text" id="doctorIndicationName" name="indication_name" placeholder="Tìm khảo sát hoặc nhập tên" maxlength="255" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="doctorIndicationNameDropdown" aria-describedby="doctorIndicationsMessage" disabled>
+						<div class="doctor-indications-autocomplete__dropdown order-autocomplete-dropdown" id="doctorIndicationNameDropdown" role="listbox" aria-label="Mẫu khảo sát" aria-hidden="true"></div>
 					</div>
 				</div>
 

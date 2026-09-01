@@ -5,6 +5,11 @@
 (function () {
 	'use strict';
 
+	function normalizeSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+	}
+
 	const API_BASE = '/api/drug-interactions';
 	const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
 	const TOKEN = () => localStorage.getItem('qlpk_token');
@@ -123,17 +128,17 @@
 			hidden.value = input.value.trim();
 
 			let matches = [];
-			const queryLower = query.toLowerCase();
+			const queryLower = normalizeSearchText(query);
 
 			if (!query) {
 				// Focus mà chưa gõ → hiện 15 hoạt chất đầu tiên
 				matches = allActiveIngredients.slice(0, 15).map(m => ({ label: m, isNew: false }));
 			} else {
-				const filtered = allActiveIngredients.filter(m => m.toLowerCase().includes(queryLower));
+				const filtered = allActiveIngredients.filter(m => normalizeSearchText(m).includes(queryLower));
 				matches = filtered.slice(0, 15).map(m => ({ label: m, isNew: false }));
 				
 				// Kiểm tra xem đã khớp chính xác 100% chưa, nếu chưa thì chèn mục Thêm mới
-				const exactMatch = allActiveIngredients.find(m => m.toLowerCase() === queryLower);
+				const exactMatch = allActiveIngredients.find(m => normalizeSearchText(m) === queryLower);
 				if (!exactMatch) {
 					matches.unshift({ label: query, displayLabel: `+ Thêm hoạt chất mới: "${query}"`, isNew: true });
 				}
@@ -262,7 +267,8 @@
 		};
 
 		async function saveNewIngredientIfNeeded(name) {
-			const exists = allActiveIngredients.find(m => m.toLowerCase() === name.toLowerCase());
+			const normalizedName = normalizeSearchText(name);
+			const exists = allActiveIngredients.find(m => normalizeSearchText(m) === normalizedName);
 			if (!exists) {
 				try {
 					await fetch('/api/active-ingredient', {
@@ -334,15 +340,15 @@
 	function setupSearch() {
 		const input = document.getElementById('di-search');
 		input.addEventListener('input', function () {
-			const q = this.value.toLowerCase().trim();
+			const q = normalizeSearchText(this.value);
 			if (!q) {
 				renderTable(allInteractions);
 				return;
 			}
 			const filtered = allInteractions.filter(item => {
-				return (item.hoat_chat_1 || '').toLowerCase().includes(q) ||
-					(item.hoat_chat_2 || '').toLowerCase().includes(q) ||
-					(item.consequence || '').toLowerCase().includes(q);
+				return normalizeSearchText(item.hoat_chat_1).includes(q) ||
+					normalizeSearchText(item.hoat_chat_2).includes(q) ||
+					normalizeSearchText(item.consequence).includes(q);
 			});
 			renderTable(filtered);
 		});

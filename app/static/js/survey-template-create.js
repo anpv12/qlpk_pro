@@ -6,6 +6,11 @@
 (function () {
 	'use strict';
 
+	function normalizeSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+	}
+
 	const Q_TYPE = Object.freeze({
 		MULTIPLE_CHOICE: 'multiple_choice',
 		MULTIPLE_CHOICE_GRID: 'multiple_choice_grid'
@@ -26,9 +31,12 @@
 		dirty: false,
 		loading: false,
 		saving: false,
+		defaultPerformerId: null,
+		performers: [],
 	};
 
 	let criteriaCache = null;
+	let performersPromise = null;
 
 	function byId(...ids) {
 		for (const id of ids) {
@@ -40,6 +48,7 @@
 
 	function surveyNameInput() { return byId('scSurveyName', 'surveyName'); }
 	function surveyDescInput() { return byId('scSurveyDesc', 'surveyDesc'); }
+	function surveyPerformerInput() { return byId('scSurveyPerformer', 'surveyPerformer'); }
 	function questionsListEl() { return byId('scQuestionsList', 'questionsList'); }
 	function saveButton() { return byId('scSaveBtn', 'saveBtn'); }
 	function addQuestionButton() { return byId('scAddQuestionBtn', 'addQuestionBtn'); }
@@ -59,6 +68,39 @@
 
 	function showToast(type, message) {
 		return window.QLPKUserFeedback?.show(type, message);
+	}
+
+	function authHeaders(extra = {}) {
+		const token = localStorage.getItem('qlpk_token') || localStorage.getItem('access_token') || '';
+		return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+	}
+
+	function renderPerformerOptions(selectedId = state.defaultPerformerId) {
+		const select = surveyPerformerInput();
+		if (!select) return;
+		select.innerHTML = '<option value="">Chưa gán (chọn sau khi chỉ định)</option>' + state.performers.map(user => {
+			const id = Number(user.id || user.user_id);
+			const name = String(user.full_name || user.name || user.username || '').trim();
+			return id && name ? `<option value="${id}">${escHtml(name)}</option>` : '';
+		}).join('');
+		const normalizedId = Number(selectedId) || 0;
+		select.value = normalizedId && Array.from(select.options).some(option => option.value === String(normalizedId))
+			? String(normalizedId)
+			: '';
+	}
+
+	async function loadPerformers() {
+		const select = surveyPerformerInput();
+		if (!select) return [];
+		if (!performersPromise) {
+			performersPromise = fetch('/users/doctors', { headers: authHeaders() })
+				.then(response => response.ok ? response.json() : [])
+				.then(data => Array.isArray(data) ? data : [])
+				.catch(() => []);
+		}
+		state.performers = await performersPromise;
+		renderPerformerOptions();
+		return state.performers;
 	}
 
 	async function fetchCriteria() {
@@ -110,7 +152,7 @@
 				items.forEach(c => {
 					html += `<div class="sc-criteria-item" data-name="${escHtml(c.name)}">${escHtml(c.name)}</div>`;
 				});
-				if (query && !items.find(c => c.name.toLowerCase() === query.toLowerCase())) {
+				if (query && !items.find(c => normalizeSearchText(c.name) === normalizeSearchText(query))) {
 					html += `<div class="sc-criteria-item sc-criteria-create" data-name="${escHtml(query)}"><i class="bi bi-plus-circle"></i> Tạo mới: "${escHtml(query)}"</div>`;
 				}
 			}
@@ -133,15 +175,15 @@
 
 		input.addEventListener('focus', async () => {
 			const list = await fetchCriteria();
-			const q = input.value.trim().toLowerCase();
-			const filtered = q ? list.filter(c => c.name.toLowerCase().includes(q)) : list;
+			const q = normalizeSearchText(input.value);
+			const filtered = q ? list.filter(c => normalizeSearchText(c.name).includes(q)) : list;
 			renderDropdown(filtered, input.value.trim());
 		});
 
 		input.addEventListener('input', async () => {
 			const list = await fetchCriteria();
-			const q = input.value.trim().toLowerCase();
-			const filtered = q ? list.filter(c => c.name.toLowerCase().includes(q)) : list;
+			const q = normalizeSearchText(input.value);
+			const filtered = q ? list.filter(c => normalizeSearchText(c.name).includes(q)) : list;
 			renderDropdown(filtered, input.value.trim());
 		});
 
@@ -186,12 +228,14 @@
 		state.dirty = false;
 		state.loading = false;
 		state.saving = false;
+		state.defaultPerformerId = null;
 		const nameEl = surveyNameInput();
 		const descEl = surveyDescInput();
 		const list = questionsListEl();
 		if (nameEl) nameEl.value = '';
 		if (descEl) descEl.value = '';
 		if (list) list.innerHTML = '';
+		renderPerformerOptions();
 		setSaveButtonIdle();
 		criteriaCache = null;
 		if (window._scResultConfig) window._scResultConfig.resetConfig();
@@ -208,6 +252,7 @@
 		} else {
 			if (title) title.textContent = 'Tạo mới khảo sát';
 		}
+		loadPerformers();
 		switchTab('questions');
 		if (overlay) {
 			overlay.classList.add('sc-open');
@@ -292,7 +337,7 @@
 	async function loadTemplate(id) {
 		state.loading = true;
 		try {
-			const res = await fetch(`/api/survey-templates/${id}`);
+			const res = await fetch(`/api/survey-templates/${id}`, { headers: authHeaders() });
 			const json = await res.json();
 			if (!json.success) return showToast('error', 'Không tải được dữ liệu');
 
@@ -301,6 +346,9 @@
 			const descEl = surveyDescInput();
 			if (nameEl) nameEl.value = t.name || '';
 			if (descEl) descEl.value = t.description || '';
+			state.defaultPerformerId = Number(t.default_performer_id) || null;
+			await loadPerformers();
+			renderPerformerOptions();
 
 			let content = t.content;
 			if (typeof content === 'string') {
@@ -673,6 +721,8 @@
 		const descEl = surveyDescInput();
 		const name = nameEl ? nameEl.value.trim() : '';
 		const desc = descEl ? descEl.value.trim() : '';
+		const performerEl = surveyPerformerInput();
+		const defaultPerformerId = Number(performerEl?.value) || null;
 		if (!name) return showToast('error', 'Vui lòng nhập tên mẫu khảo sát'), null;
 
 		const questions = [];
@@ -713,7 +763,7 @@
 		if (window._scResultConfig) {
 			content.result_config = window._scResultConfig.collectConfig();
 		}
-		return { name, description: desc, content };
+		return { name, description: desc, content, default_performer_id: defaultPerformerId };
 	}
 
 	async function save() {
@@ -739,7 +789,7 @@
 		try {
 			const res = await fetch(url, {
 				method: isEdit ? 'PUT' : 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: authHeaders({ 'Content-Type': 'application/json' }),
 				body: JSON.stringify(data),
 			});
 			json = await res.json();

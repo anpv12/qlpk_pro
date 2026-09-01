@@ -3,18 +3,18 @@
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-import unicodedata
 import urllib.parse
 
 import pytz
 
-from sqlalchemy import case, desc, func, or_, text
+from sqlalchemy import case, desc, func, or_
 from sqlalchemy.orm import joinedload
 
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.examination import Examination
 from app.models.patient import Patient
 from app.realtime.events import emit_appointment_changed
+from app.utils.search_normalization import normalized_contains
 
 
 @dataclass
@@ -220,46 +220,18 @@ def _apply_search_filter(db, query, search, logger):
     if not search:
         return query
 
-    search_term = f"%{search}%"
-    logger.debug("Search term formatted: %r -> %r", search, search_term)
+    search_term = str(search).strip()
+    logger.debug("Normalized appointment search term: %r", search_term)
 
-    search_no_accent = _remove_accents(search_term)
-    logger.debug("Search term without accents: %r", search_no_accent)
-
-    raw_sql = text("""
-        SELECT DISTINCT a.id FROM appointments a
-        JOIN patients p ON a.patient_id = p.id
-        WHERE LOWER(p.full_name) LIKE LOWER(:term)
-        OR LOWER(p.full_name) LIKE LOWER(:no_accent)
-        OR LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.full_name, 'â', 'a'), 'ă', 'a'), 'ơ', 'o'), 'ê', 'e'), 'ô', 'o'), 'ư', 'u'), 'đ', 'd')) LIKE LOWER(:no_accent)
-    """)
-    logger.debug("Raw appointment search SQL with params: term=%r no_accent=%r", search_term, search_no_accent)
-
-    result = db.execute(raw_sql, {"term": search_term, "no_accent": search_no_accent})
-    raw_ids = [row[0] for row in result]
-    logger.debug("Raw appointment search found IDs: %s", raw_ids)
-
-    if raw_ids:
-        query = query.filter(Appointment.id.in_(raw_ids))
-    else:
-        query = query.join(Appointment.patient).filter(
-            (Patient.full_name.ilike(search_term)) |
-            (Patient.phone.ilike(search_term)) |
-            (func.lower(Patient.full_name).ilike(func.lower(search_term))) |
-            (func.upper(Patient.full_name).ilike(func.upper(search_term))) |
-            (func.lower(Patient.full_name).ilike(func.lower(search_term))) |
-            (func.lower(Patient.full_name).ilike(func.lower(search_no_accent))) |
-            (func.lower(Patient.full_name).op('~')(
-                func.lower(search_term.replace('â', '[âa]').replace('ă', '[ăa]').replace('ơ', '[ơo]'))
-            ))
+    query = query.join(Appointment.patient).filter(
+        or_(
+            normalized_contains(Patient.full_name, search_term),
+            normalized_contains(Patient.phone, search_term),
+            normalized_contains(Patient.id_number, search_term),
         )
+    )
     logger.debug("Appointment query count after search filter: %s", query.count())
     return query
-
-
-def _remove_accents(value):
-    normalized = unicodedata.normalize('NFD', value)
-    return ''.join(char for char in normalized if not unicodedata.combining(char))
 
 
 def _apply_actor_filters(query, doctor_id, psychologist_id, patient_id, user_role_upper, logger):

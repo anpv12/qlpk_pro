@@ -7,6 +7,7 @@ from app.models.medicine import Medicine
 from app.models.medicine_batch import MedicineBatch
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 from datetime import datetime, date
 
@@ -49,10 +50,12 @@ def get_transactions(user):
         
         # Filter theo tìm kiếm
         if search:
-            query = query.join(Medicine).filter(
+            query = query.join(Medicine).outerjoin(
+                MedicineBatch, MedicineTransaction.batch_id == MedicineBatch.id
+            ).filter(
                 or_(
-                    Medicine.name.ilike(f'%{search}%'),
-                    MedicineBatch.batch_number.ilike(f'%{search}%')
+                    normalized_contains(Medicine.name, search),
+                    normalized_contains(MedicineBatch.batch_number, search),
                 )
             )
         
@@ -77,48 +80,15 @@ def get_transactions(user):
 @medicine_transaction_router.route('/medicine-transactions/', methods=['POST'])
 @require_auth
 def create_transaction(user):
-    """Tạo giao dịch mới"""
-    db = next(get_db())
-    try:
-        data = request.get_json()
-        
-        medicine_id = data.get('medicine_id')
-        batch_id = data.get('batch_id')
-        transaction_type = data.get('type')
-        quantity = data.get('quantity')
-        price = data.get('price')
-        note = data.get('note', '')
-        
-        if not medicine_id or not transaction_type or quantity is None:
-            return jsonify({'detail': 'Thiếu thông tin bắt buộc'}), 400
-        
-        transaction = MedicineTransaction(
-            medicine_id=medicine_id,
-            batch_id=batch_id,
-            type=transaction_type,
-            quantity=quantity,
-            price=price,
-            note=note,
-            created_by=user.id
-        )
-        
-        db.add(transaction)
-        db.commit()
-        db.refresh(transaction)
-        emit_inventory_changed('transaction_created', entity='medicine_transaction', entity_id=transaction.id, extra={
-            'medicine_id': medicine_id,
-            'batch_id': batch_id,
-            'transaction_type': transaction_type,
-        })
-        
-        return jsonify({
-            'success': True,
-            'transaction': transaction.to_dict()
-        }), 201
-        
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error creating transaction: {e}")
-        return jsonify({'success': False, 'detail': str(e)}), 500
-    finally:
-        db.close()
+    """Reject direct ledger writes.
+
+    Movement rows are append-only records produced by the batch import,
+    batch-adjustment, and prescription stock services.  A generic POST here
+    could make the ledger disagree with both the lot and aggregate balances.
+    """
+
+    return jsonify({
+        'success': False,
+        'detail': 'Không ghi giao dịch kho trực tiếp. Hãy dùng API nhập lô, kiểm kê theo lô hoặc kê đơn.',
+        'code': 'inventory.transaction_write_forbidden',
+    }), 409

@@ -37,7 +37,6 @@ from .district import District
 from .ward import Ward
 from .administrative_region import AdministrativeRegion
 from .administrative_unit import AdministrativeUnit
-from .order_category import OrderCategory, OrderItem
 from .chi_dinh import ChiDinh
 from .google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
 from .expense import Expense
@@ -100,8 +99,6 @@ __all__ = [
     "Ward",
     "AdministrativeRegion",
     "AdministrativeUnit",
-    "OrderCategory",
-    "OrderItem",
     "ChiDinh",
     "GoogleCalendarConnection",
     "GoogleCalendarEvent",

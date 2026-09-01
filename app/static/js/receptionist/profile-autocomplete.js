@@ -27,6 +27,11 @@
 		return options && options.document ? options.document : window.document;
 	}
 
+	function normalizeSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+	}
+
 	function setupAutocomplete(inputId, dropdownId, hiddenId, optionsList, options = {}) {
 		const doc = getDocument(options);
 		const input = doc.getElementById(inputId);
@@ -39,13 +44,13 @@
 
 		function filterOptions(value) {
 			return optionsList.filter(option =>
-				option.toLowerCase().includes(value.toLowerCase())
+				normalizeSearchText(option).includes(normalizeSearchText(value))
 			);
 		}
 
 		function hasExactOption(value) {
-			const normalizedValue = value.trim().toLowerCase();
-			return optionsList.some(option => option.toLowerCase() === normalizedValue);
+			const normalizedValue = normalizeSearchText(value);
+			return optionsList.some(option => normalizeSearchText(option) === normalizedValue);
 		}
 
 		function selectValue(value) {

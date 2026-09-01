@@ -16,6 +16,12 @@ class SurveyTemplate(Base):
     file_size = Column(Integer, comment='Kích thước file (bytes)')
     file_type = Column(String(50), comment='Loại file (pdf, docx, xlsx, etc.)')
     created_by = Column(Integer, ForeignKey('users.id'), nullable=False, comment='ID người tạo')
+    default_performer_id = Column(
+        Integer,
+        ForeignKey('users.id'),
+        nullable=True,
+        comment='ID người thực hiện mặc định khi mẫu được chỉ định',
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment='Thời gian tạo')
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment='Thời gian cập nhật')
     is_active = Column(Boolean, default=True, comment='Trạng thái hoạt động')
@@ -29,7 +35,16 @@ class SurveyTemplate(Base):
     max_price = Column(Numeric(10, 2), nullable=True, comment='Giá tối đa')
     
     # Relationships
-    creator = relationship("User", back_populates="survey_templates")
+    creator = relationship(
+        "User",
+        back_populates="survey_templates",
+        foreign_keys=[created_by],
+    )
+    default_performer = relationship(
+        "User",
+        back_populates="assigned_survey_templates",
+        foreign_keys=[default_performer_id],
+    )
     responses = relationship("SurveyResponse", back_populates="survey_template", cascade="all, delete-orphan")
     service = relationship("Service", foreign_keys=[service_id])
     
@@ -47,6 +62,8 @@ class SurveyTemplate(Base):
             'file_size': self.file_size,
             'file_type': self.file_type,
             'created_by': self.created_by,
+            'default_performer_id': self.default_performer_id,
+            'default_performer_name': self.default_performer.full_name if self.default_performer else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'is_active': self.is_active,

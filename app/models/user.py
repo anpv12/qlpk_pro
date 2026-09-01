@@ -38,7 +38,17 @@ class User(Base):
 
     groups = relationship("UserGroup", backref="user", cascade="all, delete-orphan")
     doctor_profile = relationship("Doctor", back_populates="user", uselist=False)
-    survey_templates = relationship("SurveyTemplate", back_populates="creator", cascade="all, delete-orphan")
+    survey_templates = relationship(
+        "SurveyTemplate",
+        back_populates="creator",
+        foreign_keys="SurveyTemplate.created_by",
+        cascade="all, delete-orphan",
+    )
+    assigned_survey_templates = relationship(
+        "SurveyTemplate",
+        back_populates="default_performer",
+        foreign_keys="SurveyTemplate.default_performer_id",
+    )
     survey_responses = relationship("SurveyResponse", back_populates="doctor", cascade="all, delete-orphan")
 
 

@@ -33,9 +33,11 @@
 	function matchesSearch(appointment, searchKeyword) {
 		if (!searchKeyword) return true;
 
-		const searchLower = searchKeyword.toLowerCase();
-		const nameMatch = (appointment.patient_full_name || appointment.full_name || '').toLowerCase().includes(searchLower);
-		const phoneMatch = (appointment.phone || '').toLowerCase().includes(searchLower);
+		const normalizeSearchText = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+		const searchLower = normalizeSearchText(searchKeyword);
+		const nameMatch = normalizeSearchText(appointment.patient_full_name || appointment.full_name).includes(searchLower);
+		const phoneMatch = normalizeSearchText(appointment.phone).includes(searchLower);
 		return nameMatch || phoneMatch;
 	}
 

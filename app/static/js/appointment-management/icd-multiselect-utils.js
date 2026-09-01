@@ -20,7 +20,7 @@
 		if (typeof loader !== 'function') return Promise.resolve([]);
 		const token = options.token || window.localStorage?.getItem('qlpk_token') || '';
 		return loader(query, {
-			limit: Number.isFinite(options.limit) ? options.limit : (query ? 1000 : 30),
+				limit: Number.isFinite(options.limit) ? options.limit : (query ? 100 : 30),
 			getAuthHeader: () => token ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`) : null,
 			missingTokenMessage: 'Không tìm thấy token để tải danh mục ICD.'
 		});
@@ -39,7 +39,7 @@
 		instances[mode] = new Component(root, {
 			multiple: true,
 			selectionKey: 'id',
-			limit: 1000,
+			limit: 100,
 			emptyQueryLimit: 30
 		});
 		return instances[mode];
@@ -96,7 +96,7 @@
 			const [code, ...nameParts] = entry.split(' - ');
 			if (!code || !nameParts.length) continue;
 			const name = nameParts.join(' - ');
-			const results = await loadICDData(code, { limit: 1000 });
+			const results = await loadICDData(code, { limit: 100 });
 			const icd = results.find(item => item.icd_code === code && item.disease_name === name);
 			if (icd) selected.push(icd);
 		}

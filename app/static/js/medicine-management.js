@@ -1,6 +1,11 @@
 // Medicine Management JavaScript
 
 // Helper functions
+function normalizeSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		|| String(value || '').toLowerCase().trim();
+}
+
 function escapeHtml(text) {
 	if (!text) return '';
 	const map = {
@@ -144,9 +149,9 @@ function initializeSaleUnitAutocomplete() {
 	}
 
 	function filter(keyword) {
-		const kw = (keyword || '').toLowerCase().trim();
+		const kw = normalizeSearchText(keyword);
 		if (!kw) return units;
-		return units.filter(u => u.label.includes(kw) || u.value.includes(kw));
+		return units.filter(u => normalizeSearchText(u.label).includes(kw) || normalizeSearchText(u.value).includes(kw));
 	}
 
 	input.addEventListener('focus', () => render(filter(input.value)));
@@ -824,7 +829,7 @@ function populateMedicineForm(medicine, id) {
 	$('select[name="unit"]').val(medicine.unit);
 
 	$('input[name="strength"]').val(medicine.strength);
-	$('input[name="stock_quantity"]').val(medicine.stock_quantity);
+	$('#stockQuantitySummaryDisplay').val(medicine.stock_quantity ?? 0);
 	$('input[name="low_stock_threshold"]').val(medicine.low_stock_threshold || 0);
 	$('input[name="expiry_date"]').val(medicine.expiry_date);
 	// Set giá trị cho Flatpickr nếu đã khởi tạo
@@ -967,11 +972,9 @@ function saveMedicine() {
 		medicineData.packaging = medicineData.packaging || '';
 	}
 
-	// Lấy stock_quantity từ hidden input (tính từ số hộp và viên lẻ)
-	const stockQuantityFromHidden = $('#stockQuantityInput').val();
-	if (stockQuantityFromHidden) {
-		medicineData.stock_quantity = parseFloat(stockQuantityFromHidden) || 0;
-	}
+	// Tồn kho là aggregate read-only trên form danh mục.  Không gửi field này
+	// để API không thể bị dùng như một đường sửa tồn trực tiếp.
+	delete medicineData.stock_quantity;
 
 	// Ép kiểu số - xử lý chuỗi rỗng thành null
 	const numericFields = ['unit_price', 'low_stock_threshold', 'expiry_warning_days', 'import_price', 'units_per_box', 'pills_per_unit'];
@@ -983,13 +986,6 @@ function saveMedicine() {
 			medicineData[f] = null;
 		}
 	});
-
-	// Ép kiểu stock_quantity riêng (đã được xử lý ở trên)
-	if (medicineData.stock_quantity !== undefined && medicineData.stock_quantity !== '') {
-		medicineData.stock_quantity = Number(medicineData.stock_quantity);
-	} else {
-		medicineData.stock_quantity = 0;
-	}
 
 	// Validation
 	// Lấy đơn vị tính từ hidden value hoặc từ input hiển thị (đã là tiếng Việt)
@@ -1123,6 +1119,8 @@ function resetForm() {
 	if (remainingInput) remainingInput.value = '';
 	const hiddenInput = document.getElementById('stockQuantityInput');
 	if (hiddenInput) hiddenInput.value = '';
+	const summaryInput = document.getElementById('stockQuantitySummaryDisplay');
+	if (summaryInput) summaryInput.value = '0';
 
 	// Reset hint
 	const convertElement = document.getElementById('stockQuantityConvert');
@@ -1148,7 +1146,7 @@ function showCustomToast(type, message) {
 function exportTemplate() {
 	// Tải file template Excel đã được tạo sẵn với màu đỏ
 	const link = document.createElement('a');
-	link.href = '/uploads/templates/mau_import_thuoc.xlsx';
+	link.href = '/static/templates/mau_import_thuoc.xlsx';
 	link.download = 'mau_import_thuoc.xlsx';
 	document.body.appendChild(link);
 	link.click();
@@ -1363,9 +1361,9 @@ function initializeCategoryTypeAutocomplete() {
 	];
 
 	input.addEventListener('input', function () {
-		const query = this.value.toLowerCase();
+		const query = normalizeSearchText(this.value);
 		const filtered = options.filter(option =>
-			option.label.toLowerCase().includes(query)
+			normalizeSearchText(option.label).includes(query)
 		);
 		showDropdown(dropdown, filtered, input, hiddenInput);
 	});
@@ -1395,9 +1393,9 @@ function initializePrescriptionTypeAutocomplete() {
 	];
 
 	input.addEventListener('input', function () {
-		const query = this.value.toLowerCase();
+		const query = normalizeSearchText(this.value);
 		const filtered = options.filter(option =>
-			option.label.toLowerCase().includes(query)
+			normalizeSearchText(option.label).includes(query)
 		);
 		showDropdown(dropdown, filtered, input, hiddenInput);
 	});
@@ -1456,13 +1454,13 @@ function initializeGenericNameAutocomplete() {
 			return;
 		}
 
-		const queryLower = query.toLowerCase();
-		const filtered = activeIngredients.filter(option =>
-			option.label.toLowerCase().includes(queryLower)
-		).slice(0, 30);
+			const queryLower = normalizeSearchText(query);
+			const filtered = activeIngredients.filter(option =>
+				normalizeSearchText(option.label).includes(queryLower)
+			).slice(0, 30);
 
-		// Kiểm tra xem đã có exact match chưa
-		const exactMatch = activeIngredients.find(opt => opt.label.toLowerCase() === queryLower);
+			// Kiểm tra xem đã có exact match chưa
+			const exactMatch = activeIngredients.find(opt => normalizeSearchText(opt.label) === queryLower);
 		
 		// Nếu chưa có exact match, thêm 1 lựa chọn "Tạo mới" lên đầu
 		if (!exactMatch) {
@@ -1540,9 +1538,9 @@ function initializeAdministrationMethodAutocomplete() {
 	];
 
 	input.addEventListener('input', function () {
-		const query = this.value.toLowerCase();
+		const query = normalizeSearchText(this.value);
 		const filtered = options.filter(option =>
-			option.label.toLowerCase().includes(query)
+			normalizeSearchText(option.label).includes(query)
 		);
 		showDropdown(dropdown, filtered, input, hiddenInput);
 	});
@@ -1570,9 +1568,9 @@ function initializeImportedTypeAutocomplete() {
 	];
 
 	input.addEventListener('input', function () {
-		const query = this.value.toLowerCase();
+		const query = normalizeSearchText(this.value);
 		const filtered = options.filter(option =>
-			option.label.toLowerCase().includes(query)
+			normalizeSearchText(option.label).includes(query)
 		);
 		showDropdown(dropdown, filtered, input, hiddenInput);
 	});
@@ -1902,7 +1900,7 @@ function updateBoxesFromTotal() {
 	updateStockQuantityHint();
 }
 
-// Hiển thị tồn kho quy đổi (ô nhập số tổng) dùng giá trị thô, không định dạng thousands trong input number
+// Hiển thị tồn kho quy đổi (ô tổng read-only) dùng giá trị thô, không định dạng thousands
 function updateStockQuantitySummaryDisplay({ total, boxes, remaining, packagingUnit, saleUnit, formatDecimalFn, formatNumFn }) {
 	const summaryInput = document.getElementById('stockQuantitySummaryDisplay');
 	if (!summaryInput) return;
@@ -2129,8 +2127,8 @@ function renderStockDetail(data, medicineName) {
 	// Update summary
 	$('#totalStockQuantity').text(formatStockQuantity(totalQuantity));
 	$('#totalBatches').text(`${totalBatches} lô`);
-	$('#averageImportPrice').text(avgImportPrice > 0 ? formatCurrency(avgImportPrice) + ' ₫' : '-');
-	$('#totalStockValue').text(stockValue > 0 ? formatCurrency(stockValue) + ' ₫' : '-');
+	$('#averageImportPrice').text(avgImportPrice > 0 ? formatCurrency(avgImportPrice) : '-');
+	$('#totalStockValue').text(stockValue > 0 ? formatCurrency(stockValue) : '-');
 
 	// Render batch table
 	const tbody = $('#batchDetailTableBody');
@@ -2173,12 +2171,12 @@ function renderStockDetail(data, medicineName) {
 
 		const row = `
             <tr class="${rowClass}">
-	                <td class="batch-number-cell">${batch.batch_number || '-'}</td>
+                <td class="batch-number-cell">${batch.batch_number || '-'}</td>
                 <td>${formatDate(batch.import_date)}</td>
                 <td>${formatDate(batch.expiry_date)}</td>
                 <td>${formatStockQuantity(batch.quantity || 0)}</td>
                 <td>${formatStockQuantity(batch.remaining_quantity || 0)}</td>
-                <td>${batch.import_price ? formatCurrency(batch.import_price) + ' ₫' : '-'}</td>
+                <td>${batch.import_price ? formatCurrency(batch.import_price) : '-'}</td>
                 <td>${batch.supplier_name || '-'}</td>
                 <td>
                     <span class="badge ${statusBadgeClass}">${status}</span>
@@ -2377,7 +2375,7 @@ function positionBatchMedicineDropdown(input, dropdown) {
 }
 
 function showBatchMedicineDropdown(input, dropdown, hiddenId, rowId) {
-	const keyword = (input.value || '').toLowerCase().trim();
+	const keyword = normalizeSearchText(input.value);
 
 	let filtered;
 	if (!keyword) {
@@ -2385,9 +2383,7 @@ function showBatchMedicineDropdown(input, dropdown, hiddenId, rowId) {
 		filtered = allMedicines.slice(0, 5000);
 	} else {
 		// Lọc theo tên thuốc khi có từ khóa
-		filtered = allMedicines.filter(m =>
-			m.name.toLowerCase().includes(keyword)
-		);
+		filtered = allMedicines.filter(m => normalizeSearchText(m.name).includes(keyword));
 	}
 
 	// Hiển thị dropdown
@@ -2433,7 +2429,7 @@ function calculateBatchRowTotal(rowId) {
 	const total = quantity * price;
 	const totalElement = row.querySelector('.batch-row-total');
 	if (totalElement) {
-		totalElement.textContent = formatCurrency(total) + ' ₫';
+		totalElement.textContent = formatCurrency(total);
 	}
 }
 
@@ -2462,7 +2458,7 @@ function updateBatchTotal() {
 	// Hiển thị tổng giá trị đơn hàng
 	const totalElement = document.getElementById('batchTotalValue');
 	if (totalElement) {
-		totalElement.textContent = formatCurrency(total) + ' ₫';
+		totalElement.textContent = formatCurrency(total);
 	}
 
 	// Hiển thị breakdown theo từng lô
@@ -2476,7 +2472,7 @@ function updateBatchTotal() {
 				.map(([lot, lotTotal]) => {
 						return `<div class="lot-item">
 	                      <span class="lot-name">Lô ${lot}:</span>
-	                      <span class="lot-value fw-bold">${formatCurrency(lotTotal)} ₫</span>
+	                      <span class="lot-value fw-bold">${formatCurrency(lotTotal)}</span>
 	                    </div>`;
 				})
 				.join('');
@@ -2520,7 +2516,7 @@ async function onBatchMedicineSelect(medicineId, rowId) {
 			// Hiển thị giá nhập lần trước
 			const lastPriceElement = row.querySelector('.batch-last-price');
 			if (lastPriceElement && lastPrice) {
-				lastPriceElement.textContent = `Giá lần trước: ${formatCurrency(lastPrice)} ₫`;
+				lastPriceElement.textContent = `Giá lần trước: ${formatCurrency(lastPrice)}`;
 				setElementVisible(lastPriceElement, true);
 			}
 
@@ -2588,10 +2584,10 @@ function updatePriceComparison(rowId) {
 	setElementVisible(priceDiffElement, true);
 	if (diff > 0) {
 		priceDiffElement.className = 'batch-price-diff text-danger fw-bold';
-		priceDiffElement.textContent = `↑ +${formatCurrency(diff)} ₫ (${diffPercent}%)`;
+		priceDiffElement.textContent = `↑ +${formatCurrency(diff)} (${diffPercent}%)`;
 	} else {
 		priceDiffElement.className = 'batch-price-diff text-success fw-bold';
-		priceDiffElement.textContent = `↓ ${formatCurrency(diff)} ₫ (${diffPercent}%)`;
+		priceDiffElement.textContent = `↓ ${formatCurrency(diff)} (${diffPercent}%)`;
 	}
 }
 
@@ -3054,7 +3050,7 @@ async function loadInventoryCountData() {
 	const tbody = document.getElementById('inventoryCountTableBody');
 	if (!tbody) return;
 
-	tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Đang tải dữ liệu...</td></tr>';
+	tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Đang tải dữ liệu...</td></tr>';
 
 	const token = localStorage.getItem('qlpk_token');
 	if (!token) {
@@ -3065,32 +3061,28 @@ async function loadInventoryCountData() {
 	try {
 		// Load tất cả thuốc để kiểm kê
 		const response = await $.ajax({
-			url: '/api/medicines/',
+			url: '/api/medicine-batches/?page=1&per_page=5000',
 			method: 'GET',
 			headers: {
 				'Authorization': 'Bearer ' + token
 			},
-			data: {
-				page: 1,
-				per_page: 1000 // Load tất cả để kiểm kê
-			},
-			dataType: 'json'
-		});
+				dataType: 'json'
+			});
 
-		const medicines = response.medicines || [];
+		const batches = response.batches || [];
 
 		// Lưu dữ liệu gốc để filter
-		inventoryCountOriginalData = medicines;
+		inventoryCountOriginalData = batches;
 
 		// Render bảng với dữ liệu gốc
-		renderInventoryCountTable(medicines);
+		renderInventoryCountTable(batches);
 
 	} catch (error) {
 		console.error('Error loading inventory count data:', error);
 		showCustomToast('error', 'Lỗi khi tải dữ liệu kiểm kê kho');
 		const tbody = document.getElementById('inventoryCountTableBody');
 		if (tbody) {
-			tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Không thể tải dữ liệu</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Không thể tải dữ liệu</td></tr>';
 		}
 	}
 }
@@ -3101,11 +3093,11 @@ function saveInventoryCountInputValues() {
 	const savedValues = {};
 
 	rows.forEach(row => {
-		const medicineId = row.querySelector('.actual-quantity')?.getAttribute('data-medicine-id');
-		if (medicineId) {
-			const actualQty = row.querySelector('.actual-quantity')?.value || '';
-			const note = row.querySelector('.inventory-note')?.value || '';
-			savedValues[medicineId] = {
+			const batchId = row.querySelector('.actual-quantity')?.getAttribute('data-batch-id');
+			if (batchId) {
+				const actualQty = row.querySelector('.actual-quantity')?.value || '';
+				const note = row.querySelector('.inventory-note')?.value || '';
+				savedValues[batchId] = {
 				actualQty: actualQty,
 				note: note
 			};
@@ -3126,27 +3118,29 @@ function renderInventoryCountTable(medicines) {
 	tbody.innerHTML = '';
 
 	if (medicines.length === 0) {
-		tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Không tìm thấy thuốc nào</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy lô thuốc nào</td></tr>';
 		return;
 	}
 
-	medicines.forEach(medicine => {
+	medicines.forEach(batch => {
 		const row = document.createElement('tr');
-		const systemQty = parseFloat(medicine.stock_quantity) || 0;
+		const systemQty = parseFloat(batch.remaining_quantity) || 0;
 
 		// Khôi phục giá trị đã nhập nếu có
-		const savedValue = savedValues[medicine.id];
+		const savedValue = savedValues[batch.id];
 		const actualQtyValue = savedValue?.actualQty || systemQty;
 		const noteValue = savedValue?.note || '';
 
 		row.innerHTML = `
-                <td>${medicine.name || 'N/A'}</td>
-                <td><strong>${formatStockQuantity(systemQty)}</strong></td>
-                <td>
-                    <input type="number" class="form-control form-control-sm actual-quantity" 
-                           value="${actualQtyValue}" min="0" step="0.01"
-                           data-medicine-id="${medicine.id}"
-                           data-system-qty="${systemQty}">
+				<td>${batch.medicine_name || 'N/A'}</td>
+				<td><span class="badge bg-light text-dark">${batch.batch_number || '-'}</span></td>
+				<td><strong>${formatStockQuantity(systemQty)}</strong></td>
+				<td>
+					<input type="number" class="form-control form-control-sm actual-quantity"
+						   value="${actualQtyValue}" min="0" step="0.01"
+						   data-batch-id="${batch.id}"
+						   data-medicine-id="${batch.medicine_id}"
+						   data-system-qty="${systemQty}">
                 </td>
                 <td>
                     <span class="badge bg-secondary difference-badge">0</span>
@@ -3202,7 +3196,7 @@ function filterInventoryCountTable() {
 	const searchInput = document.getElementById('inventoryCountSearchInput');
 	if (!searchInput) return;
 
-	const searchTerm = searchInput.value.trim().toLowerCase();
+	const searchTerm = normalizeSearchText(searchInput.value);
 
 	if (!searchTerm) {
 		// Nếu không có từ khóa, hiển thị tất cả
@@ -3210,10 +3204,11 @@ function filterInventoryCountTable() {
 		return;
 	}
 
-	// Filter dữ liệu theo tên thuốc
-	const filteredData = inventoryCountOriginalData.filter(medicine => {
-		const medicineName = (medicine.name || '').toLowerCase();
-		return medicineName.includes(searchTerm);
+	// Filter dữ liệu theo tên thuốc hoặc số lô
+	const filteredData = inventoryCountOriginalData.filter(batch => {
+		const medicineName = normalizeSearchText(batch.medicine_name);
+		const batchNumber = normalizeSearchText(batch.batch_number);
+		return medicineName.includes(searchTerm) || batchNumber.includes(searchTerm);
 	});
 
 	// Render lại bảng với dữ liệu đã filter
@@ -3224,20 +3219,26 @@ function filterInventoryCountTable() {
 async function confirmInventoryCount() {
 	const rows = document.querySelectorAll('#inventoryCountTableBody tr');
 	const adjustments = [];
+	let hasMissingInventoryNote = false;
 
 	rows.forEach(row => {
-		const medicineIdInput = row.querySelector('.actual-quantity');
-		if (!medicineIdInput) return;
+		const batchIdInput = row.querySelector('.actual-quantity');
+		if (!batchIdInput) return;
 
-		const medicineId = parseInt(medicineIdInput.getAttribute('data-medicine-id'));
-		const systemQty = parseFloat(medicineIdInput.getAttribute('data-system-qty')) || 0;
-		const actualQty = parseFloat(medicineIdInput.value) || 0;
+		const batchId = parseInt(batchIdInput.getAttribute('data-batch-id'));
+		const systemQty = parseFloat(batchIdInput.getAttribute('data-system-qty')) || 0;
+		const actualQty = parseFloat(batchIdInput.value) || 0;
 		const noteInput = row.querySelector('.inventory-note');
 		const note = noteInput ? noteInput.value.trim() : '';
 
 		if (actualQty !== systemQty) {
+			if (!note) {
+				row.classList.add('table-warning');
+				hasMissingInventoryNote = true;
+				return;
+			}
 			adjustments.push({
-				medicine_id: medicineId,
+				batch_id: batchId,
 				system_quantity: systemQty,
 				actual_quantity: actualQty,
 				difference: actualQty - systemQty,
@@ -3246,12 +3247,17 @@ async function confirmInventoryCount() {
 		}
 	});
 
+	if (hasMissingInventoryNote) {
+		showCustomToast('warning', 'Vui lòng ghi lý do cho từng lô có chênh lệch.');
+		return;
+	}
+
 	if (adjustments.length === 0) {
 		showCustomToast('info', 'Không có chênh lệch nào cần điều chỉnh!');
 		return;
 	}
 
-	if (!confirm(`Xác nhận điều chỉnh ${adjustments.length} thuốc có chênh lệch?`)) {
+	if (!confirm(`Xác nhận điều chỉnh ${adjustments.length} lô thuốc có chênh lệch?`)) {
 		return;
 	}
 
@@ -3263,7 +3269,7 @@ async function confirmInventoryCount() {
 
 	try {
 		const response = await $.ajax({
-			url: '/api/medicines/inventory-count',
+			url: '/api/medicine-batches/inventory-count',
 			method: 'POST',
 			headers: {
 				'Authorization': 'Bearer ' + token,
@@ -3284,7 +3290,7 @@ async function confirmInventoryCount() {
 		updateDashboard();
 
 		// Hiển thị thông báo thành công
-		showCustomToast('success', `Điều chỉnh thành công ${adjustments.length} thuốc!`);
+		showCustomToast('success', `Điều chỉnh thành công ${adjustments.length} lô thuốc!`);
 
 	} catch (error) {
 		console.error('Error confirming inventory count:', error);
@@ -3716,6 +3722,9 @@ async function loadTransactionHistory() {
 			tbody.html('<tr><td colspan="8" class="text-center text-muted py-4">Chưa có giao dịch nào</td></tr>');
 			return;
 		}
+
+		// Replace the loading row before appending the loaded ledger rows.
+		tbody.empty();
 
 		transactions.forEach(transaction => {
 			const typeClass = transaction.type === 'import' ? 'text-success' : 'text-danger';

@@ -1,6 +1,16 @@
 (function (window) {
 	'use strict';
 
+	function normalizeServiceSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '')
+				.normalize('NFKD')
+				.toLowerCase()
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/đ/g, 'd')
+				.trim();
+	}
+
 	function formatPrice(price) {
 		return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
 	}
@@ -50,7 +60,7 @@
 		});
 
 		$input.off(`focus${eventNamespace}`).on(`focus${eventNamespace}`, function () {
-			const query = $(this).val().toLowerCase().trim();
+			const query = normalizeServiceSearchText($(this).val());
 			if (!query) {
 				renderDropdown(getServices());
 			} else {
@@ -59,7 +69,7 @@
 		});
 
 		$input.off(`input${eventNamespace}`).on(`input${eventNamespace}`, function () {
-			const query = $(this).val().toLowerCase().trim();
+			const query = normalizeServiceSearchText($(this).val());
 			if (!query) {
 				$hidden.val('');
 				renderDropdown(getServices());
@@ -67,8 +77,8 @@
 			}
 
 			const filtered = getServices().filter(service =>
-				service.name.toLowerCase().includes(query) ||
-				(service.code && service.code.toLowerCase().includes(query))
+				normalizeServiceSearchText(service.name).includes(query) ||
+				(service.code && normalizeServiceSearchText(service.code).includes(query))
 			);
 
 			if (filtered.length === 0) {

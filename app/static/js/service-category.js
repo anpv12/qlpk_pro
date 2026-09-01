@@ -1,5 +1,10 @@
 		let categories = [];
 
+		function normalizeSearchText(value) {
+			return window.QLPKSearchNormalization?.normalizeSearchText(value)
+				|| String(value || '').toLowerCase().trim();
+		}
+
 		// Toast function
 		function showToast(type, message) {
 			return window.QLPKUserFeedback?.show(type, message);
@@ -180,10 +185,10 @@
 
 		// Tìm kiếm
 		$('#searchInput').on('input', function () {
-			const searchTerm = $(this).val().toLowerCase();
+			const searchTerm = normalizeSearchText($(this).val());
 			const filtered = categories.filter(category =>
-				category.name.toLowerCase().includes(searchTerm) ||
-				(category.description && category.description.toLowerCase().includes(searchTerm))
+				normalizeSearchText(category.name).includes(searchTerm) ||
+				(category.description && normalizeSearchText(category.description).includes(searchTerm))
 			);
 			renderCategories(filtered);
 		});

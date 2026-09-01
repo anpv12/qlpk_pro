@@ -3,6 +3,11 @@ function showCustomToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
 }
 
+function normalizeSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		|| String(value || '').toLowerCase().trim();
+}
+
 $(function () {
   let users = [];
   let groups = [];
@@ -98,8 +103,8 @@ $(function () {
     groupTree.empty();
     let filteredGroups = groups;
     if (groupFilter.trim() !== '') {
-      const kw = groupFilter.trim().toLowerCase();
-      filteredGroups = groups.filter(g => (g.name || g.desc || '').toLowerCase().includes(kw) || (g.code || '').toLowerCase().includes(kw));
+      const kw = normalizeSearchText(groupFilter);
+      filteredGroups = groups.filter(g => normalizeSearchText(g.name || g.desc).includes(kw) || normalizeSearchText(g.code).includes(kw));
     }
     if (filteredGroups.length === 0) {
       groupTree.append('<div class="text-muted">Không có nhóm quyền</div>');

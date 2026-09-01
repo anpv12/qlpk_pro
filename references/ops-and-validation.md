@@ -39,6 +39,9 @@
 - SQL one-off helpers may exist under `scripts/`; the old root `migrations/` SQL folder was archived to `_archive/cleanup-20260613/root/migrations/` during the 2026-06-13 cleanup.
 - When adding a persistent model field, add a migration or clearly explain why no migration is needed.
 - Keep SQLAlchemy model, migration, serializer, frontend load, and frontend save in sync.
+- `alembic/env.py` lấy URL từ `app.core.config.settings`, vì vậy lệnh
+  `alembic -c alembic/alembic.ini upgrade head` dùng đúng `DATABASE_URL` của
+  môi trường hiện tại; không dùng URL mẫu trong file ini để suy ra database.
 - Destructive schema cleanup must be preceded by a database backup and must archive non-empty legacy values into `legacy_database_archive` before dropping tables or columns.
 - Model registry is part of the schema contract: every live model with `__tablename__` must be imported/exported through `app/models/__init__.py` so `Base.metadata` and Alembic see the same schema.
 - The legacy multi-head Alembic graph was archived to `_archive/alembic-prebaseline-20260705/` on 2026-07-05. The active graph now has one baseline revision, `20260704_legacy_db_cleanup`, backed by the current SQLAlchemy model registry. Existing databases already stamped at this revision do not need schema-changing SQL for the baseline; fresh databases can use `alembic upgrade head` to create the current schema.

@@ -143,8 +143,10 @@ class WardAutocomplete extends AutocompleteBase {
 
 		// Tìm unit theo tên
 		const unit = this.units.find(u =>
-			u.name.toLowerCase() === wardName.toLowerCase() ||
-			(u.full_name && u.full_name.toLowerCase() === wardName.toLowerCase())
+			(window.QLPKSearchNormalization?.normalizeSearchText(u.name) || u.name.toLowerCase()) ===
+				(window.QLPKSearchNormalization?.normalizeSearchText(wardName) || wardName.toLowerCase()) ||
+			(u.full_name && (window.QLPKSearchNormalization?.normalizeSearchText(u.full_name) || u.full_name.toLowerCase()) ===
+				(window.QLPKSearchNormalization?.normalizeSearchText(wardName) || wardName.toLowerCase()))
 		);
 
 		if (unit) {

@@ -120,7 +120,8 @@ class ProvinceAutocomplete extends AutocompleteBase {
 
 		// Tìm province theo tên
 		const province = this.provinces.find(p =>
-			p.name.toLowerCase() === provinceName.toLowerCase()
+			(window.QLPKSearchNormalization?.normalizeSearchText(p.name) || p.name.toLowerCase()) ===
+			(window.QLPKSearchNormalization?.normalizeSearchText(provinceName) || provinceName.toLowerCase())
 		);
 
 		if (province) {

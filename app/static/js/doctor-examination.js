@@ -268,6 +268,8 @@
 			getCurrentPatientData: () => state.currentPatientData,
 			getCurrentAppointmentId: () => state.currentAppointmentId,
 			setCurrentPatientId,
+			getAppointments: () => state.appointments,
+			selectPatientCard,
 			getExaminationStatusBadgeClass: getDoctorHistoryStatusClass,
 			getExaminationStatusText: getDoctorHistoryStatusText,
 			copyHistory: selectHistoryResult,

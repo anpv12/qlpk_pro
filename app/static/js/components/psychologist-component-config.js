@@ -82,7 +82,10 @@
 		}),
 		clinical: Object.freeze({ rootId: PSYCHOLOGIST_CLINICAL_ROOT }),
 		services: Object.freeze({ rootId: 'doctorServicePanel', strictRoot: true }),
-		indications: Object.freeze({ rootId: 'doctorIndicationsPanel', strictRoot: true })
+		indications: Object.freeze({
+			rootId: 'doctorIndicationsPanel',
+			strictRoot: true
+		})
 	});
 
 	window.QLPKPsychologistComponentConfig = config;

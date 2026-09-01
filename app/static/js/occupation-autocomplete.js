@@ -3,6 +3,11 @@
  * Thay thế combobox thông thường bằng autocomplete input với dropdown gợi ý
  */
 
+function normalizeOccupationText(value) {
+    return window.QLPKSearchNormalization?.normalizeSearchText(value)
+        || String(value || '').toLowerCase().trim();
+}
+
 class OccupationAutocomplete {
     constructor(inputId, dropdownId) {
         this.input = document.getElementById(inputId);
@@ -100,9 +105,9 @@ class OccupationAutocomplete {
         if (!query.trim()) {
             this.filteredOccupations = [...this.occupations];
         } else {
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = normalizeOccupationText(query);
             this.filteredOccupations = this.occupations.filter(occ => 
-                occ.name.toLowerCase().includes(lowerQuery)
+                normalizeOccupationText(occ.name).includes(lowerQuery)
             );
         }
         

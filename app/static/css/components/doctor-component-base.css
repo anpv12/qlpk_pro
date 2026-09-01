@@ -39,7 +39,9 @@ body[data-doctor-ui] [data-doctor-component][data-load-state='error'] {
 	border-color: var(--qlpk-feedback-error, var(--qlpk-doctor-danger));
 }
 
-body[data-doctor-ui] [data-doctor-component] :where(button, input, select, textarea):focus-visible {
+/* Composite ICD controls expose focus on their outer container via
+ * :focus-within; the inner query input must not receive a second outline. */
+body[data-doctor-ui] [data-doctor-component] :where(button, input:not([data-icd-autocomplete-input]), select, textarea):focus-visible {
 	outline: 0.125rem solid var(--doctor-component-focus);
 	outline-offset: 0.125rem;
 }

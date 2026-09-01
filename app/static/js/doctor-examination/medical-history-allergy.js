@@ -11,6 +11,16 @@ import {
 let _allergyRowCounter = 0;
 let _allergyActiveTab = 'all';
 
+function normalizeAllergySearchText(value) {
+  return window.QLPKSearchNormalization?.normalizeSearchText(value)
+    || String(value || '')
+      .normalize('NFKD')
+      .toLowerCase()
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .trim();
+}
+
 function medicalHistoryGetAllergyRowLevel(row) {
   const levelRadio = row?.querySelector?.('.allergy-level:checked');
   return levelRadio ? levelRadio.value : '';
@@ -229,7 +239,7 @@ async function fetchAllergenSuggestions(q, input, dropdown, positionDropdown) {
 
     dropdown.innerHTML = '';
     const items = data.data || [];
-    const exactMatch = q && items.some(i => i.ten_di_nguyen.toLowerCase() === q.toLowerCase());
+    const exactMatch = q && items.some(i => normalizeAllergySearchText(i.ten_di_nguyen) === normalizeAllergySearchText(q));
 
     items.forEach(item => {
       const div = document.createElement('div');

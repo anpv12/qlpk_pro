@@ -6,6 +6,11 @@ let currentBusySchedules = [];
 let busyReasonsCache = null;
 let busyReasonsCacheTime = null;
 
+function normalizeSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		|| String(value || '').toLowerCase().trim();
+}
+
 // Initialize page
 $(document).ready(function () {
 	loadUserInfo();
@@ -686,13 +691,13 @@ function setQuickTime(type) {
 
 // Filter table based on search and status
 function filterTable() {
-	const searchTerm = $('#searchInput').val().toLowerCase();
+	const searchTerm = normalizeSearchText($('#searchInput').val());
 	const statusFilter = $('#statusFilter').val();
 
 	$('#busySchedulesTableBody tr').each(function () {
 		const row = $(this);
-		const timeText = row.find('td:nth-child(2)').text().toLowerCase();
-		const reasonText = row.find('td:nth-child(3)').text().toLowerCase();
+		const timeText = normalizeSearchText(row.find('td:nth-child(2)').text());
+		const reasonText = normalizeSearchText(row.find('td:nth-child(3)').text());
 		const statusBadge = row.find('.badge');
 
 		let matchesSearch = true;

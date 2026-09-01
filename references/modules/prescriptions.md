@@ -8,6 +8,7 @@ Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa
 - `prescription_items`: từng dòng thuốc và là owner duy nhất của số lượng hiện đang lưu/cấp theo appointment.
 - `medicine_batches.remaining_quantity`: tồn hiện hành của từng lô; lô còn hạn được cấp theo FEFO.
 - `medicines.stock_quantity`: tồn tổng hiện hành dùng bởi các màn kho khác. Cấp/hoàn có truy vết cập nhật cùng đúng delta với lô; hoàn phần đơn cũ không có lô chỉ cập nhật tồn tổng.
+- Nhập lô/kiểm kê theo lô thuộc owner `app/modules/medicines/services/inventory_service.py`; không sửa `medicines.stock_quantity` trực tiếp từ danh mục hoặc ledger API.
 - `medicine_transactions`: lịch sử movement append-only. Dòng có truy vết dùng `batch_id` hiện hữu để chỉ đúng lô và hai mẫu `note` hiện hữu (`Xuất theo đơn thuốc - Lịch hẹn ID: ...` / `Hoàn lại tồn kho - Lịch hẹn ID: ...`) để giới hạn movement của đúng appointment. Hoàn phần legacy dùng đúng note hoàn với `batch_id=NULL`, ghi nhận biến động tồn tổng mà không đoán lô. Tổng movement theo appointment/lô chỉ dùng để trả lời lô nào còn đang cấp cho đơn, không thay `prescription_items` làm owner số lượng đơn hoặc `remaining_quantity` làm owner số dư lô. Không thêm cột liên kết mới.
 - `examinations.diagnosis`: chẩn đoán raw theo ICD IDs trong flow mới.
 - `appointment_relatives`: người đi cùng/người nhận thuốc cho footer đơn H/N.

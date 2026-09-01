@@ -6,6 +6,7 @@ from app.models.appointment import Appointment
 from app.models.examination import Examination
 from app.api.auth import require_auth
 from app.utils.clinical_access import patient_access_error, scoped_patient_ids
+from app.utils.search_normalization import normalized_contains
 from app.realtime.events import emit_patient_changed
 from app.services.kinship_service import (
     FALLBACK_KINSHIP,
@@ -341,9 +342,9 @@ def search_relatives(user):
         
         if search_term:
             query = query.filter(
-                (Patient.full_name.ilike(f'%{search_term}%')) |
-                (Patient.phone.ilike(f'%{search_term}%')) |
-                (Patient.id_number.ilike(f'%{search_term}%'))
+                normalized_contains(Patient.full_name, search_term) |
+                normalized_contains(Patient.phone, search_term) |
+                normalized_contains(Patient.id_number, search_term)
             )
         
         # Get paginated results

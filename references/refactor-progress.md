@@ -1,6 +1,200 @@
 # QLPK Refactor Progress
 
-Last updated: 2026-08-23.
+Last updated: 2026-09-01.
+
+### Schema/Test Gate Cleanup (2026-09-01)
+
+- Thêm một migration hậu kiểm `20260901_reconcile_doctor_legacy` để archive
+  rồi loại bỏ 4 bảng Doctor legacy còn sót trong database đã được stamp ở
+  revision cũ; không chạm bảng sống và không dùng `CASCADE`.
+- Alembic online/offline lấy `DATABASE_URL` từ settings của ứng dụng, tránh
+  chạy nhầm database do URL tĩnh trong `alembic.ini`.
+- Thêm `pytest.ini` tối giản (`pythonpath = .`, `testpaths = tests`) để lệnh
+  `pytest -q` chuẩn chạy được từ thư mục repo.
+- Local DB đã backup trước khi migrate và nâng lên revision mới. Schema gate,
+  Alembic strict và `pytest -q` đều đạt.
+
+### Survey Result Template Ownership (2026-09-01)
+
+- Tab Khảo sát trong màn quản lý chỉ định chỉ tải mẫu từ
+  `chi_dinh.survey_template_id`; dropdown hiển thị đúng một option bị khóa ở
+  cả trạng thái chưa có kết quả và đã có kết quả.
+- Đã bỏ nhánh đổi mẫu/tự gửi link theo mẫu khác và lọc response theo template
+  của chỉ định, tránh hiển thị hoặc gửi sai bài test. Không đổi API lưu chỉ
+  định hay dữ liệu khảo sát.
+- Browser QA với chỉ định HADS thật: request detail mẫu trả `200`, dropdown
+  chỉ có HADS và `disabled=true`, console error/warn rỗng.
+
+### Survey Editor Default Performer Placement (2026-09-01)
+
+- Khối thông tin của editor mẫu khảo sát dùng grid responsive: tên mẫu ở bên
+  trái, `Người thực hiện mặc định` ở góc phải cùng hàng, mô tả trải toàn bộ
+  hàng dưới.
+- Overlay `#surveyCreateOverlay` và route tạo độc lập dùng cùng quy tắc CSS;
+  desktop giữ hai cột, mobile tự xếp một cột. Không đổi JavaScript, API,
+  payload hoặc lifecycle tải/lưu performer.
+- Browser QA với mẫu HADS: desktop dropdown nằm cùng hàng bên phải tên, chọn
+  performer hoạt động; mobile `390x844` xếp dọc, body/html không tràn ngang,
+  console error/warn rỗng. Cả overlay và route tạo độc lập đều đã kiểm.
+- Static QA: frontend contract, smoke health, full pytest và `git diff --check`
+  đều đạt.
+
+### Clinical Indication Source Badge Removal (2026-09-01)
+
+- Bảng `Trong lượt khám này` và `Lịch sử các lần trước` không còn hiển thị
+  badge `Nhập text`/`Khảo sát` cạnh tên chỉ định; tên chỉ định được giữ gọn,
+  dễ quét hơn.
+- `source`, `survey_template_id`, edit/restore và payload save vẫn giữ nguyên
+  ở runtime; chỉ bỏ presentation badge, không thay đổi phân biệt dữ liệu.
+- Đã dọn CSS badge nguồn và thêm contract/test để ngăn badge quay lại.
+
+### Unified Clinical Indication Input (2026-09-01)
+
+- Form Chỉ định dùng chung cho Doctor và Tâm lý gia đã bỏ selector `Loại chỉ
+  định` và hai radio `Nhập text`/`Khảo sát`; chỉ còn một input với gợi ý
+  `Tìm khảo sát hoặc nhập tên`.
+- Dropdown luôn tìm mẫu khảo sát. Chọn một mẫu sẽ gắn `survey_template_id` và
+  giữ gợi ý người thực hiện mặc định; nội dung không chọn mẫu được lưu dạng
+  `custom` chỉ với `order_name`. Backend và payload/lịch sử giữ nguyên;
+  source chỉ còn là dữ liệu nội bộ, không hiển thị badge trong bảng.
+- Đã bỏ branch source UI, config `allowedSources` và CSS picker cũ; lifecycle
+  clear/load/save vẫn do `indicationsForm` sở hữu duy nhất.
+- QA browser Doctor với ca thật: input không còn selector, mở dropdown có mẫu
+  khảo sát, tìm `ZUNG` trả đúng mẫu, chọn mẫu đóng dropdown, gõ text tự do
+  hiện trạng thái không có mẫu phù hợp nhưng vẫn giữ nội dung; không overflow
+  ở `1280x720`, console error/warn rỗng. Không bấm Lưu và không ghi dữ liệu.
+- Static QA: `node --check`, Doctor contract, frontend contract, smoke health,
+  workflow tests và ICD tests đều đạt.
+
+### Clinical Indication Catalog Removal (2026-08-31)
+
+- Chỉ định hiện chỉ còn hai nguồn `custom` (nhập text) và `survey` (chọn mẫu
+  khảo sát) ở cả Doctor và Tâm lý gia; không còn chọn từ danh mục.
+- Đã bỏ màn quản trị/API/model/frontend catalog và quyền `ql-danhmuc-chidinh`.
+- Migration `20260831_drop_order_catalog` archive dữ liệu trước khi drop
+  `order_categories`, `order_items`, `chi_dinh.order_item_id` và
+  `chi_dinh.group_path`; `20260831_drop_order_catalog_perm` dọn shortcut/quyền
+  cũ. Lịch sử `chi_dinh.order_name`, khảo sát và file kết quả vẫn giữ nguyên.
+- Workspace shell tự lọc route nghỉ `/order-catalog.html` khỏi tab đã lưu từ
+  phiên cũ; không để tab “Danh mục chỉ định” quay lại dù navigation config đã
+  bỏ mục này.
+- `supportModulesUi.getSaveReadiness()` kiểm tra cờ canonical `surveyLoaded`,
+  không còn phụ thuộc cờ `catalogLoaded` đã bị xóa; static Doctor contract đã
+  được cập nhật để giữ hai nguồn dữ liệu nhưng chỉ render một input và ngăn
+  runtime catalog.
+- Browser QA 2026-08-31: launcher và workspace tabs không còn Danh mục chỉ định;
+  Doctor/Tâm lý gia đều không còn control Catalog, còn phân biệt source chỉ
+  tồn tại trong payload/bảng truy vết;
+  console error/warn rỗng. Chưa mở được state populated/interactive của pane
+  Doctor/Tâm lý gia trong phiên này vì session hiện tại là Admin và queue theo
+  role không có ca; không tự đổi trạng thái hay tạo dữ liệu khám để test.
+- QA follow-up 2026-09-01: form Chỉ định dùng một input, pane giữ chiều cao
+  workspace và tự cuộn nội bộ khi mở Lịch sử, không tạo page overflow. Ca Bác
+  sĩ có lịch sử thật đã kiểm bằng browser; chưa test role Tâm lý gia vì phiên
+  đăng nhập chưa chuyển role.
+
+### ICD Search Pagination And Indexing (2026-08-31)
+
+- API `/api/icd/` giữ lọc/phân trang ở backend, bỏ `ORDER BY` khi `count()`,
+  kiểm tra `skip/limit` và giới hạn page tối đa 1.000 dòng.
+- Loader dùng chung có contract `loadICDPage`; autocomplete mặc định tải 100
+  dòng (trống 30), giữ metadata `pagination` và có nút `Tải thêm`. Contract
+  mảng `loadICDData` của các caller cũ vẫn ủy quyền từ loader, không cắt dữ liệu.
+- Thêm migration `20260831_icd_search` với functional trigram indexes cho mã/
+  tên ICD đã chuẩn hóa; local database đã nâng lên revision này.
+- Regression: Node kiểm tra URL/page/load-more, Python kiểm tra tham số phân
+  trang; API thật xác nhận trang 2 lấy được kết quả sau dòng 1.000.
+
+### Unified Search Normalization (2026-08-30)
+
+- Chuẩn hóa tìm kiếm dùng chung ở backend và frontend: không phân biệt hoa/
+  thường, bỏ dấu tiếng Việt, và quy đổi `đ/Đ` thành `d`. Backend dùng
+  `TRANSLATE + LOWER` qua `app/utils/search_normalization.py` để tương thích
+  PostgreSQL collation `C`; frontend dùng
+  `app/static/js/shared/search-normalization.js`.
+- Đã áp dụng cho global search, bệnh nhân/lịch hẹn, ICD, chỉ định, mẫu khảo
+  sát, danh mục thuốc/DAV, hoạt chất/dị nguyên, nhà cung cấp, giao dịch kho,
+  thanh toán, quản lý khám, địa chỉ và các bộ lọc/autocomplete cục bộ (menu
+  Ứng dụng, danh mục chỉ định, tương tác thuốc, chi tiêu, dịch vụ, địa chỉ,
+  Tiền sử dị nguyên).
+- Regression tests: `tests/test_search_normalization.py` và
+  `tests/search_normalization.test.js`.
+- QA: `scripts/check_frontend_contract.py`, `scripts/smoke_health.py`,
+  `PYTHONPATH=. pytest -q` (15 passed), Node syntax và `git diff --check` đạt.
+  Browser admin xác nhận `dat`/`Đạt` đồng nhất ở Global Search, Danh mục chỉ
+  định, Lịch hẹn, Tương tác thuốc và autocomplete địa chỉ; console không có
+  error/warn. Chi tiêu hiện không có dữ liệu và Tiền sử chưa có ca mở trong
+  phiên QA nên hai state populated đó chưa được xác nhận bằng mắt.
+
+### Doctor Medical History ICD Bootstrap Lifecycle (2026-08-30)
+
+- Sửa lỗi ô ICD trong Tiền sử không xổ dropdown: `medical-history-form.js`
+  không còn auto-init instance trước khi feature bridge đăng ký action; bridge
+  Doctor gọi `init()` sau khi ICD bridge đã gắn `setupICDMultiSelect`.
+- Giữ nguyên API, payload, CSS, macro và data owner. Hai mode `physHistory` và
+  `famHistory` giờ tạo đúng component autocomplete, gửi `/api/icd/?search=...`
+  và render option trong cùng lifecycle.
+- Thêm regression test `tests/medical_history_icd_bootstrap.test.js` mô phỏng
+  đúng thứ tự load để ngăn lỗi init sớm quay lại.
+- QA: Node syntax/test, ICD/frontend contract, smoke health, workflow pytest
+  và browser ca HS00267; gõ `f` trong Tiền sử hiển thị dropdown 532 option,
+  request ICD trả `200`, không có runtime exception.
+
+### Doctor Medical History ICD Single Frame (2026-08-30)
+
+- Biến thể `doctor_flat` của Tiền sử không còn vẽ card border quanh
+  `.medical-history-section`; section giữ header/divider, còn
+  `.icd-input-container` là frame duy nhất của control ICD.
+- Rule focus chung của Doctor loại trừ `[data-icd-autocomplete-input]`; trạng
+  thái keyboard focus của ICD chỉ hiển thị qua `:focus-within` trên container,
+  không còn outline xanh lồng bên trong.
+- Không đổi macro Jinja, ID, API, payload, state, clear/load hoặc logic
+  autocomplete. Input ICD vẫn là child borderless của container.
+- Static contract, smoke health, full pytest, keyboard-focus cascade test và
+  browser console smoke trên `qlpk_pro:8000` đạt. Computed style xác nhận
+  section không còn full frame, input không còn outline, container còn một
+  border/focus ring. Chưa có ca khám trong phiên browser hiện tại nên chưa
+  pass visual/interactive QA với state populated/focus thật.
+
+### Survey Indication Performer (2026-08-28; source selector superseded 2026-09-01)
+
+- Mẫu khảo sát có thêm `default_performer_id` (FK tới `users`) và
+  `default_performer_name` trong serializer/API. Màn quản lý mẫu khảo sát cho
+  phép chọn người thực hiện mặc định khi tạo, sửa hoặc tải file; danh sách
+  người khám được tải từ `/users/doctors`.
+- Component Chỉ định dùng chung trước đây giữ selector nguồn; từ 2026-09-01
+  selector đã bỏ và form dùng một input. Khi chọn mẫu khảo sát, component tự
+  chọn performer mặc định nếu mẫu đã cấu hình; người dùng vẫn đổi được trước
+  khi thêm/lưu. Text không chọn mẫu vẫn là `custom`.
+- Browser QA lịch sử với tài khoản Tâm lý gia `duongnguyen` trên ca Võ Vương
+  Cao Sáng: thêm draft Nhập text và Khảo sát, đổi performer, badge/bảng và
+  reset form đều đúng; không bấm Lưu, không ghi dữ liệu thật. Bác sĩ
+  `hienngvo` trên ca Ngô Hiển Đạt từng hiển thị đủ các nguồn trước khi selector
+  được rút gọn. Màn quản lý mẫu hiển thị cột performer và hai form tạo/upload
+  đều tải đủ danh sách người khám. Console error/warn rỗng.
+- Môi trường hiện có 15 mẫu khảo sát nhưng cả 15 đều `default_performer_id =
+  NULL`, nên chưa thể xác nhận bằng mắt state tự điền tên trong một mẫu đã cấu
+  hình. Đây là việc cấu hình dữ liệu quản trị còn lại; không tự gán người vào
+  mẫu hiện hữu trong QA.
+- Static QA: `pytest -q tests/test_workflow_contracts.py` (11 passed), Node/
+  Python syntax, frontend/Doctor contract, HTTP smoke, Alembic strict và API
+  auth đều đạt. `check_schema_contract.py` còn báo 4 bảng legacy vật lý
+  (`examination_diagnosis`, `examination_prescriptions`,
+  `examination_records`, `medical_records`) ngoài metadata; không xóa trong
+  lát tính năng này.
+
+### Survey Editor Full-Width Overlay (2026-08-28)
+
+- `#surveyCreateOverlay` trong màn quản lý mẫu khảo sát không còn chừa
+  `16.666667%` cho cột danh sách; overlay editor phủ toàn bộ chiều rộng màn
+  hình ở desktop và mobile.
+- Giữ nguyên parent/child layout: overlay cố định theo viewport, còn
+  `.sc-content` là owner scroll dọc của nội dung câu hỏi; không đổi field,
+  API, save lifecycle hoặc dữ liệu mẫu.
+- Browser QA trạng thái chỉnh sửa mẫu ZAI: overlay chạm `x=0` và mép phải,
+  desktop `1280x720` và mobile `390x844` không có horizontal overflow; nội
+  dung dài scroll trong `.sc-content`, tiêu đề/tabs/form vẫn hiển thị, console
+  error/warn rỗng. Static frontend/smoke và `git diff --check` đạt.
 
 ### Source Cleanup And Runtime Map (2026-08-23)
 
@@ -159,14 +353,15 @@ Last updated: 2026-08-23.
   hiện autosave của field thử nghiệm, cần dọn dữ liệu thử trước khi chốt pass
   workflow save/load.
 
-### Psychologist Indications Shared Stylesheet (2026-08-21)
+### Psychologist Indications Shared Stylesheet (2026-08-21; unified input 2026-09-01)
 
 - Tâm lý gia đã nạp `pages/doctor-indications.css`, đúng owner presentation
   của component Chỉ định dùng chung; không tạo CSS/logic riêng theo role.
 - Browser QA ca thật đã kiểm Hành chính, Tiền sử, Khám, Dịch vụ và Chỉ định;
-  mobile `390x844` không tràn trang, form Chỉ định tách hàng rõ, ba nguồn
-  Danh mục/Nhập text/Khảo sát và lịch sử hoạt động, đổi ca không giữ dữ liệu
-  ca trước. Desktop `1280px` khớp wrapper; console error/warn rỗng.
+  mobile `390x844` không tràn trang, form Chỉ định tách hàng rõ, và lịch sử
+  hoạt động, đổi ca không giữ dữ liệu ca trước. Từ 2026-09-01, form chỉ còn
+  một input tìm khảo sát/nhập text; desktop `1280px` khớp wrapper, console
+  error/warn rỗng.
 
 ### Psychologist–Doctor Visual Reconciliation (2026-08-21)
 
@@ -201,14 +396,13 @@ Last updated: 2026-08-23.
   động, không overflow trang. Static frontend/Doctor/smoke HTTP và diff check
   đạt.
 
-### Doctor Indications Three Sources (2026-08-20)
+### Doctor Indications Three Sources (2026-08-20; superseded by unified input 2026-09-01)
 
-- Màn Bác sĩ Chỉ định có một form duy nhất với ba nguồn: `Danh mục` chọn từ
-  `order_items`, `Nhập text` lưu tên tự do, và `Khảo sát` chọn từ
-  `/api/survey-templates-for-orders`. Danh mục/khảo sát bắt buộc chọn đúng
-  item/template; nhập text không tạo ID catalog/survey. Bảng hiện badge nguồn,
-  edit/clear vẫn nạp lại đúng nguồn, và global Doctor `Lưu` vẫn là writer duy
-  nhất.
+- Lát lịch sử này từng có ba nguồn. Sau khi catalog bị loại, selector nguồn
+  được rút gọn thành một input: dropdown chọn mẫu từ
+  `/api/survey-templates-for-orders`, còn text không chọn mẫu không tạo ID
+  survey. Bảng vẫn giữ badge nguồn, edit/clear nạp lại đúng nguồn, và global
+  Doctor `Lưu` vẫn là writer duy nhất.
 - Giữ nguyên `chi_dinh` schema/API; `order_name` được giới hạn 255 ký tự ở
   HTML và validation JS trước khi đưa vào state/payload.
 - Static QA: Node syntax, Doctor contract, frontend contract, smoke health,
@@ -567,6 +761,24 @@ Last updated: 2026-08-23.
   modal, tải đúng lịch sử, chọn dòng được, đổi bệnh nhân không giữ dữ liệu cũ,
   console không có warning/error ở viewport mặc định. In-app Browser không có
   capability đổi viewport nên chưa xác nhận responsive mobile riêng.
+
+### Doctor Global Search History Action Bridge (2026-08-30)
+
+- Doctor `patient-history-bridge.js` đăng ký `window.QLPKGlobalSearchActions` cho
+  hai action từ header: `open_appointment` chọn trực tiếp lượt nếu appointment
+  đang có trong queue; lượt lịch sử ngoài queue mở singleton modal lịch sử theo
+  `patient_id`. Không đổi API, payload, URL action hoặc modal markup.
+- `doctor-examination.js` truyền queue getter và `selectPatientCard` vào bridge;
+  test Node kiểm đủ nhánh appointment trong queue, appointment lịch sử và
+  action không hỗ trợ.
+- Browser QA tại `/doctor-examination.html` với danh sách lịch sử có dữ liệu:
+  bấm `Xem lịch sử` từ `qlpk-app-header__global-search-actions` mở đúng modal
+  ngay trên Doctor, không đổi URL và console error/warning bằng `0`. Queue
+  runtime lúc kiểm tra rỗng nên nhánh chọn appointment đang nằm trong queue
+  chưa được browser-test với ca thật; đã được kiểm bằng test bridge.
+- Static QA: `node --check` hai file Doctor, `node tests/doctor_patient_history_bridge.test.js`,
+  `pytest -q tests/test_workflow_contracts.py`, các Doctor/modal/frontend
+  contracts và `smoke_health.py` đều đạt.
 
 ### Doctor Prescription History Visibility (2026-08-10)
 
@@ -2133,3 +2345,19 @@ details remain in the three Doctor workflow references.
 - Static QA lát này: `node --check`, bridge lifecycle test, Patient History
   Modal contract và `pytest -q tests` đều đạt (`10 passed`). Browser QA Doctor
   sau lát tách này còn phải chạy lại với ca thật trước khi kết luận hoàn tất.
+
+## Clinical Indication Integrity Slice - 2026-09-01
+
+- Khóa scope theo appointment cho detail/update/delete/batch và file result;
+  survey session nội bộ cũng kiểm tra từ `examination_id` về appointment.
+- Đưa validation payload và pagination vào backend owner: status/location hợp
+  lệ, tên/người thực hiện/ngày/cờ hoàn thành đúng kiểu, ID không được trỏ sang
+  lượt khám khác; page lỗi trả `400`, không làm thay đổi dữ liệu.
+- Giữ `ChiDinh.survey_template_id` làm nguồn template chuẩn: chỉ định nhập
+  text không mở luồng survey, tab Khảo sát tự chọn và khóa đúng mẫu đã gắn;
+  link chỉ tạo khi template active và thuộc lượt khám.
+- File result mới được giới hạn PDF/JPG/PNG/DOC/DOCX, tối đa 25MB và đường dẫn
+  lưu trữ an toàn; timeline custom không còn hiển thị các bước khảo sát giả.
+- QA: `pytest -q` đạt 35 test, syntax/frontend/Doctor/auth/Alembic/smoke đạt;
+  HTTP 401/403/400 và browser Doctor/Quản lý chỉ định đã kiểm tra, console
+  warning/error rỗng. Không để lại session khảo sát test trong database.

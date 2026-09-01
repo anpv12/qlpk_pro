@@ -549,10 +549,26 @@
   overflow-y: auto;
 }
 .medicine-management-page .mm-sticky-head {
+  background: #f7fafd;
+}
+.medicine-management-page .mm-sticky-head th {
   position: sticky;
   top: 0;
   background: #f7fafd;
-  z-index: 10;
+  box-shadow: 0 8px 0 #f7fafd, inset 0 -1px 0 #dce5ef;
+  z-index: 100;
+  transform: translateZ(0);
+  isolation: isolate;
+}
+.medicine-management-page .mm-sticky-head th::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background: #f7fafd;
+  z-index: -1;
 }
 .medicine-management-page .mm-dialog-800 {
   max-width: 800px;

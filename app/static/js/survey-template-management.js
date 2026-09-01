@@ -7,7 +7,8 @@ class SurveyTemplateManager {
 			perPage: 10,
 			searchTerm: '',
 			totalItems: 0,
-			templates: []
+			templates: [],
+			performers: []
 		};
 		this.currentTemplateId = null;
 		this.init();
@@ -21,6 +22,7 @@ class SurveyTemplateManager {
 
 		this.bindEvents();
 		this.registerRealtimeHooks();
+		this.loadPerformers();
 		this.loadTemplates();
 	}
 
@@ -30,6 +32,38 @@ class SurveyTemplateManager {
 
 	getToken() {
 		return localStorage.getItem('qlpk_token') || localStorage.getItem('access_token') || '';
+	}
+
+	getAuthHeaders(extra = {}) {
+		const token = this.getToken();
+		return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+	}
+
+	async loadPerformers() {
+		try {
+			const response = await fetch('/users/doctors', {
+				headers: this.getAuthHeaders()
+			});
+			if (!response.ok) return;
+			const data = await response.json();
+			this.state.performers = Array.isArray(data) ? data : [];
+			this.renderPerformerOptions($('#uploadPerformer')[0]);
+		} catch (_) {
+			this.state.performers = [];
+		}
+	}
+
+	renderPerformerOptions(select) {
+		if (!select) return;
+		const currentValue = select.value;
+		select.innerHTML = '<option value="">Chưa gán (chọn sau khi chỉ định)</option>' + this.state.performers.map(user => {
+			const id = Number(user.id || user.user_id);
+			const name = String(user.full_name || user.name || user.username || '').trim();
+			return id && name ? `<option value="${id}">${this.escapeHtml(name)}</option>` : '';
+		}).join('');
+		if (currentValue && Array.from(select.options).some(option => option.value === String(currentValue))) {
+			select.value = String(currentValue);
+		}
 	}
 
 
@@ -176,7 +210,7 @@ class SurveyTemplateManager {
 		if (!templates.length) {
 			tbody.html(`
                 <tr>
-                    <td colspan="6" class="text-center py-5">
+					<td colspan="7" class="text-center py-5">
                         <div class="stm-empty">
                             <i class="bi bi-clipboard2-check"></i>
                             <p>Chưa có mẫu khảo sát nào được tạo</p>
@@ -201,7 +235,7 @@ class SurveyTemplateManager {
 		for (let i = 0; i < emptyRowsCount; i++) {
 			tbody.append(`
                 <tr class="empty-row stm-empty-row">
-                    <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td>
+	                    <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>
                 </tr>
             `);
 		}
@@ -213,6 +247,7 @@ class SurveyTemplateManager {
 		const nameAttr = this.escapeAttr(template.name || 'Không tên');
 		const fileName = this.escapeHtml(template.file_name || '');
 		const description = this.escapeHtml(template.description || 'Không có mô tả');
+		const performer = this.escapeHtml(template.default_performer_name || 'Chưa gán');
 		const createdDate = this.formatDate(template.created_at);
 		const isPublic = template.is_public !== false;
 		const statusBadge = isPublic
@@ -226,8 +261,9 @@ class SurveyTemplateManager {
                     <strong>${this.highlightSearch(name)}</strong>
                     ${fileName ? `<br><small class="text-muted"><i class="bi bi-file-earmark"></i> ${fileName}</small>` : ''}
                 </td>
-                <td><span class="stm-desc-cell">${this.highlightSearch(description)}</span></td>
-                <td>${createdDate}</td>
+	                <td><span class="stm-desc-cell">${this.highlightSearch(description)}</span></td>
+	                <td>${performer}</td>
+	                <td>${createdDate}</td>
                 <td class="stm-table-center-cell">${statusBadge}</td>
                 <td class="stm-table-center-cell">
                     <div class="stm-row-actions">
@@ -355,6 +391,7 @@ class SurveyTemplateManager {
 		const formData = new FormData();
 		formData.append('name', name);
 		formData.append('description', description);
+		formData.append('default_performer_id', $('#uploadPerformer').val() || '');
 		formData.append('file', file);
 		return formData;
 	}

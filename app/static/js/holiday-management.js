@@ -1,5 +1,10 @@
 		let holidays = [];
 
+		function normalizeSearchText(value) {
+			return window.QLPKSearchNormalization?.normalizeSearchText(value)
+				|| String(value || '').toLowerCase().trim();
+		}
+
 		// Toast function
 		function showToast(type, message) {
 			return window.QLPKUserFeedback?.show(type, message);
@@ -209,10 +214,10 @@
 
 		// Tìm kiếm
 		$('#searchInput').on('input', function () {
-			const searchTerm = $(this).val().toLowerCase();
+			const searchTerm = normalizeSearchText($(this).val());
 			const filtered = holidays.filter(holiday =>
-				holiday.name.toLowerCase().includes(searchTerm) ||
-				(holiday.description && holiday.description.toLowerCase().includes(searchTerm))
+				normalizeSearchText(holiday.name).includes(searchTerm) ||
+				(holiday.description && normalizeSearchText(holiday.description).includes(searchTerm))
 			);
 			renderHolidays(filtered);
 		});

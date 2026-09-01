@@ -3,6 +3,7 @@ from app.core.database import get_db
 from app.models.atc_code import ATCCode
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,8 @@ def get_atc_codes(user):
         # Apply search filter
         if search:
             query = query.filter(
-                ATCCode.code.ilike(f'%{search}%') |
-                ATCCode.name.ilike(f'%{search}%')
+                normalized_contains(ATCCode.code, search) |
+                normalized_contains(ATCCode.name, search)
             )
         
         # Order by code

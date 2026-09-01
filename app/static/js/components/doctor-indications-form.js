@@ -12,10 +12,8 @@
 
 	const DEFAULT_DOM = {
 		root: 'doctorIndicationsPanel',
-		catalog: 'doctorIndicationCatalog',
-		catalogId: 'doctorIndicationCatalogId',
-		catalogDropdown: 'doctorIndicationCatalogDropdown',
-		sourceFieldset: 'doctorIndicationSourceFieldset',
+		name: 'doctorIndicationName',
+		nameDropdown: 'doctorIndicationNameDropdown',
 		locationFieldset: 'doctorIndicationLocationFieldset',
 		performerGroup: 'doctorIndicationPerformerGroup',
 		performer: 'doctorIndicationPerformer',
@@ -35,12 +33,12 @@
 
 	const DEFAULT_ENDPOINTS = {
 		appointment: ({ appointmentId }) => `/api/chi-dinh/appointment/${appointmentId}`,
-		catalog: '/api/order-items?include_inactive=true',
 		surveyTemplates: '/api/survey-templates-for-orders',
 		performers: '/users/doctors',
 		history: ({ patientId, appointmentId }) => `/api/chi-dinh/patient/${patientId}?exclude_appointment_id=${appointmentId || ''}`
 	};
 	const MAX_ORDER_NAME_LENGTH = 255;
+	const VALID_SOURCES = Object.freeze(['custom', 'survey']);
 
 	const DEFAULT_CONFIG = {
 		rootId: DEFAULT_DOM.root,
@@ -83,21 +81,15 @@
 			appointmentId: null,
 			patientId: null,
 			defaultDate: '',
-			source: 'catalog',
 			isLoading: null,
 			rows: [],
-			catalog: [],
-			catalogIndex: new Map(),
-			selectedCatalog: null,
 			surveyTemplates: [],
 			surveyIndex: new Map(),
 			selectedSurvey: null,
 			surveyLoaded: false,
 			autocomplete: null,
-			syncCatalogDropdownGeometry: null,
 			performers: [],
 			performersLoaded: false,
-			catalogLoaded: false,
 			ordersLoaded: false,
 			ordersDirty: false,
 			ordersRevision: 0,
@@ -138,20 +130,13 @@
 		}
 
 		function normalizeSource(value) {
-			return ['catalog', 'custom', 'survey'].includes(String(value || '').toLowerCase())
-				? String(value).toLowerCase()
-				: 'catalog';
+			const source = String(value || '').toLowerCase();
+			return VALID_SOURCES.includes(source) ? source : 'custom';
 		}
 
 		function sourceForRow(row = {}) {
 			if (normalizeId(row.survey_template_id)) return 'survey';
-			if (normalizeId(row.order_id || row.order_item_id)) return 'catalog';
 			return 'custom';
-		}
-
-		function getSelectedSource(doc) {
-			const selected = doc.querySelector('input[name="doctorIndicationSource"]:checked');
-			return normalizeSource(selected?.value || STATE.source);
 		}
 
 		function buildSurveyIndex(items = []) {
@@ -184,40 +169,9 @@
 				: (row.out_facility || '');
 		}
 
-		function getSourceConfig(row = {}) {
-			const source = normalizeSource(row.source || sourceForRow(row));
-			if (source === 'survey') return { label: 'Khảo sát', className: 'doctor-indications-source-badge--survey' };
-			if (source === 'custom') return { label: 'Nhập text', className: 'doctor-indications-source-badge--custom' };
-			return { label: 'Danh mục', className: 'doctor-indications-source-badge--catalog' };
-		}
-
-		function renderSourceBadge(row) {
-			const config = getSourceConfig(row);
-			return `<span class="doctor-indications-source-badge ${config.className}">${config.label}</span>`;
-		}
-
-		function buildCatalogIndex(items = []) {
-			const index = new Map();
-			items.forEach(item => {
-				const id = normalizeId(item.id);
-				const name = textOf(item.name);
-				if (!id || !name || item.is_active === false) return;
-				index.set(Number(id), {
-					...item,
-					id: Number(id),
-					name,
-					breadcrumb: textOf(item.group_path || item.category_name)
-				});
-			});
-			return index;
-		}
-
-		function clearCatalogSelection(doc, options = {}) {
-			STATE.selectedCatalog = null;
+		function clearNameSelection(doc, options = {}) {
 			STATE.selectedSurvey = null;
-			const input = el(doc, 'catalog');
-			const hidden = el(doc, 'catalogId');
-			if (hidden) hidden.value = '';
+			const input = el(doc, 'name');
 			if (input) {
 				if (options.clearText !== false) input.value = '';
 				input.removeAttribute('aria-invalid');
@@ -229,67 +183,29 @@
 			const id = normalizeId(item.id || item.survey_template_id);
 			const name = textOf(item.name || item.order_name);
 			if (!id || !name) {
-				clearCatalogSelection(doc);
+				clearNameSelection(doc);
 				return false;
 			}
-			STATE.selectedCatalog = null;
 			STATE.selectedSurvey = { ...item, id: Number(id), name };
-			const input = el(doc, 'catalog');
-			const hidden = el(doc, 'catalogId');
-			if (hidden) hidden.value = '';
+			const input = el(doc, 'name');
 			if (input) {
 				input.value = name;
 				input.removeAttribute('aria-invalid');
 			}
+			const performer = el(doc, 'performer');
+			const defaultPerformerId = normalizeId(item.default_performer_id);
+			if (performer) {
+				const matchingOption = defaultPerformerId
+					? Array.from(performer.options || []).find(option => String(option.value) === String(defaultPerformerId))
+					: null;
+				performer.value = matchingOption ? String(defaultPerformerId) : '';
+			}
 			return true;
 		}
 
-		function setSource(doc, source, options = {}) {
-			const nextSource = normalizeSource(source);
-			STATE.source = nextSource;
-			const input = el(doc, 'catalog');
-			const hidden = el(doc, 'catalogId');
-			const selectedControls = doc.querySelectorAll('input[name="doctorIndicationSource"]');
-			selectedControls.forEach(control => {
-				control.checked = control.value === nextSource;
-			});
-			STATE.selectedCatalog = null;
-			STATE.selectedSurvey = null;
-			if (hidden) hidden.value = '';
-			if (input) {
-				if (!options.preserveText) input.value = '';
-				input.removeAttribute('aria-invalid');
-			}
-			if (STATE.autocomplete?.hide) STATE.autocomplete.hide();
-			renderCatalog(doc);
-		}
-
-		function setCatalogSelection(doc, item = {}) {
-			const id = normalizeId(item.id || item.order_id || item.order_item_id);
-			const name = textOf(item.name || item.order_name);
-			if (!id || !name) {
-				clearCatalogSelection(doc);
-				return false;
-			}
-			STATE.selectedCatalog = {
-				id,
-				name,
-				group_path: textOf(item.group_path || item.breadcrumb || item.category_name)
-			};
-			STATE.selectedSurvey = null;
-			const input = el(doc, 'catalog');
-			const hidden = el(doc, 'catalogId');
-			if (input) {
-				input.value = name;
-				input.removeAttribute('aria-invalid');
-			}
-			if (hidden) hidden.value = String(id);
-			return true;
-		}
-
-		function syncCatalogDropdownGeometry(doc) {
-			const input = el(doc, 'catalog');
-			const dropdown = STATE.autocomplete?.dropdown || el(doc, 'catalogDropdown');
+		function syncNameDropdownGeometry(doc) {
+			const input = el(doc, 'name');
+			const dropdown = STATE.autocomplete?.dropdown || el(doc, 'nameDropdown');
 			if (!input || !dropdown) return;
 			const ownerDocument = input.ownerDocument;
 			const view = ownerDocument && ownerDocument.defaultView;
@@ -318,8 +234,8 @@
 			);
 		}
 
-		function bindCatalogDropdownGeometry(doc, input, dropdown) {
-			const sync = () => syncCatalogDropdownGeometry(doc);
+		function bindNameDropdownGeometry(doc, input, dropdown) {
+			const sync = () => syncNameDropdownGeometry(doc);
 			const syncIfOpen = () => {
 				if (dropdown.classList.contains('is-open')) sync();
 			};
@@ -338,35 +254,25 @@
 			return sync;
 		}
 
-		function setupCatalogAutocomplete(doc) {
+		function setupNameAutocomplete(doc) {
 			if (STATE.autocomplete) return true;
 			if (typeof AUTOCOMPLETE_UTILS.setupOrderFormAutocomplete !== 'function') return false;
-			const input = el(doc, 'catalog');
-			const dropdown = el(doc, 'catalogDropdown');
+			const input = el(doc, 'name');
+			const dropdown = el(doc, 'nameDropdown');
 			if (!input || !dropdown) return false;
 
 			STATE.autocomplete = AUTOCOMPLETE_UTILS.setupOrderFormAutocomplete({
 				document: doc,
 				nameInput: input,
 				dropdown,
-				getOrderIndex: () => STATE.source === 'catalog' ? STATE.catalogIndex : new Map(),
-				getSurveyTemplates: () => STATE.source === 'survey' ? STATE.surveyTemplates : [],
-				isEnabled: () => STATE.source !== 'custom',
-				includeCatalogWhenEmpty: true,
-				emptyCatalogLimit: 30,
+				getSurveyTemplates: () => STATE.surveyTemplates,
+				isEnabled: () => Boolean(STATE.appointmentId && STATE.ordersLoaded && STATE.surveyLoaded && !STATE.saving),
 				normalizeSearch: true,
-				includeMetadataSearch: true,
 				selectFirstOnEnter: true,
 				showSurveyDescription: false,
-				emptyText: 'Không tìm thấy chỉ định phù hợp.',
+				emptyText: 'Không có mẫu khảo sát phù hợp; bạn vẫn có thể nhập tên tự do.',
 				escapeHtml,
-				onInput: () => clearCatalogSelection(doc, { clearText: false, hide: false }),
-				onOrderSelect: (orderId, context) => {
-					const item = STATE.catalogIndex.get(Number(orderId));
-					if (!item || !setCatalogSelection(doc, item)) return;
-					context.hide();
-					setMessage(doc);
-				},
+				onInput: () => clearNameSelection(doc, { clearText: false, hide: false }),
 				onSurveySelect: (surveyId, context) => {
 					const item = STATE.surveyIndex.get(Number(surveyId));
 					if (!item || !setSurveySelection(doc, item)) return;
@@ -374,7 +280,7 @@
 					setMessage(doc);
 				}
 			});
-			STATE.syncCatalogDropdownGeometry = bindCatalogDropdownGeometry(doc, input, dropdown);
+			STATE.syncNameDropdownGeometry = bindNameDropdownGeometry(doc, input, dropdown);
 			return Boolean(STATE.autocomplete);
 		}
 
@@ -395,13 +301,11 @@
 
 		function normalizeRow(item = {}) {
 			const id = normalizeId(item.id);
-			const orderId = normalizeId(item.order_id || item.order_item_id);
 			const tempId = item.tempId || id || `ind-${STATE.rows.length + 1}`;
 			return {
 				uid: item.uid || String(tempId),
 				id,
 				tempId,
-				order_id: orderId,
 				source: normalizeSource(item.source || sourceForRow(item)),
 				order_name: textOf(item.order_name || item.name),
 				location_type: normalizeLocation(item.location_type),
@@ -411,7 +315,6 @@
 				scheduled_for: textOf(item.scheduled_for),
 				status: item.status || 'sent',
 				is_completed: Boolean(item.is_completed),
-				group_path: textOf(item.group_path),
 				survey_template_id: normalizeId(item.survey_template_id)
 			};
 		}
@@ -430,7 +333,6 @@
 			}
 			return STATE.rows.map(row => ({
 				id: row.id || undefined,
-				order_id: row.order_id,
 				survey_template_id: row.survey_template_id || null,
 				order_name: row.order_name,
 				location_type: row.location_type,
@@ -440,7 +342,6 @@
 				scheduled_for: row.scheduled_for,
 				status: row.status,
 				is_completed: row.is_completed,
-				group_path: row.group_path || ''
 			}));
 		}
 
@@ -456,16 +357,14 @@
 			const ready = Boolean(
 				STATE.appointmentId
 				&& STATE.ordersLoaded
-				&& STATE.catalogLoaded
+				&& STATE.surveyLoaded
 				&& STATE.performersLoaded
 				&& !STATE.saving
 			);
-			['catalog', 'performer', 'outFacility', 'date', 'submit'].forEach(name => {
+			['name', 'performer', 'outFacility', 'date', 'submit'].forEach(name => {
 				const control = el(doc, name);
 				if (control) control.disabled = !ready;
 			});
-			const sourceFieldset = el(doc, 'sourceFieldset');
-			if (sourceFieldset) sourceFieldset.disabled = !ready;
 			const fieldset = el(doc, 'locationFieldset');
 			if (fieldset) fieldset.disabled = !ready;
 			const historyToggle = el(doc, 'historyToggle');
@@ -488,17 +387,12 @@
 			if (outFacility) outFacility.required = location === 'out';
 		}
 
-		function renderCatalog(doc) {
-			const input = el(doc, 'catalog');
+		function renderNameField(doc) {
+			const input = el(doc, 'name');
 			if (!input) return;
 			if (!STATE.appointmentId) input.placeholder = 'Chưa chọn lượt khám';
-			else if (STATE.source === 'custom') input.placeholder = 'Nhập tên chỉ định';
-			else if (STATE.source === 'survey' && !STATE.surveyLoaded) input.placeholder = 'Đang tải mẫu khảo sát...';
-			else if (STATE.source === 'survey' && STATE.surveyIndex.size === 0) input.placeholder = 'Chưa có mẫu khảo sát';
-			else if (STATE.source === 'catalog' && !STATE.catalogLoaded) input.placeholder = 'Đang tải danh mục chỉ định...';
-			else if (STATE.source === 'catalog' && STATE.catalogIndex.size === 0) input.placeholder = 'Chưa có danh mục chỉ định';
-			else if (STATE.source === 'survey') input.placeholder = 'Tìm tên mẫu khảo sát';
-			else input.placeholder = 'Tìm tên chỉ định';
+			else if (!STATE.surveyLoaded) input.placeholder = 'Đang tải mẫu khảo sát...';
+			else input.placeholder = 'Tìm khảo sát hoặc nhập tên';
 		}
 
 		function renderPerformers(doc) {
@@ -526,10 +420,9 @@
 				const status = getStatusConfig(row.status);
 				const locked = row.location_type === 'in' && row.status === 'completed';
 				const performer = getPerformerName(row) || '—';
-				const group = row.group_path ? `<small class="doctor-indications-table__group">${escapeHtml(row.group_path)}</small>` : '';
 				return `<tr data-doctor-indication-row="${escapeAttr(row.tempId)}">
 					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong> ${renderSourceBadge(row)}${group}</td>
+					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong></td>
 					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
 					<td>${formatDate(row.scheduled_for)}</td>
 					<td><span class="doctor-indications-status ${escapeAttr(status.className || '')}">${escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
@@ -557,7 +450,7 @@
 				const performer = getPerformerName(row) || '—';
 				return `<tr>
 					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong> ${renderSourceBadge(row)}${row.group_path ? `<small class="doctor-indications-table__group">${escapeHtml(row.group_path)}</small>` : ''}</td>
+					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong></td>
 					<td>${escapeHtml(appointment.appointment_code || `Lượt khám #${row.appointment_id || '—'}`)}</td>
 					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
 					<td>${formatDate(appointment.appointment_date || row.scheduled_for)}</td>
@@ -568,7 +461,7 @@
 
 		function render(doc) {
 			if (!el(doc, 'root')) return false;
-			renderCatalog(doc);
+			renderNameField(doc);
 			renderPerformers(doc);
 			renderCurrentRows(doc);
 			renderHistory(doc);
@@ -589,8 +482,7 @@
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
 			const inLocation = doc.getElementById('doctorIndicationLocationIn');
-			setSource(doc, 'catalog');
-			clearCatalogSelection(doc);
+			clearNameSelection(doc);
 			if (performer) performer.value = '';
 			if (outFacility) outFacility.value = '';
 			if (date) date.value = STATE.defaultDate || '';
@@ -609,17 +501,15 @@
 				showToast('warning', 'Không thể sửa chỉ định đã hoàn thành trong cơ sở.');
 				return false;
 			}
-			const catalog = el(doc, 'catalog');
+			const nameInput = el(doc, 'name');
 			const performer = el(doc, 'performer');
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
-			const catalogItem = STATE.catalog.find(item => String(item.id) === String(row.order_id));
-			const source = normalizeSource(row.source || sourceForRow(row));
-			setSource(doc, source, { preserveText: true });
-			if (source === 'catalog') setCatalogSelection(doc, catalogItem || row);
-			else if (source === 'survey') setSurveySelection(doc, STATE.surveyIndex.get(Number(row.survey_template_id)) || row);
+			const source = sourceForRow(row);
+			clearNameSelection(doc);
+			if (source === 'survey') setSurveySelection(doc, STATE.surveyIndex.get(Number(row.survey_template_id)) || row);
 			else {
-				const input = el(doc, 'catalog');
+				const input = el(doc, 'name');
 				if (input) input.value = row.order_name || '';
 			}
 			if (performer) performer.value = row.in_house_unit_id ? String(row.in_house_unit_id) : '';
@@ -635,49 +525,37 @@
 			const cancel = el(doc, 'cancelEdit');
 			if (cancel) cancel.hidden = false;
 			updateLocationFields(doc);
-			if (catalog) catalog.focus();
+			if (nameInput) nameInput.focus();
 			return true;
 		}
 
 		function readForm(doc) {
-			const catalog = el(doc, 'catalog');
-			const catalogId = el(doc, 'catalogId');
+			const nameInput = el(doc, 'name');
 			const performer = el(doc, 'performer');
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
 			const selectedLocation = doc.querySelector('input[name="doctorIndicationLocation"]:checked');
 			const locationType = normalizeLocation(selectedLocation && selectedLocation.value);
-			const source = getSelectedSource(doc);
-			const selectedCatalog = STATE.selectedCatalog;
 			const selectedSurvey = STATE.selectedSurvey;
-			const orderId = normalizeId(catalogId && catalogId.value);
-			const typedName = textOf(catalog && catalog.value);
-			const orderName = source === 'catalog'
-				? textOf(selectedCatalog && selectedCatalog.name)
-				: source === 'survey'
-					? textOf(selectedSurvey && selectedSurvey.name)
-					: typedName;
-			const surveyTemplateId = source === 'survey' ? normalizeId(selectedSurvey && selectedSurvey.id) : null;
+			const typedName = textOf(nameInput && nameInput.value);
+			const selectedSurveyId = normalizeId(selectedSurvey && selectedSurvey.id);
+			const selectedSurveyName = textOf(selectedSurvey && selectedSurvey.name);
+			const hasSelectedSurvey = Boolean(selectedSurveyId && selectedSurveyName && typedName === selectedSurveyName);
+			const source = hasSelectedSurvey ? 'survey' : 'custom';
+			const orderName = typedName;
+			const surveyTemplateId = hasSelectedSurvey ? selectedSurveyId : null;
 			if (orderName.length > MAX_ORDER_NAME_LENGTH) {
-				if (catalog) catalog.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: `Tên chỉ định tối đa ${MAX_ORDER_NAME_LENGTH} ký tự.`, focus: catalog };
+				if (nameInput) nameInput.setAttribute('aria-invalid', 'true');
+				return { valid: false, message: `Tên chỉ định tối đa ${MAX_ORDER_NAME_LENGTH} ký tự.`, focus: nameInput };
 			}
 			const scheduledFor = textOf(date && date.value);
 			const outFacilityName = textOf(outFacility && outFacility.value);
 			const performerId = normalizeId(performer && performer.value);
 			const performerOption = performer && performer.selectedOptions ? performer.selectedOptions[0] : null;
 			const performerName = textOf(performerOption && (performerOption.dataset.userName || performerOption.textContent));
-			if (source === 'catalog' && (!orderId || !orderName || String(orderId) !== String(selectedCatalog?.id) || typedName !== orderName)) {
-				if (catalog) catalog.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: 'Chọn một chỉ định từ danh mục.', focus: catalog };
-			}
-			if (source === 'survey' && (!surveyTemplateId || !orderName || typedName !== orderName)) {
-				if (catalog) catalog.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: 'Chọn một mẫu khảo sát.', focus: catalog };
-			}
-			if (source === 'custom' && !typedName) {
-				if (catalog) catalog.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: 'Nhập tên chỉ định.', focus: catalog };
+			if (!typedName) {
+				if (nameInput) nameInput.setAttribute('aria-invalid', 'true');
+				return { valid: false, message: 'Nhập tên chỉ định hoặc chọn một mẫu khảo sát.', focus: nameInput };
 			}
 			if (!scheduledFor) return { valid: false, message: 'Chọn ngày chỉ định.', focus: date };
 			if (locationType === 'in' && !performerId) return { valid: false, message: 'Chọn người thực hiện trong cơ sở.', focus: performer };
@@ -685,7 +563,6 @@
 			return {
 				valid: true,
 				data: {
-					order_id: source === 'catalog' ? orderId : null,
 					survey_template_id: surveyTemplateId,
 					order_name: orderName,
 					location_type: locationType,
@@ -693,9 +570,6 @@
 					in_house_unit: locationType === 'in' ? performerName : '',
 					out_facility: locationType === 'out' ? outFacilityName : '',
 					scheduled_for: scheduledFor,
-					group_path: source === 'catalog'
-						? textOf(selectedCatalog.group_path)
-						: source === 'survey' ? 'Khảo sát Tâm lý' : '',
 					source,
 					status: 'sent',
 					is_completed: false
@@ -709,7 +583,7 @@
 		}
 
 		function handleSubmit(doc) {
-			if (!STATE.ordersLoaded || !STATE.catalogLoaded) return;
+			if (!STATE.ordersLoaded) return;
 			const validation = readForm(doc);
 			if (!validation.valid) {
 				setMessage(doc, validation.message, 'warning');
@@ -772,22 +646,6 @@
 			}
 		}
 
-		async function loadCatalog(context) {
-			const { doc, token, appointmentId } = context;
-			try {
-				const data = await requestJson(endpoint('catalog'), { method: 'GET' });
-				if (!currentToken(token, appointmentId)) return false;
-				STATE.catalog = Array.isArray(data?.data) ? data.data : [];
-				STATE.catalogIndex = buildCatalogIndex(STATE.catalog);
-				STATE.catalogLoaded = true;
-				renderCatalog(doc);
-				return true;
-			} catch (error) {
-				if (currentToken(token, appointmentId)) setMessage(doc, 'Không thể tải danh mục chỉ định. Vui lòng thử lại.', 'error');
-				return false;
-			}
-		}
-
 		async function loadSurveyTemplates(context) {
 			const { doc, token, appointmentId } = context;
 			try {
@@ -796,14 +654,14 @@
 				STATE.surveyTemplates = Array.isArray(data?.data) ? data.data : [];
 				STATE.surveyIndex = buildSurveyIndex(STATE.surveyTemplates);
 				STATE.surveyLoaded = true;
-				renderCatalog(doc);
+				renderNameField(doc);
 				return true;
 			} catch (error) {
 				if (currentToken(token, appointmentId)) {
 					STATE.surveyTemplates = [];
 					STATE.surveyIndex = new Map();
 					STATE.surveyLoaded = true;
-					renderCatalog(doc);
+					renderNameField(doc);
 				}
 				return true;
 			}
@@ -865,16 +723,11 @@
 
 		function resetContextData(doc) {
 			STATE.rows = [];
-			STATE.catalog = [];
-			STATE.catalogIndex = new Map();
-			STATE.selectedCatalog = null;
 			STATE.surveyTemplates = [];
 			STATE.surveyIndex = new Map();
 			STATE.selectedSurvey = null;
 			STATE.surveyLoaded = false;
-			STATE.source = 'catalog';
 			STATE.performers = [];
-			STATE.catalogLoaded = false;
 			STATE.performersLoaded = false;
 			STATE.ordersLoaded = false;
 			STATE.ordersDirty = false;
@@ -885,7 +738,7 @@
 			STATE.historyLoaded = false;
 			STATE.historyLoading = false;
 			STATE.historyRequestToken += 1;
-			renderCatalog(doc);
+			renderNameField(doc);
 			renderPerformers(doc);
 			resetForm(doc);
 			renderCurrentRows(doc);
@@ -957,8 +810,8 @@
 			STATE.isLoading = bindOptions.isLoading || STATE.isLoading;
 			STATE.apiCall = bindOptions.apiCall || STATE.apiCall;
 			RUNTIME.configure(bindOptions);
-			if (!setupCatalogAutocomplete(doc)) {
-				throw new Error('Không khởi tạo được autocomplete danh mục chỉ định');
+			if (!setupNameAutocomplete(doc)) {
+				throw new Error('Không khởi tạo được ô tên chỉ định');
 			}
 			root.addEventListener('click', event => {
 				const action = event.target.closest('[data-doctor-indication-action]');
@@ -974,12 +827,6 @@
 			});
 			root.querySelectorAll('input[name="doctorIndicationLocation"]').forEach(input => {
 				input.addEventListener('change', () => updateLocationFields(doc));
-			});
-			root.querySelectorAll('input[name="doctorIndicationSource"]').forEach(input => {
-				input.addEventListener('change', () => {
-					setSource(doc, input.value);
-					setFormReady(doc);
-				});
 			});
 			STATE.bound = true;
 			render(doc);
@@ -1007,12 +854,12 @@
 			STATE.patientId = normalizeId(patient);
 			STATE.defaultDate = textOf(context.appointmentDate || appointment.appointment_date || appointment.appointment?.appointment_date);
 			resetContextData(doc);
-			return Promise.allSettled([
+			const loadTasks = [
 				loadCurrent({ doc, token, appointmentId }),
-				loadCatalog({ doc, token, appointmentId }),
-				loadSurveyTemplates({ doc, token, appointmentId }),
-				loadPerformers({ doc, token, appointmentId })
-			]).then(results => {
+				loadPerformers({ doc, token, appointmentId }),
+				loadSurveyTemplates({ doc, token, appointmentId })
+			];
+			return Promise.allSettled(loadTasks).then(results => {
 				if (currentToken(token, appointmentId)) setFormReady(doc);
 				return results.every(result => result.status === 'fulfilled' && result.value === true);
 			});

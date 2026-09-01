@@ -9,7 +9,6 @@ class ChiDinh(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False)
-    order_item_id = Column(Integer, ForeignKey("order_items.id"), nullable=True)  # Nếu chọn từ catalog
     survey_template_id = Column(Integer, ForeignKey("survey_templates.id"), nullable=True)  # Nếu là chỉ định khảo sát tâm lý
     order_name = Column(String(255), nullable=False)  # Tên chỉ định
     location_type = Column(String(20), nullable=False)  # 'in' hoặc 'out'
@@ -21,14 +20,12 @@ class ChiDinh(Base):
     is_completed = Column(Boolean, default=False)  # Đã hoàn tất
     note_nurse = Column(Text, nullable=True)  # Ghi chú của y tá
     note_patient = Column(Text, nullable=True)  # Ghi chú của bệnh nhân
-    group_path = Column(String(500), nullable=True)  # Đường dẫn nhóm (nếu có)
     result_files = Column(JSON, nullable=True)  # Danh sách file kết quả: [{"id": 1, "filename": "...", "original_filename": "...", "upload_date": "..."}]
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     appointment = relationship("Appointment", back_populates="chi_dinh")
-    order_item = relationship("OrderItem", foreign_keys=[order_item_id])
     survey_template = relationship("SurveyTemplate", foreign_keys=[survey_template_id])
     in_house_unit_user = relationship("User", foreign_keys=[in_house_unit_id])
 
@@ -46,7 +43,6 @@ class ChiDinh(Base):
         return {
             "id": self.id,
             "appointment_id": self.appointment_id,
-            "order_item_id": self.order_item_id,
             "survey_template_id": self.survey_template_id,
             "survey_template_name": self.survey_template.name if self.survey_template else None,
             "order_name": self.order_name,
@@ -59,9 +55,7 @@ class ChiDinh(Base):
             "is_completed": self.is_completed,
             "note_nurse": self.note_nurse,
             "note_patient": self.note_patient,
-            "group_path": self.group_path,
             "result_files": self.result_files if self.result_files else [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-

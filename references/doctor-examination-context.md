@@ -22,13 +22,22 @@
   hoặc `{ page, perPage }`. Không truyền trực tiếp cả object context vào URL.
 - Hai ICD control trong Khám dùng `icd-input-container` làm frame/border owner
   duy nhất; input bên trong không tự vẽ border và không có action button phụ.
+- Ở biến thể doctor-flat của Tiền sử, `icd-input-container` cũng là frame owner
+  duy nhất của ô ICD. `.medical-history-section` chỉ giữ cấu trúc section/header,
+  không vẽ thêm card border quanh control.
 - Mọi ICD autocomplete trong Doctor dùng skeleton Jinja duy nhất tại
   `app/templates/components/_icd_autocomplete.html`. Label nghiệp vụ phải đứng
   ngoài root và liên kết bằng `for`; không được bọc root/tag/input/nút xóa trong
   một implicit `<label>`. `icd-autocomplete.js` tiếp tục là owner interaction,
-  còn Khám/Tiền sử chỉ cấu hình hydrate, serialize và class presentation.
+  phân trang và tải thêm kết quả; loader dùng chung giữ metadata `pagination`
+  của API, không cắt mảng kết quả ở FE. Khám/Tiền sử chỉ cấu hình hydrate,
+  serialize và class presentation.
+- `components/medical-history-form.js` chỉ tạo instance bootstrap; không tự gọi
+  `init()` khi các feature bridge chưa đăng ký. `medical-history-bridge.js` là
+  owner gọi `init()` sau `medical-history-icd-bridge.js`, để các action ICD của
+  Bản thân/Gia đình được gắn trước khi người dùng nhập.
 
-Last reconciled with runtime: 2026-08-13.
+Last reconciled with runtime: 2026-08-31.
 
 ## Component foundation and migration boundary (2026-08-13)
 
@@ -147,7 +156,7 @@ files unless a separately approved runtime slice reintroduces them.
 | Prescription row presentation | `app/static/js/doctor-examination/prescription-row-renderer.js` | Renders current medicine rows and updates row totals through callbacks; no API, save, or prescription state. |
 | Prescription history presentation | `app/static/js/doctor-examination/prescription-history-ui.js` | Renders the dedicated large medication-history modal: prescription-bearing visits on the left, selected prescription tables on the right, and no API, save, or prescription state. It reuses the canonical prescription model to display JSONB usage as readable instructions. |
 | Services form component | `app/static/js/components/doctor-services-form.js`, registry key `servicesForm` | Appointment-service state, catalog pagination, selected-row render, clear/load/save, dirty state, and draft snapshot. |
-| Indications form component | `app/static/js/components/doctor-indications-form.js`, registry key `indicationsForm` | Data-backed Chỉ định pane lifecycle: catalog autocomplete with canonical `order_items.id`, performers, current appointment rows, patient history, edit/delete, dirty/save and draft restore. The shared order autocomplete provides focus/search/keyboard/dropdown behavior; this component remains the only selection and save owner. |
+| Indications form component | `app/static/js/components/doctor-indications-form.js`, registry key `indicationsForm` | Data-backed Chỉ định pane lifecycle: free-text/survey selection, performers, current appointment rows, patient history, edit/delete, dirty/save and draft restore. The shared autocomplete is survey-only; this component remains the only selection and save owner. |
 | Services and support save facade | `app/static/js/doctor-examination/support-modules-ui.js`, registry key `supportModulesUi` | Composes prescription + services owners and exposes the single support save facade; no service row/catalog state. |
 | Shared support runtime | `app/static/js/doctor-examination/support-runtime.js` | Shared DOM, formatting, API, token, and draft-row helpers; no clinical or prescription state. |
 | Device-local recovery | `app/static/js/doctor-examination/draft-recovery.js` | IndexedDB baseline/snapshot comparison, explicit restore/discard, and restored-value markers. |
@@ -185,13 +194,14 @@ The root navigation is exactly:
 | Tiền sử | `#doctorHistoryPanel` | Personal/family history, allergies, risk, substance use, safety plan. |
 | Khám | `#doctorClinicalDecisionPanel` | Default clinical task surface. |
 | Dịch vụ | `#doctorServicePanel` | Appointment services only. |
-| Chỉ định | `#doctorIndicationsPanel` | Data-backed indication entry; catalog, current appointment rows, history, edit/delete and global save. |
+| Chỉ định | `#doctorIndicationsPanel` | Data-backed indication entry; Doctor và Tâm lý gia dùng một input để chọn mẫu Khảo sát hoặc nhập text tự do, với current appointment rows, history, edit/delete và global save. |
 
 Tài liệu đính kèm remains inside the Hành chính surface, while prescription
 history remains inside `#doctorPrescriptionWorkspace`; there is no separate
-Doctor support panel. Chỉ định is mounted as a data-backed pane: it loads the
-catalog, current appointment rows and patient-scoped history, while the global
-Doctor save remains its only write transaction. A navigation click changes
+Doctor support panel. Chỉ định is mounted as a data-backed pane: both Doctor
+and Tâm lý gia load survey templates, current appointment rows, performers and
+patient-scoped history, while the global save remains its only write
+transaction. A navigation click changes
 presentation and ARIA state only: it must not write, clear the appointment, or
 infer clinical state from its label.
 

@@ -3,6 +3,7 @@ from app.core.database import get_db
 from app.models.atc_group import ATCGroup
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def get_atc_groups(user):
         
         # Apply search filter
         if search:
-            query = query.filter(ATCGroup.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(ATCGroup.name, search))
         
         # Order by name
         atc_groups = query.order_by(ATCGroup.name).all()

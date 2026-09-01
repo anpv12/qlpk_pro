@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.models.medicine_category import MedicineCategory
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,8 @@ def get_medicine_categories(user):
         # Apply filters
         if search:
             query = query.filter(
-                MedicineCategory.name.ilike(f'%{search}%') |
-                MedicineCategory.description.ilike(f'%{search}%')
+                normalized_contains(MedicineCategory.name, search) |
+                normalized_contains(MedicineCategory.description, search)
             )
             
         if status:

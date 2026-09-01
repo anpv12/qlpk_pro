@@ -3,6 +3,7 @@ from app.core.database import SessionLocal
 from app.models.allergen import Allergen
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 from sqlalchemy import or_
 import pandas as pd
 import io
@@ -23,10 +24,9 @@ def get_allergens(user):
         query = db.query(Allergen).filter(Allergen.is_active == True)
 
         if search:
-            search_term = f"%{search}%"
             query = query.filter(or_(
-                Allergen.ten_di_nguyen.ilike(search_term),
-                Allergen.mo_ta.ilike(search_term)
+                normalized_contains(Allergen.ten_di_nguyen, search),
+                normalized_contains(Allergen.mo_ta, search)
             ))
 
         total = query.count()

@@ -237,12 +237,14 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-section {
-  background: #ffffff;
-  border: 0.0625rem solid #dfe7ef;
-  border-radius: 0.75rem;
-  box-shadow: 0 0.25rem 0.9rem rgba(15, 23, 42, 0.045);
+  /* The ICD control owns its own interactive frame. Keep this section flat
+   * so the history form does not render a card around a bordered control. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .inline-tien-su--doctor-flat .medical-history-section:not(:last-child) {
@@ -1416,11 +1418,21 @@
   font-size: var(--qlpk-font-size-base, 13px);
 }
 
-.inline-tien-su--doctor-flat .form-control-sm {
+.inline-tien-su--doctor-flat .form-control-sm:not([data-icd-autocomplete-input]) {
   min-height: 2rem;
   padding: 0.25rem 0.45rem;
   border-color: #d8e1ec;
   border-radius: 0.5rem;
+}
+
+/* The shared ICD container owns the frame. The search input stays a
+ * borderless child so the history field cannot render two nested frames. */
+.inline-tien-su--doctor-flat .icd-autocomplete [data-icd-autocomplete-input] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .inline-tien-su--doctor-flat .medical-history-micro-row {

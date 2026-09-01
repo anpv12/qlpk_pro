@@ -11,8 +11,15 @@
 		const getCurrentPatientData = options.getCurrentPatientData || (() => null);
 		const getCurrentAppointmentId = options.getCurrentAppointmentId || (() => null);
 		const setCurrentPatientId = options.setCurrentPatientId || (() => {});
+		const getAppointments = options.getAppointments || (() => []);
+		const selectPatientCard = options.selectPatientCard || (() => false);
 
-		return modalContract.getOrCreate({
+		function hasAppointmentInCurrentList(appointmentId) {
+			return Array.isArray(getAppointments())
+				&& getAppointments().some(appointment => String(appointment.id) === String(appointmentId));
+		}
+
+		const patientHistoryModal = modalContract.getOrCreate({
 			document: doc,
 			context: options.context,
 			apiCall: options.apiCall,
@@ -39,6 +46,36 @@
 				beforeOpen: options.beforeOpen
 			}]
 		});
+
+		function openPatientHistory(payload = {}) {
+			const patientId = payload.patient_id;
+			if (!patientId || typeof patientHistoryModal.openPatient !== 'function') return false;
+			return patientHistoryModal.openPatient(patientId);
+		}
+
+		function openAppointment(payload = {}) {
+			const appointmentId = payload.appointment_id;
+			if (appointmentId && hasAppointmentInCurrentList(appointmentId)) {
+				return selectPatientCard(appointmentId);
+			}
+			return openPatientHistory(payload);
+		}
+
+		window.QLPKGlobalSearchActions = {
+			handleAction(action = {}, item = {}) {
+				if (action.kind === 'open_patient_history') {
+					return openPatientHistory(action.payload || {}, item);
+				}
+				if (action.kind === 'open_appointment') {
+					return openAppointment(action.payload || {}, item);
+				}
+				return false;
+			},
+			openPatientHistory,
+			openAppointment
+		};
+
+		return patientHistoryModal;
 	}
 
 	REGISTRY.register('patientHistoryBridge', { create }, {

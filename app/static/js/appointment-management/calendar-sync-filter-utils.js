@@ -2,7 +2,13 @@
 	'use strict';
 
 	function normalizeSearchText(value) {
-		return String(value || '').toLowerCase().trim();
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '')
+				.normalize('NFKD')
+				.toLowerCase()
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/đ/g, 'd')
+				.trim();
 	}
 
 	function rowMatchesSyncFilter(rowText, syncStatus, searchText, statusFilter) {

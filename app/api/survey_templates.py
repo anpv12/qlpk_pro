@@ -6,6 +6,7 @@ from app.models.survey_template import SurveyTemplate
 from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.search_normalization import normalized_contains
 import os
 import uuid
 from datetime import datetime
@@ -16,6 +17,27 @@ survey_templates_router = Blueprint('survey_templates', __name__)
 # Cấu hình upload file
 UPLOAD_FOLDER = 'uploads/survey_templates'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'doc', 'xls'}
+PERFORMER_ROLES = ('doctor', 'PSYCHOLOGIST')
+
+
+def resolve_default_performer_id(db, raw_value):
+    """Validate and normalize the optional default performer for a template."""
+    if raw_value is None or str(raw_value).strip() == '':
+        return None
+
+    try:
+        performer_id = int(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError('Người thực hiện mặc định không hợp lệ') from exc
+
+    performer = db.query(User).filter(
+        User.id == performer_id,
+        User.is_active.is_(True),
+        User.role.in_(PERFORMER_ROLES),
+    ).first()
+    if not performer:
+        raise ValueError('Người thực hiện mặc định không tồn tại hoặc đã ngừng hoạt động')
+    return performer.id
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -42,8 +64,8 @@ def get_survey_templates(user):
         if search:
             query = query.filter(
                 or_(
-                    SurveyTemplate.name.ilike(f'%{search}%'),
-                    SurveyTemplate.description.ilike(f'%{search}%')
+                    normalized_contains(SurveyTemplate.name, search),
+                    normalized_contains(SurveyTemplate.description, search),
                 )
             )
         
@@ -141,7 +163,7 @@ def create_survey_template(user):
     """Tạo mẫu khảo sát mới"""
     db: Session = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
         # Validate required fields
         if not data.get('name'):
@@ -161,13 +183,18 @@ def create_survey_template(user):
                 'success': False,
                 'message': 'Tên mẫu khảo sát đã tồn tại'
             }), 400
+
+        default_performer_id = resolve_default_performer_id(
+            db, data.get('default_performer_id')
+        )
         
         # Tạo mẫu khảo sát mới
         template = SurveyTemplate(
             name=data['name'],
             description=data.get('description', ''),
             content=data.get('content'),
-            created_by=user.id  # Từ user object
+            created_by=user.id,  # Từ user object
+            default_performer_id=default_performer_id,
         )
         
         db.add(template)
@@ -181,6 +208,12 @@ def create_survey_template(user):
             'data': template.to_dict()
         }), 201
         
+    except ValueError as e:
+        db.rollback()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
     except Exception as e:
         db.rollback()
         return jsonify({
@@ -207,7 +240,7 @@ def update_survey_template(user, template_id):
                 'message': 'Không tìm thấy mẫu khảo sát'
             }), 404
         
-        data = request.get_json()
+        data = request.get_json() or {}
         
         # Validate required fields
         if not data.get('name'):
@@ -228,6 +261,11 @@ def update_survey_template(user, template_id):
                 'success': False,
                 'message': 'Tên mẫu khảo sát đã tồn tại'
             }), 400
+
+        if 'default_performer_id' in data:
+            template.default_performer_id = resolve_default_performer_id(
+                db, data.get('default_performer_id')
+            )
         
         # Cập nhật thông tin
         template.name = data['name']
@@ -245,6 +283,12 @@ def update_survey_template(user, template_id):
             'data': template.to_dict()
         }), 200
         
+    except ValueError as e:
+        db.rollback()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
     except Exception as e:
         db.rollback()
         return jsonify({
@@ -323,6 +367,9 @@ def upload_survey_template(user):
         # Lấy thông tin từ form
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
+        default_performer_id = resolve_default_performer_id(
+            db, request.form.get('default_performer_id')
+        )
         
         if not name:
             return jsonify({
@@ -356,7 +403,8 @@ def upload_survey_template(user):
             file_name=filename,
             file_size=os.path.getsize(file_path),
             file_type=filename.rsplit('.', 1)[1].lower(),
-            created_by=user.id
+            created_by=user.id,
+            default_performer_id=default_performer_id,
         )
         
         db.add(template)
@@ -370,6 +418,12 @@ def upload_survey_template(user):
             'data': template.to_dict()
         }), 201
         
+    except ValueError as e:
+        db.rollback()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
     except Exception as e:
         db.rollback()
         return jsonify({

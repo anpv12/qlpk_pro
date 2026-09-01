@@ -1,6 +1,11 @@
   let categories = [];
   let services = [];
 
+  function normalizeSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	  || String(value || '').toLowerCase().trim();
+  }
+
   // Toast function - đồng bộ với các màn hình khác
   function showToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
@@ -268,11 +273,11 @@
 
   // Tìm kiếm
   $('#searchInput').on('input', function() {
-    const searchTerm = $(this).val().toLowerCase();
+    const searchTerm = normalizeSearchText($(this).val());
     const filtered = services.filter(service => 
-      service.name.toLowerCase().includes(searchTerm) ||
-      (service.description && service.description.toLowerCase().includes(searchTerm)) ||
-      (service.category_name && service.category_name.toLowerCase().includes(searchTerm))
+      normalizeSearchText(service.name).includes(searchTerm) ||
+      (service.description && normalizeSearchText(service.description).includes(searchTerm)) ||
+      (service.category_name && normalizeSearchText(service.category_name).includes(searchTerm))
     );
     renderServices(filtered);
   });

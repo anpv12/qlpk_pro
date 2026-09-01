@@ -62,6 +62,7 @@
 										<th class="stm-col-stt">STT</th>
 										<th>Tên mẫu</th>
 										<th>Mô tả</th>
+										<th>Người thực hiện mặc định</th>
 										<th class="stm-col-created">Ngày tạo</th>
 										<th class="stm-col-status">Trạng thái</th>
 										<th class="stm-col-actions">Thao tác</th>
@@ -109,6 +110,12 @@
 						<div class="mb-3">
 							<label for="uploadDescription" class="form-label">Mô tả</label>
 							<textarea class="form-control" id="uploadDescription" rows="3"></textarea>
+						</div>
+						<div class="mb-3">
+							<label for="uploadPerformer" class="form-label">Người thực hiện mặc định</label>
+							<select class="form-select" id="uploadPerformer">
+								<option value="">Chưa gán (chọn sau khi chỉ định)</option>
+							</select>
 						</div>
 						<div class="mb-3">
 							<label for="uploadFile" class="form-label">Chọn file <span
@@ -182,6 +189,12 @@
 								placeholder="Nhập tên mẫu khảo sát...">
 							<textarea id="scSurveyDesc" class="sc-survey-desc"
 								placeholder="Mô tả mẫu khảo sát (tùy chọn)..." rows="3"></textarea>
+							<label class="sc-survey-performer-field" for="scSurveyPerformer">
+								<span>Người thực hiện mặc định</span>
+								<select id="scSurveyPerformer" class="sc-survey-performer">
+									<option value="">Chưa gán (chọn sau khi chỉ định)</option>
+								</select>
+							</label>
 						</div>
 					</div>
 					<div id="scQuestionsList"></div>

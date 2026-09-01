@@ -1,6 +1,11 @@
 (function (window) {
 	'use strict';
 
+	function normalizeSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+	}
+
 	function parseOptionalId(value) {
 		if (value === null || typeof value === 'undefined' || value === '') {
 			return null;
@@ -58,7 +63,7 @@
 		}
 
 		$input.on('focus', function () {
-			const query = $(this).val().toLowerCase().trim();
+			const query = normalizeSearchText($(this).val());
 			if (!query) {
 				renderDropdown(servicesList);
 			} else {
@@ -67,15 +72,15 @@
 		});
 
 		$input.on('input', function () {
-			const query = $(this).val().toLowerCase().trim();
+			const query = normalizeSearchText($(this).val());
 			if (!query) {
 				$hidden.val('');
 				renderDropdown(servicesList);
 				return;
 			}
 			const filtered = servicesList.filter(s =>
-				s.name.toLowerCase().includes(query) ||
-				(s.code && s.code.toLowerCase().includes(query))
+				normalizeSearchText(s.name).includes(query) ||
+				(s.code && normalizeSearchText(s.code).includes(query))
 			);
 			if (filtered.length === 0) {
 				$hidden.val('');

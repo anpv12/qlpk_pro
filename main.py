@@ -51,7 +51,7 @@ from app.api.holiday import holiday_router
 from app.api.doctor_busy_schedule import doctor_busy_schedule_bp
 from app.api.vietnam_address import vietnam_address_bp
 from app.api.usage_suggestions import usage_suggestions_bp
-from app.modules.orders.api.catalog import order_catalog_bp
+from app.modules.orders.api.survey import survey_order_bp
 from app.api.calendar import calendar_bp
 from app.api.dashboard import dashboard_bp
 from app.api.expense import expense_bp
@@ -279,7 +279,7 @@ app.register_blueprint(holiday_router)
 app.register_blueprint(doctor_busy_schedule_bp, url_prefix='/api')
 app.register_blueprint(vietnam_address_bp, url_prefix='/api')
 app.register_blueprint(usage_suggestions_bp, url_prefix='/api')
-app.register_blueprint(order_catalog_bp, url_prefix='/api')
+app.register_blueprint(survey_order_bp, url_prefix='/api')
 app.register_blueprint(calendar_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(expense_bp)
@@ -328,10 +328,6 @@ def appointment_management_page():
 @app.route('/service-category.html')
 def service_category_page():
     return render_template('service-category.html')
-
-@app.route('/order-catalog.html')
-def order_catalog_page():
-    return render_template('order-catalog.html')
 
 @app.route('/service-management.html')
 def service_management_page():

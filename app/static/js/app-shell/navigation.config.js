@@ -147,12 +147,6 @@
 						permission: 'ql-danhmuc-dichvu',
 					},
 					{
-						label: 'Danh mục chỉ định',
-						icon: 'bi bi-journal-medical',
-						href: 'order-catalog.html',
-						permission: 'ql-danhmuc-chidinh',
-					},
-					{
 						label: 'Dịch vụ',
 						icon: 'bi bi-briefcase-fill',
 						href: 'service-management.html',

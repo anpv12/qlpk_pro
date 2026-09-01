@@ -49,6 +49,7 @@ class MedicineBatch(Base):
         return {
             'id': self.id,
             'medicine_id': self.medicine_id,
+            'medicine_name': self.medicine.name if self.medicine else None,
             'batch_number': self.batch_number,
             'import_date': self.import_date.isoformat() if self.import_date else None,
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
@@ -66,4 +67,3 @@ class MedicineBatch(Base):
             'days_to_expiry': days_to_expiry,
             'status': status
         }
-

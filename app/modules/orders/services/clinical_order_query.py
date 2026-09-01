@@ -5,12 +5,15 @@ from datetime import datetime
 import logging
 
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 from app.models.appointment import Appointment
 from app.models.chi_dinh import ChiDinh
 from app.models.patient import Patient
+from app.models.survey_template import SurveyTemplate
 from app.models.user import User
-from sqlalchemy.orm import joinedload
+from app.utils.search_normalization import normalized_contains
+
 
 @dataclass
 class ChiDinhListResult:
@@ -19,6 +22,24 @@ class ChiDinhListResult:
     page: int
     per_page: int
     total_pages: int
+
+
+class InvalidPagination(ValueError):
+    """Raised when list pagination values are not positive integers."""
+
+
+def get_survey_templates_for_order_result(db):
+    """Return active survey templates that can be used as an indication."""
+    return (
+        db.query(SurveyTemplate)
+        .options(joinedload(SurveyTemplate.default_performer))
+        .filter(
+            SurveyTemplate.is_active.is_(True),
+            SurveyTemplate.content.isnot(None),
+        )
+        .order_by(SurveyTemplate.name)
+        .all()
+    )
 
 
 def get_chi_dinh_for_patient(db, patient_id, exclude_appointment_id=None, limit=100):
@@ -36,6 +57,7 @@ def get_chi_dinh_for_patient(db, patient_id, exclude_appointment_id=None, limit=
         query = query.filter(ChiDinh.appointment_id != exclude_appointment_id)
     return query.order_by(ChiDinh.created_at.desc()).limit(max(1, min(int(limit or 100), 200))).all()
 
+
 def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
     """Return filtered ChiDinh models and legacy pagination metadata."""
     logger = logger or logging.getLogger(__name__)
@@ -46,8 +68,8 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
     to_date = args.get('to_date', '').strip()
     status = args.get('status', '').strip()
     location_type = args.get('location_type', '').strip()
-    page = int(args.get('page', 1))
-    per_page = int(args.get('per_page', 50))
+    page = _positive_int(args.get('page', 1), 'page')
+    per_page = min(_positive_int(args.get('per_page', 50), 'per_page'), 100)
 
     # Query trực tiếp từ ChiDinh để giữ nguyên hành vi legacy với join tùy filter.
     query = db.query(ChiDinh)
@@ -71,16 +93,16 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
             query = query.join(User, Appointment.doctor_id == User.id)
             query = query.filter(
                 or_(
-                    User.full_name.ilike(f'%{doctor_name}%'),
-                    User.name.ilike(f'%{doctor_name}%')
+                    normalized_contains(User.full_name, doctor_name),
+                    normalized_contains(User.name, doctor_name),
                 )
             )
         if patient_name:
             query = query.join(Patient, Appointment.patient_id == Patient.id)
             query = query.filter(
                 or_(
-                    Patient.full_name.ilike(f'%{patient_name}%'),
-                    Patient.nickname.ilike(f'%{patient_name}%')
+                    normalized_contains(Patient.full_name, patient_name),
+                    normalized_contains(Patient.nickname, patient_name),
                 )
             )
 
@@ -107,8 +129,9 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
         query = query.filter(ChiDinh.location_type == location_type.lower())
 
     total = query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
     items = query.order_by(ChiDinh.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    total_pages = (total + per_page - 1) // per_page
 
     logger.info(f"Found {len(items)} chi_dinh records, total: {total}")
 
@@ -119,3 +142,13 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
         per_page=per_page,
         total_pages=total_pages,
     )
+
+
+def _positive_int(value, field_name):
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError) as exc:
+        raise InvalidPagination(f'{field_name} phải là số nguyên dương') from exc
+    if normalized <= 0:
+        raise InvalidPagination(f'{field_name} phải là số nguyên dương')
+    return normalized

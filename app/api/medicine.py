@@ -8,37 +8,19 @@ from app.models.medicine_batch import MedicineBatch
 from app.models.supplier import Supplier
 from app.api.auth import require_auth
 from app.utils.patient_utils import generate_medicine_code
+from app.utils.search_normalization import normalized_contains
 from app.realtime.events import emit_inventory_changed
+from app.modules.medicines.services.inventory_service import (
+    InventoryValidationError,
+    adjust_batch,
+)
 import logging
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_, text
-import unicodedata
 
 logger = logging.getLogger(__name__)
 
 medicine_router = Blueprint('medicine', __name__)
-
-
-def remove_accents(input_str):
-    """Bỏ dấu tiếng Việt để tìm kiếm accent-insensitive"""
-    if not input_str:
-        return ""
-    nfkd = unicodedata.normalize('NFD', input_str)
-    return ''.join(c for c in nfkd if not unicodedata.combining(c)).replace('đ', 'd').replace('Đ', 'D')
-
-
-# Bảng ánh xạ đầy đủ ký tự tiếng Việt có dấu → không dấu (cho PostgreSQL translate())
-_VN_ACCENTED  = 'àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ'
-_VN_UNACCENTED = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd'
-_VN_ACCENTED_UPPER  = _VN_ACCENTED.upper()
-_VN_UNACCENTED_UPPER = _VN_UNACCENTED.upper()
-_TRANSLATE_FROM = _VN_ACCENTED + _VN_ACCENTED_UPPER
-_TRANSLATE_TO   = _VN_UNACCENTED + _VN_UNACCENTED_UPPER
-
-
-def _pg_unaccent(column):
-    """Bỏ dấu tiếng Việt trong Postgres bằng translate() — xử lý tất cả dấu thanh"""
-    return func.lower(func.translate(column, _TRANSLATE_FROM, _TRANSLATE_TO))
 
 
 def validate_date(date_str):
@@ -112,8 +94,8 @@ def get_medicines(user):
         if search:
             query = query.filter(
                 or_(
-                    Medicine.name.ilike(f'%{search}%'),
-                    Medicine.generic_name.ilike(f'%{search}%')
+                    normalized_contains(Medicine.name, search),
+                    normalized_contains(Medicine.generic_name, search),
                 )
             )
             
@@ -188,7 +170,14 @@ def create_medicine(user):
     """Tạo thuốc mới"""
     try:
         db = next(get_db())
-        data = request.get_json()
+        data = request.get_json() or {}
+
+        # Inventory is batch-owned.  A medicine record is only a catalog row;
+        # allowing a non-zero stock here would create stock with no lot/audit.
+        if 'stock_quantity' in data:
+            return jsonify({
+                "error": "Không được nhập tồn trực tiếp khi tạo thuốc. Hãy tạo lô thuốc để nhập kho."
+            }), 400
         
         # Validate required fields
         required_fields = ['name', 'unit', 'category_type', 'prescription_type']
@@ -270,7 +259,7 @@ def create_medicine(user):
             import_price=import_price,
             unit=data['unit'],
             strength=data.get('strength'),
-            stock_quantity=float(data['stock_quantity']) if data.get('stock_quantity') is not None else 0.0,  # Hỗ trợ số thập phân
+            stock_quantity=0.0,
             expiry_date=expiry_date,
             description=data.get('description'),
             category_type=data.get('category_type', 'DRUG'),
@@ -326,51 +315,66 @@ def get_medicine(user, medicine_id):
 @medicine_router.route('/medicines/inventory-count', methods=['POST'])
 @require_auth
 def inventory_count(user):
-    """Điều chỉnh tồn kho sau kiểm kê"""
+    """Compatibility alias for the batch-based inventory count flow.
+
+    The old payload was medicine-level and could silently overwrite the
+    aggregate.  It is intentionally rejected unless every row identifies a
+    concrete batch and a reason.
+    """
     db = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         adjustments = data.get('adjustments', [])
         
         if not adjustments or len(adjustments) == 0:
             return jsonify({'detail': 'Không có điều chỉnh nào'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
-        updated_medicines = []
+        if any(not isinstance(adj, dict) or not adj.get('batch_id') for adj in adjustments):
+            return jsonify({
+                'detail': 'Kiểm kê phải thực hiện theo từng lô thuốc',
+                'code': 'inventory.batch_required',
+            }), 409, {'Content-Type': 'application/json; charset=utf-8'}
+
+        updated_batches = []
         
         for adj in adjustments:
-            medicine_id = adj.get('medicine_id')
+            batch_id = adj.get('batch_id')
             actual_quantity = adj.get('actual_quantity')
             note = adj.get('note', '')
             
-            if not medicine_id or actual_quantity is None:
-                continue
-            
-            medicine = db.query(Medicine).filter(Medicine.id == medicine_id).first()
-            if not medicine:
-                continue
-            
-            # Cập nhật số lượng tồn kho
-            old_quantity = float(medicine.stock_quantity) if medicine.stock_quantity else 0
-            medicine.stock_quantity = float(actual_quantity)
-            
-            updated_medicines.append({
-                'medicine_id': medicine_id,
+            try:
+                medicine, batch, movement, old_quantity, new_quantity = adjust_batch(
+                    db,
+                    batch_id=int(batch_id),
+                    actual_quantity=actual_quantity,
+                    note=note,
+                    created_by=user.id,
+                )
+            except (InventoryValidationError, LookupError, ValueError) as exc:
+                db.rollback()
+                return jsonify({'detail': str(exc)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
+
+            updated_batches.append({
+                'batch_id': batch.id,
+                'medicine_id': medicine.id,
                 'medicine_name': medicine.name,
-                'old_quantity': old_quantity,
-                'new_quantity': actual_quantity,
-                'difference': actual_quantity - old_quantity,
-                'note': note
+                'batch_number': batch.batch_number,
+                'old_quantity': float(old_quantity),
+                'new_quantity': float(new_quantity),
+                'difference': float(new_quantity - old_quantity),
+                'transaction_id': movement.id if movement else None,
+                'note': note,
             })
         
         db.commit()
         emit_inventory_changed('inventory_counted', entity='medicine', extra={
-            'adjustments': updated_medicines,
+            'adjustments': updated_batches,
         })
         
         return jsonify({
             'success': True,
-            'message': f'Điều chỉnh thành công {len(updated_medicines)} thuốc',
-            'adjustments': updated_medicines
+            'message': f'Điều chỉnh thành công {len(updated_batches)} lô thuốc',
+            'adjustments': updated_batches
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
         
     except Exception as e:
@@ -526,11 +530,16 @@ def update_medicine(user, medicine_id):
     """Cập nhật thông tin thuốc"""
     try:
         db = next(get_db())
-        data = request.get_json()
+        data = request.get_json() or {}
         
         medicine = db.query(Medicine).filter(Medicine.id == medicine_id).first()
         if not medicine:
             return jsonify({"error": "Không tìm thấy thuốc"}), 404
+
+        if 'stock_quantity' in data:
+            return jsonify({
+                "error": "Không được sửa tồn tổng trực tiếp. Hãy nhập hoặc điều chỉnh theo lô thuốc."
+            }), 400
         # Normalize and validate internal_code trước khi cập nhật
         old_internal_code = medicine.internal_code
         if 'internal_code' in data:
@@ -609,7 +618,6 @@ def update_medicine(user, medicine_id):
         update_fields = [
             'name', 'generic_name', 'internal_code', 'national_code',
             'unit', 'strength',
-            'stock_quantity',
             'description', 'category_type', 'prescription_type', 'administration_method',
             'low_stock_threshold', 'expiry_warning_days', 'packaging', 'units_per_box', 'packaging_unit', 'origin'
         ]
@@ -936,12 +944,11 @@ def import_medicines(user):
             'Thể loại',  # category_type - bắt buộc
             'Loại đơn thuốc',  # prescription_type - bắt buộc
             'Đơn vị dùng',  # unit - bắt buộc (UI: "Đơn vị dùng")
-            'Phương thức dùng',  # administration_method - bắt buộc
-            'Tổng tồn (viên)'  # stock_quantity - bắt buộc (tên mới)
+            'Phương thức dùng'  # administration_method - bắt buộc
             # 'Đơn giá vốn nhập' - không bắt buộc (có thể để trống hoặc = 0)
             # 'Đơn giá bán' - không bắt buộc (có thể để trống hoặc = 0)
-            # 'Tổng (viên)' - tên cũ (backward compatibility, không bắt buộc trong required_columns)
-            # 'Số lượng tồn' - tên cũ (backward compatibility, không bắt buộc trong required_columns)
+            # Legacy stock columns are optional only so the importer can
+            # detect and reject direct stock writes below.
             # 'Ngày hết hạn' - không bắt buộc (có thể để trống)
         ]
         
@@ -955,6 +962,7 @@ def import_medicines(user):
             'Số đơn vị',  # units_per_box
             'Đơn giá vốn nhập',  # import_price - không bắt buộc
             'Đơn giá bán',  # unit_price - không bắt buộc
+            'Tổng tồn (viên)', 'Tổng (viên)', 'Số lượng tồn',  # legacy stock columns: rejected when positive
             'Hộp/Lọ/Vỉ/Chai Tồn',  # Tùy chọn: Số lượng theo đơn vị đóng gói
             'Viên/Gói/Chai/Ống Tồn',  # Tùy chọn: Số lượng lẻ theo đơn vị dùng
             '{Đơn vị đóng gói} tồn',  # Tên cũ (backward compatibility)
@@ -972,12 +980,7 @@ def import_medicines(user):
         missing_required = []
         for col in required_columns:
             if col not in df.columns:
-                # Xử lý đặc biệt cho "Tổng tồn (viên)": cho phép tên cũ "Tổng (viên)" hoặc "Số lượng tồn"
-                if col == 'Tổng tồn (viên)':
-                    if 'Tổng (viên)' not in df.columns and 'Số lượng tồn' not in df.columns:
-                        missing_required.append(col)
-                else:
-                    missing_required.append(col)
+                missing_required.append(col)
         
         if missing_required:
             logger.error(f"Thiếu các cột bắt buộc: {missing_required}")
@@ -1218,6 +1221,17 @@ def import_medicines(user):
                     errors.append(error_msg)
                     skipped_count += 1
                     continue
+
+                if stock_quantity > 0:
+                    errors.append(
+                        f"Dòng {row_num}: Không nhập tồn trực tiếp từ Excel. "
+                        "Hãy tạo thuốc trước, sau đó nhập tồn bằng lô thuốc - ĐÃ BỎ QUA"
+                    )
+                    skipped_count += 1
+                    continue
+                # Catalog imports always start at zero; only a lot import may
+                # increase the aggregate inventory.
+                stock_quantity = 0.0
                 
                 # Xử lý ngày hết hạn (tùy chọn - có thể để trống)
                 expiry_date_str = get_row_value(row, 'Ngày hết hạn', '')
@@ -1677,14 +1691,11 @@ def get_statistics_summary(user):
         
         # Filter by search (patient, doctor, medicine — accent-insensitive)
         if search:
-            search_normalized = remove_accents(search)
             prescriptions_query = prescriptions_query.filter(
                 or_(
-                    Patient.full_name.ilike(f'%{search}%'),
-                    UserModel.full_name.ilike(f'%{search}%'),
-                    Prescription.items.any(PrescriptionItem.medicine_name.ilike(f'%{search}%')),
-                    _pg_unaccent(Patient.full_name).contains(search_normalized),
-                    _pg_unaccent(UserModel.full_name).contains(search_normalized),
+                    normalized_contains(Patient.full_name, search),
+                    normalized_contains(UserModel.full_name, search),
+                    Prescription.items.any(normalized_contains(PrescriptionItem.medicine_name, search)),
                 )
             )
         
@@ -1852,16 +1863,11 @@ def get_statistics_prescriptions(user):
         
         # Filter by search (patient name, doctor name, medicine name — accent-insensitive)
         if search:
-            search_normalized = remove_accents(search).lower()
             prescriptions_query = prescriptions_query.filter(
                 or_(
-                    # Exact accent match
-                    Patient.full_name.ilike(f'%{search}%'),
-                    UserModel.full_name.ilike(f'%{search}%'),
-                    Prescription.items.any(PrescriptionItem.medicine_name.ilike(f'%{search}%')),
-                    # Accent-insensitive (gõ không dấu vẫn tìm được)
-                    _pg_unaccent(Patient.full_name).contains(search_normalized),
-                    _pg_unaccent(UserModel.full_name).contains(search_normalized),
+                    normalized_contains(Patient.full_name, search),
+                    normalized_contains(UserModel.full_name, search),
+                    Prescription.items.any(normalized_contains(PrescriptionItem.medicine_name, search)),
                 )
             )
         
@@ -2261,13 +2267,10 @@ def get_statistics_inventory(user):
             query = query.filter(Medicine.prescription_type == medicine_type)
         
         if search:
-            search_normalized = remove_accents(search).lower()
             query = query.filter(
                 or_(
-                    Medicine.name.ilike(f'%{search}%'),
-                    Medicine.internal_code.ilike(f'%{search}%'),
-                    # Accent-insensitive
-                    _pg_unaccent(Medicine.name).contains(search_normalized),
+                    normalized_contains(Medicine.name, search),
+                    normalized_contains(Medicine.internal_code, search),
                 )
             )
         
@@ -2400,15 +2403,11 @@ def get_statistics_prescription_history(user):
 
         # Search filter (accent-insensitive)
         if search:
-            search_normalized = remove_accents(search).lower()
             items_query = items_query.filter(
                 or_(
-                    PrescriptionItem.medicine_name.ilike(f'%{search}%'),
-                    Patient.full_name.ilike(f'%{search}%'),
-                    UserModel.full_name.ilike(f'%{search}%'),
-                    _pg_unaccent(PrescriptionItem.medicine_name).contains(search_normalized),
-                    _pg_unaccent(Patient.full_name).contains(search_normalized),
-                    _pg_unaccent(UserModel.full_name).contains(search_normalized),
+                    normalized_contains(PrescriptionItem.medicine_name, search),
+                    normalized_contains(Patient.full_name, search),
+                    normalized_contains(UserModel.full_name, search),
                 )
             )
 

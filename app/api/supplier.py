@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.models.supplier import Supplier
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
+from app.utils.search_normalization import normalized_contains
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def get_suppliers(user):
         
         # Tìm kiếm theo tên
         if search:
-            query = query.filter(Supplier.name.ilike(f'%{search}%'))
+            query = query.filter(normalized_contains(Supplier.name, search))
         
         # Lọc theo trạng thái active
         if is_active is not None:

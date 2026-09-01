@@ -10,6 +10,7 @@ from app.models.appointment import Appointment
 from app.models.examination import Examination, ExaminationStatus
 from app.models.patient import Patient
 from app.utils.clinical_access import scoped_patient_ids
+from app.utils.search_normalization import normalized_contains
 
 router = Blueprint('global_search', __name__, url_prefix='/api/global-search')
 
@@ -257,15 +258,14 @@ def make_group(key, label, items, query, empty_text=None):
 
 
 def search_patients(db, query, limit, role, selected_patient_id=None, scoped_ids=None):
-    term = f'%{query}%'
     patient_query = db.query(Patient).filter(
         Patient.is_active.is_(True),
         or_(
-            Patient.full_name.ilike(term),
-            Patient.patient_code.ilike(term),
-            Patient.phone.ilike(term),
-            Patient.id_number.ilike(term),
-            Patient.nickname.ilike(term),
+            normalized_contains(Patient.full_name, query),
+            normalized_contains(Patient.patient_code, query),
+            normalized_contains(Patient.phone, query),
+            normalized_contains(Patient.id_number, query),
+            normalized_contains(Patient.nickname, query),
         )
     )
     if scoped_ids is not None:

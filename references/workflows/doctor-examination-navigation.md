@@ -49,21 +49,15 @@ overflow.
 | Tiền sử | `#doctorHistoryPanel` | None | Open patient history, allergy, risk, substance-use, and safety-plan content. |
 | Khám | `#doctorClinicalDecisionPanel` | `#doctorPrescriptionWorkspace` | Default workspace for the paired nine-field and inline-detail cards followed by the prescription workspace. |
 | Dịch vụ | `#doctorServicePanel` | None | Read, add, edit, and explicitly save appointment services without mixing them into the prescription workspace. |
-| Chỉ định | `#doctorIndicationsPanel` | `#doctorIndicationsHistory` | Tạo, sửa, xóa chỉ định của appointment; đọc danh mục/người thực hiện, xem lịch sử theo bệnh nhân và lưu qua Doctor global save. |
+| Chỉ định | `#doctorIndicationsPanel` | `#doctorIndicationsHistory` | Tạo, sửa, xóa chỉ định của appointment bằng một ô nhập: chọn mẫu khảo sát từ gợi ý hoặc nhập text tự do; chọn người thực hiện, xem lịch sử theo bệnh nhân và lưu qua Doctor global save. |
 
-The top-level rail contains five root sections: Hành chính, Tiền sử, Khám, Dịch vụ, and Chỉ định. The Chỉ định pane is owned by `components/doctor-indications-form.js`; it loads the appointment rows and active catalog, keeps one dirty state, and is composed into `supportModulesUi` so Doctor global save remains the only save transaction. Its inline history reads the patient-scoped orders endpoint and excludes the current appointment. Tài liệu đính kèm remains in Hành chính and prescription history remains inside the prescription workspace; there is no nested support navigation.
+The top-level rail contains five root sections: Hành chính, Tiền sử, Khám, Dịch vụ, and Chỉ định. The Chỉ định pane is owned by `components/doctor-indications-form.js`; it loads appointment rows, active survey templates and performers, keeps one dirty state, and is composed into `supportModulesUi` so Doctor global save remains the only save transaction. Its inline history reads the patient-scoped orders endpoint and excludes the current appointment. Tài liệu đính kèm remains in Hành chính and prescription history remains inside the prescription workspace; there is no nested support navigation.
 
-The Chỉ định pane supports three explicit sources: `Danh mục` chọn từ
-`order_items`, `Nhập text` lưu tên tự do, và `Khảo sát` chọn từ
-`/api/survey-templates-for-orders`. Catalog and survey sources require a
-selection; custom text does not. The Chỉ định catalog menu is a
-viewport-anchored autocomplete popover, not a
-fixed-height child list of the left form column. Its width must remain equal to
-the input width. Its block size follows the usable viewport space and it opens
-upward when that side has more room. The anchor is resynchronized while the
-workspace scrolls or the viewport resizes, so parent workspace overflow must not
-clip the menu. Only the popover owns overflow scrolling; opening it must not
-stretch the form column or overlap the current-appointment table horizontally.
+The Chỉ định pane has one input. Its dropdown always searches
+`/api/survey-templates-for-orders`; selecting a result stores `survey` and
+`survey_template_id`, while text that is not selected from the dropdown stores
+`custom` and only `order_name`. It does not load or reference the retired
+indication catalog.
 
 ## Clinical Panel Content Contract
 
@@ -98,7 +92,10 @@ top of `doctor-clinical-layout`, whose block-start padding is zero. The
 doctor-flat Tiền sử variant must not receive Bootstrap `mt-2`/`mb-2` utility
 spacing, and `.doctor-workbench-panel__body--clinical` must retain zero padding.
 This keeps Hành chính, Tiền sử, and Khám aligned without adding wrapper-specific
-offsets; the cards themselves remain the visual-frame owners.
+offsets. In the doctor-flat history variant, the section stays flat and the
+interactive ICD container owns the single field frame; the section may retain a
+lightweight divider between history groups but must not wrap the control in a
+second card.
 
 ## Services And Document/History Support
 
@@ -201,8 +198,9 @@ The active doctor UI slice keeps five root sections in
 `doctor-section-edge-nav`: Hành chính, Tiền sử, Khám, Dịch vụ, and Chỉ định. The
 prescription workspace is inline below Khám and its history panel is opened by
 the local `Xem lịch sử` action. Chỉ định is mounted as a separate data-backed
-pane with current appointment rows, three source choices (catalog, custom text,
-survey), edit/delete actions,
+pane with current appointment rows, and both Doctor and Tâm lý gia expose one
+shared input that can select a survey or accept custom text,
+edit/delete actions,
 inline patient history, and one global-save owner. Documents remain in Hành
 chính and prescription history remains inside Đơn thuốc.
 

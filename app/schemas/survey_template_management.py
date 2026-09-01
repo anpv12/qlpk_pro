@@ -6,6 +6,7 @@ class SurveyTemplateBase(BaseModel):
     name: str
     description: Optional[str] = None
     content: Dict[str, Any]
+    default_performer_id: Optional[int] = None
     is_active: bool = True
 
 class SurveyTemplateCreate(SurveyTemplateBase):

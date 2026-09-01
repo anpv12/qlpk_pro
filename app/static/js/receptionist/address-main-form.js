@@ -44,7 +44,13 @@
 	};
 
 	function normalizeAddressQuery(value) {
-		return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '')
+				.normalize('NFKD')
+				.toLowerCase()
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/đ/g, 'd')
+				.trim();
 	}
 
 	function filterAddressItems(items, query) {

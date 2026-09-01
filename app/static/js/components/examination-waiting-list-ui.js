@@ -5,15 +5,20 @@
 		return options && options.document ? options.document : window.document;
 	}
 
+	function normalizeSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '').toLowerCase().trim();
+	}
+
 	function filterAppointmentsByPatientQuery(appointments, query) {
 		const source = Array.isArray(appointments) ? appointments : [];
-		const normalized = (query || '').trim().toLowerCase();
+		const normalized = normalizeSearchText(query);
 		if (!normalized) return source;
 
 		return source.filter(appointment => {
-			const name = (appointment.patient_full_name || '').toLowerCase();
-			const phone = (appointment.patient_phone || '').toLowerCase();
-			const idNumber = (appointment.patient_id_number || '').toLowerCase();
+			const name = normalizeSearchText(appointment.patient_full_name);
+			const phone = normalizeSearchText(appointment.patient_phone);
+			const idNumber = normalizeSearchText(appointment.patient_id_number);
 			return name.includes(normalized) || phone.includes(normalized) || idNumber.includes(normalized);
 		});
 	}

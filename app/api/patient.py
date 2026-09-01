@@ -21,6 +21,11 @@ from app.utils.clinical_access import (
     scoped_patient_ids,
     user_role_value,
 )
+from app.utils.search_normalization import (
+    VIETNAMESE_SEARCH_FROM,
+    VIETNAMESE_SEARCH_TO,
+    normalize_search_text,
+)
 from app.api.auth import require_auth
 from app.realtime.events import emit_document_changed, emit_patient_changed
 from app.models.patient import Patient # Import Patient model
@@ -96,6 +101,7 @@ def list_patients(user):
             """)
             result = db.execute(query, {'status': status_filter})
         elif search:
+            normalized_search = f"%{normalize_search_text(search)}%"
             query = text("""
                 SELECT id, patient_code, full_name, phone, date_of_birth,
                        address, address_detail, province, district, ward,
@@ -104,10 +110,15 @@ def list_patients(user):
                        sexual_orientation, id_number, nationality, religion, ethnicity,
                        education_level, nickname
                 FROM patients
-                WHERE full_name ILIKE :search OR phone ILIKE :search
+                WHERE LOWER(TRANSLATE(full_name, :search_from, :search_to)) LIKE :search
+                   OR LOWER(TRANSLATE(phone, :search_from, :search_to)) LIKE :search
                 ORDER BY id DESC
             """)
-            result = db.execute(query, {'search': f'%{search}%'})
+            result = db.execute(query, {
+                'search': normalized_search,
+                'search_from': VIETNAMESE_SEARCH_FROM,
+                'search_to': VIETNAMESE_SEARCH_TO,
+            })
         else:
             query = text("""
                 SELECT id, patient_code, full_name, phone, date_of_birth,
@@ -251,14 +262,15 @@ def modal_search_patients(user):
             .all()
         )
 
-        # Python-side filter cho search (xử lý đúng Vietnamese case-insensitive)
+        # Python-side filter uses the same case/accent-insensitive key as the
+        # shared SQL search expression above.
         if query_str:
-            query_lower = query_str.lower()
+            query_lower = normalize_search_text(query_str)
             all_patients = [p for p in all_patients if (
-                query_lower in (p.full_name or '').lower() or
-                query_lower in (p.phone or '').lower() or
-                query_lower in (p.patient_code or '').lower() or
-                query_lower in (p.id_number or '').lower()
+                query_lower in normalize_search_text(p.full_name) or
+                query_lower in normalize_search_text(p.phone) or
+                query_lower in normalize_search_text(p.patient_code) or
+                query_lower in normalize_search_text(p.id_number)
             )]
 
         patients = all_patients[:limit]

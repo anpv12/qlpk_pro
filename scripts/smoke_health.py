@@ -35,7 +35,6 @@ SMOKE_PAGES = [
     "/service-category.html",
     "/service-management.html",
     "/package-management.html",
-    "/order-catalog.html",
     "/order-management.html",
     "/payment-waiting.html",
     "/medicine-reference-catalog.html",

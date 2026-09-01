@@ -39,8 +39,9 @@
 			this.options = {
 				multiple: true,
 				selectionKey: 'id',
-				limit: 1000,
-				emptyQueryLimit: undefined,
+				limit: 100,
+				emptyQueryLimit: 30,
+				searchDebounceMs: 180,
 				getAuthHeader: null,
 				tagClassName: null,
 				tagLabel: getDisplayText,
@@ -55,6 +56,12 @@
 			this.requestRevision = 0;
 			this.activeIndex = -1;
 			this.isOpen = false;
+			this.currentQuery = '';
+			this.currentSkip = 0;
+			this.currentItems = [];
+			this.pagination = null;
+			this.loadingMore = false;
+			this.refreshTimer = null;
 			this.initialized = false;
 			this.init();
 		}
@@ -66,7 +73,7 @@
 			this.dropdown.hidden = true;
 			this.dropdown.classList.remove('appointment-hidden');
 			this.input.addEventListener('focus', () => this.open());
-			this.input.addEventListener('input', () => this.refresh(this.input.value));
+			this.input.addEventListener('input', () => this.scheduleRefresh(this.input.value));
 			this.input.addEventListener('keydown', event => this.handleKeydown(event));
 			this.root.addEventListener('click', event => {
 				if (event.target.closest('.icd-autocomplete__remove, [data-icd-option]')) return;
@@ -80,9 +87,9 @@
 			return true;
 		}
 
-		async loadOptions(query) {
-			const loader = window.ClinicalIcdDataLoader?.loadICDData;
-			if (typeof loader !== 'function') return [];
+		async loadOptions(query, skip = 0) {
+			const loader = window.ClinicalIcdDataLoader?.loadICDPage;
+			if (typeof loader !== 'function') return { data: [], pagination: null };
 			const trimmedQuery = textValue(query);
 			const limit = trimmedQuery || this.options.emptyQueryLimit === undefined
 				? this.options.limit
@@ -90,6 +97,7 @@
 			return loader(trimmedQuery, {
 				getAuthHeader: this.options.getAuthHeader,
 				limit,
+				skip,
 				missingTokenMessage: this.options.missingTokenMessage || 'Không tìm thấy token để tải danh mục ICD.'
 			});
 		}
@@ -109,9 +117,31 @@
 			await this.refresh(this.input.value);
 		}
 
+		scheduleRefresh(query = '') {
+			if (this.refreshTimer) clearTimeout(this.refreshTimer);
+			const delay = Math.max(0, Number(this.options.searchDebounceMs) || 0);
+			if (!delay) {
+				this.refresh(query);
+				return;
+			}
+			this.refreshTimer = setTimeout(() => {
+				this.refreshTimer = null;
+				this.refresh(query);
+			}, delay);
+		}
+
 		close({ clearQuery = true } = {}) {
+			if (this.refreshTimer) {
+				clearTimeout(this.refreshTimer);
+				this.refreshTimer = null;
+			}
 			this.requestRevision += 1;
 			this.isOpen = false;
+			this.loadingMore = false;
+			this.currentQuery = '';
+			this.currentSkip = 0;
+			this.currentItems = [];
+			this.pagination = null;
 			this.activeIndex = -1;
 			this.dropdown.hidden = true;
 			this.dropdown.classList.remove('show');
@@ -120,34 +150,73 @@
 
 		async refresh(query = '') {
 			if (!this.initialized) return;
+			if (this.refreshTimer) {
+				clearTimeout(this.refreshTimer);
+				this.refreshTimer = null;
+			}
 			this.closeSiblings();
 			this.isOpen = true;
 			this.dropdown.hidden = false;
 			this.dropdown.classList.add('show');
 			const revision = ++this.requestRevision;
+			this.currentQuery = textValue(query);
+			this.currentSkip = 0;
+			this.currentItems = [];
+			this.pagination = null;
+			this.loadingMore = false;
 			this.activeIndex = -1;
 			this.renderMessage('Đang tải...', 'loading');
-			const items = await this.loadOptions(query);
+			const page = await this.loadOptions(this.currentQuery, 0);
 			if (revision !== this.requestRevision || !this.isOpen) return;
-			this.renderOptions(Array.isArray(items) ? items : []);
+			const items = Array.isArray(page?.data) ? page.data : [];
+			this.currentItems = items.slice();
+			this.pagination = page?.pagination || null;
+			this.renderOptions(items);
+		}
+
+		async loadMore() {
+			if (!this.isOpen || this.loadingMore || !this.pagination?.has_next) return false;
+
+			const revision = this.requestRevision;
+			const pageSize = Math.max(
+				1,
+				Number(this.pagination.per_page) || Number(this.options.limit) || 100
+			);
+			const nextSkip = this.currentSkip + pageSize;
+			this.loadingMore = true;
+			this.renderLoadMoreControl();
+			try {
+				const page = await this.loadOptions(this.currentQuery, nextSkip);
+				if (revision !== this.requestRevision || !this.isOpen) return false;
+
+				const items = Array.isArray(page?.data) ? page.data : [];
+				this.currentItems.push(...items);
+				this.currentSkip = nextSkip;
+				this.pagination = page?.pagination || {
+					...this.pagination,
+					has_next: false
+				};
+				if (!items.length) this.pagination.has_next = false;
+				this.renderOptions(items, { append: true });
+				return true;
+			} finally {
+				if (revision === this.requestRevision) {
+					this.loadingMore = false;
+					this.renderLoadMoreControl();
+				}
+			}
 		}
 
 		renderMessage(message, type) {
-		this.list.replaceChildren();
-		const element = document.createElement('div');
-		 element.className = `icd-autocomplete__message icd-autocomplete__message--${type}`;
-		element.setAttribute('role', 'status');
-		element.textContent = message;
-		this.list.appendChild(element);
-	}
-
-		renderOptions(items) {
-		this.list.replaceChildren();
-		if (!items.length) {
-			this.renderMessage(this.input.value.trim() ? 'Không tìm thấy kết quả' : 'Nhập mã ICD hoặc tên bệnh để tìm kiếm', 'empty');
-			return;
+			this.list.replaceChildren();
+			const element = document.createElement('div');
+			element.className = `icd-autocomplete__message icd-autocomplete__message--${type}`;
+			element.setAttribute('role', 'status');
+			element.textContent = message;
+			this.list.appendChild(element);
 		}
-		items.forEach(item => {
+
+		createOption(item) {
 			const option = document.createElement('button');
 			option.type = 'button';
 			option.className = 'dropdown-item icd-autocomplete__option';
@@ -168,9 +237,41 @@
 				event.stopPropagation();
 				this.select(item);
 			});
-			this.list.appendChild(option);
-		});
-	}
+			return option;
+		}
+
+		renderOptions(items, { append = false } = {}) {
+			if (!append) this.list.replaceChildren();
+			if (!items.length && !append) {
+				this.renderMessage(this.input.value.trim() ? 'Không tìm thấy kết quả' : 'Nhập mã ICD hoặc tên bệnh để tìm kiếm', 'empty');
+				return;
+			}
+			items.forEach(item => this.list.appendChild(this.createOption(item)));
+			this.renderLoadMoreControl();
+		}
+
+		renderLoadMoreControl() {
+			this.list.querySelector('.icd-autocomplete__load-more')?.remove();
+			if (!this.pagination?.has_next) return;
+			const remaining = Math.max(
+				0,
+				Number(this.pagination.total_count || 0) - this.currentItems.length
+			);
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'icd-autocomplete__load-more';
+			button.disabled = this.loadingMore;
+			button.textContent = this.loadingMore
+				? 'Đang tải thêm...'
+				: remaining > 0 ? `Tải thêm (${remaining})` : 'Tải thêm';
+			button.setAttribute('aria-label', button.textContent);
+			button.addEventListener('click', event => {
+				event.preventDefault();
+				event.stopPropagation();
+				this.loadMore();
+			});
+			this.list.appendChild(button);
+		}
 
 	getOptionElements() {
 		return [...this.list.querySelectorAll('[data-icd-option]')];

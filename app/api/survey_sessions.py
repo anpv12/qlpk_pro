@@ -4,8 +4,12 @@ from app.models.survey_session import SurveySession, SurveySessionStatus
 from app.models.patient import Patient
 from app.models.examination import Examination
 from app.models.survey_response import SurveyResponse
+from app.models.appointment import Appointment
+from app.models.chi_dinh import ChiDinh
+from app.models.survey_template import SurveyTemplate
 from app.api.auth import require_auth
 from app.realtime.events import emit_survey_changed
+from app.utils.clinical_access import appointment_access_error
 import qrcode
 import io
 import base64
@@ -37,13 +41,41 @@ def get_appointment_id_for_examination(db, examination_id):
     row = db.query(Examination.appointment_id).filter(Examination.id == examination_id).first()
     return row[0] if row else None
 
+
+def _get_accessible_examination(db, user, examination_id):
+    examination = db.query(Examination).filter(Examination.id == examination_id).first()
+    if not examination:
+        return None, None, ('Không tìm thấy lần khám', 404)
+    appointment = db.query(Appointment).filter(Appointment.id == examination.appointment_id).first()
+    if not appointment:
+        return None, None, ('Không tìm thấy lịch hẹn của lần khám', 404)
+    access_error = appointment_access_error(user, appointment)
+    if access_error:
+        return None, None, (access_error, 403)
+    return examination, appointment, None
+
+
+def _get_order_template_id(db, appointment_id):
+    row = (
+        db.query(ChiDinh)
+        .filter(
+            ChiDinh.appointment_id == appointment_id,
+            ChiDinh.survey_template_id.isnot(None),
+        )
+        .order_by(ChiDinh.created_at.desc(), ChiDinh.id.desc())
+        .first()
+    )
+    return row.survey_template_id if row else None
+
 @survey_sessions.route('/survey-sessions/generate', methods=['POST'])
 @require_auth
 def generate_survey_session(user):
     """Generate survey session with QR code and URL"""
     db_gen = None
     try:
-        data = request.get_json(silent=True) or {}
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Dữ liệu tạo khảo sát không hợp lệ'}), 400
         patient_id = data.get('patient_id')
         examination_id = data.get('examination_id')
         template_id = data.get('template_id')  # Get template_id from request
@@ -54,14 +86,43 @@ def generate_survey_session(user):
         db_gen = get_db()
         db = next(db_gen)
         
-        # Check if patient and examination exist
+        try:
+            patient_id = int(patient_id)
+            examination_id = int(examination_id)
+            template_id = int(template_id) if template_id is not None else None
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'ID bệnh nhân, lần khám hoặc mẫu khảo sát không hợp lệ'}), 400
+
+        # Check if patient, examination and appointment are in the current user's scope.
         patient = db.query(Patient).filter(Patient.id == patient_id).first()
         if not patient:
             return jsonify({'success': False, 'message': 'Không tìm thấy bệnh nhân'}), 404
-        
-        examination = db.query(Examination).filter(Examination.id == examination_id).first()
-        if not examination:
-            return jsonify({'success': False, 'message': 'Không tìm thấy lần khám'}), 404
+
+        examination, appointment, access_error = _get_accessible_examination(db, user, examination_id)
+        if access_error:
+            return jsonify({'success': False, 'message': access_error[0]}), access_error[1]
+        if examination.patient_id != patient_id:
+            return jsonify({'success': False, 'message': 'Bệnh nhân không khớp với lần khám'}), 400
+
+        if not template_id:
+            template_id = _get_order_template_id(db, appointment.id)
+        if not template_id:
+            return jsonify({'success': False, 'message': 'Chỉ định chưa gắn mẫu khảo sát'}), 400
+
+        template = db.query(SurveyTemplate).filter(
+            SurveyTemplate.id == template_id,
+            SurveyTemplate.is_active.is_(True),
+            SurveyTemplate.content.isnot(None),
+        ).first()
+        if not template:
+            return jsonify({'success': False, 'message': 'Mẫu khảo sát không tồn tại hoặc đã ngừng hoạt động'}), 400
+
+        linked_order = db.query(ChiDinh).filter(
+            ChiDinh.appointment_id == appointment.id,
+            ChiDinh.survey_template_id == template_id,
+        ).first()
+        if not linked_order:
+            return jsonify({'success': False, 'message': 'Mẫu khảo sát chưa được gắn vào chỉ định của lượt khám'}), 400
         
         # Always create a new session when user clicks "Gửi link khảo sát"
         # This ensures each link is unique and can be tracked separately
@@ -137,6 +198,10 @@ def get_survey_status(user, examination_id):
     try:
         db_gen = get_db()
         db = next(db_gen)
+
+        examination, appointment, access_error = _get_accessible_examination(db, user, examination_id)
+        if access_error:
+            return jsonify({'success': False, 'message': access_error[0]}), access_error[1]
         
         # Get latest session
         session_row = db.query(SurveySession).filter(SurveySession.examination_id == examination_id).order_by(SurveySession.created_at.desc()).first()
@@ -146,7 +211,8 @@ def get_survey_status(user, examination_id):
                 'success': True,
                 'data': {
                     'status': 'not_started',
-                    'message': 'Chưa có phiên khảo sát nào'
+                    'message': 'Chưa có phiên khảo sát nào',
+                    'template_id': _get_order_template_id(db, appointment.id),
                 }
             })
         
@@ -171,6 +237,7 @@ def get_survey_status(user, examination_id):
         created_at = session_row.created_at
         updated_at = session_row.updated_at
         started_at = session_row.started_at
+        template_id = _get_order_template_id(db, appointment.id)
         
         # Get patient info
         patient = db.query(Patient).filter(Patient.id == patient_id).first()
@@ -211,7 +278,8 @@ def get_survey_status(user, examination_id):
                 'created_at': created_at.isoformat(),
                 'expires_at': expires_at.isoformat(),
                 'responses': responses_data,
-                'elapsed_time': elapsed_time
+                'elapsed_time': elapsed_time,
+                'template_id': template_id,
             }
         })
         
@@ -245,6 +313,10 @@ def update_survey_status(user, session_id):
         
         if not session_row:
             return jsonify({'success': False, 'message': 'Không tìm thấy phiên khảo sát'}), 404
+
+        _, _, access_error = _get_accessible_examination(db, user, session_row.examination_id)
+        if access_error:
+            return jsonify({'success': False, 'message': access_error[0]}), access_error[1]
         
         # Check if session is expired
         if session_row.is_expired():

@@ -5,10 +5,23 @@
 	const ACTIVE_TAB_STORAGE_KEY = 'qlpk_workspace_active_tab';
 	const WORKSPACE_STORAGE_VERSION = 2;
 	const MAX_TABS = 10;
+	const RETIRED_WORKSPACE_PATHS = new Set([
+		'/order-catalog.html',
+	]);
 	let initialized = false;
 	let nativeTabId = '';
 	let resizeObserver = null;
 	let activeLauncherGroup = '';
+
+	function normalizeLauncherSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '')
+				.normalize('NFKD')
+				.toLowerCase()
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/đ/g, 'd')
+				.trim();
+	}
 
 	function getConfigItems() {
 		return (window.QLPKNavigationConfig && Array.isArray(window.QLPKNavigationConfig.items))
@@ -321,18 +334,23 @@
 		return normalizeHref(href).replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home';
 	}
 
+	function isRetiredWorkspaceTab(tab) {
+		return RETIRED_WORKSPACE_PATHS.has(normalizedPathname(tab && tab.href));
+	}
+
 	function readTabs() {
 		const tabs = readOwnerValue(TAB_STORAGE_KEY, []);
 		if (!Array.isArray(tabs)) return [];
 		return tabs.filter((tab) => {
 			if (!tab || !tab.href || !tab.label) return false;
+			if (isRetiredWorkspaceTab(tab)) return false;
 			const configuredItem = configuredNavItem(tab.href);
 			return !configuredItem || hasPermission(configuredItem);
 		});
 	}
 
 	function saveTabs(tabs) {
-		let nextTabs = tabs.filter(tab => tab && tab.href && tab.label);
+		let nextTabs = tabs.filter(tab => tab && tab.href && tab.label && !isRetiredWorkspaceTab(tab));
 		if (nativeTabId) {
 			const nativeTab = nextTabs.find(tab => tab.id === nativeTabId);
 			const rest = nextTabs.filter(tab => tab.id !== nativeTabId).slice(-(MAX_TABS - 1));
@@ -767,13 +785,13 @@
 		const grid = document.getElementById('qlpkAppLauncherGrid');
 		if (!grid) return;
 
-		const query = (document.getElementById('qlpkAppLauncherSearch')?.value || '').trim().toLowerCase();
+		const query = normalizeLauncherSearchText(document.getElementById('qlpkAppLauncherSearch')?.value || '');
 		grid.innerHTML = '';
 		grid.classList.toggle('is-searching', Boolean(query));
 
 		if (query) {
 			flattenLeaves(visibleItems())
-				.filter(item => `${item.parentLabel} ${item.label}`.toLowerCase().includes(query))
+				.filter(item => normalizeLauncherSearchText(`${item.parentLabel} ${item.label}`).includes(query))
 				.forEach((item) => grid.appendChild(createLauncherTile(item)));
 			return;
 		}

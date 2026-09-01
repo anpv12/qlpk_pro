@@ -248,7 +248,7 @@ def smoke_page(port: int, base_url: str, path: str, wait_seconds: float, auth_to
                     localStorage.setItem('qlpk_token', qlpkSmokeToken);
                     localStorage.setItem('token', qlpkSmokeToken);
                     localStorage.setItem('qlpk_user', JSON.stringify({{role:'admin', full_name:'Browser Smoke', username:'smoke'}}));
-                    localStorage.setItem('qlpk_permissions', JSON.stringify(['dashboard','lichhen','qlkham-letan','qlkham-bs','qlkham-tamly','qlkham-cls','hoadon','chi-tieu','thongke-thuoc','ql-tailieu','ql-kho-thuoc','ql-thuoc','ql-hoat-chat','ql-di-nguyen','ql-tuong-tac-thuoc','ql-taikhoan','ql-phanquyen','ql-nhomquyen','ql-tu-viettat','ql-danhmuc-dichvu','ql-danhmuc-chidinh','ql-dichvu','ql-goi-dichvu','ql-mau-khaosat','ql-danhmuc-icd','ql-ngayle','ca-nhan','ca-nhan-phimtat']));
+                    localStorage.setItem('qlpk_permissions', JSON.stringify(['dashboard','lichhen','qlkham-letan','qlkham-bs','qlkham-tamly','qlkham-cls','hoadon','chi-tieu','thongke-thuoc','ql-tailieu','ql-kho-thuoc','ql-thuoc','ql-hoat-chat','ql-di-nguyen','ql-tuong-tac-thuoc','ql-taikhoan','ql-phanquyen','ql-nhomquyen','ql-tu-viettat','ql-danhmuc-dichvu','ql-dichvu','ql-goi-dichvu','ql-mau-khaosat','ql-danhmuc-icd','ql-ngayle','ca-nhan','ca-nhan-phimtat']));
                 """
             },
         )

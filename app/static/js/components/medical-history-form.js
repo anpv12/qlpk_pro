@@ -429,9 +429,11 @@
     substanceIds: DEFAULT_SUBSTANCE_IDS
 	});
 
+		// Consumers register workflow-specific actions (notably the ICD bridge)
+		// after this shared form is loaded.  Create the instance here, but let the
+		// owning bridge call init() once all actions/features are available.
 		const bootstrapConfig = window.QLPKMedicalHistoryBootstrapConfig
 			|| window.QLPKDoctorModuleRegistry.get('doctorComponentConfig')?.history
 			|| {};
-		const bootstrapInstance = getOrCreate(bootstrapConfig);
-		if (bootstrapInstance && bootstrapConfig.autoInit !== false) bootstrapInstance.init();
+		getOrCreate(bootstrapConfig);
 	})(window, document);

@@ -4,6 +4,25 @@ Use this file before changing models, endpoint payloads, serializers, save/load 
 
 ## Ownership By Table
 
+### `icd`
+
+Owns the active ICD catalog used by diagnosis and medical-history controls.
+
+Rules:
+
+- `GET /api/icd/` filters by `search` in the database and returns a stable
+  `icd_code` order with `skip`, `limit` and `pagination` metadata. The API
+  accepts `limit` from `1..1000`; invalid pagination values return `400`.
+- Shared autocomplete uses pages of 100 results (30 for an empty query), keeps
+  the metadata through `loadICDPage`, and loads the next page explicitly via
+  `skip`. It must never hide a result by applying a frontend `.slice()` cap.
+- `loadICDData` remains an array-compatible adapter for existing hydration
+  callers; its data is produced by the same page loader and carries the page
+  metadata without a second search implementation.
+- Accent-insensitive substring search uses the normalized SQL expression and
+  the `20260831_icd_search` PostgreSQL trigram indexes. Diagnosis/history save
+  still stores IDs, not display labels.
+
 ### `patients`
 
 Owns patient identity, contact, demographics, and lifetime/background information.
@@ -148,6 +167,37 @@ Doctor `medical_history` envelope and page lifecycle. The retired top-level hist
 history fields duplicated inside the generic `patient`/`examination` payload
 are not part of the active Doctor contract.
 
+### Clinic Medicine Inventory
+
+`medicines` is the clinic drug catalog. `medicine_batches.remaining_quantity`
+owns each lot balance, while `medicines.stock_quantity` is a materialized
+aggregate kept for existing readers.
+
+Rules:
+
+- Creating or editing a medicine never writes `stock_quantity`; a new catalog
+  row starts at zero. Inventory enters only through a lot import.
+- Creating a lot sets `quantity` and `remaining_quantity` to the imported
+  quantity, locks the medicine aggregate, and appends one `import` movement
+  with `batch_id` in the same transaction. Import-order rows are validated as
+  one atomic request; invalid rows are not silently skipped. Inventory write
+  quantities accept at most two decimal places, matching the aggregate and
+  ledger precision.
+- Lot `quantity` and `remaining_quantity` are not writable through the batch
+  metadata `PUT`. Inventory count submits `batch_id`, actual quantity, and a
+  mandatory reason to the batch adjustment flow; the service updates the lot,
+  aggregate, and append-only `adjustment` movement together.
+- Direct `POST /api/medicine-transactions/` is rejected. Movement rows are
+  produced only by lot import, lot adjustment, or the prescription stock
+  service. A lot with movement history cannot be deleted; a lot with remaining
+  balance must be adjusted to zero before any legacy deletion path.
+- Excel catalog import creates medicines at zero. Any positive stock column is
+  rejected with a message directing the user to import a lot; this phase does
+  not backfill or reconcile legacy rows whose aggregate and lot totals differ.
+- `app/modules/medicines/services/inventory_service.py` is the canonical owner
+  for lot import and adjustment writes. Existing readers may continue to use
+  `medicines.stock_quantity` until the later read-only reconciliation phase.
+
 ### Prescriptions
 
 `prescriptions` owns prescription headers. `prescription_items` owns medicine rows. The database column remains numeric for legacy rows, but new dispensing quantities are whole units; dose fractions belong in the usage schedule JSON.
@@ -192,12 +242,26 @@ Rules:
 
 ### Orders / Clinical Indications
 
-`chi_dinh` owns per-appointment ordered items and result files. Order catalog data lives in `order_categories` / `order_items`.
+`chi_dinh` owns per-appointment ordered items and result files. The indication
+name is either free text or a reference to an active `survey_templates` row;
+the retired order catalog tables no longer exist.
 
 Rules:
 
 - Preserve result-file upload/delete/download behavior.
 - Keep selected-order frontend state in sync with server reload after modal open/save.
+- `survey_templates.default_performer_id` is the optional default in-house
+  performer for one survey/test. It references an active doctor or psychologist
+  user; `created_by` remains the template creator and must not be used as the
+  performer. Selecting a survey copies this ID into the appointment order's
+  existing `chi_dinh.in_house_unit_id`; changing the template default does not
+  rewrite existing orders.
+- Doctor and Tâm lý gia indication forms expose one input. Selecting a result
+  from its survey autocomplete stores `survey_template_id` and the copied
+  display name; text that is not selected from the dropdown stores only
+  `order_name` as `custom`. The backend still distinguishes the two sources
+  from the payload, but the user is not asked to choose a source. No catalog ID
+  or group path is accepted or persisted.
 
 ### Legacy Database Archive
 

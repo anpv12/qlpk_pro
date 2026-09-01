@@ -8,6 +8,16 @@
 (function () {
 	'use strict';
 
+	function normalizePersonalDetailSearchText(value) {
+		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+			|| String(value || '')
+				.normalize('NFKD')
+				.toLowerCase()
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/đ/g, 'd')
+				.trim();
+	}
+
 	// Flag để kiểm tra modal đã được load chưa
 	let modalLoaded = false;
 	let modalLoading = false;
@@ -753,8 +763,9 @@
 			filtered = suggestions;
 		} else {
 			// Filter suggestions based on search value
+			const normalizedSearchValue = normalizePersonalDetailSearchText(searchValue);
 			filtered = suggestions.filter(suggestion =>
-				suggestion.toLowerCase().includes(searchValue)
+				normalizePersonalDetailSearchText(suggestion).includes(normalizedSearchValue)
 			);
 		}
 
@@ -864,7 +875,7 @@
 			field.parentNode.replaceChild(newField, field);
 
 			newField.addEventListener('input', function () {
-				const value = this.value.toLowerCase();
+				const value = normalizePersonalDetailSearchText(this.value);
 				if (typeof showAutocompleteSuggestions === 'function') {
 					showAutocompleteSuggestions(this, suggestions, value);
 				}
@@ -1480,11 +1491,12 @@
 	// Global normalize function for address name matching
 	function normalizeAddressName(s) {
 		if (!s) return '';
-		let x = ('' + s).normalize('NFC').toLowerCase().trim();
+		let x = `${s}`.trim();
 		// Loại bỏ tiền tố thông dụng
 		x = x.replace(/^t\s*p\.?\s*/i, '');
 		x = x.replace(/^thành phố\s+/i, '');
 		x = x.replace(/^tỉnh\s+/i, '');
+		x = normalizePersonalDetailSearchText(x);
 		return x.replace(/\s+/g, ' ');
 	}
 

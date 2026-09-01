@@ -2,6 +2,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.medicine_reference_catalog import MedicineReferenceCatalog
+from app.utils.search_normalization import normalized_contains
 
 
 def _not_withdrawn_registration_filter():
@@ -51,14 +52,13 @@ def build_reference_catalog_query(db: Session, search=None, status="active"):
         )
 
     if search:
-        term = f"%{search.strip()}%"
         query = query.filter(
             or_(
-                MedicineReferenceCatalog.name.ilike(term),
-                MedicineReferenceCatalog.active_ingredient.ilike(term),
-                MedicineReferenceCatalog.registration_number.ilike(term),
-                MedicineReferenceCatalog.old_registration_number.ilike(term),
-                MedicineReferenceCatalog.manufacturer_name.ilike(term),
+                normalized_contains(MedicineReferenceCatalog.name, search),
+                normalized_contains(MedicineReferenceCatalog.active_ingredient, search),
+                normalized_contains(MedicineReferenceCatalog.registration_number, search),
+                normalized_contains(MedicineReferenceCatalog.old_registration_number, search),
+                normalized_contains(MedicineReferenceCatalog.manufacturer_name, search),
             )
         )
 

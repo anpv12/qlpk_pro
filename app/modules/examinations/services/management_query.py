@@ -11,6 +11,7 @@ from app.modules.examinations.view_models.management import (
     build_examination_management_detail_response,
     build_examination_management_list_item,
 )
+from app.utils.search_normalization import normalized_contains
 
 class ManagementExaminationNotFound(Exception):
     """Raised when an active management examination row does not exist."""
@@ -45,9 +46,9 @@ def get_examination_management_list_result(db, args):
         query = query.join(Patient).join(User, User.id == Examination.doctor_id)
         query = query.filter(
             or_(
-                Examination.examination_code.ilike(f'%{search}%'),
-                Patient.full_name.ilike(f'%{search}%'),
-                User.full_name.ilike(f'%{search}%')
+                normalized_contains(Examination.examination_code, search),
+                normalized_contains(Patient.full_name, search),
+                normalized_contains(User.full_name, search),
             )
         )
 

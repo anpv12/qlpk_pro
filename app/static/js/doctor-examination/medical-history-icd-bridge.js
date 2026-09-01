@@ -95,7 +95,6 @@
 		getHistoryForm().state.components[mode] = new Component(root, {
 			multiple: true,
 			selectionKey: 'code',
-			limit: 1000,
 			getAuthHeader,
 			tagClassName: item => getHistoryTagClass(mode, item),
 			tagLabel: getHistoryTagLabel,
@@ -114,9 +113,8 @@
 	function loadICDData(query = '') {
     const loader = REGISTRY.get('icdDataLoader') || window.ClinicalIcdDataLoader;
     if (!loader || typeof loader.loadICDData !== 'function') return Promise.resolve([]);
-    return loader.loadICDData(query, {
+		return loader.loadICDData(query, {
 			getAuthHeader,
-			limit: 1000,
 			missingTokenMessage: 'Không tìm thấy token để tải danh mục ICD.'
 		});
 	}

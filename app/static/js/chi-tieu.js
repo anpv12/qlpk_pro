@@ -1,5 +1,10 @@
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
 
+function normalizeSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		|| String(value || '').toLowerCase().trim();
+}
+
 function setCtVisible(target, isVisible) {
 	const el = typeof target === 'string' ? document.getElementById(target) : target;
 	if (!el) return;
@@ -125,12 +130,12 @@ function openAcList(ri, colId, inputEl) {
 	closeAllAc();
 	const col = columns.find(c => c.id === colId);
 	const allOpts = getAcOptions(col);
-	const query = inputEl.value.toLowerCase().trim();
-	const filtered = query ? allOpts.filter(o => o.toLowerCase().includes(query)) : allOpts;
+	const query = normalizeSearchText(inputEl.value);
+	const filtered = query ? allOpts.filter(o => normalizeSearchText(o).includes(query)) : allOpts;
 	const listEl = inputEl.parentElement.querySelector('.ac-list');
 	if (!listEl) return;
 	let html = filtered.map(o => `<div class="ac-item" onmousedown="selectAc(${ri},'${colId}','${o.replace(/'/g, "\\'")}')"> ${o}</div>`).join('');
-	if (query && !allOpts.some(o => o.toLowerCase() === query)) {
+	if (query && !allOpts.some(o => normalizeSearchText(o) === query)) {
 		html += `<div class="ac-item ac-item-new" onmousedown="selectAc(${ri},'${colId}','${query.replace(/'/g, "\\'")}')">
 			<i class="bi bi-plus-circle me-1"></i> Thêm "${inputEl.value.trim()}"</div>`;
 	}
@@ -1125,7 +1130,7 @@ function updateFilterTypeLabel() {
 	}
 }
 function getFilteredRows() {
-	const search = (document.getElementById('filterSearch')?.value || '').toLowerCase().trim();
+	const search = normalizeSearchText(document.getElementById('filterSearch')?.value || '');
 	const filterPayment = document.getElementById('filterPayment')?.value || '';
 
 	return rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
@@ -1133,7 +1138,7 @@ function getFilteredRows() {
 		if (selectedFilterTypes.length > 0 && !selectedFilterTypes.includes(row.type)) return false;
 		if (filterPayment && row.payment !== filterPayment) return false;
 		if (search) {
-			const haystack = columns.map(c => String(row[c.id] || '')).join(' ').toLowerCase();
+			const haystack = normalizeSearchText(columns.map(c => String(row[c.id] || '')).join(' '));
 			if (!haystack.includes(search)) return false;
 		}
 		return true;
@@ -1461,7 +1466,7 @@ function processImportRows(raw, fileName) {
 	const headers = raw[0].map(h => String(h || '').trim());
 	const colMap = {};
 	headers.forEach((h, i) => {
-		const col = columns.find(c => c.name.trim().toLowerCase() === h.toLowerCase());
+		const col = columns.find(c => normalizeSearchText(c.name) === normalizeSearchText(h));
 		if (col) colMap[i] = col.id;
 	});
 
