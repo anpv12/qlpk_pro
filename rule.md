@@ -24,6 +24,8 @@ Before asking the user to approve work, include Findings, Proposed Solution, Sco
 
 ## Reference Sources
 
+- `references/ui/button-system.md` — bắt buộc cho mọi thiết kế/sửa nút; dùng owner token/CSS chung, không tự phối màu hoặc viền riêng.
+
 - `AGENTS.md` - agent entry point and load order.
 - `references/refactor-progress.md` - compact handoff dashboard for ongoing refactor scope, current progress, next steps, and validation status.
 - `so-do-to-chuc.md` - controlled organization roadmap, target structure, phased backlog, and double-check protocol.

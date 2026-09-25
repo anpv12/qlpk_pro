@@ -235,7 +235,7 @@
 			if (!$row.length) return;
 
 			const $icons = options.$(`.verify-icons[data-appt-id="${appointmentId}"]`);
-			$icons.html('<span class="appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Lỗi kiểm tra</span>');
+			$icons.html('<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Lỗi kiểm tra</span>');
 
 			const $actionButton = options.$(`.action-btn[data-appt-id="${appointmentId}"]`);
 			if ($actionButton.length) {

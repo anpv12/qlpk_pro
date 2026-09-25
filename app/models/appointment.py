@@ -50,6 +50,7 @@ class Appointment(Base):
     notes = Column(Text)  # Ghi chú lịch hẹn
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    doctor_queue_entered_at = Column(DateTime(timezone=True), nullable=True)
     
     # Soft delete fields
     is_deleted = Column(Boolean, default=False, nullable=False)
@@ -90,6 +91,7 @@ class Appointment(Base):
             'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'doctor_queue_entered_at': self.doctor_queue_entered_at.isoformat() if self.doctor_queue_entered_at else None,
             'is_deleted': self.is_deleted,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'original_appointment_id': self.original_appointment_id,

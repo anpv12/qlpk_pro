@@ -33,6 +33,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt
 
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/qlpk-browsers
+RUN python -m playwright install --with-deps chromium \
+    && chmod -R a+rX /opt/qlpk-browsers
+
 # Copy application code
 COPY . .
 

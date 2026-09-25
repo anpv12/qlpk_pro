@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, or_
 from app.core.database import get_db
 from app.models.medicine_batch import MedicineBatch
 from app.models.medicine import Medicine
@@ -8,36 +8,21 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.modules.medicines.services.inventory_service import (
     InventoryValidationError,
-    adjust_batch,
     import_batch,
     parse_quantity,
+    lock_medicine,
+    add_movement,
 )
+from app.modules.medicines.services.reference_review import can_review_reference
 from app.models.medicine_transaction import MedicineTransaction
+from app.utils.search_normalization import normalized_contains
 import logging
+from decimal import Decimal
 from datetime import datetime, date
 
 logger = logging.getLogger(__name__)
 
 medicine_batch_router = Blueprint('medicine_batch', __name__)
-
-
-def generate_batch_number(db, medicine_id=None):
-    """
-    Tự động tạo số lô mới (LOT-01, LOT-02...) đảm bảo không trùng trong toàn bộ bảng.
-    Bỏ phụ thuộc vào medicine_id vì cột batch_number đang unique toàn cục.
-    """
-    last_batch = db.query(MedicineBatch).order_by(desc(MedicineBatch.id)).first()
-    
-    if last_batch and last_batch.batch_number:
-        try:
-            last_number = int(str(last_batch.batch_number).split('-')[-1])
-            new_number = last_number + 1
-        except Exception:
-            new_number = 1
-    else:
-        new_number = 1
-    
-    return f"LOT-{new_number:02d}"
 
 
 @medicine_batch_router.route('/medicine-batches/', methods=['GET'])
@@ -50,6 +35,8 @@ def get_medicine_batches(user):
         medicine_id = request.args.get('medicine_id', type=int)
         supplier_id = request.args.get('supplier_id', type=int)
         status = request.args.get('status')  # Bình thường, Sắp hết hạn, Đã hết hạn, Sắp hết
+        search = request.args.get('search', '').strip()
+        sort = request.args.get('sort', '')
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 50, type=int)
         
@@ -59,6 +46,15 @@ def get_medicine_batches(user):
             joinedload(MedicineBatch.creator),
         )
         
+        # Lọc theo tên thuốc hoặc số lô (bảng gộp "Lịch sử nhập & lô")
+        if search:
+            query = query.join(Medicine, MedicineBatch.medicine_id == Medicine.id).filter(
+                or_(
+                    normalized_contains(Medicine.name, search),
+                    normalized_contains(MedicineBatch.batch_number, search),
+                )
+            )
+
         # Lọc theo medicine_id
         if medicine_id:
             query = query.filter(MedicineBatch.medicine_id == medicine_id)
@@ -89,15 +85,20 @@ def get_medicine_batches(user):
                     MedicineBatch.remaining_quantity > MedicineBatch.quantity * 0.1
                 )
         
-        # Sắp xếp theo FEFO (First Expired First Out)
-        query = query.order_by(MedicineBatch.expiry_date.asc(), MedicineBatch.import_date.asc())
+        # Sắp xếp theo FEFO (First Expired First Out); "recent" phục vụ xem lại
+        # lần vừa nhập trong panel Lịch sử nhập & lô, không đổi thứ tự mặc định.
+        if sort == 'recent':
+            query = query.order_by(MedicineBatch.created_at.desc(), MedicineBatch.id.desc())
+        else:
+            query = query.order_by(MedicineBatch.expiry_date.asc(), MedicineBatch.import_date.asc())
         
         # Phân trang
         total = query.count()
         batches = query.offset((page - 1) * per_page).limit(per_page).all()
         
+        can_supply_price = can_review_reference(db, user.id)
         return jsonify({
-            'batches': [batch.to_dict() for batch in batches],
+            'batches': [dict(batch.to_dict(), can_supply_import_price=can_supply_price and batch.import_price is None) for batch in batches],
             'total': total,
             'page': page,
             'per_page': per_page,
@@ -151,22 +152,30 @@ def get_medicine_batches_by_medicine(user, medicine_id):
         total_value = 0
         total_qty = 0
         for batch in batches:
-            if batch.import_price and batch.remaining_quantity:
+            if batch.import_price is not None and batch.remaining_quantity:
                 total_value += float(batch.import_price) * float(batch.remaining_quantity)
                 total_qty += float(batch.remaining_quantity)
         avg_import_price = total_value / total_qty if total_qty > 0 else None
         
         # Tính giá trị tồn kho
-        stock_value = total_value if total_value > 0 else None
+        missing_cost_quantity = sum(float(b.remaining_quantity) for b in batches if b.import_price is None)
+        stock_value = total_value if missing_cost_quantity == 0 else None
         
         return jsonify({
             'medicine_id': medicine_id,
             'medicine_name': medicine.name,
+            'unit': medicine.unit,
             'batches': [batch.to_dict() for batch in batches],
             'total_batches': len(batches),
             'total_quantity': total_quantity,
             'avg_import_price': avg_import_price,
-            'stock_value': stock_value
+            'stock_value': stock_value,
+            'known_stock_value': total_value,
+            'missing_cost_quantity': missing_cost_quantity,
+            'aggregate_quantity': float(medicine.stock_quantity or 0),
+            'stock_difference': float(medicine.stock_quantity or 0) - total_quantity,
+            'synthetic_receipts': sum(b.batch_number.startswith('SEED-LOCAL-') for b in batches),
+            'distinct_lots': len({(b.batch_number, b.expiry_date) for b in batches}),
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
         logger.error(f"Lỗi lấy danh sách lô thuốc: {e}")
@@ -212,37 +221,17 @@ def create_medicine_batch(user):
         except:
             return jsonify({'detail': 'Định dạng ngày không hợp lệ (YYYY-MM-DD)'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
-        # Tạo số lô tự động nếu không có
-        batch_number = data.get('batch_number')
-        if not batch_number:
-            batch_number = generate_batch_number(db, data['medicine_id'])
-        else:
-            # Kiểm tra số lô đã tồn tại chưa
-            existing = db.query(MedicineBatch).filter(MedicineBatch.batch_number == batch_number).first()
-            if existing:
-                return jsonify({'detail': 'Số lô đã tồn tại'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        # remaining_quantity is deliberately ignored: a new lot starts with
-        # its full imported quantity and the service records the import ledger.
-        import_price = data.get('import_price')
-        if import_price in (None, ''):
-            import_price = None
-        else:
-            try:
-                import_price = float(import_price)
-            except (TypeError, ValueError):
-                return jsonify({'detail': 'Giá nhập không hợp lệ'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-            if import_price < 0:
-                return jsonify({'detail': 'Giá nhập không được âm'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
+        if 'remaining_quantity' in data:
+            raise InventoryValidationError('Không truyền tồn lô trực tiếp; chỉ nhập số lượng trên phiếu nhập')
 
         _, batch, movement = import_batch(
             db,
             medicine_id=int(data['medicine_id']),
-            batch_number=batch_number,
+            batch_number=data.get('batch_number'),
             import_date=import_date,
             expiry_date=expiry_date,
             quantity=data['quantity'],
-            import_price=import_price,
+            import_price=data.get('import_price'),
             supplier_id=data.get('supplier_id'),
             invoice_number=data.get('invoice_number'),
             notes=data.get('notes'),
@@ -258,7 +247,7 @@ def create_medicine_batch(user):
         return jsonify(batch.to_dict()), 201, {'Content-Type': 'application/json; charset=utf-8'}
     except (InventoryValidationError, LookupError) as e:
         db.rollback()
-        return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
+        return jsonify({'detail': str(e), 'code': 'inventory.receipt_invalid'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
         db.rollback()
         logger.error(f"Lỗi tạo lô thuốc: {e}")
@@ -267,82 +256,45 @@ def create_medicine_batch(user):
         db.close()
 
 
-@medicine_batch_router.route('/medicine-batches/inventory-count', methods=['POST'])
+@medicine_batch_router.route('/medicine-batches/<int:batch_id>/import-price', methods=['POST'])
 @require_auth
-def inventory_count_by_batch(user):
-    """Adjust counted quantities per lot and append adjustment movements."""
-
+def supply_missing_import_price(user, batch_id):
     db = next(get_db())
     try:
+        if not can_review_reference(db, user.id):
+            return jsonify(detail='Bạn không có quyền truy cập Tủ thuốc.'), 403
         data = request.get_json() or {}
-        adjustments = data.get('adjustments')
-        if not isinstance(adjustments, list) or not adjustments:
-            return jsonify({'detail': 'Danh sách kiểm kê theo lô là bắt buộc'}), 400
-
-        normalized_adjustments = []
-        seen_batch_ids = set()
-        for item in adjustments:
-            if not isinstance(item, dict) or not item.get('batch_id'):
-                return jsonify({
-                    'detail': 'Mỗi dòng kiểm kê phải có batch_id',
-                    'code': 'inventory.batch_required',
-                }), 400
-            try:
-                batch_id = int(item['batch_id'])
-            except (TypeError, ValueError):
-                return jsonify({'detail': 'batch_id không hợp lệ'}), 400
-            if batch_id in seen_batch_ids:
-                return jsonify({'detail': 'Không được gửi trùng một lô trong cùng lượt kiểm kê'}), 400
-            seen_batch_ids.add(batch_id)
-            normalized_adjustments.append((batch_id, item))
-
-        results_by_batch_id = {}
-        # Stable order keeps concurrent multi-lot counts from locking rows in
-        # different orders.  The response remains in the caller's order.
-        ordered = sorted(normalized_adjustments, key=lambda pair: pair[0])
-        for batch_id, item in ordered:
-            try:
-                medicine, batch, movement, old_quantity, new_quantity = adjust_batch(
-                    db,
-                    batch_id=batch_id,
-                    actual_quantity=item.get('actual_quantity'),
-                    delta=item.get('delta'),
-                    note=item.get('note', ''),
-                    created_by=user.id,
-                )
-            except (InventoryValidationError, LookupError, ValueError) as exc:
-                db.rollback()
-                return jsonify({'detail': str(exc)}), 400
-
-            results_by_batch_id[batch.id] = {
-                'batch_id': batch.id,
-                'medicine_id': medicine.id,
-                'medicine_name': medicine.name,
-                'batch_number': batch.batch_number,
-                'old_quantity': float(old_quantity),
-                'new_quantity': float(new_quantity),
-                'difference': float(new_quantity - old_quantity),
-                'transaction_id': movement.id if movement else None,
-            }
-
-        # Return the same order the caller submitted, while the writes above
-        # still use a stable lock order.
-        results = [results_by_batch_id[batch_id] for batch_id, _ in normalized_adjustments]
-
+        if not isinstance(data, dict) or set(data) != {'import_price'}:
+            raise InventoryValidationError('Chỉ bổ sung đơn giá nhập còn thiếu.')
+        price = parse_quantity(data['import_price'], 'Đơn giá nhập')
+        if price > Decimal('99999999.99'):
+            raise InventoryValidationError('Đơn giá nhập vượt giới hạn cho phép.')
+        medicine_id = db.query(MedicineBatch.medicine_id).filter_by(id=batch_id).scalar()
+        if medicine_id is None:
+            return jsonify(detail='Không tìm thấy lô thuốc.'), 404
+        medicine = lock_medicine(db, medicine_id)
+        batch = db.query(MedicineBatch).filter_by(id=batch_id).populate_existing().with_for_update().one_or_none()
+        if batch is None:
+            return jsonify(detail='Không tìm thấy lô thuốc.'), 404
+        if batch.import_price is not None:
+            return jsonify(detail='Lô đã có giá nhập. Hãy tải lại lịch sử nhập; không được ghi đè.'), 409
+        batch.import_price = price
+        add_movement(db, medicine_id=medicine_id, batch_id=batch.id,
+                     movement_type='adjustment', quantity=0, price=price,
+                     note=f'Bổ sung giá nhập còn thiếu: chưa ghi nhận → {price}; không thay đổi tồn hoặc giá vốn giao dịch cũ.',
+                     created_by=user.id, balance_after=batch.remaining_quantity,
+                     stock_balance_after=medicine.stock_quantity)
         db.commit()
-        emit_inventory_changed('inventory_counted', entity='medicine_batch', extra={
-            'batch_ids': [item['batch_id'] for item in results],
-            'adjustments': results,
-        })
-        return jsonify({
-            'success': True,
-            'message': f'Điều chỉnh thành công {len(results)} lô thuốc',
-            'adjustments': results,
-        }), 200
-    except Exception as e:
+        emit_inventory_changed('batch_updated', entity='medicine_batch', entity_id=batch.id,
+                               extra={'medicine_id': medicine_id})
+        return jsonify(success=True, batch=batch.to_dict()), 200
+    except InventoryValidationError as error:
         db.rollback()
-        logger.error(f'Lỗi kiểm kê theo lô: {e}')
-        return jsonify({'detail': 'Lỗi kiểm kê theo lô', 'error': str(e)}), 500
+        return jsonify(detail=str(error)), 400
+    except Exception:
+        db.rollback()
+        logger.exception('Không thể bổ sung giá nhập lô')
+        return jsonify(detail='Không thể bổ sung giá nhập. Hãy tải lại để kiểm tra.'), 500
     finally:
         db.close()
 
@@ -361,33 +313,18 @@ def update_medicine_batch(user, batch_id):
 
         if 'quantity' in data or 'remaining_quantity' in data:
             return jsonify({
-                'detail': 'Không được sửa trực tiếp số lượng lô. Hãy dùng kiểm kê theo lô để tạo adjustment.',
+                'detail': 'Không được sửa trực tiếp số lượng lô đã ghi nhận.',
                 'code': 'inventory.batch_balance_readonly',
-                'adjustment_url': '/api/medicine-batches/inventory-count',
             }), 409, {'Content-Type': 'application/json; charset=utf-8'}
         
-        # Cập nhật các trường
-        if 'import_date' in data:
-            try:
-                batch.import_date = datetime.strptime(data['import_date'], '%Y-%m-%d').date()
-            except:
-                return jsonify({'detail': 'Định dạng ngày nhập không hợp lệ'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        if 'expiry_date' in data:
-            try:
-                batch.expiry_date = datetime.strptime(data['expiry_date'], '%Y-%m-%d').date()
-            except:
-                return jsonify({'detail': 'Định dạng ngày hết hạn không hợp lệ'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        if 'import_price' in data:
-            batch.import_price = float(data['import_price']) if data['import_price'] else None
-        
-        if 'supplier_id' in data:
-            batch.supplier_id = data['supplier_id']
-        
-        if 'invoice_number' in data:
-            batch.invoice_number = data['invoice_number']
-        
+        immutable = {'medicine_id', 'batch_number', 'import_date', 'expiry_date',
+                     'import_price', 'supplier_id', 'invoice_number'}
+        if immutable.intersection(data):
+            return jsonify({
+                'detail': 'Thông tin lần nhập đã ghi sổ không được sửa đè, kể cả giá nhập. Hãy đối soát chứng từ nếu nhập sai.',
+                'code': 'inventory.receipt_readonly',
+            }), 409
+
         if 'notes' in data:
             batch.notes = data['notes']
         
@@ -429,7 +366,7 @@ def delete_medicine_batch(user, batch_id):
             }), 409, {'Content-Type': 'application/json; charset=utf-8'}
         if remaining_qty > 0:
             return jsonify({
-                'detail': 'Không thể xóa lô còn tồn. Hãy kiểm kê/điều chỉnh theo lô trước.',
+                'detail': 'Không thể xóa lô còn tồn.',
                 'code': 'inventory.batch_has_balance',
             }), 409, {'Content-Type': 'application/json; charset=utf-8'}
 
@@ -475,19 +412,6 @@ def import_order(user):
         invoice_number = data.get('invoice_number')
         
         normalized_items = []
-        seen_batch_numbers = set()
-        
-        # Lấy số lô lớn nhất từ database để bắt đầu đếm
-        last_batch = db.query(MedicineBatch).order_by(desc(MedicineBatch.id)).first()
-        if last_batch and last_batch.batch_number:
-            try:
-                last_number = int(str(last_batch.batch_number).split('-')[-1])
-                batch_counter = last_number
-            except Exception:
-                batch_counter = 0
-        else:
-            batch_counter = 0
-        
         # Validate every row before writing anything.  The old implementation
         # silently skipped invalid rows, which made an order look successful
         # while its aggregate was only partially updated.
@@ -508,25 +432,9 @@ def import_order(user):
                 raise InventoryValidationError(f"Dòng {index + 1}: Định dạng hạn sử dụng không hợp lệ")
             quantity = parse_quantity(item.get('quantity'), f"Dòng {index + 1}: Số lượng nhập", allow_zero=False)
             batch_number = str(item.get('batch_number') or '').strip()
-            if not batch_number:
-                batch_counter += 1
-                batch_number = f"LOT-{batch_counter:02d}"
-            if batch_number in seen_batch_numbers or db.query(MedicineBatch.id).filter(
-                MedicineBatch.batch_number == batch_number
-            ).first():
-                raise InventoryValidationError(f"Dòng {index + 1}: Số lô '{batch_number}' đã tồn tại")
-            seen_batch_numbers.add(batch_number)
-
-            import_price = item.get('import_price')
-            if import_price in (None, ''):
-                import_price = None
-            else:
-                try:
-                    import_price = float(import_price)
-                except (TypeError, ValueError):
-                    raise InventoryValidationError(f"Dòng {index + 1}: Giá nhập không hợp lệ")
-                if import_price < 0:
-                    raise InventoryValidationError(f"Dòng {index + 1}: Giá nhập không được âm")
+            if 'remaining_quantity' in item:
+                raise InventoryValidationError(f'Dòng {index + 1}: Không truyền tồn lô trực tiếp')
+            import_price = parse_quantity(item.get('import_price'), f'Dòng {index + 1}: Đơn giá nhập')
 
             normalized_items.append({
                 'index': index,
@@ -579,7 +487,7 @@ def import_order(user):
         }), 201, {'Content-Type': 'application/json; charset=utf-8'}
     except (InventoryValidationError, LookupError) as e:
         db.rollback()
-        return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
+        return jsonify({'detail': str(e), 'code': 'inventory.receipt_invalid'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
         db.rollback()
         logger.error(f"Lỗi nhập kho theo đơn hàng: {e}")

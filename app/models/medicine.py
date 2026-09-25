@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, Boolean, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, Boolean, Date, ForeignKey, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -6,11 +7,15 @@ from app.core.database import Base
 
 class Medicine(Base):
     __tablename__ = "medicines"
+    __table_args__ = (UniqueConstraint('reference_catalog_id', name='uq_medicines_reference_catalog'),)
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
+    name = Column(String(500), nullable=False, index=True)
+    reference_catalog_id = Column(Integer, ForeignKey('medicine_reference_catalog.id', name='fk_medicines_reference_catalog', ondelete='RESTRICT'), nullable=True)
+    reference_snapshot = Column(JSONB, nullable=True)
+    reference_catalog = relationship('MedicineReferenceCatalog')
     # Tên gốc/biệt dược
-    generic_name = Column(String(255))
+    generic_name = Column(Text)
     # Mã thuốc nội bộ (duy nhất)
     internal_code = Column(String(50), unique=True, index=True, nullable=True)
     # Mã dược quốc gia (không bắt buộc)
@@ -18,12 +23,12 @@ class Medicine(Base):
     unit_price = Column(Numeric(10, 2), nullable=False)
     # Đơn vị bán (viên, gói, chai...)
     unit = Column(String(50), nullable=False)
-    strength = Column(String(100))  # 500mg, 100mg, etc.
+    strength = Column(Text)  # Full DAV strength; never truncate identity.
     stock_quantity = Column(Numeric(10, 2), default=0)  # Hỗ trợ số thập phân (0.5, 0.25 viên)
     expiry_date = Column(Date)
     description = Column(Text)
     is_active = Column(Boolean, default=True)
-    # Thể loại: DRUG/TPCN/EQUIPMENT (Equipment = Y dụng cụ)
+    # New catalog entries are DRUG only; legacy classification is retained until verified.
     category_type = Column(String(20), default='DRUG')
     # Loại đơn thuốc: BASIC/H/N/TOXIC (Cơ bản/Thuốc H/Thuốc N/Thuốc độc)
     prescription_type = Column(String(20), default='BASIC')
@@ -52,10 +57,24 @@ class Medicine(Base):
 
     def to_dict(self):
         from datetime import date
+        from app.modules.medicines.services.catalog_service import reference_state
+        # `Medicine.expiry_date` is a legacy column no writer ever sets; hạn
+        # dùng thật nằm ở từng lô (`MedicineBatch.expiry_date`). Cảnh báo và
+        # hiển thị phải theo lô còn tồn (remaining_quantity > 0), gần hạn
+        # nhất trong số đó, chứ không đọc field chết này.
+        nearest_expiry_date = None
+        try:
+            active_batches = [b for b in (self.batches or [])
+                               if b.expiry_date and (b.remaining_quantity or 0) > 0]
+            if active_batches:
+                nearest_expiry_date = min(b.expiry_date for b in active_batches)
+        except Exception:
+            nearest_expiry_date = None
+
         days_to_expiry = None
-        if self.expiry_date:
+        if nearest_expiry_date:
             try:
-                days_to_expiry = (self.expiry_date - date.today()).days
+                days_to_expiry = (nearest_expiry_date - date.today()).days
             except Exception:
                 days_to_expiry = None
 
@@ -82,6 +101,7 @@ class Medicine(Base):
 
         return {
             'id': self.id,
+            **reference_state(self),
             'name': self.name,
             'generic_name': self.generic_name,
             'internal_code': self.internal_code,
@@ -91,6 +111,7 @@ class Medicine(Base):
             'strength': self.strength,
             'stock_quantity': float(self.stock_quantity) if self.stock_quantity is not None else 0.0,  # Hỗ trợ số thập phân
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
+            'nearest_expiry_date': nearest_expiry_date.isoformat() if nearest_expiry_date else None,
             'description': self.description,
             'is_active': self.is_active,
             'category_type': self.category_type,

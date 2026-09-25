@@ -21,6 +21,7 @@ from app.utils.search_normalization import normalized_contains
 class AppointmentListResult:
     appointments: list
     pagination: dict
+    latest_edited_id: int | None = None
 
 
 def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
@@ -92,12 +93,19 @@ def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
 
     is_receptionist_page = args.get('receptionist', 'false').lower() == 'true'
     latest_activity_id = None
+    latest_edited_id = None
     if is_receptionist_page:
         latest_activity = query.with_entities(Appointment.id).order_by(
             func.coalesce(Appointment.updated_at, Appointment.created_at).desc().nulls_last(),
             Appointment.id.desc(),
         ).first()
         latest_activity_id = latest_activity[0] if latest_activity else None
+        latest_edit = query.with_entities(Appointment.id, Appointment.updated_at).filter(
+            Appointment.updated_at.isnot(None),
+        ).order_by(Appointment.updated_at.desc(), Appointment.id.desc()).first()
+        timezone = pytz.timezone('Asia/Ho_Chi_Minh')
+        if latest_edit and latest_edit.updated_at.astimezone(timezone).date() == datetime.now(timezone).date():
+            latest_edited_id = latest_edit.id
 
     offset = (page - 1) * per_page
     if is_receptionist_page and latest_activity_id is not None:
@@ -106,6 +114,8 @@ def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
             Appointment.appointment_date.asc(),
             Appointment.id.desc(),
         )
+    elif args.get('doctor', 'false').lower() == 'true':
+        order_columns = (Appointment.doctor_queue_entered_at.desc().nulls_last(), Appointment.id.desc())
     else:
         order_columns = (Appointment.id.desc(),)
 
@@ -123,6 +133,7 @@ def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
 
     return AppointmentListResult(
         appointments=appointments,
+        latest_edited_id=latest_edited_id,
         pagination={
             'page': page,
             'per_page': per_page,
@@ -326,6 +337,7 @@ def _apply_doctor_screen_filter(query, examination_status, user):
         return query.filter(False)
 
     status_map = {
+        'doctor_queue': ['DOCTOR_EXAM', 'CONCLUSION'],
         'examining': ['DOCTOR_EXAM', 'PSYCHOLOGIST_EXAM', 'CONCLUSION'],
         'doctor_exam': 'DOCTOR_EXAM',
         'conclusion': 'CONCLUSION',

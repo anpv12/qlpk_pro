@@ -60,7 +60,9 @@
   }
 
   // Render dịch vụ
-  function renderServices(servicesToRender) {
+  const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderServices(servicesToRender) { listPagination.setItems(servicesToRender); }
+    function renderPage(servicesToRender, offset) {
     const tbody = $('#serviceTableBody');
     tbody.empty();
     
@@ -90,10 +92,10 @@
             </span>
           </td>
           <td>
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="editService(${service.id})">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" onclick="editService(${service.id})">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteService(${service.id})">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteService(${service.id})">
               <i class="bi bi-trash"></i>
             </button>
           </td>

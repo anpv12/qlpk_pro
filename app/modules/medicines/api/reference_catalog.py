@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 import logging
 
 from app.api.auth import require_auth
@@ -13,6 +13,7 @@ from app.modules.medicines.services.reference_catalog_query import (
     get_reference_catalog_summary,
     list_reference_catalog,
 )
+from app.modules.medicines.services.reference_catalog_export import build_reference_catalog_excel
 
 
 reference_catalog_bp = Blueprint(
@@ -28,14 +29,26 @@ logger = logging.getLogger(__name__)
 def get_reference_catalog(user):
     db = SessionLocal()
     try:
+        autocomplete = request.args.get("mode") == "autocomplete"
         result = list_reference_catalog(
             db,
             search=request.args.get("search") or request.args.get("q"),
             page=request.args.get("page", 1),
             per_page=request.args.get("per_page") or request.args.get("limit") or 20,
             status=request.args.get("status", "active"),
+            autocomplete=autocomplete,
+            registration_number=request.args.get('registration_number'),
+            clinic_medicine_id=request.args.get('clinic_medicine_id', type=int),
         )
-        summary = get_reference_catalog_summary(db)
+        if autocomplete:
+            return jsonify({
+                "success": True,
+                "data": result["items"],
+                "page": result["page"],
+                "per_page": result["per_page"],
+                "has_more": result["has_more"],
+            })
+        summary = get_reference_catalog_summary(db) if request.args.get("include_summary") != "0" else None
         return jsonify({
             "success": True,
             "data": result["items"],
@@ -45,8 +58,31 @@ def get_reference_catalog(user):
             "total_pages": result["total_pages"],
             "summary": summary,
         })
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
     except Exception as exc:
         return jsonify({"success": False, "message": str(exc)}), 500
+    finally:
+        db.close()
+
+
+@reference_catalog_bp.route("/export/excel", methods=["GET"])
+@require_auth
+def export_reference_catalog(user):
+    db = SessionLocal()
+    try:
+        output = build_reference_catalog_excel(
+            db, search=request.args.get('search', ''), status=request.args.get('status', 'active')
+        )
+        response = send_file(
+            output, as_attachment=True, download_name='danh_muc_thuoc_DAV.xlsx',
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except Exception:
+        logger.exception('Unexpected error while exporting DAV catalog')
+        return jsonify(success=False, message='Không thể xuất danh mục DAV. Vui lòng thử lại.'), 500
     finally:
         db.close()
 
@@ -98,7 +134,6 @@ def sync_reference_catalog(user):
         payload = request.get_json(silent=True) or {}
         result = sync_dav_reference_catalog(
             db,
-            max_pages=payload.get("max_pages"),
             page_size=payload.get("page_size") or 1000,
             timeout=payload.get("timeout") or 30,
         )

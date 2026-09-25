@@ -153,12 +153,6 @@
 						permission: 'ql-dichvu',
 					},
 					{
-						label: 'Gói dịch vụ',
-						icon: 'bi bi-gift-fill',
-						href: 'package-management.html',
-						permission: 'ql-goi-dichvu',
-					},
-					{
 						label: 'Mẫu khảo sát',
 						icon: 'bi bi-clipboard2-check',
 						href: 'survey-template-management.html',

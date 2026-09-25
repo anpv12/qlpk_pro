@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/relative-table.css?v={{ app_version }}">
@@ -20,7 +21,6 @@
 	<link rel="stylesheet" href="/static/css/referral-source-control.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
 	<!-- Flatpickr CSS -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -88,7 +88,7 @@
 									<form id="patientForm" class="receptionist-intake-form">
 										<input type="hidden" id="patientId" name="patientId">
 										<section class="receptionist-intake-panel" id="vung2CardBody">
-											<div class="receptionist-intake-panel-header">
+											<div class="receptionist-intake-panel-header" data-qlpk-button-surface="dark">
 												<div class="receptionist-intake-panel-title-row">
 													<h6 class="receptionist-intake-panel-title">
 												<i class="bi bi-person-plus qlpk-button-icon"></i>
@@ -109,7 +109,7 @@
 																<div class="receptionist-field receptionist-field--appointment-doctor">
 																	<label class="form-label required-field" for="doctorId">Bác sĩ:</label>
 																	<select class="form-select" id="doctorId">
-																		<option value="">Chọn BS</option>
+																		<option value="">Chọn người khám</option>
 																	</select>
 																</div>
 																<div class="receptionist-field receptionist-field--appointment-service">
@@ -123,12 +123,12 @@
 													</div>
 												</div>
 												<div class="receptionist-intake-actions" aria-label="Thao tác tiếp nhận">
-											<button type="button" class="btn receptionist-document-upload-btn" id="uploadDocumentBtn">
+											<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn receptionist-document-upload-btn" id="uploadDocumentBtn">
 												<i class="bi bi-upload qlpk-button-icon"></i>
 												<span>Tải lên</span>
 											</button>
 											<input type="file" id="documentFileInput" class="receptionist-hidden" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-											<button type="button" class="btn" id="saveInfoBtn">
+											<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn" id="saveInfoBtn">
 												<i class="bi bi-save qlpk-button-icon"></i>
 												<span>Lưu</span>
 													</button>
@@ -217,15 +217,15 @@
 					<div id="duplicateList" class="duplicate-patient-modal__list" aria-live="polite"></div>
 				</div>
 				<div class="modal-footer duplicate-patient-modal__footer">
-					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--ghost" data-bs-dismiss="modal">
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--ghost" data-bs-dismiss="modal">
 						<i class="bi bi-x-circle qlpk-button-icon" aria-hidden="true"></i>
 						<span>Huỷ</span>
 					</button>
-					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--secondary" data-duplicate-action="cancel">
+					<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--secondary" data-duplicate-action="cancel">
 						<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i>
 						<span>Tạo mới</span>
 					</button>
-					<button type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--primary" id="updateSelectedBtn"
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--primary" id="updateSelectedBtn"
 						data-duplicate-action="update" disabled>
 						<i class="bi bi-check-circle qlpk-button-icon" aria-hidden="true"></i>
 						<span>Cập nhật</span>

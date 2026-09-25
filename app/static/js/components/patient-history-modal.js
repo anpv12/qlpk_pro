@@ -52,7 +52,7 @@
 			const prescriptionTemplate = REGISTRY?.get?.('prescriptionDocumentTemplate');
 			const prescriptionController = prescriptionPreview?.create
 				? prescriptionPreview.create({
-					buildPrescriptionPreviewHTML: prescriptionTemplate?.buildPrescriptionPreviewHTML,
+					buildPrescriptionScreenHTML: prescriptionTemplate?.buildPrescriptionScreenHTML,
 					createBarcodesInElement: dataRuntime.createBarcodesInElement
 				})
 				: prescriptionPreview?.getController?.();

@@ -153,10 +153,10 @@
 							<i class="bi bi-info-circle"></i> <strong>Lưu ý:</strong> Nếu xác nhận, thông tin bệnh nhân sẽ được cập nhật và tất cả các lịch hẹn cũ sẽ hiển thị thông tin mới.
 						</div>
 						<div class="conflict-popup-buttons patient-duplicate-buttons">
-							<button type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm me-2" id="patientDuplicateCancelBtn">
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm me-2" id="patientDuplicateCancelBtn">
 								<i class="bi bi-x-circle me-1"></i>Hủy
 							</button>
-							<button type="button" class="btn appointment-button appointment-button--primary appointment-button--sm" id="patientDuplicateConfirmBtn">
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn appointment-button appointment-button--primary appointment-button--sm" id="patientDuplicateConfirmBtn">
 								<i class="bi bi-check-circle me-1"></i>Xác nhận cập nhật
 							</button>
 						</div>

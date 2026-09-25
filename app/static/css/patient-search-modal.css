@@ -1,3 +1,6 @@
+@import url('./prescriptions/components/prescription-standard-form.css');
+@import url('./prescriptions/components/prescription-screen.css');
+
 /* ============================================
    Patient Search Modal - DRY CSS
    Di dời từ doctor-examination.html & psychologist-examination.html
@@ -5,8 +8,8 @@
 
 /* Modal Layout */
 .patient-search-modal {
-	--patient-modal-primary: var(--qlpk-color-brown, #5a301f);
-	--patient-modal-primary-strong: var(--qlpk-color-chocolate, #4b2719);
+	--patient-modal-primary: var(--qlpk-color-primary);
+	--patient-modal-primary-strong: var(--qlpk-color-primary-strong);
 	--patient-modal-primary-soft: var(--qlpk-color-brown-soft, #f8f1e9);
 	--patient-modal-accent: var(--qlpk-color-gold, #d6a069);
 	--patient-modal-canvas: var(--qlpk-color-surface-warm, #fffdf9);
@@ -15,10 +18,10 @@
 	--patient-modal-muted: #725d51;
 	--patient-modal-on-primary: #fffaf3;
 	--patient-modal-control-border: #9a8979;
-	--patient-modal-line: rgb(75 39 25 / 14%);
-	--patient-modal-line-strong: rgb(75 39 25 / 28%);
+	--patient-modal-line: rgba(var(--qlpk-brown-800-rgb), 0.14);
+	--patient-modal-line-strong: rgba(var(--qlpk-brown-800-rgb), 0.28);
 	--patient-modal-shadow: 0 0.5rem 1.25rem rgb(53 40 33 / 10%);
-	--patient-modal-info: var(--qlpk-feedback-info, #2563eb);
+	--patient-modal-info: var(--qlpk-feedback-info, var(--qlpk-color-primary));
 	--patient-modal-info-soft: var(--qlpk-feedback-info-bg, #eff6ff);
 	--patient-modal-error: var(--qlpk-feedback-error, #dc2626);
 	--patient-modal-error-soft: var(--qlpk-feedback-error-bg, #fef2f2);
@@ -86,13 +89,13 @@
 	--patient-modal-canvas: #ffffff;
 	--patient-modal-surface: #ffffff;
 	--patient-modal-text: #212529;
-	--patient-modal-muted: #64748b;
-	--patient-modal-control-border: #cbd5e1;
+	--patient-modal-muted: var(--qlpk-color-text-muted);
+	--patient-modal-control-border: var(--qlpk-color-border);
 	--patient-modal-line: rgb(100 116 139 / 18%);
 	--patient-modal-line-strong: #d9e1ea;
 	--patient-modal-shadow: 0 0.375rem 1.25rem rgb(15 23 42 / 7%);
-	--patient-modal-cream: #f8fafc;
-	--patient-modal-surface-soft: #f8fafc;
+	--patient-modal-cream: var(--qlpk-color-page-bg);
+	--patient-modal-surface-soft: var(--qlpk-color-page-bg);
 	background: var(--patient-modal-canvas);
 }
 
@@ -138,7 +141,7 @@
 }
 
 .patient-search-modal__table-head {
-	background: var(--patient-modal-deep);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--patient-modal-on-primary);
 }
 
@@ -149,32 +152,27 @@
 	font-size: var(--qlpk-font-size-sm, 12px);
 	letter-spacing: 0.01em;
 }
-
-.patient-search-modal .form-control {
+.patient-search-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--patient-modal-control-border);
 	background: var(--patient-modal-surface);
 	color: var(--patient-modal-text);
 }
-
-.patient-search-modal .form-control::placeholder {
+.patient-search-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
 	color: var(--patient-modal-muted);
 }
-
-.patient-search-modal .form-control:focus {
+.patient-search-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--patient-modal-coral);
 	box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--patient-modal-coral) 22%, transparent);
 }
-
-.patient-search-modal__patient-action,
+.patient-search-modal__patient-action:not([data-qlpk-button], [data-qlpk-button] *),
 .patient-search-modal__history-copy-button {
 	border-color: var(--patient-modal-control-border);
 	background: var(--patient-modal-surface);
 	color: var(--patient-modal-brown);
-	box-shadow: 0 0.125rem 0.35rem rgb(75 39 25 / 8%);
+	box-shadow: 0 0.125rem 0.35rem rgba(var(--qlpk-brown-800-rgb), 0.08);
 }
-
-.patient-search-modal__patient-action:hover,
-.patient-search-modal__patient-action:focus-visible,
+.patient-search-modal__patient-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal__patient-action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
 .patient-search-modal__history-copy-button:hover,
 .patient-search-modal__history-copy-button:focus-visible {
 	border-color: var(--patient-modal-coral);
@@ -183,13 +181,13 @@
 }
 
 .patient-search-modal__history-copy-button--current {
-	background: var(--patient-modal-deep);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--patient-modal-on-primary);
 }
 
 .patient-search-modal__history-copy-button--current:hover,
 .patient-search-modal__history-copy-button--current:focus-visible {
-	background: var(--patient-modal-brown-strong);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--patient-modal-on-primary);
 }
 
@@ -199,41 +197,6 @@
 	border-color: var(--patient-modal-info);
 	background: var(--patient-modal-info);
 	color: var(--patient-modal-on-primary);
-}
-
-.patient-search-modal__status-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-	border: 0.0625rem solid var(--patient-modal-line-strong);
-	border-radius: 999rem;
-	padding: 0.2rem 0.45rem;
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-	line-height: 1.1;
-}
-
-.patient-search-modal__status-badge--current {
-	border-color: var(--patient-modal-deep);
-	background: var(--patient-modal-deep);
-	color: var(--patient-modal-on-primary);
-}
-
-.patient-search-modal__status-badge--examining {
-	border-color: var(--patient-modal-info);
-	background: var(--patient-modal-info);
-	color: var(--patient-modal-on-primary);
-}
-
-.patient-search-modal__status-badge--today {
-	border-color: var(--patient-modal-coral);
-	background: var(--patient-modal-brown-soft);
-	color: var(--patient-modal-brown);
-}
-
-.patient-search-modal__status-badge--history {
-	border-color: var(--patient-modal-line-strong);
-	background: var(--patient-modal-cream);
-	color: var(--patient-modal-brown);
 }
 
 .patient-search-modal__spinner {
@@ -270,8 +233,7 @@
 	flex: 0 0 auto;
 	margin-inline-start: auto;
 }
-
-.patient-search-modal .patient-modal-close-btn {
+.patient-search-modal .patient-modal-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--patient-modal-surface);
 	border-color: var(--patient-modal-control-border);
 	box-shadow: none;
@@ -280,10 +242,13 @@
 
 .patient-search-modal .patient-modal-close-btn:hover,
 .patient-search-modal .patient-modal-close-btn:focus-visible {
+	transform: none;
+}
+.patient-search-modal .patient-modal-close-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal .patient-modal-close-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--patient-modal-primary-soft);
 	border-color: var(--patient-modal-primary);
 	color: var(--patient-modal-primary-strong);
-	transform: none;
 }
 
 .patient-search-modal__results-card {
@@ -382,6 +347,7 @@
 }
 
 .patient-search-modal__history-section {
+	container-type: inline-size;
 	gap: 0.5rem;
 	min-height: 0;
 	overflow: hidden;
@@ -553,7 +519,7 @@
 }
 
 .time-range-btn.active {
-	background: var(--patient-modal-coral);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--patient-modal-on-primary);
 	border-color: var(--patient-modal-coral);
 }
@@ -583,10 +549,16 @@
 /* Modal History Row */
 .modal-history-row {
 	--bs-gutter-x: 0;
+	display: grid;
+	grid-template-columns: 9rem minmax(0, 1fr) 8.5rem 4.5rem;
 	margin-inline: 0;
 }
 
-/* empty rule removed */
+.modal-history-row > [class*="col-"] {
+	width: auto;
+	min-width: 0;
+	padding-inline: 0.4rem;
+}
 
 .modal-history-row .col-history-date,
 .modal-history-row .col-history-payment,
@@ -605,8 +577,13 @@
 	overflow-wrap: anywhere;
 }
 
-.modal-history-visit-badge {
-	font-size: var(--qlpk-font-size-sm, 12px);
+.modal-history-visit-label {
+	display: block;
+	margin-block-start: 0.2rem;
+	color: var(--patient-modal-info);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.3;
 }
 
 .modal-history-date-time {
@@ -617,58 +594,61 @@
 	margin-right: 0.25rem;
 }
 
-@media (max-width: 768px) {
-	.patient-search-modal--history-only .patient-search-modal__scroll-card > .patient-search-modal__table-head {
+@container (max-width: 36rem) {
+	.patient-search-modal__scroll-card > .patient-search-modal__table-head {
 		display: none;
 	}
 
-	.patient-search-modal--history-only .modal-history-row {
+	.modal-history-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto auto;
 		gap: 0.25rem 0.5rem;
 		align-items: start;
 	}
 
-	.patient-search-modal--history-only .modal-history-row > [class*="col-"] {
+	.modal-history-row > [class*="col-"] {
 		width: auto;
 		max-width: none;
 		flex: initial;
-		padding-inline-start: 0;
-		padding-inline-end: 0;
+		padding-inline: 0.4rem;
 	}
 
-	.patient-search-modal--history-only .modal-history-row .col-history-date {
+	.modal-history-row .col-history-date {
 		grid-column: 1;
+		grid-row: 1;
 	}
 
-	.patient-search-modal--history-only .modal-history-row .col-history-diagnosis {
+	.modal-history-row .col-history-diagnosis {
 		grid-column: 1 / -1;
+		grid-row: 2;
 		padding-block-start: 0.1rem;
 	}
 
-	.patient-search-modal--history-only .modal-history-row .col-history-payment {
+	.modal-history-row .col-history-payment {
 		grid-column: 2;
+		grid-row: 1;
 		justify-self: end;
 	}
 
-	.patient-search-modal--history-only .modal-history-row > div:last-child {
+	.modal-history-row > div:last-child {
 		grid-column: 3;
+		grid-row: 1;
 		justify-self: end;
 	}
 
-	.patient-search-modal--history-only .modal-history-row .modal-history-date-time,
-	.patient-search-modal--history-only .modal-history-row .col-history-diagnosis span {
+	.modal-history-row .modal-history-date-time,
+	.modal-history-row .col-history-diagnosis span {
 		white-space: normal;
 		word-break: break-word;
 	}
 
-	.patient-search-modal--history-only .modal-history-row .modal-history-copy-button {
+	.modal-history-row .modal-history-copy-button {
 		margin-right: 0;
 	}
 }
 
 /* Prescription Preview */
-.prescription-preview {
+.prescription-preview:not(.prescription-preview--moh) {
 	background: var(--patient-modal-surface);
 	border: 1px solid var(--patient-modal-line-strong);
 	border-radius: 12px;
@@ -951,24 +931,24 @@
 	border-color: transparent;
 	background: transparent;
 }
-
-.patient-search-modal .function-tab-list .nav-link.active + .tab-print-btn {
-	color: #64748b;
+.patient-search-modal .function-tab-list .nav-link.active + .tab-print-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--qlpk-color-text-muted);
 }
 
 .function-tab-list .tab-print-btn {
 	border: none;
-	background: transparent;
-	color: #64748b;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	padding: 0.25rem 0.4rem;
 	border-radius: 0.4rem;
+}
+.function-tab-list .tab-print-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: var(--qlpk-color-text-muted);
 	transition: all 0.15s ease-in-out;
 }
-
-.function-tab-list .tab-print-btn:hover {
+.function-tab-list .tab-print-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	color: var(--patient-modal-primary-strong);
 	background: var(--patient-modal-primary-soft);
 }
@@ -1001,28 +981,21 @@
 }
 
 .patient-search-modal__exam-status-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-inline-size: 5rem;
-	border: 0.0625rem solid color-mix(in srgb, var(--patient-modal-coral) 48%, transparent);
-	background: var(--patient-modal-brown-soft);
-	color: var(--patient-modal-brown);
-	font-size: var(--qlpk-font-size-xs, 11px);
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-	line-height: 1.2;
+	--qlpk-status-color: var(--patient-modal-primary);
+	--qlpk-status-text: #ffffff;
+	--qlpk-status-radius: 0.3rem;
+	--qlpk-status-padding: 0.2rem 0.45rem;
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	white-space: nowrap;
 }
 
 .patient-search-modal__exam-status-badge--examining {
-	border-color: color-mix(in srgb, var(--patient-modal-info) 46%, transparent);
-	background: var(--patient-modal-info-soft);
-	color: var(--patient-modal-info);
+	--qlpk-status-color: var(--qlpk-feedback-info);
 }
 
 .patient-search-modal__exam-status-badge--waiting-payment {
-	border-color: color-mix(in srgb, var(--qlpk-feedback-success) 46%, transparent);
-	background: var(--qlpk-feedback-success-bg);
-	color: var(--qlpk-feedback-success);
+	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 
 .vital-view-mode-selector {
@@ -1527,168 +1500,7 @@
 	padding-left: 20px;
 }
 
-/* Screen modal uses the same two-column paper layout as the printable prescription. */
-.patient-search-modal .prescription-preview--rx {
-	font-size: var(--qlpk-font-size-md, 14px);
-}
-
-.patient-search-modal .prescription-preview--rx .prescription-preview__header {
-	font-size: var(--qlpk-font-size-sm, 12px);
-}
-
-.patient-search-modal .rx-nowrap {
-	white-space: nowrap;
-}
-
-.patient-search-modal .rx-schedule-line {
-	margin-top: 2px;
-}
-
-.patient-search-modal .rx-med-item {
-	line-height: 1.6;
-	margin-bottom: 14px;
-}
-
-.patient-search-modal .rx-med-row {
-	display: flex;
-	align-items: baseline;
-	gap: 16px;
-}
-
-.patient-search-modal .rx-col-drug,
-.patient-search-modal .rx-col-left {
-	flex: 0 0 60%;
-	max-width: 60%;
-}
-
-.patient-search-modal .rx-col-dosage,
-.patient-search-modal .rx-col-right {
-	flex: 0 0 40%;
-	max-width: 40%;
-}
-
-.patient-search-modal .prescription-title-section {
-	margin: 0;
-	padding: 1.25rem 0 2.8125rem;
-	text-align: center;
-}
-
-.patient-search-modal .prescription-preview__title--rx {
-	font-size: var(--qlpk-font-size-3xl, 24px);
-	margin: 0;
-}
-
-.patient-search-modal .prescription-title-en {
-	color: #444;
-	font-size: var(--qlpk-font-size-md, 14px);
-	font-style: italic;
-	margin-top: 4px;
-}
-
-.patient-search-modal .rx-section {
-	background: #fff;
-	border-radius: 4px;
-	font-size: var(--qlpk-font-size-md, 14px);
-	line-height: 1.6;
-}
-
-.patient-search-modal .rx-section--patient {
-	padding: 16px 16px 0;
-}
-
-.patient-search-modal .rx-section--medication {
-	padding: 0 16px 16px;
-}
-
-.patient-search-modal .rx-patient-grid {
-	display: flex;
-	align-items: flex-start;
-	gap: 16px;
-}
-
-.patient-search-modal .rx-line {
-	margin-bottom: 6px;
-}
-
-.patient-search-modal .rx-em-normal {
-	font-weight: var(--qlpk-font-weight-regular, 400);
-}
-
-.patient-search-modal .rx-reexam-line,
-.patient-search-modal .rx-note-block,
-.patient-search-modal .rx-warning-vi,
-.patient-search-modal .rx-recipient-id-line {
-	margin-top: 10px;
-}
-
-.patient-search-modal .rx-note-text {
-	margin-top: 4px;
-}
-
-.patient-search-modal .rx-warning-en {
-	color: #212529;
-	font-size: var(--qlpk-font-size-md, 14px);
-	line-height: 1.6;
-	margin-top: 2px;
-}
-
-.patient-search-modal .rx-signature-table {
-	border: 0;
-	border-collapse: collapse;
-	margin-top: auto;
-	page-break-inside: avoid;
-	width: 100%;
-}
-
-.patient-search-modal .rx-signature-qr-cell,
-.patient-search-modal .rx-signature-doctor-cell {
-	border: 0;
-	text-align: left;
-	vertical-align: top;
-}
-
-.patient-search-modal .rx-signature-qr-cell {
-	padding: 8px 0 0 16px;
-	width: 60%;
-}
-
-.patient-search-modal .rx-signature-doctor-cell {
-	padding: 8px 16px 0 0;
-	width: 40%;
-}
-
-.patient-search-modal .rx-inline-center {
-	display: inline-block;
-	text-align: center;
-}
-
-.patient-search-modal .rx-verify-qr-image {
-	display: block;
-	inline-size: 8.125rem;
-	max-inline-size: 100%;
-	block-size: auto;
-}
-
-.patient-search-modal .rx-signature-role {
-	margin-top: 8px;
-}
-
-.patient-search-modal .rx-signature-doctor-name {
-	margin-top: 48px;
-}
-
-.patient-search-modal .prescription-code-badge--rx {
-	background: #fff;
-	border-radius: 6px;
-	box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
-	color: #000;
-	font-size: var(--qlpk-font-size-sm, 12px);
-	font-weight: var(--qlpk-font-weight-bold, 700);
-	line-height: 1.5;
-	margin-bottom: 0.5rem;
-	padding: 5px 8px;
-	white-space: nowrap;
-}
+/* Prescription paper styles are shared with the print document. */
 
 .patient-search-modal .prescription-service-table__col-index { width: 5%; }
 .patient-search-modal .prescription-service-table__col-name { width: 30%; }
@@ -1704,14 +1516,13 @@
 }
 
 .patient-search-modal .modal-patient-item.modal-patient-item-active:not(.patient-search-modal__table-head-row),
-.patient-search-modal .modal-history-item.modal-history-item-active:not(.patient-search-modal__table-head-row) {
+.patient-search-modal .modal-history-item.modal-history-item-user-selected:not(.patient-search-modal__table-head-row) {
 	background-color: var(--patient-modal-primary-soft);
 	box-shadow: inset 0.2rem 0 0 var(--patient-modal-coral);
 }
 
 .patient-search-modal .modal-history-item.current-exam-highlight:not(.patient-search-modal__table-head-row) {
 	position: relative;
-	border-left: 0.25rem solid var(--patient-modal-coral);
 	background-color: var(--patient-modal-primary-soft);
 }
 
@@ -1726,7 +1537,6 @@
 
 .patient-search-modal .modal-history-item.modal-history-item--examining:not(.patient-search-modal__table-head-row),
 .patient-search-modal .modal-history-item.modal-history-item--examining.modal-history-item-active:not(.patient-search-modal__table-head-row) {
-	border-left: 0.25rem solid var(--patient-modal-info);
 	background-color: var(--patient-modal-info-soft);
 }
 
@@ -1836,8 +1646,6 @@
 		inline-size: 5.5rem;
 	}
 
-	.patient-search-modal .rx-med-row,
-	.patient-search-modal .rx-patient-grid,
 	.patient-search-modal .medical-record-admin-grid {
 		flex-direction: column;
 	}
@@ -1846,10 +1654,6 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.patient-search-modal .rx-col-drug,
-	.patient-search-modal .rx-col-dosage,
-	.patient-search-modal .rx-col-left,
-	.patient-search-modal .rx-col-right,
 	.patient-search-modal .medical-record-admin-main,
 	.patient-search-modal .medical-record-admin-side {
 		flex: 0 0 100%;
@@ -1857,7 +1661,4 @@
 		width: 100%;
 	}
 
-	.patient-search-modal .rx-col-dosage {
-		margin-top: 2px;
-	}
 }

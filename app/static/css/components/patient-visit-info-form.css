@@ -1,12 +1,12 @@
 /* Shared initial visit/interview form used by receptionist and doctor screens. */
 .qlpk-patient-visit-card.receptionist-card {
 	--qlpk-patient-visit-surface: var(--receptionist-tone-surface, var(--qlpk-color-surface, #ffffff));
-	--qlpk-patient-visit-line: var(--receptionist-tone-line, var(--qlpk-color-line, rgba(75, 39, 25, 0.16)));
-	--qlpk-patient-visit-line-strong: var(--receptionist-tone-line-strong, var(--qlpk-color-line-strong, rgba(75, 39, 25, 0.28)));
+	--qlpk-patient-visit-line: var(--receptionist-tone-line, var(--qlpk-color-line, rgba(var(--qlpk-brown-800-rgb), 0.16)));
+	--qlpk-patient-visit-line-strong: var(--receptionist-tone-line-strong, var(--qlpk-color-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.28)));
 	--qlpk-patient-visit-text: var(--receptionist-tone-text, var(--qlpk-color-text, #352821));
 	--qlpk-patient-visit-muted: var(--receptionist-tone-muted, var(--qlpk-color-text-muted, #566366));
-	--qlpk-patient-visit-accent: var(--receptionist-section-header-accent, var(--qlpk-color-primary, #0f766e));
-	--qlpk-patient-visit-heading-text: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong, #07564f));
+	--qlpk-patient-visit-accent: var(--receptionist-section-header-accent, var(--qlpk-color-primary));
+	--qlpk-patient-visit-heading-text: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
 	--qlpk-patient-visit-heading-icon: var(--receptionist-section-header-icon, var(--qlpk-patient-visit-accent));
 	--qlpk-patient-visit-heading-bg: var(--receptionist-section-header-bg, transparent);
 	--qlpk-patient-visit-gap: var(--receptionist-field-gap, 0.625rem);
@@ -20,11 +20,14 @@
 	min-width: 0;
 	padding: 0 var(--qlpk-patient-visit-pad) var(--qlpk-patient-visit-pad);
 	border: 0.0625rem solid var(--qlpk-patient-visit-line);
-	border-inline-start: 0.1875rem solid var(--qlpk-patient-visit-accent);
 	border-radius: 0.5rem;
 	background: var(--qlpk-patient-visit-surface);
 	box-shadow: none;
 	overflow: hidden;
+}
+
+.qlpk-patient-visit-card.receptionist-card:not(.qlpk-patient-visit-card--neutral-border) {
+	border-inline-start: 0.1875rem solid var(--qlpk-patient-visit-accent);
 }
 
 .qlpk-patient-visit-card__title {
@@ -102,25 +105,26 @@
 	min-width: 0;
 	border-width: 0 0 0.0625rem;
 	border-radius: 0;
-	border-color: var(--qlpk-patient-visit-line-strong);
-	background-color: transparent;
-	color: var(--qlpk-patient-visit-text);
 	padding: var(--qlpk-patient-visit-entry-block-start) var(--receptionist-underline-input-padding-inline, 0.42rem);
 	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
 	font-weight: var(--qlpk-font-weight-medium);
 	line-height: 1.35;
+}
+.qlpk-patient-visit-card .receptionist-paper-field .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-visit-card .receptionist-paper-field .form-select {
+	border-color: var(--qlpk-patient-visit-line-strong);
+	background-color: transparent;
+	color: var(--qlpk-patient-visit-text);
 	box-shadow: none;
 }
 
 .qlpk-patient-visit-card .receptionist-paper-field textarea.form-control {
 	resize: vertical;
 }
-
-.qlpk-patient-visit-card .receptionist-paper-field .form-control::placeholder {
+.qlpk-patient-visit-card .receptionist-paper-field .form-control:not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
 	color: #8c786b;
 }
-
-.qlpk-patient-visit-card .receptionist-paper-field .form-control:focus,
+.qlpk-patient-visit-card .receptionist-paper-field .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-patient-visit-card .receptionist-paper-field .form-select:focus {
 	border-color: var(--receptionist-tone-accent, var(--qlpk-patient-visit-accent));
 	box-shadow: 0 0.125rem 0 0 rgba(214, 160, 105, 0.24);
@@ -146,12 +150,12 @@
 }
 
 .qlpk-patient-visit-card .referral-source-option {
-	--referral-source-color: var(--receptionist-tone-bg, var(--qlpk-color-chocolate, #4b2719));
+	--referral-source-color: var(--receptionist-tone-bg, var(--qlpk-color-primary));
 	--referral-source-bg: var(--receptionist-tone-surface, #ffffff);
-	--referral-source-soft: rgba(15, 118, 110, 0.1);
+	--referral-source-soft: rgba(var(--qlpk-color-primary-rgb), 0.1);
 	--referral-source-hover: var(--referral-source-soft);
 	--referral-source-border: rgba(107, 66, 44, 0.2);
-	--referral-source-ring: rgba(15, 118, 110, 0.22);
+	--referral-source-ring: rgba(var(--qlpk-color-primary-rgb), 0.22);
 	justify-content: flex-start;
 	inline-size: 100%;
 	min-block-size: 1.72rem;
@@ -186,7 +190,7 @@
 
 .qlpk-patient-visit-card .referral-source-website {
 	--referral-source-color: #0369a1;
-	--referral-source-soft: #e0f2fe;
+	--referral-source-soft: var(--qlpk-color-primary-soft);
 	--referral-source-border: rgba(3, 105, 161, 0.28);
 	--referral-source-ring: rgba(3, 105, 161, 0.22);
 }
@@ -199,10 +203,10 @@
 }
 
 .qlpk-patient-visit-card .referral-source-medpro {
-	--referral-source-color: #0f766e;
+	--referral-source-color: var(--qlpk-color-primary);
 	--referral-source-soft: #e8f6f2;
-	--referral-source-border: rgba(15, 118, 110, 0.3);
-	--referral-source-ring: rgba(15, 118, 110, 0.22);
+	--referral-source-border: rgba(var(--qlpk-color-primary-rgb), 0.3);
+	--referral-source-ring: rgba(var(--qlpk-color-primary-rgb), 0.22);
 }
 
 .qlpk-patient-visit-card .referral-source-walk-in {

@@ -18,13 +18,13 @@ let totalPages = 1;
 let totalOrders = 0;
 let selectedOrderIds = new Set();
 let currentOrderDetail = null;
+let saveCustomOrderNote = null;
 
 // Survey realtime context for modal refresh
 let lastKnownSurveyStatus = null;
 let currentExaminationId = null;
+let currentSurveySession = null;
 
-// Handler reference cho noteNurseTextarea autosave (để có thể remove listener)
-let noteNurseBlurHandler = null;
 
 // Handler reference cho orderStatusSelect autosave (để có thể remove listener)
 let orderStatusChangeHandler = null;
@@ -34,16 +34,12 @@ const filterState = {
 	patient_name: '',
 	from_date: '',
 	to_date: '',
-	status: 'sent', // Mặc định hiển thị "Chuyển thực hiện"
+	status_group: 'active',
 	location_type: '' // Thay đổi mặc định từ 'in' thành '' để hiển thị tất cả
 };
 
-const ORDER_STATUS_OPTIONS = [
-	{ value: '', label: 'Tất cả trạng thái' },
-	{ value: 'sent', label: 'Chuyển thực hiện' },
-	{ value: 'completed', label: 'Hoàn thành' },
-	{ value: 'processing', label: 'Đang xử lý' },
-];
+let ordersRequestVersion = 0;
+let expiryRefreshTimer = null;
 const RESULT_FILE_MAX_BYTES = 25 * 1024 * 1024;
 const RESULT_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']);
 const FILTER_INPUT_DEBOUNCE_MS = 200; // Giảm từ 400ms xuống 200ms để search nhanh hơn
@@ -175,26 +171,19 @@ function formatDateOnly(dateString) {
 
 // Get status badge HTML
 function getStatusBadge(status) {
-	const statusMap = {
-		'sent': { class: 'sent', label: 'Chuyển thực hiện' },
-		'processing': { class: 'processing', label: 'Đang xử lý' },
-		'completed': { class: 'completed', label: 'Hoàn thành' },
-		'draft': { class: 'sent', label: 'Dự thảo' }
-	};
-
-	const config = statusMap[status] || { class: 'sent', label: status };
-	return `<span class="status-pill ${config.class}">${config.label}</span>`;
+    const config = window.ClinicalOrderStatusUtils.getOrderStatusConfig(status);
+    return `<span class="qlpk-status status-pill ${config.className} ${escapeHtml(status)}">${escapeHtml(config.label)}</span>`;
 }
 
-// Load danh sách chỉ định
 async function loadOrders() {
+	const version = ++ordersRequestVersion;
 	try {
 		// Build query params
 		const params = new URLSearchParams();
 		if (filterState.patient_name) params.append('patient_name', filterState.patient_name);
 		if (filterState.from_date) params.append('from_date', filterState.from_date);
 		if (filterState.to_date) params.append('to_date', filterState.to_date);
-		if (filterState.status) params.append('status', filterState.status);
+		params.append('status_group', filterState.status_group);
 		if (filterState.location_type) params.append('location_type', filterState.location_type);
 		params.append('page', currentPage);
 		params.append('per_page', perPage);
@@ -214,15 +203,27 @@ async function loadOrders() {
 		}
 
 		const data = await response.json();
+		if (version !== ordersRequestVersion) return;
 		const orders = data.chi_dinh || [];
 		totalOrders = data.total || 0;
 		totalPages = data.total_pages || 1;
 		currentPage = data.page || 1;
+		document.getElementById('ordersActiveCount').textContent = data.group_counts.active;
+		document.getElementById('ordersCompletedCount').textContent = data.group_counts.completed;
+		clearTimeout(expiryRefreshTimer);
+		if (data.next_expiry_at) {
+			const delay = Math.max(100, Math.min(2147483647, new Date(data.next_expiry_at).getTime() - Date.now() + 100));
+			expiryRefreshTimer = setTimeout(async () => {
+				await loadOrders();
+				if (currentExaminationId) await checkSurveyStatusUpdate(currentExaminationId);
+			}, delay);
+		}
 
 		renderOrdersTable(orders);
 		updateSelectedCount();
 
 	} catch (error) {
+		if (version !== ordersRequestVersion) return;
 		console.error('Error loading orders:', error);
 		showCustomToast('error', 'Không thể tải danh sách chỉ định. Vui lòng thử lại.');
 		renderOrdersTable([]);
@@ -274,17 +275,9 @@ function renderOrdersTable(orders) {
                 <td>${createdDate}</td>
                 <td>${statusBadge}</td>
                 <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary btn-action-icon order-detail-btn" 
-                                data-order-id="${orderId}" 
-                                title="Chi tiết">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-action-icon order-delete-btn" 
-                                data-order-id="${orderId}" 
-                                title="Xóa">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                    <div class="om-actions">
+                        ${QLPKIconSystem.renderActionButton({ action: 'edit', label: 'Chi tiết chỉ định', className: 'order-detail-btn', attrs: { 'data-order-id': orderId } })}
+                        ${QLPKIconSystem.renderActionButton({ action: 'delete', label: 'Xóa chỉ định', className: 'order-delete-btn', attrs: { 'data-order-id': orderId } })}
                     </div>
                 </td>
             </tr>
@@ -366,96 +359,84 @@ function updateSelectedCount() {
 	if (footer) {
 		footer.innerHTML = `
             <span>${totalOrders} chỉ định / ${totalPages} trang</span>
+            ${totalPages > 1 ? `<nav class="d-flex align-items-center gap-2" aria-label="Phân trang chỉ định">
+                <button type="button" class="om-button om-button--secondary" id="ordersPrevPage" ${currentPage === 1 ? 'disabled' : ''}>Trước</button>
+                <label class="d-flex align-items-center gap-2">Trang <input id="ordersPageNumber" class="form-control form-control-sm om-page-number" type="number" min="1" max="${totalPages}" value="${currentPage}"></label>
+                <button type="button" class="om-button om-button--secondary" id="ordersNextPage" ${currentPage === totalPages ? 'disabled' : ''}>Sau</button>
+            </nav>` : ''}
         `;
+		const go = value => {
+			const page = Number(value);
+			if (!Number.isInteger(page) || page < 1 || page > totalPages) {
+				document.getElementById('ordersPageNumber').value = currentPage;
+				return;
+			}
+			currentPage = page;
+			loadOrders();
+		};
+		document.getElementById('ordersPrevPage')?.addEventListener('click', () => go(currentPage - 1));
+		document.getElementById('ordersNextPage')?.addEventListener('click', () => go(currentPage + 1));
+		document.getElementById('ordersPageNumber')?.addEventListener('change', event => go(event.target.value));
 	}
 }
 
 // Load order detail
+let detailRequestVersion = 0;
+let surveyLoadVersion = 0;
+
 async function loadOrderDetail(orderId) {
-	try {
-		clearSurveyRealtimeContext();
-
-		const response = await apiCall(`/api/chi-dinh/${orderId}`);
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({ detail: 'Lỗi không xác định' }));
-			throw new Error(error.detail || 'Lỗi khi tải chi tiết chỉ định');
-		}
-
-		const order = await response.json();
-		currentOrderDetail = order;
-
-		renderOrderDetailModal(order);
-
-		// Show modal
-		const modalEl = document.getElementById('orderDetailModal');
-		if (!modalEl) {
-			throw new Error('Modal element not found');
-		}
-
-		const modal = new bootstrap.Modal(modalEl);
-
-		// Setup survey tab listener after modal is shown
-		modalEl.addEventListener('shown.bs.modal', function () {
-			// Setup listener after modal is fully shown
-			setTimeout(() => {
-				setupSurveyTabListener();
-				initializeSurveyRealtimeContext();
-			}, 100);
-		}, { once: true });
-
-		// Clear modal realtime context when hidden and reload orders list
-		modalEl.addEventListener('hidden.bs.modal', function () {
-			clearSurveyRealtimeContext();
-
-			// Reset currentOrderDetail để tránh hiển thị data cũ khi mở modal mới
-			currentOrderDetail = null;
-			isSurveyTabLoading = false;
-
-			// Clear nội dung tab Khảo sát để tránh hiển thị data cũ
-			const surveyContent = document.getElementById('surveyContent');
-			if (surveyContent) {
-				surveyContent.innerHTML = '<div class="text-center text-navy py-5"><p>Đang tải...</p></div>';
-			}
-
-			// Reset về tab "Thông tin" mặc định
-			const infoTab = document.getElementById('info-tab');
-			const surveyTab = document.getElementById('survey-tab');
-			const infoPane = document.getElementById('info');
-			const surveyPane = document.getElementById('survey');
-
-			if (infoTab && surveyTab) {
-				infoTab.classList.add('active');
-				surveyTab.classList.remove('active');
-			}
-			if (infoPane && surveyPane) {
-				infoPane.classList.add('show', 'active');
-				surveyPane.classList.remove('show', 'active');
-			}
-
-			// Set filter status to "Chuyển thực hiện" (sent)
-			filterState.status = 'sent';
-
-			// Update filter select dropdown
-			const statusSelect = document.getElementById('filterStatus');
-			if (statusSelect) {
-				statusSelect.value = 'sent';
-			}
-
-			// Reload orders list to get latest data
-			loadOrders();
-		}, { once: false });
-
-		modal.show();
-
-	} catch (error) {
-		console.error('Error loading order detail:', error);
-		showCustomToast('error', 'Không thể tải chi tiết chỉ định. Vui lòng thử lại.');
-	}
+    const version = ++detailRequestVersion;
+    ++surveyLoadVersion;
+    clearSurveyRealtimeContext();
+    currentOrderDetail = null;
+    saveCustomOrderNote = null;
+    renderOrderSurveyContent('<p>Đang tải thông tin khảo sát…</p>');
+    document.getElementById('orderSurveyActions').replaceChildren();
+    try {
+        const response = await apiCall(`/api/chi-dinh/${orderId}`);
+        if (!response.ok) throw new Error('Không tải được chỉ định');
+        const order = await response.json();
+        if (version !== detailRequestVersion) return;
+        currentOrderDetail = order;
+        renderOrderDetailModal(order);
+        const modalEl = document.getElementById('orderDetailModal');
+        if (!modalEl._detailCloseHandler) {
+            modalEl.addEventListener('hide.bs.modal', () => {
+                modalEl._detailClosing = true;
+                modalEl._closingDetailVersion = detailRequestVersion;
+            });
+            modalEl._detailCloseHandler = () => {
+                modalEl._detailClosing = false;
+                // A newer order may already be loading while the close animation ends.
+                if (modalEl._closingDetailVersion === detailRequestVersion) {
+                    ++detailRequestVersion;
+                    ++surveyLoadVersion;
+                    clearSurveyRealtimeContext();
+                    currentOrderDetail = null;
+                    saveCustomOrderNote = null;
+                    renderOrderSurveyContent('');
+                    document.getElementById('orderSurveyActions').replaceChildren();
+                }
+                loadOrders();
+            };
+            modalEl.addEventListener('hidden.bs.modal', modalEl._detailCloseHandler);
+        }
+        if (modalEl._detailClosing) {
+            await new Promise(resolve => modalEl.addEventListener('hidden.bs.modal', resolve, {once: true}));
+            if (version !== detailRequestVersion) return;
+        }
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        await loadOrderSurvey();
+        if (version === detailRequestVersion) await initializeSurveyRealtimeContext();
+    } catch (error) {
+        if (version === detailRequestVersion) showCustomToast('error', 'Không thể tải chi tiết chỉ định. Vui lòng thử lại.');
+    }
 }
 
 // Render order detail modal
 function renderOrderDetailModal(order) {
+    document.getElementById('orderDetailName').textContent = order.order_name || 'Chỉ định';
+    document.getElementById('orderSurveySection').setAttribute('aria-label', order.survey_template_id ? 'Khảo sát của chỉ định' : 'Kết quả chỉ định');
 	const patient = order.patient || {};
 	const doctor = order.doctor || {};
 	const appointment = order.appointment || {};
@@ -464,68 +445,24 @@ function renderOrderDetailModal(order) {
 	const age = birthYear ? new Date().getFullYear() - birthYear : null;
 
 	// Update patient info
-	const patientInfoHtml = `
-		<div class="om-patient-summary">
-			<div class="mb-2 d-flex align-items-center gap-2">
-				<span class="om-patient-name">${escapeHtml(patient.full_name || '—')}</span>
-				${age ? `<span class="badge om-patient-age-badge">${age} tuổi</span>` : ''}
-			</div>
-			<div class="d-flex justify-content-between mb-2">
-				<span class="om-patient-meta-label">Điện thoại</span>
-				<span class="om-patient-meta-value">${escapeHtml(patient.phone || 'Chưa có')}</span>
-			</div>
-			<div class="d-flex justify-content-between mb-2">
-				<span class="om-patient-meta-label">Ngày sinh</span>
-				<span class="om-patient-meta-value">${formatDateOnly(patient.date_of_birth)}</span>
-			</div>
-			<div class="d-flex justify-content-between mb-2">
-				<span class="om-patient-meta-label">Ngày ra chỉ định</span>
-				<span class="om-patient-meta-value">${formatDateOnly(order.created_at)}</span>
-			</div>
-			</div>
-	`;
+    const patientInfoHtml = `
+        <div class="om-patient-summary">
+            <div class="om-patient-identity"><span class="om-patient-name">${escapeHtml(patient.full_name || '—')}</span>
+            ${age !== null ? `<span class="badge om-patient-age-badge">${age} tuổi</span>` : ''}</div>
+            <dl class="om-patient-fields">
+                <dt>Điện thoại</dt><dd>${escapeHtml(patient.phone || 'Chưa có')}</dd>
+                <dt>Ngày sinh</dt><dd>${formatDateOnly(patient.date_of_birth)}</dd>
+                <dt>Ngày ra chỉ định</dt><dd>${formatDateOnly(order.created_at)}</dd>
+            </dl>
+        </div>`;
 
 	const patientInfoEl = document.getElementById('orderPatientInfo');
 	if (patientInfoEl) {
 		patientInfoEl.innerHTML = patientInfoHtml;
 	}
 
-	// Update note nurse và setup autosave listener
-	const noteNurseEl = document.getElementById('noteNurseTextarea');
-	if (noteNurseEl) {
-		// Remove listener cũ nếu có (tránh duplicate)
-		if (noteNurseBlurHandler) {
-			noteNurseEl.removeEventListener('blur', noteNurseBlurHandler);
-			noteNurseBlurHandler = null;
-		}
-
-		// Set value
-		noteNurseEl.value = order.note_nurse || '';
-		noteNurseEl.dataset.orderId = order.id;
-
-		// Tạo handler mới và lưu reference
-		noteNurseBlurHandler = async function () {
-			if (currentOrderDetail) {
-				const newValue = this.value.trim();
-				const oldValue = (currentOrderDetail.note_nurse || '').trim();
-
-				// Chỉ lưu nếu giá trị thay đổi
-				if (newValue !== oldValue) {
-					try {
-						await updateOrderNote(currentOrderDetail.id, 'note_nurse', newValue);
-						currentOrderDetail.note_nurse = newValue;
-					} catch (error) {
-						console.error('Error auto-saving note_nurse:', error);
-					}
-				}
-			}
-		};
-
-		// Gắn listener mới
-		noteNurseEl.addEventListener('blur', noteNurseBlurHandler);
-	}
-
 	// Update order status và setup autosave listener
+    document.getElementById('customOrderStatusControls').hidden = Boolean(order.survey_template_id);
 	const orderStatusSelect = document.getElementById('orderStatusSelect');
 	if (orderStatusSelect) {
 		// Remove listener cũ nếu có (tránh duplicate)
@@ -536,24 +473,34 @@ function renderOrderDetailModal(order) {
 
 		// Set value
 		orderStatusSelect.value = order.status || 'sent';
+        orderStatusSelect.disabled = Boolean(order.survey_template_id) || order.status === 'completed';
+        [...orderStatusSelect.options].forEach(option => { option.hidden = ['survey_sent', 'has_result'].includes(option.value) && !order.survey_template_id; });
 
 		// Tạo handler mới và lưu reference
 		orderStatusChangeHandler = async function () {
 			if (currentOrderDetail) {
+				const order = currentOrderDetail;
+				const version = detailRequestVersion;
 				const newValue = this.value;
-				const oldValue = currentOrderDetail.status || 'sent';
+				const oldValue = order.status || 'sent';
 
 				// Chỉ lưu nếu giá trị thay đổi
 				if (newValue !== oldValue) {
 					try {
-						await updateOrderNote(currentOrderDetail.id, 'status', newValue);
-						currentOrderDetail.status = newValue;
+						this.disabled = true;
+						if (saveCustomOrderNote) await saveCustomOrderNote();
+						if (version !== detailRequestVersion || currentOrderDetail !== order) return;
+						await updateOrderNote(order.id, 'status', newValue);
+						if (version !== detailRequestVersion || currentOrderDetail !== order) return;
+						order.status = newValue;
 						// Reload timeline để hiển thị status mới
 						renderTimeline(currentOrderDetail);
 					} catch (error) {
 						console.error('Error auto-saving status:', error);
 						// Revert về giá trị cũ nếu lỗi
-						this.value = oldValue;
+						if (version === detailRequestVersion && currentOrderDetail === order) this.value = oldValue;
+					} finally {
+						if (version === detailRequestVersion && currentOrderDetail === order) this.disabled = order.status === 'completed';
 					}
 				}
 			}
@@ -566,73 +513,86 @@ function renderOrderDetailModal(order) {
 	// Render result files
 	renderResultFiles(order.result_files || []);
 
-	// Render timeline (có thể từ note_nurse hoặc tạo riêng)
+	// Render timeline from the order lifecycle.
 	renderTimeline(order);
 
-	// Survey tab listener will be setup after modal is shown
+	// Survey content is loaded by the detail lifecycle.
 }
 
-// Setup survey tab listener
-function setupSurveyTabListener() {
-	try {
-		const surveyTab = document.getElementById('survey-tab');
-		const surveyContent = document.getElementById('surveyContent');
-
-		if (!surveyTab) {
-			console.warn('Survey tab element not found');
-			return;
-		}
-
-		if (!surveyContent) {
-			console.warn('Survey content element not found');
-			return;
-		}
-
-		// Remove existing listener to avoid duplicates (use named function for proper removal)
-		const existingHandler = surveyTab._surveyTabHandler;
-		if (existingHandler) {
-			surveyTab.removeEventListener('shown.bs.tab', existingHandler);
-		}
-
-		// Store handler reference for future removal
-		surveyTab._surveyTabHandler = handleSurveyTabShow;
-		surveyTab.addEventListener('shown.bs.tab', handleSurveyTabShow);
-	} catch (error) {
-		console.error('Error setting up survey tab listener:', error);
-	}
+// Manual orders use the existing result note, independently of survey content.
+function renderCustomOrderNote(order) {
+    renderOrderSurveyContent(`
+        <label class="view-field-label" for="customOrderResultNote">Ghi chú kết quả</label>
+        <textarea id="customOrderResultNote" class="form-control" rows="8"
+            aria-describedby="customOrderNoteStatus" placeholder="Nhập nội dung xử lý hoặc kết quả chỉ định..."></textarea>
+        <div class="om-order-controls mt-2">
+            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="qlpk-icon-text-button om-button" id="saveCustomOrderNoteBtn">Lưu ghi chú</button>
+            <span id="customOrderNoteStatus" role="status" aria-live="polite">Tự lưu khi rời ô.</span>
+        </div>`);
+    const input = document.getElementById('customOrderResultNote');
+    const feedback = document.getElementById('customOrderNoteStatus');
+    const button = document.getElementById('saveCustomOrderNoteBtn');
+    const version = detailRequestVersion;
+    const isCurrent = () => version === detailRequestVersion && currentOrderDetail === order && input.isConnected;
+    let savedValue = order.note_nurse || '';
+    let pending = Promise.resolve();
+    input.value = savedValue;
+    const save = () => {
+        const value = input.value;
+        pending = pending.catch(() => {}).then(async () => {
+            if (value === savedValue) {
+                if (isCurrent() && input.value === savedValue) feedback.textContent = 'Đã lưu';
+                return;
+            }
+            if (isCurrent()) feedback.textContent = 'Đang lưu…';
+            try {
+                await updateOrderNote(order.id, 'note_nurse', value);
+                savedValue = value;
+                if (isCurrent()) {
+                    order.note_nurse = value;
+                    feedback.textContent = input.value === value ? 'Đã lưu' : 'Chưa lưu thay đổi mới.';
+                }
+            } catch (error) {
+                if (isCurrent()) feedback.textContent = 'Chưa lưu được. Bấm Lưu ghi chú để thử lại.';
+                throw error;
+            }
+        });
+        return pending;
+    };
+    saveCustomOrderNote = save;
+    input.addEventListener('input', () => { feedback.textContent = 'Chưa lưu — tự lưu khi rời ô.'; });
+    input.addEventListener('change', () => { save().catch(() => {}); });
+    button.addEventListener('click', () => { save().catch(() => {}); });
 }
 
-// Handle survey tab show
-let isSurveyTabLoading = false; // Prevent duplicate calls
-async function handleSurveyTabShow() {
-	// Prevent duplicate calls
-	if (isSurveyTabLoading) {
-		// Prevent duplicate calls
-		return;
-	}
-
+// Load survey content directly as part of the order detail.
+async function loadOrderSurvey() {
+    const version = ++surveyLoadVersion;
+    const loadingOrderId = currentOrderDetail?.id;
+    const isCurrent = () => version === surveyLoadVersion && currentOrderDetail?.id === loadingOrderId;
 	if (!currentOrderDetail || !currentOrderDetail.appointment) {
-		renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>');
+		renderOrderSurveyContent('<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>');
 		return;
 	}
 
 	const appointment = currentOrderDetail.appointment;
 	const appointmentId = appointment.id;
 	if (!appointmentId) {
-		renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>');
+		renderOrderSurveyContent('<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>');
 		return;
 	}
 
 	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
 	if (!indicationTemplateId) {
-		renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Chỉ định này nhập text, không gắn mẫu khảo sát.</p></div>');
+		renderCustomOrderNote(currentOrderDetail);
 		return;
 	}
+	saveCustomOrderNote = null;
 
-	isSurveyTabLoading = true;
+
 
 	// Show loading
-	renderSurveyTabContent(`
+	renderOrderSurveyContent(`
         <div class="text-center text-navy py-5">
             <i class="bi bi-hourglass-split display-4 mb-3 d-block"></i>
             <p>Đang tải thông tin khảo sát...</p>
@@ -651,34 +611,41 @@ async function handleSurveyTabShow() {
 		if (!examinationId) {
 			// Call endpoint (blueprint has no url_prefix, so route is /examinations/...)
 			const examIdResponse = await apiCall(`/examinations/appointment/${appointmentId}/id`);
+        if (!isCurrent()) return;
 
 			// If not found, show message and return gracefully
 			if (!examIdResponse.ok) {
 				if (examIdResponse.status === 404) {
-					renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Chưa có lịch khám nào cho chỉ định này</p></div>');
+					renderOrderSurveyContent('<div class="text-center text-navy py-5"><p>Chưa có lịch khám nào cho chỉ định này</p></div>');
 					return;
 				} else {
 					const errorData = await examIdResponse.json().catch(() => ({ detail: 'Lỗi không xác định' }));
+        if (!isCurrent()) return;
 					throw new Error(errorData.detail || errorData.error || 'Lỗi khi tải thông tin khám');
 				}
 			}
 
 			const examIdData = await examIdResponse.json();
+        if (!isCurrent()) return;
 			examinationId = examIdData.examination_id;
 		}
 
 		if (!examinationId) {
-			renderSurveyTabContent('<div class="text-center text-navy py-5"><p>Chưa có lịch khám nào cho chỉ định này</p></div>');
+			renderOrderSurveyContent('<div class="text-center text-navy py-5"><p>Chưa có lịch khám nào cho chỉ định này</p></div>');
 			return;
 		}
 
+		await refreshCurrentOrderStatus();
+        if (!isCurrent()) return;
 		// The indication is the canonical source for the survey template.
 		const templateResponse = await apiCall(`/api/survey-templates/${indicationTemplateId}/public`);
+        if (!isCurrent()) return;
 		if (!templateResponse.ok) {
 			throw new Error('Lỗi khi tải mẫu khảo sát');
 		}
 
 		const templateData = await templateResponse.json();
+        if (!isCurrent()) return;
 		const templates = templateData.data ? [templateData.data] : [];
 		if (!templates.length) {
 			throw new Error('Không tìm thấy mẫu khảo sát của chỉ định');
@@ -686,45 +653,20 @@ async function handleSurveyTabShow() {
 
 		// Get survey session status
 		let surveySession = null;
-		let sessionDetailData = null;
-
-		// Check if we have cached session data from recent generation
-		const cachedSessionKey = `survey_session_${examinationId}`;
-		const cachedData = sessionStorage.getItem(cachedSessionKey);
-		if (cachedData) {
-			try {
-				sessionDetailData = JSON.parse(cachedData);
-			} catch (e) {
-				sessionStorage.removeItem(cachedSessionKey);
-			}
-		}
 
 		try {
 			// Correct API endpoint: /api/survey-sessions/{examination_id}/status
-			const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status`);
+			const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status?order_id=${currentOrderDetail.id}`);
+        if (!isCurrent()) return;
 
 			if (sessionResponse && sessionResponse.ok) {
 				const sessionData = await sessionResponse.json();
+        if (!isCurrent()) return;
 				surveySession = sessionData.data || sessionData;
 
 				// Check if status is 'not_started' - means no session exists yet (this is normal)
 				if (surveySession && surveySession.status === 'not_started') {
 					surveySession = null; // Treat as no session
-				} else if (surveySession) {
-					// If we have cached detail data (with URL and QR), merge it
-					if (sessionDetailData) {
-						surveySession.survey_url = sessionDetailData.survey_url;
-						surveySession.qr_code = sessionDetailData.qr_code;
-						surveySession.template_id = sessionDetailData.template_id;
-					} else if (surveySession.session_token) {
-						// Generate URL and QR code from session_token
-						const baseUrl = window.location.origin;
-						const patientId = currentOrderDetail.patient?.id;
-						if (patientId) {
-							const templateParam = indicationTemplateId ? `&template_id=${indicationTemplateId}` : '';
-							surveySession.survey_url = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}${templateParam}`;
-						}
-					}
 				}
 			} else if (sessionResponse && sessionResponse.status === 404) {
 				// 404 means endpoint not found (should not happen, but handle gracefully)
@@ -739,10 +681,9 @@ async function handleSurveyTabShow() {
 			// Survey session check failed - this is ok if no session exists
 		}
 
-		// Use cached detail data if available (fallback if no session from API)
-		if (!surveySession && sessionDetailData) {
-			surveySession = sessionDetailData;
-		}
+		if (!isCurrent()) return;
+		currentSurveySession = surveySession;
+		renderTimeline(currentOrderDetail, surveySession);
 
 		// Get patient info
 		const patient = currentOrderDetail.patient || {};
@@ -750,24 +691,28 @@ async function handleSurveyTabShow() {
 
 		// Check session status - only show results if session is closed or completed
 		const sessionStatus = surveySession?.status || surveySession?.data?.status;
-		const isSessionClosed = sessionStatus === 'closed' || sessionStatus === 'completed';
+		const hasSurveyOrder = Boolean(currentOrderDetail.survey_template_id);
 
 		// Only fetch and display results if session is closed
-		if (isSessionClosed) {
+		if (hasSurveyOrder) {
 			// Get survey responses for this examination
-			const surveyResponse = await apiCall(`/api/survey-responses/examination/${examinationId}`);
+			const surveyResponse = await apiCall(`/api/survey-responses/examination/${examinationId}?order_id=${currentOrderDetail.id}`);
+        if (!isCurrent()) return;
 			let allSurveyResponses = [];
 
 			if (surveyResponse.ok) {
 				const surveyData = await surveyResponse.json();
+        if (!isCurrent()) return;
 				allSurveyResponses = surveyData.data || surveyData.responses || [];
 
 
 			}
 
+			if (!isCurrent()) return;
 			// If we have responses, render results
 			if (allSurveyResponses.length > 0) {
-				await renderSurveyResultsWithFullUI(allSurveyResponses, templates, surveySession, appointment);
+				await renderSurveyResults(allSurveyResponses, templates, surveySession, appointment, isCurrent);
+        if (!isCurrent()) return;
 				return;
 			}
 		}
@@ -776,20 +721,22 @@ async function handleSurveyTabShow() {
 		renderSurveySelectionUI(examinationId, templates, surveySession, appointment);
 
 	} catch (error) {
+        if (!isCurrent()) return;
 		console.error('Error loading survey data:', error);
-		renderSurveyTabContent(`
+		renderOrderSurveyContent(`
             <div class="text-center text-danger py-5">
                 <i class="bi bi-exclamation-triangle display-4 mb-3 d-block"></i>
                 <p>Không thể tải thông tin khảo sát. Vui lòng thử lại.</p>
             </div>
         `);
-	} finally {
-		isSurveyTabLoading = false;
 	}
 }
 
-// Render survey tab content
-function renderSurveyTabContent(html) {
+// Render the survey section
+function renderOrderSurveyContent(html, qrCode = '') {
+    const qr = document.getElementById('orderProgressQR');
+    qr.hidden = !qrCode;
+    qr.innerHTML = qrCode ? `<img src="${escapeHtml(qrCode)}" alt="Mã QR mở link khảo sát" class="om-survey-qr">` : '';
 	try {
 		const surveyContent = document.getElementById('surveyContent');
 		if (!surveyContent) {
@@ -801,15 +748,26 @@ function renderSurveyTabContent(html) {
 		// Then set new content
 		surveyContent.innerHTML = html;
 	} catch (error) {
-		console.error('Error rendering survey tab content:', error);
+		console.error('Error rendering survey content:', error);
 	}
+}
+
+function renderSurveyActions(examinationId, patientId, hasResult = false, hasLink = false) {
+    const order = currentOrderDetail;
+    const target = document.getElementById('orderSurveyActions');
+    if (!order?.survey_template_id) { target.replaceChildren(); return; }
+    target.innerHTML = `
+        ${!hasResult && order.status !== 'completed' ? `<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="qlpk-icon-text-button om-button" id="sendSurveyLinkBtn"><i class="bi bi-link-45deg qlpk-button-icon" aria-hidden="true"></i>${hasLink ? 'Tạo lại link khảo sát' : 'Tạo link khảo sát'}</button>` : ''}
+        <a class="qlpk-icon-text-button om-button" id="viewSurveyResultBtn" href="/patient-survey.html?review_order_id=${order.id}" target="_blank" rel="noopener"><i class="bi bi-eye qlpk-button-icon" aria-hidden="true"></i>Xem kết quả</a>
+        ${order.status !== 'completed' ? '<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="qlpk-icon-text-button om-button om-button--danger" id="closeSurveySessionBtn"><i class="bi bi-lock qlpk-button-icon" aria-hidden="true"></i>Kết thúc khảo sát</button>' : ''}`;
+    document.getElementById('sendSurveyLinkBtn')?.addEventListener('click', () => sendSurveyLink(examinationId, patientId, order.survey_template_id));
+    document.getElementById('closeSurveySessionBtn')?.addEventListener('click', () => closeSurveySession());
 }
 
 // Render survey selection UI (when no survey results yet)
 function renderSurveySelectionUI(examinationId, templates, surveySession, appointment) {
 	const patient = currentOrderDetail.patient || {};
 	const patientId = patient.id;
-	const orderDate = currentOrderDetail.created_at;
 	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
 
 	// Get survey session details (URL and QR code)
@@ -822,12 +780,6 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 		surveyUrl = surveySession.survey_url || surveySession.url || '';
 		qrCode = surveySession.qr_code || '';
 
-		// If no URL but have session_token, generate URL
-		if (!surveyUrl && surveySession.session_token && examinationId) {
-			const baseUrl = window.location.origin;
-			const templateParam = indicationTemplateId ? `&template_id=${indicationTemplateId}` : '';
-			surveyUrl = `${baseUrl}/patient-survey.html?patient_id=${patientId}&examination_id=${examinationId}&session_token=${surveySession.session_token}${templateParam}`;
-		}
 
 		if (surveySession.expires_at) {
 			const expDate = new Date(surveySession.expires_at);
@@ -835,170 +787,46 @@ function renderSurveySelectionUI(examinationId, templates, surveySession, appoin
 		}
 	}
 
-	// Determine status and button states
-	// hasActiveSession = true if we have surveyUrl or qrCode or session with valid status
-	let hasActiveSession = !!(surveyUrl || qrCode || (surveySession && surveySession.session_token));
-
-	let statusBadge = '';
-
-	// Get session status for conditional rendering
-	let sessionStatus = null;
-	if (hasActiveSession && surveySession) {
-		sessionStatus = surveySession.status || surveySession.data?.status;
-		if (sessionStatus === 'pending' || sessionStatus === 'not_started') {
-			statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Chờ bệnh nhân điền</span>';
-		} else if (sessionStatus === 'in_progress') {
-			statusBadge = '<span class="survey-status-badge in-progress small"><i class="bi bi-hourglass-split"></i> Đang điền</span>';
-		} else if (sessionStatus === 'closed' || sessionStatus === 'completed') {
-			statusBadge = '<span class="survey-status-badge completed small"><i class="bi bi-check-circle"></i> Đã hoàn thành</span>';
-		} else {
-			// Session exists but no status - still consider it active (cached data)
-			statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Đã gửi</span>';
-		}
-	} else if (hasActiveSession) {
-		// We have URL/QR but no surveySession object (cached only)
-		statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Đã gửi</span>';
-	} else {
-		statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-x-circle"></i> Chưa gửi</span>';
-	}
-
-	// Only the template linked to this indication is valid here.
+	// The template linked to this indication is the source of the displayed name.
 	const linkedTemplate = templates[0];
-	const templateOptions = `<option value="${linkedTemplate.id}" selected>${escapeHtml(linkedTemplate.name || '—')}</option>`;
 
 	// Build QR and Link section HTML
 	let qrAndLinkHtml = '';
 	if (surveyUrl) {
 		qrAndLinkHtml = `
-            <div class="card-wrap">
-                <div class="row g-3">
-                    ${qrCode ? `
-                    <div class="col-md-6">
-                        <div class="text-center">
-                            <h6 class="fw-semibold">
-                                <i class="bi bi-qr-code me-2"></i>Mã QR
-                            </h6>
-                            <div class="mb-2"><img src="${qrCode}" alt="QR Code" class="img-fluid om-survey-qr"></div>
-                            <small class="text-navy">Quét mã QR để truy cập khảo sát</small>
-                        </div>
-                    </div>
-                    ` : ''}
-                    <div class="${qrCode ? 'col-md-6' : 'col-md-12'}">
+            <div class="om-survey-access">
+                    <div class="om-survey-access-link">
                         <h6 class="fw-semibold mb-3">
                             <i class="bi bi-link-45deg me-2"></i>Link khảo sát
                         </h6>
                         <div class="input-group mb-2">
                             <input type="text" class="form-control form-control-sm om-survey-link-input" id="surveyLinkInput" value="${escapeHtml(surveyUrl)}" readonly>
-                            <button class="btn btn-outline-primary btn-sm" type="button" id="copySurveyLinkBtn">
-                                <i class="bi bi-clipboard"></i>
+                            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="qlpk-icon-action qlpk-icon-action--view" type="button" id="copySurveyLinkBtn" title="Sao chép link khảo sát" aria-label="Sao chép link khảo sát">
+                                <i class="bi bi-clipboard" aria-hidden="true"></i>
                             </button>
                         </div>
                         ${expiresAt ? `<small class="text-navy">Hết hạn: ${expiresAt}</small>` : ''}
                     </div>
-                </div>
             </div>
         `;
 	}
 
-	const html = `
-        <div class="mt-2">
-            <div class="card-wrap mb-3">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label small text-navy mb-1">Trạng thái khảo sát</label>
-                                <div>${statusBadge}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small text-navy mb-1">Thời gian hoàn thành</label>
-                                <div class="small">
-                                    <strong>—</strong>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small text-navy mb-1">Ngày chỉ định</label>
-                                <div class="small">
-                                    <strong>${formatDateOnly(orderDate)}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary btn-sm flex-fill" id="sendSurveyLinkBtn">
-                                <i class="bi bi-link-45deg me-1"></i>Gửi link khảo sát
-                            </button>
-                            ${hasActiveSession && sessionStatus !== 'closed' && sessionStatus !== 'completed' ? `
-                            <button class="btn btn-danger btn-sm flex-fill" id="closeSurveySessionBtn">
-                                <i class="bi bi-lock me-1"></i>Kết thúc khảo sát
-                            </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-wrap mb-3">
-                <label class="view-field-label">Mẫu khảo sát</label>
-                <select class="form-select om-survey-template-select" id="surveyTemplateSelect" disabled>
-                    ${templateOptions}
-                </select>
-                <small class="text-navy d-block mt-1 om-survey-helper-text">Mẫu khảo sát lấy từ chỉ định đã chọn.</small>
-            </div>
-            
-            ${qrAndLinkHtml}
-        </div>
+    renderSurveyActions(examinationId, patientId, false, Boolean(surveyUrl));
+    const html = `
+        <div class="om-survey-heading"><div><h3>Khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
+            <p class="om-survey-helper-text">Mẫu: ${escapeHtml(linkedTemplate.name || '—')}</p></div></div>
+        ${currentOrderDetail.status === 'completed' ? '<p class="om-survey-empty">Chưa có bài nộp. Bấm “Xem kết quả” để xem phần trả lời đã lưu.</p>' : qrAndLinkHtml || '<p class="om-survey-empty">Chưa tạo link khảo sát. Bấm “Tạo link khảo sát” để bệnh nhân bắt đầu làm bài.</p>'}
     `;
 
-	renderSurveyTabContent(html);
+	renderOrderSurveyContent(html, currentOrderDetail.status !== 'completed' && surveyUrl ? qrCode : '');
 
-	// The linked template is read-only; only the send action is interactive.
-	try {
-		const sendBtn = document.getElementById('sendSurveyLinkBtn');
-		const closeBtn = document.getElementById('closeSurveySessionBtn');
-		const copyBtn = document.getElementById('copySurveyLinkBtn');
-
-		if (sendBtn) {
-			sendBtn.addEventListener('click', async () => {
-				try {
-					await sendSurveyLink(examinationId, patientId, indicationTemplateId);
-				} catch (error) {
-					console.error('Error in send survey link handler:', error);
-					showCustomToast('error', 'Lỗi khi gửi link khảo sát');
-				}
-			});
-		}
-
-		// Attach event listener for close survey session button
-		if (closeBtn) {
-			closeBtn.addEventListener('click', async () => {
-				try {
-					await closeSurveySession(examinationId, patientId);
-				} catch (error) {
-					console.error('Error in close survey session handler:', error);
-					showCustomToast('error', 'Lỗi khi kết thúc khảo sát');
-				}
-			});
-		}
-
-		if (copyBtn) {
-			copyBtn.addEventListener('click', () => {
-				try {
-					copySurveyLink();
-				} catch (error) {
-					console.error('Error copying survey link:', error);
-					showCustomToast('error', 'Lỗi khi copy link khảo sát');
-				}
-			});
-		}
-	} catch (error) {
-		console.error('Error attaching survey event listeners:', error);
-	}
+    document.getElementById('copySurveyLinkBtn')?.addEventListener('click', copySurveyLink);
 }
 
 // Send survey link
 async function sendSurveyLink(examinationId, patientId, templateId) {
+    const orderId = currentOrderDetail?.id;
+    if (!orderId) return;
 	try {
 		if (!templateId) {
 			showCustomToast('error', 'Vui lòng chọn mẫu khảo sát');
@@ -1010,10 +838,6 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 			return;
 		}
 
-		// Fix: Clear cache cũ khi đổi template để tránh render sai template
-		const cachedSessionKey = `survey_session_${examinationId}`;
-		sessionStorage.removeItem(cachedSessionKey);
-
 		showCustomToast('info', 'Đang tạo link khảo sát...');
 
 		// Send template_id to API so it can be included in the survey URL
@@ -1022,71 +846,45 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 			body: JSON.stringify({
 				patient_id: patientId,
 				examination_id: examinationId,
-				template_id: templateId  // Include template_id in request
+				template_id: templateId,
+                order_id: orderId
 			})
 		});
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({ message: 'Lỗi không xác định' }));
+			if (errorData.code === 'SURVEY_TEMPLATE_INVALID') {
+				showCustomToast('error', 'Mẫu khảo sát chưa đủ cấu hình điểm. Vui lòng kiểm tra lại.');
+				return;
+			}
 			throw new Error(errorData.message || 'Lỗi khi tạo link khảo sát');
 		}
 
 		const data = await response.json();
 		if (data.success && data.data) {
-			showCustomToast('success', 'Đã tạo link khảo sát thành công. Khảo sát đã được reset về trạng thái chưa hoàn thành.');
+			showCustomToast('success', 'Link khảo sát đã sẵn sàng.');
 
-			// Cache session data with URL and QR code, also save template_id
-			const cachedSessionKey = `survey_session_${examinationId}`;
-			const sessionDataToCache = {
-				...data.data,
-				template_id: templateId // Save the selected template_id
-			};
-			sessionStorage.setItem(cachedSessionKey, JSON.stringify(sessionDataToCache));
+
 		} else {
 			showCustomToast('success', 'Đã tạo link khảo sát thành công');
 		}
 
-		// Clear any previous response data and reload survey tab
-		// This ensures the tab shows the selection UI instead of results
-		await handleSurveyTabShow();
+		// Clear any previous response data and reload survey content
+		// This ensures the section shows the selection UI instead of results
+		if (currentOrderDetail?.id === orderId) await loadOrderSurvey();
 
 	} catch (error) {
 		console.error('Error sending survey link:', error);
-		showCustomToast('error', 'Không thể gửi liên kết khảo sát. Vui lòng thử lại.');
+		showCustomToast('error', 'Không thể tạo link khảo sát. Vui lòng thử lại.');
 	}
 }
 
 // Close survey session
 async function closeSurveySession(examinationId, patientId) {
+	const orderId = currentOrderDetail?.id;
+	if (!orderId) return;
 	try {
-		// Get current session to get session_token
-		const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status`);
-
-		if (!sessionResponse || !sessionResponse.ok) {
-			showCustomToast('error', 'Không tìm thấy phiên khảo sát để kết thúc');
-			return;
-		}
-
-		const sessionData = await sessionResponse.json();
-		const session = sessionData.data || sessionData;
-
-		if (!session || session.status === 'not_started') {
-			showCustomToast('error', 'Chưa có phiên khảo sát nào để kết thúc. Vui lòng tạo khảo sát trước.');
-			return;
-		}
-
-		if (session.status === 'closed' || session.status === 'completed') {
-			showCustomToast('info', 'Khảo sát đã được kết thúc rồi');
-			return;
-		}
-
-		if (!session.session_token) {
-			showCustomToast('error', 'Không tìm thấy session token để kết thúc khảo sát');
-			return;
-		}
-
-		// Show confirmation using browser confirm (simple approach)
-		const confirmed = confirm('Bạn có chắc chắn muốn kết thúc khảo sát? Bệnh nhân sẽ không thể chỉnh sửa hoặc gửi kết quả mới.');
+		const confirmed = await showConfirmDialog({title: 'Kết thúc khảo sát', text: 'Chỉ định sẽ chuyển sang Hoàn thành và ngừng nhận bài nộp. Kết quả đã có vẫn được giữ nguyên.', confirmText: 'Kết thúc khảo sát', variant: 'warning'});
 		if (!confirmed) {
 			return;
 		}
@@ -1094,7 +892,7 @@ async function closeSurveySession(examinationId, patientId) {
 		showCustomToast('info', 'Đang kết thúc khảo sát...');
 
 		// Call close API
-		const closeResponse = await apiCall(`/api/survey-sessions/close/${session.session_token}`, {
+		const closeResponse = await apiCall(`/api/chi-dinh/${orderId}/finish-survey`, {
 			method: 'POST'
 		});
 
@@ -1108,12 +906,14 @@ async function closeSurveySession(examinationId, patientId) {
 		if (closeData.success) {
 			showCustomToast('success', 'Khảo sát đã được kết thúc thành công');
 
-			// Clear cached session data
-			const cachedSessionKey = `survey_session_${examinationId}`;
-			sessionStorage.removeItem(cachedSessionKey);
 
-			// Reload survey tab - will now show results if available
-			await handleSurveyTabShow();
+
+			// Reload survey content - will now show results if available
+			await loadOrders();
+			if (currentOrderDetail?.id === orderId) {
+				await refreshCurrentOrderStatus();
+				await loadOrderSurvey();
+			}
 		} else {
 			showCustomToast('error', 'Không thể kết thúc khảo sát. Vui lòng thử lại.');
 		}
@@ -1125,7 +925,7 @@ async function closeSurveySession(examinationId, patientId) {
 }
 
 // Render survey results with full UI (header + dropdown + results)
-async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveySession, appointment) {
+async function renderSurveyResults(surveyResponses, templates, surveySession, appointment, isCurrent = () => true) {
 	if (!surveyResponses || surveyResponses.length === 0) {
 		renderSurveySelectionUI(null, templates, surveySession, appointment);
 		return;
@@ -1162,21 +962,7 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 	// Debug: Log all responses with their template_id and total_scores
 
 
-	// Tìm response mới nhất có total_scores không rỗng
-	let latestResponse = null;
-	for (const response of linkedResponses) {
-		const hasScores = response.total_scores && Object.keys(response.total_scores).length > 0;
-		if (hasScores) {
-			latestResponse = response;
-			break; // Dùng response đầu tiên có scores (mới nhất do đã sort)
-		}
-	}
-
-	// Fallback: Nếu không có response nào có scores, dùng response mới nhất
-	if (!latestResponse && linkedResponses.length > 0) {
-		latestResponse = linkedResponses[0];
-		console.warn(`⚠️ [FALLBACK] Không tìm thấy response có total_scores, dùng response mới nhất ID ${latestResponse.id} (total_scores: ${JSON.stringify(latestResponse.total_scores)})`);
-	}
+	const latestResponse = linkedResponses[0] || null;
 
 	if (!latestResponse) {
 		renderSurveySelectionUI(null, templates, surveySession, appointment);
@@ -1192,65 +978,14 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 
 	// Debug: Log template match
 
-	// Render header and the read-only linked template once.
-	const orderDate = currentOrderDetail.created_at;
-	const completedAt = latestResponse.updated_at;
-
-	let statusBadge = '';
-	if (completedAt) {
-		statusBadge = '<span class="survey-status-badge completed small"><i class="bi bi-check-circle"></i> Đã hoàn thành</span>';
-	} else {
-		statusBadge = '<span class="survey-status-badge pending small"><i class="bi bi-clock"></i> Chờ bệnh nhân điền</span>';
-	}
-
-	const templateOptions = `<option value="${latestTemplate.id}" selected>${escapeHtml(latestTemplate.name || '—')}</option>`;
-
-	// Render header and the read-only linked template once.
-	let html = `
-        <div class="mt-2">
-            <div class="row g-3 mb-4 align-items-center">
-                <div class="col-md-8">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label small text-navy mb-1">Trạng thái khảo sát</label>
-                            <div>${statusBadge}</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-navy mb-1">Thời gian hoàn thành</label>
-                            <div class="small">
-                                <strong>${formatDisplayDate(completedAt)}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-navy mb-1">Ngày chỉ định</label>
-                            <div class="small">
-                                <strong>${formatDateOnly(orderDate)}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm flex-fill" id="sendSurveyLinkBtnResults">
-                            <i class="bi bi-link-45deg me-1"></i>Gửi link khảo sát
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row g-3 mb-4">
-                <div class="col-md-12">
-                    <label class="form-label fw-semibold">Mẫu khảo sát</label>
-                    <select class="form-select" id="surveyTemplateSelectResults" disabled>
-                        ${templateOptions}
-                    </select>
-                    <small class="text-navy d-block mt-1">Mẫu khảo sát lấy từ chỉ định đã chọn.</small>
-                </div>
-            </div>
-    `;
-
+    renderSurveyActions(latestResponse.examination_id, currentOrderDetail.patient?.id, true);
+    let html = `<div>
+        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
+        <p class="om-survey-helper-text">Mẫu: ${escapeHtml(latestTemplate.name || '—')}</p></div>
+        ${currentOrderDetail.status !== 'completed' && currentOrderDetail.survey_expires_at ? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(currentOrderDetail.survey_expires_at)}</p>` : ''}</div>`;
 	// Render chỉ 1 card cho response mới nhất
 	const cardHtml = await renderSingleSurveyResultCard(latestTemplate, latestResponse);
+    if (!isCurrent()) return;
 	// Only add if card is not empty
 	if (cardHtml && cardHtml.trim()) {
 		html += cardHtml;
@@ -1258,55 +993,33 @@ async function renderSurveyResultsWithFullUI(surveyResponses, templates, surveyS
 
 	html += '</div>';
 
-	renderSurveyTabContent(html);
+	renderOrderSurveyContent(html);
 
 	// Load saved survey levels after content is in DOM
 	setTimeout(() => {
-		loadSavedSurveyLevels(latestResponse.examination_id);
+		if (isCurrent()) loadSavedSurveyLevels(latestResponse.examination_id);
 	}, 150);
 
-	// Attach only the send action; the linked template is read-only.
-	try {
-		const sendBtnResults = document.getElementById('sendSurveyLinkBtnResults');
-		const appointmentData = currentOrderDetail.appointment || {};
-		const patientId = currentOrderDetail.patient?.id;
-		const appointmentId = appointmentData.id;
 
-		// Helper function to get examinationId
-		const getExaminationId = async () => {
-			let examId = appointmentData.examinations?.[0]?.id || null;
-			if (!examId && appointmentId) {
-				const examResponse = await apiCall(`/examinations/appointment/${appointmentId}/id`);
-				if (examResponse.ok) {
-					const examData = await examResponse.json();
-					examId = examData.examination_id || examData.id;
-				}
-			}
-			return examId;
-		};
+}
 
-		const handleSendSurveyLink = async () => {
-			const examId = await getExaminationId();
-			if (examId) {
-				await sendSurveyLink(examId, patientId, indicationTemplateId);
-			} else {
-				showCustomToast('error', 'Không tìm thấy lần khám để gửi link khảo sát');
-			}
-		};
+function resolveSurveyAnswerText(question, answerValue) {
+	const answers = question.answers || question.options || [];
+	if (Array.isArray(answerValue)) return answerValue.map(value => resolveSurveyAnswerText(question, value)).join('; ');
+	const normalizedValue = answerValue && typeof answerValue === 'object'
+		? (answerValue.answer_id ?? answerValue.value ?? answerValue.id)
+		: answerValue;
+	const matchedAnswer = answers.find(answer => answer.id !== undefined && answer.id !== null && answer.id !== '' && String(answer.id) === String(normalizedValue));
+	if (matchedAnswer) return matchedAnswer.text || matchedAnswer.label || String(normalizedValue);
 
-		if (sendBtnResults && appointmentId && patientId) {
-			sendBtnResults.addEventListener('click', async () => {
-				try {
-					await handleSendSurveyLink();
-				} catch (error) {
-					console.error('Error in send survey link handler (results view):', error);
-					showCustomToast('error', 'Lỗi khi gửi link khảo sát');
-				}
-			});
+	const numericValue = Number(normalizedValue);
+	if (Number.isInteger(numericValue) && numericValue >= 0 && numericValue < answers.length) {
+		const indexedAnswer = answers[numericValue];
+		if (indexedAnswer && (indexedAnswer.id === undefined || indexedAnswer.id === null || indexedAnswer.id === '')) {
+			return indexedAnswer.text || indexedAnswer.label || String(normalizedValue);
 		}
-	} catch (error) {
-		console.error('Error attaching event listener for results view:', error);
 	}
+	return 'Không ghép được đáp án';
 }
 
 // Summarize patient answers for order management (dynamic criteria support)
@@ -1320,7 +1033,6 @@ function summarizePatientAnswersForOrderManagement(template, response) {
 		return summary;
 	}
 
-	const answerTextMap = DASS21_CONFIG.ANSWER_MAP;
 	const totalScores = response.total_scores || {};
 
 
@@ -1333,49 +1045,30 @@ function summarizePatientAnswersForOrderManagement(template, response) {
 			summary.criteria[criteria] = [];
 		}
 
-		// Get score for this criteria (try multiple formats)
-		const criteriaScore = totalScores[criteria] ||
-			totalScores[criteria.toLowerCase()] ||
-			totalScores[criteria.toLowerCase().replace(/\s+/g, '_')] ||
-			0;
-
-
-
-		// Store score
+		// Missing score is not a zero score.
+		const criteriaScore = Object.prototype.hasOwnProperty.call(totalScores, criteria)
+			&& typeof totalScores[criteria] === 'number' && Number.isFinite(totalScores[criteria])
+			? totalScores[criteria] : null;
 		summary.scores[criteria] = criteriaScore;
 
 		// Process questions for this criteria
 		questions.forEach(question => {
 			// Fix: Hỗ trợ cả grid questions (dùng question_id hoặc id)
-			const rowId = question.question_id || question.id;
-			const questionIdStr = rowId ? String(rowId) : null;
+			const rowId = question.question_id ?? question.id;
+			const questionIdStr = rowId !== undefined && rowId !== null && rowId !== '' ? String(rowId) : null;
 
-			// Fix: Tìm answerValue - hỗ trợ cả grid format (criteria_1, criteria_2) và normal format
+			// Match the exact question identity; never reuse another answer by group prefix.
 			let answerValue = null;
 			if (response.responses) {
 				// Thử tìm trực tiếp bằng question_id hoặc id
 				if (questionIdStr && response.responses[questionIdStr] !== undefined) {
 					answerValue = response.responses[questionIdStr];
-				} else {
-					// Grid format: tìm theo pattern criteria_index (ví dụ: stress_1, stress_2)
-					const criteriaLower = criteria.toLowerCase();
-					const matchingKey = Object.keys(response.responses).find(key => {
-						// Match pattern: criteria_index hoặc criteriaIndex
-						return key.startsWith(`${criteriaLower}_`) ||
-							key.startsWith(`${criteria}_`) ||
-							key === `${criteriaLower}${question.index || ''}` ||
-							key === `${criteria}${question.index || ''}`;
-					});
-					if (matchingKey) {
-						answerValue = response.responses[matchingKey];
-					}
 				}
 			}
 
 			if (answerValue !== undefined && answerValue !== null) {
-				// Fix: Mapping an toàn hơn - convert sang string
-				const answerValueStr = String(answerValue);
-				const answerText = answerTextMap[answerValueStr] || DASS21_CONFIG.DEFAULT_ANSWER;
+				// Resolve both stored answer IDs and numeric answer values.
+				const answerText = resolveSurveyAnswerText(question, answerValue);
 				const questionText = question.text || question.question || '';
 				const remainingText = questionText.replace(/^Tôi\s+/, ''); // Bỏ "Tôi " ở đầu
 				const summarizedAnswer = `Bệnh nhân ${answerText} ${remainingText}`;
@@ -1410,7 +1103,7 @@ function renderSurveyResultsByCriteria(template, response) {
 	// Render each criteria dynamically
 	allCriteria.forEach(criteriaName => {
 		const answers = summary.criteria[criteriaName] || [];
-		const score = summary.scores[criteriaName] || 0;
+		const score = summary.scores[criteriaName] ?? 'Chưa tính được';
 
 		// Normalize criteria name for use as key (for saving levels)
 		// Use criteria name as-is, but sanitize for HTML id
@@ -1419,38 +1112,24 @@ function renderSurveyResultsByCriteria(template, response) {
 		// Format title: uppercase and add prefix if needed
 		const title = criteriaName.toUpperCase();
 
-		html += `
+        html += `
             <div class="survey-criteria-section">
                 <div class="criteria-header">${escapeHtml(title)}</div>
-                <div class="criteria-content">
-                    <div class="criteria-left">
-                        ${answers.length > 0 ?
-				answers.map(answer => `<div class="symptom-item">• ${escapeHtml(answer.summarized)}</div>`).join('') :
-				'<div class="text-navy">Chưa có dữ liệu</div>'
-			}
-                    </div>
-                    <div class="criteria-right">
-                        <div class="scale-result">
-                            <div class="score-display" title="Tổng số điểm ghi nhận">
-                                <span class="score-label">Tổng số điểm ghi nhận:</span>
-                                <span class="score-value">${score}</span>
-                            </div>
-                            <div class="level-display">
-                                <span class="level-label">Mức độ ghi nhận:</span>
-                                <input type="text" 
-                                       class="form-control form-control-sm level-input" 
-                                       placeholder="Nhập mức độ" 
-                                       data-criteria="${escapeHtml(criteriaName)}" 
-                                       data-criteria-key="${criteriaKey}"
-                                       id="level-input-${criteriaKey}-${response.id}"
-                                       onchange="saveSurveyLevelForOrder('${escapeHtml(criteriaName)}', '${response.examination_id}', this)"
-                                       oninput="updateLevelInputAlignment(this)">
-                            </div>
-                        </div>
-                    </div>
+                <div class="criteria-left">
+                    ${answers.length > 0 ? answers.map(answer => `<div class="symptom-item">• ${escapeHtml(answer.summarized)}</div>`).join('') : '<div class="text-navy">Chưa có câu trả lời ghép được với nhóm này</div>'}
                 </div>
-            </div>
-        `;
+                <div class="score-display" title="Tổng số điểm ghi nhận">
+                    <span class="score-label">Tổng số điểm ghi nhận:</span><span class="score-value">${score}</span>
+                </div>
+                <div class="level-display">
+                    <label class="level-label" for="level-input-${criteriaKey}-${response.id}">Mức độ ghi nhận:</label>
+                    <input type="text" class="form-control form-control-sm level-input" placeholder="Nhập mức độ"
+                        data-criteria="${escapeHtml(criteriaName)}" data-criteria-key="${criteriaKey}"
+                        id="level-input-${criteriaKey}-${response.id}"
+                        onchange="saveSurveyLevelForOrder('${escapeHtml(criteriaName)}', '${response.examination_id}', this)"
+                        oninput="updateLevelInputAlignment(this)">
+                </div>
+            </div>`;
 	});
 
 	return html;
@@ -1458,7 +1137,9 @@ function renderSurveyResultsByCriteria(template, response) {
 
 // Render single survey result card (ONLY the "Kết quả khảo sát" card, no header)
 async function renderSingleSurveyResultCard(template, response) {
-	const completedAt = response.updated_at ? new Date(response.updated_at) : null;
+	if (response.questions_by_criteria) template = {...template, questions_by_criteria: response.questions_by_criteria};
+	const completionTimestamp = response.updated_at || response.created_at;
+	const completedAt = completionTimestamp ? new Date(completionTimestamp) : null;
 
 	// Only render if we have completed survey
 	if (!completedAt || !template.questions_by_criteria) {
@@ -1468,11 +1149,9 @@ async function renderSingleSurveyResultCard(template, response) {
 	// Render survey results by criteria (new format matching mockup)
 	const criteriaResultsHtml = renderSurveyResultsByCriteria(template, response);
 
-	return `
-        <div class="survey-result-card mt-4">
-            <h6 class="fw-semibold mb-3">
-                <i class="bi bi-graph-up me-2"></i>Kết quả khảo sát
-            </h6>
+    return `
+        <div class="survey-result-card">
+            ${window.renderSurveyResultSummary?.(response.result_summary) || ''}
             ${criteriaResultsHtml}
         </div>
     `;
@@ -1500,33 +1179,21 @@ function renderResultFiles(files) {
             if (ext === 'JPG' || ext === 'PNG') badgeClass = 'bg-success';
             
             return `
-            <tr class="om-file-row">
-                <td><span class="fw-semibold text-dark om-file-name">${escapeHtml(file.original_filename || file.filename)}</span></td>
-                <td><span class="badge ${badgeClass} bg-opacity-25 text-dark border om-file-type-badge">${ext}</span></td>
-                <td>${formatDateOnly(file.created_at)}</td>
-                <td>
-                    <button class="btn btn-sm text-secondary result-file-download" data-file-id="${file.id}" title="Tải xuống"><i class="bi bi-eye"></i></button>
-                    <button class="btn btn-sm text-secondary result-file-delete" data-file-id="${file.id}" title="Xóa"><i class="bi bi-trash"></i></button>
-                </td>
-            </tr>
+            <li class="om-file-row">
+                <span class="fw-semibold text-dark om-file-name">${escapeHtml(file.original_filename || file.filename)}</span>
+                <div class="om-file-meta">
+                    <span class="badge ${badgeClass} bg-opacity-25 text-dark border om-file-type-badge">${escapeHtml(ext)}</span>
+                    <span>Ngày tải: ${formatDateOnly(file.created_at)}</span>
+                    <div class="om-actions">
+                        ${QLPKIconSystem.renderActionButton({ action: 'download', label: 'Tải xuống', className: 'result-file-download', attrs: { 'data-file-id': file.id } })}
+                        ${QLPKIconSystem.renderActionButton({ action: 'delete', label: 'Xóa file', className: 'result-file-delete', attrs: { 'data-file-id': file.id } })}
+                    </div>
+                </div>
+            </li>
             `;
         }).join('');
 
-		listContainer.innerHTML = `
-            <table class="table table-borderless table-hover align-middle mb-0 mt-3 om-file-table">
-                <thead>
-                    <tr class="om-file-table-head">
-                        <th class="text-uppercase om-file-table-th om-file-table-th--first">Tên tập tin</th>
-                        <th class="text-uppercase om-file-table-th">Loại</th>
-                        <th class="text-uppercase om-file-table-th">Ngày tải</th>
-                        <th class="text-uppercase om-file-table-th om-file-table-th--last">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filesList}
-                </tbody>
-            </table>
-        `;
+        listContainer.innerHTML = `<ul class="om-file-list" aria-label="File kết quả đính kèm">${filesList}</ul>`;
 	}
 
     // Attach event listeners for the static upload area
@@ -1780,44 +1447,39 @@ async function downloadResultFile(orderId, fileId) {
 }
 
 // Render timeline
+function surveyClosureText(order) {
+    const reason = order.completion_reason === 'expired' ? 'Hết thời hạn khảo sát' : order.completion_reason === 'doctor' ? 'Bác sĩ kết thúc khảo sát' : 'Khảo sát đã kết thúc';
+    return `${reason}${order.completed_at ? ` · ${formatDisplayDate(order.completed_at)}` : ''}`;
+}
+
 function renderTimeline(order) {
-	const timelineEl = document.querySelector('#orderDetailModal .timeline');
-	if (!timelineEl) return;
+    const statusBadge = document.getElementById('orderSurveyStatus');
+    if (statusBadge) statusBadge.innerHTML = getStatusBadge(order.status);
+    const target = document.querySelector('#orderDetailModal .timeline');
+    if (!target) return;
+    const states = order.survey_template_id ? ['sent', 'survey_sent', 'has_result', 'completed'] : ['sent', 'completed'];
+    const current = states.indexOf(order.status);
+    const timestamps = {sent: order.created_at, survey_sent: order.survey_sent_at, has_result: order.result_at, completed: order.completed_at};
+    target.innerHTML = states.map((value, index) => {
+        const label = window.ClinicalOrderStatusUtils.getOrderStatusConfig(value).label;
+        const state = timestamps[value] ? (index === current && value !== 'completed' ? 'active' : 'done') : 'pending';
+        const detail = value === 'completed' && order.status === 'completed' ? surveyClosureText(order) : timestamps[value] ? formatDisplayDate(timestamps[value]) : order.status === 'completed' && value === 'has_result' ? 'Chưa ghi nhận bài nộp hợp lệ' : '';
+        return `<div class="timeline-item ${state}"><div class="fw-semibold om-timeline-step-title">${label}</div>${detail ? `<div class="om-timeline-step-sub">${detail}</div>` : ''}</div>`;
+    }).join('');
+}
 
-	const timeOnly = order.created_at ? formatDisplayDate(order.created_at).split(' ')[1] : '';
-
-	const isSurveyOrder = Number(order.survey_template_id) > 0;
-	const steps = isSurveyOrder
-		? [
-			{ title: 'Tạo chỉ định', sub: timeOnly ? `Hoàn thành lúc ${timeOnly}` : '', status: 'done' },
-			{ title: 'Gửi khảo sát', sub: 'Chưa gửi', status: 'active' },
-			{ title: 'Bệnh nhân hoàn thành', sub: '', status: 'pending' },
-			{ title: 'Có kết quả', sub: '', status: 'pending' },
-		]
-		: [
-			{ title: 'Tạo chỉ định', sub: timeOnly ? `Hoàn thành lúc ${timeOnly}` : '', status: 'done' },
-			{ title: 'Chuyển thực hiện', sub: order.status === 'processing' ? 'Đang xử lý' : 'Đã chuyển', status: order.status === 'processing' ? 'active' : 'done' },
-			{ title: 'Có kết quả', sub: '', status: 'pending' },
-		];
-
-	if (isSurveyOrder && order.status === 'completed') {
-		const updateTimeOnly = order.updated_at ? formatDisplayDate(order.updated_at).split(' ')[1] : '';
-		steps[1] = { title: 'Gửi khảo sát', sub: 'Hoàn thành', status: 'done' };
-		steps[2] = { title: 'Bệnh nhân hoàn thành', sub: 'Hoàn thành', status: 'done' };
-		steps[3] = { title: 'Có kết quả', sub: updateTimeOnly ? `Lúc ${updateTimeOnly}` : '', status: 'done' };
-	}
-	if (!isSurveyOrder && order.status === 'completed') {
-		const updateTimeOnly = order.updated_at ? formatDisplayDate(order.updated_at).split(' ')[1] : '';
-		steps[1] = { title: 'Chuyển thực hiện', sub: 'Hoàn thành', status: 'done' };
-		steps[2] = { title: 'Có kết quả', sub: updateTimeOnly ? `Lúc ${updateTimeOnly}` : '', status: 'done' };
-	}
-
-	timelineEl.innerHTML = steps.map(step => `
-		<div class="timeline-item ${step.status}">
-			<div class="fw-semibold om-timeline-step-title">${step.title}</div>
-			${step.sub ? `<div class="om-timeline-step-sub">${step.sub}</div>` : ''}
-		</div>
-	`).join('');
+async function refreshCurrentOrderStatus() {
+    const id = currentOrderDetail?.id;
+    if (!id) return;
+    const response = await apiCall(`/api/chi-dinh/${id}`);
+    if (!response.ok) throw new Error('Không tải được trạng thái chỉ định');
+    const order = await response.json();
+    if (currentOrderDetail?.id !== id) return;
+    const data = order.data || order;
+    Object.assign(currentOrderDetail, data);
+    const select = document.getElementById('orderStatusSelect');
+    if (select) select.value = data.status;
+    renderTimeline(currentOrderDetail);
 }
 
 // Update order note
@@ -1842,8 +1504,6 @@ async function updateOrderNote(orderId, noteType, noteValue) {
 		// Hiển thị message phù hợp với từng loại update
 		if (noteType === 'status') {
 			showCustomToast('success', 'Cập nhật trạng thái thành công');
-		} else if (noteType === 'note_nurse') {
-			showCustomToast('success', 'Đã lưu ghi chú xử lý');
 		} else {
 			showCustomToast('success', 'Cập nhật thành công');
 		}
@@ -1931,7 +1591,6 @@ function applyFilters() {
 	filterState.patient_name = patientNameValue;
 	filterState.from_date = document.getElementById('filterFromDate')?.value || '';
 	filterState.to_date = document.getElementById('filterToDate')?.value || '';
-	filterState.status = document.getElementById('filterStatus')?.value || '';
 	filterState.location_type = ''; // Thay đổi từ 'in' thành '' để không filter mặc định
 
 	currentPage = 1;
@@ -1966,7 +1625,6 @@ function setupAutoFilterListeners() {
 	const patientInput = document.getElementById('filterPatientName');
 	const fromDateInput = document.getElementById('filterFromDate');
 	const toDateInput = document.getElementById('filterToDate');
-	const statusSelect = document.getElementById('filterStatus');
 
 
 	if (patientInput) {
@@ -1992,29 +1650,34 @@ function setupAutoFilterListeners() {
 	if (toDateInput) {
 		toDateInput.addEventListener('change', applyFilters);
 	}
-	if (statusSelect) {
-		statusSelect.addEventListener('change', applyFilters);
-	}
 }
 
-function populateStatusFilterOptions() {
-	const select = document.getElementById('filterStatus');
-	if (!select) return;
-	select.innerHTML = '';
-
-	ORDER_STATUS_OPTIONS.forEach(option => {
-		const opt = document.createElement('option');
-		opt.value = option.value;
-		opt.textContent = option.label;
-		select.appendChild(opt);
+function selectOrderGroup(group) {
+	filterState.status_group = group;
+	document.querySelectorAll('[data-status-group]').forEach(button => {
+		const selected = button.dataset.statusGroup === group;
+		button.classList.toggle('active', selected);
+		button.setAttribute('aria-selected', String(selected));
+		button.tabIndex = selected ? 0 : -1;
+		if (selected) document.getElementById('ordersListPanel').setAttribute('aria-labelledby', button.id);
 	});
-
-	select.value = filterState.status || '';
+	selectedOrderIds.clear();
+	applyFilters();
 }
 
 // Initialize page
 function initializePage() {
-	populateStatusFilterOptions();
+	const groupTabs = [...document.querySelectorAll('[data-status-group]')];
+	groupTabs.forEach((button, index) => {
+		button.addEventListener('click', () => selectOrderGroup(button.dataset.statusGroup));
+		button.addEventListener('keydown', event => {
+			if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+			event.preventDefault();
+			const next = event.key === 'Home' ? 0 : event.key === 'End' ? groupTabs.length - 1 : (index + 1) % groupTabs.length;
+			groupTabs[next].focus();
+			selectOrderGroup(groupTabs[next].dataset.statusGroup);
+		});
+	});
 	setupAutoFilterListeners();
 	// Set giá trị mặc định: đầu năm - cuối năm hiện tại
 	const today = new Date();
@@ -2051,17 +1714,11 @@ function initializePage() {
 			}
 		}
 
-		// Set Trạng thái về "Chuyển thực hiện"
-		const statusSelect = document.getElementById('filterStatus');
-		if (statusSelect) {
-			statusSelect.value = 'sent';
-		}
-
 		// Update filterState
 		filterState.patient_name = '';
 		filterState.from_date = startDateDefault;
 		filterState.to_date = endDateDefault;
-		filterState.status = 'sent';
+		applyFilters();
 	}, 200);
 
 	// Select all checkbox
@@ -2090,7 +1747,6 @@ function initializePage() {
 			const patientNameInput = document.getElementById('filterPatientName');
 			const fromDateInput = document.getElementById('filterFromDate');
 			const toDateInput = document.getElementById('filterToDate');
-			const statusSelect = document.getElementById('filterStatus');
 
 			// Clear Tên bệnh nhân
 			if (patientNameInput) {
@@ -2117,16 +1773,10 @@ function initializePage() {
 				}
 			}
 
-			// Reset Trạng thái về "Chuyển thực hiện"
-			if (statusSelect) {
-				statusSelect.value = 'sent';
-			}
-
 			// Reset filter state
 			filterState.patient_name = '';
 			filterState.from_date = startDateDefault;
 			filterState.to_date = endDateDefault;
-			filterState.status = 'sent'; // Reset về "Chuyển thực hiện"
 			filterState.location_type = '';
 
 			// Reload danh sách
@@ -2143,7 +1793,6 @@ function initializePage() {
 	}
 
 	// Modal event listeners - chỉ setup một lần khi page load
-	// Note: Event listener cho noteNurseTextarea sẽ được setup trong renderOrderDetailModal
 	// để đảm bảo luôn có currentOrderDetail và tránh duplicate listeners
 
 	// Load initial data
@@ -2341,6 +1990,7 @@ async function saveSurveyLevel(buttonElement) {
 
 // Function để load mức độ ghi nhận đã lưu (dynamic criteria support)
 async function loadSavedSurveyLevels(examinationId) {
+    const orderId = currentOrderDetail?.id;
 	if (!examinationId) {
 		return;
 	}
@@ -2350,6 +2000,7 @@ async function loadSavedSurveyLevels(examinationId) {
 
 		if (response.ok) {
 			const data = await response.json();
+            if (currentOrderDetail?.id !== orderId) return;
 			if (data && data.data && Array.isArray(data.data)) {
 				// Load old format (survey_level) for backward compatibility
 				const surveyLevelItem = data.data.find(item => item.field_name === 'survey_level');
@@ -2419,6 +2070,7 @@ function copySurveyLink() {
 // Initialize survey context for realtime status updates
 async function initializeSurveyRealtimeContext() {
 	clearSurveyRealtimeContext();
+    const orderId = currentOrderDetail?.id;
 
 	// Get examination_id from current order detail
 	if (!currentOrderDetail || !currentOrderDetail.appointment) {
@@ -2453,6 +2105,7 @@ async function initializeSurveyRealtimeContext() {
 		return;
 	}
 
+	if (currentOrderDetail?.id !== orderId) return;
 	currentExaminationId = examinationId;
 	lastKnownSurveyStatus = null;
 
@@ -2462,10 +2115,13 @@ async function initializeSurveyRealtimeContext() {
 function clearSurveyRealtimeContext() {
 	lastKnownSurveyStatus = null;
 	currentExaminationId = null;
+	currentSurveySession = null;
 }
 
 // Check survey status and reload if changed
 async function checkSurveyStatusUpdate(examinationId) {
+    const orderId = currentOrderDetail?.id;
+    if (!orderId) return;
 	try {
 		// Check if modal is still open
 		const modalEl = document.getElementById('orderDetailModal');
@@ -2475,7 +2131,7 @@ async function checkSurveyStatusUpdate(examinationId) {
 		}
 
 		// Get current survey session status
-		const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status`);
+		const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status?order_id=${orderId}`);
 
 		if (!sessionResponse || !sessionResponse.ok) {
 			// No session exists yet.
@@ -2483,58 +2139,33 @@ async function checkSurveyStatusUpdate(examinationId) {
 		}
 
 		const sessionData = await sessionResponse.json();
+        if (currentOrderDetail?.id !== orderId) return;
 		const surveySession = sessionData.data || sessionData;
 
 		if (!surveySession || surveySession.status === 'not_started') {
 			// No active session yet.
+			currentSurveySession = null;
+			if (currentOrderDetail) renderTimeline(currentOrderDetail, null);
 			return;
 		}
 
-		const currentStatus = surveySession.status;
+		await refreshCurrentOrderStatus();
+        if (currentOrderDetail?.id !== orderId) return;
+		const currentStatus = currentOrderDetail.status;
+		const previousStatus = lastKnownSurveyStatus;
+		currentSurveySession = surveySession;
+		if (currentOrderDetail) renderTimeline(currentOrderDetail, surveySession);
 
 		// Check if status has changed
-		if (lastKnownSurveyStatus === null) {
-			// First check - just store the status
-			const previousStatus = lastKnownSurveyStatus;
-			lastKnownSurveyStatus = currentStatus;
-			return;
-		}
+		lastKnownSurveyStatus = currentStatus;
+		if (previousStatus === null) return;
 
-		// If status changed to completed or closed, reload survey tab
-		if (lastKnownSurveyStatus !== currentStatus) {
-			lastKnownSurveyStatus = currentStatus;
-
-			// If status is now completed or closed, reload survey tab
-			if (currentStatus === 'completed' || currentStatus === 'closed') {
-				// Check if survey tab is currently active
-				const surveyTab = document.getElementById('survey-tab');
-				const isSurveyTabActive = surveyTab && surveyTab.classList.contains('active');
-
-				// Fix: Reset loading flag TRƯỚC KHI gọi handleSurveyTabShow() để tránh race condition
-				isSurveyTabLoading = false;
-
-				// Reload survey tab content
-				if (isSurveyTabActive) {
-					// Tab is active, reload it
-					await handleSurveyTabShow();
-					showCustomToast('success', 'Đã cập nhật kết quả khảo sát mới!');
-				} else {
-					// Tab is not active, show notification
-					showCustomToast('info', 'Bệnh nhân đã hoàn thành khảo sát. Vui lòng mở tab "Khảo sát" để xem kết quả.');
-				}
-
-				clearSurveyRealtimeContext();
-			} else if (currentStatus === 'in_progress' && previousStatus === 'pending') {
-				// Status changed from pending to in_progress - patient started filling
-				// Update status badge if survey tab is visible
-				const surveyTab = document.getElementById('survey-tab');
-				if (surveyTab && surveyTab.classList.contains('active')) {
-					// Fix: Reset loading flag TRƯỚC KHI gọi handleSurveyTabShow()
-					isSurveyTabLoading = false;
-					await handleSurveyTabShow();
-				}
-			}
-		}
+        if (previousStatus !== currentStatus) {
+            await loadOrderSurvey();
+            if (currentOrderDetail?.id === orderId && ['has_result', 'completed'].includes(currentStatus)) {
+                showCustomToast('success', currentStatus === 'has_result' ? 'Khảo sát đã có kết quả.' : 'Chỉ định đã hoàn thành.');
+            }
+        }
 
 	} catch (error) {
 		// Silently handle errors - don't spam console.

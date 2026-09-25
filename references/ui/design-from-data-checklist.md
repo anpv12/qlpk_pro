@@ -32,6 +32,8 @@ Dùng checklist này trước khi tạo mockup, sửa HTML/CSS/JS, hoặc đánh
 
 ### D. Component
 
+- [ ] Nút tuân thủ `button-system.md`: role, mức ưu tiên, nền chứa và owner chung; không palette/viền/shadow riêng.
+
 - [ ] Đã kiểm tra có component shared tồn tại chưa.
 - [ ] Nếu giống component màn khác, dùng chung owner thay vì copy.
 - [ ] Nếu tạo component mới, đã ghi owner rõ.

@@ -223,11 +223,25 @@ canonical eight mental-exam fields.
 
 ## Patient Context Header Contract
 
+Từ 2026-09-10, header có nút `Chuyển khám` mở `TransferModal` dùng chung
+(`transfer-modal-dry.js`, `static/templates/transfer-modal.html`). Registry
+`transferModal` được nạp qua platform boundary; Doctor không tạo modal riêng.
+Page orchestrator giữ appointment/load token, cung cấp `isCurrent` và
+`beforeTransfer` cho modal. Mở/hủy modal không ghi; xác nhận mới gọi
+`clinicalWorkspace.saveWorkspace({ silent: true })`, chỉ POST chuyển khi lưu
+đủ và context còn đúng. Không áp dụng default Khám chi tiết của nút Lưu.
+Không cho chuyển lúc loading/load failed/xem lịch sử/đang lưu. Thành công
+clear lượt đang chọn và tải lại queue; endpoint hiện có phát socket cho các
+phiên khác. Modal chung khóa thao tác/đóng khi đang lưu-chuyển, chặn gửi lặp
+và bỏ qua phản hồi người nhận từ phiên/nhóm cũ. Lỗi giữ modal để thử lại.
+Header hẹp dùng grid tự chia cột (2 cột ở 390px), chiều cao theo nội dung;
+vùng khám vẫn giữ scroll owner hiện có.
+
 `#doctorClinicalWorkspace .doctor-patient-hero` is a flat two-row patient
 context header. Row one contains the patient name, `doctorPatientCode`, and
 `doctorPatientLatestVisit`; row two contains `doctorPatientHistory` with the
 most recent previous-visit diagnosis and prescription summary. The header keeps
-the real `Lưu` and `Hoàn thành khám` actions in the same owner.
+the real `Lưu`, `Chuyển khám` and `Hoàn thành khám` actions in the same owner.
 
 The header intentionally does not render avatar, gender, age, service, status,
 or a duplicate appointment summary. The name/code come from the selected
@@ -297,6 +311,19 @@ is the only history save/clear owner. File upload and safety-plan-file repair
 remain explicit file actions.
 
 ## Patient Switch And Dirty Safety
+
+Từ 2026-09-13, field8 Thuốc đang dùng là autocomplete chọn nhiều từ DAV,
+được sở hữu trực tiếp bởi `clinical-examination-form.js`; endpoint cấu hình
+trong `doctor-component-config.js`. UI/lifecycle dùng `QLPKAutocompleteField`
+chung với ICD theo `references/ui/autocomplete-field.md`. Tìm tên/hoạt chất/
+SĐK, 12 dòng mỗi lần, cuộn tải tiếp; status=all cho cả thuốc từ nguồn cũ.
+Không ghi DAV ID vào hợp đồng hiện hành: `currentMedications` giữ JSON list
+tên kèm hàm lượng, giữ các tên legacy. Render và draft không biến tên chứa
+dấu phẩy thành nhiều thuốc. Query là transient, không dirty/serialize/draft.
+Đổi ca, render, restore, Escape/Tab/blur đóng và vô hiệu hóa request cũ;
+loading/history view chặn tìm/chọn/bỏ. Chips và input chung control; dropdown
+nổi trong native popover, không làm giãn form; panel body giữ cuộn vùng khám.
+Không autosave.
 
 Before loading another appointment, the page must set the loading guard and
 clear both DOM and JavaScript state. The existing clear sequence covers:
@@ -409,7 +436,36 @@ compatibility-sensitive, or out of scope for the current Khám cleanup.
 - Removed unused prescription runtime imports and retained defensive parse/API
   error handling only; no fake data or presentation fallback branch was added.
 
+## Doctor queue realtime (2026-09-09)
+
+- `appointments.doctor_queue_entered_at` là thời điểm vào hàng chờ bác sĩ,
+  do `appointments/services/doctor_queue.py` ghi khi chuyển bác sĩ hoặc đổi
+  sang DOCTOR_EXAM/CONCLUSION. Sửa nội dung khám không đổi thứ tự.
+- Queue dùng status hợp nhất `doctor_queue`, lấy đủ các trang và giữ thứ tự
+  backend. Card đang chọn và bộ lọc tìm kiếm giữ nguyên khi nhận socket;
+  không tự mở ca mới, không tải lại form Khám/đơn thuốc đang nhập.
+- `realtime-client.js` khử envelope trùng bằng `event_id`; sau mỗi lần kết
+  nối và nhận xác nhận subscribe, phát `realtime.resynced` để Doctor tải bù
+  queue/CLS và header tải bù thông báo. Hook Doctor dùng batch để document
+  event không nuốt appointment event; response queue cũ không được render.
+- Order/survey event gọi `indicationsForm.refreshCurrent()`: chỉ cập nhật
+  rows của đúng context khi không dirty/saving/editing; giữ nguyên ô nhập.
+  Nếu đang sửa thì báo có cập nhật và chờ lưu/kết thúc sửa. Load, clear,
+  request revision ngăn response của ca cũ ghi vào ca mới.
+- Đây là cập nhật queue và chỉ định; không phải đồng bộ toàn bộ field
+  lâm sàng/đơn thuốc giữa nhiều người sửa cùng lúc.
+
 ## Required QA For Doctor Changes
+
+Khi nhấn nút `Lưu`, `clinicalDetails.prepareEmptyDefaults()` điền đúng
+`Không ghi nhận bất thường` cho ô trống/whitespace thuộc 7 cơ quan và 8
+field tâm thần. `clinicalExaminationForm` gọi owner này sau guard load;
+save controller lấy dirty sections sau khi chuẩn bị giá trị mặc định và
+dùng section API hiện có. Nội dung đã nhập giữ nguyên; 4 field Lý do khám,
+Bệnh sử, KQ khám toàn thân, Biểu hiện chung không được mặc định. Giá trị
+mặc định không chạy khi load, đổi bệnh nhân, background save hoặc chỉ
+collect draft. Scope này chỉ bật qua action `save` với `applyDetailDefaults`.
+Lưu lỗi giữ dirty để retry; không có cập nhật hàng loạt dữ liệu lịch sử.
 
 At minimum, use static asset/reference checks and syntax checks. For a UI or
 behavior change, also verify a real selected appointment: sparse and dense

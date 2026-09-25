@@ -11,7 +11,7 @@ Màn Bác sĩ không phải nơi nhập lại toàn bộ dữ liệu lễ tân. 
 3. Đọc dữ liệu lễ tân đã nhập: hành chính, sinh hiệu, hỏi bệnh ban đầu, tài liệu/người đi cùng nếu cần.
 4. Ghi dữ liệu khám hiện tại: lý do/triệu chứng đã xác nhận, chẩn đoán ICD, bệnh kèm, kế hoạch điều trị, lời dặn, thuốc đang dùng, nguy cơ.
 5. Thao tác nghiệp vụ phụ trợ: lịch sử, dịch vụ, tài liệu, in đơn, hoàn thành khám.
-6. Chuyển trạng thái khám sau khi dữ liệu đủ.
+6. Chuyển khám qua modal dùng chung: chọn nhóm Bác sĩ/Tâm lý gia/Lễ tân và người nhận; lưu dữ liệu đang sửa trước khi xác nhận chuyển. `Hoàn thành` vẫn là luồng sang thanh toán.
 
 ## Actor, Task Và Nguồn Dữ Liệu
 

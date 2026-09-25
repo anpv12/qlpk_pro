@@ -86,18 +86,21 @@
 		try {
 			const authHeader = resolveAuthHeader(options);
 			if (!authHeader) {
+				if (options.throwOnError) throw new Error('missing-icd-auth');
 				console.error(options.missingTokenMessage || 'No token found');
 				return emptyPage(options);
 			}
 
 			const fetcher = resolveFetch(options);
 			if (!fetcher) {
+				if (options.throwOnError) throw new Error('missing-icd-fetch');
 				console.error('Fetch API is not available');
 				return emptyPage(options);
 			}
 
 			const response = await fetcher(buildIcdUrl(query, options), {
 				method: 'GET',
+				signal: options.signal,
 				headers: {
 					'Authorization': authHeader,
 					'Content-Type': 'application/json'
@@ -109,9 +112,11 @@
 				return normalizePage(result, options);
 			}
 
+			if (options.throwOnError) throw new Error('icd-search-failed');
 			console.error('Error loading ICD data:', response.statusText);
 			return emptyPage(options);
 		} catch (error) {
+			if (options.throwOnError || error.name === 'AbortError') throw error;
 			console.error('Error loading ICD data:', error);
 			return emptyPage(options);
 		}

@@ -12,7 +12,7 @@
 		diagnosis: { controlId: 'diagnosis', hiddenControlId: 'diagnosisIds', autocompleteRootId: 'diagnosisIcdField', payloadKey: 'diagnosis', kind: 'icd', idSourceKey: 'diagnosis_ids' },
 		benhKemTheo: { controlId: 'benhKemTheo', hiddenControlId: 'benhKemTheoIds', autocompleteRootId: 'benhKemTheoIcdField', payloadKey: 'benh_kem_theo', kind: 'icd', idSourceKey: 'benh_kem_theo_ids' },
 		treatmentPlan: { controlId: 'treatmentPlan', payloadKey: 'treatment_plan', source: 'examination' },
-		currentMedications: { controlId: 'currentMedications', payloadKey: 'current_medications', source: 'examination', kind: 'medication' },
+		currentMedications: { controlId: 'currentMedications', autocompleteRootId: 'currentMedicationField', payloadKey: 'current_medications', source: 'examination', kind: 'medication' },
 		examinationNotes: { controlId: 'examinationNotes', payloadKey: 'loi_dan', source: 'examination' }
 	};
 	const DEFAULT_CONFIG = {
@@ -71,7 +71,45 @@
 			.filter(field => field.hiddenControlId)
 			.map(field => [field.hiddenControlId, field]));
 		const icdInstances = new Map();
+		const medicationInstances = new Map();
 		let bound = false;
+
+		function getMedicationInstance(doc, field) {
+			const root = getElement(doc, field.autocompleteRootId);
+			if (!root || !config.medicationSearchEndpoint) return null;
+			if (medicationInstances.has(root)) return medicationInstances.get(root);
+			const control = getElement(doc, field.controlId);
+			const label = item => item.label || [item.name, item.strength].filter(Boolean).join(' · ');
+			const Autocomplete = REGISTRY.require('autocompleteField');
+			const instance = new Autocomplete(root, {
+				limit: 12, emptyQueryLimit: 12,
+				getKey: label,
+				getLabel: label,
+				getDescription: item => [item.registration_number && `SĐK: ${item.registration_number}`,
+					item.manufacturer_name].filter(Boolean).join(' · '),
+				isEnabled: () => !isLoading() && Boolean(state.appointment?.id) && !control.disabled,
+				loadOptions: async (query, { skip, limit, signal }) => {
+					const params = new URLSearchParams({ mode: 'autocomplete', status: 'all',
+						search: query, page: Math.floor(skip / limit) + 1, per_page: limit });
+					const response = await apiCall(`${config.medicationSearchEndpoint}?${params}`, { signal });
+					if (!response.ok) throw new Error('dav-search-failed');
+					const payload = await response.json();
+					if (!payload.success || !Array.isArray(payload.data)) throw new Error('dav-search-invalid');
+					return { data: payload.data, pagination: { per_page: limit, has_next: payload.has_more } };
+				},
+				onChange: values => {
+					if (isLoading()) return;
+					const names = values.map(label);
+					control.value = names.length ? JSON.stringify(names) : '';
+					markDirty(control);
+				}
+			});
+			const adapter = {
+				reset: () => instance.setSelected(parseMedicationText(control.value).map(name => ({ label: name })), { silent: true })
+			};
+			medicationInstances.set(root, adapter);
+			return adapter;
+		}
 
 		function getIcdAuthHeader() {
 			return config.getAuthHeader?.()
@@ -266,6 +304,7 @@
 			state.detailRevisions = {};
 			icdInstances.forEach(instance => instance.clear({ silent: true }));
 			fieldIds.forEach(id => setValue(doc, id, ''));
+			medicationInstances.forEach(instance => instance.reset());
 			syncDirtyState();
 		}
 
@@ -274,9 +313,10 @@
 			const patient = payload.patient_info || {};
 			Object.entries(config.mainFields).forEach(([name, field]) => {
 				let value = readPayloadValue(field, examination, patient);
-				if (field.kind === 'medication') value = parseMedicationText(value).join(', ');
+				if (field.kind === 'medication') value = serializeMedicationInput(value);
 				if (field.kind === 'icd') value = '';
 				setValue(doc, field.controlId, value);
+				if (field.kind === 'medication') getMedicationInstance(doc, field)?.reset();
 				if (field.hiddenControlId) {
 					const ids = examination[field.idSourceKey];
 					setValue(doc, field.hiddenControlId, JSON.stringify(parseIdList(ids)));
@@ -365,6 +405,10 @@
 				if (!control) return;
 				if (control.type === 'checkbox') control.checked = Boolean(value);
 				else control.value = field?.kind === 'icd' ? JSON.stringify(parseIdList(value)) : textOf(value);
+				if (field?.kind === 'medication') {
+					control.value = serializeMedicationInput(value);
+					getMedicationInstance(doc, field)?.reset();
+				}
 				const config = detailsPersistence.getConfig(control);
 				if (config) detailSections.add(config.section);
 				else mainRestored = true;
@@ -409,6 +453,8 @@
 			const root = getElement(doc, config.rootId);
 			if (!root || bound) return Boolean(root);
 			bindIcdFields(doc);
+			Object.values(config.mainFields).filter(field => field.kind === 'medication')
+				.forEach(field => getMedicationInstance(doc, field));
 			root.addEventListener('input', handleFieldMutation);
 			root.addEventListener('change', handleFieldMutation);
 			bound = true;
@@ -421,6 +467,10 @@
 			render,
 			populate: render,
 			collect,
+			prepareEmptyDetailDefaults: options => {
+				if (isLoading()) return false;
+				return detailsPersistence.prepareEmptyDefaults(getDocument(options));
+			},
 			loadDetails: (doc, appointmentId, token) => detailsPersistence.load(doc, appointmentId, token),
 			saveDetails: (doc, appointmentId, token, sections) => detailsPersistence.save(doc, appointmentId, token, sections),
 			hasUnsavedChanges: () => Boolean(state.mainDirty || state.detailDirtySections.size),

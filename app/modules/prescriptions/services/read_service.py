@@ -12,24 +12,14 @@ from app.models.patient import Patient
 from app.utils.risk_assessment import format_risk_assessment
 from app.models.prescription import Prescription, PrescriptionItem
 from app.models.user import User
+from app.modules.prescriptions.services.re_examination_service import (
+    latest_re_examination, schedule_state, show_re_examination_date_on_prescription,
+)
 from app.modules.prescriptions.services.stock_service import (
     build_prescription_batch_allocation_states,
 )
 from app.utils.examination_utils import build_icd_display_contract, resolve_diagnosis_to_str
 from app.utils.allergy_contract import format_allergy_entries
-
-
-def _get_active_re_examination_appointment(db, appointment_id):
-    """Return the active re-examination appointment linked to an original appointment."""
-    return db.query(Appointment).filter(
-        Appointment.original_appointment_id == appointment_id,
-        Appointment.appointment_category == AppointmentCategory.RE_EXAMINATION,
-        Appointment.is_deleted == False,
-        Appointment.status != AppointmentStatus.CANCELLED,
-    ).order_by(
-        Appointment.appointment_date.desc(),
-        Appointment.id.desc(),
-    ).first()
 
 
 def _build_re_examination_fields(re_appointment=None, prescription_date=None):
@@ -45,6 +35,8 @@ def _build_re_examination_fields(re_appointment=None, prescription_date=None):
         re_time = '09:00'
 
     return {
+        'show_re_examination_date': show_re_examination_date_on_prescription(re_appointment),
+        're_examination_snapshot': {**schedule_state(re_appointment), 'datetime': f'{re_date.isoformat()} {re_time}' if re_date else ''},
         're_examination_date': re_date.isoformat() if re_date else None,
         're_examination_time': re_time,
         're_examination_appointment_id': re_appointment.id if re_appointment else None,
@@ -92,7 +84,7 @@ def build_appointment_prescription_payload(db, appointment_id):
         Prescription.appointment_id == appointment_id
     ).all()
 
-    re_appointment = _get_active_re_examination_appointment(db, appointment_id)
+    re_appointment = latest_re_examination(db, appointment_id)
     re_examination_fields = _build_re_examination_fields(re_appointment)
 
     if not prescriptions:
@@ -228,6 +220,21 @@ def build_patient_prescription_history_payload(db, patient_id):
             "total_items_count": 0
         }
 
+    from app.modules.prescriptions.services.ledger_service import visit_ledger_payload
+    from app.models.medicine_transaction import MedicineTransaction
+    ledger_visits = db.query(Appointment).join(
+        MedicineTransaction, MedicineTransaction.appointment_id == Appointment.id
+    ).filter(Appointment.patient_id == patient_id, Appointment.is_deleted == False).distinct().all()
+    for appointment in ledger_visits:
+        if appointment.id not in grouped:
+            grouped[appointment.id] = {
+                'appointment_id': appointment.id,
+                'appointment_date': appointment.appointment_date.strftime('%d/%m/%Y'),
+                'appointment_date_iso': appointment.appointment_date.isoformat(),
+                'doctor_name': appointment.doctor.full_name if appointment.doctor else 'N/A',
+                'prescriptions': [], 'total_items_count': 0,
+            }
+
     prescription_results = db.query(Prescription, Appointment).join(
         Appointment, Prescription.appointment_id == Appointment.id
     ).filter(
@@ -273,7 +280,9 @@ def build_patient_prescription_history_payload(db, patient_id):
             })
             grouped[apt_id]["total_items_count"] += len(medicines)
 
-    history = list(grouped.values())
+    for appointment_id, record in grouped.items():
+        record['medicine_transactions'] = visit_ledger_payload(db, appointment_id)
+    history = sorted(grouped.values(), key=lambda record: record.get('appointment_date_iso') or '', reverse=True)
     patient_info = _build_patient_info(db, patient_id)
 
     return {

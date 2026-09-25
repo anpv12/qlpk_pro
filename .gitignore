@@ -16,6 +16,7 @@ app/static/downloads/
 tmp/
 output/
 designs/
+reports/
 
 # Local development caches and test state.
 .pytest_cache/

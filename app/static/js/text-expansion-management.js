@@ -3,9 +3,16 @@
 let currentPage = 1;
 let totalPages = 1;
 let searchTimeout;
+let pageSize = 10;
+let listPagination;
+let listRevision = 0;
 
 // Initialize page
 $(document).ready(function() {
+    listPagination = window.QLPKPagination.create({ onChange(page, size) {
+        pageSize = size;
+        loadTextExpansions(page);
+    } });
     registerRealtimeHooks();
     loadTextExpansions();
     loadStats();
@@ -31,13 +38,14 @@ function registerRealtimeHooks() {
 
 // Load text expansions with filters
 function loadTextExpansions(page = 1) {
+    const revision = ++listRevision;
     const category = $('#categoryFilter').val();
     const status = $('#statusFilter').val();
     const search = $('#searchInput').val();
     
     const params = new URLSearchParams({
         page: page,
-        per_page: 20,
+        per_page: pageSize,
         ...(category && category !== 'all' && { category }),
         ...(status && { is_active: status }),
         ...(search && { search })
@@ -50,7 +58,10 @@ function loadTextExpansions(page = 1) {
             'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
         },
         success: function(response) {
+            if (revision !== listRevision) return;
             if (response.success) {
+                const lastPage = Math.max(1, response.pagination.pages);
+                if (page > lastPage) { loadTextExpansions(lastPage); return; }
                 displayTextExpansions(response.data);
                 updatePagination(response.pagination);
                 currentPage = response.pagination.page;
@@ -84,8 +95,8 @@ function displayTextExpansions(data) {
     
     data.forEach(item => {
         const statusBadge = item.is_active 
-            ? '<span class="status-badge status-active">Đang hoạt động</span>'
-            : '<span class="status-badge status-inactive">Không hoạt động</span>';
+            ? '<span class="qlpk-status qlpk-status--success">Đang hoạt động</span>'
+            : '<span class="qlpk-status qlpk-status--neutral">Không hoạt động</span>';
         
         const categoryBadge = getCategoryBadge(item.category);
         
@@ -98,10 +109,10 @@ function displayTextExpansions(data) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editTextExpansion(${item.id})" title="Sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" onclick="editTextExpansion(${item.id})" title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTextExpansion(${item.id})" title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteTextExpansion(${item.id})" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -124,36 +135,7 @@ function getCategoryBadge(category) {
 
 // Update pagination
 function updatePagination(pagination) {
-    const paginationEl = $('#pagination');
-    paginationEl.empty();
-    
-    if (pagination.pages <= 1) return;
-    
-    // Previous button
-    paginationEl.append(`
-        <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadTextExpansions(${pagination.page - 1})">Trước</a>
-        </li>
-    `);
-    
-    // Page numbers
-    const startPage = Math.max(1, pagination.page - 2);
-    const endPage = Math.min(pagination.pages, pagination.page + 2);
-    
-    for (let i = startPage; i <= endPage; i++) {
-        paginationEl.append(`
-            <li class="page-item ${i === pagination.page ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="loadTextExpansions(${i})">${i}</a>
-            </li>
-        `);
-    }
-    
-    // Next button
-    paginationEl.append(`
-        <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadTextExpansions(${pagination.page + 1})">Sau</a>
-        </li>
-    `);
+    listPagination.update({ page: pagination.page, pageSize, total: pagination.total });
 }
 
 // Load statistics

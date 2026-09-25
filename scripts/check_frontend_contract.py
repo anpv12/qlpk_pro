@@ -249,6 +249,21 @@ def run_user_feedback_contract() -> list[str]:
     return ["user_feedback_contract failed", result.stdout.strip()]
 
 
+
+def run_brand_theme_contract() -> list[str]:
+    result = subprocess.run(
+        [sys.executable, "scripts/check_brand_theme.py"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if result.returncode == 0:
+        print("[OK] brand_theme_contract")
+        return []
+    return ["brand_theme_contract failed", result.stdout.strip()]
+
+
 def main() -> int:
     failures: list[str] = []
     failures.extend(run_receptionist_contract())
@@ -257,6 +272,7 @@ def main() -> int:
     failures.extend(run_prescription_print_contract())
     failures.extend(run_icd_autocomplete_contract())
     failures.extend(run_user_feedback_contract())
+    failures.extend(run_brand_theme_contract())
 
     for metric in METRICS:
         count, files, examples = collect_metric(metric)

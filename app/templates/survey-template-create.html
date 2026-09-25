@@ -12,29 +12,32 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/pages/survey-template-create.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/components/survey-template-utils.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 </head>
 
-<body class="sc-page">
+<body class="sc-page qlpk-clinic-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<!-- Sidebar (DRY loader) -->
 			<div id="sidebar-container" class="col-lg-2"></div>
 
 			<!-- Main -->
-			<div class="col-lg-10 sc-main">
+			<div class="col-12 sc-main">
 
 				<!-- ── Header ── -->
-				<div class="sc-header">
+				<div class="sc-header qlpk-clinic-header">
 					<div class="sc-header-left">
 						<a href="/survey-template-management.html" class="sc-back-btn" title="Quay lại danh sách">
 							<i class="bi bi-arrow-left"></i>
 						</a>
-						<span class="sc-page-title" id="pageTitle">Tạo mới khảo sát</span>
+						<span class="sc-page-title qlpk-clinic-title" id="pageTitle">Tạo mới khảo sát</span>
 					</div>
 					<div class="sc-header-right">
-						<button class="sc-btn-draft" id="saveDraftBtn">Lưu tạm</button>
-						<button class="sc-btn-save" id="saveBtn">
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-btn-draft" id="saveDraftBtn">Lưu tạm</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-btn-save" id="saveBtn">
 							<i class="bi bi-check2 sc-save-icon"></i> Lưu
 						</button>
 					</div>
@@ -75,7 +78,7 @@
 
 							<!-- Add question -->
 							<div class="sc-add-q-wrap">
-								<button class="sc-add-q-btn" id="addQuestionBtn">
+								<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-q-btn" id="addQuestionBtn">
 									<i class="bi bi-plus-circle"></i> Thêm câu hỏi
 								</button>
 							</div>
@@ -94,12 +97,6 @@
 
 			</div>
 		</div>
-	</div>
-
-	<!-- Toast notification -->
-	<div class="sc-toast" id="scToast">
-		<i class="bi bi-check-circle-fill" id="scToastIcon"></i>
-		<span id="scToastMsg"></span>
 	</div>
 
 	<!-- Scripts -->

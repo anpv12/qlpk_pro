@@ -77,6 +77,10 @@
 }
 
 .custom-modal-icon.success {
+	border-width: 3px;
+	border-style: solid;
+}
+.custom-modal-icon.success:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #d1edff;
 	border: 3px solid #0d6efd;
 	color: #0d6efd;
@@ -85,7 +89,7 @@
 .custom-modal-title {
 	font-size: var(--qlpk-font-size-2xl, 20px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	color: #0d6efd;
+	color: var(--qlpk-color-primary);
 	margin-bottom: 15px;
 }
 
@@ -109,39 +113,37 @@
 	font-size: var(--qlpk-font-size-md, 14px);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	cursor: pointer;
-	transition: all 0.2s ease;
 	min-width: 100px;
+}
+.custom-modal-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	transition: all 0.2s ease;
 }
 
 .custom-modal-btn:hover {
 	transform: translateY(-1px);
+}
+.custom-modal-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-
-.custom-modal-btn.cancel {
-	background-color: #0d6efd;
+.custom-modal-btn.cancel:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: white;
 }
-
-.custom-modal-btn.cancel:hover {
-	background-color: #0b5ed7;
+.custom-modal-btn.cancel:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 }
-
-.custom-modal-btn.confirm {
+.custom-modal-btn.confirm:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #dc3545;
 	color: white;
 }
-
-.custom-modal-btn.confirm:hover {
+.custom-modal-btn.confirm:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #c82333;
 }
-
-.custom-modal-btn.success {
+.custom-modal-btn.success:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #198754;
 	color: white;
 }
-
-.custom-modal-btn.success:hover {
+.custom-modal-btn.success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #157347;
 }
 
@@ -160,12 +162,16 @@
 .invoice-confirmed select,
 .invoice-confirmed textarea,
 .invoice-confirmed button {
-	background-color: #f8f9fa !important;
-	color: #6c757d !important;
 	cursor: not-allowed !important;
 }
-
-.invoice-confirmed .btn {
+.invoice-confirmed input,
+.invoice-confirmed select,
+.invoice-confirmed textarea,
+.invoice-confirmed button:not([data-qlpk-button], [data-qlpk-button] *) {
+	background-color: var(--qlpk-color-page-bg) !important;
+	color: #6c757d !important;
+}
+.invoice-confirmed .btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	opacity: 0.6;
 }
 
@@ -177,20 +183,17 @@
 	border-color: #ced4da !important;
 	color: #6c757d !important;
 }
-
 /* Success button state */
-.btn-success {
+.btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #28a745;
 	border-color: #28a745;
 	color: white;
 }
-
-.btn-success:hover {
+.btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #218838;
 	border-color: #1e7e34;
 }
-
-.btn-success:disabled {
+.btn-success:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #6c757d;
 	border-color: #6c757d;
 	opacity: 0.6;
@@ -198,15 +201,17 @@
 
 /* Print button always active */
 .invoice-confirmed #printInvoiceBtn {
-	opacity: 1 !important;
 	pointer-events: auto !important;
+	cursor: pointer !important;
+}
+/* Print button always active */
+.invoice-confirmed #printInvoiceBtn:not([data-qlpk-button], [data-qlpk-button] *) {
+	opacity: 1 !important;
 	background-color: #17a2b8 !important;
 	border-color: #17a2b8 !important;
 	color: white !important;
-	cursor: pointer !important;
 }
-
-.invoice-confirmed #printInvoiceBtn:hover {
+.invoice-confirmed #printInvoiceBtn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #138496 !important;
 	border-color: #138496 !important;
 	color: white !important;

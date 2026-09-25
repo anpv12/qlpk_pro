@@ -86,11 +86,8 @@ async function openInvoiceWindow(examinationId) {
 		}
 
 		const html = await response.text();
-		invoiceWindow.document.open();
-		invoiceWindow.document.write(html);
-		invoiceWindow.document.close();
+		await window.QLPKPdfPreview.render(invoiceWindow, html);
 	} catch (error) {
-		invoiceWindow.close();
 		showCustomToast('error', 'Không thể mở hóa đơn. Vui lòng thử lại.');
 	}
 }
@@ -403,10 +400,10 @@ function renderPaymentTable() {
                 <td>${getStatusBadge(payment)}</td>
                 <td class="text-center">
                     <div class="d-flex gap-1 justify-content-center">
-                        <button class="btn btn-sm btn-outline-primary js-edit-payment" data-payment-id="${safeId}" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary js-edit-payment" data-payment-id="${safeId}" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger js-delete-payment" data-payment-id="${safeId}" title="Trả lại">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger js-delete-payment" data-payment-id="${safeId}" title="Trả lại">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -441,9 +438,9 @@ function renderPaymentTable() {
 // Get status badge HTML
 function getStatusBadge(payment) {
 	if (isPaymentPaid(payment)) {
-		return '<span class="pw-payment-status pw-payment-status--paid"><i class="bi bi-check-circle-fill"></i>Đã thanh toán</span>';
+		return '<span class="qlpk-status qlpk-status--success pw-payment-status"><i class="bi bi-check-circle-fill"></i>Đã thanh toán</span>';
 	}
-	return '<span class="pw-payment-status pw-payment-status--waiting"><i class="bi bi-clock-fill"></i>Chờ thanh toán</span>';
+	return '<span class="qlpk-status qlpk-status--warning pw-payment-status"><i class="bi bi-clock-fill"></i>Chờ thanh toán</span>';
 }
 
 // Update pagination
@@ -547,7 +544,7 @@ function loadExaminationDetailModal(paymentId) {
                 <i class="bi bi-exclamation-triangle text-danger pw-error-icon"></i>
                 <h5 class="mt-3 text-danger">Lỗi xác thực</h5>
                 <p class="text-muted">Vui lòng đăng nhập lại để tiếp tục</p>
-                <button type="button" class="btn btn-primary js-go-login">
+                <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary js-go-login">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
                 </button>
             </div>
@@ -602,10 +599,10 @@ function loadExaminationDetailModal(paymentId) {
                     <h5 class="mt-3 text-danger">Lỗi khi tải thông tin</h5>
                     <p class="text-muted">${safeErrorMessage}</p>
                     <div class="mt-3">
-                        <button type="button" class="btn btn-primary me-2 js-retry-load-invoice" data-payment-id="${Number(paymentId) || 0}">
+                        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary me-2 js-retry-load-invoice" data-payment-id="${Number(paymentId) || 0}">
                             <i class="bi bi-arrow-clockwise me-2"></i>Thử lại
                         </button>
-                        <button type="button" class="btn btn-outline-primary js-go-login">
+                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-outline-primary js-go-login">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập lại
                         </button>
                     </div>
@@ -691,7 +688,7 @@ function buildExaminationDetailContentHtml(viewModel) {
                 
                 <div class="service-header">
                     <div class="service-controls">
-                        <button type="button" class="btn btn-primary" id="addServiceBtn">
+                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="addServiceBtn">
                             <i class="bi bi-plus"></i> Thêm dịch vụ
                         </button>
                     </div>
@@ -1031,10 +1028,10 @@ function renderServicesTable(services) {
                 <td class="text-end pw-invoice-col-price">${formatCurrency(totalAmount)}</td>
                 <td class="text-center pw-invoice-col-actions">
                     <div class="d-flex gap-1 justify-content-center">
-                        <button class="btn btn-sm btn-outline-primary js-edit-service" data-service-id="${safeServiceId}" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary js-edit-service" data-service-id="${safeServiceId}" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger js-delete-service" data-service-id="${safeServiceId}" title="Xóa dịch vụ">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-danger js-delete-service" data-service-id="${safeServiceId}" title="Xóa dịch vụ">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -1361,8 +1358,8 @@ function buildEditServiceModalHtml(viewModel) {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-primary js-save-edit-service" data-service-id="${safeServiceId}">Lưu thay đổi</button>
+                        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary js-save-edit-service" data-service-id="${safeServiceId}">Lưu thay đổi</button>
                     </div>
                 </div>
             </div>
@@ -1649,16 +1646,16 @@ function buildActionSelectionModalHtml(safePaymentId) {
                     </div>
                     <div class="modal-body">
                         <div class="d-grid gap-2">
-                            <button class="btn btn-warning js-return-action" data-return-action="receptionist" data-payment-id="${safePaymentId}">
+                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-warning js-return-action" data-return-action="receptionist" data-payment-id="${safePaymentId}">
                                 <i class="bi bi-arrow-left-circle"></i> Trả về lễ tân
                             </button>
-                            <button class="btn btn-info js-return-action" data-return-action="doctor" data-payment-id="${safePaymentId}">
+                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-info js-return-action" data-return-action="doctor" data-payment-id="${safePaymentId}">
                                 <i class="bi bi-arrow-left-circle"></i> Trả về bác sĩ
                             </button>
-                            <button class="btn btn-secondary js-return-action" data-return-action="psychologist" data-payment-id="${safePaymentId}">
+                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-secondary js-return-action" data-return-action="psychologist" data-payment-id="${safePaymentId}">
                                 <i class="bi bi-arrow-left-circle"></i> Trả về tâm lý gia
                             </button>
-                            <button class="btn btn-danger js-return-action" data-return-action="appointment" data-payment-id="${safePaymentId}">
+                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-danger js-return-action" data-return-action="appointment" data-payment-id="${safePaymentId}">
                                 <i class="bi bi-arrow-left"></i> Trả về lịch hẹn
                             </button>
                         </div>

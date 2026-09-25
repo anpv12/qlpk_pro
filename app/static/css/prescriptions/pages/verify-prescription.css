@@ -50,87 +50,11 @@ body {
 }
 
 .verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify {
-	background: #fff;
-	border-radius: 10px;
-	padding: 16px;
-	box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
-	box-sizing: border-box;
 	width: calc(var(--verify-document-width) * 1px);
-	max-width: none !important;
+	max-width: none;
 	overflow: visible;
 	transform: scale(var(--verify-document-scale));
 	transform-origin: top left;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .prescription-preview__header {
-	display: flex !important;
-	flex-direction: row !important;
-	flex-wrap: nowrap !important;
-	align-items: flex-start !important;
-	gap: 20px !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .clinic-logo {
-	flex-shrink: 0 !important;
-	grid-row: auto !important;
-	grid-column: auto !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .clinic-logo img {
-	width: 120px !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .clinic-info {
-	flex: 1 1 auto !important;
-	grid-row: auto !important;
-	grid-column: auto !important;
-	min-width: 0 !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .prescription-code-section {
-	flex: 0 0 auto !important;
-	width: auto !important;
-	padding-left: 0 !important;
-	margin-top: 0 !important;
-	margin-bottom: 0 !important;
-	align-items: center !important;
-	grid-row: auto !important;
-	grid-column: auto !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .prescription-code-badge {
-	font-size: var(--qlpk-font-size-sm, 12px) !important;
-	padding: 5px 8px !important;
-	margin-bottom: 20px !important;
-	white-space: nowrap !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-patient-grid,
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-med-row {
-	display: flex !important;
-	flex-direction: row !important;
-	align-items: flex-start !important;
-	gap: 16px !important;
-	width: 100% !important;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-col-left,
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-col-drug {
-	flex: 0 0 calc(60% - 8px) !important;
-	max-width: calc(60% - 8px) !important;
-	width: auto !important;
-	min-width: 0 !important;
-	overflow-wrap: anywhere;
-}
-
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-col-right,
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify .rx-col-dosage {
-	flex: 0 0 calc(40% - 8px) !important;
-	max-width: calc(40% - 8px) !important;
-	width: auto !important;
-	min-width: 0 !important;
-	margin-top: 0 !important;
-	overflow-wrap: anywhere;
 }
 
 @media (max-width: 800px) {

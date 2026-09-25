@@ -85,7 +85,7 @@
               ${escapeHtml(message) || 'Có xung đột lịch hẹn'}
             </div>
             <div class="conflict-popup-buttons">
-				<button type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm" id="conflictCancelBtn">
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm" id="conflictCancelBtn">
                 <i class="bi bi-x-circle me-1"></i>Hủy
               </button>
             </div>

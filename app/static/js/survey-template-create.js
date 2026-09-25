@@ -33,6 +33,8 @@
 		saving: false,
 		defaultPerformerId: null,
 		performers: [],
+		loadRevision: 0,
+		content: {},
 	};
 
 	let criteriaCache = null;
@@ -139,6 +141,8 @@
 	}
 
 	function bindCriteriaAutocomplete(input) {
+		if (input.dataset.criteriaBound) return;
+		input.dataset.criteriaBound = '1';
 		const wrapper = input.closest('.sc-criteria-wrap');
 		if (!wrapper) return;
 		const dropdown = wrapper.querySelector('.sc-criteria-dropdown');
@@ -209,8 +213,12 @@
 		return 'q_' + Math.random().toString(36).slice(2, 9);
 	}
 
+	function retainedId(id) {
+		return id === undefined || id === null || id === '' ? genId() : id;
+	}
+
 	function escHtml(str) {
-		if (!str) return '';
+		if (str === undefined || str === null) return '';
 		return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 	}
 
@@ -223,6 +231,8 @@
 	}
 
 	function resetState() {
+		state.loadRevision += 1;
+		state.content = {};
 		state.templateId = null;
 		state.questionCounter = 0;
 		state.dirty = false;
@@ -233,6 +243,7 @@
 		const descEl = surveyDescInput();
 		const list = questionsListEl();
 		if (nameEl) nameEl.value = '';
+		byId('scValidationMessage')?.remove();
 		if (descEl) descEl.value = '';
 		if (list) list.innerHTML = '';
 		renderPerformerOptions();
@@ -241,8 +252,26 @@
 		if (window._scResultConfig) window._scResultConfig.resetConfig();
 	}
 
-	function open(mode, templateId) {
+	async function open(mode, templateId) {
+		if (state.saving) return;
 		resetState();
+		const revision = state.loadRevision;
+		state.loading = true;
+		saveButton().disabled = true;
+		try {
+			const response = await fetch('/api/survey-templates/access', { headers: authHeaders() });
+			const access = await response.json();
+			if (revision !== state.loadRevision) return;
+			if (!response.ok || !access.can_manage) {
+				showToast('error', 'Bạn không có quyền quản lý mẫu khảo sát.');
+				return;
+			}
+		} catch (_) {
+			if (revision === state.loadRevision) showToast('error', 'Không thể kiểm tra quyền. Vui lòng thử lại.');
+			return;
+		}
+		state.loading = false;
+		setSaveButtonIdle();
 		const overlay = overlayEl();
 		const title = pageTitleEl();
 		if (mode === 'edit' && templateId) {
@@ -261,6 +290,7 @@
 	}
 
 	async function close(force = false) {
+		if (state.saving && force !== true) return;
 		if (!force && hasUnsavedChanges()) {
 			const confirmed = await (window.CustomModal ? window.CustomModal.confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?') : Promise.resolve(window.confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?')));
 			if (!confirmed) return;
@@ -280,7 +310,7 @@
 		const overlay = overlayEl();
 		const dirtyRoot = overlay || document.querySelector('.sc-main') || document;
 		const list = questionsListEl();
-		if (closeBtn) closeBtn.addEventListener('click', close);
+		if (closeBtn) closeBtn.addEventListener('click', () => close());
 		if (saveBtn) saveBtn.addEventListener('click', () => save());
 		if (addBtn) addBtn.addEventListener('click', addQuestion);
 		dirtyRoot.addEventListener('input', markDirty);
@@ -322,6 +352,7 @@
 	}
 
 	function switchTab(tab) {
+		if (document.querySelector('#sc-tab-results.active, #tab-results.active')) window._scResultConfig?.collectConfig();
 		document.querySelectorAll('[data-sc-tab], [data-tab]').forEach(b => b.classList.remove('active'));
 		document.querySelectorAll('.sc-tab-pane').forEach(p => p.classList.remove('active'));
 		const tabBtn = document.querySelector(`[data-sc-tab="${tab}"], [data-tab="${tab}"]`);
@@ -335,19 +366,30 @@
 	}
 
 	async function loadTemplate(id) {
+		const revision = state.loadRevision;
 		state.loading = true;
+		saveButton().disabled = true;
 		try {
 			const res = await fetch(`/api/survey-templates/${id}`, { headers: authHeaders() });
 			const json = await res.json();
+			if (revision !== state.loadRevision) return;
 			if (!json.success) return showToast('error', 'Không tải được dữ liệu');
 
 			const t = json.data;
+			if (t.validation_message) {
+				const notice = document.createElement('p');
+				notice.id = 'scValidationMessage';
+				notice.className = 'text-danger mt-2';
+				notice.textContent = `Cần cập nhật trước khi tạo link: ${t.validation_message}`;
+				surveyNameInput().insertAdjacentElement('afterend', notice);
+			}
 			const nameEl = surveyNameInput();
 			const descEl = surveyDescInput();
 			if (nameEl) nameEl.value = t.name || '';
 			if (descEl) descEl.value = t.description || '';
 			state.defaultPerformerId = Number(t.default_performer_id) || null;
 			await loadPerformers();
+			if (revision !== state.loadRevision) return;
 			renderPerformerOptions();
 
 			let content = t.content;
@@ -355,16 +397,21 @@
 				try { content = JSON.parse(content || '{}'); } catch (_) { content = {}; }
 			}
 			const rawQuestions = Array.isArray(content) ? content : (content.questions || []);
+			state.content = Array.isArray(content) ? {} : structuredClone(content);
+			if (rawQuestions.some(q => !QUESTION_TYPE_ALIASES[q.type || 'multiple_choice'] || q.type === 'checkbox_grid')) {
+				showToast('error', 'Mẫu có loại câu hỏi chưa hỗ trợ chỉnh sửa tại đây.');
+				return;
+			}
 			rawQuestions.forEach(q => {
 				state.questionCounter += 1;
 				const qType = normalizeQuestionType(q.type);
 				const qObj = buildQuestionObject({
-					id: q.id || genId(),
+					id: retainedId(q.id),
 					type: qType,
 					text: q.text || q.question || '',
 					criteria: q.scoring_criteria || q.criteria || '',
 					required: q.required,
-					answers: Array.isArray(q.answers) ? q.answers : [],
+					answers: Array.isArray(q.answers) ? q.answers : (Array.isArray(q.options) ? q.options : []),
 					grid: q.grid,
 				});
 				renderQuestionCard(qObj);
@@ -374,16 +421,21 @@
 				window._scResultConfig.initTab(content.result_config);
 			}
 		} catch (err) {
+			if (revision !== state.loadRevision) return;
+			questionsListEl().innerHTML = '';
 			showToast('error', 'Không thể tải mẫu khảo sát. Vui lòng thử lại.');
 		} finally {
-			state.loading = false;
-			state.dirty = false;
+			if (revision === state.loadRevision) {
+				state.loading = false;
+				state.dirty = false;
+				saveButton().disabled = !questionsListEl().children.length;
+			}
 		}
 	}
 
 	function buildQuestionObject(raw) {
 		return {
-			id: raw.id || genId(),
+			id: retainedId(raw.id),
 			type: normalizeQuestionType(raw.type),
 			text: raw.text || '',
 			criteria: raw.criteria || '',
@@ -420,7 +472,7 @@
 			<div class="sc-q-header">
 				<div class="sc-q-header-left">
 					<div class="sc-q-drag-handle" title="Kéo để sắp xếp">⠿</div>
-					<button class="sc-q-collapse-btn" title="Thu gọn"><i class="bi bi-chevron-down"></i></button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="sc-q-collapse-btn" title="Thu gọn"><i class="bi bi-chevron-down"></i></button>
 					<span class="sc-q-badge">Câu ${idx}</span>
 					<select class="sc-q-type">
 						<option value="${Q_TYPE.MULTIPLE_CHOICE}" ${qObj.type === Q_TYPE.MULTIPLE_CHOICE ? 'selected' : ''}>Trắc nghiệm</option>
@@ -441,7 +493,7 @@
 					<div class="sc-answers-list">
 						${qObj.answers.map(a => buildAnswerRowHTML(a)).join('')}
 					</div>
-					<button class="sc-add-answer-btn"><i class="bi bi-plus"></i> Thêm đáp án</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-answer-btn"><i class="bi bi-plus"></i> Thêm đáp án</button>
 				</div>
 				<div class="sc-grid-section ${isGridType(qObj.type) ? '' : 'sc-hidden'}">
 					${buildGridHTML(qObj)}
@@ -452,19 +504,19 @@
 					<label class="sc-required-toggle"><input type="checkbox" class="sc-required-check" ${reqChecked}><span class="sc-toggle-track"></span></label>
 					<span class="sc-required-label">Bắt buộc</span>
 				</div>
-				<div class="sc-q-action-btns"><button class="sc-q-action-btn sc-q-delete-btn" title="Xóa câu hỏi"><i class="bi bi-trash"></i></button></div>
+				<div class="sc-q-action-btns"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-q-action-btn sc-q-delete-btn" title="Xóa câu hỏi"><i class="bi bi-trash"></i></button></div>
 			</div>
 		`;
 	}
 
 	function buildAnswerRowHTML(a) {
 		return `
-			<div class="sc-answer-row">
+			<div class="sc-answer-row" data-answer-id="${escHtml(retainedId(a.id))}">
 				<div class="sc-answer-radio"></div>
 				<input type="text" class="sc-answer-text" placeholder="Nhập đáp án..." value="${escHtml(a.text || '')}">
 				<span class="sc-answer-score-label">Điểm:</span>
-				<input type="number" class="sc-answer-score" value="${a.score ?? 0}" min="0">
-				<button class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
+				<input type="number" class="sc-answer-score" value="${a.score ?? a.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
 			</div>
 		`;
 	}
@@ -473,26 +525,27 @@
 		const rows = qObj.grid?.rows || [];
 		const cols = qObj.grid?.columns || [];
 		const colHeaders = cols.map((c, ci) => `
-			<th class="sc-col-header">
+			<th class="sc-col-header" data-column-id="${escHtml(retainedId(c.id))}">
 				<div class="sc-grid-col-top">
-					<input type="text" class="sc-grid-col-label" value="${escHtml(c.label || `Cột ${ci + 1}`)}" placeholder="Nhập tên cột...">
-					<button class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
+					<input type="text" class="sc-grid-col-label" value="${escHtml(c.label ?? c.text ?? `Cột ${ci + 1}`)}" placeholder="Nhập tên cột...">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
 				</div>
 				<div class="sc-grid-col-score">
-					<span>Điểm</span>
-					<input type="number" class="sc-grid-score-input" value="${c.score ?? 0}" min="0">
+					<span>Điểm mặc định</span>
+					<input type="number" class="sc-grid-score-input" value="${c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
 				</div>
 			</th>
 		`).join('');
 
 		const bodyRows = rows.map((r, ri) => `
-			<tr data-row="${ri}">
+			<tr data-row="${ri}" data-row-id="${escHtml(retainedId(r.question_id ?? r.id))}">
 				<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
 				<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..." value="${escHtml(r.text || '')}"></td>
-				<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(r.criteria || '')}" autocomplete="off"><div class="sc-criteria-dropdown sc-hidden"></div></div></td>
-				<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" ${r.score_enabled ? 'checked' : ''} title="Cho phép tính điểm"></td>
-				${cols.map(() => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="0" min="0"></td>`).join('')}
-				<td><button class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
+				<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(r.criteria ?? r.scoring_criteria ?? qObj.criteria)}" autocomplete="off"><div class="sc-criteria-dropdown sc-hidden"></div></div></td>
+				<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" ${r.score_enabled !== false ? 'checked' : ''} title="Cho phép tính điểm"></td>
+				${cols.map(c => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${r.scores?.[c.id] ?? c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
+				<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
 			</tr>
 		`).join('');
 
@@ -506,13 +559,13 @@
 							<th class="sc-grid-criteria-col">Tiêu chí</th>
 							<th class="sc-grid-score-enabled-col">Tính điểm</th>
 							${colHeaders}
-							<th class="sc-grid-add-col"><button class="sc-add-col-btn"><i class="bi bi-plus-lg"></i></button></th>
+							<th class="sc-grid-add-col"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-col-btn"><i class="bi bi-plus-lg"></i></button></th>
 						</tr>
 					</thead>
 					<tbody>${bodyRows}</tbody>
 				</table>
 			</div>
-			<div class="sc-grid-actions"><button class="sc-add-row-btn"><i class="bi bi-plus"></i> Thêm hàng</button></div>
+			<div class="sc-grid-actions"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-row-btn"><i class="bi bi-plus"></i> Thêm hàng</button></div>
 		`;
 	}
 
@@ -539,12 +592,8 @@
 			setScVisible(gr, false);
 			if (isChoiceType(qObj.type)) {
 				setScVisible(tn, true);
-				card.querySelector('.sc-answers-list').innerHTML = qObj.answers.map(a => buildAnswerRowHTML(a)).join('');
-				card.querySelectorAll('.sc-answer-row').forEach(row => bindAnswerRemove(row));
 			} else if (isGridType(qObj.type)) {
 				setScVisible(gr, true);
-				gr.innerHTML = buildGridHTML(qObj);
-				bindGridEvents(card);
 			}
 			const cw = card.querySelector('.sc-criteria-wrap');
 			setScVisible(cw, !isGridType(qObj.type));
@@ -593,6 +642,8 @@
 	}
 
 	function bindGridEvents(card) {
+		if (card.dataset.gridBound) return;
+		card.dataset.gridBound = '1';
 		const addCol = card.querySelector('.sc-add-col-btn');
 		if (addCol) addCol.addEventListener('click', () => addGridCol(card));
 		const addRow = card.querySelector('.sc-add-row-btn');
@@ -600,17 +651,25 @@
 		const table = card.querySelector('.sc-grid-table');
 		if (!table) return;
 
-		table.querySelector('thead').addEventListener('input', e => {
-			if (!e.target.classList.contains('sc-grid-score-input')) return;
-			const headerInputs = [...table.querySelectorAll('thead th.sc-col-header .sc-grid-score-input')];
-			const colIdx = headerInputs.indexOf(e.target);
-			if (colIdx === -1) return;
-			const val = e.target.value;
-			table.querySelectorAll('tbody tr').forEach(tr => {
-				const cells = tr.querySelectorAll('td.sc-col-cell');
-				const inp = cells[colIdx]?.querySelector('.sc-grid-score-input');
-				if (inp) inp.value = val;
-			});
+		table.querySelector('thead').addEventListener('click', async e => {
+			const button = e.target.closest('.sc-apply-col-btn');
+			if (!button || button.disabled || state.saving) return;
+			const th = button.closest('th.sc-col-header');
+			const input = th.querySelector('.sc-grid-score-input');
+			const value = input.value;
+			if (value === '' || !Number.isFinite(Number(value))) return showToast('error', 'Vui lòng nhập điểm mặc định trước khi áp dụng.');
+			const revision = state.loadRevision;
+			button.disabled = true;
+			try {
+				const message = `Thay điểm của tất cả các hàng trong cột bằng ${Number(value)}? Điểm đã nhập sẽ bị thay thế.`;
+				const confirmed = await (window.CustomModal ? window.CustomModal.confirm(message) : Promise.resolve(window.confirm(message)));
+				if (!confirmed || revision !== state.loadRevision || state.saving || !th.isConnected || input.value !== value) return;
+				const colIdx = [...table.querySelectorAll('thead th.sc-col-header')].indexOf(th);
+				table.querySelectorAll('tbody tr').forEach(tr => {
+					tr.querySelectorAll('.sc-col-cell .sc-grid-score-input')[colIdx].value = value;
+				});
+				markDirty();
+			} finally { button.disabled = false; }
 		});
 
 		table.querySelector('thead').addEventListener('click', e => {
@@ -648,25 +707,26 @@
 		const addTh = table.querySelector('thead tr th:last-child');
 		const newTh = document.createElement('th');
 		newTh.className = 'sc-col-header';
+		newTh.dataset.columnId = genId();
 		newTh.innerHTML = `
 			<div class="sc-grid-col-top">
 				<input type="text" class="sc-grid-col-label" value="Cột ${colCount + 1}" placeholder="Nhập tên cột...">
-				<button class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
+				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
 			</div>
 			<div class="sc-grid-col-score">
-				<span>Điểm</span>
-				<input type="number" class="sc-grid-score-input" value="0" min="0">
+				<span>Điểm mặc định</span>
+				<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
 			</div>
 		`;
 		table.querySelector('thead tr').insertBefore(newTh, addTh);
 		table.querySelectorAll('tbody tr').forEach(tr => {
 			const td = document.createElement('td');
 			td.className = 'sc-col-cell';
-			td.innerHTML = `<input type="number" class="sc-grid-score-input" value="0" min="0">`;
+			td.innerHTML = `<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">`;
 			tr.insertBefore(td, tr.lastElementChild);
 		});
 		markDirty();
-		bindGridEvents(card);
 	}
 
 	function addGridRow(card) {
@@ -674,13 +734,14 @@
 		const table = card.querySelector('.sc-grid-table');
 		const headerScoreInputs = table ? [...table.querySelectorAll('thead th.sc-col-header .sc-grid-score-input')] : [];
 		const tr = document.createElement('tr');
+		tr.dataset.rowId = genId();
 		tr.innerHTML = `
 			<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
 			<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..."></td>
 			<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" autocomplete="off"><div class="sc-criteria-dropdown"></div></div></td>
 			<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" checked title="Cho phép tính điểm"></td>
-			${headerScoreInputs.map(() => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="0" min="0"></td>`).join('')}
-			<td><button class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
+			${headerScoreInputs.map(input => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${input.value}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
+			<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
 		`;
 		tbody.appendChild(tr);
 		const newCriteriaInput = tr.querySelector('.sc-q-criteria-input');
@@ -702,7 +763,7 @@
 			const q = questions[i];
 			const idx = i + 1;
 			if (!q.text) return showToast('error', `Vui lòng nhập nội dung cho câu ${idx}`), false;
-			if (!q.criteria) return showToast('error', `Vui lòng nhập tiêu chí cho câu ${idx}`), false;
+			if (isChoiceType(q.type) && !q.criteria) return showToast('error', `Vui lòng nhập tiêu chí cho câu ${idx}`), false;
 			if (isChoiceType(q.type)) {
 				if (!q.answers || q.answers.length < 2) return showToast('error', `Câu ${idx} cần ít nhất 2 đáp án`), false;
 				if (q.answers.some(a => !a.text)) return showToast('error', `Vui lòng nhập đầy đủ đáp án của câu ${idx}`), false;
@@ -710,7 +771,7 @@
 			if (isGridType(q.type)) {
 				if (!q.grid.columns.length || !q.grid.rows.length) return showToast('error', `Câu ${idx} phải có ít nhất 1 hàng và 1 cột`), false;
 				if (q.grid.columns.some(c => !c.label)) return showToast('error', `Vui lòng nhập đầy đủ tên cột cho câu ${idx}`), false;
-				if (q.grid.rows.some(r => !r.text || !r.criteria)) return showToast('error', `Vui lòng nhập đầy đủ hàng và tiêu chí cho câu ${idx}`), false;
+				if (q.grid.rows.some(r => !r.text || (r.score_enabled && (!r.criteria || Object.values(r.scores).some(s => s === null))))) return showToast('error', `Vui lòng nhập nội dung, tiêu chí và điểm các hàng tính điểm ở câu ${idx}`), false;
 			}
 		}
 		return true;
@@ -738,19 +799,26 @@
 			};
 			if (isChoiceType(type)) {
 				qObj.answers = Array.from(card.querySelectorAll('.sc-answer-row')).map(row => ({
+					id: row.dataset.answerId,
 					text: row.querySelector('.sc-answer-text').value.trim(),
-					score: parseInt(row.querySelector('.sc-answer-score').value, 10) || 0,
+					score: row.querySelector('.sc-answer-score').value === '' ? null : Number(row.querySelector('.sc-answer-score').value),
 				}));
 			} else if (isGridType(type)) {
 				qObj.grid = {
 					columns: Array.from(card.querySelectorAll('thead th.sc-col-header')).map((th, ci) => ({
+						id: th.dataset.columnId,
 						label: th.querySelector('.sc-grid-col-label')?.value.trim() || `Cột ${ci + 1}`,
-						score: parseInt(th.querySelector('.sc-grid-score-input')?.value, 10) || 0,
+						score: th.querySelector('.sc-grid-score-input')?.value === '' ? null : Number(th.querySelector('.sc-grid-score-input')?.value),
 					})),
 					rows: Array.from(card.querySelectorAll('tbody tr')).map(tr => ({
+						id: tr.dataset.rowId,
 						text: tr.querySelector('.sc-grid-row-input')?.value.trim() || '',
 						criteria: tr.querySelector('.sc-grid-criteria-input')?.value.trim() || '',
 						score_enabled: tr.querySelector('.sc-grid-score-enabled')?.checked ?? true,
+						scores: Object.fromEntries(Array.from(card.querySelectorAll('thead th.sc-col-header')).map((th, ci) => {
+							const input = tr.querySelectorAll('.sc-col-cell .sc-grid-score-input')[ci];
+							return [th.dataset.columnId, input.value === '' ? null : Number(input.value)];
+						})),
 					})),
 				};
 			}
@@ -758,16 +826,22 @@
 		});
 
 		if (!validateQuestions(questions)) return null;
-		const content = { questions };
+		const content = { ...state.content, questions };
 		// Include Tab 2 result config
 		if (window._scResultConfig) {
 			content.result_config = window._scResultConfig.collectConfig();
+			const message = window._scResultConfig.validateConfig();
+			if (message) {
+				switchTab('results');
+				showToast('error', message);
+				return null;
+			}
 		}
 		return { name, description: desc, content, default_performer_id: defaultPerformerId };
 	}
 
 	async function save() {
-		if (state.saving) return;
+		if (state.saving || state.loading) return;
 		const saveBtn = saveButton();
 		if (!saveBtn) return;
 		state.saving = true;
@@ -808,7 +882,9 @@
 				else window.location.href = '/survey-template-management.html';
 			}, 800);
 		} else {
-			showToast('error', 'Không thể lưu mẫu khảo sát. Vui lòng kiểm tra lại.');
+			showToast('error', json.code === 'SURVEY_TEMPLATE_IDENTITY_CONFLICT'
+				? 'Mẫu đã có kết quả cần giữ nguyên câu hỏi và đáp án. Vui lòng tạo mẫu mới nếu cần thay đổi cấu trúc.'
+				: json.message || 'Không thể lưu mẫu khảo sát. Vui lòng kiểm tra lại.');
 			resetBtn();
 		}
 	}

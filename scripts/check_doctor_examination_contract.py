@@ -218,7 +218,7 @@ def main() -> int:
     for control_id in (
         "doctorPrescriptionUsageMode",
         "doctorPrescriptionMedicineDays",
-        "doctorPrescriptionReExamToggle",
+        "doctorPrescriptionReExamButton",
         "doctorPrescriptionReExamDateTime",
     ):
         if parser.ids.count(control_id) != 1:

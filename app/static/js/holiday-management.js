@@ -30,7 +30,9 @@
 		}
 
 		// Render ngày lễ
-		function renderHolidays(holidaysToRender) {
+		const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderHolidays(holidaysToRender) { listPagination.setItems(holidaysToRender); }
+    function renderPage(holidaysToRender, offset) {
 			const tbody = $('#holidayTableBody');
 			tbody.empty();
 
@@ -59,10 +61,10 @@
             </span>
           </td>
           <td>
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="editHoliday(${holiday.id})">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" onclick="editHoliday(${holiday.id})">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteHoliday(${holiday.id})">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteHoliday(${holiday.id})">
               <i class="bi bi-trash"></i>
             </button>
           </td>

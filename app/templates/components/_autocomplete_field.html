@@ -1,0 +1,20 @@
+{% macro attributes(values) -%}
+{% for key, value in values.items() %} {{ key }}="{{ value }}"{% endfor %}
+{%- endmacro %}
+
+{% macro render_autocomplete_field(
+    input_id, tags_id, list_id, root_id='', container_id='', dropdown_id='',
+    root_class='', container_class='', tags_class='', input_class='form-control',
+    input_name='', placeholder='', aria_label='', dropdown_class='', list_class='',
+    root_attrs={}, input_attrs={}, tags_attrs={}, dropdown_attrs={}, list_attrs={}
+) -%}
+<div{% if root_id %} id="{{ root_id }}"{% endif %} class="qlpk-autocomplete {{ root_class }}" data-autocomplete-field=""{{ attributes(root_attrs) }}>
+    <div{% if container_id %} id="{{ container_id }}"{% endif %} class="qlpk-autocomplete__control {{ container_class }}" data-autocomplete-control>
+        <div id="{{ tags_id }}" class="qlpk-autocomplete__tags {{ tags_class }}" data-autocomplete-tags=""{{ attributes(tags_attrs) }}></div>
+        <input type="text" id="{{ input_id }}" class="{{ input_class }}"{% if input_name %} name="{{ input_name }}"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} data-autocomplete-input autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ list_id }}"{{ attributes(input_attrs) }}>
+    </div>
+    <div{% if dropdown_id %} id="{{ dropdown_id }}"{% endif %} class="qlpk-autocomplete__dropdown {{ dropdown_class }}" data-autocomplete-dropdown popover="manual" hidden{{ attributes(dropdown_attrs) }}>
+        <div id="{{ list_id }}" class="qlpk-autocomplete__list {{ list_class }}" data-autocomplete-list role="listbox"{{ attributes(list_attrs) }}></div>
+    </div>
+</div>
+{%- endmacro %}

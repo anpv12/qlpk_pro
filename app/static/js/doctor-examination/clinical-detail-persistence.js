@@ -1,6 +1,12 @@
 (function (window) {
 	'use strict';
 
+	const NORMAL_DETAIL_FIELDS = {
+		bac_si_kham_kham_tong_quat: new Set(['circulation', 'digestive', 'renal_urogenital', 'musculoskeletal', 'ent', 'endocrine_nutrition_others', 'neurological']),
+		bac_si_kham_kham_tam_than: new Set(['orientation', 'emotions', 'perception', 'thought', 'behavior', 'memory', 'intelligence', 'attention'])
+	};
+	const NORMAL_DETAIL_VALUE = 'Không ghi nhận bất thường';
+
 	const DEFAULT_FIELDS = [
 		{
 			section: 'bac_si_kham_form_kham',
@@ -139,6 +145,26 @@
 				}));
 		}
 
+		function prepareEmptyDefaults(doc) {
+			if (!state.detailsLoaded || state.detailsLoading) return false;
+			const changedSections = new Set();
+			fields.forEach(config => {
+				if (!NORMAL_DETAIL_FIELDS[config.section]?.has(config.field)) return;
+				if (!getElement(doc, config.controlId) || textOf(getValue(doc, config.controlId)).trim()) return;
+				setValue(doc, config.controlId, NORMAL_DETAIL_VALUE);
+				changedSections.add(config.section);
+			});
+			changedSections.forEach(section => {
+				state.detailDirtySections.add(section);
+				state.detailRevisions[section] = (state.detailRevisions[section] || 0) + 1;
+			});
+			if (changedSections.size) {
+				state.revision += 1;
+				syncDirtyState();
+			}
+			return changedSections.size > 0;
+		}
+
 		function groupBySection(details) {
 			return details.reduce((groups, detail) => {
 				if (!groups[detail.section]) groups[detail.section] = {};
@@ -228,7 +254,7 @@
 			return { status: 'success', appointmentId, sections: Object.keys(detailsBySection) };
 		}
 
-		return { collect, getConfig, load, save, fields: fields.slice(), endpoints: { ...endpoints } };
+		return { collect, getConfig, load, save, prepareEmptyDefaults, fields: fields.slice(), endpoints: { ...endpoints } };
 	}
 
 	window.QLPKDoctorModuleRegistry.register('clinicalDetails', { fields: DEFAULT_FIELDS, endpoints: DEFAULT_ENDPOINTS, create });

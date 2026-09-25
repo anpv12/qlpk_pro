@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from app.models.appointment import Appointment
 from app.models.examination import Examination, ExaminationStatus
 from app.modules.appointments.services.side_effects import sync_transferred_appointment_calendar
+from app.modules.appointments.services.doctor_queue import mark_doctor_queue_entry
 
 
 class AppointmentTransferValidationError(Exception):
@@ -14,6 +15,7 @@ class AppointmentTransferValidationError(Exception):
 @dataclass
 class AppointmentTransferResult:
     updated_count: int
+    appointment_ids: list
 
 
 def transfer_appointments_between_roles(db, user, data, logger=None):
@@ -25,8 +27,15 @@ def transfer_appointments_between_roles(db, user, data, logger=None):
     if not appointment_ids or not to_role or not to_person_id:
         raise AppointmentTransferValidationError("Missing required parameters")
 
-    if to_person_id is None:
-        raise AppointmentTransferValidationError("to_person_id cannot be null")
+    try:
+        if not isinstance(appointment_ids, list):
+            raise ValueError()
+        appointment_ids = sorted(set(int(value) for value in appointment_ids))
+        to_person_id = int(to_person_id)
+        if to_person_id <= 0 or any(value <= 0 for value in appointment_ids):
+            raise ValueError()
+    except (TypeError, ValueError):
+        raise AppointmentTransferValidationError("Lượt khám hoặc người nhận không hợp lệ")
 
     if to_person_id == user.id:
         raise AppointmentTransferValidationError("Không thể chuyển cho chính mình")
@@ -43,26 +52,30 @@ def transfer_appointments_between_roles(db, user, data, logger=None):
         logger.info(f"New status will be: {new_status}")
 
     to_role_normalized = normalize_transfer_role(to_role)
-    updated_count = 0
+    changed_ids = []
 
     for appointment_id in appointment_ids:
-        appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        appointment = db.query(Appointment).filter(Appointment.id == appointment_id).populate_existing().with_for_update().first()
         if not appointment:
             continue
 
         old_doctor_id = appointment.doctor_id
+        examination = db.query(Examination).filter(Examination.appointment_id == appointment_id).populate_existing().first()
+        previous_status = examination.status if examination else None
+        if examination and old_doctor_id == int(to_person_id) and previous_status == new_status:
+            continue
 
         if to_role_normalized == 'doctor':
-            appointment.doctor_id = to_person_id
+            appointment.doctor_id = int(to_person_id)
         elif to_role_normalized == 'psychologist':
-            appointment.psychologist_id = to_person_id
-            appointment.doctor_id = to_person_id
+            appointment.psychologist_id = int(to_person_id)
+            appointment.doctor_id = int(to_person_id)
 
-        examination = db.query(Examination).filter(Examination.appointment_id == appointment_id).first()
         if examination:
             if to_role_normalized in ('doctor', 'psychologist'):
                 examination.doctor_id = to_person_id
             examination.status = new_status
+            mark_doctor_queue_entry(appointment, previous_status, new_status, old_doctor_id)
 
         if to_role_normalized == 'doctor' and appointment.doctor_id != old_doctor_id:
             sync_transferred_appointment_calendar(
@@ -72,9 +85,9 @@ def transfer_appointments_between_roles(db, user, data, logger=None):
                 logger_override=logger,
             )
 
-        updated_count += 1
+        changed_ids.append(appointment.id)
 
-    return AppointmentTransferResult(updated_count=updated_count)
+    return AppointmentTransferResult(updated_count=len(changed_ids), appointment_ids=changed_ids)
 
 
 def normalize_transfer_role(role):

@@ -9,7 +9,9 @@ from app.models.user import User
 from sqlalchemy.orm import joinedload
 
 
-VALID_ORDER_STATUSES = frozenset({'draft', 'sent', 'processing', 'completed'})
+from app.modules.orders.services.survey_lifecycle import ORDER_STATUSES, transition_order
+
+VALID_ORDER_STATUSES = frozenset(ORDER_STATUSES)
 VALID_LOCATION_TYPES = frozenset({'in', 'out', 'in_house', 'external'})
 PERFORMER_ROLES = frozenset({'doctor', 'psychologist'})
 
@@ -62,7 +64,7 @@ def sync_chi_dinh_for_appointment(db, appointment_id, chi_dinh_list):
     if not appointment:
         raise AppointmentNotFound()
 
-    existing_chi_dinh = db.query(ChiDinh).filter(ChiDinh.appointment_id == appointment_id).all()
+    existing_chi_dinh = db.query(ChiDinh).filter(ChiDinh.appointment_id == appointment_id).with_for_update().all()
     existing_ids = {item.id for item in existing_chi_dinh}
     existing_by_id = {item.id: item for item in existing_chi_dinh}
     prepared_rows = [_prepare_chi_dinh_payload(db, item_data) for item_data in chi_dinh_list]
@@ -89,6 +91,8 @@ def sync_chi_dinh_for_appointment(db, appointment_id, chi_dinh_list):
             result_list.append(chi_dinh)
 
     ids_to_delete = existing_ids - incoming_ids
+    if any(getattr(existing_by_id[item_id], 'status', None) in ('survey_sent', 'has_result', 'completed') for item_id in ids_to_delete):
+        raise InvalidChiDinhPayload('Danh sách đã thay đổi. Vui lòng tải lại trước khi xóa chỉ định đã gửi hoặc hoàn thành')
     if ids_to_delete:
         db.query(ChiDinh).filter(ChiDinh.id.in_(ids_to_delete)).delete(synchronize_session=False)
 
@@ -99,27 +103,45 @@ def update_chi_dinh_fields(db, chi_dinh_id, data):
     if not isinstance(data, dict):
         raise InvalidChiDinhPayload('Dữ liệu cập nhật chỉ định không hợp lệ')
 
-    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).first()
+    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).with_for_update().first()
     if not chi_dinh:
         raise ChiDinhNotFound()
 
+    current_status = _normalize_status(getattr(chi_dinh, 'status', None) or 'sent')
+    next_status = current_status
+    next_is_completed = bool(getattr(chi_dinh, 'is_completed', False))
     if 'status' in data:
-        status = _normalize_status(data['status'])
-        chi_dinh.status = status
-        if 'is_completed' not in data:
-            chi_dinh.is_completed = status == 'completed'
+        next_status = _normalize_status(data['status'])
+
+    if 'is_completed' in data:
+        next_is_completed = _normalize_bool(data['is_completed'], 'is_completed')
+        if 'status' in data:
+            if next_is_completed != (next_status == 'completed'):
+                raise InvalidChiDinhPayload('Trạng thái và trạng thái hoàn thành không khớp')
+        elif next_is_completed:
+            # `is_completed` is a derived flag, but accept legacy callers that
+            # only send it by moving the lifecycle status with it.
+            next_status = 'completed'
+        elif current_status == 'completed':
+            raise InvalidChiDinhPayload('Không thể hủy trạng thái hoàn thành chỉ bằng is_completed')
+        else:
+            next_status = current_status
+    elif 'status' in data:
+        next_is_completed = next_status == 'completed'
+
+    if getattr(chi_dinh, 'survey_template_id', None) and next_status != current_status:
+        raise InvalidChiDinhPayload('Trạng thái khảo sát tự cập nhật khi gửi link và nộp bài')
+    if not getattr(chi_dinh, 'survey_template_id', None) and next_status in ('survey_sent', 'has_result'):
+        raise InvalidChiDinhPayload('Chỉ định này không phải khảo sát')
+    if current_status == 'completed' and next_status != current_status:
+        raise InvalidChiDinhPayload('Không thể hủy trạng thái hoàn thành')
+    transition_order(chi_dinh, next_status)
 
     if 'note_nurse' in data:
         chi_dinh.note_nurse = _normalize_text(data['note_nurse'], 'Ghi chú xử lý')
 
     if 'note_patient' in data:
         chi_dinh.note_patient = _normalize_text(data['note_patient'], 'Ghi chú bệnh nhân')
-
-    if 'is_completed' in data:
-        is_completed = _normalize_bool(data['is_completed'], 'is_completed')
-        if 'status' in data and is_completed != (_normalize_status(data['status']) == 'completed'):
-            raise InvalidChiDinhPayload('Trạng thái và trạng thái hoàn thành không khớp')
-        chi_dinh.is_completed = is_completed
 
     if 'scheduled_for' in data:
         chi_dinh.scheduled_for = _parse_scheduled_for_value(data['scheduled_for'])
@@ -133,7 +155,7 @@ def update_chi_dinh_fields(db, chi_dinh_id, data):
 
 
 def delete_chi_dinh_by_id(db, chi_dinh_id):
-    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).first()
+    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).with_for_update().first()
     if not chi_dinh:
         raise ChiDinhNotFound()
     db.delete(chi_dinh)
@@ -162,6 +184,9 @@ def delete_chi_dinh_batch(db, chi_dinh_list):
 
 
 def _apply_prepared_chi_dinh_payload(chi_dinh, payload):
+    current_status = getattr(chi_dinh, 'status', None) or 'sent'
+    if current_status != 'sent' and getattr(chi_dinh, 'survey_template_id', None) != payload['survey_template_id']:
+        raise InvalidChiDinhPayload('Không thể đổi mẫu của chỉ định đã gửi khảo sát hoặc hoàn thành')
     chi_dinh.survey_template_id = payload['survey_template_id']
     chi_dinh.order_name = payload['order_name']
     chi_dinh.location_type = payload['location_type']
@@ -169,8 +194,9 @@ def _apply_prepared_chi_dinh_payload(chi_dinh, payload):
     chi_dinh.in_house_unit = payload['in_house_unit']
     chi_dinh.out_facility = payload['out_facility']
     chi_dinh.scheduled_for = payload['scheduled_for']
-    chi_dinh.status = payload['status']
-    chi_dinh.is_completed = payload['is_completed']
+    # Form snapshots never own persisted lifecycle transitions.
+    chi_dinh.status = current_status
+    chi_dinh.is_completed = current_status == 'completed'
 
 
 def _prepare_chi_dinh_payload(db, item_data):

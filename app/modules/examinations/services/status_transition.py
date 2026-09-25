@@ -4,6 +4,7 @@ from datetime import datetime
 
 from app.models.examination import Examination, ExaminationStatus
 from app.modules.examinations.view_models.management import get_examination_status_text
+from app.modules.appointments.services.doctor_queue import mark_doctor_queue_entry
 
 class StatusTransitionExaminationNotFound(Exception):
     """Raised when an examination row does not exist for a status transition."""
@@ -74,7 +75,7 @@ def update_management_examination_status_result(db, examination_id, data):
     if not new_status or new_status not in [status.value for status in ExaminationStatus]:
         raise InvalidStatusValue()
 
-    examination.status = ExaminationStatus(new_status)
+    apply_status_transition(examination, ExaminationStatus(new_status))
     db.commit()
     return {
         'message': 'Cập nhật trạng thái thành công',
@@ -93,6 +94,7 @@ def get_examination_for_status_transition(db, examination_id, active_only=False)
     return examination
 
 def apply_status_transition(examination, status, touch_updated_at=False):
+    mark_doctor_queue_entry(examination.appointment, examination.status, status)
     examination.status = status
     if touch_updated_at:
         examination.updated_at = datetime.now()

@@ -25,6 +25,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create the current live schema on a fresh database."""
+    # Current model metadata includes DAV trigram search indexes.
+    op.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm')
     Base.metadata.create_all(bind=op.get_bind())
 
 

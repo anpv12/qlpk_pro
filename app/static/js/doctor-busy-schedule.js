@@ -3,6 +3,7 @@
 let currentUser = null;
 let deleteScheduleId = null;
 let currentBusySchedules = [];
+let busyListRevision = 0;
 let busyReasonsCache = null;
 let busyReasonsCacheTime = null;
 
@@ -94,17 +95,12 @@ function setupEventHandlers() {
 
 	// Status filter
 	$('#statusFilter').on('change', function () {
-		filterTable();
+		loadMyBusySchedules();
 	});
 
 	// Quick reason suggestions
 	$('input[name="reason"]').on('focus', function () {
 		showReasonSuggestions();
-	});
-
-	// Status filter change
-	$('#statusFilter').on('change', function () {
-		loadMyBusySchedules();
 	});
 
 	// Delete confirmation
@@ -240,7 +236,7 @@ function displayReasonSuggestions(suggestions) {
 	}
 
 	const suggestionsHtml = suggestions.map(reason =>
-		`<span class="badge bg-light text-dark me-1 suggestion-badge" title="Click để chọn">${reason}</span>`
+		`<span class="suggestion-badge" title="Click để chọn">${reason}</span>`
 	).join('');
 
 	suggestionsContainer.html(`
@@ -252,8 +248,8 @@ function displayReasonSuggestions(suggestions) {
 	$('.suggestion-badge').on('click', function () {
 		reasonInput.val($(this).text());
 		// Highlight selected suggestion
-		$('.suggestion-badge').removeClass('bg-primary text-white');
-		$(this).addClass('bg-primary text-white');
+		$('.suggestion-badge').removeClass('is-selected');
+		$(this).addClass('is-selected');
 	});
 }
 
@@ -396,11 +392,9 @@ function loadMyBusySchedules() {
 
 	const token = localStorage.getItem('qlpk_token');
 	const status = $('#statusFilter').val();
+	const revision = ++busyListRevision;
 
-	let url = '/api/doctor-busy-schedules/my-busy-schedules';
-	if (status !== 'all') {
-		url += `?status=${status}`;
-	}
+	const url = `/api/doctor-busy-schedules/my-busy-schedules?status=${encodeURIComponent(status)}`;
 
 	$.ajax({
 		url: url,
@@ -409,13 +403,16 @@ function loadMyBusySchedules() {
 			'Authorization': `Bearer ${token}`
 		},
 		success: function (response) {
+			if (revision !== busyListRevision) return;
 			if (response.success) {
 				renderBusySchedulesTable(response.data);
+				filterTable();
 			} else {
 				showAlert('Không thể tải danh sách lịch bận', 'error');
 			}
 		},
 		error: function (xhr) {
+			if (revision !== busyListRevision) return;
 			if (xhr.status === 401) {
 				localStorage.removeItem('token');
 				window.location.href = 'login.html';
@@ -436,7 +433,7 @@ function renderBusySchedulesTable(schedules) {
 	if (schedules.length === 0) {
 		tbody.html(`
             <tr>
-                <td colspan="4" class="text-center py-4">
+                <td colspan="5" class="text-center py-4">
                     <i class="bi bi-calendar-x text-muted busy-empty-icon"></i>
                     <p class="mt-2 mb-0 text-muted">Chưa có lịch bận nào</p>
                 </td>
@@ -466,15 +463,15 @@ function renderBusySchedulesTable(schedules) {
                     </span>
                 </td>
                 <td>
-                    <small class="text-muted">${formatDateTime(new Date(schedule.created_at))}</small>
+                    <span class="text-muted">${formatDateTime(new Date(schedule.created_at))}</span>
                 </td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         ${schedule.status === 'active' ? `
-                            <button class="btn btn-outline-warning btn-sm" onclick="editBusySchedule(${schedule.id})" title="Chỉnh sửa">
+                            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-warning btn-sm" onclick="editBusySchedule(${schedule.id})" title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteBusySchedule(${schedule.id})" title="Xóa">
+                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteBusySchedule(${schedule.id})" title="Xóa">
                                 <i class="bi bi-trash"></i>
                             </button>
                         ` : `
@@ -625,7 +622,7 @@ function getStatusIndicator(startTime, endTime, status) {
 	}
 
 	if (endTime < now) {
-		return '<span class="badge bg-muted" title="Đã kết thúc">⏰</span>';
+		return '<span class="badge bg-secondary" title="Đã kết thúc">⏰</span>';
 	} else if (startTime <= now && endTime >= now) {
 		return '<span class="badge bg-danger" title="Đang diễn ra">🔴</span>';
 	} else {
@@ -691,33 +688,21 @@ function setQuickTime(type) {
 
 // Filter table based on search and status
 function filterTable() {
+	if (!currentBusySchedules.length) return;
 	const searchTerm = normalizeSearchText($('#searchInput').val());
-	const statusFilter = $('#statusFilter').val();
 
 	$('#busySchedulesTableBody tr').each(function () {
 		const row = $(this);
 		const timeText = normalizeSearchText(row.find('td:nth-child(2)').text());
 		const reasonText = normalizeSearchText(row.find('td:nth-child(3)').text());
-		const statusBadge = row.find('.badge');
-
 		let matchesSearch = true;
-		let matchesStatus = true;
 
 		// Search filter
 		if (searchTerm) {
 			matchesSearch = timeText.includes(searchTerm) || reasonText.includes(searchTerm);
 		}
 
-		// Status filter
-		if (statusFilter !== 'all') {
-			if (statusFilter === 'active') {
-				matchesStatus = !statusBadge.hasClass('bg-secondary');
-			} else if (statusFilter === 'cancelled') {
-				matchesStatus = statusBadge.hasClass('bg-secondary');
-			}
-		}
-
-		if (matchesSearch && matchesStatus) {
+		if (matchesSearch) {
 			row.show();
 		} else {
 			row.hide();
@@ -815,8 +800,8 @@ function confirmDeleteBusySchedule(scheduleId) {
                         <p class="text-danger"><small>Hành động này không thể hoàn tác!</small></p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-danger" onclick="deleteBusySchedule(${scheduleId})">
+                        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-danger" onclick="deleteBusySchedule(${scheduleId})">
                             <i class="bi bi-trash me-1"></i>Xóa
                         </button>
                     </div>

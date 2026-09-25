@@ -1,20 +1,19 @@
-    .user-list, .group-list { border-radius: 18px !important; box-shadow: 0 2px 8px #e0e6ed33; }
+    .user-list, .group-list { border-radius: var(--clinic-surface-radius); box-shadow: var(--clinic-surface-shadow); }
     .user-item { padding-left: 12px; }
     .group-checkbox-list .form-check { margin-bottom: 12px; }
-    .group-list .save-btn { min-width: 140px; font-size: var(--qlpk-font-size-xl, 18px); border-radius: 30px; font-weight: var(--qlpk-font-weight-bold, 700); }
+    .group-list .save-btn { min-width: 140px; font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 18px)); border-radius: var(--clinic-control-radius, 30px); font-weight: var(--qlpk-font-weight-bold, 700); }
     .alert { margin-top: 16px; }
     .card { border: none; background: #fff; }
     .user-tree .form-check, .group-tree .form-check { margin-bottom: 10px; }
-    .user-tree .form-check-label, .group-tree .form-check-label { font-size: var(--qlpk-font-size-xl, 18px); }
     .user-tree .form-check-input, .group-tree .form-check-input { margin-right: 8px; }
     .user-tree .user-branch, .group-tree .group-branch { margin-left: 18px; }
     .user-tree .user-leaf, .group-tree .group-leaf { margin-left: 32px; }
     .user-tree .user-label { font-weight: var(--qlpk-font-weight-medium, 500); }
     .group-tree .group-label { font-weight: var(--qlpk-font-weight-medium, 500); }
-    .save-btn { border-radius: 30px; font-weight: var(--qlpk-font-weight-bold, 700); min-width: 120px; }
+    .save-btn { border-radius: var(--clinic-control-radius, 30px); font-weight: var(--qlpk-font-weight-bold, 700); min-width: 120px; }
 
 .permission-section-title {
-    color: #155CA2;
+    color: var(--qlpk-color-primary);
     font-size: var(--qlpk-font-size-xl, 18px);
 }
 
@@ -22,13 +21,13 @@
     min-height: 320px;
     max-height: 420px;
     overflow: auto;
-    background: #f9fbfd;
-    border-radius: 12px;
+    background: var(--qlpk-color-page-bg);
+    border-radius: var(--clinic-control-radius);
     padding: 10px 8px;
 }
 
 .permission-tree-heading {
-    color: #1976d2;
+    color: var(--qlpk-color-primary);
 }
 
 .user-item {
@@ -36,7 +35,7 @@
 }
 
 .user-item.active {
-    background: #e3f0ff;
-    color: #155ca2;
+    background: var(--qlpk-color-primary-soft);
+    color: var(--qlpk-color-primary);
     font-weight: var(--qlpk-font-weight-semibold, 600);
 }

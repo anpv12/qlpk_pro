@@ -900,7 +900,7 @@
 		const actionColumn = showPatientAction
 			? `
             <div class="col-2 text-center">
-				<button class="btn btn-sm patient-search-modal__patient-action" data-action="copy" data-index="${index}" title="Xem lại">
+				<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm patient-search-modal__patient-action" data-action="copy" data-index="${index}" title="Xem lại">
                     <i class="bi bi-eye"></i>
                 </button>
             </div>`

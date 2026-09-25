@@ -13,16 +13,19 @@
 	}
 
 	register('confirmationDialog', window.QLPKConfirmationDialog, { owner: 'shared/feedback' });
+	register('transferModal', window.TransferModal, { owner: 'shared/transfer-modal' });
 	register('iconSystem', window.QLPKIconSystem, { owner: 'shared/icons' });
 	register('orderStatusUtils', window.ClinicalOrderStatusUtils, { owner: 'shared/orders' });
 	register('orderSelectionStateUtils', window.ClinicalOrderSelectionStateUtils, { owner: 'shared/orders' });
 	register('icdAutocomplete', window.QLPKIcdAutocomplete, { owner: 'shared/icd' });
+	register('autocompleteField', window.QLPKAutocompleteField, { owner: 'shared/autocomplete' });
 	register('icdDataLoader', window.ClinicalIcdDataLoader, { owner: 'shared/icd' });
 	register('prescriptionPrintDocument', window.PrescriptionPrintDocument, { owner: 'shared/prescription-print' });
 	register('doctorPrescriptionPrint', window.createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
 	register('prescriptionDocumentTemplate', {
 		getClinicInfoConfig: window.getClinicInfoConfig,
-		buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML
+		buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML,
+		buildPrescriptionScreenHTML: window.buildPrescriptionScreenHTML
 	}, { owner: 'shared/prescription-document' });
 
 	window.QLPKDoctorModuleRegistry.register('doctorPlatformBoundaries', Object.freeze({

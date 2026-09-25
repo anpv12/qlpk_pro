@@ -104,7 +104,8 @@
 				key,
 				label,
 				reason,
-				guidance: module.guidance || getFailureGuidance(key, reason)
+				guidance: ['inventory.batch_missing', 'inventory.batch_expired'].includes(code)
+					? reason : module.guidance || getFailureGuidance(key, reason)
 			};
 		}
 
@@ -129,6 +130,37 @@
 				.map(buildFailure);
 			const hasStockShortage = normalizedFailures.some(isPrescriptionStockShortage);
 			const otherFailures = normalizedFailures.filter(failure => !isPrescriptionStockShortage(failure));
+			const shortageFailure = normalizedFailures.find(failure =>
+				isPrescriptionStockShortage(failure) && failure.error?.payload?.shortage);
+			if (shortageFailure) {
+				const shortage = shortageFailure.error.payload.shortage;
+				const quantityKeys = ['requested_quantity', 'stock_quantity', 'additional_quantity', 'available_quantity', 'previous_quantity'];
+				if (quantityKeys.every(key => shortage[key] != null && String(shortage[key]).trim() !== '' && Number.isFinite(Number(shortage[key])) && Number(shortage[key]) >= 0)) {
+					const quantity = value => Number(value).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+					const unit = shortage.unit || 'đơn vị';
+					const details = [];
+					if (Number(shortage.previous_quantity) > 0) {
+						details.push(`Đơn đã cấp ${quantity(shortage.previous_quantity)} ${unit}; lần này cần cấp thêm ${quantity(shortage.additional_quantity)} ${unit}.`);
+					}
+					if (Number(shortage.available_quantity) < Number(shortage.stock_quantity)) {
+						details.push(`Các lô hợp lệ chỉ có thể cấp ${quantity(shortage.available_quantity)} ${unit}.`);
+					}
+					if (otherFailures.length) details.push(`${[...new Set(otherFailures.map(failure => failure.label))].join(', ')} cũng chưa được lưu.`);
+					return {
+						title: 'Chưa lưu được đơn thuốc',
+						label: `${shortage.medicine_name}:`,
+						emphasis: `Đang bốc ${quantity(shortage.requested_quantity)} ${unit}, tồn kho ${quantity(shortage.stock_quantity)} ${unit}.`,
+						detail: details.join(' '),
+						guidance: 'Vui lòng kiểm tra kho và bổ sung thuốc trước khi lưu lại.'
+					};
+				}
+			}
+			const inventoryFailure = normalizedFailures.find(failure => failure.key === 'prescription'
+				&& String(failure.code).startsWith('inventory.') && Array.isArray(failure.error?.payload?.errors));
+			if (inventoryFailure) {
+				const details = inventoryFailure.error.payload.errors.filter(detail => typeof detail === 'string' && detail.trim());
+				if (details.length) return `Chưa lưu được đơn thuốc. ${details.join(' ')}${otherFailures.filter(failure => failure !== inventoryFailure).length ? ' Các phần khác cũng chưa được lưu; vui lòng kiểm tra.' : ''}`;
+			}
 			if (hasStockShortage && !otherFailures.length) return PRESCRIPTION_STOCK_SHORTAGE_MESSAGE;
 			if (hasStockShortage) {
 				const labels = [...new Set(otherFailures.map(failure => failure.label))].join(', ');
@@ -172,6 +204,7 @@
 
 			const token = state.contextToken;
 			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
+			if (options.applyDetailDefaults === true) clinicalForm?.prepareEmptyDetailDefaults?.({ document: doc });
 			const clinicalState = clinicalForm?.getSaveState?.() || {
 				mainDirty: false,
 				mainRevision: 0,
@@ -269,7 +302,7 @@
 					}
 					return { status: 'error', failedModules: supportReadiness.failures };
 				}
-				const mainResult = await saveNow({ document: doc, silent: true });
+				const mainResult = await saveNow({ document: doc, silent: true, applyDetailDefaults: options.applyDetailDefaults === true });
 				if (mainResult && mainResult.skipped && mainResult.reason !== 'clean') {
 					const failure = buildFailure({
 						key: 'clinical',
@@ -330,6 +363,7 @@
 				const failure = buildFailure({
 					key: error?.module || 'clinical',
 					label: error?.moduleLabel || (error?.module === 'prescription' ? 'Đơn thuốc' : 'Khám'),
+					error,
 					reason: error?.message || 'Không lưu được dữ liệu khám'
 				});
 				await captureLocalDraft();

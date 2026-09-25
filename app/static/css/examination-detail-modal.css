@@ -1,8 +1,8 @@
 /* CSS riêng cho modal Khám chi tiết - tránh ảnh hưởng modal khác */
 
 .examination-detail-modal .modal-header {
-	background: #f0f6ff;
-	border-bottom: 1px solid #e2e8f0;
+	background: var(--qlpk-color-primary-soft);
+	border-bottom: 1px solid var(--qlpk-color-border);
 }
 
 .examination-detail-modal .modal-title {
@@ -10,8 +10,8 @@
 }
 
 .examination-detail-modal .nav-tabs .nav-link.active {
-	background: #e6f0ff;
-	border-color: #cfe0ff #cfe0ff #e6f0ff;
+	background: var(--qlpk-color-primary-soft);
+	border-color: var(--qlpk-color-border) var(--qlpk-color-border) var(--qlpk-color-primary-soft);
 }
 
 .examination-detail-modal .modal-body {
@@ -24,7 +24,7 @@
 }
 
 .examination-detail-modal .modal-footer {
-	border-top: 1px solid #e2e8f0;
+	border-top: 1px solid var(--qlpk-color-border);
 }
 
 .examination-detail-modal .chem-check-right {
@@ -63,8 +63,8 @@ body.examination-detail-modal-open .modal-backdrop {
 }
 
 .examination-detail-modal input[type="checkbox"]:checked {
-	background: #0d6efd;
-	border-color: #0d6efd;
+	background: var(--qlpk-workflow-context-header-bg);
+	border-color: var(--qlpk-color-primary);
 }
 
 .examination-detail-modal input[type="checkbox"]:checked::after {
@@ -82,26 +82,15 @@ body.examination-detail-modal-open .modal-backdrop {
 
 /* Auto-save indicator — compact, modern, slide-up */
 .auto-save-indicator {
+  --qlpk-status-color: var(--qlpk-feedback-success);
   position: fixed;
   top: 16px;
   left: 50%;
   transform: translateX(-50%) translateY(-12px);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 16px;
-  border-radius: 20px;
-  font-size: var(--qlpk-font-size-base, 13px);
-  font-weight: var(--qlpk-font-weight-medium, 500);
-  letter-spacing: 0.02em;
   z-index: 9999;
   opacity: 0;
   transition: opacity 0.22s ease, transform 0.22s ease;
   pointer-events: none;
-  background: rgba(5, 150, 105, 0.93);
-  color: #fff;
-  box-shadow: 0 2px 12px rgba(5, 150, 105, 0.25);
-  backdrop-filter: blur(6px);
 }
 
 .auto-save-indicator.show {
@@ -110,13 +99,11 @@ body.examination-detail-modal-open .modal-backdrop {
 }
 
 .auto-save-indicator.saving {
-  background: rgba(245, 158, 11, 0.96);
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.32);
+	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 
 .auto-save-indicator.error {
-  background: rgba(220, 38, 38, 0.93);
-  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+	--qlpk-status-color: var(--qlpk-feedback-error);
 }
 
 /* Spin icon khi đang lưu */

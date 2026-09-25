@@ -1,0 +1,576 @@
+{
+  "22": {
+    "type": "questionnaire",
+    "questions": [
+      {
+        "id": "id_1264a483c5034e7b815b94d5591eed02",
+        "type": "multiple_choice_grid",
+        "text": "Trong hai tuần qua, số ngày bạn thường xuyên bị làm phiền bởi những vấn đề sau đây là:",
+        "required": false,
+        "scoring_criteria": "Lo âu",
+        "grid": {
+          "rows": [
+            {
+              "id": "id_325a0921f2474029843cea823d77c342",
+              "text": "Cảm thấy lo lắng, bồn chồn hoặc căng thẳng",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222010967_83nnztcey",
+              "text": "Không thể ngừng hay kiểm soát được sự lo lắng",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222099396_3mak3ac1s",
+              "text": "Lo lắng quá nhiều về những thứ khác nhau",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222099396_1mbjn3bn9",
+              "text": "Gặp rắc rối trong việc thư giãn",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222131571_f8gn01zpf",
+              "text": "Bồn chồn đến mức khó ngồi yên",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222131571_lvc5o5n73",
+              "text": "Trở nên dễ khó chịu hoặc cáu kỉnh",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1759222150964_anvpvka6s",
+              "text": "Cảm thấy sợ hãi như thể điều gì đó khủng khiếp có thể xảy ra",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            }
+          ],
+          "columns": [
+            {
+              "id": "id_af8c1560a490436cb92f1712d91d46c5",
+              "text": "0",
+              "label": "0"
+            },
+            {
+              "id": "id_1759221974919_f1b3utc6t",
+              "text": "3-5",
+              "label": "3-5"
+            },
+            {
+              "id": "id_1759221992047_hls5hrvsi",
+              "text": "7-10",
+              "label": "7-10"
+            },
+            {
+              "id": "id_1759221998767_4adnv9jc8",
+              "text": "12-14",
+              "label": "12-14"
+            }
+          ]
+        },
+        "criteria": "Lo âu"
+      },
+      {
+        "id": "id_1759222287003_3umrl0fwr",
+        "type": "multiple_choice",
+        "text": "Nếu bạn có chọn bất kỳ vấn đề nào, điều đó ảnh hưởng tới công việc, sinh hoạt thường ngày và các mối quan hệ như thế nào",
+        "required": false,
+        "scoring_criteria": "Lo âu",
+        "answers": [
+          {
+            "id": "id_1759222324068_50ypo382i",
+            "text": "Không khó khăn",
+            "score": 0,
+            "is_correct": false
+          },
+          {
+            "id": "id_1759222324068_ewtvmaxd1",
+            "text": "Hơi khó khăn",
+            "score": 0,
+            "is_correct": false
+          },
+          {
+            "id": "id_1759222334403_5z9247itq",
+            "text": "Rất khó khăn",
+            "score": 0,
+            "is_correct": false
+          },
+          {
+            "id": "id_1759222334404_r5upuuy0t",
+            "text": "Cực kỳ khó khăn",
+            "score": 0,
+            "is_correct": false
+          }
+        ],
+        "criteria": "Lo âu"
+      }
+    ],
+    "score_conversion": "<p>Nhập nội dung thang điểm quy đổi...</p>"
+  },
+  "26": {
+    "type": "questionnaire",
+    "questions": [
+      {
+        "id": "id_1769592592486_8j4fgg7eo",
+        "type": "multiple_choice_grid",
+        "text": "Trong bảng này gồm 9 đề mục. Trong mỗi một đề mục hãy chọn ra một mức độ mô\ntả gần giống nhất tình trạng mà anh/chị cảm thấy. Chọn các mức\nđộ bên phải câu phát biểu. Đừng bỏ sót đề mục nào nhé!",
+        "required": false,
+        "scoring_criteria": "Trầm cảm",
+        "grid": {
+          "rows": [
+            {
+              "id": "id_351c2f33343d45f89786ca7fd84f9ff3",
+              "text": "Ít muốn làm điều gì hoặc ít có cảm giác thích thú khi làm bất cứ điều gì",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592847606_7spqhgjvt",
+              "text": "Cảm thấy buồn, chán nản hoặc tuyệt vọng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592848789_8w78tvi0j",
+              "text": "Khó ngủ hoặc ngủ quá nhiều",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592852837_3v6dgh8gs",
+              "text": "Cảm thấy mệt mỏi hoặc thiếu năng lượng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592853949_3is7gy7cl",
+              "text": "Ăn kém ngon miệng hoặc ăn quá nhiều",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592854822_285o6g9ip",
+              "text": "Cảm thấy tồi tệ về bản thân – cho rằng mình là người thất bại hoặc đã làm cho bản thân hoặc gia đình thất vọng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592875101_opc8pv6b9",
+              "text": "Khó tập trung vào việc như đọc báo hoặc xem truyền hình",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592880462_pfi98ln7u",
+              "text": "Di chuyển hoặc nói năng quá chậm mà người khác có thể nhận thấy, hoặc ngược lại – bồn chồn, hiếu động",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769592883890_fgcxxt6g2",
+              "text": "Có ý nghĩ rằng thà chết đi hoặc muốn tự làm hại bản thân theo cách nào đó",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            }
+          ],
+          "columns": [
+            {
+              "id": "id_04f1b698c77b4229b459a148e55d2af2",
+              "text": "Không ngày nào ",
+              "label": "Không ngày nào "
+            },
+            {
+              "id": "id_1769592850198_y2qpyjd2r",
+              "text": "Vài ngày (1–7 ngày) ",
+              "label": "Vài ngày (1–7 ngày) "
+            },
+            {
+              "id": "id_1769592850886_pb69l5whg",
+              "text": "Hơn một nửa số ngày (8–11 ngày)",
+              "label": "Hơn một nửa số ngày (8–11 ngày)"
+            },
+            {
+              "id": "id_1769592851745_qx56tomp1",
+              "text": "Gần như mỗi ngày (12–14 ngày)",
+              "label": "Gần như mỗi ngày (12–14 ngày)"
+            }
+          ]
+        },
+        "criteria": "Trầm cảm"
+      }
+    ],
+    "score_conversion": "<p>Nhập nội dung thang điểm quy đổi...</p>"
+  },
+  "28": {
+    "type": "questionnaire",
+    "questions": [
+      {
+        "id": "id_1769679788014_l1qnyol28",
+        "type": "multiple_choice_grid",
+        "text": "Hãy chọn ô “Đúng” hoặc “Không đúng” tương ứng với tình\ntrạng mà bác cảm thấy trong vòng một tuần trở lại đây.",
+        "required": false,
+        "scoring_criteria": "Trầm cảm",
+        "grid": {
+          "rows": [
+            {
+              "id": "id_da18cca279304fefa3c463cf4a64f828",
+              "text": "Về cơ bản tôi hài lòng với cuộc sống của mình",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679846194_vnsgs2118",
+              "text": "Hiện tôi đã từ bỏ nhiều hoạt động và thú vui",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679851157_ng90a1m0s",
+              "text": "Tôi cảm thấy cuộc sống của mình thật là trống rỗng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679856261_4kq8npwlt",
+              "text": "Tôi thường cảm thấy buồn chán",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679858062_k0e1nbnv2",
+              "text": "Tôi cảm thấy tương lai đầy triển vọng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679861701_apw9wd0kt",
+              "text": "Tôi thấy phiền muộn bởi có những ý nghĩ trong đầu không thể dứt ra được",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679865334_qtzaef098",
+              "text": "Hầu hết thời gian tôi thấy thoải mái",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679868457_9i9pfwst7",
+              "text": "Tôi sợ rằng có một điều tồi tệ sẽ xảy đến với mình",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679873530_piufyrayv",
+              "text": "Phần lớn thời gian tôi cảm thấy hạnh phúc",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679875526_lbuaekcwb",
+              "text": "Tôi thường cảm thấy không tự lo liệu được",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679880837_gc7vqaoa3",
+              "text": "Tôi thường cảm thấy bồn chồn, bất an",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679885111_66beu3w0w",
+              "text": "Tôi thích ở nhà hơn là đi ra ngoài và làm việc gì đó",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679889373_srajqd1xb",
+              "text": "Tôi thường thấy lo lắng về tương lai",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679893950_mzashp3uw",
+              "text": "Tôi cảm thấy mình có nhiều vấn đề về trí nhớ hơn hầu hết những người có cùng độ tuổi",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679898165_6z1wg9lvt",
+              "text": "Tôi nghĩ cuộc sống hiện tại thật là tuyệt vời",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679902625_bj7g9mjfu",
+              "text": "Tôi cảm thấy chán nản và thất vọng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679908354_42j8rvlm0",
+              "text": "Tôi cảm thấy khá vô dụng trong tình trạng hiện tại",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679911209_pfqp5c7m5",
+              "text": "Tôi lo nghĩ nhiều về quá khứ",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679917757_tbmm2lrwt",
+              "text": "Tôi nhận thấy cuộc sống rất thú vị",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679921646_jisakhyfz",
+              "text": "Tôi thấy khó để bắt đầu những kế hoạch mới",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679926949_i27yeg548",
+              "text": "Tôi cảm thấy tràn đầy sinh lực",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679930862_pckj6kk25",
+              "text": "Tôi cảm thấy tình trạng của mình là tuyệt vọng",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679934654_si0q72ze9",
+              "text": "Tôi nghĩ hầu hết mọi người đều tốt hơn tôi",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679938542_kx3nvodwn",
+              "text": "Tôi thường thấy bối rối cả với những việc nhỏ nhặt",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679943205_2vhw24nqs",
+              "text": "Tôi thường cảm thấy muốn khóc",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679946441_4j2ju9l54",
+              "text": "Tôi có vấn đề về tập trung chú ý",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679950126_p9d7rl8eh",
+              "text": "Khi thức dậy vào buổi sáng tôi thấy sảng khoái",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679954381_uuosdq5e4",
+              "text": "Tôi không thích những chỗ hội họp đông người",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769679958278_lqvpntkiv",
+              "text": "Tôi dễ dàng đưa ra các quyết định",
+              "criteria": "Trầm cảm",
+              "score_enabled": true
+            }
+          ],
+          "columns": [
+            {
+              "id": "id_8b6f5a64610b4bf2be868f12df232a63",
+              "text": "Đúng",
+              "label": "Đúng"
+            },
+            {
+              "id": "id_1769679841946_5tu1zmhzb",
+              "text": "Không",
+              "label": "Không"
+            }
+          ]
+        },
+        "criteria": "Trầm cảm"
+      }
+    ],
+    "score_conversion": "<p>Nhập nội dung thang điểm quy đổi...</p>"
+  },
+  "30": {
+    "type": "questionnaire",
+    "questions": [
+      {
+        "id": "id_1769681771882_yvv43idkk",
+        "type": "multiple_choice_grid",
+        "text": "Dưới đây là 20 câu phát biểu mô tả một số triệu chứng của cơ thể. Ở mỗi câu, hãy chọn\nmột mức độ “Không có”; “Đôi khi”; “Thường xuyên” và “Luôn luôn” phù hợp với\ntình trạng mà bạn cảm thấy trong vòng một tuần vừa qua. Khoanh tròn vào con số bên\nphải tương ứng với các mức độ mà bạn lựa chọn",
+        "required": false,
+        "scoring_criteria": "Lo âu",
+        "grid": {
+          "rows": [
+            {
+              "id": "id_2b86c0967093432fa3c6a8cdf23bc3c3",
+              "text": "Tôi cảm thấy nóng nảy và lo âu hơn thường lệ.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682333145_49oq8kpk0",
+              "text": "Tôi cảm thấy sợ vô cớ.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682334033_cbo5q4c76",
+              "text": "Tôi dễ bối rối và cảm thấy hoảng sợ.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682334661_wm1uy3g07",
+              "text": "Tôi cảm thấy như bị ngã và vỡ ra từng mảnh.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682335825_kswswgxjt",
+              "text": "Tôi cảm thấy mọi thứ đều tốt và không có điều gì xấu sẽ xảy ra.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682336521_yz408jrnl",
+              "text": "Tay và chân tôi lắc lư, run lên.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682337113_sygk9tfzz",
+              "text": "Tôi đang khó chịu vì đau đầu, đau cổ, đau lưng.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682338497_6gkpsx6og",
+              "text": "Tôi cảm thấy yếu và dễ mệt mỏi.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682339697_yaqpiylay",
+              "text": "Tôi cảm thấy bình tĩnh và có thể ngồi yên một cách dễ dàng.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682340517_7sy2r5319",
+              "text": "Tôi cảm thấy tim mình đập nhanh.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682369162_h1yovoy8p",
+              "text": "Tôi đang khó chịu vì cơn hoa mắt chóng mặt.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682370393_btow1we4z",
+              "text": "Tôi bị ngất và có lúc cảm thấy gần như thế.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682371950_u8cq9vkdr",
+              "text": "Tôi có thể thở ra, hít vào một cách dễ dàng.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682373445_5vici0azq",
+              "text": "Tôi cảm thấy tê buốt, như có kiến bò ở đầu ngón tay, ngón chân.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682440833_tvuk3ivdm",
+              "text": "Tôi đang khó chịu vì đau dạ dày và đầy bụng.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682442237_xoaywv1xy",
+              "text": "Tôi luôn cần phải đi đái.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682443369_6e1feo32w",
+              "text": "Bàn tay tôi thường khô và ấm.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682444541_vyw4k3g2s",
+              "text": "Mặt tôi thường nóng và đỏ.",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682456777_kx69wrv6m",
+              "text": "Tôi ngủ dễ dàng và luôn có một giấc ngủ tốt",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            },
+            {
+              "id": "id_1769682460473_seitmb24o",
+              "text": "Tôi thường có ác mông",
+              "criteria": "Lo âu",
+              "score_enabled": true
+            }
+          ],
+          "columns": [
+            {
+              "id": "id_fe3f3437b1e749878bed2296f3871ecc",
+              "text": "Không có",
+              "label": "Không có"
+            },
+            {
+              "id": "id_1769682307090_qqeuktint",
+              "text": "Đôi khi",
+              "label": "Đôi khi"
+            },
+            {
+              "id": "id_1769682310937_8n828wjib",
+              "text": "Thường xuyên",
+              "label": "Thường xuyên"
+            },
+            {
+              "id": "id_1769682314161_rr8ankydl",
+              "text": "Luôn luôn",
+              "label": "Luôn luôn"
+            }
+          ]
+        },
+        "criteria": "Lo âu"
+      }
+    ],
+    "score_conversion": "<p>Nhập nội dung thang điểm quy đổi...</p>"
+  }
+}

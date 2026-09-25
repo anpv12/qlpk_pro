@@ -22,6 +22,8 @@ class ChiDinhListResult:
     page: int
     per_page: int
     total_pages: int
+    group_counts: dict
+    next_expiry_at: str | None
 
 
 class InvalidPagination(ValueError):
@@ -67,6 +69,9 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
     from_date = args.get('from_date', '').strip()
     to_date = args.get('to_date', '').strip()
     status = args.get('status', '').strip()
+    status_group = args.get('status_group', '').strip()
+    if status_group not in ('', 'active', 'completed'):
+        raise InvalidPagination('Nhóm trạng thái không hợp lệ')
     location_type = args.get('location_type', '').strip()
     page = _positive_int(args.get('page', 1), 'page')
     per_page = min(_positive_int(args.get('per_page', 50), 'per_page'), 100)
@@ -120,18 +125,23 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
         except ValueError:
             logger.warning(f"Invalid to_date format: {to_date}")
 
-    if status:
-        query = query.filter(ChiDinh.status == status)
-    else:
-        query = query.filter(ChiDinh.status != 'draft')
-
     if location_type:
         query = query.filter(ChiDinh.location_type == location_type.lower())
 
+    # Counts are over the same permission/name/date scope, before status/paging.
+    completed_count = query.filter(ChiDinh.status == 'completed').count()
+    active_count = query.filter(ChiDinh.status != 'completed').count()
+    next_expiry = query.filter(ChiDinh.status != 'completed').with_entities(func.min(ChiDinh.survey_expires_at)).scalar()
+    if status:
+        query = query.filter(ChiDinh.status == status)
+    if status_group == 'active':
+        query = query.filter(ChiDinh.status != 'completed')
+    elif status_group == 'completed':
+        query = query.filter(ChiDinh.status == 'completed')
     total = query.count()
     total_pages = max(1, (total + per_page - 1) // per_page)
     page = min(page, total_pages)
-    items = query.order_by(ChiDinh.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    items = query.order_by(ChiDinh.created_at.desc(), ChiDinh.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     logger.info(f"Found {len(items)} chi_dinh records, total: {total}")
 
@@ -141,6 +151,8 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
         page=page,
         per_page=per_page,
         total_pages=total_pages,
+        group_counts={'active': active_count, 'completed': completed_count},
+        next_expiry_at=next_expiry.isoformat() if next_expiry else None,
     )
 
 

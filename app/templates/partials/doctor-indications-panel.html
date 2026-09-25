@@ -2,10 +2,6 @@
 	<div class="doctor-indications-workspace" data-doctor-indications-ui="true">
 		<header class="doctor-indications-toolbar">
 			<h3 id="doctorIndicationsHeading">Tạo chỉ định</h3>
-			<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorIndicationsHistoryToggle" aria-expanded="false" aria-controls="doctorIndicationsHistory" disabled>
-				<i class="bi bi-clock-history qlpk-button-icon" aria-hidden="true"></i>
-				<span>Lịch sử</span>
-			</button>
 		</header>
 
 		<div class="doctor-indications-layout">
@@ -51,11 +47,11 @@
 				</label>
 
 				<div class="doctor-indications-form__actions">
-					<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="doctorIndicationSubmit" disabled>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="doctorIndicationSubmit" disabled>
 					<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i>
 					<span>Thêm chỉ định</span>
 					</button>
-					<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorIndicationCancelEdit" hidden>Hủy sửa</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorIndicationCancelEdit" hidden>Hủy sửa</button>
 				</div>
 				<p class="doctor-indications-message" id="doctorIndicationsMessage" role="status" aria-live="polite" hidden></p>
 			</div>
@@ -89,31 +85,6 @@
 				</div>
 			</section>
 
-			<section class="doctor-indications-history" id="doctorIndicationsHistory" aria-labelledby="doctorIndicationsHistoryHeading" hidden>
-				<header class="doctor-indications-list__header">
-					<h3 id="doctorIndicationsHistoryHeading">Lịch sử các lần trước</h3>
-					<span id="doctorIndicationsHistoryCount">0 chỉ định</span>
-				</header>
-				<div class="doctor-indications-table-wrap" role="region" aria-label="Lịch sử chỉ định" tabindex="0">
-					<table class="doctor-indications-table doctor-indications-history-table">
-						<thead>
-							<tr>
-								<th scope="col">STT</th>
-								<th scope="col">Tên chỉ định</th>
-								<th scope="col">Lần khám</th>
-								<th scope="col">Nơi thực hiện</th>
-								<th scope="col">Ngày</th>
-								<th scope="col">Trạng thái</th>
-							</tr>
-						</thead>
-						<tbody id="doctorIndicationsHistoryList">
-							<tr class="doctor-indications-table__empty">
-								<td colspan="6">Chưa có lịch sử chỉ định.</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</section>
 		</div>
 	</div>
 </section>

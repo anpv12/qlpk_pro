@@ -64,7 +64,7 @@
 		if (typeof openWindow !== 'function') {
 			throw new Error('Trình duyệt không hỗ trợ cửa sổ in');
 		}
-		const printWindow = openWindow('', '_blank', 'width=900,height=700');
+		const printWindow = openWindow('', '_blank');
 		if (!printWindow) throw new Error('Trình duyệt đã chặn cửa sổ in');
 		printWindow.document.open();
 		printWindow.document.write(buildLoadingDocument(title));
@@ -84,12 +84,10 @@
 				<meta charset="utf-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1">
 				<title>${escapeHtml(options.title)}</title>
-				<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-				<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+				<link href="/static/vendor/pdf/bootstrap.min.css" rel="stylesheet">
 				<link rel="stylesheet" href="${escapeHtml(typographyUrl)}">
 				<link rel="stylesheet" href="${escapeHtml(colorTokensUrl)}">
 				<link rel="stylesheet" href="${escapeHtml(modalStylesUrl)}">
-				<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 				<style>
 					@page { size: A4; margin: 8mm; }
 					html, body { height: auto; margin: 0; background: #ffffff; }
@@ -162,43 +160,12 @@
 			</head>
 			<body class="patient-search-modal patient-search-modal__right-column">
 				<main class="modal-history-print-content">${options.html}</main>
-				<script>
-					(function () {
-						function renderBarcodes() {
-							if (typeof window.JsBarcode !== 'function') return;
-							document.querySelectorAll('.barcode-svg').forEach(function (svg) {
-								var code = svg.dataset.barcode || (svg.id && svg.id.indexOf('barcode-') === 0 ? svg.id.slice(8) : '');
-								if (!code) return;
-								try {
-									window.JsBarcode(svg, code, {
-										format: 'CODE128', width: 1.5, height: 35, displayValue: false, margin: 0
-									});
-								} catch (error) {
-									console.error('Không tạo được barcode cho tài liệu in:', error);
-								}
-							});
-						}
-
-						window.addEventListener('afterprint', function () {
-							window.setTimeout(function () { window.close(); }, 100);
-						}, { once: true });
-
-						window.addEventListener('load', function () {
-							renderBarcodes();
-							document.body.dataset.printReady = 'true';
-							window.focus();
-							window.setTimeout(function () { window.print(); }, 250);
-						}, { once: true });
-					})();
-				</script>
 			</body>
 			</html>`;
 	}
 
 	function writePrintDocument(printWindow, options) {
-		printWindow.document.open();
-		printWindow.document.write(buildPrintDocument(options));
-		printWindow.document.close();
+		return window.QLPKPdfPreview.render(printWindow, buildPrintDocument(options));
 	}
 
 	function writePrintError(printWindow, title, message) {
@@ -290,6 +257,7 @@
 				if (button) {
 					button.disabled = true;
 					button.setAttribute('aria-busy', 'true');
+					button.dataset.pdfPreviewState = 'loading';
 				}
 
 				const renderer = renderers[target.rendererKey];
@@ -312,7 +280,7 @@
 					if (!result.paginationOptions) {
 						throw new Error('Thiếu dữ liệu tài liệu đơn thuốc');
 					}
-					prescriptionDocument.render(printWindow, {
+					await prescriptionDocument.render(printWindow, {
 						...result.paginationOptions,
 						assetVersion: getAssetVersion(doc),
 						title: target.title
@@ -322,14 +290,16 @@
 					const html = content?.innerHTML?.trim();
 					if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
 
-					writePrintDocument(printWindow, {
+					await writePrintDocument(printWindow, {
 						assetVersion: getAssetVersion(doc),
 						html,
 						title: target.title
 					});
 				}
+				if (button) button.dataset.pdfPreviewState = 'ready';
 				return { status: 'ready', targetId };
 			} catch (error) {
+				if (button) button.dataset.pdfPreviewState = 'error';
 				console.error(`[ModalHistoryPrintController] ${targetId}:`, error);
 				if (prescriptionDocument) {
 					prescriptionDocument.renderError(printWindow, {
@@ -350,7 +320,8 @@
 		}
 
 		function bind() {
-			const buttons = Array.from(doc.querySelectorAll('.tab-print-btn'));
+			const root = doc.getElementById('patientSearchModal') || doc;
+			const buttons = Array.from(root.querySelectorAll('.tab-print-btn'));
 			buttons.forEach(button => {
 				if (button._tabPrintBound) return;
 				button.addEventListener('click', event => {
@@ -359,6 +330,7 @@
 					if (targetId) void printTarget(targetId, button);
 				});
 				button._tabPrintBound = true;
+				button.dataset.pdfPreviewBound = 'true';
 			});
 			return buttons;
 		}

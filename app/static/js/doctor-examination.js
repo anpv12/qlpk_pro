@@ -74,6 +74,39 @@
 
 	function setLoadingState(isLoading) {
 		state.isLoadingExaminationData = Boolean(isLoading);
+		getModule('clinicalWorkspace')?.syncTransferActionState?.({ document: DOM });
+	}
+
+	function canTransferCurrentAppointment() {
+		return Boolean(state.currentAppointmentId && state.currentPatientData
+			&& !state.isLoadingExaminationData && !state.loadFailed && !state.historyView.active);
+	}
+
+	function openCurrentAppointmentTransfer() {
+		if (!canTransferCurrentAppointment()) return;
+		const appointmentId = state.currentAppointmentId;
+		const token = state.loadToken;
+		const isCurrent = () => canTransferCurrentAppointment()
+			&& state.currentAppointmentId === appointmentId && state.loadToken === token;
+		requireModule('transferModal').open([appointmentId], 'doctor', () => {
+			if (isCurrent()) {
+				state.loadToken += 1;
+				state.currentAppointmentId = null;
+				clearPatientSurface();
+			}
+			loadAppointments('doctor_exam', state.currentPage);
+		}, {
+			isCurrent,
+			beforeTransfer: async () => {
+				if (!isCurrent()) return false;
+				const result = await requireModule('clinicalWorkspace').saveWorkspace({ document: DOM, silent: true });
+				if (result?.status !== 'success') {
+					showCustomToast('error', 'Chưa lưu đủ dữ liệu khám. Vui lòng đóng cửa sổ chuyển khám, kiểm tra và lưu lại.');
+					return false;
+				}
+				return isCurrent();
+			}
+		});
 	}
 
 	function isHistoryViewExemptControl(control) {
@@ -269,6 +302,7 @@
 			getCurrentAppointmentId: () => state.currentAppointmentId,
 			setCurrentPatientId,
 			getAppointments: () => state.appointments,
+			getSelectedAppointmentId: () => state.currentAppointmentId,
 			selectPatientCard,
 			getExaminationStatusBadgeClass: getDoctorHistoryStatusClass,
 			getExaminationStatusText: getDoctorHistoryStatusText,
@@ -560,13 +594,16 @@
 			document: DOM,
 			context: COMPONENT_CONTEXT,
 			apiCall,
-			statuses: ['doctor_exam', 'conclusion'],
+			statuses: ['doctor_queue'],
+			loadAllPages: true,
+			preserveServerOrder: true,
 			roleQueryParam: 'doctor=true',
 			defaultStatus: 'doctor_exam',
 			getPerPage: () => state.perPage,
 			getAppointments: () => state.appointments,
 			getPatientSearchQuery: () => state.patientSearchQuery,
 			getCurrentPage: () => state.currentPage,
+			getSelectedAppointmentId: () => state.currentAppointmentId,
 			setAppointments: appointments => {
 				state.appointments = Array.isArray(appointments) ? appointments : [];
 			},
@@ -653,6 +690,8 @@
 				getAppointmentId: () => state.currentAppointmentId,
 				isLoading: () => state.isLoadingExaminationData,
 				showToast: showCustomToast,
+				canTransfer: canTransferCurrentAppointment,
+				onTransfer: openCurrentAppointmentTransfer,
 				afterSave: () => {
 					const draftRecovery = getModule('draftRecovery');
 					if (draftRecovery && typeof draftRecovery.rebaseAfterSave === 'function') {
@@ -720,25 +759,36 @@
 		const realtimeHooks = requireModule('realtimePageHooks');
 		if (!realtimeHooks || typeof realtimeHooks.register !== 'function') return;
 		realtimeHooks.register({
-			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'document.changed'],
+			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'document.changed', 'order.changed', 'survey.changed', 'realtime.resynced'],
 			debounceMs: 500,
-			handler: event => {
-				const payload = event && event.payload ? event.payload : {};
-				const eventPatientId = payload.patient_id ? Number(payload.patient_id) : null;
-				const attachments = getDocumentAttachments();
-				if (attachments && typeof attachments.handleRealtimeEvent === 'function'
-					&& attachments.handleRealtimeEvent(event, state.currentPatientId)) {
-					return;
-				}
-				if (event.type === 'patient.changed' && eventPatientId && state.currentPatientId && eventPatientId === Number(state.currentPatientId) && state.relativeTableInstance) {
-					const handledRelativeUpdate = typeof state.relativeTableInstance.applyPatientChanged === 'function'
-						? state.relativeTableInstance.applyPatientChanged(payload)
-						: false;
-					if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof state.relativeTableInstance.reload === 'function') {
-						state.relativeTableInstance.reload();
+			batch: true,
+			handler: events => {
+				let refreshQueue = false;
+				let refreshOrders = false;
+				for (const event of events) {
+					const payload = event && event.payload ? event.payload : {};
+					if (['order.changed', 'survey.changed', 'realtime.resynced'].includes(event.type)) {
+						if (!payload.appointment_id || Number(payload.appointment_id) === Number(state.currentAppointmentId)) refreshOrders = true;
+						if (event.type !== 'realtime.resynced') continue;
 					}
+					const eventPatientId = payload.patient_id ? Number(payload.patient_id) : null;
+					const attachments = getDocumentAttachments();
+					if (attachments && typeof attachments.handleRealtimeEvent === 'function'
+						&& attachments.handleRealtimeEvent(event, state.currentPatientId)) {
+						continue;
+					}
+					if (event.type === 'patient.changed' && eventPatientId && state.currentPatientId && eventPatientId === Number(state.currentPatientId) && state.relativeTableInstance) {
+						const handledRelativeUpdate = typeof state.relativeTableInstance.applyPatientChanged === 'function'
+							? state.relativeTableInstance.applyPatientChanged(payload)
+							: false;
+						if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof state.relativeTableInstance.reload === 'function') {
+							state.relativeTableInstance.reload();
+						}
+					}
+					refreshQueue = true;
 				}
-				loadAppointments('doctor_exam', state.currentPage);
+				if (refreshQueue) loadAppointments('doctor_exam', 1);
+				if (refreshOrders) getModule('supportModulesUi')?.refreshIndications?.({ document: DOM });
 			}
 		});
 	}

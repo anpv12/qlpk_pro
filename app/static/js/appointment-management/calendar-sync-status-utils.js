@@ -13,9 +13,9 @@
 	function buildVerifySyncStatusBadge(result) {
 		switch (result.sync_status) {
 			case 'full':
-				return '<span class="appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
+				return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
 			case 'partial':
-				return '<span class="appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
+				return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
 			default:
 				return '';
 		}
@@ -25,32 +25,32 @@
 		const doctorLabel = escapeHtml(result.doctor_role || 'Bác sĩ');
 		const doctorTitleName = escapeHtml(result.doctor_name) || doctorLabel;
 		if (result.doctor_verified === true) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--success" title="${doctorTitleName}: Đã xác nhận trên GCal">
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${doctorTitleName}: Đã xác nhận trên GCal">
 									<i class="bi bi-check-circle-fill"></i> ${doctorLabel}
 								</span>`;
 		}
 		if (result.doctor_verified === false) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--danger" title="${doctorTitleName}: Không tìm thấy event trên GCal">
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${doctorTitleName}: Không tìm thấy event trên GCal">
 									<i class="bi bi-x-circle-fill"></i> ${doctorLabel}
 								</span>`;
 		}
-		return `<span class="appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel}: Chưa có event">
+		return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel}: Chưa có event">
 									<i class="bi bi-dash-circle"></i> ${doctorLabel}
 								</span>`;
 	}
 
 	function buildVerifyReceptionistBadge(result) {
 		if (result.receptionist_verified === true) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--success" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Đã xác nhận trên GCal">
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Đã xác nhận trên GCal">
 									<i class="bi bi-check-circle-fill"></i> Lễ tân
 								</span>`;
 		}
 		if (result.receptionist_verified === false) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--danger" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Không tìm thấy event trên GCal">
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Không tìm thấy event trên GCal">
 									<i class="bi bi-x-circle-fill"></i> Lễ tân
 								</span>`;
 		}
-		return `<span class="appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân: Chưa có event">
+		return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân: Chưa có event">
 								<i class="bi bi-dash-circle"></i> Lễ tân
 							</span>`;
 	}
@@ -83,10 +83,10 @@
 
 	function buildSyncResultStatusBadge(result) {
 		if (result.sync_status === 'full') {
-			return '<span class="appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
+			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
 		}
 		if (result.sync_status === 'partial') {
-			return '<span class="appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
+			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
 		}
 		return '';
 	}
@@ -94,26 +94,26 @@
 	function buildSyncResultDoctorBadge(result) {
 		const doctorLabel = escapeHtml(result.doctor_role || 'Bác sĩ');
 		if (result.doctor_verified === true) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--success" title="${doctorLabel}"><i class="bi bi-check-circle-fill"></i> ${doctorLabel}</span>`;
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${doctorLabel}"><i class="bi bi-check-circle-fill"></i> ${doctorLabel}</span>`;
 		}
 		if (result.doctor_verified === false) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--danger" title="${doctorLabel} - Lỗi"><i class="bi bi-x-circle-fill"></i> ${doctorLabel}</span>`;
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${doctorLabel} - Lỗi"><i class="bi bi-x-circle-fill"></i> ${doctorLabel}</span>`;
 		}
 		if (result.doctor_verified === null) {
-			return `<span class="appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel} chưa kết nối"><i class="bi bi-dash-circle"></i> ${doctorLabel}</span>`;
+			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel} chưa kết nối"><i class="bi bi-dash-circle"></i> ${doctorLabel}</span>`;
 		}
 		return '';
 	}
 
 	function buildSyncResultReceptionistBadge(result) {
 		if (result.receptionist_verified === true) {
-			return '<span class="appointment-sync-badge appointment-sync-badge--success" title="Lễ tân"><i class="bi bi-check-circle-fill"></i> Lễ tân</span>';
+			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="Lễ tân"><i class="bi bi-check-circle-fill"></i> Lễ tân</span>';
 		}
 		if (result.receptionist_verified === false) {
-			return '<span class="appointment-sync-badge appointment-sync-badge--danger" title="Lễ tân - Lỗi"><i class="bi bi-x-circle-fill"></i> Lễ tân</span>';
+			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="Lễ tân - Lỗi"><i class="bi bi-x-circle-fill"></i> Lễ tân</span>';
 		}
 		if (result.receptionist_verified === null) {
-			return '<span class="appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân chưa kết nối"><i class="bi bi-dash-circle"></i> Lễ tân</span>';
+			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân chưa kết nối"><i class="bi bi-dash-circle"></i> Lễ tân</span>';
 		}
 		return '';
 	}

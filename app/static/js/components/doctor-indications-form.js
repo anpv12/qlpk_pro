@@ -24,18 +24,13 @@
 		cancelEdit: 'doctorIndicationCancelEdit',
 		message: 'doctorIndicationsMessage',
 		count: 'doctorIndicationsCount',
-		list: 'doctorIndicationsList',
-		historyToggle: 'doctorIndicationsHistoryToggle',
-		historyPanel: 'doctorIndicationsHistory',
-		historyCount: 'doctorIndicationsHistoryCount',
-		historyList: 'doctorIndicationsHistoryList'
+		list: 'doctorIndicationsList'
 	};
 
 	const DEFAULT_ENDPOINTS = {
 		appointment: ({ appointmentId }) => `/api/chi-dinh/appointment/${appointmentId}`,
 		surveyTemplates: '/api/survey-templates-for-orders',
-		performers: '/users/doctors',
-		history: ({ patientId, appointmentId }) => `/api/chi-dinh/patient/${patientId}?exclude_appointment_id=${appointmentId || ''}`
+		performers: '/users/doctors'
 	};
 	const MAX_ORDER_NAME_LENGTH = 255;
 	const VALID_SOURCES = Object.freeze(['custom', 'survey']);
@@ -93,12 +88,10 @@
 			ordersLoaded: false,
 			ordersDirty: false,
 			ordersRevision: 0,
+			realtimePending: false,
+			realtimeRequest: 0,
 			saving: false,
-			editingTempId: null,
-			history: [],
-			historyLoaded: false,
-			historyLoading: false,
-			historyRequestToken: 0
+			editingTempId: null
 		};
 
 		function getDocument(context = {}) {
@@ -155,6 +148,23 @@
 			const raw = String(value).slice(0, 10);
 			const parts = raw.split('-');
 			return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : raw;
+		}
+
+		function normalizeDateInputValue(value) {
+			const raw = textOf(value);
+			const match = raw.match(/^(\d{4}-\d{2}-\d{2})(?:$|[T\s])/);
+			if (!match) return '';
+
+			const [year, month, day] = match[1].split('-').map(Number);
+			const parsed = new Date(Date.UTC(year, month - 1, day));
+			if (
+				Number.isNaN(parsed.getTime())
+				|| parsed.getUTCFullYear() !== year
+				|| parsed.getUTCMonth() !== month - 1
+				|| parsed.getUTCDate() !== day
+			) return '';
+
+			return match[1];
 		}
 
 		function getStatusConfig(status) {
@@ -296,7 +306,7 @@
 				});
 			}
 			const icon = action === 'delete' ? 'trash3' : 'pencil';
-			return `<button type="button" class="doctor-indications-table__action" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}"${Object.entries(attrs).map(([key, value]) => ` ${escapeAttr(key)}="${escapeAttr(value)}"`).join('')}><i class="bi bi-${icon}" aria-hidden="true"></i></button>`;
+			return `<button data-qlpk-button="${action === 'delete' ? 'danger' : 'edit'}" data-qlpk-button-variant="soft" type="button" class="doctor-indications-table__action" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}"${Object.entries(attrs).map(([key, value]) => ` ${escapeAttr(key)}="${escapeAttr(value)}"`).join('')}><i class="bi bi-${icon}" aria-hidden="true"></i></button>`;
 		}
 
 		function normalizeRow(item = {}) {
@@ -367,8 +377,6 @@
 			});
 			const fieldset = el(doc, 'locationFieldset');
 			if (fieldset) fieldset.disabled = !ready;
-			const historyToggle = el(doc, 'historyToggle');
-			if (historyToggle) historyToggle.disabled = !STATE.appointmentId || STATE.historyLoading;
 			const cancel = el(doc, 'cancelEdit');
 			if (cancel) cancel.disabled = !ready;
 			updateLocationFields(doc);
@@ -418,43 +426,15 @@
 			}
 			list.innerHTML = STATE.rows.map((row, index) => {
 				const status = getStatusConfig(row.status);
-				const locked = row.location_type === 'in' && row.status === 'completed';
+				const locked = (row.status === 'completed' || (row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status)));
 				const performer = getPerformerName(row) || '—';
 				return `<tr data-doctor-indication-row="${escapeAttr(row.tempId)}">
 					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong></td>
-					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
+					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong> <span class="qlpk-feedback-token doctor-indications-location-badge">${row.location_type === 'in' ? 'Trong cơ sở' : 'Ngoài cơ sở'}</span></td>
+					<td>${escapeHtml(performer)}</td>
 					<td>${formatDate(row.scheduled_for)}</td>
-					<td><span class="doctor-indications-status ${escapeAttr(status.className || '')}">${escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
+					<td><span class="qlpk-status doctor-indications-status ${escapeAttr(status.className || '')}">${escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
 					<td>${renderActionButton('edit', locked ? 'Không thể sửa chỉ định đã hoàn thành' : 'Sửa chỉ định', { 'data-doctor-indication-action': 'edit', 'data-doctor-indication-id': row.tempId, disabled: locked })}${renderActionButton('delete', 'Xóa chỉ định', { 'data-doctor-indication-action': 'delete', 'data-doctor-indication-id': row.tempId })}</td>
-				</tr>`;
-			}).join('');
-		}
-
-		function renderHistory(doc) {
-			const list = el(doc, 'historyList');
-			const count = el(doc, 'historyCount');
-			if (count) count.textContent = `${STATE.history.length} chỉ định`;
-			if (!list) return;
-			if (STATE.historyLoading) {
-				list.innerHTML = '<tr class="doctor-indications-table__empty"><td colspan="6">Đang tải lịch sử chỉ định...</td></tr>';
-				return;
-			}
-			if (!STATE.history.length) {
-				list.innerHTML = '<tr class="doctor-indications-table__empty"><td colspan="6">Chưa có lịch sử chỉ định.</td></tr>';
-				return;
-			}
-			list.innerHTML = STATE.history.map((row, index) => {
-				const status = getStatusConfig(row.status);
-				const appointment = row.appointment || {};
-				const performer = getPerformerName(row) || '—';
-				return `<tr>
-					<td>${index + 1}</td>
-					<td><strong>${escapeHtml(row.order_name || 'Chưa có tên')}</strong></td>
-					<td>${escapeHtml(appointment.appointment_code || `Lượt khám #${row.appointment_id || '—'}`)}</td>
-					<td>${escapeHtml(row.location_type === 'in' ? `Trong cơ sở · ${performer}` : `Ngoài cơ sở · ${performer}`)}</td>
-					<td>${formatDate(appointment.appointment_date || row.scheduled_for)}</td>
-					<td><span class="doctor-indications-status ${escapeAttr(status.className || '')}">${escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
 				</tr>`;
 			}).join('');
 		}
@@ -464,7 +444,6 @@
 			renderNameField(doc);
 			renderPerformers(doc);
 			renderCurrentRows(doc);
-			renderHistory(doc);
 			setFormReady(doc);
 			return true;
 		}
@@ -485,19 +464,20 @@
 			clearNameSelection(doc);
 			if (performer) performer.value = '';
 			if (outFacility) outFacility.value = '';
-			if (date) date.value = STATE.defaultDate || '';
+			if (date) date.value = normalizeDateInputValue(STATE.defaultDate);
 			if (inLocation) inLocation.checked = true;
 			STATE.editingTempId = null;
 			setSubmitMode(doc, false);
 			const cancel = el(doc, 'cancelEdit');
 			if (cancel) cancel.hidden = true;
 			updateLocationFields(doc);
+			if (STATE.realtimePending && !STATE.ordersDirty) refreshCurrent({ document: doc });
 		}
 
 		function startEdit(doc, tempId) {
 			const row = STATE.rows.find(item => String(item.tempId) === String(tempId));
 			if (!row) return false;
-			if (row.location_type === 'in' && row.status === 'completed') {
+			if ((row.status === 'completed' || (row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status)))) {
 				showToast('warning', 'Không thể sửa chỉ định đã hoàn thành trong cơ sở.');
 				return false;
 			}
@@ -514,7 +494,7 @@
 			}
 			if (performer) performer.value = row.in_house_unit_id ? String(row.in_house_unit_id) : '';
 			if (outFacility) outFacility.value = row.out_facility || '';
-			if (date) date.value = row.scheduled_for || '';
+			if (date) date.value = normalizeDateInputValue(row.scheduled_for);
 			const outLocation = doc.getElementById('doctorIndicationLocationOut');
 			const inLocation = doc.getElementById('doctorIndicationLocationIn');
 			const isOut = row.location_type === 'out';
@@ -646,6 +626,33 @@
 			}
 		}
 
+		async function refreshCurrent(options = {}) {
+			const doc = getDocument(options);
+			if (!STATE.appointmentId) return false;
+			STATE.realtimePending = true;
+			if (!STATE.ordersLoaded || STATE.saving) return false;
+			if (STATE.ordersDirty || STATE.editingTempId) {
+				setMessage(doc, 'Có cập nhật chỉ định. Lưu hoặc kết thúc chỉnh sửa để xem dữ liệu mới.', 'info');
+				return false;
+			}
+			const appointmentId = STATE.appointmentId;
+			const token = STATE.contextToken;
+			const revision = STATE.ordersRevision;
+			const request = ++STATE.realtimeRequest;
+			try {
+				const data = await requestJson(endpoint('appointment', { appointmentId }), { method: 'GET' });
+				if (!currentToken(token, appointmentId) || request !== STATE.realtimeRequest) return false;
+				if (STATE.saving || STATE.ordersDirty || STATE.editingTempId || revision !== STATE.ordersRevision) return false;
+				STATE.rows = mapServerRows(data?.chi_dinh || []);
+				STATE.realtimePending = false;
+				renderCurrentRows(doc);
+				return true;
+			} catch (error) {
+				if (currentToken(token, appointmentId)) setMessage(doc, 'Chưa cập nhật được chỉ định. Vui lòng thử lại.', 'error');
+				return false;
+			}
+		}
+
 		async function loadSurveyTemplates(context) {
 			const { doc, token, appointmentId } = context;
 			try {
@@ -682,46 +689,9 @@
 			}
 		}
 
-		async function loadHistory(doc) {
-			if (!STATE.patientId || STATE.historyLoading) return false;
-			const token = STATE.contextToken;
-			const historyToken = ++STATE.historyRequestToken;
-			STATE.historyLoading = true;
-			renderHistory(doc);
-			try {
-				const data = await requestJson(endpoint('history', {
-					patientId: STATE.patientId,
-					appointmentId: STATE.appointmentId
-				}), { method: 'GET' });
-				if (!currentToken(token) || historyToken !== STATE.historyRequestToken) return false;
-				STATE.history = Array.isArray(data?.chi_dinh) ? data.chi_dinh : [];
-				STATE.historyLoaded = true;
-				return true;
-			} catch (error) {
-				if (currentToken(token) && historyToken === STATE.historyRequestToken) {
-					STATE.history = [];
-					setMessage(doc, 'Không thể tải lịch sử chỉ định. Vui lòng thử lại.', 'error');
-				}
-				return false;
-			} finally {
-				if (currentToken(token) && historyToken === STATE.historyRequestToken) {
-					STATE.historyLoading = false;
-					renderHistory(doc);
-				}
-			}
-		}
-
-		function toggleHistory(doc) {
-			const panel = el(doc, 'historyPanel');
-			const toggle = el(doc, 'historyToggle');
-			if (!panel || !toggle) return;
-			const shouldOpen = panel.hidden;
-			panel.hidden = !shouldOpen;
-			toggle.setAttribute('aria-expanded', String(shouldOpen));
-			if (shouldOpen && !STATE.historyLoaded) loadHistory(doc);
-		}
-
 		function resetContextData(doc) {
+			STATE.realtimePending = false;
+			STATE.realtimeRequest += 1;
 			STATE.rows = [];
 			STATE.surveyTemplates = [];
 			STATE.surveyIndex = new Map();
@@ -734,19 +704,10 @@
 			STATE.ordersRevision = 0;
 			STATE.saving = false;
 			STATE.editingTempId = null;
-			STATE.history = [];
-			STATE.historyLoaded = false;
-			STATE.historyLoading = false;
-			STATE.historyRequestToken += 1;
 			renderNameField(doc);
 			renderPerformers(doc);
 			resetForm(doc);
 			renderCurrentRows(doc);
-			renderHistory(doc);
-			const panel = el(doc, 'historyPanel');
-			const toggle = el(doc, 'historyToggle');
-			if (panel) panel.hidden = true;
-			if (toggle) toggle.setAttribute('aria-expanded', 'false');
 			setFormReady(doc);
 		}
 
@@ -786,6 +747,7 @@
 			} finally {
 				STATE.saving = false;
 				setFormReady(doc);
+				if (STATE.realtimePending && !STATE.ordersDirty) refreshCurrent(options);
 			}
 		}
 
@@ -823,7 +785,6 @@
 				}
 				if (event.target.closest(`#${domId('submit')}`)) handleSubmit(doc);
 				if (event.target.closest(`#${domId('cancelEdit')}`)) resetForm(doc);
-				if (event.target.closest(`#${domId('historyToggle')}`)) toggleHistory(doc);
 			});
 			root.querySelectorAll('input[name="doctorIndicationLocation"]').forEach(input => {
 				input.addEventListener('change', () => updateLocationFields(doc));
@@ -834,6 +795,8 @@
 		}
 
 		function clear(options = {}) {
+			STATE.realtimePending = false;
+			STATE.realtimeRequest += 1;
 			const doc = getDocument(options);
 			STATE.contextToken += 1;
 			STATE.appointmentId = null;
@@ -852,7 +815,7 @@
 			const token = STATE.contextToken;
 			STATE.appointmentId = appointmentId;
 			STATE.patientId = normalizeId(patient);
-			STATE.defaultDate = textOf(context.appointmentDate || appointment.appointment_date || appointment.appointment?.appointment_date);
+			STATE.defaultDate = normalizeDateInputValue(context.appointmentDate || appointment.appointment_date || appointment.appointment?.appointment_date);
 			resetContextData(doc);
 			const loadTasks = [
 				loadCurrent({ doc, token, appointmentId }),
@@ -861,6 +824,7 @@
 			];
 			return Promise.allSettled(loadTasks).then(results => {
 				if (currentToken(token, appointmentId)) setFormReady(doc);
+				if (currentToken(token, appointmentId) && STATE.realtimePending) refreshCurrent(context);
 				return results.every(result => result.status === 'fulfilled' && result.value === true);
 			});
 		}
@@ -869,6 +833,7 @@
 			bind,
 			clear,
 			load,
+			refreshCurrent,
 			populate: load,
 			render,
 			collect: buildSavePayload,

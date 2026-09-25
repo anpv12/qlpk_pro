@@ -27,7 +27,9 @@
 		}
 
 		// Render danh mục
-		function renderCategories(categoriesToRender) {
+		const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderCategories(categoriesToRender) { listPagination.setItems(categoriesToRender); }
+    function renderPage(categoriesToRender, offset) {
 			const tbody = $('#categoryTableBody');
 			tbody.empty();
 
@@ -56,10 +58,10 @@
           </td>
           <td>${new Date(category.created_at).toLocaleDateString('vi-VN')}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="editCategory(${category.id})">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" onclick="editCategory(${category.id})">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${category.id})">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${category.id})">
               <i class="bi bi-trash"></i>
             </button>
           </td>

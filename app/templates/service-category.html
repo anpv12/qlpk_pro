@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/service-category.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
@@ -22,31 +23,27 @@
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
 </head>
 
-<body class="qlpk-admin-page">
+<body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content">
-				<div class="header-bar header-padding">
-					<nav aria-label="breadcrumb">
-						<ol class="breadcrumb mb-1">
-							<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
-							<li class="breadcrumb-item"><a href="index.html">QUẢN LÝ</a></li>
-							<li class="breadcrumb-item active" aria-current="page">DANH MỤC NHÓM DỊCH VỤ</li>
-						</ol>
-					</nav>
+				<div class="header-bar qlpk-clinic-header header-padding">
 					<div class="d-flex justify-content-between align-items-center">
-						<h1 class="page-title">DANH MỤC NHÓM DỊCH VỤ</h1>
+						<div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title page-title">Nhóm dịch vụ</h1>
+<p class="qlpk-clinic-subtitle">Quản lý danh mục nhóm dịch vụ của phòng khám</p></div>
 						<div class="d-flex gap-2">
-							<button class="btn btn-outline-success" onclick="exportTemplate()">
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" onclick="exportTemplate()">
 								<i class="bi bi-download me-2"></i>Xuất mẫu
 							</button>
-							<button class="btn btn-outline-primary" onclick="openImportModal()">
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-outline-primary" onclick="openImportModal()">
 								<i class="bi bi-upload me-2"></i>Import
 							</button>
-							<button class="btn btn-primary add-btn" data-bs-toggle="modal"
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary add-btn" data-bs-toggle="modal"
 								data-bs-target="#addCategoryModal">
 								<i class="bi bi-plus-circle me-2"></i>Thêm danh mục
 							</button>
@@ -84,6 +81,7 @@
 								</tbody>
 							</table>
 						</div>
+{% include 'partials/clinic-pagination.html' %}
 					</div>
 				</div>
 			</main>
@@ -120,8 +118,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-						<button type="submit" class="btn btn-primary">Thêm nhóm dịch vụ</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-primary">Thêm nhóm dịch vụ</button>
 					</div>
 				</form>
 			</div>
@@ -159,8 +157,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-						<button type="button" class="btn btn-primary" id="updateCategoryBtn">Cập nhật</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="updateCategoryBtn">Cập nhật</button>
 					</div>
 				</form>
 			</div>
@@ -196,8 +194,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-					<button type="button" class="btn btn-primary" onclick="importCategories()">Import</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" onclick="importCategories()">Import</button>
 				</div>
 			</div>
 		</div>

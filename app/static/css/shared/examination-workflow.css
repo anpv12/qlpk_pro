@@ -1,11 +1,17 @@
 /* Shared examination workflow styles for doctor and psychologist pages. */
 .form-control,
 .form-select {
-	border: 1px solid #D5D7DA;
+	border-width: 1px;
+	border-style: solid;
 	border-radius: 8px;
 	font-size: var(--qlpk-control-font-size, var(--qlpk-font-size-base, 13px));
 	font-weight: var(--qlpk-control-font-weight, var(--qlpk-font-weight-medium, 500));
 	line-height: var(--qlpk-control-line-height, var(--qlpk-line-height-normal, 1.45));
+}
+/* Shared examination workflow styles for doctor and psychologist pages. */
+.form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.form-select {
+	border: 1px solid #D5D7DA;
 	background-color: #fff;
 	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
@@ -39,15 +45,20 @@
 #genderEditBtn,
 #idCardEditBtn {
 	border: none !important;
-	background: none !important;
 	padding: 0 !important;
 	z-index: 1000;
 }
-
+#addressEditBtn,
+#occupationEditBtn:not([data-qlpk-button], [data-qlpk-button] *),
+#genderEditBtn:not([data-qlpk-button], [data-qlpk-button] *),
+#idCardEditBtn:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: none !important;
+	background: none !important;
+}
 #addressEditBtn:hover,
-#occupationEditBtn:hover,
-#genderEditBtn:hover,
-#idCardEditBtn:hover {
+#occupationEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+#genderEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+#idCardEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: none !important;
 }
 
@@ -83,11 +94,18 @@
 	right: -2px;
 	width: 8px;
 	height: 8px;
-	background: #28a745;
 	border-radius: 50%;
+	border-width: 2px;
+	border-style: solid;
+	animation: pulse-badge 2s infinite;
+}
+#addressEditBtn::after,
+#occupationEditBtn:not([data-qlpk-button], [data-qlpk-button] *)::after,
+#genderEditBtn:not([data-qlpk-button], [data-qlpk-button] *)::after,
+#idCardEditBtn:not([data-qlpk-button], [data-qlpk-button] *)::after {
+	background: #28a745;
 	border: 2px solid white;
 	box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.3);
-	animation: pulse-badge 2s infinite;
 }
 
 @keyframes pulse-badge {
@@ -107,9 +125,14 @@
 #occupationEditBtn:hover,
 #genderEditBtn:hover,
 #idCardEditBtn:hover {
-	background: rgba(11, 107, 95, 0.1) !important;
 	border-radius: 4px;
 	padding: 2px 4px !important;
+}
+#addressEditBtn:hover,
+#occupationEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+#genderEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+#idCardEditBtn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: rgba(11, 107, 95, 0.1) !important;
 }
 
 .text-uppercase {
@@ -198,19 +221,19 @@
 .examination-input:disabled,
 textarea[readonly],
 textarea:disabled {
-	background-color: #f8f9fa !important;
+	background-color: var(--qlpk-color-page-bg) !important;
 	color: #212529;
 	cursor: not-allowed;
 }
 
 textarea.examination-input[readonly],
 textarea.examination-input:disabled {
-	background-color: #f8f9fa !important;
+	background-color: var(--qlpk-color-page-bg) !important;
 }
 
 .examination-input:focus {
 	outline: none;
-	border-color: var(--qlpk-clinical, #0b6b5f);
+	border-color: var(--qlpk-clinical, var(--qlpk-color-primary));
 	box-shadow: 0 0 0 0.2rem rgba(11, 107, 95, 0.16);
 }
 
@@ -279,18 +302,20 @@ textarea.examination-input:disabled {
 }
 
 .card-header .btn-outline-primary {
-	border-color: #d5def0;
-	color: #0d6efd;
-	background: #ffffff;
 	border-radius: 8px;
-	transition: all 0.2s ease;
 	font-size: var(--qlpk-font-size-md, 14px);
+}
+.card-header .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: #d5def0;
+	color: var(--qlpk-color-primary);
+	background: #ffffff;
+	transition: all 0.2s ease;
 }
 
 .card-header h5 {
 	font-size: var(--qlpk-font-size-lg, 16px);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	color: var(--qlpk-text, #111827);
+	color: var(--qlpk-text, var(--qlpk-color-text));
 }
 
 .autocomplete-dropdown {
@@ -316,7 +341,7 @@ textarea.examination-input:disabled {
 }
 
 .icd-item.selected {
-	background-color: var(--qlpk-clinical, #0b6b5f);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: white;
 }
 
@@ -327,7 +352,7 @@ textarea.examination-input:disabled {
 
 .icd-item .icd-code {
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	color: var(--qlpk-clinical, #0b6b5f);
+	color: var(--qlpk-clinical, var(--qlpk-color-primary));
 	min-width: 80px;
 	flex-shrink: 0;
 }
@@ -388,14 +413,14 @@ textarea.examination-input:disabled {
 .card-header.patient-header {
 	background: #ffffff !important;
 	border-bottom: 1px solid #e5e7eb !important;
-	color: #111827 !important;
+	color: var(--qlpk-color-text) !important;
 }
 
 .card-header.patient-header h5,
 .card-header.patient-header label,
 .card-header.patient-header .form-label,
 .card-header.patient-header .form-check-label {
-	color: #111827 !important;
+	color: var(--qlpk-color-text) !important;
 }
 
 .card-header.patient-header {
@@ -454,19 +479,20 @@ textarea.examination-input:disabled {
 	min-height: 2.25rem;
 	padding: 0.45rem 0.75rem;
 	border-radius: 0.5rem;
-	background: #ffffff;
 	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+.patient-header-actions .btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: #ffffff;
 	box-shadow: none;
 }
-
-.patient-header-actions #historyBtn {
+.patient-header-actions #historyBtn:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: #d5def0;
-	color: #0d6efd;
+	color: var(--qlpk-color-primary);
 }
 
 .patient-header-actions #orderBtn {
 	border-color: #d9d6ff;
-	color: #4f46e5;
+	color: var(--qlpk-color-primary);
 }
 
 .patient-header-actions #documentBtn {
@@ -478,8 +504,7 @@ textarea.examination-input:disabled {
 .patient-header-actions #documentBtn i {
 	color: inherit;
 }
-
-.patient-header-actions #completeExaminationBtn {
+.patient-header-actions #completeExaminationBtn:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: #15815f;
 	background: #1f9d6b;
 	color: #ffffff;

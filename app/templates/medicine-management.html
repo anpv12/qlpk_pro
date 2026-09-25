@@ -1,3 +1,4 @@
+{% from 'components/_autocomplete_field.html' import render_autocomplete_field %}
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -10,71 +11,67 @@
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
+	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
+	<script id="qlpk-icon-system" src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/option-autocomplete.css?v={{ app_version }}">
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/medicine-management.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 </head>
 
-<body class="medicine-management-page">
+<body class="medicine-management-page qlpk-data-tables qlpk-clinic-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content mm-main-content-shell">
 				<!-- Tiêu đề chính -->
-				<div class="mm-page-header">
-					<h1 class="mm-page-heading"><i class="bi bi-capsule me-2"></i>Kho thuốc</h1>
-					<div class="mm-page-subtitle">Quản lý danh mục thuốc, tồn kho và các lô nhập của phòng khám</div>
-				</div>
-
-				<!-- Dashboard tổng quan -->
-				<div class="mm-surface mm-summary-surface" id="dashboardSection">
-					<div class="mm-summary-row">
-						<div class="mm-summary-pill mm-summary-pill--medicines">
-							<i class="bi bi-capsule mm-summary-icon" aria-hidden="true"></i>
-							<span class="mm-summary-value" id="dashboardTotalMedicines">0</span>
-							<span class="mm-summary-label">Tổng số thuốc</span>
-						</div>
-						<div class="mm-summary-pill mm-summary-pill--value">
-							<i class="bi bi-currency-exchange mm-summary-icon" aria-hidden="true"></i>
-							<span class="mm-summary-value" id="dashboardTotalValue">0 ₫</span>
-							<span class="mm-summary-label">Giá trị tồn kho</span>
-						</div>
-						<div class="mm-summary-pill mm-summary-pill--warning">
-							<i class="bi bi-exclamation-triangle mm-summary-icon" aria-hidden="true"></i>
-							<span class="mm-summary-value" id="dashboardWarnings">0</span>
-							<span class="mm-summary-label">Cảnh báo tồn kho</span>
-						</div>
-						<div class="mm-summary-pill mm-summary-pill--batches">
-							<i class="bi bi-boxes mm-summary-icon" aria-hidden="true"></i>
-							<span class="mm-summary-value" id="dashboardTotalBatches">0</span>
-							<span class="mm-summary-label">Tổng số lô</span>
-						</div>
+				<div class="mm-page-header qlpk-clinic-header">
+					<div class="mm-page-header-copy">
+						<h1 class="mm-page-heading qlpk-clinic-title"><i class="bi bi-capsule me-2"></i>Kho thuốc</h1>
+						<div class="mm-page-subtitle qlpk-clinic-subtitle">Quản lý danh mục thuốc, tồn kho và các lô nhập của phòng khám</div>
 					</div>
 				</div>
 
 				<!-- Nút hành động và tìm kiếm -->
 				<div class="mm-surface mm-toolbar-surface">
-					<!-- 6 nút hành động -->
+					<!-- Nút hành động -->
+					<div class="mm-toolbar-top">
 					<div class="mm-action-row">
-						<button class="btn btn-primary" id="addMedicineBtn"><i class="bi bi-plus-lg"></i> Thêm thuốc
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary" id="addMedicineBtn"><i class="bi bi-plus-lg"></i> Thêm thuốc
 							mới</button>
-						<button class="btn btn-success" id="importBtn"><i class="bi bi-file-excel"></i> Nhập từ
-							Excel</button>
-						<button class="btn btn-success" id="reportBtn"><i class="bi bi-file-earmark-text"></i> Lập báo
-							cáo</button>
-						<button class="btn btn-primary" id="importWarehouseBtn"><i class="bi bi-box-arrow-in-down"></i>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn btn-primary" id="importWarehouseBtn"><i class="bi bi-box-arrow-in-down"></i>
 							Nhập kho</button>
-						<button class="btn btn-info" id="inventoryCountBtn"><i class="bi bi-clipboard-check"></i> Kiểm
-							kê kho</button>
-						<button class="btn btn-warning" id="exportDataBtn"><i class="bi bi-download"></i> Xuất dữ
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-primary" id="exportDataBtn"><i class="bi bi-download"></i> Xuất dữ
 							liệu</button>
+					</div>
+					<div class="mm-toolbar-summary qlpk-clinic-summary" id="dashboardSection" role="group" aria-label="Tổng quan tồn kho">
+						<div class="qlpk-clinic-summary__item">
+							<span class="qlpk-clinic-summary__label">Tổng số thuốc</span>
+							<span class="qlpk-clinic-summary__value" id="dashboardTotalMedicines">0</span>
+						</div>
+						<div class="qlpk-clinic-summary__item">
+							<span class="qlpk-clinic-summary__label">Giá trị tồn đã có giá</span>
+							<span class="qlpk-clinic-summary__value" id="dashboardTotalValue">0 ₫</span>
+						</div>
+						<div class="qlpk-clinic-summary__item qlpk-clinic-summary__item--warning">
+							<span class="qlpk-clinic-summary__label">Cảnh báo tồn kho</span>
+							<span class="qlpk-clinic-summary__value" id="dashboardWarnings">0</span>
+						</div>
+						<button type="button" class="qlpk-clinic-summary__item mm-missing-price-filter" id="missingImportPriceFilter" aria-pressed="false" onclick="toggleMissingImportPriceFilter()" title="Lọc toàn bộ thuốc có lô thiếu giá nhập; nhấn lại để bỏ lọc">
+							<span class="qlpk-clinic-summary__label">Thuốc thiếu giá nhập</span>
+							<span class="qlpk-clinic-summary__value" id="dashboardMissingImportPrice">0</span>
+							<span id="missingImportPriceFilterState" hidden>Đang lọc · Bỏ lọc</span>
+						</button>
+					</div>
 					</div>
 
 					<!-- Thanh tìm kiếm -->
@@ -82,15 +79,6 @@
 						<div class="mm-filter-field">
 							<label class="form-label fw-semibold mm-text-primary">Từ khoá:</label>
 							<input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm thuốc">
-						</div>
-						<div class="mm-filter-field">
-							<label class="form-label fw-semibold mm-text-primary">Loại thuốc:</label>
-							<select class="form-select" id="categoryTypeFilter">
-								<option value="">Tất cả</option>
-								<option value="DRUG">Thuốc</option>
-								<option value="SUPPLEMENT">TPCN</option>
-								<option value="EQUIPMENT">Y dụng cụ</option>
-							</select>
 						</div>
 						<div class="mm-filter-field">
 							<label class="form-label fw-semibold mm-text-primary">Sắp xếp theo:</label>
@@ -104,7 +92,7 @@
 							</select>
 						</div>
 						<div class="mm-filter-field">
-							<button class="btn btn-primary w-100" id="searchBtn">Xem</button>
+							<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-primary w-100" id="searchBtn">Xem</button>
 						</div>
 					</div>
 				</div>
@@ -118,11 +106,11 @@
 									<th>STT</th>
 									<th>Tên Thuốc</th>
 									<th>Ngày hết hạn</th>
-									<th>Giá vốn</th>
+									<th>Giá nhập</th>
 									<th>Giá bán</th>
-									<th>Số lô</th>
+									<th>Lần nhập</th>
 									<th>Tồn kho</th>
-									<th>Loại</th>
+									<th class="mm-reference-column">Liên kết DAV</th>
 									<th>Tác vụ</th>
 								</tr>
 							</thead>
@@ -134,7 +122,7 @@
 
 					<!-- Nút xóa thuốc đã chọn -->
 					<div class="mt-3">
-						<button class="btn btn-danger mm-hidden" id="deleteSelectedBtn">
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-danger mm-hidden" id="deleteSelectedBtn">
 							<i class="bi bi-trash"></i> Xoá thuốc đã chọn
 						</button>
 					</div>
@@ -142,8 +130,17 @@
 				<!-- Phân trang -->
 				<div class="mm-surface mm-pagination-surface">
 					<div class="mm-pagination-row">
-						<div class="small text-muted" id="tableInfo">10 of 2100 items</div>
-						<nav>
+						<div class="mm-pagination-details">
+							<label for="medicinePageSize">Số dòng/trang</label>
+							<select class="form-select form-select-sm" id="medicinePageSize">
+								<option value="10" selected>10</option>
+								<option value="20">20</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+							</select>
+							<span id="tableInfo" role="status"></span>
+						</div>
+						<nav aria-label="Phân trang danh sách thuốc">
 							<ul class="pagination mb-0" id="pagination">
 								<!-- Phân trang sẽ render ở đây -->
 							</ul>
@@ -163,328 +160,397 @@
 	</div>
 
 	<!-- Modal Thêm/Sửa Thuốc -->
+	<div class="modal fade" id="medicineReferenceReviewModal" tabindex="-1" aria-labelledby="medicineReferenceReviewTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="medicineReferenceReviewTitle">Liên kết thuốc trong kho với DAV</h4>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mm-review-start" id="medicineReviewStart">
+						<section class="mm-review-target" aria-labelledby="medicineReviewTargetTitle">
+							<h5 id="medicineReviewTargetTitle" class="mm-review-step">Thuốc trong kho</h5>
+							<strong id="medicineReviewTargetName">Đang tải thuốc trong kho…</strong>
+							<p id="medicineReviewTargetDetails" class="mm-review-hint"></p>
+							<p id="medicineReviewLinkStatus" class="mm-review-hint"></p>
+							<button data-qlpk-button="edit" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-review-change" id="medicineReviewChange" hidden>Đổi thuốc DAV</button>
+						</section>
+						<section id="medicineReviewSearchSection" class="mm-review-search" aria-labelledby="medicineReviewSearchTitle" hidden>
+							<h5 class="mm-review-step"><label id="medicineReviewSearchTitle" for="medicineReviewSearch">Chọn thuốc tương ứng trên DAV</label></h5>
+							{{ render_autocomplete_field(input_id='medicineReviewSearch', tags_id='medicineReviewTags', list_id='medicineReviewResults', root_id='medicineReviewField', placeholder='Tìm theo tên, hoạt chất hoặc số đăng ký…', aria_label='Tìm thuốc trong danh mục DAV') }}
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-action-secondary mm-review-change" id="medicineReviewCancelChange" hidden>Giữ liên kết hiện tại</button>
+						</section>
+					</div>
+					<div id="medicineReviewStatus" role="status" aria-live="polite"></div>
+					<section id="medicineReviewCompareSection" aria-labelledby="medicineReviewCompareTitle" hidden>
+					<h5 id="medicineReviewCompareTitle" class="mm-review-step">Kiểm tra trước khi liên kết</h5>
+					<p id="medicineReviewChanges" class="mm-review-hint" aria-live="polite" hidden></p>
+					<div class="mm-review-compare">
+						<table class="mm-review-table">
+							<caption class="visually-hidden">Thông tin đang lưu trong kho và thông tin sau khi liên kết DAV</caption>
+							<thead><tr>
+								<th scope="col">Thông tin</th>
+								<th scope="col">Hiện tại</th>
+								<th scope="col" id="medicineReviewAfterTitle">Dự kiến sau khi liên kết</th>
+							</tr></thead>
+							<tbody id="medicineReviewComparison"></tbody>
+						</table>
+					</div>
+					</section>
+				</div>
+				<div class="modal-footer">
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-action-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="medicineReviewSave" hidden disabled>Liên kết với thuốc đã chọn</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="modal fade" id="medicineModal" tabindex="-1" aria-labelledby="medicineModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-xl mm-dialog-medicine">
+		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-modal-content-full">
 				<form id="medicineForm">
-					<div class="modal-header border-0 mm-flex-fixed">
-						<h4 class="modal-title w-100 text-center fw-bold mm-modal-title-main" id="medicineModalLabel">THÊM THUỐC MỚI</h4>
-						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-					</div>
-					<div class="modal-body pt-0 px-3 mm-body-scroll-flex">
-						<div class="row g-2">
-							<!-- Cột trái -->
-							<div class="col-md-6">
-								<!-- Card 1: Thông tin cơ bản -->
-								<div class="card border-primary mb-2 mm-card-muted">
-									<div class="card-body p-2">
-										<h6 class="card-title mb-2 mm-card-title-primary">
-											<i class="bi bi-info-circle"></i> Thông tin cơ bản
-										</h6>
-										<div class="row g-2">
-											<!-- Row 1: Tên thuốc/dụng cụ và Tên gốc -->
-											<div class="col-6">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Tên thuốc/dụng cụ <span
-														class="text-danger">*</span></label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2" name="name"
-													placeholder="Tên đầy đủ" autocomplete="off" required>
-											</div>
-											<div class="col-6">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Hoạt chất / Biệt dược</label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="genericNameInput" placeholder="Hoạt chất / Biệt dược"
-														autocomplete="off">
-													<div id="genericNameDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="generic_name" id="genericNameValue">
-												</div>
-											</div>
-											<!-- Row 2: Mã thuốc, Mã DQG, Phương thức, Đơn vị dùng -->
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Mã thuốc</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="internal_code" placeholder="Mã thuốc">
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Mã DQG</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="national_code" placeholder="Mã DQG">
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Phương thức dùng</label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="administrationMethod" placeholder="Uống, tiêm..."
-														autocomplete="off">
-													<div id="administrationMethodDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="administration_method"
-														id="administrationMethodValue">
-												</div>
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Đơn vị dùng <span
-														class="text-danger">*</span></label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="saleUnit" placeholder="viên, gram, ml..." autocomplete="off"
-														required>
-													<div id="saleUnitDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="unit" id="saleUnitValue">
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<!-- Card 2: Quy cách đóng gói & Số lượng tồn -->
-								<div class="card border-primary mb-2 mm-card-muted">
-									<div class="card-body p-2">
-									<h6 class="card-title mb-2 mm-card-title-primary">
-										<i class="bi bi-box-seam"></i> Quy cách đóng gói
-									</h6>
-									<div class="small text-muted mb-2">
-										<i class="bi bi-lock-fill me-1"></i>
-										Tồn kho chỉ thay đổi qua nhập hoặc kiểm kê theo từng lô thuốc.
-									</div>
-										<div class="row g-2">
-											<!-- Row 1: Đóng gói, Số đơn vị, Vỉ tồn, Viên tồn, Tổng (viên) -->
-											<div class="col-12">
-												<div class="row g-2">
-													<div class="col">
-														<label class="form-label fw-semibold mb-1 mm-label-primary">Đóng gói</label>
-														<select class="form-select form-select-sm rounded-3 py-1 px-2"
-															id="packagingUnit" name="packaging_unit"
-															onchange="updatePackagingInfo()">
-															<option value="">Chọn đơn vị</option>
-															<option value="vỉ">vỉ</option>
-															<option value="lọ">lọ</option>
-															<option value="gói">gói</option>
-															<option value="chai">chai</option>
-															<option value="tuýp">tuýp</option>
-															<option value="ống">ống</option>
-															<option value="hộp">hộp</option>
-														</select>
-													</div>
-													<div class="col">
-														<label class="form-label fw-semibold mb-1 mm-label-primary">Số đơn vị</label>
-														<input type="number"
-															class="form-control form-control-sm rounded-3 py-1 px-2"
-															id="unitsPerBox" name="units_per_box" placeholder="10"
-															min="0" step="1"
-															oninput="updatePackagingInfo(); updateStockQuantityFromBoxes();">
-													</div>
-									<div class="col">
-										<label class="form-label fw-semibold mb-1 mm-label-primary-sm">Tổng (viên)</label>
-						<input type="number"
-							class="form-control form-control-sm rounded-3 py-1 px-2"
-							id="stockQuantitySummaryDisplay" placeholder="0" min="0"
-							step="0.01" readonly aria-readonly="true">
-									</div>
-									<div class="col">
-										<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
-											id="stockQuantityBoxesLabel">{Đơn vị đóng gói} tồn</label>
-						<input type="number"
-							class="form-control form-control-sm rounded-3 py-1 px-2"
-							id="stockQuantityBoxes" placeholder="0" min="0" step="0.01"
-							readonly aria-readonly="true">
-									</div>
-									<div class="col">
-										<label class="form-label fw-semibold mb-1 mm-label-primary-sm"
-											id="stockQuantityRemainingLabel">{Đơn vị dùng} tồn</label>
-						<input type="number"
-							class="form-control form-control-sm rounded-3 py-1 px-2"
-							id="stockQuantityRemaining" placeholder="0" min="0"
-							step="0.01" readonly aria-readonly="true">
-									</div>
-								</div>
-								<input type="hidden" id="stockQuantityInput" aria-hidden="true">
-												<input type="hidden" id="packagingDisplay" name="packaging">
-												<input type="hidden" id="pillsPerUnit" name="pills_per_unit" value="0">
-											</div>
-											<!-- Row 2: Quy cách -->
-											<div class="col-12">
-												<div class="row g-2">
-													<div class="col-12">
-														<label class="form-label fw-semibold mb-1 mm-label-primary">Quy cách</label>
-														<div class="form-control form-control-sm rounded-3 py-1 px-2 mm-packaging-info-display"
-															id="packagingInfoDisplay">
-															<span id="packagingInfoText" class="text-muted mm-text-form">Nhập đơn vị đóng gói và số
-																đơn vị</span>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Cột phải -->
-							<div class="col-md-6">
-								<!-- Card 3: Giá cả & Phân loại -->
-								<div class="card border-warning mb-2 mm-card-muted">
-									<div class="card-body p-2">
-										<h6 class="card-title mb-2 mm-card-title-warning">
-											<i class="bi bi-currency-dollar"></i> Giá cả & Phân loại
-										</h6>
-										<div class="row g-2">
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Đơn giá vốn nhập</label>
-												<input type="number"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="import_price" placeholder="VNĐ" min="0" step="0.01">
-											</div>
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Đơn giá bán</label>
-												<input type="number"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="unit_price" placeholder="VNĐ" min="0">
-											</div>
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Thể loại <span
-														class="text-danger">*</span></label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="categoryType" placeholder="Thuốc/TPCN" autocomplete="off"
-														required>
-													<div id="categoryTypeDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="category_type" id="categoryTypeValue">
-												</div>
-											</div>
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Thuốc Nội/Ngoại</label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="importedType" placeholder="Nội/Ngoại" autocomplete="off">
-													<div id="importedTypeDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="is_imported" id="importedTypeValue">
-												</div>
-											</div>
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-prescription-type-label" for="prescriptionType">
-													<span class="mm-warning-icon-sm">⚠️</span> Loại đơn thuốc <span
-														class="text-danger">*</span>
-												</label>
-												<div class="position-relative">
-													<input type="text"
-														class="form-control form-control-sm rounded-3 py-1 px-2"
-														id="prescriptionType" placeholder="Cơ bản/H/N"
-														autocomplete="off" required>
-													<div id="prescriptionTypeDropdown" class="occupation-dropdown mm-hidden"></div>
-													<input type="hidden" name="prescription_type"
-														id="prescriptionTypeValue">
-												</div>
-											</div>
-											<div class="col-4">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Nguồn gốc</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="origin" placeholder="Nguồn gốc">
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<!-- Card 4: Cảnh báo & Thông tin bổ sung -->
-								<div class="card border-danger mb-2 mm-card-muted">
-									<div class="card-body p-2">
-										<h6 class="card-title mb-2 mm-card-title-danger">
-											<i class="bi bi-exclamation-triangle"></i> Cảnh báo & Thông tin khác
-										</h6>
-										<div class="row g-2">
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Ngày hết hạn</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2 js-datepicker"
-													name="expiry_date" placeholder="dd/mm/yyyy" autocomplete="off">
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Cảnh báo SL tồn</label>
-												<input type="number"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="low_stock_threshold" placeholder="Ngưỡng" min="0">
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Cảnh báo hết hạn</label>
-												<input type="number"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="expiry_warning_days" placeholder="Số ngày" min="0">
-											</div>
-											<div class="col-3">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Hàm lượng</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="strength" placeholder="500mg, 5mg/ml...">
-											</div>
-											<div class="col-12">
-												<label class="form-label fw-semibold mb-1 mm-label-primary">Ghi chú</label>
-												<input type="text"
-													class="form-control form-control-sm rounded-3 py-1 px-2"
-													name="description" placeholder="Ghi chú thông tin">
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-
-						</div>
-						<div class="alert alert-danger mt-3 d-none" id="medicineFormError"></div>
-					</div>
-					<div class="modal-footer border-0 pt-0 px-4 justify-content-center mm-footer-actions">
-						<button type="submit" class="btn px-5 py-2 fw-bold mm-btn-primary-pill-lg">Lưu thông
-							tin</button>
-						<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-						 data-bs-dismiss="modal">Huỷ</button>
-					</div>
+				 <div class="modal-header mm-medicine-header">
+				  <span aria-hidden="true" class="mm-medicine-hero-icon" data-medicine-icon="medicine">
+				  </span>
+				  <div class="mm-medicine-heading">
+				   <h4 class="modal-title mm-modal-title-main" id="medicineModalLabel">
+				    THÊM THUỐC MỚI
+				   </h4>
+				   <p id="medicineFlowGuide">
+				    Chọn thuốc trong danh mục DAV, sau đó kiểm tra thông tin phòng khám.
+				   </p>
+				  </div>
+				  <div class="mm-medicine-motto">
+				   <span aria-hidden="true" class="mm-medicine-branch">
+				    <span>
+				    </span>
+				    <span>
+				    </span>
+				    <span>
+				    </span>
+				   </span>
+				   <span>
+				    Vì một cộng đồng
+				    <br/>
+				    khỏe mạnh hơn
+				   </span>
+				  </div>
+				  <button aria-label="Đóng" class="btn-close" data-bs-dismiss="modal" type="button">
+				  </button>
+				 </div>
+				 <div class="modal-body mm-medicine-body">
+				  <section aria-label="Thông tin từ danh mục thuốc" class="mm-dav-source" id="davSourceSection">
+				   <div id="davSearchControls">
+				    <label class="form-label fw-semibold" for="davSearchInput" id="davSearchLabel">
+				     Tìm thuốc trong danh mục
+				    </label>
+                    {{ render_autocomplete_field(
+                        input_id='davSearchInput', tags_id='davSearchTags', list_id='davSearchResults',
+                        root_id='davSearchField', dropdown_id='davDropdown', input_class='',
+                        placeholder='Gõ tên thuốc, hoạt chất hoặc số đăng ký…',
+                        aria_label='Tìm thuốc trong danh mục DAV', list_attrs={'aria-label': 'Thuốc từ DAV'}
+                    ) }}
+				   </div>
+				   <div class="mm-dav-selected" hidden="" id="davSelectedRow">
+				    <div id="davSelection">
+				    </div>
+				    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-secondary btn-sm text-nowrap" id="davChangeButton" type="button">
+				     Đổi thuốc
+				    </button>
+				   </div>
+				   <p class="small mt-2 mb-0" hidden="" id="davContext">
+				   </p>
+				  </section>
+				  <fieldset class="mm-medicine-fields" disabled="" id="medicineEditFields">
+				   <section aria-labelledby="medicineSection-basic" class="mm-medicine-section mm-medicine-section--basic">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="basic">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-basic">
+				       Thông tin cơ bản
+				      </h6>
+				      <p>
+				       Mã thuốc, đường dùng và đơn vị dùng tại phòng khám.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <input id="medicine-name" name="name" type="hidden"/>
+				      <input id="genericNameInput" type="hidden"/>
+				      <input id="genericNameValue" name="generic_name" type="hidden"/>
+				      <input id="medicine-origin" name="origin" type="hidden"/>
+				      <input id="medicine-strength" name="strength" type="hidden"/>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-internal_code">
+				        Mã thuốc
+				       </label>
+				       <input class="form-control" disabled="" id="medicine-internal_code" maxlength="50" name="internal_code" placeholder="Tự sinh khi lưu" type="text"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-national_code">
+				        Mã DQG
+				       </label>
+				       <input class="form-control" id="medicine-national_code" maxlength="50" name="national_code" placeholder="Nhập mã DQG" type="text"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="administrationMethod">
+				        Phương thức dùng
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="administrationMethod" placeholder="Chọn đường dùng" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="administrationMethodDropdown">
+				        </div>
+				        <input id="administrationMethodValue" name="administration_method" type="hidden"/>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="saleUnit">
+				        Đơn vị dùng
+				        <span class="text-danger">
+				         *
+				        </span>
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="saleUnit" placeholder="Chọn đơn vị dùng" required="" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="saleUnitDropdown">
+				        </div>
+				        <input id="saleUnitValue" name="unit" type="hidden"/>
+				       </div>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-packaging" class="mm-medicine-section mm-medicine-section--packaging">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="packaging">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-packaging">
+				       Quy cách đóng gói
+				      </h6>
+				      <p>
+				       Số lượng, giá vốn và hạn dùng được ghi khi nhập lô.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field mm-field--full">
+				       <div class="mm-package-quantities">
+				        <div class="mm-field">
+				         <label class="form-label" for="packagingUnit">
+				          Đóng gói
+				         </label>
+				         <select class="form-select" id="packagingUnit" name="packaging_unit" onchange="updatePackagingInfo()">
+				          <option value="">
+				           Chọn đơn vị
+				          </option>
+				          <option value="vỉ">
+				           vỉ
+				          </option>
+				          <option value="lọ">
+				           lọ
+				          </option>
+				          <option value="gói">
+				           gói
+				          </option>
+				          <option value="chai">
+				           chai
+				          </option>
+				          <option value="tuýp">
+				           tuýp
+				          </option>
+				          <option value="ống">
+				           ống
+				          </option>
+				          <option value="hộp">
+				           hộp
+				          </option>
+				         </select>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="unitsPerBox">
+				          Số đơn vị
+				         </label>
+				         <input class="form-control" id="unitsPerBox" min="1" name="units_per_box" oninput="updatePackagingInfo()" placeholder="Nhập số đơn vị" step="1" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantitySummaryDisplay">
+				          Tổng (viên)
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantitySummaryDisplay" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantityBoxes" id="stockQuantityBoxesLabel">
+				          Hộp tồn
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantityBoxes" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantityRemaining" id="stockQuantityRemainingLabel">
+				          Viên tồn
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantityRemaining" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="medicineImportOpen">
+				          Tồn kho
+				         </label>
+				         <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicineImportOpen" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" onclick="showImportFromMedicineForm()"><i id="medicineImportIcon" class="bi bi-box-arrow-in-down" aria-hidden="true" hidden></i><span id="medicineImportLabel">Lưu thuốc trước</span></button>
+				        </div>
+				       </div>
+				       <input aria-hidden="true" id="stockQuantityInput" type="hidden"/>
+				       <input id="packagingDisplay" name="packaging" type="hidden"/>
+				       <input id="pillsPerUnit" name="pills_per_unit" type="hidden" value="0"/>
+				      </div>
+				      <div class="mm-field mm-field--full">
+				       <label class="form-label">
+				        Quy cách
+				       </label>
+				       <div class="form-control mm-packaging-info-display" id="packagingInfoDisplay">
+				        <span id="davPackagingText" hidden=""></span>
+				        <span class="text-muted mm-text-form" id="packagingInfoText">
+				         Nhập đơn vị đóng gói và số đơn vị
+				        </span>
+				       </div>
+				       <p class="small mb-0 mt-2" hidden="" id="medicineConversionNote">
+				        Thuốc đã có tồn hoặc lịch sử nhập xuất; đơn vị dùng và quy đổi được giữ nguyên.
+				       </p>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-pricing" class="mm-medicine-section mm-medicine-section--pricing">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="pricing">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-pricing">
+				       Giá cả &amp; Phân loại
+				      </h6>
+				      <p>
+				       Giá vốn theo lô nhập gần nhất; nhập giá bán và phân loại thuốc.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-import_price">Giá vốn theo lần nhập</label>
+				       <input class="form-control" id="medicine-import_price" name="import_price" type="number" min="0" step="0.01" placeholder="Chưa có" disabled readonly aria-readonly="true"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-unit_price">Đơn giá bán</label>
+				       <div class="mm-price-control">
+				        <input class="form-control" id="medicine-unit_price" name="unit_price" type="number" min="0" step="0.01" placeholder="Chưa có" disabled readonly/>
+				        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-action-price" id="medicinePriceOpen" aria-haspopup="dialog" aria-controls="medicinePricePanel">Cập nhật giá</button>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="importedType">
+				        Thuốc Nội/Ngoại
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="importedType" placeholder="Chọn Nội/Ngoại" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="importedTypeDropdown">
+				        </div>
+				        <input id="importedTypeValue" name="is_imported" type="hidden"/>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label mm-prescription-type-label" for="prescriptionType">
+				        <span aria-hidden="true" data-medicine-action-icon="warning">
+				        </span>
+				        Loại đơn thuốc
+				        <span class="text-danger">
+				         *
+				        </span>
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control mm-prescription-type" id="prescriptionType" placeholder="Chọn loại đơn" required="" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="prescriptionTypeDropdown">
+				        </div>
+				        <input id="prescriptionTypeValue" name="prescription_type" type="hidden"/>
+				       </div>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-warnings" class="mm-medicine-section mm-medicine-section--warnings">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="warnings">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-warnings">
+				       Cảnh báo &amp; Thông tin khác
+				      </h6>
+				      <p>
+				       Thiết lập cảnh báo tồn kho, hạn dùng và thông tin bổ sung.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-expiry_date">
+				        Hạn dùng theo lô
+				       </label>
+				       <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicine-expiry_date" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" onclick="showMedicineExpiry()"><i id="medicineExpiryIcon" class="bi bi-calendar3" aria-hidden="true" hidden></i><span id="medicineExpiryLabel">Chưa có lô</span></button>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-low_stock_threshold">
+				        Cảnh báo SL tồn
+				       </label>
+				       <input class="form-control" id="medicine-low_stock_threshold" min="0" name="low_stock_threshold" placeholder="Nhập ngưỡng" step="1" type="number"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-expiry_warning_days">
+				        Cảnh báo hết hạn
+				       </label>
+				       <input class="form-control" id="medicine-expiry_warning_days" min="0" name="expiry_warning_days" placeholder="Nhập số ngày" step="1" type="number"/>
+				      </div>
+				      <div class="mm-field mm-field--full">
+				       <label class="form-label" for="medicine-description">
+				        Ghi chú
+				       </label>
+				       <input class="form-control" id="medicine-description" name="description" placeholder="Nhập ghi chú" type="text"/>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				  </fieldset>
+				  <div class="alert alert-danger mt-3 d-none" id="medicineFormError">
+				  </div>
+				 </div>
+				 <div class="modal-footer mm-medicine-footer" id="medicineEditActions">
+				  <div class="mm-medicine-footer-actions">
+				   <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary qlpk-icon-text-button" disabled="" id="medicineSaveButton" type="submit">
+				    <span aria-hidden="true" class="qlpk-button-icon" data-medicine-action-icon="save">
+				    </span>
+				    <span>
+				     Lưu thông tin
+				    </span>
+				   </button>
+				   <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-primary qlpk-icon-text-button" data-bs-dismiss="modal" type="button">
+				    Huỷ
+				   </button>
+				  </div>
+				  <span class="mm-medicine-footer-motto">
+				   <span aria-hidden="true" class="mm-medicine-leaf">
+				   </span>
+				   Vì một cộng đồng khỏe mạnh hơn
+				  </span>
+				 </div>
 				</form>
 			</div>
 		</div>
 	</div>
 
-	<!-- Modal Import thuốc -->
-	<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-modal-title-import" id="importModalLabel">IMPORT THUỐC</h4>
-				</div>
-				<div class="modal-body pt-0">
-					<div class="text-center mb-3">
-						<p class="text-muted">Chọn file Excel để import danh sách thuốc</p>
-					</div>
-					<div class="mb-3">
-						<label class="form-label fw-semibold mm-text-primary">Chọn file Excel</label>
-						<input type="file" class="form-control" id="importFile" accept=".xlsx,.xls" required>
-						<div class="form-text">Hỗ trợ định dạng .xlsx, .xls</div>
-					</div>
-					<div class="mb-3">
-						<a href="#" onclick="exportTemplate()" class="btn btn-outline-primary btn-sm">
-							<i class="bi bi-download me-1"></i>Tải mẫu Excel
-						</a>
-					</div>
-						<div class="alert alert-info">
-							<i class="bi bi-info-circle"></i>
-							<strong>Lưu ý:</strong> File Excel chỉ tạo danh mục thuốc và bắt đầu tồn bằng 0.
-							Muốn nhập số lượng, dùng chức năng <strong>Nhập kho theo lô</strong>.
-						</div>
-					<div class="alert alert-danger d-none" id="importError"></div>
-				</div>
-				<div class="modal-footer border-0 pt-0 justify-content-center mm-gap-16">
-					<button type="button" class="btn px-5 py-2 fw-bold mm-btn-primary-pill-lg" id="confirmImportBtn">Import</button>
-					<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-					 data-bs-dismiss="modal">Huỷ</button>
-				</div>
-			</div>
-		</div>
-	</div>
+	{% include 'partials/medicine-price-editor.html' %}
 
 	<!-- Modal xác nhận xoá thuốc -->
 	<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel"
@@ -498,9 +564,9 @@
 				<div class="modal-body text-center pt-0">
 					<div class="mb-3 mm-text-lg">Bạn có chắc chắn muốn xoá thuốc này ?</div>
 					<div class="d-flex justify-content-center gap-3 mt-3">
-						<button type="button" class="btn px-4 py-2 fw-bold mm-btn-primary-pill-md" id="confirmDeleteBtn">Xác
+						<button data-qlpk-button="danger" data-qlpk-button-variant="solid" type="button" class="btn px-4 py-2 fw-bold btn-primary mm-btn-pill-md" id="confirmDeleteBtn">Xác
 							nhận</button>
-						<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold mm-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary px-4 py-2 fw-bold mm-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
 					</div>
 				</div>
 			</div>
@@ -521,97 +587,10 @@
 					<div class="mb-3 mm-text-lg" id="bulkDeleteMessage">Bạn có chắc chắn muốn xoá <span
 							id="bulkDeleteCount">0</span> thuốc đã chọn?</div>
 					<div class="d-flex justify-content-center gap-3 mt-3">
-						<button type="button" class="btn px-4 py-2 fw-bold mm-btn-primary-pill-md" id="confirmBulkDeleteBtn">Xác
+						<button data-qlpk-button="danger" data-qlpk-button-variant="solid" type="button" class="btn px-4 py-2 fw-bold btn-primary mm-btn-pill-md" id="confirmBulkDeleteBtn">Xác
 							nhận</button>
-						<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold mm-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary px-4 py-2 fw-bold mm-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
 					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal Chi tiết tồn kho -->
-	<div class="modal fade" id="stockDetailModal" tabindex="-1" aria-labelledby="stockDetailModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog mm-dialog-stock-detail">
-			<div class="modal-content mm-modal-content-95">
-				<div class="modal-header border-0 mm-stock-modal-header">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-stock" id="stockDetailModalLabel">
-						CHI TIẾT TỒN KHO
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body pt-0 mm-stock-modal-body">
-					<!-- Thông tin tổng quan -->
-					<div class="stock-summary-card mm-stock-summary-card">
-						<div class="d-flex align-items-center mb-2">
-							<i class="bi bi-capsule me-2 mm-icon-primary-lg"></i>
-							<span id="detailMedicineName" class="fw-bold mm-text-primary-lg">-</span>
-						</div>
-						<div class="row g-3">
-							<div class="col-md-3">
-								<div class="stock-summary-item">
-									<span class="stock-summary-label mm-stock-summary-label">Tồn
-										kho tổng:</span>
-									<span class="stock-summary-value mm-stock-summary-value" id="totalStockQuantity">-</span>
-								</div>
-							</div>
-							<div class="col-md-3">
-								<div class="stock-summary-item">
-									<span class="stock-summary-label mm-stock-summary-label">Số
-										lô:</span>
-									<span class="stock-summary-value mm-stock-summary-value" id="totalBatches">-</span>
-								</div>
-							</div>
-							<div class="col-md-3">
-								<div class="stock-summary-item">
-									<span class="stock-summary-label mm-stock-summary-label">Giá
-										nhập TB:</span>
-									<span class="stock-summary-value mm-stock-summary-value" id="averageImportPrice">-</span>
-								</div>
-							</div>
-							<div class="col-md-3">
-								<div class="stock-summary-item">
-									<span class="stock-summary-label mm-stock-summary-label">Giá
-										trị tồn kho:</span>
-									<span class="stock-summary-value mm-stock-summary-value" id="totalStockValue">-</span>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Bảng chi tiết các lô -->
-					<h6 class="fw-bold mb-2 mm-text-primary-base">
-						<i class="bi bi-list-ul"></i> Chi tiết từng lô
-					</h6>
-					<div class="table-responsive mm-scroll-95vh-350">
-						<table class="table table-bordered table-sm batch-detail-table mm-mb-0">
-							<thead class="mm-sticky-head">
-								<tr>
-									<th class="mm-cell-w-100">Số lô</th>
-									<th class="mm-cell-w-120">Ngày nhập</th>
-									<th class="mm-cell-w-120">Hạn sử dụng</th>
-									<th class="mm-cell-w-100">SL nhập</th>
-									<th class="mm-cell-w-100">SL còn lại</th>
-									<th class="mm-cell-w-120">Giá nhập</th>
-									<th class="mm-cell-w-150">Nhà cung cấp</th>
-									<th class="mm-cell-w-100">Trạng thái</th>
-								</tr>
-							</thead>
-							<tbody class="mm-text-sm" id="batchDetailTableBody">
-								<tr>
-									<td colspan="8" class="text-center text-muted py-4">Đang tải dữ liệu...</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-
-				</div>
-				<div class="modal-footer border-0 pt-0 mm-modal-toolbar-fixed">
-					<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold mm-btn-pill-sm"
-					 data-bs-dismiss="modal">
-						Đóng
-					</button>
 				</div>
 			</div>
 		</div>
@@ -620,74 +599,80 @@
 	<!-- Modal Nhập kho theo đơn hàng -->
 	<div class="modal fade" id="importBatchModal" tabindex="-1" aria-labelledby="importBatchModalLabel"
 		aria-hidden="true">
-		<div class="modal-dialog modal-xl mm-dialog-95">
+		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-md" id="importBatchModalLabel">
-						NHẬP KHO THEO ĐƠN HÀNG
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				<div class="modal-header">
+					<div>
+						<h4 class="modal-title" id="importBatchModalLabel">Nhập kho theo đơn hàng</h4>
+						<p class="mm-import-subtitle">Nhập thuốc theo lô, hạn dùng và đơn giá thực tế.</p>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng nhập kho"></button>
 				</div>
-				<div class="modal-body pt-0">
+				<div class="mm-import-tabs" role="tablist" aria-label="Chế độ nhập kho">
+					<button type="button" class="mm-import-tab is-active" id="importTabOrder" role="tab"
+						aria-selected="true" aria-controls="importOrderPane">Nhập kho</button>
+					<button type="button" class="mm-import-tab" id="importTabLedger" role="tab"
+						aria-selected="false" aria-controls="importLedgerPane">Lịch sử nhập</button>
+				</div>
+				<div class="modal-body">
+					<div id="importOrderPane" class="mm-import-pane" role="tabpanel" aria-labelledby="importTabOrder">
 					<!-- Thông tin chung đơn hàng -->
-					<div class="row g-2 mb-2">
-						<div class="col-md-4">
-							<label class="form-label fw-semibold mm-text-primary">
+					<div class="mm-import-fields">
+						<div>
+							<label class="form-label" for="batchSupplier">
 								Nhà cung cấp <span class="text-danger">*</span>
 							</label>
 							<div class="input-group">
 								<input type="text" class="form-control" id="batchSupplier"
 									placeholder="Chọn nhà cung cấp từ danh sách" required readonly>
 								<input type="hidden" id="batchSupplierId">
-								<button type="button" class="btn btn-outline-secondary"
+								<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary"
 									onclick="showSupplierManagement()" title="Quản lý và chọn nhà cung cấp">
-									<i class="bi bi-building"></i>
+									<i class="bi bi-building" aria-hidden="true"></i> Chọn
 								</button>
 							</div>
 						</div>
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">
+						<div>
+							<label class="form-label" for="batchInvoiceNumber">
 								Số hóa đơn
 							</label>
 							<input type="text" class="form-control" id="batchInvoiceNumber" placeholder="Số hóa đơn">
 						</div>
-						<div class="col-md-2">
-							<label class="form-label fw-semibold mm-text-primary">
+						<div>
+							<label class="form-label" for="batchImportDate">
 								Ngày nhập kho <span class="text-danger">*</span>
 							</label>
 							<input type="text" class="form-control js-datepicker" id="batchImportDate"
 								placeholder="dd/mm/yyyy" autocomplete="off" required>
 						</div>
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">
+						<div>
+							<label class="form-label" for="batchImportUser">
 								Người thực hiện
 							</label>
-							<input type="text" class="form-control" id="batchImportUser" placeholder="Tên người nhập">
+							<input type="text" class="form-control" id="batchImportUser" placeholder="Tài khoản đăng nhập" readonly disabled>
 						</div>
 					</div>
 
 					<!-- Bảng danh sách thuốc nhập -->
-					<div class="mb-2">
-						<div class="d-flex justify-content-between align-items-center mb-1">
-							<h6 class="fw-bold mb-0 mm-text-primary">
-								<i class="bi bi-list-ul"></i> Danh sách thuốc nhập kho
-							</h6>
-							<button type="button" class="btn btn-sm btn-success" id="addBatchRowBtn">
+					<section class="mm-import-list" aria-labelledby="batchImportListTitle">
+						<div class="mm-import-toolbar">
+							<h5 id="batchImportListTitle">Danh sách thuốc nhập</h5>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary" id="addBatchRowBtn">
 								<i class="bi bi-plus-circle"></i> Thêm thuốc
 							</button>
 						</div>
-						<div class="table-responsive mm-scroll-100vh-420">
-							<table class="table table-bordered table-sm" id="batchImportTable">
+						<div class="table-responsive mm-import-table-scroll">
+							<table class="table" id="batchImportTable" aria-label="Thuốc nhập kho theo lô">
 								<thead class="mm-sticky-head">
 									<tr>
-										<th class="mm-w-180">Tên thuốc <span class="text-danger">*</span></th>
-										<th class="mm-w-100">Số lô</th>
-										<th class="mm-w-110">Hạn sử dụng <span class="text-danger">*</span></th>
-										<th class="mm-w-90">Số lượng <span class="text-danger">*</span></th>
-										<th class="mm-w-110">Giá nhập</th>
-										<th class="mm-w-140">Giá lần trước</th>
-										<th class="mm-w-110">Thành tiền</th>
-										<th class="mm-w-70">Tác vụ</th>
+										<th scope="col">Tên thuốc <span class="text-danger">*</span></th>
+										<th scope="col">Số lô <span class="text-danger">*</span></th>
+										<th scope="col">Hạn dùng <span class="text-danger">*</span></th>
+										<th scope="col">Số lượng <span class="text-danger">*</span></th>
+										<th scope="col">Đơn giá nhập <span class="text-danger">*</span></th>
+										<th scope="col">Giá lần trước</th>
+										<th scope="col">Thành tiền</th>
+										<th scope="col"><span class="visually-hidden">Thao tác</span></th>
 									</tr>
 								</thead>
 								<tbody id="batchImportTableBody">
@@ -695,38 +680,99 @@
 								</tbody>
 							</table>
 						</div>
-					</div>
+					</section>
 
-					<!-- Tổng giá trị đơn hàng -->
-					<div class="alert alert-info mb-2">
-						<div class="d-flex justify-content-between align-items-center mb-2">
-							<span class="fw-bold mm-text-sm-primary">Tổng giá trị đơn
-								hàng:</span>
-							<span class="fw-bold mm-text-primary" id="batchTotalValue">0 ₫</span>
+					<div class="mm-import-support">
+						<div>
+							<label class="form-label" for="batchNote">Ghi chú đơn hàng <span class="mm-import-optional">(không bắt buộc)</span></label>
+							<textarea class="form-control" id="batchNote" rows="2"
+								placeholder="Thông tin bổ sung về đơn hàng"></textarea>
 						</div>
-						<!-- Tổng giá trị theo từng lô -->
-						<div id="batchTotalByLot">
-							<small class="text-muted fw-semibold mm-text-xs">Chi tiết theo lô:</small>
-							<div id="batchLotBreakdown"></div>
+						<div id="batchTotalByLot" class="mm-import-lots">
+							<h6 class="form-label">Chi tiết giá trị theo lô</h6>
+							<div id="batchLotBreakdown" class="mm-import-lot-list" tabindex="0" role="region" aria-label="Giá trị theo lô">Chưa có dữ liệu lô</div>
 						</div>
 					</div>
-
-					<!-- Ghi chú -->
-					<div class="mb-2">
-						<label class="form-label fw-semibold mm-text-primary-xs">Ghi chú đơn
-							hàng</label>
-						<textarea class="form-control" id="batchNote" rows="1"
-							placeholder="Ghi chú về đơn hàng nhập kho này"></textarea>
+					</div>
+					<div id="importLedgerPane" class="mm-import-pane" role="tabpanel" aria-labelledby="importTabLedger" hidden>
+						<div class="mm-import-ledger-toolbar">
+							<input type="text" class="form-control form-control-sm" id="importLedgerSearch"
+								placeholder="Tìm theo tên thuốc hoặc số lô…" aria-label="Tìm trong lịch sử nhập và lô">
+							<select class="form-select form-select-sm" id="importLedgerStatus" aria-label="Lọc theo trạng thái tồn">
+								<option value="">Tất cả trạng thái</option>
+								<option value="Bình thường">Bình thường</option>
+								<option value="Sắp hết">Sắp hết</option>
+								<option value="Sắp hết hạn">Sắp hết hạn</option>
+								<option value="Đã hết hạn">Đã hết hạn</option>
+							</select>
+						</div>
+						<div class="table-responsive mm-import-ledger-scroll">
+							<table class="table table-sm mm-import-ledger-table">
+								<thead>
+									<tr>
+										<th scope="col" class="text-center">Thuốc</th>
+										<th scope="col" class="text-center">Số lô</th>
+										<th scope="col" class="text-center">Hạn dùng</th>
+										<th scope="col" class="text-center">SL nhập</th>
+										<th scope="col" class="text-center">Còn lại</th>
+										<th scope="col" class="text-center">Đơn giá</th>
+										<th scope="col" class="text-center">Số hóa đơn</th>
+										<th scope="col" class="text-center">Ngày nhập</th>
+										<th scope="col" class="text-center">Lịch sử</th>
+									</tr>
+								</thead>
+								<tbody id="importLedgerTableBody"></tbody>
+							</table>
+						</div>
+						<div class="mm-import-ledger-pager">
+							<span id="importLedgerPageInfo" aria-live="polite"></span>
+							<div class="mm-import-ledger-pager-actions">
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="importLedgerPrev">Trước</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="importLedgerNext">Sau</button>
+							</div>
+						</div>
 					</div>
 				</div>
-				<div class="modal-footer border-0 pt-0 justify-content-center mm-toolbar-row">
-					<button type="button" class="btn px-4 fw-bold mm-btn-primary-compact-padded" id="confirmImportBatchBtn">
-						<i class="bi bi-check-circle"></i> Xác nhận nhập kho
-					</button>
-					<button type="button" class="btn btn-outline-primary px-4 fw-bold mm-btn-compact-padded"
-						data-bs-dismiss="modal">
-						Hủy
-					</button>
+				<div class="modal-footer mm-import-footer">
+					<div class="mm-import-total">
+						<span>Tổng giá trị đơn hàng</span>
+						<strong id="batchTotalValue" aria-live="polite">0 ₫</strong>
+					</div>
+					<div class="mm-import-actions">
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="confirmImportBatchBtn">
+							<i class="bi bi-check-circle" aria-hidden="true"></i> Xác nhận nhập kho
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="receiptDispensingModal" tabindex="-1" aria-labelledby="receiptDispensingTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered mm-dialog-wide">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="receiptDispensingTitle">Lịch sử kê đơn</h4>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng lịch sử kê đơn"></button>
+				</div>
+				<div class="modal-body">
+					<form id="receiptDispensingFilters" class="mm-dispensing-filters" role="search" aria-label="Tìm lịch sử kê đơn">
+						<div class="mm-dispensing-search"><label for="receiptDispensingSearch">Bệnh nhân</label><input id="receiptDispensingSearch" type="search" class="form-control form-control-sm" placeholder="Tìm theo tên bệnh nhân" autocomplete="off"></div>
+						<div><label for="receiptDispensingType">Loại giao dịch</label><select id="receiptDispensingType" class="form-select form-select-sm"><option value="">Tất cả</option><option value="export">Cấp thuốc</option><option value="return">Hoàn thuốc</option><option value="price_adjustment">Điều chỉnh giá</option></select></div>
+						<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="submit" class="btn btn-sm btn-primary">Tìm kiếm</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="receiptDispensingReset" class="btn btn-sm btn-outline-secondary">Xóa lọc</button>
+					</form>
+					<p class="mm-dispensing-note">Mới nhất trước · Cấp thuốc: trừ kho (−) · Hoàn thuốc: cộng lại kho (+)</p>
+					<div class="mm-dispensing-scroll" role="region" aria-label="Chi tiết cấp hoàn theo lượt khám" tabindex="0">
+						<table class="table table-sm"><thead><tr><th>Thời điểm thao tác</th><th>Loại</th><th>Bệnh nhân / Ngày khám</th><th>Thay đổi kho</th><th>Tồn lô<span>Sau thao tác</span></th><th>Tồn tổng<span>Sau thao tác</span></th><th>Người thực hiện</th></tr></thead><tbody id="receiptDispensingRows"></tbody></table>
+					</div>
+					<p class="mm-dispensing-note">Tồn sau thao tác là số đã lưu tại thời điểm đó, không phải tồn hiện tại. “Chưa ghi nhận” không có nghĩa là 0. Giao dịch chưa liên kết lượt khám không thể tìm theo tên bệnh nhân.</p>
+				</div>
+				<div class="modal-footer">
+						<span id="receiptDispensingPage" aria-live="polite"></span>
+						<div id="receiptDispensingPagination" hidden><button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingPrev">Trước</button> <button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingNext">Sau</button></div>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal">Đóng</button>
 				</div>
 			</div>
 		</div>
@@ -735,7 +781,7 @@
 	<!-- Modal Quản lý Nhà cung cấp -->
 	<div class="modal fade" id="supplierManagementModal" tabindex="-1" aria-labelledby="supplierManagementModalLabel"
 		aria-hidden="true">
-		<div class="modal-dialog modal-xl mm-dialog-95">
+		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-radius-20">
 				<div class="modal-header border-0">
 					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-md" id="supplierManagementModalLabel">
@@ -745,9 +791,9 @@
 				</div>
 				<div class="modal-body pt-0">
 					<!-- Form thêm/sửa nhà cung cấp -->
-					<div class="card border-primary mb-3 mm-card-muted">
-						<div class="card-body p-3">
-							<h6 class="card-title mb-3 mm-card-title-primary">
+					<div class="card border-primary mb-2 mm-card-muted">
+						<div class="card-body p-2">
+							<h6 class="card-title mb-2 mm-card-title-primary">
 								<i class="bi bi-building"></i> <span id="supplierFormTitle">Thêm nhà cung cấp mới</span>
 							</h6>
 							<form id="supplierForm">
@@ -757,56 +803,54 @@
 										<label class="form-label fw-semibold mb-1 mm-label-primary">
 											Tên nhà cung cấp <span class="text-danger">*</span>
 										</label>
-										<input type="text" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="text" class="form-control form-control-sm py-1 px-2"
 											id="supplierName" name="name" placeholder="Tên nhà cung cấp" required>
 									</div>
 									<div class="col-md-3">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Số điện thoại</label>
-										<input type="text" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="text" class="form-control form-control-sm py-1 px-2"
 											id="supplierPhone" name="phone" placeholder="Số điện thoại">
 									</div>
 									<div class="col-md-3">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Email</label>
-										<input type="email" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="email" class="form-control form-control-sm py-1 px-2"
 											id="supplierEmail" name="email" placeholder="Email">
 									</div>
 									<div class="col-md-2">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Mã số thuế</label>
-										<input type="text" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="text" class="form-control form-control-sm py-1 px-2"
 											id="supplierTaxCode" name="tax_code" placeholder="Mã số thuế">
 									</div>
-									<div class="col-md-4">
+									<div class="col-md-3">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Người liên hệ</label>
-										<input type="text" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="text" class="form-control form-control-sm py-1 px-2"
 											id="supplierContactPerson" name="contact_person"
 											placeholder="Người liên hệ">
 									</div>
-									<div class="col-md-8">
+									<div class="col-md-5">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Địa chỉ</label>
-										<input type="text" class="form-control form-control-sm rounded-3 py-1 px-2"
+										<input type="text" class="form-control form-control-sm py-1 px-2"
 											id="supplierAddress" name="address" placeholder="Địa chỉ">
 									</div>
-									<div class="col-md-12">
+									<div class="col-md-4">
 										<label class="form-label fw-semibold mb-1 mm-label-primary">Ghi chú</label>
-										<textarea class="form-control form-control-sm rounded-3 py-1 px-2"
-											id="supplierNotes" name="notes" rows="2"
+										<textarea class="form-control form-control-sm py-1 px-2"
+											id="supplierNotes" name="notes" rows="1"
 											placeholder="Ghi chú về nhà cung cấp"></textarea>
 									</div>
-									<div class="col-md-12">
-										<div class="form-check">
-											<input class="form-check-input" type="checkbox" id="supplierIsActive"
-												name="is_active" checked>
-											<label class="form-check-label mm-text-primary" for="supplierIsActive">
-												Đang hoạt động
-											</label>
-										</div>
-									</div>
 								</div>
-								<div class="mt-3 d-flex gap-2">
-									<button type="submit" class="btn btn-sm px-4 fw-bold mm-btn-primary-compact">
+								<div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+									<div class="form-check mb-0 me-auto">
+										<input class="form-check-input" type="checkbox" id="supplierIsActive"
+											name="is_active" checked>
+										<label class="form-check-label mm-text-primary" for="supplierIsActive">
+											Đang hoạt động
+										</label>
+									</div>
+									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-sm px-4 fw-bold btn-primary mm-btn-compact">
 										<i class="bi bi-check-circle"></i> <span id="supplierSubmitText">Thêm mới</span>
 									</button>
-									<button type="button" class="btn btn-sm btn-outline-secondary px-4 fw-bold mm-btn-compact"
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-secondary px-4 fw-bold mm-btn-compact"
 										id="supplierResetBtn">
 										<i class="bi bi-arrow-counterclockwise"></i> Làm mới
 									</button>
@@ -816,33 +860,33 @@
 					</div>
 
 					<!-- Bảng danh sách nhà cung cấp -->
-					<div class="mb-2">
-						<div class="d-flex justify-content-between align-items-center mb-2">
+					<div class="mm-supplier-list mb-2">
+						<div class="mm-supplier-toolbar d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 							<h6 class="fw-bold mb-0 mm-text-primary">
 								<i class="bi bi-list-ul"></i> Danh sách nhà cung cấp
 							</h6>
-							<div class="d-flex gap-2">
-								<input type="text" class="form-control form-control-sm mm-w-250" id="supplierSearchInput"
+							<div class="mm-supplier-filters d-flex flex-wrap gap-2">
+								<input type="text" class="form-control form-control-sm" id="supplierSearchInput"
 									placeholder="Tìm kiếm nhà cung cấp...">
-								<select class="form-select form-select-sm mm-w-150" id="supplierStatusFilter">
+								<select class="form-select form-select-sm" id="supplierStatusFilter">
 									<option value="">Tất cả</option>
 									<option value="1">Đang hoạt động</option>
 									<option value="0">Ngừng hoạt động</option>
 								</select>
 							</div>
 						</div>
-						<div class="table-responsive mm-scroll-100vh-500">
+						<div class="table-responsive mm-supplier-table-scroll">
 							<table class="table table-bordered table-sm">
 								<thead class="mm-sticky-head">
 									<tr>
-										<th class="mm-w-200">Tên nhà cung cấp</th>
+										<th>Tên nhà cung cấp</th>
 										<th class="mm-w-120">Số điện thoại</th>
 										<th class="mm-w-150">Email</th>
 										<th class="mm-w-120">Mã số thuế</th>
 										<th class="mm-w-150">Người liên hệ</th>
-										<th class="mm-w-200">Địa chỉ</th>
-										<th class="mm-w-100">Trạng thái</th>
-										<th class="mm-w-120">Tác vụ</th>
+										<th>Địa chỉ</th>
+										<th class="mm-supplier-status-cell">Trạng thái</th>
+										<th class="mm-supplier-actions-cell">Tác vụ</th>
 									</tr>
 								</thead>
 								<tbody id="supplierTableBody">
@@ -855,7 +899,7 @@
 					</div>
 				</div>
 				<div class="modal-footer border-0 pt-0 justify-content-center mm-toolbar-row">
-					<button type="button" class="btn btn-outline-primary px-4 fw-bold mm-btn-compact-padded"
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary px-4 fw-bold mm-btn-compact-padded"
 						data-bs-dismiss="modal">
 						Đóng
 					</button>
@@ -863,293 +907,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- Modal Kiểm kê kho -->
-	<div class="modal fade" id="inventoryCountModal" tabindex="-1" aria-labelledby="inventoryCountModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog mm-dialog-1200">
-			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-lg" id="inventoryCountModalLabel">
-						KIỂM KÊ KHO
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body pt-0">
-					<div class="alert alert-info mb-3">
-						<i class="bi bi-info-circle"></i>
-						<strong>Hướng dẫn:</strong> Nhập số lượng thực tế theo từng lô. Hệ thống sẽ tự động tính chênh
-						lệch, cập nhật lô và tồn tổng, đồng thời ghi lịch sử điều chỉnh.
-					</div>
-
-					<!-- Thanh tìm kiếm -->
-					<div class="mb-3">
-						<div class="input-group">
-							<span class="input-group-text mm-input-addon-left">
-								<i class="bi bi-search"></i>
-							</span>
-							<input type="text" class="form-control mm-input-attached-right" id="inventoryCountSearchInput"
-								placeholder="Tìm theo tên thuốc hoặc số lô...">
-						</div>
-					</div>
-
-					<div class="table-responsive mm-scroll-100vh-400">
-						<table class="table table-bordered table-sm">
-							<thead class="mm-sticky-head">
-								<tr>
-									<th class="mm-w-250">Tên thuốc</th>
-									<th class="mm-w-120">Số lô</th>
-									<th class="mm-w-120">SL hệ thống</th>
-									<th class="mm-w-120">SL thực tế</th>
-									<th class="mm-w-100">Chênh lệch</th>
-									<th class="mm-w-200">Ghi chú</th>
-								</tr>
-							</thead>
-							<tbody id="inventoryCountTableBody">
-								<!-- Dữ liệu sẽ được render bằng JS -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-				<div class="modal-footer border-0 pt-0 justify-content-center mm-gap-16">
-					<button type="button" class="btn px-5 py-2 fw-bold mm-btn-primary-pill-lg" id="confirmInventoryCountBtn">
-						<i class="bi bi-check-circle"></i> Xác nhận điều chỉnh
-					</button>
-					<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-					 data-bs-dismiss="modal">
-						Hủy
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal Xuất dữ liệu -->
-	<div class="modal fade" id="exportDataModal" tabindex="-1" aria-labelledby="exportDataModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog mm-dialog-800">
-			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-lg" id="exportDataModalLabel">
-						XUẤT DỮ LIỆU
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body pt-0">
-					<div class="row g-3">
-						<div class="col-md-6">
-							<div class="card border-0 shadow-sm h-100">
-								<div class="card-body text-center">
-									<h6 class="card-title mb-3">Xuất danh sách thuốc</h6>
-									<button class="btn btn-success mb-2 w-100" onclick="exportToExcel('medicines')">
-										<i class="bi bi-file-excel"></i> Excel
-									</button>
-									<button class="btn btn-danger w-100" onclick="exportToPDF('medicines')">
-										<i class="bi bi-file-pdf"></i> PDF
-									</button>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="card border-0 shadow-sm h-100">
-								<div class="card-body text-center">
-									<h6 class="card-title mb-3">Xuất báo cáo tồn kho</h6>
-									<button class="btn btn-success mb-2 w-100" onclick="exportToExcel('stock_report')">
-										<i class="bi bi-file-excel"></i> Excel
-									</button>
-									<button class="btn btn-danger w-100" onclick="exportToPDF('stock_report')">
-										<i class="bi bi-file-pdf"></i> PDF
-									</button>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="card border-0 shadow-sm h-100">
-								<div class="card-body text-center">
-									<h6 class="card-title mb-3">Xuất lịch sử giao dịch</h6>
-									<button class="btn btn-info mb-2 w-100" onclick="showTransactionHistoryModal()">
-										<i class="bi bi-clock-history"></i> Xem lịch sử
-									</button>
-									<button class="btn btn-success mb-2 w-100" onclick="exportToExcel('transactions')">
-										<i class="bi bi-file-excel"></i> Excel
-									</button>
-									<button class="btn btn-danger w-100" onclick="exportToPDF('transactions')">
-										<i class="bi bi-file-pdf"></i> PDF
-									</button>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="card border-0 shadow-sm h-100">
-								<div class="card-body text-center">
-									<h6 class="card-title mb-3">Xuất báo cáo nhà cung cấp</h6>
-									<button class="btn btn-success mb-2 w-100" onclick="exportToExcel('suppliers')">
-										<i class="bi bi-file-excel"></i> Excel
-									</button>
-									<button class="btn btn-danger w-100" onclick="exportToPDF('suppliers')">
-										<i class="bi bi-file-pdf"></i> PDF
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer border-0 pt-0">
-					<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-					 data-bs-dismiss="modal">
-						Đóng
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal Báo cáo -->
-	<div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
-		<div class="modal-dialog mm-dialog-1200">
-			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-lg" id="reportsModalLabel">
-						BÁO CÁO KHO THUỐC
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body pt-0">
-					<!-- Chọn loại báo cáo -->
-					<div class="row g-3 mb-4">
-						<div class="col-md-4">
-							<label class="form-label fw-semibold mm-text-primary">
-								Loại báo cáo <span class="text-danger">*</span>
-							</label>
-							<select class="form-select" id="reportType" required>
-								<option value="">-- Chọn loại báo cáo --</option>
-								<option value="nxt">Báo cáo Nhập - Xuất - Tồn</option>
-								<option value="expiry">Báo cáo thuốc sắp hết hạn</option>
-								<option value="stock_value">Báo cáo giá trị tồn kho</option>
-								<option value="low_stock">Báo cáo thuốc sắp hết</option>
-							</select>
-						</div>
-						<div class="col-md-4">
-							<label class="form-label fw-semibold mm-text-primary">Từ ngày</label>
-							<input type="text" class="form-control js-datepicker" id="reportFromDate"
-								placeholder="dd/mm/yyyy" autocomplete="off">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label fw-semibold mm-text-primary">Đến ngày</label>
-							<input type="text" class="form-control js-datepicker" id="reportToDate"
-								placeholder="dd/mm/yyyy" autocomplete="off">
-						</div>
-					</div>
-
-					<!-- Nút tạo báo cáo -->
-					<div class="mb-3">
-						<button type="button" class="btn btn-primary" id="generateReportBtn">
-							<i class="bi bi-file-earmark-text"></i> Tạo báo cáo
-						</button>
-						<button type="button" class="btn btn-success ms-2 mm-hidden" id="exportReportBtn">
-							<i class="bi bi-download"></i> Xuất Excel
-						</button>
-					</div>
-
-					<!-- Khu vực hiển thị báo cáo -->
-					<div class="mm-hidden" id="reportContent">
-						<div class="table-responsive mm-scroll-100vh-400">
-							<table class="table table-bordered table-sm" id="reportTable">
-								<thead class="mm-sticky-head">
-									<tr id="reportTableHeader">
-										<!-- Header sẽ được render bằng JS -->
-									</tr>
-								</thead>
-								<tbody id="reportTableBody">
-									<!-- Dữ liệu sẽ được render bằng JS -->
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer border-0 pt-0">
-					<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-					 data-bs-dismiss="modal">
-						Đóng
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal Lịch sử giao dịch -->
-	<div class="modal fade" id="transactionHistoryModal" tabindex="-1" aria-labelledby="transactionHistoryModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog mm-dialog-1200">
-			<div class="modal-content mm-radius-20">
-				<div class="modal-header border-0">
-					<h4 class="modal-title w-100 text-center fw-bold mm-title-primary-lg" id="transactionHistoryModalLabel">
-						LỊCH SỬ GIAO DỊCH
-					</h4>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body pt-0">
-					<!-- Bộ lọc -->
-					<div class="row g-3 mb-3">
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">Loại giao dịch</label>
-							<select class="form-select" id="filterTransactionType">
-								<option value="">Tất cả</option>
-								<option value="import">Nhập kho</option>
-								<option value="export">Xuất kho</option>
-								<option value="adjustment">Điều chỉnh</option>
-							</select>
-						</div>
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">Từ ngày</label>
-							<input type="text" class="form-control js-datepicker" id="filterFromDate"
-								placeholder="dd/mm/yyyy" autocomplete="off">
-						</div>
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">Đến ngày</label>
-							<input type="text" class="form-control js-datepicker" id="filterToDate"
-								placeholder="dd/mm/yyyy" autocomplete="off">
-						</div>
-						<div class="col-md-3">
-							<label class="form-label fw-semibold mm-text-primary">Tìm kiếm</label>
-							<input type="text" class="form-control" id="filterSearch" placeholder="Tên thuốc, số lô...">
-						</div>
-					</div>
-
-					<!-- Bảng lịch sử -->
-					<div class="table-responsive mm-scroll-100vh-400">
-						<table class="table table-bordered table-sm">
-							<thead class="mm-sticky-head">
-								<tr>
-									<th class="mm-w-120">Thời gian</th>
-									<th class="mm-w-100">Loại</th>
-									<th class="mm-w-200">Tên thuốc</th>
-									<th class="mm-w-120">Số lô</th>
-									<th class="mm-w-100">Số lượng</th>
-									<th class="mm-w-120">Giá</th>
-									<th class="mm-w-150">Người thực hiện</th>
-									<th class="mm-w-200">Ghi chú</th>
-								</tr>
-							</thead>
-							<tbody id="transactionHistoryTableBody">
-								<!-- Dữ liệu sẽ được render bằng JS -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-				<div class="modal-footer border-0 pt-0">
-					<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold mm-btn-pill-lg"
-					 data-bs-dismiss="modal">
-						Đóng
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-	<!-- Flatpickr CSS -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 	<!-- Flatpickr JS -->
 	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -1160,6 +917,10 @@
 	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
 
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
+	<script src="/static/js/medicines/clinic-catalog.js?v={{ app_version }}"></script>
+	<script src="/static/js/medicines/price-editor.js?v={{ app_version }}"></script>
+	<script src="/static/js/medicines/reference-review.js?v={{ app_version }}"></script>
 	<script src="/static/js/medicine-management.js?v={{ app_version }}"></script>
 </body>
 

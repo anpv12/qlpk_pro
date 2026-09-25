@@ -1,52 +1,55 @@
 .user-management-page .um-filter-search {
-  max-width: 220px;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
-.user-management-page .um-filter-category {
-  max-width: 180px;
+.user-management-page .um-filter-role {
+  flex: 0 1 11.25rem;
+  width: 11.25rem;
 }
 
-.user-management-page .um-filter-date,
 .user-management-page .um-filter-status {
-  max-width: 170px;
+  flex: 0 1 10.625rem;
+  width: 10.625rem;
 }
 
 .user-management-page .table .user-link {
-  color: #1976d2;
+  color: var(--qlpk-color-primary);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .user-management-page .table .action-btn {
   border: none;
-  background: none;
-  color: #1976d2;
   font-size: var(--qlpk-font-size-2xl, 20px);
   margin-right: 6px;
 }
-
-.user-management-page .table .action-btn.delete {
+.user-management-page .table .action-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: none;
+  color: var(--qlpk-color-primary);
+}
+.user-management-page .table .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *) {
   color: #e53935;
 }
 
 .user-management-page .um-modal-content-lg {
-  border-radius: 20px;
+  border-radius: var(--clinic-surface-radius, 20px);
 }
 
 .user-management-page .um-modal-content-md {
-  border-radius: 18px;
+  border-radius: var(--clinic-surface-radius, 18px);
 }
 
 .user-management-page .um-modal-title {
-  color: #155ca2;
-  font-size: var(--qlpk-font-size-5xl, 32px);
+  color: var(--qlpk-color-primary);
+  font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-5xl, 32px));
   letter-spacing: 1px;
 }
 
 .user-management-page #userModal .form-label,
 .user-management-page #userModal .form-check-label,
 .user-management-page .um-text-primary {
-  color: #155ca2;
+  color: var(--qlpk-color-primary);
 }
 
 .user-management-page .um-gap-12 {
@@ -84,18 +87,18 @@
 .user-management-page #avatarFile::file-selector-button,
 .user-management-page #licenseCertificateFile::file-selector-button,
 .user-management-page input[type="file"]::-webkit-file-upload-button {
-  font-size: var(--qlpk-font-size-md, 14px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-md, 14px));
   padding: 6px 14px;
-  border-radius: 24px;
-  border: 1px solid #155ca2;
-  background: #155ca2;
+  border-radius: var(--clinic-control-radius, 24px);
+  border: 1px solid var(--qlpk-color-primary);
+  background: var(--qlpk-workflow-context-header-bg);
   color: #fff;
   cursor: pointer;
 }
 
 .user-management-page #licenseCertificateFileName {
   display: none;
-  color: #155ca2;
+  color: var(--qlpk-color-primary);
   text-decoration: underline;
   cursor: pointer;
   font-size: var(--qlpk-font-size-md, 14px);
@@ -171,7 +174,7 @@
 }
 
 .user-management-page .um-clear-color-btn {
-  font-size: var(--qlpk-font-size-xs, 11px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xs, 11px));
   padding: 2px 8px;
   margin-left: 4px;
 }
@@ -182,73 +185,31 @@
 
 .user-management-page .um-btn-primary-pill-lg,
 .user-management-page .um-btn-primary-pill-md {
-  background: #155ca2;
+  border-radius: var(--clinic-control-radius, 30px);
+}
+.user-management-page .um-btn-primary-pill-lg:not([data-qlpk-button], [data-qlpk-button] *),
+.user-management-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-workflow-context-header-bg);
   color: #fff;
-  border-radius: 30px;
 }
 
 .user-management-page .um-btn-primary-pill-lg,
 .user-management-page .um-btn-pill-lg {
-  font-size: var(--qlpk-font-size-xl, 18px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 18px));
 }
 
 .user-management-page .um-btn-primary-pill-md,
 .user-management-page .um-btn-pill-md {
-  font-size: var(--qlpk-font-size-lg, 16px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-lg, 16px));
 }
 
 .user-management-page .um-btn-pill-lg,
 .user-management-page .um-btn-pill-md {
-  border-radius: 30px;
+  border-radius: var(--clinic-control-radius, 30px);
 }
 
 .user-management-page .um-text-lg {
   font-size: var(--qlpk-font-size-xl, 18px);
-}
-
-.user-management-page .um-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  max-width: 300px;
-  font-size: var(--qlpk-font-size-md, 14px);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  animation: slideInRight 0.3s ease-out;
-}
-
-.user-management-page .um-toast--success {
-  background: #10b981;
-}
-.user-management-page .um-toast--error {
-  background: #dc3545;
-}
-.user-management-page .um-toast--warning {
-  background: #ffc107;
-}
-.user-management-page .um-toast--info {
-  background: #17a2b8;
-}
-.user-management-page .um-toast-icon {
-  font-size: var(--qlpk-font-size-lg, 16px);
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 
 @media (max-width: 900px) {

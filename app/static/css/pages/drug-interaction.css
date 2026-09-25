@@ -1,23 +1,25 @@
 		/* Add button */
 		.btn-add {
-			background: #0F766E;
-			color: #fff;
 			border: none;
-			border-radius: 8px;
+			border-radius: var(--clinic-control-radius, 8px);
 			padding: 7px 16px;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
 			cursor: pointer;
 			display: flex;
 			align-items: center;
 			gap: 5px;
 			white-space: nowrap;
-		}
-
-		.btn-add:hover {
-			background: #0D6B63;
+}
+/* Add button */
+		.btn-add:not([data-qlpk-button], [data-qlpk-button] *) {
+			background: var(--qlpk-workflow-context-header-bg);
 			color: #fff;
-		}
+}
+.btn-add:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+			background: var(--qlpk-workflow-context-header-bg);
+			color: #fff;
+}
 
 		/* Type badges */
 		.badge-type {
@@ -26,7 +28,7 @@
 			gap: 4px;
 			padding: 3px 10px;
 			border-radius: 99px;
-			font-size: var(--qlpk-font-size-xs, 11px);
+			font-size: inherit;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			white-space: nowrap;
 		}
@@ -48,7 +50,7 @@
 			left: 0;
 			right: 0;
 			background: #fff;
-			border: 1px solid #E2E8F0;
+			border: 1px solid var(--qlpk-color-border);
 			border-radius: 8px;
 			max-height: 220px;
 			overflow-y: auto;
@@ -60,11 +62,11 @@
 			padding: 8px 12px;
 			cursor: pointer;
 			font-size: var(--qlpk-font-size-base, 13px);
-			border-bottom: 1px solid #F1F5F9;
+			border-bottom: 1px solid var(--qlpk-color-brown-soft);
 		}
 
 		.ac-item:hover {
-			background: #F0FDFA;
+			background: var(--qlpk-color-primary-soft);
 		}
 
 		.ac-item:last-child {
@@ -72,12 +74,12 @@
 		}
 
 		.ac-item-new {
-			background-color: #F0FDFA;
-			border-bottom: 1px dashed #99F6E4;
+			background-color: var(--qlpk-color-primary-soft);
+			border-bottom: 1px dashed var(--qlpk-color-border);
 		}
 
 		.ac-new-label {
-			color: #0F766E;
+			color: var(--qlpk-color-primary);
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 		}
 
@@ -112,8 +114,8 @@
 
 		/* Drug selector section */
 		.drug-selector {
-			background: #F8FAFC;
-			border: 1px solid #E2E8F0;
+			background: var(--qlpk-color-page-bg);
+			border: 1px solid var(--qlpk-color-border);
 			border-radius: 10px;
 			padding: 12px;
 		}
@@ -121,7 +123,7 @@
 		.drug-selector .label {
 			font-size: var(--qlpk-font-size-xs, 11px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #0F766E;
+			color: var(--qlpk-color-primary);
 			text-transform: uppercase;
 			margin-bottom: 6px;
 		}
@@ -147,7 +149,7 @@
 		.section-title {
 			font-size: var(--qlpk-font-size-base, 13px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #1E293B;
+			color: var(--qlpk-color-text);
 			margin-bottom: 6px;
 			display: flex;
 			align-items: center;
@@ -155,7 +157,7 @@
 		}
 
 		.section-title i {
-			color: #0F766E;
+			color: var(--qlpk-color-primary);
 		}
 
 		.info-section {
@@ -168,7 +170,7 @@
 			align-items: center;
 			gap: 6px;
 			padding: 6px 12px;
-			border: 2px solid #E2E8F0;
+			border: 2px solid var(--qlpk-color-border);
 			border-radius: 8px;
 			cursor: pointer;
 			font-size: var(--qlpk-font-size-base, 13px);
@@ -200,19 +202,19 @@
 		.view-field-label {
 			font-size: var(--qlpk-font-size-xs, 11px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #0F766E;
+			color: var(--qlpk-color-primary);
 			text-transform: uppercase;
 			margin-bottom: 4px;
 		}
 
 		.view-field-value {
 			font-size: var(--qlpk-font-size-base, 13px);
-			color: #1E293B;
+			color: var(--qlpk-color-text);
 			white-space: pre-line;
 			padding: 8px 12px;
-			background: #F8FAFC;
+			background: var(--qlpk-color-page-bg);
 			border-radius: 8px;
-			border: 1px solid #E2E8F0;
+			border: 1px solid var(--qlpk-color-border);
 			margin-bottom: 10px;
 		}
 
@@ -222,6 +224,10 @@
 
 .di-hidden-input {
 	display: none;
+}
+
+.di-table {
+	min-width: 62rem;
 }
 
 .di-col-stt,
@@ -244,7 +250,7 @@
 }
 
 .di-modal-header {
-	background: #0F766E;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 	border-radius: 8px 8px 0 0;
 }
@@ -261,20 +267,18 @@
 	font-size: var(--qlpk-font-size-sm, 12px);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
-
-.di-save-btn {
-	background: #0F766E;
+.di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 }
-
-.di-save-btn:hover {
-	background: #0D6B63;
+.di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 }
 
 .di-view-pair {
-	background: #F8FAFC;
+	background: var(--qlpk-color-page-bg);
 	padding: 10px;
 	border-radius: 8px;
-	border: 1px solid #E2E8F0;
+	border: 1px solid var(--qlpk-color-border);
 }

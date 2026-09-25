@@ -47,7 +47,7 @@
 				}
 
 				doctorSelect.empty();
-				doctorSelect.append('<option value="">Chọn BS</option>');
+				doctorSelect.append('<option value="">Chọn người khám</option>');
 
 				if (doctors.length > 0) {
 					doctors.forEach(doctor => {

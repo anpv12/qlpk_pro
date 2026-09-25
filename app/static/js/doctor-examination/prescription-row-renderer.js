@@ -6,6 +6,9 @@
 	const MODEL = REGISTRY.get('prescriptionModel');
 	if (!RUNTIME || !MODEL) throw new Error('Thiếu Doctor prescription dependencies');
 
+	const TYPE_CONTRACT = window.PrescriptionTypeContract;
+	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
+
 	const { escapeHtml, escapeAttr } = RUNTIME;
 	const { formatDoseValue, PRESCRIPTION_SLOT_DEFS, PRESCRIPTION_USAGE_MODES } = MODEL;
 	const DEFAULT_DOM = {
@@ -60,6 +63,7 @@
 
 	function getCurrentStockQuantity(row) {
 		const value = row.currentStockQuantity ?? row.batchAllocation?.aggregate_stock;
+		if (value == null) return null;
 		const parsed = Number(value);
 		return Number.isFinite(parsed) ? parsed : null;
 	}
@@ -68,22 +72,20 @@
 		if (row.isExternal || !row.medicineId) return '';
 		const stock = getCurrentStockQuantity(row);
 		if (stock === null) return '';
-		return `<span class="doctor-prescription-table__stock">Tồn kho: <strong>${escapeHtml(formatAllocationQuantity(stock))}</strong> ${escapeHtml(row.unit || 'đơn vị')}</span>`;
+		return `<span class="doctor-prescription-table__stock">Tồn tổng hiện tại: <strong>${escapeHtml(formatAllocationQuantity(stock))}</strong> ${escapeHtml(row.unit || 'đơn vị')}</span>`;
 	}
 
 	function buildBatchAllocationHtml(row, showAllocation) {
 		if (!showAllocation || row.isExternal) return '';
 		const state = row.batchAllocation;
 		const status = state?.batch_allocation_status || '';
-		if (state && status !== 'allocated') return '';
 		if (row.batchAllocationStale) {
 			return '<div class="doctor-prescription-batches" data-status="pending"><span><i class="bi bi-hourglass-split" aria-hidden="true"></i>Cần lưu để cập nhật lô</span></div>';
 		}
-		if (!state || status !== 'allocated') return '';
+		if (!state) return '';
 
 		const allocations = Array.isArray(state.batch_allocations) ? state.batch_allocations : [];
-		if (!allocations.length) return '';
-
+		if (status !== 'allocated' || !allocations.length) return '';
 		const unit = row.unit || state.unit || 'đơn vị';
 		return `
 			<div class="doctor-prescription-batches" data-status="${escapeAttr(status)}" aria-label="Phân bổ thuốc theo lô">
@@ -110,7 +112,7 @@
 		const noteColspan = scheduleCellCount + 3;
 
 		return `
-			<tr class="doctor-prescription-table__body-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}" data-prescription-source="${row.isExternal ? 'external' : 'stock'}">
+			<tr class="doctor-prescription-table__body-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}" data-prescription-type="${escapeAttr(TYPE_CONTRACT.toDocumentType(row.prescriptionType))}" data-prescription-source="${row.isExternal ? 'external' : 'stock'}">
 				<td rowspan="2" class="doctor-prescription-table__stt-cell">${index + 1}</td>
 				<td rowspan="2" class="doctor-prescription-table__medicine-cell">
 					<div class="doctor-prescription-table__medicine-copy">
@@ -138,12 +140,12 @@
 				</td>
 				<td class="doctor-prescription-table__total-cell"><strong data-prescription-row-total>${getRowTotal(row)}</strong></td>
 				<td rowspan="2" class="doctor-prescription-table__actions-cell">
-					<button type="button" class="doctor-prescription-table__remove" data-prescription-row-action="remove" aria-label="Xóa thuốc" title="Xóa thuốc">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="doctor-prescription-table__remove" data-prescription-row-action="remove" aria-label="Xóa thuốc" title="Xóa thuốc">
 						<i class="bi bi-trash3" aria-hidden="true"></i>
 					</button>
 				</td>
 			</tr>
-			<tr class="doctor-prescription-table__note-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}">
+			<tr class="doctor-prescription-table__note-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}" data-prescription-type="${escapeAttr(TYPE_CONTRACT.toDocumentType(row.prescriptionType))}">
 				<td colspan="${noteColspan}" class="doctor-prescription-table__note-cell">
 					<div class="doctor-prescription-table__note-line">
 						<i class="bi bi-card-text" aria-hidden="true"></i>
@@ -152,6 +154,36 @@
 					</div>
 				</td>
 			</tr>`;
+	}
+
+	function getTableColumnCount(mode) {
+		const scheduleCellCount = mode === PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY
+			? 2
+			: PRESCRIPTION_SLOT_DEFS.length;
+		return scheduleCellCount + 6;
+	}
+
+	function buildGroupHeaderHtml(type, code, colCount) {
+		const modifier = String(type).toLowerCase();
+		const codeText = code ? `Mã đơn thuốc: ${escapeHtml(code)}` : 'Chưa cấp mã đơn';
+		return `
+			<tr class="doctor-prescription-table__group-row doctor-prescription-table__group-row--${escapeAttr(modifier)}" data-prescription-group="${escapeAttr(type)}">
+				<td colspan="${colCount}" class="doctor-prescription-table__group-cell">
+					<div class="doctor-prescription-table__group-inner">
+						<span class="doctor-prescription-table__group-title">${escapeHtml(TYPE_CONTRACT.getLabel(type))}</span>
+						<span class="doctor-prescription-table__group-code${code ? '' : ' is-empty'}">${codeText}</span>
+					</div>
+				</td>
+			</tr>`;
+	}
+
+	function groupRowsByDocumentType(rows) {
+		const groups = new Map(TYPE_CONTRACT.DOCUMENT_TYPES.map(type => [type, []]));
+		rows.forEach(row => {
+			const type = TYPE_CONTRACT.toDocumentType(row && row.prescriptionType);
+			(groups.get(type) || groups.get('BASIC')).push(row);
+		});
+		return groups;
 	}
 
 	function render(options = {}) {
@@ -174,14 +206,23 @@
 			if (empty) empty.hidden = false;
 		} else {
 			const renderedMedicineAllocations = new Set();
-			body.innerHTML = rows.map((row, index) => {
-				const allocationKey = row && !row.isExternal && row.medicineId
-					? String(row.medicineId)
-					: '';
-				const showAllocation = Boolean(allocationKey) && !renderedMedicineAllocations.has(allocationKey);
-				if (showAllocation) renderedMedicineAllocations.add(allocationKey);
-				return buildPrescriptionRowHtml(row, index, mode, options.getRowTotal, showAllocation);
-			}).join('');
+			const codesByType = options.codesByType || {};
+			const colCount = getTableColumnCount(mode);
+			const groups = groupRowsByDocumentType(rows);
+			const html = [];
+			groups.forEach((groupRows, type) => {
+				if (!groupRows.length) return;
+				html.push(buildGroupHeaderHtml(type, codesByType[type], colCount));
+				groupRows.forEach((row, groupIndex) => {
+					const allocationKey = row && !row.isExternal && row.medicineId
+						? String(row.medicineId)
+						: '';
+					const showAllocation = Boolean(allocationKey) && !renderedMedicineAllocations.has(allocationKey);
+					if (showAllocation) renderedMedicineAllocations.add(allocationKey);
+					html.push(buildPrescriptionRowHtml(row, groupIndex, mode, options.getRowTotal, showAllocation));
+				});
+			});
+			body.innerHTML = html.join('');
 			if (table) table.hidden = false;
 			if (empty) empty.hidden = true;
 		}

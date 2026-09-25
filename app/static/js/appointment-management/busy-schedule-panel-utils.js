@@ -71,7 +71,7 @@
 		html += `
         </div>
         <div class="popup-footer">
-		  <button type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm" data-doctor-busy-action="close">Đóng</button>
+		  <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--neutral appointment-button--sm" data-doctor-busy-action="close">Đóng</button>
         </div>
       </div>
     `;

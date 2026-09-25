@@ -81,7 +81,10 @@
 	}
 
 	function render(type, message, options = {}) {
-		const text = String(message || '').trim();
+		const structured = message && typeof message === 'object' && typeof message.title === 'string';
+		const text = structured
+			? [message.title, message.label, message.emphasis, message.detail, message.guidance].filter(Boolean).join(' ')
+			: String(message || '').trim();
 		if (!text) return false;
 
 		const hostWindow = getHostWindow(options);
@@ -95,17 +98,27 @@
 		}
 
 		const toastType = normalizeType(type);
+		host.classList.toggle('qlpk-workspace-toast-host--detailed', Boolean(structured));
 		positionHost(host, hostWindow);
 		hostWindow.setTimeout(() => positionHost(host, hostWindow), 250);
 		host.innerHTML = `
-			<div class="qlpk-workspace-toast qlpk-toast qlpk-toast--${toastType}" role="status" aria-live="polite">
+			<div class="qlpk-workspace-toast qlpk-toast qlpk-toast--${toastType}${structured ? ' qlpk-toast--detailed' : ''}" role="status" aria-live="polite">
 				<span class="qlpk-toast__icon" aria-hidden="true"><i class="bi ${ICONS[toastType]}"></i></span>
-				<span class="qlpk-toast__title" title="${escapeHtml(text)}">${escapeHtml(text)}</span>
+				${structured ? `<div class="qlpk-toast__content">
+					<strong class="qlpk-toast__heading">${escapeHtml(message.title)}</strong>
+					<div><strong>${escapeHtml(message.label || '')}</strong> <strong class="qlpk-toast__emphasis">${escapeHtml(message.emphasis || '')}</strong></div>
+					${message.detail ? `<div>${escapeHtml(message.detail)}</div>` : ''}
+					<div class="qlpk-toast__guidance">${escapeHtml(message.guidance || '')}</div>
+				</div><button type="button" class="qlpk-toast__close" aria-label="Đóng thông báo">×</button>`
+				: `<span class="qlpk-toast__title" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`}
 			</div>
 		`;
 
 		hostWindow.clearTimeout(host._qlpkToastTimer);
 		hostWindow.clearTimeout(host._qlpkToastHideTimer);
+		if (structured) {
+			host.querySelector('.qlpk-toast__close').addEventListener('click', () => { host.innerHTML = ''; });
+		}
 		host._qlpkToastTimer = hostWindow.setTimeout(() => {
 			const toast = host.querySelector('.qlpk-workspace-toast');
 			if (!toast) {
@@ -116,7 +129,7 @@
 			host._qlpkToastHideTimer = hostWindow.setTimeout(() => {
 				host.innerHTML = '';
 			}, 180);
-		}, Number(options.duration) > 0 ? Number(options.duration) : 3000);
+		}, Number(options.duration) > 0 ? Number(options.duration) : structured ? 12000 : 3000);
 		return true;
 	}
 
@@ -143,6 +156,10 @@
 
 	function resolveError(error, options = {}) {
 		const code = codeOf(error);
+		if (['inventory.batch_missing', 'inventory.batch_expired', 'inventory.receipt_invalid'].includes(code)) {
+			const detail = payloadOf(error).detail;
+			if (typeof detail === 'string' && detail.trim()) return detail.trim();
+		}
 		const messages = options.messages || {};
 		return messages[code]
 			|| DEFAULT_ERROR_MESSAGES[code]
@@ -152,7 +169,10 @@
 
 	function show(type, message, options = {}) {
 		if (typeof options.renderer === 'function') {
-			options.renderer(normalizeType(type), String(message || '').trim());
+			const text = message && typeof message === 'object'
+				? [message.title, message.label, message.emphasis, message.detail, message.guidance].filter(Boolean).join(' ')
+				: String(message || '').trim();
+			options.renderer(normalizeType(type), text);
 			return true;
 		}
 		return render(type, message, options);

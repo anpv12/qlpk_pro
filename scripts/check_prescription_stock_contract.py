@@ -52,8 +52,8 @@ def main():
             errors.append(f"retired ledger/state branch returned: {needle}")
     if FORBIDDEN_SCHEMA_MIGRATION.exists():
         errors.append("prescription stock must not add a schema migration")
-    if "appointment_id = Column(" in model or "'appointment_id': self.appointment_id" in model:
-        errors.append("medicine_transactions must not gain an appointment_id column")
+    for column in ('appointment_id', 'operation_id', 'sale_unit_price', 'original_transaction_id', 'sale_amount_delta'):
+        _require(model, column + ' = Column(', 'approved visit ledger field', errors)
     if "Audit mới có `appointment_id`" in smoke_checks:
         errors.append("stock smoke checklist still requires the rejected appointment_id column")
 
@@ -76,7 +76,7 @@ def main():
         (".with_for_update()", "medicine and batch row locks"),
         ("batch_id=batch.id", "movement batch linkage"),
         ("prescription_stock_movement_notes(appointment_id)", "existing appointment note linkage"),
-        ("MedicineTransaction.note.in_", "ledger note query"),
+        ("visit_ledger_filter(appointment_id)", "explicit visit linkage with legacy fallback"),
         ("available_to_dispense = min(aggregate_stock, available_batch_stock)", "aggregate and valid-batch shortage guard"),
         ("tồn khả dụng {format_quantity(available_to_dispense)}", "single effective availability shortage message"),
         ("tracked_refund_quantity = min(refund_quantity, allocated_total)", "tracked refund split"),

@@ -937,7 +937,7 @@ Ghi chú Phase 10.2 2026-06-13: tách tiếp CSS shared/private sau khi đã rú
 
 ## Backlog Gần Nhất
 
-1. Medicine reference catalog: user test màn `medicine-reference-catalog.html`, search dữ liệu, mở modal chi tiết/raw payload, bấm đồng bộ DAV theo scope test 1000 dòng hoặc toàn bộ; chỉ khi accept mới nối vào kê đơn.
+1. Medicine reference catalog: user test màn `medicine-reference-catalog.html`, search dữ liệu, mở modal chi tiết thuốc, đồng bộ toàn bộ DAV và xuất Excel theo bộ lọc. Scope thử 1000 dòng và phần xem raw payload đã gỡ ngày 2026-09-13; chỉ khi accept mới nối vào kê đơn.
 2. Smoke test 3 luồng appointment vừa hoàn tất: import batch, tạo lịch mới từ lễ tân và đặt/hủy lịch tái khám từ đơn thuốc.
 3. Nếu tiếp tục frontend receptionist, tách component nhỏ có caller rõ thay vì move cả `receptionist-new.js`.
 4. Cân nhắc module island tiếp theo sau appointments/examinations: surveys hoặc payment, ưu tiên nơi có contract rõ và smoke checklist.

@@ -3,14 +3,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 from app.core.database import get_db
 from app.models.survey_template import SurveyTemplate
+from app.models.survey_response import SurveyResponse
+from app.models.survey_session import SurveySession
 from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalized_contains
+from app.utils.survey_scoring import normalize_survey_content, validate_survey_content, validate_survey_identity_update, SurveyIdentityConflict
+from app.utils.survey_template_policy import can_manage_survey_templates, require_survey_manager, survey_template_readiness
 import os
 import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import json
+from copy import deepcopy
 
 survey_templates_router = Blueprint('survey_templates', __name__)
 
@@ -18,6 +24,22 @@ survey_templates_router = Blueprint('survey_templates', __name__)
 UPLOAD_FOLDER = 'uploads/survey_templates'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'doc', 'xls'}
 PERFORMER_ROLES = ('doctor', 'PSYCHOLOGIST')
+
+
+def validate_survey_name(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError('Vui lòng nhập tên mẫu khảo sát.')
+    name = value.strip()
+    if len(name) > 255:
+        raise ValueError('Tên mẫu khảo sát không được quá 255 ký tự.')
+    return name
+
+
+def survey_request_data():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ValueError('Thông tin mẫu khảo sát không hợp lệ.')
+    return {**data, 'name': validate_survey_name(data.get('name'))}
 
 
 def resolve_default_performer_id(db, raw_value):
@@ -46,6 +68,40 @@ def ensure_upload_folder():
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
+def _questions_by_criteria(content):
+    from app.utils.survey_scoring import survey_questions_by_criteria
+    return survey_questions_by_criteria(content)
+
+
+def template_validation_message(content):
+    if content is None:
+        return None
+    try:
+        validate_survey_content(content)
+    except ValueError as exc:
+        return str(exc)
+    return None
+
+
+def preserve_legacy_template_snapshots(db, template):
+    """Freeze missing historical snapshots before editing the catalog source."""
+    snapshot = {'name': template.name, 'content': deepcopy(template.content)}
+    for model in (SurveySession, SurveyResponse):
+        for record in db.query(model).filter(model.survey_template_id == template.id).with_for_update():
+            if not record.template_snapshot:
+                record.template_snapshot = deepcopy(snapshot)
+
+
+@survey_templates_router.route('/survey-templates/access', methods=['GET'])
+@require_auth
+def survey_template_access(user):
+    db = next(get_db())
+    try:
+        return jsonify(success=True, can_manage=can_manage_survey_templates(db, user))
+    finally:
+        db.close()
+
 @survey_templates_router.route('/survey-templates', methods=['GET'])
 @require_auth
 def get_survey_templates(user):
@@ -53,8 +109,8 @@ def get_survey_templates(user):
     db: Session = next(get_db())
     try:
         # Lấy parameters
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
+        page = max(1, request.args.get('page', 1, type=int))
+        per_page = min(100, max(1, request.args.get('per_page', 10, type=int)))
         search = request.args.get('search', '').strip()
         
         # Query cơ bản
@@ -70,23 +126,26 @@ def get_survey_templates(user):
             )
         
         # Sắp xếp theo thời gian tạo mới nhất
-        query = query.order_by(desc(SurveyTemplate.created_at))
+        query = query.order_by(desc(SurveyTemplate.created_at), desc(SurveyTemplate.id))
         
         # Phân trang
         total = query.count()
+        pages = max(1, (total + per_page - 1) // per_page)
+        page = min(page, pages)
         templates = query.offset((page - 1) * per_page).limit(per_page).all()
         
         # Convert to dict
-        templates_data = [template.to_dict() for template in templates]
+        templates_data = [{**template.to_dict(), **survey_template_readiness(template)} for template in templates]
         
         return jsonify({
             'success': True,
             'data': templates_data,
+            'can_manage': can_manage_survey_templates(db, user),
             'pagination': {
                 'page': page,
                 'per_page': per_page,
                 'total': total,
-                'pages': (total + per_page - 1) // per_page
+                'pages': pages
             }
         }), 200
         
@@ -117,7 +176,8 @@ def get_survey_template(user, template_id):
         
         return jsonify({
             'success': True,
-            'data': template.to_dict()
+            'data': {**template.to_dict(), **survey_template_readiness(template),
+                     'validation_message': template_validation_message(template.content)}
         }), 200
         
     except Exception as e:
@@ -143,10 +203,13 @@ def get_survey_template_public(template_id):
                 'success': False,
                 'message': 'Mẫu khảo sát không tồn tại'
             }), 404
-        
+
+        template_data = template.to_dict()
+        template_data['questions_by_criteria'] = _questions_by_criteria(template.content)
+
         return jsonify({
             'success': True,
-            'data': template.to_dict()
+            'data': template_data
         }), 200
         
     except Exception as e:
@@ -159,11 +222,12 @@ def get_survey_template_public(template_id):
 
 @survey_templates_router.route('/survey-templates', methods=['POST'])
 @require_auth
+@require_survey_manager
 def create_survey_template(user):
     """Tạo mẫu khảo sát mới"""
     db: Session = next(get_db())
     try:
-        data = request.get_json() or {}
+        data = survey_request_data()
         
         # Validate required fields
         if not data.get('name'):
@@ -188,11 +252,13 @@ def create_survey_template(user):
             db, data.get('default_performer_id')
         )
         
+        content = normalize_survey_content(data.get('content'))
+        validate_survey_content(content)
         # Tạo mẫu khảo sát mới
         template = SurveyTemplate(
             name=data['name'],
             description=data.get('description', ''),
-            content=data.get('content'),
+            content=content,
             created_by=user.id,  # Từ user object
             default_performer_id=default_performer_id,
         )
@@ -225,6 +291,7 @@ def create_survey_template(user):
 
 @survey_templates_router.route('/survey-templates/<int:template_id>', methods=['PUT'])
 @require_auth
+@require_survey_manager
 def update_survey_template(user, template_id):
     """Cập nhật mẫu khảo sát"""
     db: Session = next(get_db())
@@ -240,7 +307,7 @@ def update_survey_template(user, template_id):
                 'message': 'Không tìm thấy mẫu khảo sát'
             }), 404
         
-        data = request.get_json() or {}
+        data = survey_request_data()
         
         # Validate required fields
         if not data.get('name'):
@@ -262,6 +329,7 @@ def update_survey_template(user, template_id):
                 'message': 'Tên mẫu khảo sát đã tồn tại'
             }), 400
 
+        preserve_legacy_template_snapshots(db, template)
         if 'default_performer_id' in data:
             template.default_performer_id = resolve_default_performer_id(
                 db, data.get('default_performer_id')
@@ -270,7 +338,12 @@ def update_survey_template(user, template_id):
         # Cập nhật thông tin
         template.name = data['name']
         template.description = data.get('description', template.description)
-        template.content = data.get('content', template.content)
+        if 'content' in data:
+            content = normalize_survey_content(data['content'])
+            validate_survey_content(content)
+            if db.query(SurveyResponse.id).filter(SurveyResponse.survey_template_id == template.id).first():
+                validate_survey_identity_update(template.content, content)
+            template.content = content
         template.updated_at = datetime.utcnow()
         
         db.commit()
@@ -283,6 +356,10 @@ def update_survey_template(user, template_id):
             'data': template.to_dict()
         }), 200
         
+    except SurveyIdentityConflict:
+        db.rollback()
+        return jsonify({'success': False, 'code': 'SURVEY_TEMPLATE_IDENTITY_CONFLICT',
+                        'message': 'Mẫu đã có kết quả cần giữ mã câu hỏi và đáp án. Vui lòng tạo mẫu mới.'}), 400
     except ValueError as e:
         db.rollback()
         return jsonify({
@@ -300,6 +377,7 @@ def update_survey_template(user, template_id):
 
 @survey_templates_router.route('/survey-templates/<int:template_id>', methods=['DELETE'])
 @require_auth
+@require_survey_manager
 def delete_survey_template(user, template_id):
     """Xóa mẫu khảo sát (soft delete)"""
     db: Session = next(get_db())
@@ -338,6 +416,7 @@ def delete_survey_template(user, template_id):
 
 @survey_templates_router.route('/survey-templates/upload', methods=['POST'])
 @require_auth
+@require_survey_manager
 def upload_survey_template(user):
     """Upload file mẫu khảo sát"""
     db: Session = next(get_db())
@@ -365,7 +444,7 @@ def upload_survey_template(user):
             }), 400
         
         # Lấy thông tin từ form
-        name = request.form.get('name', '').strip()
+        name = validate_survey_name(request.form.get('name'))
         description = request.form.get('description', '').strip()
         default_performer_id = resolve_default_performer_id(
             db, request.form.get('default_performer_id')
@@ -459,7 +538,7 @@ def download_survey_template(user, template_id):
         # Trả về file để download
         from flask import send_file
         return send_file(
-            template.file_path,
+            os.path.abspath(template.file_path),
             as_attachment=True,
             download_name=template.file_name
         )

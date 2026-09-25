@@ -32,16 +32,18 @@ body[data-doctor-ui] [data-doctor-component][aria-busy='true'] {
 body[data-doctor-ui] [data-doctor-component][aria-disabled='true'],
 body[data-doctor-ui] [data-doctor-component] :where(button, input, select, textarea):disabled {
 	cursor: not-allowed;
+}
+body[data-doctor-ui] [data-doctor-component][aria-disabled='true'],
+body[data-doctor-ui] [data-doctor-component] :where(button, input, select, textarea):disabled:not([data-qlpk-button], [data-qlpk-button] *) {
 	opacity: 0.72;
 }
 
 body[data-doctor-ui] [data-doctor-component][data-load-state='error'] {
 	border-color: var(--qlpk-feedback-error, var(--qlpk-doctor-danger));
 }
-
 /* Composite ICD controls expose focus on their outer container via
  * :focus-within; the inner query input must not receive a second outline. */
-body[data-doctor-ui] [data-doctor-component] :where(button, input:not([data-icd-autocomplete-input]), select, textarea):focus-visible {
+body[data-doctor-ui] [data-doctor-component] :where(button, input:not([data-autocomplete-input]), select, textarea):focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	outline: 0.125rem solid var(--doctor-component-focus);
 	outline-offset: 0.125rem;
 }

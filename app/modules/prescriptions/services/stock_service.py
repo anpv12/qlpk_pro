@@ -4,9 +4,8 @@ The service deliberately uses only existing inventory tables:
 
 - ``medicine_batches.remaining_quantity`` owns the current balance per batch.
 - ``medicines.stock_quantity`` remains the aggregate balance used elsewhere.
-- ``medicine_transactions`` records append-only movements. New prescription
-  movements use the existing ``note`` contract for the appointment identity
-  and ``batch_id`` for the exact lot identity.
+- ``medicine_transactions`` records append-only movements with explicit visit,
+  receipt and price evidence; exact legacy notes remain a read fallback.
 
 No legacy movement is inferred from display text or medicine names.
 """
@@ -14,12 +13,16 @@ No legacy movement is inferred from display text or medicine names.
 from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from uuid import uuid4
 
 from sqlalchemy import func
 
 from app.models.medicine import Medicine
 from app.models.medicine_batch import MedicineBatch
 from app.models.medicine_transaction import MedicineTransaction
+from app.modules.prescriptions.services.ledger_service import (
+    visit_ledger_filter, visit_ledger_payload, append_dispensing_movement, reprice_open_exports,
+)
 
 
 ZERO_QUANTITY = Decimal("0")
@@ -31,8 +34,10 @@ PRESCRIPTION_STOCK_REFUND_NOTE = "Hoàn lại tồn kho - Lịch hẹn ID: {appo
 class PrescriptionStockValidationError(Exception):
     """Expose user-correctable inventory errors without committing partial state."""
 
-    def __init__(self, errors):
+    def __init__(self, errors, *, code="inventory.insufficient", shortage=None):
         self.errors = list(errors or [])
+        self.code = code
+        self.shortage = shortage
         super().__init__("; ".join(self.errors))
 
 
@@ -89,9 +94,7 @@ def _load_net_batch_allocations(db, appointment_id, medicine_ids):
         .filter(
             MedicineTransaction.medicine_id.in_(sorted(medicine_ids)),
             MedicineTransaction.batch_id.isnot(None),
-            MedicineTransaction.note.in_(
-                prescription_stock_movement_notes(appointment_id)
-            ),
+            visit_ledger_filter(appointment_id),
         )
         .group_by(MedicineTransaction.medicine_id, MedicineTransaction.batch_id)
         .all()
@@ -155,6 +158,9 @@ def build_prescription_batch_allocation_states(
         appointment_id,
         medicine_ids,
     )
+    movements_by_medicine = defaultdict(list)
+    for movement in visit_ledger_payload(db, appointment_id):
+        movements_by_medicine[movement['medicine_id']].append(movement)
     today = date.today()
     result = {}
     for medicine_id in medicine_ids:
@@ -206,6 +212,7 @@ def build_prescription_batch_allocation_states(
             "prescribed_quantity": float(prescribed_quantity),
             "allocated_quantity": float(allocated_quantity),
             "batch_allocations": batch_allocations,
+            "stock_movements": movements_by_medicine[medicine_id],
             "batch_count": len(batch_allocations),
             "batch_allocation_complete": status == "allocated",
             "batch_allocation_status": status,
@@ -269,20 +276,29 @@ def _append_stock_transaction(
     quantity,
     is_export,
     user_id,
+    stock_balance_after,
+    unit_cost=None,
+    balance_after=None,
+    operation_id=None,
+    sale_unit_price=None,
 ):
-    db.add(MedicineTransaction(
+    append_dispensing_movement(db,
         medicine_id=medicine_id,
+        appointment_id=appointment_id,
         batch_id=batch_id,
-        type="export" if is_export else "import",
-        quantity=-quantity if is_export else quantity,
-        price=0,
+        quantity=quantity,
+        is_export=is_export,
+        unit_cost=unit_cost,
+        balance_after=balance_after,
+        stock_balance_after=stock_balance_after,
         note=(
             PRESCRIPTION_STOCK_EXPORT_NOTE if is_export
             else PRESCRIPTION_STOCK_REFUND_NOTE
         ).format(appointment_id=appointment_id),
-        created_by=user_id,
-        created_at=datetime.now(),
-    ))
+        user_id=user_id,
+        operation_id=operation_id,
+        sale_unit_price=sale_unit_price,
+    )
 
 
 def apply_prescription_batch_stock_deltas(
@@ -296,6 +312,7 @@ def apply_prescription_batch_stock_deltas(
 ):
     """Apply the exact prescription delta using FEFO batches, atomically."""
     updates = []
+    operation_id = uuid4()
     medicine_ids = sorted(set(old_totals_by_medicine) | set(new_totals_by_medicine))
     for medicine_id in medicine_ids:
         totals_data = new_totals_by_medicine.get(medicine_id) or {}
@@ -309,10 +326,15 @@ def apply_prescription_batch_stock_deltas(
         new_quantity = as_quantity_decimal(totals_data.get("total_in_clinic_qty"))
         old_quantity = as_quantity_decimal(old_totals_by_medicine.get(medicine_id))
         delta = new_quantity - old_quantity
+        sale_unit_price = totals_data.get('sale_unit_price')
+        medicine, batches = _lock_inventory(db, medicine_id)
         if delta == ZERO_QUANTITY:
+            reprice_open_exports(db, appointment_id=appointment_id, medicine_id=medicine_id,
+                sale_unit_price=sale_unit_price, operation_id=operation_id, user_id=user_id,
+                stock_balance_after=medicine.stock_quantity if medicine else None,
+                batch_balances={batch.id: batch.remaining_quantity for batch in batches})
             continue
 
-        medicine, batches = _lock_inventory(db, medicine_id)
         _validate_inventory_contract(medicine, batches, medicine_name, unit)
         batch_map = {batch.id: batch for batch in batches}
         allocations, invalid_allocations = _load_net_batch_allocations(
@@ -344,8 +366,14 @@ def apply_prescription_batch_stock_deltas(
             ])
 
         movements = []
+        running_stock = as_quantity_decimal(medicine.stock_quantity)
         if delta > ZERO_QUANTITY:
             today = date.today()
+            if not batches and as_quantity_decimal(medicine.stock_quantity) > ZERO_QUANTITY:
+                raise PrescriptionStockValidationError([
+                    f"{medicine_name}: chưa có lô để cấp {format_quantity(delta)} {unit}. "
+                    "Cần bổ sung lô cho tồn hiện hữu."
+                ], code="inventory.batch_missing")
             valid_batches = [
                 batch for batch in batches
                 if batch.expiry_date and batch.expiry_date >= today
@@ -356,6 +384,15 @@ def apply_prescription_batch_stock_deltas(
                 ZERO_QUANTITY,
             )
             aggregate_stock = as_quantity_decimal(medicine.stock_quantity)
+            if not valid_batches and aggregate_stock > ZERO_QUANTITY and any(
+                batch.expiry_date and batch.expiry_date < today
+                and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
+                for batch in batches
+            ):
+                raise PrescriptionStockValidationError([
+                    f"{medicine_name}: các lô còn số lượng đã hết hạn, không thể cấp thuốc. "
+                    "Cần kiểm tra kho và bổ sung lô còn hạn."
+                ], code="inventory.batch_expired")
             available_to_dispense = min(aggregate_stock, available_batch_stock)
             if available_to_dispense < delta:
                 missing = delta - available_to_dispense
@@ -363,7 +400,15 @@ def apply_prescription_batch_stock_deltas(
                     f"{medicine_name}: cần cấp thêm {format_quantity(delta)} {unit}, "
                     f"tồn khả dụng {format_quantity(available_to_dispense)} {unit}, "
                     f"thiếu {format_quantity(missing)} {unit}. Đơn chưa được lưu."
-                ])
+                ], shortage={
+                    "medicine_name": medicine_name,
+                    "unit": unit,
+                    "requested_quantity": str(new_quantity),
+                    "stock_quantity": str(aggregate_stock),
+                    "additional_quantity": str(delta),
+                    "available_quantity": str(available_to_dispense),
+                    "previous_quantity": str(old_quantity),
+                })
 
             remaining = delta
             for batch in valid_batches:
@@ -371,6 +416,7 @@ def apply_prescription_batch_stock_deltas(
                     break
                 quantity = min(as_quantity_decimal(batch.remaining_quantity), remaining)
                 batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) - quantity
+                running_stock -= quantity
                 allocations[medicine_id][batch.id] = allocations[medicine_id].get(batch.id, ZERO_QUANTITY) + quantity
                 _append_stock_transaction(
                     db,
@@ -379,7 +425,12 @@ def apply_prescription_batch_stock_deltas(
                     batch_id=batch.id,
                     quantity=quantity,
                     is_export=True,
+                    stock_balance_after=running_stock,
                     user_id=user_id,
+                    unit_cost=batch.import_price,
+                    balance_after=batch.remaining_quantity,
+                    operation_id=operation_id,
+                    sale_unit_price=sale_unit_price,
                 )
                 movements.append({
                     "batch_id": batch.id,
@@ -410,6 +461,7 @@ def apply_prescription_batch_stock_deltas(
                 allocated = current_allocations[batch.id]
                 quantity = min(allocated, remaining)
                 batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) + quantity
+                running_stock += quantity
                 current_allocations[batch.id] = allocated - quantity
                 _append_stock_transaction(
                     db,
@@ -418,7 +470,11 @@ def apply_prescription_batch_stock_deltas(
                     batch_id=batch.id,
                     quantity=quantity,
                     is_export=False,
+                    stock_balance_after=running_stock,
                     user_id=user_id,
+                    unit_cost=batch.import_price,
+                    balance_after=batch.remaining_quantity,
+                    operation_id=operation_id,
                 )
                 movements.append({
                     "batch_id": batch.id,
@@ -439,12 +495,18 @@ def apply_prescription_batch_stock_deltas(
                     medicine_id=medicine_id,
                     appointment_id=appointment_id,
                     batch_id=None,
+                    stock_balance_after=running_stock + legacy_refund_quantity,
                     quantity=legacy_refund_quantity,
                     is_export=False,
                     user_id=user_id,
+                    operation_id=operation_id,
                 )
             medicine.stock_quantity = as_quantity_decimal(medicine.stock_quantity) + refund_quantity
 
+        reprice_open_exports(db, appointment_id=appointment_id, medicine_id=medicine_id,
+            sale_unit_price=sale_unit_price, operation_id=operation_id, user_id=user_id,
+            stock_balance_after=medicine.stock_quantity,
+            batch_balances={batch.id: batch.remaining_quantity for batch in batches})
         updated_batch_total = sum(
             (as_quantity_decimal(batch.remaining_quantity) for batch in batches),
             ZERO_QUANTITY,

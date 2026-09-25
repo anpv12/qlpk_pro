@@ -19,6 +19,42 @@ const STATUS_MAP = {
 
 let currentTab = 'prescriptions'; // 'prescriptions' | 'inventory' | 'prescription-history'
 let expandedDoctors = new Set();
+let ledgerPage = 1;
+let ledgerRequest = 0;
+
+async function loadDispensingLedger(page = 1) {
+	const requestId = ++ledgerRequest;
+	const params = new URLSearchParams(getFilterParams());
+	params.set('page', page);
+	const summary = document.getElementById('ledgerSummary');
+	const rows = document.getElementById('ledgerRows');
+	rows.replaceChildren();
+	summary.textContent = 'Đang tải giao dịch...';
+	try {
+		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: getAuthHeaders() });
+		if (!response.ok) throw new Error('Không tải được giao dịch');
+		const data = await response.json();
+		if (requestId !== ledgerRequest) return;
+		ledgerPage = data.page;
+		const money = value => value == null ? 'Chưa rõ' : formatMoney(value);
+		const balance = (value, unit) => value == null ? 'Chưa rõ' : `${value} ${unit || ''}`;
+		const totals = data.summary;
+		summary.textContent = `Tiền thuốc ghi nhận (phần có dữ liệu): ${money(totals.recorded_revenue)} · Giá vốn có dữ liệu: ${money(totals.recorded_cost)} · Lãi gộp các dòng đủ truy vết: ${money(totals.gross_margin_complete_rows)} · ${totals.incomplete_rows} dòng thiếu truy vết. ${totals.warning}`;
+		const labels = { export: 'Cấp', return: 'Hoàn', import: 'Hoàn (cũ)', price_adjustment: 'Đổi giá' };
+		data.transactions.forEach(item => {
+			const row = rows.insertRow();
+			const values = [`${item.created_at} · ${labels[item.type] || item.type} #${item.id}${item.original_transaction_id ? ` ← #${item.original_transaction_id}` : ''}`, `${item.patient_name || 'Chưa rõ'} / #${item.appointment_id || '?'} (${item.appointment_date || 'Chưa rõ ngày khám'})`, `${item.medicine_name}${item.financial_trace_complete ? '' : ' — Thiếu truy vết'}`, `${item.receipt_reference || '?'} / ${item.batch_number || '?'}`, item.quantity, money(item.unit_cost_snapshot), money(item.sale_unit_price), money(item.sale_amount_delta)];
+			values.splice(5, 0, balance(item.balance_after, item.unit), balance(item.stock_balance_after, item.unit));
+			values.forEach(value => { row.insertCell().textContent = value; });
+		});
+		if (!data.transactions.length) rows.insertRow().insertCell().textContent = 'Không có giao dịch trong bộ lọc này.';
+		document.getElementById('ledgerPage').textContent = `Trang ${data.page}/${Math.max(1, data.total_pages)} · ${data.total} giao dịch`;
+		document.getElementById('ledgerPrevious').disabled = data.page <= 1;
+		document.getElementById('ledgerNext').disabled = data.page >= data.total_pages;
+	} catch (error) {
+		if (requestId === ledgerRequest) summary.textContent = 'Không tải được giao dịch; vui lòng thử lại.';
+	}
+}
 
 // ==================== INITIALIZATION ====================
 
@@ -60,6 +96,8 @@ function initDatePickers() {
 }
 
 function setupEventListeners() {
+	document.getElementById('ledgerPrevious')?.addEventListener('click', () => loadDispensingLedger(ledgerPage - 1));
+	document.getElementById('ledgerNext')?.addEventListener('click', () => loadDispensingLedger(ledgerPage + 1));
 	// Tab switching - Hook into Bootstrap tabs
 	document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
 		tab.addEventListener('shown.bs.tab', function (e) {
@@ -184,6 +222,10 @@ async function loadDoctorsFilter() {
 }
 
 async function exportExcel() {
+	if (currentTab === 'ledger') {
+		showToast('Sổ giao dịch chưa hỗ trợ xuất Excel; không xuất thay bằng số liệu đơn hiện tại.', 'info');
+		return;
+	}
 	const params = getFilterParams();
 
 	try {
@@ -212,18 +254,13 @@ async function exportExcel() {
 
 // ==================== RENDER HELPERS ====================
 
-function renderMedicineSummary({ total, types, qty, variant = 'primary' }) {
-	const badgeClass = variant === 'danger'
-		? 'bg-danger bg-opacity-10 text-danger'
-		: 'bg-primary bg-opacity-10 text-primary';
-	const textClass = variant === 'danger' ? 'text-danger' : '';
-
+function renderMedicineSummary({ total, types, qty }) {
 	return `
 		<div class="d-flex align-items-center justify-content-between">
-			<span><strong class="summary-qty ${textClass}">${total}</strong> <small class="fw-semibold">Thuốc</small></span>
-			<span class="badge ${badgeClass} badge-type">${types} Loại</span>
+			<span><strong class="summary-qty">${total}</strong> <small class="fw-semibold">Thuốc</small></span>
+			<span class="badge badge-type">${types} Loại</span>
 		</div>
-		<div class="medicine-summary"><strong class="summary-qty ${textClass}">${formatNumber(qty)}</strong> <small class="fw-semibold">Viên</small></div>
+		<div class="medicine-summary"><strong class="summary-qty">${formatNumber(qty)}</strong> <small class="fw-semibold">Viên</small></div>
 	`;
 }
 
@@ -262,7 +299,7 @@ function renderMedicineDetailTable(medicines) {
 
 function renderStatusBadge(status) {
 	const mapped = STATUS_MAP[status] || { label: status, class: 'bg-secondary' };
-	return `<span class="badge ${mapped.class}">${mapped.label}</span>`;
+	return `<span class="qlpk-status ${mapped.class}">${mapped.label}</span>`;
 }
 
 // ==================== SUMMARY CARDS (nguồn duy nhất: /summary API) ====================
@@ -306,19 +343,18 @@ function renderPrescriptionsTable(data) {
 		const totalRow = document.createElement('tr');
 		totalRow.className = 'row-grand-total';
 		totalRow.innerHTML = `
-			<td><strong class="text-danger">Tổng cộng</strong></td>
-			<td><strong class="text-danger">${data.grand_total.examination_count} Lượt</strong></td>
+			<td><strong>Tổng cộng</strong></td>
+			<td><strong>${data.grand_total.examination_count} Lượt</strong></td>
 			<td></td>
-			<td><strong class="text-danger">${data.grand_total.service_count} dịch vụ</strong></td>
+			<td><strong>${data.grand_total.service_count} dịch vụ</strong></td>
 			<td>${renderMedicineSummary({
 			total: data.grand_total.total_medicine_items,
 			types: data.grand_total.medicine_count,
-			qty: data.grand_total.total_dispensed_qty,
-			variant: 'danger'
+				qty: data.grand_total.total_dispensed_qty
 		})}</td>
-			<td><strong class="text-danger">${formatMoney(data.grand_total.medicine_amount)}</strong></td>
-			<td><strong class="text-danger">${formatMoney(data.grand_total.service_amount)}</strong></td>
-			<td><strong class="text-danger">${formatMoney(data.grand_total.medicine_amount + data.grand_total.service_amount)}</strong></td>
+			<td><strong>${formatMoney(data.grand_total.medicine_amount)}</strong></td>
+			<td><strong>${formatMoney(data.grand_total.service_amount)}</strong></td>
+			<td><strong>${formatMoney(data.grand_total.medicine_amount + data.grand_total.service_amount)}</strong></td>
 			<td></td>
 		`;
 		tbody.appendChild(totalRow);
@@ -383,7 +419,7 @@ function renderPrescriptionsTable(data) {
 				medicineTd = `<td>
 					<span class="medicine-toggle" onclick="toggleMedicineDetail(${pres.id})">
 						<span><i class="bi bi-caret-right-fill me-1" id="medIcon${pres.id}"></i><strong class="summary-qty">${pres.total_medicine_items}</strong> <small class="fw-semibold">Thuốc</small></span>
-						<span class="badge bg-primary bg-opacity-10 text-primary badge-type">${pres.medicine_count} Loại</span>
+						<span class="badge badge-type">${pres.medicine_count} Loại</span>
 					</span>
 					<div class="medicine-summary medicine-summary-nested"><strong class="summary-qty">${formatNumber(pres.total_dispensed_qty)}</strong> <small class="fw-semibold">viên</small></div>
 				</td>`;
@@ -480,6 +516,8 @@ function renderInventoryTable(data) {
 
 function switchTab(tabName) {
 	currentTab = tabName;
+	const currentSummary = document.getElementById('currentPrescriptionSummary');
+	if (currentSummary) currentSummary.classList.toggle('d-none', tabName === 'ledger');
 	sessionStorage.setItem('medicineStatsActiveTab', tabName);
 
 	// Update tab UI
@@ -491,7 +529,8 @@ function switchTab(tabName) {
 	const panes = {
 		'prescriptions': document.getElementById('tab-prescription'),
 		'inventory': document.getElementById('tab-medicine'),
-		'prescription-history': document.getElementById('tab-prescription-history')
+		'prescription-history': document.getElementById('tab-prescription-history'),
+		'ledger': document.getElementById('tab-ledger')
 	};
 	Object.entries(panes).forEach(([key, pane]) => {
 		if (pane) {
@@ -606,10 +645,10 @@ function renderPrescriptionHistoryTable(medicines) {
 	const totalRow = document.createElement('tr');
 	totalRow.className = 'row-grand-total';
 	totalRow.innerHTML = `
-		<td colspan="3"><strong class="text-danger">TỔNG CỘNG</strong></td>
-		<td class="text-center"><strong class="text-danger">${formatNumber(medicines.reduce((s, m) => s + m.total_prescriptions, 0))}</strong></td>
-		<td class="text-end"><strong class="text-danger">${formatNumber(grandTotal.quantity)}</strong></td>
-		<td class="text-end"><strong class="text-danger">${formatMoney(grandTotal.amount)}</strong></td>
+		<td colspan="3"><strong>TỔNG CỘNG</strong></td>
+		<td class="text-center"><strong>${formatNumber(medicines.reduce((s, m) => s + m.total_prescriptions, 0))}</strong></td>
+		<td class="text-end"><strong>${formatNumber(grandTotal.quantity)}</strong></td>
+		<td class="text-end"><strong>${formatMoney(grandTotal.amount)}</strong></td>
 	`;
 	tbody.appendChild(totalRow);
 
@@ -738,6 +777,10 @@ function convertDateFormat(dateStr) {
 }
 
 function applyFilters() {
+	if (currentTab === 'ledger') {
+		loadDispensingLedger();
+		return;
+	}
 	// Summary cards luôn lấy từ /summary (nguồn duy nhất)
 	loadStatistics();
 

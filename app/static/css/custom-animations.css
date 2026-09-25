@@ -1,3 +1,5 @@
+@import url("./components/option-autocomplete.css");
+
 /* Custom animations for save buttons */
 
 /* Special animation for doctor examination save button */
@@ -124,76 +126,8 @@
 	animation: successFade 0.5s ease-in;
 }
 
-/* Occupation Autocomplete Styles */
-.occupation-dropdown {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	right: 0;
-	background: white;
-	border: 1px solid #ddd;
-	border-top: none;
-	border-radius: 0 0 4px 4px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	max-height: 200px;
-	overflow-y: auto;
-	z-index: 1050;
-	width: 100%;
-}
-
-/* Ensure parent containers have relative positioning */
-.col-6 {
-	position: relative;
-}
-
-/* Alternative positioning for dropdown */
-.occupation-dropdown {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	width: 100%;
-	background: white;
-	border: 1px solid #ddd;
-	border-top: none;
-	border-radius: 0 0 4px 4px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	max-height: 200px;
-	overflow-y: auto;
-	z-index: 1050;
-}
-
-.occupation-dropdown .occupation-item {
-	padding: 8px 12px;
-	cursor: pointer;
-	border-bottom: 1px solid #f0f0f0;
-	transition: background-color 0.2s ease;
-}
-
-.occupation-dropdown .occupation-item:hover {
-	background-color: #f8f9fa;
-}
-
-.occupation-dropdown .occupation-item.selected {
-	background-color: #e3f2fd;
-	color: #1976d2;
-}
-
-.occupation-dropdown .occupation-item.new-occupation {
-	background-color: #fbf4e0;
-	color: #15721f;
-	border-left: 3px solid #ffbc00;
-}
-
-.occupation-dropdown .occupation-item.new-occupation:hover {
-	background-color: #ffeaa7;
-}
-
-.occupation-dropdown .no-results {
-	padding: 12px;
-	text-align: center;
-	color: #6c757d;
-	font-style: italic;
-}
+/* Legacy consumers retain their grid positioning. */
+.col-6 { position: relative; }
 
 .autocomplete-dropdown.is-open,
 .occupation-dropdown.is-open,
@@ -248,15 +182,21 @@
 /* Button hover effects */
 .btn-primary:hover {
 	transform: translateY(-2px);
+}
+/* Button hover effects */
+.btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
 	transition: all 0.3s ease;
 }
 
 /* Disabled button style */
 .btn:disabled {
-	opacity: 0.7;
 	cursor: not-allowed;
 	transform: none !important;
+}
+/* Disabled button style */
+.btn:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
+	opacity: 0.7;
 	box-shadow: none !important;
 }
 
@@ -306,7 +246,7 @@
 #saveReExaminationBtn:hover {
 	transform: translateY(-3px);
 	box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
-	background: linear-gradient(45deg, #0d6efd, #0b5ed7);
+	background: var(--qlpk-workflow-context-header-bg);
 }
 
 #saveReExaminationBtn:active {
@@ -369,17 +309,17 @@
 
 .sidebar .nav-link:hover {
 	transform: translateX(5px);
-	background: #e3f0fa !important;
-	color: #155CA2 !important;
-	box-shadow: 0 2px 8px rgba(21, 92, 162, 0.2);
+	background: var(--qlpk-color-primary-soft) !important;
+	color: var(--qlpk-color-primary) !important;
+	box-shadow: 0 2px 8px rgba(var(--qlpk-color-primary-rgb), 0.2);
 }
 
 .sidebar .nav-link.active {
-	background: #e3f0fa !important;
-	color: #155CA2 !important;
+	background: var(--qlpk-color-primary-soft) !important;
+	color: var(--qlpk-color-primary) !important;
 	font-weight: var(--qlpk-font-weight-bold, 700) !important;
 	transform: translateX(3px);
-	box-shadow: 0 2px 8px rgba(21, 92, 162, 0.15);
+	box-shadow: 0 2px 8px rgba(var(--qlpk-color-primary-rgb), 0.15);
 }
 
 /* Special animation for "Bác sĩ" (Khám bệnh) button */
@@ -390,17 +330,17 @@
 
 .sidebar .nav-link[href="doctor-examination.html"]:hover {
 	transform: translateX(8px) scale(1.02);
-	background: linear-gradient(135deg, #e3f0fa 0%, #f0f8ff 100%) !important;
-	color: #155CA2 !important;
-	box-shadow: 0 4px 12px rgba(21, 92, 162, 0.3);
+	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, #f0f8ff 100%) !important;
+	color: var(--qlpk-color-primary) !important;
+	box-shadow: 0 4px 12px rgba(var(--qlpk-color-primary-rgb), 0.3);
 }
 
 .sidebar .nav-link[href="doctor-examination.html"].active {
-	background: linear-gradient(135deg, #e3f0fa 0%, #f0f8ff 100%) !important;
-	color: #155CA2 !important;
+	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, #f0f8ff 100%) !important;
+	color: var(--qlpk-color-primary) !important;
 	font-weight: var(--qlpk-font-weight-bold, 700) !important;
 	transform: translateX(5px) scale(1.01);
-	box-shadow: 0 3px 10px rgba(21, 92, 162, 0.25);
+	box-shadow: 0 3px 10px rgba(var(--qlpk-color-primary-rgb), 0.25);
 }
 
 /* Icon animation for sidebar items */
@@ -410,12 +350,12 @@
 
 .sidebar .nav-link:hover i {
 	transform: scale(1.1);
-	color: #155CA2;
+	color: var(--qlpk-color-primary);
 }
 
 .sidebar .nav-link[href="doctor-examination.html"]:hover i {
 	transform: scale(1.15) rotate(5deg);
-	color: #155CA2;
+	color: var(--qlpk-color-primary);
 }
 
 /* Animation for other sidebar menu items */
@@ -483,7 +423,7 @@
 }
 
 .btn-sidebar[data-left-tab="examination"].active {
-	background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+	background: linear-gradient(135deg, #ffffff 0%, var(--qlpk-color-page-bg) 100%) !important;
 	color: #2c3e50 !important;
 	font-weight: var(--qlpk-font-weight-bold, 700) !important;
 	transform: translateX(6px) scale(1.02);

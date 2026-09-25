@@ -16,7 +16,13 @@ class ChiDinh(Base):
     in_house_unit_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # ID người thực hiện trong cơ sở
     out_facility = Column(String(255), nullable=True)  # Cơ sở ngoài
     scheduled_for = Column(Date, nullable=True)  # Ngày chỉ định
-    status = Column(String(20), default='sent')  # sent, processing, completed
+    status = Column(String(20), default='sent')  # sent, survey_sent, has_result, completed
+    survey_sent_at = Column(DateTime(timezone=True), nullable=True)
+    survey_expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    result_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    completion_reason = Column(String(20), nullable=True)
+    completed_by = Column(Integer, ForeignKey('users.id'), nullable=True)
     is_completed = Column(Boolean, default=False)  # Đã hoàn tất
     note_nurse = Column(Text, nullable=True)  # Ghi chú của y tá
     note_patient = Column(Text, nullable=True)  # Ghi chú của bệnh nhân
@@ -52,7 +58,13 @@ class ChiDinh(Base):
             "out_facility": self.out_facility,
             "scheduled_for": self.scheduled_for.isoformat() if self.scheduled_for else None,
             "status": self.status,
-            "is_completed": self.is_completed,
+            "is_completed": self.status == "completed",
+            "survey_sent_at": self.survey_sent_at.isoformat() if self.survey_sent_at else None,
+            "survey_expires_at": self.survey_expires_at.isoformat() if self.survey_expires_at else None,
+            "result_at": self.result_at.isoformat() if self.result_at else None,
+            "completion_reason": self.completion_reason,
+            "completed_by": self.completed_by,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "note_nurse": self.note_nurse,
             "note_patient": self.note_patient,
             "result_files": self.result_files if self.result_files else [],

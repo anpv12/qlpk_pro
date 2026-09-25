@@ -1,0 +1,89 @@
+/* Web-only prescription. The history tab owns scrolling; no physical paper sizing. */
+#modalContentArea:has(> .rx-screen) {
+	container-type: inline-size;
+	padding: 0.5rem;
+}
+
+.rx-screen {
+	--rx-screen-accent: #214de6;
+	--rx-screen-columns: minmax(0, 3fr) minmax(0, 2fr);
+	--rx-screen-column-gap: 1.5rem;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	padding: clamp(1rem, 2.5cqi, 2rem);
+	border: 1px solid #d9e1ea;
+	border-radius: 1rem;
+	background: #fff;
+	color: #212529;
+	font-family: var(--qlpk-font-family, Arial, sans-serif);
+	font-size: var(--qlpk-font-size-md);
+	line-height: 1.65;
+	overflow-wrap: anywhere;
+}
+
+.rx-screen + .rx-screen { margin-top: 1rem; }
+.rx-screen strong { font-weight: var(--qlpk-font-weight-semibold); }
+.rx-screen__header {
+	display: grid;
+	grid-template-columns: 6rem minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 1rem;
+	padding-bottom: 1rem;
+	border-bottom: 4px solid #268bee;
+}
+.rx-screen__logo { width: 100%; height: auto; }
+.rx-screen__clinic-name { color: var(--rx-screen-accent); font-size: var(--qlpk-font-size-xl); font-weight: var(--qlpk-font-weight-bold); }
+.rx-screen__clinic { min-width: 0; font-size: var(--qlpk-font-size-base); }
+.rx-screen__code { align-self: start; text-align: center; font-size: var(--qlpk-font-size-xs); }
+.rx-screen__code svg { display: block; width: 9rem; max-width: 100%; height: 2.25rem; margin: 0 auto 0.35rem; }
+.rx-screen__title { margin: 1.25rem 0 2rem; text-align: center; }
+.rx-screen__title h3 { margin: 0 0 0.1rem; color: var(--rx-screen-accent); font-size: var(--qlpk-font-size-3xl); font-weight: var(--qlpk-font-weight-bold); }
+.rx-screen__prescription-code { margin-top: 0.3rem; font-size: var(--qlpk-font-size-sm); color: #526174; }
+.rx-screen__patient { display: grid; grid-template-columns: var(--rx-screen-columns); column-gap: var(--rx-screen-column-gap); }
+.rx-screen__field { margin-bottom: 0.45rem; }
+.rx-screen__treatment { margin-top: 0.5rem; }
+.rx-screen__medicines { margin: 0; padding-left: 1.5rem; }
+.rx-screen__medicines li { padding: 0.6rem 0; }
+.rx-screen__medicines li:last-child { padding-bottom: 1rem; }
+.rx-screen__medicines li::marker { font-weight: var(--qlpk-font-weight-semibold); }
+/* Cancel the list indent for the grid, then restore it only on the name.
+   Quantity therefore starts on exactly the same column as gender/phone. */
+.rx-screen__medicine-heading {
+	display: grid;
+	grid-template-columns: var(--rx-screen-columns);
+	column-gap: var(--rx-screen-column-gap);
+	row-gap: 0.2rem;
+	align-items: baseline;
+	margin-left: -1.5rem;
+}
+.rx-screen__medicine-heading > strong { min-width: 0; padding-left: 1.5rem; }
+.rx-screen__medicine-heading > span { min-width: 0; text-align: left; }
+.rx-screen__usage, .rx-screen__advice-text { white-space: pre-line; }
+.rx-screen__empty { color: #59616a; margin: 0 0 1rem; }
+.rx-screen__advice { margin-top: 0.8rem; }
+.rx-screen__notice { margin: 1rem 0 0; }
+.rx-screen__signature {
+	display: grid;
+	grid-template-columns: var(--rx-screen-columns);
+	column-gap: var(--rx-screen-column-gap);
+	margin-top: 2rem;
+	text-align: left;
+}
+.rx-screen__signature > * { grid-column: 2; min-width: 0; }
+.rx-screen__signature > div:first-child { margin-bottom: 0.6rem; }
+.rx-screen__doctor-name { margin-top: 2.5rem; }
+
+@container (max-width: 46rem) {
+	.rx-screen__header { grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.75rem; }
+	.rx-screen__code { grid-column: 2; justify-self: start; }
+}
+
+@container (max-width: 34rem) {
+	.rx-screen { --rx-screen-columns: minmax(0, 1fr); --rx-screen-column-gap: 0; }
+	.rx-screen__medicine-heading > span { padding-left: 1.5rem; }
+	.rx-screen__title { margin-bottom: 1.25rem; }
+	.rx-screen__title h3 { font-size: var(--qlpk-font-size-3xl); }
+	.rx-screen__signature { margin-top: 1.5rem; }
+	.rx-screen__signature > * { grid-column: 1; }
+}

@@ -97,6 +97,16 @@ assert.deepEqual(
 	'Tài khoản thứ hai phải đọc đúng workspace riêng',
 );
 
+storage.setItem('qlpk_workspace_tabs', JSON.stringify({ version: 2, owners: {
+	'user-id:2': [receptionistTab, { id: 'package-management-html', label: 'Gói dịch vụ',
+		href: '/package-management.html', mode: 'iframe' }],
+} }));
+assert.deepEqual(
+	Array.from(windowObject.QLPKWorkspaceShell.getTabs(), tab => tab.id),
+	['receptionist-new-html'],
+	'Tab Gói dịch vụ đã ẩn không được khôi phục từ phiên cũ',
+);
+
 storage.setItem('qlpk_workspace_tabs', JSON.stringify([receptionistTab]));
 assert.deepEqual(
 	Array.from(windowObject.QLPKWorkspaceShell.getTabs(), tab => tab.id),

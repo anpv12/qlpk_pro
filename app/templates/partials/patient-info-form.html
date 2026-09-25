@@ -27,7 +27,7 @@
 				<div class="receptionist-input-with-action">
 					<input type="text" class="form-control" id="fullName" placeholder="Nhập họ tên">
 					{% if patient_info_show_joint_action %}
-					<button class="receptionist-icon-action" type="button" id="jointExamEditBtn"
+					<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="jointExamEditBtn"
 						title="Quản lý người đi khám cùng (CCCD, SĐT, quan hệ...)">
 						<i class="bi bi-people-fill qlpk-button-icon"></i>
 					</button>
@@ -44,7 +44,7 @@
 							<option value="other">Khác</option>
 						</select>
 						{% if patient_info_show_detail_actions %}
-						<button class="receptionist-icon-action" type="button" id="genderEditBtn" data-receptionist-inline-toggle="genderInlineDetailPanel" aria-controls="genderInlineDetailPanel" aria-expanded="false" title="Mở thông tin giới tính mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="genderEditBtn" data-receptionist-inline-toggle="genderInlineDetailPanel" aria-controls="genderInlineDetailPanel" aria-expanded="false" title="Mở thông tin giới tính mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}
@@ -113,7 +113,7 @@
 					<div class="receptionist-input-with-action receptionist-smart-input-control">
 						<input type="text" class="form-control" id="idCard" placeholder="Nhập CMT/CCCD">
 						{% if patient_info_show_detail_actions %}
-						<button class="receptionist-icon-action" type="button" id="idCardEditBtn" data-receptionist-inline-toggle="identityInlineDetailPanel" aria-controls="identityInlineDetailPanel" aria-expanded="false" title="Mở thông tin CMT/CCCD mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="idCardEditBtn" data-receptionist-inline-toggle="identityInlineDetailPanel" aria-controls="identityInlineDetailPanel" aria-expanded="false" title="Mở thông tin CMT/CCCD mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}
@@ -154,7 +154,7 @@
 						<input type="text" class="form-control" id="occupation" placeholder="Nhập nghề nghiệp" autocomplete="off">
 						<div class="occupation-dropdown" id="occupationDropdown"></div>
 						{% if patient_info_show_detail_actions %}
-						<button class="receptionist-icon-action" type="button" id="occupationEditBtn" data-receptionist-inline-toggle="occupationInlineDetailPanel" aria-controls="occupationInlineDetailPanel" aria-expanded="false" title="Mở thông tin nghề nghiệp mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="occupationEditBtn" data-receptionist-inline-toggle="occupationInlineDetailPanel" aria-controls="occupationInlineDetailPanel" aria-expanded="false" title="Mở thông tin nghề nghiệp mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}

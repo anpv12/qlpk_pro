@@ -291,6 +291,7 @@
 			restoreDraftSnapshot,
 			getServicesForm,
 			getIndicationsForm,
+			refreshIndications: refreshOptions => getIndicationsForm().refreshCurrent(refreshOptions),
 			getContext: () => state.context,
 			getConfig: () => ({ ...config, services: { ...config.services }, indications: { ...config.indications } })
 		};

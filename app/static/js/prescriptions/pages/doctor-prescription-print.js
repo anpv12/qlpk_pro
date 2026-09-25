@@ -48,7 +48,7 @@
 					doctor: appointment.doctor_info || appointment.doctor || {}
 				};
 
-				component.render(printWindow, {
+				await component.render(printWindow, {
 					title: 'In đơn thuốc',
 					clinicInfo: window.getClinicInfoConfig(),
 					patient,

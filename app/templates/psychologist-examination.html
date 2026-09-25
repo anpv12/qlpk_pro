@@ -12,10 +12,10 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/examination-detail-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<!-- CSS riêng cho modal Khám chi tiết -->
@@ -44,6 +44,8 @@
 	<script src="/static/js/ethnicity-autocomplete.js?v={{ app_version }}"></script>
 	<script src="/static/js/province-autocomplete.js?v={{ app_version }}"></script>
 	<script src="/static/js/ward-autocomplete.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
+	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
 	<script src="/static/js/clinic-config.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/shared/clinical-workflow.css?v={{ app_version }}">
@@ -73,13 +75,13 @@
 
 	<!-- Hidden elements required by shared clinical helpers -->
 	<div class="exam-initially-hidden">
-		<button id="selectPatientBtn"></button>
-		<button id="clearSearchBtn"></button>
-		<button id="printQueueBtn"></button>
-		<button id="printAppointmentBtn"></button>
-		<button id="printPatientBtn"></button>
-		<button id="nextQueueBtn"></button>
-		<button id="resetQueueBtn"></button>
+		<button data-qlpk-button="view" data-qlpk-button-variant="soft" id="selectPatientBtn"></button>
+		<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="clearSearchBtn"></button>
+		<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="printQueueBtn"></button>
+		<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="printAppointmentBtn"></button>
+		<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="printPatientBtn"></button>
+		<button data-qlpk-button="execute" data-qlpk-button-variant="solid" id="nextQueueBtn"></button>
+		<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="resetQueueBtn"></button>
 		<div id="currentQueueNumber"></div>
 		<div id="waitingCount"></div>
 		<div id="estimatedTime"></div>
@@ -113,7 +115,7 @@
 	{% include 'partials/patient-search-modal.html' %}
 
 	<!-- Auto-save indicator -->
-	<div id="autoSaveIndicator" class="auto-save-indicator">
+	<div id="autoSaveIndicator" class="qlpk-status auto-save-indicator">
 		<i class="bi bi-check-circle me-1"></i>Đã lưu
 	</div>
 	<!-- Custom JavaScript -->
@@ -144,6 +146,7 @@
 		<script src="/static/js/components/patient-modal-contract.js?v={{ app_version }}"></script>
 		<script src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
 		<script src="/static/js/personal-detail-modal-dry.js?v={{ app_version }}"></script>
+	<script src="/static/js/prescriptions/shared/prescription-type-contract.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-document-template.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/components/prescription-print-document.js?v={{ app_version }}"></script>
 		<script src="/static/js/patient-search-modal-dry.js?v={{ app_version }}"></script>

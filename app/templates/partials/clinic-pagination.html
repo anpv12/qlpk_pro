@@ -1,0 +1,15 @@
+<div class="qlpk-pagination {{ pagination_class|default('') }}" id="clinicPagination">
+  <div class="qlpk-pagination__details">
+    <label for="clinicPageSize">Số dòng/trang</label>
+    <select class="form-select form-select-sm" id="clinicPageSize">
+      <option value="10">10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    <span id="clinicPageInfo" role="status">0–0 / 0 mục</span>
+  </div>
+  <nav aria-label="Phân trang danh sách">
+    <ul class="pagination mb-0" id="clinicPageLinks"></ul>
+  </nav>
+</div>

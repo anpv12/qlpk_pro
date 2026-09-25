@@ -34,21 +34,6 @@
 		previewContainer.appendChild(validationBadge);
 	}
 
-	function createBarcode(patientInfo) {
-		if (!patientInfo.patient_code || typeof JsBarcode === 'undefined') return;
-		try {
-			JsBarcode('#barcode-' + patientInfo.patient_code, patientInfo.patient_code, {
-				format: 'CODE128',
-				width: 1.5,
-				height: 35,
-				displayValue: false,
-				margin: 0
-			});
-		} catch (error) {
-			console.error('Lỗi tạo barcode:', error);
-		}
-	}
-
 	function renderVerifiedPrescription(data) {
 		const diagnosisText = data.diagnosis_text || data.diagnosis || '';
 		document.getElementById('bannerArea').innerHTML = '';
@@ -58,7 +43,7 @@
 			clinicInfo: getClinicInfoConfig(),
 			patient: patientInfo,
 			history: { examination_date: data.examination_date, doctor: data.doctor },
-			examinationDetail: { diagnosis: diagnosisText },
+			examinationDetail: { diagnosis: diagnosisText, benh_kem_theo: data.benh_kem_theo, weight: data.weight, loi_dan: data.loi_dan },
 			examinationDetailsBySection: null,
 			prescriptionData: {
 				prescription_code: data.prescription_code,
@@ -66,6 +51,7 @@
 				medicines: data.medicines || [],
 				diagnosis: diagnosisText,
 				re_examination_date: data.re_examination_date,
+				show_re_examination_date: data.show_re_examination_date,
 				usage_instructions: data.usage_instructions
 			},
 			relatives: data.relatives || [],
@@ -97,7 +83,6 @@
 			document.fonts.ready.then(scaler.fit).catch(() => {});
 		}
 
-		createBarcode(patientInfo);
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {

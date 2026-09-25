@@ -8,6 +8,9 @@ from app.models.medicine import Medicine
 from app.models.patient import Patient
 from app.models.prescription import Prescription, PrescriptionItem
 from app.models.user import User
+from app.modules.prescriptions.services.re_examination_service import (
+    latest_re_examination, show_re_examination_date_on_prescription,
+)
 from app.utils.examination_utils import build_icd_display_contract
 
 
@@ -96,6 +99,7 @@ def build_public_prescription_view_model(db, prescription_code):
     ).first()
 
     diagnosis_contract = build_icd_display_contract(db, examination.diagnosis) if examination else {"text": "", "ids": []}
+    comorbidity_contract = build_icd_display_contract(db, examination.benh_kem_theo) if examination else {"text": "", "ids": []}
     examination_date = (
         examination.examination_date.isoformat()
         if examination and examination.examination_date
@@ -108,6 +112,9 @@ def build_public_prescription_view_model(db, prescription_code):
         "total_amount": prescription.total_amount or 0,
         "usage_instructions": prescription.usage_instructions or "",
         "re_examination_date": prescription.re_examination_date.isoformat() if prescription.re_examination_date else None,
+        "show_re_examination_date": show_re_examination_date_on_prescription(
+            latest_re_examination(db, appointment.id)
+        ),
         "created_at": prescription.created_at.isoformat() if prescription.created_at else None,
         "medicines": _serialize_medicines(db, prescription.id),
         "patient": {
@@ -125,6 +132,9 @@ def build_public_prescription_view_model(db, prescription_code):
             "license_number": doctor_profile.license_number if doctor and doctor_profile else "",
         },
         "diagnosis": diagnosis_contract["text"],
+        "benh_kem_theo": comorbidity_contract["text"],
+        "weight": float(examination.weight) if examination and examination.weight is not None else None,
+        "loi_dan": examination.loi_dan if examination else "",
         "diagnosis_ids": diagnosis_contract["ids"],
         "relatives": _serialize_relatives(db, appointment),
         "examination_date": examination_date,

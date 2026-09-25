@@ -1,0 +1,235 @@
+/* Opt-in visual foundation, shared by inventory and administrative pages.
+ * Page owners retain their own workflow, scrolling and form lifecycles. */
+.qlpk-clinic-page {
+  --qlpk-workspace-bg: #f3ebdd;
+  --clinic-surface-radius: 0.875rem;
+  --clinic-control-radius: 0.5625rem;
+  --clinic-control-font-size: var(--qlpk-font-size-base);
+  --qlpk-control-font-size-sm: var(--clinic-control-font-size);
+  --clinic-modal-title-size: var(--qlpk-font-size-xl);
+  --clinic-placeholder-color: var(--qlpk-color-text-muted);
+  --clinic-surface-shadow: 0 1px 2px rgba(59, 32, 18, 0.04), 0 10px 24px -12px rgba(59, 32, 18, 0.1);
+  background: var(--qlpk-workspace-bg);
+}
+
+.qlpk-clinic-page .qlpk-clinic-header {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 1.25rem 0.75rem 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--qlpk-workspace-bg);
+  box-shadow: none;
+  color: var(--qlpk-color-primary-strong);
+}
+
+.qlpk-clinic-header::before,
+.qlpk-clinic-header::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.qlpk-clinic-header::before {
+  inset: 0 0 0 38%;
+  background: url("/static/assets/images/medicine-clinic-interior.png") center 58% / cover no-repeat;
+  mask-image: linear-gradient(to right, transparent, #000 50%);
+  opacity: 0.22;
+}
+
+.qlpk-clinic-header::after {
+  inset: 0;
+  background: linear-gradient(to top, var(--qlpk-workspace-bg), transparent 35%);
+}
+
+.qlpk-clinic-page .qlpk-clinic-title {
+  margin: 0;
+  color: var(--qlpk-color-primary-strong);
+  font-size: var(--qlpk-font-size-4xl, 28px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  line-height: 1.25;
+}
+
+.qlpk-clinic-page .qlpk-clinic-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.qlpk-clinic-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 0;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+.qlpk-clinic-summary__item {
+  position: relative;
+  display: grid;
+  gap: 0.125rem;
+  padding-inline: 1rem;
+}
+
+.qlpk-clinic-summary__item:first-child { padding-inline-start: 0; }
+.qlpk-clinic-summary__item:last-child { padding-inline-end: 0; }
+.qlpk-clinic-summary__item + .qlpk-clinic-summary__item::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.25rem;
+  inset-inline-start: 0;
+  width: 1px;
+  background: var(--qlpk-brown-200);
+}
+
+.qlpk-clinic-summary__value {
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+  color: var(--qlpk-color-primary-strong);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.qlpk-clinic-summary__label {
+  font-size: var(--qlpk-font-size-sm, 12px);
+  color: var(--qlpk-color-text-muted);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (min-width: 36.0625rem) {
+  .qlpk-clinic-page .qlpk-clinic-header { padding: 2rem 1.25rem 2.5rem; }
+}
+
+@media (min-width: 56.25rem) {
+  .qlpk-clinic-header::before { opacity: 1; }
+}
+
+@media (max-width: 56.25rem) {
+  .qlpk-clinic-summary { flex-basis: 100%; margin-inline-start: 0; }
+}
+
+@media (max-width: 36rem) {
+  .qlpk-clinic-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .qlpk-clinic-summary__item:nth-child(odd) { padding-inline-start: 0; }
+  .qlpk-clinic-summary__item:nth-child(even) { padding-inline-end: 0; }
+  .qlpk-clinic-summary__item:nth-child(odd)::before { content: none; }
+}
+
+/* Pagination tokens are shared with the approved medicine footer. */
+.qlpk-clinic-page .pagination {
+  --bs-pagination-font-size: var(--qlpk-font-size-sm);
+  --bs-pagination-color: var(--qlpk-brown-600);
+  --bs-pagination-bg: var(--qlpk-color-surface);
+  --bs-pagination-border-color: var(--qlpk-color-border);
+  --bs-pagination-hover-bg: var(--qlpk-brown-100);
+  --bs-pagination-hover-border-color: var(--qlpk-brown-300);
+  --bs-pagination-focus-bg: var(--qlpk-brown-100);
+  --bs-pagination-disabled-color: var(--qlpk-color-text-muted);
+  --bs-pagination-disabled-bg: var(--qlpk-color-page-bg);
+  --bs-pagination-disabled-border-color: var(--qlpk-color-border);
+  margin: 0;
+}
+
+.qlpk-clinic-page .pagination .page-link {
+  padding-inline: 0.625rem;
+}
+
+
+.qlpk-pagination {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem 0.875rem;
+  border-top: 1px solid var(--qlpk-color-border);
+  background: var(--qlpk-color-surface);
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-base);
+  border-radius: 0 0 var(--clinic-surface-radius) var(--clinic-surface-radius);
+}
+.qlpk-pagination__details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+.qlpk-pagination__details label { margin: 0; font-weight: var(--qlpk-font-weight-normal); }
+.qlpk-clinic-page .qlpk-pagination__details .form-select {
+  width: auto;
+  min-width: 4rem;
+  min-height: 2rem;
+  padding-block: 0.25rem;
+  color: var(--qlpk-color-text);
+  background-color: var(--qlpk-color-surface);
+}
+.qlpk-pagination .page-link { min-width: 2rem; text-align: center; }
+.qlpk-pagination--standalone,
+.qlpk-pagination--separate {
+  margin-block: 0.75rem 1.5rem;
+  border: 1px solid var(--qlpk-color-border);
+  border-radius: var(--clinic-surface-radius);
+  box-shadow: var(--clinic-surface-shadow);
+}
+.qlpk-pagination--standalone { margin-inline: 1.25rem; }
+@media (max-width: 36rem) {
+  .qlpk-pagination { align-items: flex-start; flex-direction: column; }
+  .qlpk-pagination--standalone { margin-inline: 0.75rem; }
+  .qlpk-pagination #clinicPageInfo { flex-basis: 100%; }
+}
+
+/* Shared form primitives; workflow CSS owns layout and semantic field states. */
+.qlpk-clinic-page :where(.form-control, .form-select) {
+  min-height: 36px;
+  padding: 6px 10px;
+	border-width: 1px;
+	border-style: solid;
+  border-radius: var(--clinic-control-radius);
+  font-size: var(--clinic-control-font-size);
+  font-weight: var(--qlpk-control-font-weight, var(--qlpk-font-weight-medium));
+  line-height: var(--qlpk-line-height-normal);
+}
+/* Shared form primitives; workflow CSS owns layout and semantic field states. */
+.qlpk-clinic-page :where(.form-control, .form-select):not([data-qlpk-button], [data-qlpk-button] *) {
+  border: 1px solid var(--qlpk-brown-200);
+  background-color: var(--qlpk-color-surface);
+  color: var(--qlpk-color-text);
+}
+.qlpk-clinic-page :where(.form-select) { padding-right: 2.25rem; }
+.qlpk-clinic-page :where(.form-control, .form-select):focus:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-color-primary);
+  box-shadow: 0 0 0 0.18rem rgba(var(--qlpk-color-primary-rgb), 0.12);
+}
+.qlpk-clinic-page :where(.form-control, .form-select):disabled:not([data-qlpk-button], [data-qlpk-button] *) {
+  background-color: var(--qlpk-color-page-bg);
+  color: var(--qlpk-color-text-muted);
+}
+.qlpk-clinic-page :is(input, textarea):not(.qlpk-app-header__search-input)::placeholder {
+  color: var(--clinic-placeholder-color);
+  font-size: inherit;
+  font-style: normal;
+  font-weight: var(--qlpk-font-weight-regular);
+  opacity: 1;
+}
+.qlpk-clinic-page .btn {
+  border-radius: var(--clinic-control-radius);
+  font-size: var(--clinic-control-font-size);
+  font-weight: var(--qlpk-font-weight-semibold);
+}
+.qlpk-clinic-page .modal-content { border-radius: var(--clinic-surface-radius); }
+.qlpk-clinic-page .modal-header .modal-title {
+  font-size: var(--clinic-modal-title-size);
+  line-height: var(--qlpk-line-height-tight);
+}
+.qlpk-clinic-page .modal-body .form-label {
+  font-size: var(--clinic-label-font-size, var(--qlpk-font-size-sm));
+  font-weight: var(--qlpk-font-weight-semibold);
+}

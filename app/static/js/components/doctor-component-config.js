@@ -71,7 +71,10 @@
 				famHistory: { containerId: 'famHistoryContainer', textInputId: 'famHistoryTextInput', hiddenId: 'patientFamilyHistory', fieldName: 'family_history' }
 			}
 		},
-		clinical: { rootId: 'doctorClinicalDecisionPanel' },
+		clinical: {
+			rootId: 'doctorClinicalDecisionPanel',
+			medicationSearchEndpoint: '/api/medicine-reference-catalog'
+		},
 		workspace: {
 			rootId: 'doctorClinicalWorkspace',
 			defaultSectionId: 'doctorClinicalDecisionPanel',

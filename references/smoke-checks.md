@@ -1,5 +1,413 @@
 # QLPK Smoke Checks
 
+## Truy vết cấp/hoàn theo lượt khám (2026-09-20)
+
+- [x] Hai lượt cùng bệnh nhân giữ riêng receipt/cost/sale; đổi giá danh mục không đổi lịch sử.
+- [x] Lưu lặp không thêm dòng; đổi giá ghi delta 0 SL; cấp thêm/hoàn một phần/hoàn hết giữ liên kết gốc.
+- [x] Hoàn đúng lần nhập, cùng số lô khác giá vốn; dữ liệu cũ thiếu giá vẫn null.
+- [x] Thiếu kho rollback; khóa lượt khám và kho vượt kiểm đồng thời.
+- [x] Báo cáo lọc/phân trang, tổng toàn bộ bộ lọc, 401 thiếu auth/400 bộ lọc sai.
+- [x] Browser riêng: dữ liệu thật 50 dòng/trang, trang 2, tìm kiếm rỗng.
+- [x] QA 20/09 bổ sung: app thật + đăng nhập QA + DB riêng chỉ dữ liệu giả lập, cấp/hoàn/đổi giá qua Lưu màn bác sĩ; lịch sử sau hoàn hết, 4/29 dòng, desktop 1600 và 1024, reload, thiếu kho, thống kê 54 dòng/phân trang. Pass visual/interactive QA cho các ca này; chi tiết `reports/medicine-visit-ledger-2026-09-20/qa-interactive.md`.
+
+## Đối chiếu thuốc DAV — bảng ba cột (2026-09-18)
+
+- [ ] Modal cao theo nội dung; dữ liệu dài chỉ cuộn thân, footer vẫn thấy.
+- [ ] Bốn trường chung nằm cùng hàng giữa Ban đầu/DAV; chỉ ô khác bên DAV
+  được nhấn nhẹ. Trường thiếu ghi rõ, không suy ra hàm lượng từ tên thuốc.
+- [ ] Chi tiết DAV bổ sung nằm dưới bảng, không lặp trường; đọc được tên
+  nhà sản xuất/quy cách dài trên desktop và màn hẹp.
+- [ ] Tìm/chọn lại bỏ dữ liệu DAV cũ; đổi thuốc/đóng bỏ mọi dữ liệu cũ;
+  phản hồi chậm không ghi đè lựa chọn mới. Nút xác nhận theo can_apply.
+- [ ] Kiểm trạng thái chưa liên kết, đã liên kết, không thể áp dụng, rỗng
+  kết quả và dữ liệu dài. Không gửi xác nhận vào dữ liệu thật khi chỉ QA UI.
+
+## Cập nhật giá thuốc (2026-09-15)
+
+- [x] Server time, exact interval closure, decimals/zero/decreases/no-op,
+  stale/ABA, rollback, initial creation, pagination and stock preservation.
+- [x] Frontend difference, repeat submit, late response, staged create, errors;
+  ordinary saves omit prices. 89 Python +22 JS tests đạt.
+- [x] Schema/Alembic strict, API auth and frontend contracts.
+- [x] Migration backup and after-comparison preserve current medicines,
+  batches, transactions and prescription items. No old history invented.
+- [ ] User kiểm tra thêm/sửa, Cập nhật giá, Hủy, tăng/giảm/0, lịch sử dài,
+  hai phiên cùng sửa; màn rộng/hẹp và cuộn. Chưa pass visual/interactive QA.
+
+## Mapping DAV đợt2 (2026-09-14)
+
+- [x] Backup custom dump trước ghi;2 source corrections +17 clinic mappings
+  commit với journal, manifest pin phiên dữ liệu và người thực hiện.
+- [x] 70 tests: migration có lô/quy cách khác/field cũ khác, source blank nạp
+  null, stale/duplicate/public mapping bị chặn; correction đúng2 source giữ
+  raw, idempotent, không sửa source khác hoặc thay đổi nguồn không rõ.
+- [x] Schema;27 links có identity/snapshot đúng DAV. Không đổi ID/settings/
+  stock/prices/conversion của51 thuốc;48 lô,2744 giao dịch,877 dòng đơn giữ
+  hash;24 chưa map và10 links cũ giữ nguyên.
+- [x] Report/note24 dòng: `reports/dav-migration-2026-09-14/stage-2/report.md`.
+- [ ] Xử lý tiếp24 theo note; không tự gộp các dòng kho trùng tên/nguồn.
+- [ ] User QA hiển thị thêm/sửa sau mapping: chưa pass visual/interactive QA.
+
+## Migration dữ liệu DAV local (2026-09-14)
+
+- [x] Audit51 thuốc/54752 nguồn, manifest10 cặp duyệt riêng;41 thiếu căn cứ
+  được ghi riêng tại `reports/dav-migration-2026-09-14/report.md`.
+- [x] Backup custom dump được kiểm tra trước apply; fingerprint thuốc/nguồn
+  và database phải khớp; bỏ trùng/mất evidence/actor sai/manifest cũ.
+- [x] 6 manifest tests +50 DAV/API/Excel rollback đạt; schema contract đạt.
+- [x] Đọc lại sau commit:10 linked/41 unlinked;48 lô,2744 giao dịch,877 dòng
+  đơn không đổi, tất cả tồn/giá/quy đổi giữ nguyên.41 bản chưa ghép không đổi.
+- [ ] Có hãng/SĐK hoặc xác nhận mâu thuẫn để hoàn tất41 thuốc còn lại.
+
+## Người phụ trách xác nhận DAV (2026-09-14; thay thế việc bỏ liên kết người dùng)
+
+- [ ] 2026-09-17: thuốc thêm mới từ DAV (form/Excel) hiện "Đã xác nhận DAV"
+  ngay, không bị đòi xác nhận lại; thuốc cũ pending giữ nguyên trạng thái.
+  Modal xác nhận không còn checkbox: chọn thuốc hợp lệ là nút Xác nhận bật;
+  nguồn đổi/không hiệu lực vẫn khóa nút và báo lý do.
+- [x] 72 Python rollback: review quyền kho, pending/confirmed/stale, checkbox,
+  version/duplicate/source guards, sửa liên kết có lô và giữ nguyên dữ liệu lô.
+- [x] 20 JS: search tên, chọn lại, stale response, hủy/đổi thuốc, double submit,
+  form thêm/sửa cũ; frontend contract, Python/JS/Jinja syntax đạt.
+- [x] DB đọc lại: 27 pending, 24 unlinked; không ghi xác nhận thay người dùng.
+- [ ] User QA thuốc chưa liên kết/cần xác nhận/đã xác nhận; tìm tên, hoạt chất,
+  SĐK, đổi nguồn, hủy, kiểm tra nhà sản xuất/hàm lượng, nguồn trùng/không hiệu
+  lực, desktop/mobile và dropdown nhiều kết quả. Chưa pass visual/interactive QA.
+
+## DAV bắt buộc, migration nội bộ (2026-09-14; lịch sử trước luồng xác nhận)
+
+- [x] POST chặn thiếu/sai nguồn, nguồn ngoài DAV, hết hiệu lực, tên tự nhập,
+  tồn/giá vốn; Excel không tạo được thuốc thiếu nguồn hoặc liên kết thuốc cũ.
+- [x] PUT người dùng chặn link/relink/unlink/refresh, kể cả JSON giả quyền
+  migration; vẫn sửa cấu hình phòng khám. 50 Python rollback +15 JS đạt.
+- [x] Gỡ cột/bộ lọc nguồn và toàn bộ mapping UI; giữ form chọn DAV/thêm/sửa.
+- [ ] User QA: bảng rỗng/có dữ liệu/dày, lọc/phân trang, desktop/mobile;
+  thêm phải chọn DAV, sửa không có đổi nguồn, nhập số lượng từ lô.
+- Chưa pass visual/interactive QA. Các mục liên kết người dùng ngày 2026-09-13
+  bên dưới chỉ ghi lịch sử, đã được quy trình này thay thế.
+
+## Form thuốc theo ảnh mới và tìm DAV bằng tên (2026-09-13)
+
+- [x] Tìm tên/hoạt chất/SĐK lấy được preview; PUT nhận số đăng ký của lựa chọn.
+  40 Python rollback đạt; read-only Diropam trả2 thuốc trên dữ liệu hiện có.
+- [x] 17 JS race/save/error; syntax/Jinja, IDs/labels/DOM refs và contracts.
+- [x] Code layout: header/footer ngoài vùng cuộn; bốn section theo ảnh,
+  source dropdown tham gia flow; giữ readonly và field IDs.
+- [ ] User QA: thêm/sửa có dữ liệu; chọn DAV/đổi thuốc; dropdown dài/ngắn;
+  đơn vị/quy đổi, cảnh báo, footer và cuộn trên desktop/mobile.
+
+## Thêm/sửa/liên kết lại DAV, giữ UI gốc (2026-09-13)
+
+- [x] Code: chọn DAV mới mở nhập; đổi thuốc xóa nguồn/gợi ý cũ; không gửi tồn,
+  giá vốn/hạn dùng qua form danh mục. Khóa nguồn ở UI/API, nguồn thiếu cho nhập.
+- [x] Code/API rollback: đổi nguồn, cập nhật cùng nguồn, nguồn trùng/hết hiệu
+  lực/version cũ/quy cách hoặc hoạt chất không khớp; giữ ID/giá/tồn/lô/lịch sử.
+- [x] Code: chống submit lặp, response cũ, text lỗi kỹ thuật; 81 Python +17 JS.
+- [x] Tĩnh: hai cột/bốn nhóm theo UI gốc, không ID trùng, syntax/contracts.
+- [ ] User QA: thêm thuốc → lưu → nhập lô → kiểm số lượng; sửa phần được phép.
+- Chưa pass visual/interactive QA; user nhận phần QA giao diện trong lượt này.
+
+## Sửa thuốc / Bổ sung thông tin riêng (2026-09-13)
+
+- [x] Sửa thuốc cũ lấy GET mới nhất, không mở tìm DAV hay checkbox liên kết.
+- [x] Bổ sung chỉ mở sau GET thành công; response cũ bị bỏ qua.
+- [x] SĐK khớp chính xác hiện tại/cũ; nhập tên/đoạn SĐK không tìm gần đúng.
+- [x] Xem trước không điền đè form cũ; Hủy desktop/mobile giữ tên và tồn834.
+- [x] Browser Lupilopram30 vs kho50 chặn; Exidamin nguồn ghi Hoạt chất10mg
+  chặn với lý do rõ. Backend kiểm lại, không dựa riêng disabled button.
+- [x] Mobile390×844/600: chọn/tìm lại, cuộn thân và cuộn ngang bảng, footer/Hủy.
+- [x] New Panadol map Nội/viên/hộp120 như trước; không ghi thật qua browser.
+- [x] 51 Python rollback/query/mapping +11 JS; syntax/Jinja/frontend/auth/diff.
+- [x] PUT rollback kiểm thành công, lỗi SĐK/version/quy cách, giữ tồn/giá/
+  lịch sử/hàm lượng khi nguồn trống. Pending/double-submit/retry bằng JS.
+
+
+## Mapping DAV → thêm thuốc (2026-09-13)
+
+- [x] Quy tắc đơn vị/quy đổi toàn chuỗi; nhiều quy cách/dung dịch không đoán.
+- [x] Lookup route/defaults không thêm COUNT/raw payload, khớp full catalog.
+- [x] POST/GET rollback: route, Nội/Ngoại, chuỗi quy đổi, giá và tồn0 đúng;
+  thiếu quốc gia yêu cầu xác nhận boolean, legacy/trùng nguồn giữ guard.
+- [x] Browser thật Panadol VN tự điền viên/hộp120/Nội; chưa xác nhận bị chặn;
+  đổi nguồn xóa gợi ý. Ireland/đa quy cách → Ngoại/count trống.
+- [x] Mobile390: source dài và checkbox đọc/nhấn được, modal-body cuộn.
+- [x] 48 Python +9 JS; frontend contract/JS syntax/diff.
+- [ ] Visual route có dữ liệu và ghi browser chưa chạy; dữ liệu DAV đang
+  kiểm không có đường dùng. Route save/read được kiểm bằng rollback test.
+
+## Kết quả QA tiếp và sửa hồi quy quản trị (2026-09-13)
+
+Checklist hiện hành của lượt này; các section cùng ngày bên dưới giữ lịch
+sử. Ma trận và giới hạn tại `reports/admin-ui-qa-2026-09-13.md`.
+
+- [x] Desktop sau patch: Tài khoản, Tương tác, Nhóm dịch vụ, Dịch vụ, Ngày lễ.
+- [x] Launcher/dropdown không có Gói dịch vụ; URL trực tiếp browser về index.
+- [x] ICD đổi20 dòng/trang, tới cuối; mobile cuộn tác vụ, sửa/hủy, trang2;
+  thêm required/định dạng sai hiện feedback. Pending submit/lỗi unlock test đạt.
+- [x] Các bảng thật và footer/trang cuối: thuốc51, DAV48829 active, ICD12218,
+  tài khoản9, hoạt chất1001, dị nguyên115, tương tác11, dịch vụ287, ngày lễ38.
+- [x] Modal thuốc/DAV/nhóm/từ viết tắt populated; DASS21 mobile tới câu21,
+  4 đáp án đúng điểm, đổi tab Kết quả và đóng không lưu.
+- [x] Lịch bận3 lịch sử/active rỗng, parent filter wrap, góc input9px;
+  chọn Sáng, chọn gợi ý Họp, cuộn ngang gợi ý và reset.
+- [x] Thuốc/DAV tìm không khớp mobile: nhãn trống và footer0–0/0 nhìn thấy.
+- [x] 13/13 JS tests; frontend/brand/auth/workspace contract; Jinja/HTTP18.
+- [ ] CRUD/import/sync và giả lập lỗi mạng browser thật chưa chạy; không
+  ghi dữ liệu vận hành chỉ để QA. Không đánh đồng test mock với browser QA.
+
+## Ẩn Gói dịch vụ và QA mobile tiếp (2026-09-13)
+
+- [x] Gỡ navigation/phím tắt; test workspace loại tab Gói dịch vụ đã lưu.
+  Firefox reload không còn tab cũ; URL cũ HTTP302 về index.
+- [x] Mobile390: Tài khoản có lại mũi tên select; Nhóm dịch vụ/Dịch vụ/
+  Ngày lễ xuống dòng ô tìm hợp lý; Tương tác thuốc không bị ép dòng quá cao.
+- [x] Đã quan sát phần đầu18 trang quản trị còn hiển thị. Không tính editor
+  tạo mới, Tài liệu chưa chọn thư mục hoặc bảng dưới viewport là QA dữ liệu.
+- [ ] Sau patch mới, kiểm desktop Tài khoản/Tương tác/Nhóm dịch vụ/Dịch vụ/
+  Ngày lễ; kiểm launcher và URL redirect bằng browser, danh sách phím tắt.
+- [ ] Tiếp tục cuộn dọc/ngang tới footer/cột tác vụ, modal và validation.
+  CUA click không kích hoạt và paste timeout trong lượt này; sau đó Firefox
+  chuyển cửa sổ đang dùng. Chưa pass visual/interactive QA toàn bộ18 trang.
+
+## Control quản trị, ICD và Phân quyền (2026-09-13)
+
+- [x] Frontend contract; test ICD/auth/error/race/pager, Phân quyền
+  identity/load guard/search và bộ lọc danh sách đạt.
+- [x] ICD tải dữ liệu thật 12.218 mã trên phiên Firefox quản trị sau sửa auth.
+- [x] Đã tìm đúng Firefox container Cá nhân có Admin; server/quyền truy cập
+  không còn là điều kiện thiếu. Sửa backend thiếu ba quyền menu; Dị nguyên,
+  Tài liệu và Phím tắt đã mở thật sau hydrate `/users/me`.
+- [x] ICD trang2/cuối1222, tìm A00.0 và query không có kết quả, mở sửa/hủy;
+  mobile390 toolbar không tràn và dòng không bị ép cao. Chưa kiểm tương tác
+  cuộn ngang/mobile footer, đổi page-size và retry mạng trên browser.
+- [x] Phân quyền: chọn Admin và bác sĩ, quyền Bác sĩ hiện đúng, tìm tên có
+  dấu đúng; save khóa trước khi tải. Nhóm quyền tìm BS/Enter ra1, reset.
+- [x] Tài khoản form thật: Enter admin ra1, reset9, role Bác sĩ ra3; toolbar
+  sau sửa flex đủ chỗ nhập. Hoạt chất/Dị nguyên không lộ native file input.
+- [x] Thuốc trang cuối51–51/51 và khảo sát11–11/11; DASS tìm ra1, editor
+  đọc đủ options cũ và điểm0–3 sau sửa, đóng không lưu.
+- [x] Tài liệu chọn thư mục rỗng và thư mục1file; Phím tắt2 dòng, Ngày lễ38,
+  nhóm dịch vụ3, dịch vụ287, tương tác11, từ viết tắt6 hiển thị dữ liệu thật.
+- [x] Lịch bận Tất cả hiện3 lịch sử, Đã hủy hiện2 và khóa sửa; active rỗng
+  vì không có lịch sắp tới. Test SQLite xác nhận lọc luôn giữ owner.
+- [ ] Sau patch CSS cuối: 19 màn có field/button13px, placeholder không
+  italic, radius control9/surface14, modal heading18; kiểm focus, disabled,
+  is-invalid/is-valid, textarea, input group và select nhỏ.
+- [ ] ICD còn: đổi số dòng, lọc nhóm, lỗi mạng/retry, modal thêm/hủy;
+  wrapper scroll ngang và footer trên màn hẹp.
+- [ ] Phân quyền: chọn user trùng tên theo ID, hiện quyền đã cấp; đổi user
+  nhanh không giữ quyền cũ, không lưu khi đang tải/lỗi tải. Kiểm tìm user
+  và nhóm. Không cấp/thu hồi quyền thật chỉ để QA.
+- [ ] Nhóm quyền: tìm mã/tên/mô tả, Enter/Làm mới đổi dataset/pager đúng;
+  không còn filter danh mục thuốc/ngày/status không thuộc model Group.
+- [ ] Tài khoản: tìm tên/username/điện thoại, đổi lọc nhanh, realtime giữ
+  lọc. API /users/ hiện chỉ trả active theo contract hiện hữu; chưa mở rộng
+  backend để tra cứu inactive trong lượt UI này.
+- **Chưa pass visual/interactive QA toàn bộ18 màn còn hiển thị**: còn ma trận
+  modal, validation, responsive và save/load thực. Gói dịch vụ đã ẩn theo
+  yêu cầu; API `/users/` chỉ trả active nên chưa kiểm được inactive.
+  Đây là phần việc/giới hạn chức năng, không phải cần user cấp thêm phiên.
+
+## Phân trang quản trị theo Tủ thuốc (2026-09-12)
+
+- [ ] Chạy `node tests/clinic-pagination.test.js` và frontend contract.
+- [ ] 12 danh sách trong `CLINIC_PAGINATION_PAGES` có đúng một footer/renderer.
+  Mặc định 10, đổi 20/50/100 về trang đầu, giữ bộ lọc và STT đúng.
+- [ ] Dữ liệu thật: chuyển trang 2/trang cuối, lọc ít dòng/rỗng; tổng và khoảng
+  khớp dữ liệu, disabled không gửi request và trang hiện tại có aria-current.
+- [ ] Kiểm danh mục lớn nhiều nghìn trang và đổi bộ lọc nhanh, không để phản
+  hồi cũ thay bảng mới. Không dùng dữ liệu giả để kết luận visual QA.
+- [ ] Desktop/mobile: footer ngoài vùng cuộn ngang; khảo sát footer vẫn trong
+  viewport, bảng cuộn riêng; Tủ thuốc giữ kiểu đã duyệt, màn loại trừ không đổi.
+
+## Màn quản trị theo chuẩn Tủ thuốc (2026-09-12)
+
+- [ ] Nhóm quyền/Từ viết tắt/Tương tác thuốc/ICD/Lịch bận/Tài liệu/mẫu khảo
+  sát: đo font trên dòng thật, cả tên/ngày/metadata/badge đều base13px;
+  kiểm cả Link liên kết trong Tài liệu. Icon và tiêu đề có cấp riêng.
+- [ ] Lịch bận: gợi ý cuộn ngang trong container, click điền lý do và chuyển
+  is-selected đúng; không lưu bản ghi khi chỉ kiểm giao diện. Tài khoản/editor
+  khảo sát chỉ có feedback runtime, không xuất hiện toast local thứ hai.
+- [ ] `check_frontend_contract.py` kiểm opt-in allowlist; các màn loại trừ
+  không tải `clinic-workspace.css`, không có `.qlpk-clinic-page`.
+- [ ] Tủ thuốc giữ 4 số tổng đúng, bảng vẫn sát toolbar. Từ viết tắt và DAV
+  dùng các ID/API cũ, summary không đổi theo bộ lọc nếu API trả tổng toàn kho.
+- [ ] Kiểm desktop/mobile với dữ liệu thật, bảng dày/thưa/rỗng; tiêu đề/ảnh
+  không che nút, nhãn/số không cắt, bảng ngang có thể đến cột tác vụ.
+- [ ] Kiểm cả native pane và embedded main; survey list giữ phân trang trong
+  viewport, editor mở mẫu thật/đổi tab/đóng, Tài liệu chọn thư mục và cuộn pane.
+- [ ] Mở/hủy modal và date picker; không gửi save hoặc tạo bản ghi chỉ để QA.
+  Màn bị redirect, chỉ có placeholder hoặc chưa có dữ liệu không được coi là
+  đã pass visual/interactive QA đầy đủ.
+
+## Nhãn lịch sử khám dùng chung (2026-09-10)
+
+- Kiểm bảng 4 và nhiều lượt, chẩn đoán dài; badge trạng thái nền màu đặc,
+  chữ trắng 12px/medium, không dùng xám, một
+  dòng, không đè cột bên cạnh. Cột ngày chỉ đánh dấu lượt hiện tại/hôm nay,
+  không lặp trạng thái khám hoặc `Lịch sử`.
+- Ở container hẹp, chẩn đoán xuống dòng riêng; ngày/trạng thái/thao tác
+  còn rõ. Header/row căn cùng cột trên desktop, không tràn ở mobile.
+- Đổi bệnh nhân A→B→A và chọn lượt khác: nhãn current theo appointment
+  context, trạng thái theo backend, preview vẫn tải đúng lượt.
+
+## Doctor chuyển khám qua modal chung (2026-09-10)
+
+- Nút header `Chuyển khám` mở đúng một `#transferModal`, đủ nhóm Bác sĩ,
+  Tâm lý gia, Lễ tân và danh sách người nhận tương ứng.
+- Mở/hủy giữ nội dung đang nhập, không gửi save/transfer. Xác nhận lưu các
+  phần dirty trước POST chuyển; lỗi lưu hoặc context đổi phải chặn POST.
+- Khi đang lưu/chuyển: chặn bấm lặp, đổi người nhận và đóng modal. Lỗi API
+  giữ lượt và lựa chọn, mở lại controls để thử lại; không báo thành công.
+- Lượt chưa tải đủ hoặc đang xem lịch sử không được chuyển. Quay lại lượt
+  hiện tại khôi phục trạng thái nút đúng.
+- Chuyển thành công clear ca hiện tại và tải lại queue; phiên khác tự
+  cập nhật socket. Kiểm người nhận/trạng thái trong DB, không suy từ toast.
+- Kiểm header populated ở desktop/mobile, modal nhóm ít/nhiều người,
+  không cắt nút/tràn ngang. Caller cũ không truyền hook vẫn hoạt động.
+- Automated: `node tests/doctor_transfer.test.js`,
+  `node tests/doctor_detail_defaults.test.js`, `node tests/doctor_realtime.test.js`.
+
+## Doctor queue realtime (2026-09-09)
+
+- Chuyển A rồi B tới cùng bác sĩ: cả hai phiên Doctor tự có B ở đầu, không
+  F5; mở A và nhập Bệnh sử trước khi chuyển B, A/draft/selected card còn đúng.
+- Chuyển A sang bác sĩ khác rồi về: A có ID thấp hơn vẫn lên đầu, hàng chờ
+  bác sĩ cũ bỏ A; reload giữ thứ tự. Gửi lặp cùng transfer: updated_count=0,
+  timestamp và số thông báo không tăng.
+- Xác nhận DOCTOR_EXAM + CONCLUSION chung pagination, đủ hơn 50 ca; tìm
+  bệnh nhân ở trang sau, lọc ít ca/trống, xóa filter về đủ danh sách. Không
+  đảo thứ tự khi sửa field khám hoặc khi API cũ trả chậm.
+- Ngắt socket, đổi dữ liệu QA trong thời gian mất kết nối; reconnect tự tải
+  bù danh sách và thông báo. Giữ filter/ca hiện tại, không reload toàn form.
+- Tạo/cập nhật CLS hoặc hoàn thành survey ở phiên khác: chỉ định hiện tại
+  refresh khi sạch; lúc dirty/editing thì báo cập nhật và chờ lưu/kết thúc
+  sửa, không mất input; đổi bệnh nhân trong lúc fetch không lẫn rows.
+- Automated: `QLPK_RUN_DB_TESTS=1 python -m pytest -q tests/test_doctor_queue.py
+  tests/test_workflow_notifications.py tests/test_clinical_order_validation.py`,
+  `node tests/doctor_realtime.test.js`, `node tests/doctor_indications_form.test.js`.
+
+### Bảng dữ liệu nền trắng (2026-09-08)
+
+- [ ] Bảng Thuốc, các bảng admin, Thống kê thuốc và Lịch bận: ô trắng/viền
+  mảnh khi không hover; badge trạng thái vẫn phân biệt được.
+- [ ] Thống kê thuốc: mở nhóm bác sĩ/thuốc con; tổng chữ tối, số loại trắng
+  có viền; tab tồn/lịch sử không mất bộ lọc.
+- [ ] Chi tiêu: tab Chi tiết/Tất cả, mở nhóm có dữ liệu; tổng/STT/loại chi
+  trắng, khoản lớn chỉ đánh dấu STT; không sửa ô autosave trong QA màu.
+- [ ] Mẫu khảo sát/Hoạt chất/Dị nguyên/Tương tác thuốc: kiểm viền admin chung
+  không phá bảng; tìm rỗng rồi tải lại; modal Dịch vụ/Tài khoản mở/đóng.
+- [ ] GAD-7 preview có 7 hàng trắng và chọn đáp án được; mobile cuộn bảng
+  ngang, không tràn trang. Empty state không thay cho QA dữ liệu thật.
+
+## Survey template editor regression (2026-09-06)
+
+- [ ] Seed điểm: chạy `tests/test_survey_scoring_seed.py`; GDS đủ 30 mục,
+  GDS/Zung đảo chiều đúng; GAD không cộng câu phụ, PHQ lưu ý mục 9 không đổi
+  thành tổng grid khi mở/lưu tab kết quả. Seed chạy lại không ghi đè dữ liệu.
+- [ ] Danh sách: mặc định 25 dòng, 11 mẫu nằm chung một trang; chọn 10 thì có
+  2 trang. Mở URL trực tiếp và tab từ Trang chủ; phân trang luôn trong
+  viewport. Trang 1/2, đổi 10/25/100, tìm kiếm có/không có kết quả; bảng dài
+  cuộn riêng, trang ít dữ liệu không thêm dòng rỗng. Kiểm desktop nhỏ/mobile.
+- [ ] Tải A chậm → mở B → chỉ tên/câu hỏi/đích lưu của B; không lưu khi đang tải.
+- [ ] Thêm cột hai lần: 4→5→6; thêm hàng một lần chỉ tăng một; đổi loại câu
+  rồi trở lại không mất giá trị hoặc mất sự kiện.
+- [ ] Nhập điểm cột 1, điểm ô 7/3 → lưu → tải lại vẫn 7/3, không thành 0/1.
+- [ ] Tiêu chí hàng đủ thì lưu grid được, không yêu cầu tiêu chí cha đang ẩn.
+- [ ] Quay lại/Escape khi chưa lưu: hủy xác nhận giữ nội dung.
+- [ ] Tab kết quả: chuyển nhóm/tab không mất kết luận/lưu ý; tổng/trung bình/
+  quy đổi dùng đúng cấu hình; hệ số quy đổi chưa nhập phải bị chặn.
+- [ ] Mẫu thiếu điểm: editor nêu lỗi, tạo link bị chặn; link cũ dừng loading
+  và báo cần cấu hình. Snapshot có đáp án không bị đổi theo danh mục.
+- [ ] Hai context browser: draft xuất hiện ở bác sĩ, chưa có kết quả cuối;
+  nộp 7/3 → tổng nhóm 7/3, trung bình 5, kết luận/lưu ý đúng; reload giữ đáp án.
+- [ ] CLS đọc đúng đáp án grid từ snapshot; kiểm desktop, editor mobile cuộn
+  bảng ngang đến được các cột cuối; console không lỗi.
+- [ ] Chạy `tests/test_survey_template_contract.py`, `tests/test_survey_scoring.py`
+  và `QLPK_RUN_DB_TESTS=1 ... tests/test_order_survey_lifecycle.py`.
+
+## Unified order status and result review
+
+- [ ] Tạo chỉ định: bảng/dropdown/timeline đều Chuyển thực hiện.
+- [ ] Tạo link đúng order -> Đã gửi khảo sát; bấm lại không tạo session trùng
+  còn hiệu lực. Cùng lượt có nhiều chỉ định/mẫu phải độc lập.
+- [ ] Nộp bài hợp lệ -> session completed, order Có kết quả; vẫn ở tab Đang
+  thực hiện. Bảng/modal/Doctor/TLG đúng qua realtime và sau reload.
+- [ ] Bác sĩ Kết thúc khảo sát khi có/chưa có bài -> tab Hoàn thành; lý do và
+  thời gian đúng, kết quả cũ còn nguyên, không nhận bài mới. Gọi lại không đổi mốc.
+- [ ] Hết hạn trước/sau nộp bài -> Hoàn thành ở đúng mốc hạn; tab tự cập nhật,
+  session đã nộp vẫn đọc được. Không báo có kết quả nếu chưa có bài.
+- [ ] Hai tab đếm toàn bộ cùng phạm vi quyền/tên/ngày trước phân trang;
+  chọn tab giữ bộ lọc, reset trang, thao tác nhanh không bị response cũ ghi đè.
+  Kiểm tab bằng chuột/bàn phím, desktop/mobile và trạng thái rỗng.
+- [ ] Sai token/patient/examination/template, thiếu đáp án bắt buộc, mã sai,
+  link đóng/hết hạn không ghi kết quả mới. Chỉ định hết hạn vẫn completed.
+- [ ] Nộp trùng cùng đáp án không tạo response/notification trùng; sửa đáp án
+  sau nộp bị chặn. Không thể dùng API đổi session status để giả hoàn thành.
+- [ ] Xem kết quả chỉ GET, hiện từng đáp án đã chọn (kể cả điểm 0), không tạo
+  link mới; người không có quyền không đọc được kết quả của chỉ định khác.
+- [ ] Nút Xem kết quả mở `patient-survey.html?review_order_id=<id>` trong tab
+  mới, dùng chung UI người điền; không còn khối đáp án riêng trong CLS.
+  Đối chiếu từng câu với bài đã lưu, kể cả khi mẫu đã thay đổi/hết hạn/đã kết
+  thúc. Input khóa, không Bắt đầu lại/Nộp bài, không API ghi hoặc đụng bản nháp.
+  Mobile không bị điều hướng che đáp án. Thiếu quyền hiện thông báo; chưa có
+  bài nộp vẫn xem phần đang làm hoặc mẫu trống ở chế độ chỉ đọc.
+- [ ] Live: mở đồng thời bệnh nhân/bác sĩ bằng hai browser context độc lập.
+  0 câu → hiển thị chưa có câu trả lời; chọn 1 câu → autosave, bác sĩ tự thấy
+  phần đã chọn và tiến độ đúng sau tối đa khoảng 3 giây. Không tạo kết quả
+  chính thức hoặc đổi Có kết quả khi chỉ lưu nháp; không nhảy câu đang xem.
+- [ ] Reload link ở context bệnh nhân mới khôi phục nháp server. Nộp thành
+  công hiện bài đã nộp; kết thúc/hết hạn khi chưa nộp vẫn giữ nháp, khóa ghi.
+  PUT revision cũ khác nội dung trả 409; sai token/IDs/mã đáp án bị từ chối;
+  PUT sau nộp/kết thúc trả 410. Mất mạng phải báo chưa đồng bộ, không báo đã lưu.
+- [ ] Form Doctor/TLG mở trước khi nộp bài không ghi đè trạng thái mới hoặc
+  âm thầm xóa row đã gửi/hoàn thành; không đổi template đã gửi.
+- [ ] Chưa có link: “Tạo link khảo sát”; có link: “Tạo lại link khảo sát”.
+  QR và URL cùng xuất hiện sau tạo và khi reload/browser mới không cache.
+  Giải mã QR khớp chính xác URL; tạo lại giữ session còn hiệu lực/nháp/hạn,
+  không lấy QR/link cache của chỉ định khác. QR nằm cạnh timeline trong
+  card tiến trình, link ở phần khảo sát; card hẹp xếp QR dưới timeline.
+  Đổi chỉ định/đóng modal/tải lỗi phải clear QR cũ. Kiểm QR và link trên mobile.
+- [ ] Chi tiết không còn tab Thông tin/Khảo sát; mở là tải đủ patient,
+  timeline, khảo sát. Trạng thái và nhóm nút chỉ xuất hiện một lần.
+  Nút cùng hàng tên chỉ định; badge sát nhãn Khảo sát/Kết quả khảo sát.
+  Survey không có dropdown; chỉ định thường vẫn đổi trạng thái được.
+  Chỉ định thường không hiện nút khảo sát. Kiểm có/chưa có kết quả, file
+  hiện trực tiếp trên desktop/mobile. Chỉ định nhập tay có ô Ghi chú kết quả
+  lưu `note_nurse` khi rời ô hoặc bấm Lưu ghi chú; mở lại giữ nội dung,
+  xóa trắng lưu được, lỗi lưu giữ bản nháp để thử lại. Đổi trạng thái phải
+  đợi lưu ghi chú; đổi ca không nhận phản hồi/nội dung từ ca trước.
+  Khảo sát không có ô ghi chú này.
+- [ ] Bố cục giữ phong cách cũ: nền kem/card trắng, trái bệnh nhân/tiến trình
+  dọc/file đính kèm, phải khảo sát/kết quả. Hai cột bằng chiều cao desktop,
+  mobile xếp dọc tự nhiên; tên file dài vẫn dễ đọc, tải/xóa/chọn file hoạt động.
+  Nhóm kết quả tiêu đề nâu, đáp án
+  bên trái và điểm/mức độ bên phải; mobile xếp dọc. Không đổi thành bảng
+  phẳng hoặc timeline ngang. Kiểm nhóm nhiều/ít câu, điểm 0 thật và chưa nộp.
+- [ ] Đóng modal giữ filter; mở lại nhiều lần không nhân listener/autosave.
+  Đổi order trong lúc API chậm hoặc animation đóng chưa xong không kẹt
+  loading, không để sự kiện đóng/response cũ xóa hoặc ghi context mới.
+- [ ] Kiểm desktop/mobile phần review dài; chờ tab/animation kết thúc rồi
+  chụp ảnh, không lấy DOM hidden hoặc ảnh giữa transition làm bằng chứng.
+- [ ] `QLPK_RUN_DB_TESTS=1 python -m pytest -q tests/test_order_survey_lifecycle.py`
+  chạy các integration test PostgreSQL trong transaction rollback; chỉ
+  bật trên DB local đã migrate. Test thường không bật flag sẽ skip nhóm này.
+
+## Survey score identity regression
+
+- [ ] Tạo mẫu qua editor có câu điểm 0 và khác 0, hai câu cùng nhóm; lưu,
+  mở lại, lưu lại và xác nhận question/answer IDs không đổi.
+- [ ] Tạo ca QA riêng, chỉ định đúng mẫu, tạo link, làm và nộp bài qua màn
+  bệnh nhân. Đối chiếu từng đáp án, tổng nhóm ở DB/API/CLS, rồi reload.
+- [ ] Điểm 0 thật giữ 0; thiếu key điểm phải hiện “Chưa tính được”. Không
+  lấy bài cũ có điểm thay cho bài mới thiếu điểm của cùng mẫu.
+- [ ] Mã đáp án/câu hỏi lạ hoặc trùng, câu bắt buộc bỏ trống, cấu hình điểm
+  thiếu phải trả lỗi 400 và không ghi đè bài hợp lệ đã lưu.
+- [ ] Mẫu đã có kết quả không được thay/xóa ID làm mất liên kết response;
+  legacy thiếu ID không được tự đổi mã/cập nhật điểm khi đọc.
+- [ ] Chạy `pytest -q tests/test_survey_scoring.py`; các dạng grid/checkbox/
+  linear-scale cần browser QA riêng trước khi tuyên bố toàn bộ survey pass.
+
 Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổi. Không thay thế test tự động, nhưng là tiêu chuẩn tối thiểu để tránh lỗi dây chuyền trong lúc hệ thống chưa có test suite đầy đủ.
 
 ## Nguyên Tắc
@@ -14,7 +422,27 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 - Với dữ liệu y tế, kiểm stale data khi đổi bệnh nhân nếu workflow có patient-specific state.
 - Nếu checklist phát hiện contract mới, cập nhật `references/data-contracts.md` hoặc module doc tương ứng.
 
+## Runtime sau di chuyển checkout hoặc restart
+
+- [ ] Đối chiếu checkout hiện tại với đường dẫn trong traceback/runtime;
+  nếu checkout vừa chuyển, restart đúng app và parent reloader từ vị trí mới.
+- [ ] Kiểm HTTP `/index.html`, route workflow vừa sửa và CSS/JS tham chiếu:
+  HTML 200 đúng nội dung, asset 200; không có TemplateNotFound/404/500.
+- [ ] Mở mới hoặc reload trang chủ và workflow trên browser. Không dùng tab
+  cũ còn DOM/cache làm bằng chứng runtime hiện tại hoạt động.
+- [ ] Nếu runtime/checkout đổi sau QA, kết quả kiểm tải trang trước đó hết
+  hiệu lực; chạy lại kiểm tra này trước khi báo hoàn tất.
+
 ## UI Browser QA Gate
+
+### Bộ nút chung
+
+- [ ] Đọc `references/ui/button-system.md`; không dùng palette riêng/gradient nâu.
+- [ ] Header bác sĩ giữ nguyên vị trí: Lịch sử/Lưu/Chuyển khám phụ, Hoàn thành chính; Đơn thuốc phụ trên header.
+- [ ] Nút phụ trắng trên nền tối, xám nhẹ trên nền trắng; khai báo surface tại container đúng vùng.
+- [ ] Không viền trang trí/shadow; focus bàn phím rõ trên cả hai nền; hover phụ không thành nút chính.
+- [ ] Xóa tại dòng chữ đỏ; xác nhận nguy hiểm nền đỏ; disabled không đổi màu khi tương tác.
+- [ ] Chạy tests/button_actions.test.js và tests/button_color_tokens.test.js; không dùng kết quả test thay visual QA.
 
 Áp dụng cho mọi thay đổi HTML/CSS/JS có ảnh hưởng giao diện, kể cả thay đổi nhỏ như font-size, padding, màu, icon, modal, dropdown, calendar, table hoặc shell.
 
@@ -101,7 +529,7 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 - [ ] Parent socket đã subscribe room của các workspace tab/iframe đang mở; mở một admin/kho tab trong iframe vẫn nhận event dù URL top-level đang ở trang khác.
 - [ ] Tạo/sửa lịch hẹn ở một tab làm dashboard, lịch hẹn, lễ tân, bác sĩ/TLG liên quan refresh danh sách mà không reload browser tab.
 - [ ] Lưu chỉ định/kết quả chỉ định làm order-management và màn khám liên quan refresh danh sách/trạng thái.
-- [ ] Tạo/hoàn thành/đóng/hết hạn khảo sát làm tab Khảo sát trong modal chỉ định cập nhật qua `survey.changed`, không còn polling 3 giây.
+- [ ] Tạo/nộp/kết thúc/hết hạn khảo sát làm modal và bảng cập nhật qua `survey.changed`/`order.changed`; deadline dùng refresh một lần tại next_expiry_at, không polling 3 giây.
 - [ ] Xác nhận thanh toán hoặc trả trạng thái examination làm payment-waiting, lễ tân, bác sĩ/TLG liên quan cập nhật.
 - [ ] Tạo/sửa bệnh nhân, thân nhân hoặc người nhà đi kèm làm lễ tân/bác sĩ/TLG liên quan cập nhật qua `patient.changed` nhưng không ghi đè form khám đang nhập.
 - [ ] Lưu đơn thuốc có thay đổi tồn kho làm medicine-management và medicine-statistics cập nhật qua `inventory.changed`.
@@ -112,6 +540,14 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 - [ ] `rg "startSurveyPolling|stopSurveyPolling|surveyPolling|POLLING|polling" app/static/js app/api app/modules app/realtime` không còn polling dữ liệu nghiệp vụ; các `setInterval` còn lại nếu có phải là loader/tooltip kỹ thuật.
 
 ## Prescription Print And Verify
+
+- [ ] Tab Toa thuốc trên web dùng `.rx-screen`: logo/mã hồ sơ, tiêu đề xanh,
+  nhãn song ngữ, thông tin hai cột ở khung rộng/một cột ở khung hẹp. Kiểm toa
+  trống, nhiều thuốc/lời dặn dài, đổi bệnh nhân xóa nội dung cũ, barcode mới.
+- [ ] In thường/H/N vẫn dùng `.moh-form` qua `PrescriptionPrintDocument`,
+  không clone `.rx-screen` hay load `prescription-screen.css`; public verify
+  giữ mẫu cũ. Chạy `node tests/prescription_screen.test.js` để khóa boundary.
+
 
 Áp dụng khi sửa đơn thuốc, mẫu in, QR verify, shared prescription template, prescription public API, hoặc prescription view model.
 
@@ -137,35 +573,37 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 - [ ] `.prescription-preview--verify` tồn tại.
 - [ ] Không hiển thị block QR nội bộ hoặc chữ ký bác sĩ của bản in nếu verify context đang yêu cầu ẩn.
 - [ ] Diagnosis không hiển thị raw ID như `2659`.
-- [ ] Footer H/N fill phone, tên người đưa đi khám, CCCD người nhận thuốc khi có dữ liệu.
-- [ ] Footer không còn chuỗi dấu chấm dài khi dữ liệu tồn tại.
+- [ ] Liên hệ/người đưa trẻ dùng dữ liệu lượt khám; người nhận thuốc để trống khi chưa xác nhận riêng.
+- [ ] Chỗ trống chỉ dùng khi không có dữ liệu; không tự tạo giá trị lâm sàng.
 
 ### Layout Checks
 
-- [ ] Web/desktop verify giữ cùng document layout với mẫu web/in.
-- [ ] HTML modal Toa thuốc giữ logo/thông tin/cụm mã cùng căn đỉnh; `.prescription-code-section` không còn offset `40px`, badge không tạo khoảng trống `20px` trước barcode.
-- [ ] HTML modal dùng spacing tiêu đề `20px 0 45px`: áp trên `.prescription-title-section` cho Toa thuốc hai dòng và trên `.prescription-preview__title--document` cho Hóa đơn/Bệnh án một dòng; không cộng dồn margin cũ.
-- [ ] HTML modal giới hạn `.rx-verify-qr-image` ở `8.125rem` (130px với root mặc định), `max-inline-size: 100%` và giữ tỷ lệ; PNG nguồn độ phân giải cao không được phóng layout theo kích thước tự nhiên.
-- [ ] Browser QA modal với đơn ngắn, đơn dày và history chưa có đơn: QR hợp lệ tải được, document/modal không tràn ngang; trạng thái chưa có đơn không dựng QR giả.
-- [ ] Mobile verify giữ cặp cột 6/4, không stack dọc patient/medicine rows.
-- [ ] Mobile chỉ scale hoặc viewer-fit document, không phá cấu trúc tài liệu.
-- [ ] `.rx-patient-grid` là `flex-direction: row`.
-- [ ] `.rx-med-row` là `flex-direction: row`.
-- [ ] Document visual fit trong viewport mobile, không làm header bị bóp chữ thành cột hẹp.
+- [ ] Thường/H/N dùng chung khung đen trắng theo Phụ lục I–III TT26/2025; đúng thứ tự mã đơn, đơn vị, bệnh nhân, chẩn đoán, thuốc, lời dặn, ký, liên hệ.
+- [ ] Nhãn chung và câu cuối đơn khớp nguyên văn Đơn H.docx theo yêu cầu 10/09/2026; H có dòng Đợt trống như Word, N giữ ba dòng Đợt và số lượng bằng chữ; số lượng <10 ghi 0 đầu.
+- [ ] Trẻ dưới 72 tháng có tuổi tháng/cân nặng/người đưa trẻ; người từ đủ 72 tháng không tự điền người đưa trẻ. Dòng người nhận H/N luôn có, không tự lấy CCCD người đi cùng.
+- [ ] BHYT/người nhận/ngày đợt H/N chưa có nguồn riêng để trống, không suy từ ngày tái khám.
+- [ ] Preview/print cùng stylesheet prescription-standard-form.css, QR 25mm giữ tỷ lệ; không còn logo/quảng bá/song ngữ/barcode hồ sơ.
+- [ ] Modal đơn thật ngắn/dày và chưa có đơn: không tràn ngang, không giữ nội dung lượt cũ.
+- [ ] Verify mobile 390px scale cả giấy, không đổi cấu trúc biểu mẫu.
+- [ ] Chrome PDF: ca 1101 như ảnh người dùng một trang A4; đơn dài đủ dòng đúng thứ tự, không trang trống/chỉ có chữ ký; thuốc cuối đi cùng lời dặn/ký/liên hệ/người nhận khi nhóm vừa một trang.
+- [ ] Đệm trong khung 4mm, chữ 12pt, vùng ký 25mm; dòng điền tay 6mm co giãn theo chiều ngang, không còn chuỗi dấu chấm ngắn cho BHYT/người đưa trẻ/người nhận; tuổi tháng không bị cắt hoặc chồng cân nặng.
+- [ ] Sau afterprint giữ cửa sổ để hoàn tất lưu PDF.
+- [ ] Chạy node tests/prescription_standard_form.test.js và node tests/prescription_followup_print.test.js.
 
 ### Print Safety Checks
 
+- [ ] Lịch tái khám mới nhất CANCELLED hoặc xóa mềm: `show_re_examination_date=false`; print bác sĩ, lịch sử, preview và QR không hiện dòng ngày hẹn dù payload còn ngày. Lịch chưa hủy và ngày legacy không có lịch con vẫn hiện; ngày/status/snapshot lịch sử không bị sửa. Chạy `node tests/prescription_followup_print.test.js` và test policy tái khám PostgreSQL rollback.
 - [ ] Luồng in A4 từ màn bác sĩ vẫn dùng default print context.
 - [ ] Nút `In đơn` ở Doctor và `.tab-print-btn` trong modal lịch sử cùng đi qua `PrescriptionPrintDocument`; controller chỉ chuẩn bị dữ liệu, không clone screen preview hoặc tự sở hữu CSS/barcode/window lifecycle.
 - [ ] Popup loading, document và error dùng Blob URL cùng origin; không gọi `document.open/write/close` để ghi lại `about:blank` sau async.
-- [ ] Với cùng một đơn, hai entry point cho cùng thứ tự trang BASIC/H/N và cùng header: logo/thông tin/cụm mã thẳng hàng trên, badge mã đơn nằm đầu cụm phải, barcode + mã hồ sơ nằm bên dưới; không còn `margin-top: 40px` ở cụm mã bản in.
+- [ ] Doctor/lịch sử cho cùng thứ tự BASIC/H/N, mã đơn, thuốc và bố cục mẫu Bộ Y tế.
 - [ ] Bản in không bị inherit CSS verify/mobile.
 - [ ] QR/chữ ký của bản in vẫn hiện theo default nếu không truyền flag ẩn.
 - [ ] QR bản in chỉ tải từ endpoint cùng domain; source/template không còn tham chiếu `api.qrserver.com` hoặc dịch vụ QR bên thứ ba.
 - [ ] QR được đánh dấu là print asset bắt buộc. Ảnh hợp lệ (`naturalWidth > 0`) mới cho gọi `window.print()`; ảnh lỗi/timeout đặt `data-print-ready="error"`, hiện cảnh báo và không gọi in.
 - [ ] Đơn ngắn không ép `.prescription-preview--rx` cao gần trọn A4 và không dùng `margin-top: auto` để ghim QR/chữ ký xuống đáy; QR/chữ ký theo sát lời dặn bằng khoảng cách cố định.
 - [ ] Đơn dài phân trang bằng normal flow, không mất header/phần đầu tài liệu; mỗi mẫu BASIC/H/N sau mẫu đầu bắt đầu ở trang mới bằng `break-before`.
-- [ ] Footer H/N dưới 18 tuổi nằm trong flow, không dùng absolute positioning, không chồng QR/chữ ký và không bị tách giữa hai trang.
+- [ ] Nhóm ký/liên hệ/người nhận H/N trong normal flow, không absolute hay chồng nội dung.
 - [ ] Không đổi shared template theo cách làm caller cũ phải truyền thêm param bắt buộc.
 
 ### Save And Stock Checks
@@ -261,8 +699,9 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 - [ ] Click `Lưu` đổi ngay thành spinner + `Đang lưu...`, cập nhật live status và khóa cả `Lưu`/`Hoàn thành khám` tới khi main, detail và support writers kết thúc; các field khám vẫn nhập được.
 - [ ] Trong header đơn thuốc, trạng thái hành động thành công (`Đã lưu`, `Đã tạo lịch`) hiển thị xanh lá tương phản; trạng thái chờ/chưa hoàn tất (`Chưa lưu`, `Đang lưu`, `Cần ngày`) hiển thị cam; lỗi thật vẫn hiển thị đỏ và trạng thái chưa phát sinh hành động vẫn trung tính.
 - [ ] Double-click `Lưu` trong cùng transaction chỉ tạo một lượt writer cho mỗi owner; không có độ trễ giả hoặc modal thành công chặn thao tác.
-- [ ] Không có thay đổi ở clinical/history/support thì không gửi HTTP write và feedback nói rõ không có thay đổi cần lưu.
-- [ ] Sửa chỉ một vùng Khám chi tiết chỉ `POST` section của vùng đó; main `PUT` không chạy nếu main/Tiền sử sạch.
+- [ ] Nhấn `Lưu` khi 15 ô Các cơ quan/Khám tâm thần trống hoặc whitespace: điền và lưu `Không ghi nhận bất thường`; giữ ô đã nhập và không mặc định 4 ô Lý do khám/Bệnh sử/KQ khám toàn thân/Biểu hiện chung. Reload giữ dữ liệu; mở ca mới vẫn trống trước khi nhấn Lưu.
+- [ ] Không có thay đổi ở clinical/history/support và không có ô Khám chi tiết cần điền mặc định thì không gửi HTTP write và feedback nói rõ không có thay đổi cần lưu.
+- [ ] Chỉ `POST` các section dirty (kể cả section vừa được điền mặc định); main `PUT` không chạy nếu main/Tiền sử sạch. Load/error/background save không tự điền mặc định; lỗi lưu giữ dirty. Chạy `node tests/doctor_detail_defaults.test.js`.
 - [ ] Sửa một clinical/detail/prescription/order/service field khi request tương ứng đang bay: response cũ không ghi đè UI mới, dirty còn tồn tại và feedback yêu cầu lưu lại.
 - [ ] Mô phỏng lỗi từng prescription/order/service: feedback nêu đúng module lỗi, module đó vẫn dirty, không có toast thành công tổng; IndexedDB recovery được capture best-effort, không tự retry POST/PUT.
 - [ ] `Hoàn thành khám` chỉ chuyển trạng thái khi transaction save trả `success`; partial/error phải giữ ca ở trạng thái hiện tại.
@@ -357,21 +796,151 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 - [ ] Màn lễ tân không còn hidden controls giả cho in/số thứ tự hàng đợi (`printQueueBtn`, `nextQueueBtn`, `currentQueueNumber`, `waitingCount`, `printPreview`) và không còn include `receptionist/queue-print-controls.js`.
 - [ ] Lưu thành công ở màn lễ tân không reload browser tab; form quay về trạng thái tạo mới, danh sách chờ refresh tại chỗ, tab workspace hiện tại vẫn giữ nguyên, danh sách order theo `appointments.updated_at` từ database và chỉ một lịch vừa sửa mới nhất có nhãn `Vừa cập nhật`.
 
+## Doctor current medications DAV (2026-09-13)
+
+- [ ] ICD/DAV dùng cùng control chips/input; popup mở không tăng chiều cao
+  card, không bị panel cắt; tự mở lên/xuống, desktop/mobile. Chuẩn:
+  `references/ui/autocomplete-field.md`.
+- [ ] Field8 focus/tìm tên, hoạt chất, SĐK; 12 kết quả, cuộn tải tiếp; rỗng/lỗi/
+  thử lại; ↑/↓/Enter, Escape/Tab/blur đóng. Không dirty chỉ vì gõ tìm.
+- [ ] Chọn nhiều/bỏ từng thuốc, tên/hàm lượng chứa dấu phẩy giữ một entry;
+  dữ liệu cũ ngoài DAV vẫn load, draft restore đúng. Không ghi đơn kê mới/kho.
+- [ ] A→B→A xóa query/chips/kết quả; response cũ không mở lại; loading và
+  history view không sửa được. Lưu/tải lại giữ JSON list hiện hành.
+- [ ] `node --test tests/doctor_current_medications.test.js`; xem desktop/
+  mobile390 có dữ liệu thật, tên dài, scroll list/body và remove; không dùng
+  workspace hidden hoặc empty-only để kết luận đạt.
+
 ## Clinic Medicine Inventory
 
-Áp dụng khi sửa danh mục thuốc, nhập lô, kiểm kê, lịch sử giao dịch hoặc
+Áp dụng khi sửa danh mục thuốc, nhập lô, lịch sử giao dịch hoặc
 prescription stock integration.
 
+- [ ] Tooltip icon cảnh báo thuốc: hover/focus hiện sau120ms, không hiện
+  thêm tooltip native; Tab đọc được nhãn, Escape đóng. Đổi trang/tìm kiếm
+  kể cả kết quả rỗng không để tooltip cũ/timer tồn tại. Kiểm icon ở hàng
+  đầu/cuối bảng và khi cuộn ngang không bị khung bảng cắt.
+
+- [ ] Khối nguồn form thuốc: phụ đề header đổi đúng theo trạng thái — hướng
+  dẫn chọn danh mục, "Thông tin đăng ký thuốc (Cục Quản lý Dược)" sau khi
+  chọn/khi sửa thuốc liên kết, "Thông tin thuốc gốc (chưa liên kết...)" cho
+  thuốc cũ. Các dòng có nhãn Tên thuốc/Hàm lượng/Hoạt chất/...; Hàm lượng ẩn
+  khi đã nằm trong tên, Hoạt chất ẩn khi trùng hệt tên (vd Diazepam 5mg).
+  Không còn ô Tên thuốc/Hoạt chất/Nguồn gốc/Hàm lượng trùng bên dưới; Đổi
+  thuốc trả phụ đề về hướng dẫn; lưu thuốc mới vẫn gửi đủ identity.
+
+- [ ] Modal nhập kho: rỗng/ít dòng vẫn gần đầy chiều cao khả dụng; desktop
+  đủ cao giữ thông tin đơn hàng và nút Xác nhận/Hủy, bảng nhiều thuốc cuộn
+  đến dòng cuối. Nhiều lô không đẩy mất bảng/nút; ghi chú dài vẫn đọc/sửa
+  được. Màn hẹp/thấp cuộn thân và cuộn ngang đủ cột; kiểm thêm/xóa dòng,
+  dropdown chọn thuốc/ngày và mở/đóng nhà cung cấp giữ dữ liệu đơn hàng.
+  QA layout không bấm xác nhận ghi tồn thật.
+
+- [ ] Panel "Lịch sử nhập & lô" trong modal Nhập kho: đóng mặc định; mở
+  bằng nút "x lần nhập" ở danh mục và "Xem hạn dùng" trong form thuốc đều
+  vào đúng modal này, tự lọc theo tên thuốc. Đổi từ khoá/trạng thái gọi
+  lại đúng trang1; phân trang Trước/Sau hoạt động. Bấm một dòng lô mở
+  lịch sử giao dịch ngay dưới dòng đó; bấm dòng khác đóng dòng cũ, chỉ
+  một dòng mở tại một thời điểm. Không còn modal Chi tiết tồn kho/Lịch sử
+  giao dịch riêng; mở khi modal Nhập kho đang có đơn dở không được xoá
+  dữ liệu đang nhập.
+
+- [ ] UI nhập kho bản nâng cấp: vùng bảng trắng có khung/toolbar liền mạch
+  kể cả ít dòng; header trái, không còn khối tổng xanh. Ô nhập thẳng hàng,
+  tên thuốc đủ rộng, tiền căn phải; ghi chú/chi tiết lô không đẩy mất bảng.
+  Footer chỉ có một tổng đơn, cập nhật đúng sau thêm/xóa/đổi số lượng/giá;
+  nút Hủy/Xác nhận ở phải, không cắt trên mobile. Đối chiếu số tổng/lô với
+  dữ liệu nhập nháp và kiểm dropdown/date picker không bị vùng cuộn cắt.
+
+- [ ] Modal nhà cung cấp: ít dòng vẫn gần đầy chiều cao khả dụng; desktop
+  đủ cao giữ form/tìm kiếm/header/footer, danh sách dài cuộn riêng đến dòng
+  cuối. Màn hẹp hoặc thấp cuộn phần thân, không cắt form/nút, bộ lọc xuống
+  dòng và bảng cuộn ngang. Kiểm trạng thái rỗng, ít/nhiều dòng, sửa/reset,
+  tìm/lọc và Đóng trở về modal cha không mất dữ liệu đang nhập.
+
+- [ ] Thêm mới từ DAV → Cập nhật giá phải hiện đúng tên từ `medicine-name`;
+  xác nhận giá chỉ điền giá tạm, đóng bảng giá và mở lại nút Lưu thông tin.
+  Lưu danh mục gửi giá khởi tạo; chưa có ID thì không gọi API lịch sử giá.
+  Nếu lỗi trước khi mở bảng giá: hiện lỗi trên form, bỏ trạng thái đang mở/
+  đang tải, giữ giá đã nhập và cho thử lại. Fixture JS lấy ID từ template
+  thật, không tự tạo phần tử cho ID sai (`name`).
+
+- [x] DAV đường dùng lưu DB15/09:15432 giá trị và version,39320 trống;
+  reader không gọi inference, route gốc ưu tiên. Upsert đổi dạng bào chế hoặc
+  có route nguồn phải cập nhật/xóa gợi ý; backfill chạy lại không đổi, sai
+  fingerprint bị chặn. Đã kiểm rollback và hậu kiểm commit; mọi field nguồn
+  ngoài2 cột mới cùng medicines/lô/giao dịch/dòng đơn được bảo toàn.
+
+- [ ] DAV chi tiết và form thêm thuốc dùng cùng gợi ý đường dùng: dạng rõ
+  có nhãn Đường dùng (gợi ý), người dùng sửa được; route nguồn có dữ liệu thì
+  ưu tiên/khóa. Dạng mơ hồ để trống; đổi thuốc không giữ gợi ý của thuốc trước.
+  Kiểm biến thể mở rộng: Thuốc bột uống/Si rô → Uống; Dung dịch truyền
+  tĩnh mạch → Truyền tĩnh mạch; Viên nang chứa bột để hít → Hít; Thuốc mỡ
+  tra mắt → Tra mắt. Viên nén bao phim, nhỏ mắt/tai hoặc tiêm và uống để
+  trống; không tự biến đường dùng gợi ý thành thông tin DAV đã xác minh.
+
+- [ ] Chọn FDG QLĐB1-H07-19: gợi ý Tiêm editable, ml/lọ, số đơn vị trống;
+  Quy cách giữ khoảng15,8–16ml. Đổi thuốc/reset xóa gợi ý và source text cũ;
+  chọn thuốc có đường dùng riêng thì ưu tiên/khóa đúng. Không mặc định10 hoặc
+  làm tròn thể tích để tính tồn; xác nhận lại sau khi sửa đơn vị/quy đổi.
+
+- [ ] Modal thuốc sau thu gọn14/09: desktop thường thấy đủ4 nhóm và Lưu/Hủy
+  không cuộn; kiểm Zopinox như ảnh user, thêm trước/sau chọn DAV và checkbox
+  quy đổi. Chuỗi DAV dài/cảnh báo/mobile vẫn đọc và thao tác được, không cắt
+  nội dung; user nhận visual QA, chưa được đánh dấu đạt bằng static checks.
+
+- [ ] Form thuốc disable tồn tổng/tồn quy đổi/giá vốn; tên/hoạt chất/hàm lượng
+  lấy từ DAV và readonly; giá bán editable. Direct POST/PUT có tồn/giá vốn bị chặn;
+  Excel có giá vốn bị từ chối dòng, không ghi giá vào danh mục.
+- [ ] Nhập cùng thuốc/lô 100 × 1.000 và 100 × 1.200 giữ hai ID, giá trị
+  220.000; không sửa đè. Cùng lô khác hạn dùng bị chặn. Bỏ trống số lô/giá,
+  NaN/Infinity/âm hoặc gửi remaining_quantity đều bị chặn.
+- [ ] Xuất 120 theo FEFO cùng hạn/ngày: 100 từ lần đầu, 20 từ lần sau;
+  hoàn 30 về 20 lần sau + 10 lần đầu. Giá vốn/tồn sau đúng từng movement.
+- [ ] PUT metadata giá/ngày/lô/chứng từ của lần nhập bị 409; PUT số lượng
+  bị chặn. Không backfill snapshot/giá cho lịch sử cũ.
+- [ ] Chi tiết tồn phân biệt từng lần nhập, giá, chứng từ, giá trị tồn;
+  thiếu giá không thành 0; có cảnh báo chênh tổng và lô kiểm thử. Kiểm dữ liệu
+  thật, hai lần nhập khác giá, empty và lịch sử nhiều trang/nhảy trang/mobile.
+- [ ] `QLPK_RUN_DB_TESTS=1 python -m pytest -q tests/test_inventory_receipts.py
+  tests/test_existing_stock_lots.py tests/test_medicine_batch_audit.py` rollback
+  toàn bộ dữ liệu test; schema/Alembic/auth/frontend/prescription stock gates.
+
+- [ ] Bảng thuốc và modal lô có ô trắng, viền mảnh; trạng thái cảnh
+  báo không tô cả hàng. Giá/tồn/số lô không có nền trang trí. Hover/chọn hàng
+  vẫn phân biệt; số lô mở được bằng Enter, kết quả lọc rỗng có colspan 10.
+- [ ] Không còn nút/modal Kiểm kê kho hoặc handler của chúng. Kiểm 10 dòng,
+  trang cuối ít dòng, mobile cuộn ngang tới cột tác vụ.
 - [ ] Tạo thuốc mới luôn trả `stock_quantity=0`; payload có field tồn trực
   tiếp bị từ chối.
+- [ ] Không còn chọn TPCN/y dụng cụ. API từ chối category khác DRUG; loại cũ
+  vẫn giữ dữ liệu, không được nhập thêm trước khi đối chiếu DAV.
+- [ ] Thêm thuốc chỉ qua chọn DAV hoặc Excel mã nguồn DAV; tạo thủ công,
+  nguồn hết hiệu lực/đã rút số, sửa identity và tạo trùng đều bị chặn.
+- [ ] Autocomplete DAV xổ/tải ngay khi focus ô trống; gõ để lọc, xóa hết chữ
+  trả về danh sách đầu; kiểm dữ liệu thật, cuộn tải thêm,
+  một kết quả/rỗng; ↑/↓/Enter chọn, Escape đóng gợi ý, blur/Tab đóng;
+  Đổi thuốc xóa lựa chọn cũ và xác nhận legacy, không đổi nguồn đã linked;
+  chọn điền đúng field readonly, đóng/mở lại clear hết selection/result;
+  response cũ không mở lại modal. Kiểm desktop/mobile và scroll/footer.
+- [ ] Lookup DAV dùng `mode=autocomplete`, 12 dòng + has_more, không đếm tổng/
+  thống kê. Focus lại trong 30 giây không fetch; quá hạn, reset form, đổi token
+  hoặc inventory.changed tải mới. API mặc định vẫn có total/summary. Chạy
+  `node --test tests/medicine_dav_autocomplete.test.js` và opt-in read-only
+  `QLPK_RUN_DB_TESTS=1 python -m pytest -q tests/test_dav_autocomplete_query.py`.
+- [ ] Thuốc cũ hiện Chưa liên kết; liên kết cần xác nhận, giữ ID/tồn/lịch sử.
+  Thuốc đã liên kết không đổi nguồn; DAV thay đổi chỉ báo cần đối chiếu.
+- [ ] Mẫu Excel mới tải được; dòng sai/trùng không làm mất các dòng hợp lệ;
+  `tests/test_medicine_dav_link.py` cùng bộ receipt/opening/audit chạy rollback.
 - [ ] `PUT /api/medicines/<id>` có `stock_quantity` bị từ chối; form danh mục
   hiển thị tồn read-only và không gửi field này.
 - [ ] Tạo lô đặt `remaining_quantity=quantity`, khóa aggregate và tạo đúng một
   movement `import` có `batch_id` trong cùng transaction.
 - [ ] Import-order nhiều dòng validate toàn bộ trước khi ghi; một dòng lỗi
   rollback toàn request, không silently skip.
-- [ ] Kiểm kê hiển thị từng lô; chênh lệch cần lý do và cập nhật lô, aggregate,
-  movement `adjustment` cùng transaction.
+- [ ] POST `/api/medicines/inventory-count` và
+  `/api/medicine-batches/inventory-count` trả 404 trên app nạp code mới;
+  không còn service `adjust_batch`. Movement điều chỉnh cũ vẫn đọc được.
 - [ ] PUT số dư lô, POST ledger trực tiếp và xóa lô đã có movement đều bị chặn.
 - [ ] Excel catalog không bơm tồn trực tiếp; cột tồn dương bị bỏ qua kèm hướng
   dẫn nhập lô.
@@ -382,12 +951,29 @@ prescription stock integration.
 
 Áp dụng khi sửa danh mục thuốc DAV, API đồng bộ DAV, model `medicine_reference_catalog`, hoặc màn `medicine-reference-catalog.html`.
 
+- [ ] Sau migration search index: 7 idx_dav_* valid; EXPLAIN count tablet
+  dùng expression trigram, trang đầu rỗng dùng ordered btree. Đo riêng list
+  có count và autocomplete; thử rỗng, 1–2 ký tự, tên/hoạt chất, tiếng Việt,
+  SĐK và không có kết quả. So total/IDs/thứ tự trước-sau; không lấy thời gian
+  service làm thời gian end-to-end UI. Schema và Alembic strict phải đạt.
+- [ ] Nhập tablet/18, Enter/nút tìm về trang1; trong lúc chờ không hiện bảng
+  của từ khóa cũ. Gõ đổi từ khóa hủy request trước; submit nhiều lần không gửi
+  trùng. Kiểm timeout/thử lại, lọc rỗng, phân trang theo tổng đã lọc; summary
+  giữ nguyên khi tìm nhưng tải lại sau sync. Chạy `node --test tests/dav_catalog_search.test.js`.
 - [ ] `GET /medicine-reference-catalog.html` trả `200 text/html` và load đủ CSS/JS riêng của màn DAV.
 - [ ] Không có token thì list/detail/sync API trả `401 application/json`, không public nhầm danh mục quản trị.
 - [ ] Search theo tên thuốc, hoạt chất, số đăng ký hoặc nhà sản xuất trả đúng dữ liệu đã sync.
 - [ ] Bộ lọc đang hiệu lực/hết hạn/tất cả trả đúng số liệu summary và danh sách.
-- [ ] Nút chi tiết mở modal, hiển thị field đã normalize và raw payload DAV.
-- [ ] Đồng bộ scope test 1000 dòng chạy được, không trả raw SQL/error stack ra UI.
+- [ ] Nút chi tiết mở modal, hiển thị thông tin thuốc đã chuẩn hóa; không có
+  nút/vùng JSON kỹ thuật, response detail không chứa raw_payload. Kiểm tên,
+  hoạt chất, SĐK, nhà sản xuất, ngày và trạng thái vẫn đúng.
+- [ ] Không còn Phạm vi đồng bộ/sample cap. Kiểm service bằng nguồn giả lập
+  nhiều trang: đi hết nguồn và commit, không dừng ở trang đầu.
+- [ ] Xuất Excel theo search/hiệu lực, gồm toàn bộ trang; thử0/1/nhiều dòng
+  và toàn bộ nguồn. Kiểm download thật, chống bấm trùng, lỗi mở lại nút,
+  auth401, màu nâu–kem, freeze/filter, text SĐK/mã DAV (giữ số0 đầu), ngày
+  dd/mm/yyyy và chuỗi dài. Chạy tests/test_dav_export_sync.py cùng các tests
+  DAV read-only/JS; mở file trong Excel để kiểm mã không bị scientific notation.
 - [ ] Đồng bộ toàn bộ upsert vào `medicine_reference_catalog`, không ghi sang `medicines`, batch, tồn kho hoặc giao dịch kho.
 - [ ] Các cột DAV có chuỗi dài như hàm lượng, dạng bào chế, đường dùng, tiêu chuẩn và tuổi thọ đủ rộng để không bị truncation.
 
@@ -412,3 +998,13 @@ prescription stock integration.
 - [ ] Static asset URL/cache version vẫn đúng.
 - [ ] Browser load page liên quan không lỗi 404 asset.
 - [ ] Không move file unrelated trong cùng bước.
+
+### Dropdown lịch tái khám (2026-09-07)
+
+- [ ] Lịch mới chọn sẵn Khám tổng quát và actor; lịch cũ giữ dịch vụ/bác sĩ.
+- [ ] Đổi dropdown rồi đổi tháng/tuần vẫn giữ lựa chọn; Đóng không đổi draft,
+  Xác nhận giữ draft; Lưu rồi tải lại đúng lựa chọn, không tạo thêm lịch.
+- [ ] Chỉ đổi bác sĩ/dịch vụ vẫn đánh dấu chưa lưu; recovery giữ selection;
+  chuyển bệnh nhân reset. Lịch đã khóa không thể đổi qua UI hoặc API.
+- [ ] Không còn ba dòng phụ dưới thống kê; chi tiết sự kiện chỉ hiện khi bấm.
+  Header/nút/lịch nhỏ/ngày được chọn dùng theme chung, không palette xanh riêng.

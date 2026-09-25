@@ -11,6 +11,9 @@ class SurveyTemplateManager {
 			performers: []
 		};
 		this.currentTemplateId = null;
+		this.documentTemplateId = null;
+		this.canManage = false;
+		this.mutating = false;
 		this.init();
 	}
 
@@ -20,6 +23,11 @@ class SurveyTemplateManager {
 			return;
 		}
 
+        this.pagination = window.QLPKPagination.create({ onChange: (page, size) => {
+            this.state.currentPage = page;
+            this.state.perPage = size;
+            this.loadTemplates();
+        } });
 		this.bindEvents();
 		this.registerRealtimeHooks();
 		this.loadPerformers();
@@ -79,7 +87,7 @@ class SurveyTemplateManager {
                     <h3 class="text-muted mb-3">Yêu cầu đăng nhập</h3>
                     <p class="text-muted mb-4">Vui lòng đăng nhập để truy cập tính năng này</p>
 					<div class="d-flex gap-2 justify-content-center">
-						<button class="btn btn-primary js-go-login">
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary js-go-login">
 							<i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
 						</button>
 					</div>
@@ -100,15 +108,9 @@ class SurveyTemplateManager {
 		$('#uploadNewBtn').on('click', () => this.showUploadModal());
 
 		$('#addNewBtn').on('click', () => {
-			if (window.surveyCreateModal) {
+			if (this.canManage && window.surveyCreateModal) {
 				window.surveyCreateModal.open('create');
 			}
-		});
-
-		$('#perPageSelect').on('change', (e) => {
-			this.state.perPage = parseInt($(e.target).val(), 10) || 10;
-			this.state.currentPage = 1;
-			this.loadTemplates();
 		});
 
 		$('#uploadForm').on('submit', (e) => {
@@ -131,6 +133,9 @@ class SurveyTemplateManager {
 
 		$(document).on('click', '.js-template-edit', (e) => {
 			const id = Number($(e.currentTarget).data('template-id'));
+			if (!this.canManage) return;
+			const template = this.state.templates.find(item => item.id === id);
+			if (template?.template_kind === 'document') return this.showUploadModal(template);
 			if (id && window.surveyCreateModal) {
 				window.surveyCreateModal.open('edit', id);
 			}
@@ -140,12 +145,6 @@ class SurveyTemplateManager {
 			const id = Number($(e.currentTarget).data('template-id'));
 			const name = String($(e.currentTarget).data('template-name') || '');
 			if (id) this.showDeleteModal(id, name);
-		});
-
-		$(document).on('click', '.js-stm-page', (e) => {
-			e.preventDefault();
-			const page = Number($(e.currentTarget).data('page'));
-			if (page) this.goToPage(page);
 		});
 
 		$(document).on('click', '.js-go-login', () => {
@@ -171,6 +170,8 @@ class SurveyTemplateManager {
 	}
 
 	async loadTemplates() {
+		const revision = (this.loadRevision || 0) + 1;
+		this.loadRevision = revision;
 		try {
 			this.showLoading(true);
 
@@ -183,11 +184,17 @@ class SurveyTemplateManager {
 				params.append('search', this.state.searchTerm);
 			}
 
-			const response = await fetch(`/api/public/survey-templates?${params}`);
+			const response = await fetch(`/api/survey-templates?${params}`, { headers: this.getAuthHeaders() });
 
 			const result = await response.json();
+			if (revision !== this.loadRevision) return;
 
 			if (result.success) {
+				this.canManage = result.can_manage === true;
+				$('#addNewBtn, #uploadNewBtn').toggleClass('d-none', !this.canManage);
+				$('#addNewBtn, #uploadNewBtn').prop('disabled', !this.canManage);
+				this.state.currentPage = Number(result.pagination?.page) || 1;
+				this.state.totalItems = Number(result.pagination?.total) || 0;
 				this.state.templates = Array.isArray(result.data) ? result.data : [];
 				this.renderTemplates(this.state.templates);
 				this.renderPagination(result.pagination || {});
@@ -195,9 +202,10 @@ class SurveyTemplateManager {
 				this.showToast('error', 'Không thể tải mẫu khảo sát. Vui lòng thử lại.');
 			}
 		} catch (error) {
+			if (revision !== this.loadRevision) return;
 			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
 		} finally {
-			this.showLoading(false);
+			if (revision === this.loadRevision) this.showLoading(false);
 		}
 	}
 
@@ -213,10 +221,11 @@ class SurveyTemplateManager {
 					<td colspan="7" class="text-center py-5">
                         <div class="stm-empty">
                             <i class="bi bi-clipboard2-check"></i>
-                            <p>Chưa có mẫu khảo sát nào được tạo</p>
-                            <button class="stm-btn stm-btn--primary mt-3" id="emptyAddNewBtn">
+                            <p>${this.state.searchTerm ? 'Không tìm thấy mẫu khảo sát phù hợp' : 'Chưa có mẫu khảo sát nào được tạo'}</p>
+                            ${this.canManage && !this.state.searchTerm ? `
+                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="stm-btn stm-btn--primary mt-3" id="emptyAddNewBtn">
                                 <i class="bi bi-plus-circle"></i>Thêm mẫu khảo sát đầu tiên
-                            </button>
+                            </button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -231,14 +240,6 @@ class SurveyTemplateManager {
 			tbody.append(this.createTemplateRow(template, index));
 		});
 
-		const emptyRowsCount = Math.max(0, this.state.perPage - templates.length);
-		for (let i = 0; i < emptyRowsCount; i++) {
-			tbody.append(`
-                <tr class="empty-row stm-empty-row">
-	                    <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
-            `);
-		}
 	}
 
 	createTemplateRow(template, index) {
@@ -249,17 +250,16 @@ class SurveyTemplateManager {
 		const description = this.escapeHtml(template.description || 'Không có mô tả');
 		const performer = this.escapeHtml(template.default_performer_name || 'Chưa gán');
 		const createdDate = this.formatDate(template.created_at);
-		const isPublic = template.is_public !== false;
-		const statusBadge = isPublic
-			? '<span class="stm-badge stm-badge--active">Công khai</span>'
-			: '<span class="stm-badge stm-badge--inactive">Riêng tư</span>';
+		const documentOnly = template.template_kind === 'document';
+		const badgeClass = template.readiness === 'needs_configuration' ? 'warning' : template.readiness === 'ready' ? 'active' : 'neutral';
+		const statusBadge = `<span class="qlpk-status stm-badge stm-badge--${badgeClass}" title="${this.escapeAttr(template.readiness_message || '')}">${this.escapeHtml(template.readiness_label || 'Cần cấu hình')}</span>`;
 
 		return `
             <tr>
                 <td>${(this.state.currentPage - 1) * this.state.perPage + index + 1}</td>
                 <td>
                     <strong>${this.highlightSearch(name)}</strong>
-                    ${fileName ? `<br><small class="text-muted"><i class="bi bi-file-earmark"></i> ${fileName}</small>` : ''}
+                    ${fileName ? `<br><span class="text-muted"><i class="bi bi-file-earmark"></i> ${fileName}</span>` : ''}
                 </td>
 	                <td><span class="stm-desc-cell">${this.highlightSearch(description)}</span></td>
 	                <td>${performer}</td>
@@ -267,15 +267,16 @@ class SurveyTemplateManager {
                 <td class="stm-table-center-cell">${statusBadge}</td>
                 <td class="stm-table-center-cell">
                     <div class="stm-row-actions">
-                        <button class="stm-action-btn stm-action-btn--preview js-template-preview" data-template-id="${id}" title="Xem chi tiết">
-                            <i class="bi bi-eye"></i>
+                        <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--preview js-template-preview" data-template-id="${id}" title="${documentOnly ? 'Tải tài liệu' : 'Xem trước khảo sát'}">
+                            <i class="bi ${documentOnly ? 'bi-download' : 'bi-eye'}"></i>
                         </button>
-                        <button class="stm-action-btn stm-action-btn--edit js-template-edit" data-template-id="${id}" title="Chỉnh sửa">
+                        ${this.canManage ? `
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--edit js-template-edit" data-template-id="${id}" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="stm-action-btn stm-action-btn--danger js-template-delete" data-template-id="${id}" data-template-name="${nameAttr}" title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--danger js-template-delete" data-template-id="${id}" data-template-name="${nameAttr}" title="Xóa">
                             <i class="bi bi-trash"></i>
-                        </button>
+                        </button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -290,52 +291,8 @@ class SurveyTemplateManager {
 	}
 
 	renderPagination(pagination) {
-		const paginationEl = $('#stm-pagination');
-		paginationEl.empty();
-
-		const total = Number(pagination.total) || 0;
-		const page = Number(pagination.page) || this.state.currentPage;
-		const pages = Number(pagination.pages) || 1;
-		$('#totalItems').text(total);
-
-		if (pages <= 1) return;
-
-		const prevDisabled = page === 1 ? 'disabled' : '';
-		paginationEl.append(`
-            <li class="page-item ${prevDisabled}">
-                <a class="page-link js-stm-page" href="#" data-page="${page - 1}">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-            </li>
-        `);
-
-		const startPage = Math.max(1, page - 2);
-		const endPage = Math.min(pages, page + 2);
-		for (let i = startPage; i <= endPage; i++) {
-			const active = i === page ? 'active' : '';
-			paginationEl.append(`
-                <li class="page-item ${active}">
-                    <a class="page-link js-stm-page" href="#" data-page="${i}">${i}</a>
-                </li>
-            `);
-		}
-
-		const nextDisabled = page === pages ? 'disabled' : '';
-		paginationEl.append(`
-            <li class="page-item ${nextDisabled}">
-                <a class="page-link js-stm-page" href="#" data-page="${page + 1}">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </li>
-        `);
-	}
-
-	goToPage(page) {
-		const safePage = Number(page);
-		if (!safePage || safePage < 1) return;
-		this.state.currentPage = safePage;
-		this.loadTemplates();
-	}
+        this.pagination.update({ page: pagination.page, pageSize: this.state.perPage, total: pagination.total });
+    }
 
 	handleSearch() {
 		this.state.searchTerm = $('#searchInput').val().trim();
@@ -343,32 +300,51 @@ class SurveyTemplateManager {
 		this.loadTemplates();
 	}
 
-	showUploadModal() {
+	showUploadModal(template = null) {
+		if (!this.canManage || this.mutating) return;
+		this.resetUploadForm();
+		this.documentTemplateId = template?.id || null;
+		$('#uploadModalTitle').text(template ? 'Chỉnh sửa tài liệu khảo sát' : 'Tải tài liệu khảo sát');
+		$('#uploadBtn').text(template ? 'Lưu' : 'Tải lên');
+		$('#uploadFileGroup').toggleClass('d-none', !!template);
+		$('#uploadFile').prop('required', !template);
+		if (template) {
+			$('#uploadName').val(template.name);
+			$('#uploadDescription').val(template.description || '');
+			$('#uploadPerformer').val(String(template.default_performer_id || ''));
+		}
 		$('#uploadModal').modal('show');
 	}
 
 	async uploadFile() {
+		if (!this.canManage || this.mutating) return;
 		const formData = this.getUploadFormData();
 		if (!formData) return;
+		this.mutating = true;
+		const editing = this.documentTemplateId;
 
 		try {
 			this.showLoading(true);
-			const response = await fetch('/api/survey-templates/upload', {
-				method: 'POST',
-				body: formData
+			const response = await fetch(editing ? `/api/survey-templates/${editing}` : '/api/survey-templates/upload', {
+				method: editing ? 'PUT' : 'POST',
+				headers: this.getAuthHeaders(editing ? { 'Content-Type': 'application/json' } : {}),
+				body: editing ? JSON.stringify(Object.fromEntries(formData)) : formData
 			});
 
 			const result = await response.json();
 			if (result.success) {
-				this.showToast('success', 'Đã tải mẫu khảo sát lên.');
+				this.showToast('success', editing ? 'Đã cập nhật tài liệu khảo sát.' : 'Đã tải tài liệu khảo sát lên.');
 				$('#uploadModal').modal('hide');
 				this.loadTemplates();
 			} else {
-				this.showToast('error', 'Không thể tải mẫu khảo sát lên. Vui lòng kiểm tra tệp và thử lại.');
+				this.showToast('error', result.code === 'SURVEY_MANAGEMENT_FORBIDDEN'
+					? 'Bạn không có quyền quản lý mẫu khảo sát.'
+					: editing ? 'Không thể cập nhật tài liệu. Vui lòng kiểm tra thông tin và thử lại.' : 'Không thể tải tài liệu lên. Vui lòng kiểm tra tên và tệp.');
 			}
 		} catch (error) {
 			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
 		} finally {
+			this.mutating = false;
 			this.showLoading(false);
 		}
 	}
@@ -383,7 +359,7 @@ class SurveyTemplateManager {
 			this.showToast('error', 'Tên mẫu khảo sát là bắt buộc');
 			return null;
 		}
-		if (!file) {
+		if (!this.documentTemplateId && !file) {
 			this.showToast('error', 'Vui lòng chọn file');
 			return null;
 		}
@@ -392,23 +368,25 @@ class SurveyTemplateManager {
 		formData.append('name', name);
 		formData.append('description', description);
 		formData.append('default_performer_id', $('#uploadPerformer').val() || '');
-		formData.append('file', file);
+		if (!this.documentTemplateId) formData.append('file', file);
 		return formData;
 	}
 
 	showDeleteModal(id, name) {
+		if (!this.canManage || this.mutating) return;
 		this.currentTemplateId = Number(id) || null;
 		$('#deleteTemplateName').text(name || '');
 		$('#deleteModal').modal('show');
 	}
 
 	async deleteTemplate() {
-		if (!this.currentTemplateId) return;
+		if (!this.canManage || this.mutating || !this.currentTemplateId) return;
+		this.mutating = true;
 
 		try {
 			this.showLoading(true);
 			const response = await fetch(`/api/survey-templates/${this.currentTemplateId}`, {
-				method: 'DELETE'
+				method: 'DELETE', headers: this.getAuthHeaders()
 			});
 
 			const result = await response.json();
@@ -423,11 +401,13 @@ class SurveyTemplateManager {
 		} catch (error) {
 			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
 		} finally {
+			this.mutating = false;
 			this.showLoading(false);
 		}
 	}
 
 	resetUploadForm() {
+		this.documentTemplateId = null;
 		const form = $('#uploadForm')[0];
 		if (form) form.reset();
 	}
@@ -435,8 +415,25 @@ class SurveyTemplateManager {
 	viewTemplate(templateId) {
 		const safeId = Number(templateId);
 		if (!safeId) return;
+		const template = this.state.templates.find(item => item.id === safeId);
+		if (template?.template_kind === 'document') return this.downloadTemplate(template);
 		const surveyUrl = `${window.location.origin}/patient-survey.html?template_id=${safeId}&preview=true`;
 		window.open(surveyUrl, '_blank', 'noopener,noreferrer');
+	}
+
+	async downloadTemplate(template) {
+		try {
+			const response = await fetch(`/api/survey-templates/download/${template.id}`, { headers: this.getAuthHeaders() });
+			if (!response.ok) throw new Error('download');
+			const url = URL.createObjectURL(await response.blob());
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = template.file_name || template.name;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 1000);
+		} catch (_) { this.showToast('error', 'Không thể tải tài liệu. Vui lòng thử lại.'); }
 	}
 
 	showLoading(show) {

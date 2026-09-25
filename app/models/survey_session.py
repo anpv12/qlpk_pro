@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Enum, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime, timezone
@@ -17,12 +17,18 @@ class SurveySession(Base):
     id = Column(Integer, primary_key=True)
     patient_id = Column(Integer, ForeignKey('patients.id'), nullable=False)
     examination_id = Column(Integer, ForeignKey('examinations.id'), nullable=False)
+    order_id = Column(Integer, ForeignKey('chi_dinh.id', ondelete='SET NULL'), nullable=True, index=True)
+    survey_template_id = Column(Integer, ForeignKey('survey_templates.id'), nullable=True)
     session_token = Column(String(255), unique=True, nullable=False)
     status = Column(Enum(SurveySessionStatus), default=SurveySessionStatus.pending, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
-    started_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    draft_responses = Column(JSON, nullable=True)
+    draft_revision = Column(Integer, nullable=False, default=0, server_default='0')
+    draft_updated_at = Column(DateTime(timezone=True), nullable=True)
+    template_snapshot = Column(JSON, nullable=True)
     
     # Relationships
     # patient = relationship("Patient", back_populates="survey_sessions")

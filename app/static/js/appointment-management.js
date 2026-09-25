@@ -1770,7 +1770,7 @@ $(function () {
 				const data = xhr.responseJSON || {};
 				if (xhr.status === 409 && data.requires_force) {
 					// Đang trong quá trình khám — hỏi xác nhận lần 2
-					CustomModal.confirm('Lịch hẹn đang được sử dụng trong ca khám. Bạn có chắc muốn xóa?', 'Xác nhận xóa/ẩn').then(function (confirmed) {
+					CustomModal.confirm('Lịch hẹn đang được sử dụng trong ca khám. Bạn có chắc muốn xóa?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(function (confirmed) {
 						if (confirmed) {
 							doDeleteAppointment(appointmentId, true);
 						}
@@ -1824,7 +1824,7 @@ $(function () {
 		const appointmentId = $('#editAppointmentModal').data('appointmentId');
 		if (!appointmentId) return;
 
-		CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn').then(function (confirmed) {
+		CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(function (confirmed) {
 			if (!confirmed) return;
 			$('#editAppointmentModal').modal('hide');
 			doDeleteAppointment(appointmentId);

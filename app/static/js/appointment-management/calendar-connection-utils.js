@@ -2,15 +2,15 @@
 	'use strict';
 
 	function buildConnectedStatusHtml() {
-		return '<span class="appointment-calendar-connected-badge"><i class="bi bi-check-circle"></i> Google Calendar đã kết nối</span>';
+		return '<span class="qlpk-status qlpk-status--success appointment-calendar-connected-badge"><i class="bi bi-check-circle-fill"></i> Google Calendar đã kết nối</span>';
 	}
 
 	function buildCheckingStatusHtml() {
-		return '<span class="appointment-calendar-status-badge appointment-calendar-status-badge--checking"><i class="bi bi-arrow-repeat"></i> Đang kiểm tra Calendar</span>';
+		return '<span class="qlpk-status qlpk-status--info appointment-calendar-status-badge appointment-calendar-status-badge--checking"><i class="bi bi-arrow-repeat"></i> Đang kiểm tra Calendar</span>';
 	}
 
 	function buildUnknownStatusHtml() {
-		return '<span class="appointment-calendar-status-badge appointment-calendar-status-badge--unknown"><i class="bi bi-exclamation-triangle"></i> Chưa xác định Calendar</span>';
+		return '<span class="qlpk-status qlpk-status--warning appointment-calendar-status-badge appointment-calendar-status-badge--unknown"><i class="bi bi-exclamation-triangle"></i> Chưa xác định Calendar</span>';
 	}
 
 	function applyCalendarStatusPendingUi($, html) {

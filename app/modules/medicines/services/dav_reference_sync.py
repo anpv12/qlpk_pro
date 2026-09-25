@@ -72,13 +72,39 @@ def fetch_dav_page(skip_count=0, max_result_count=1000, timeout=30):
     }
 
 
+def correct_verified_dav_identity(values):
+    """Two verified upstream column swaps; preserve the original raw payload.
+
+    Exidamin: dav.gov.vn/upload_images/files/718_QD_QLD%202024_signed.pdf
+    Mebamrol: spm.com.vn/mebamrol (VD-28332-17).
+    Match source ID, registration, name AND the known malformed values.
+    New/unknown source changes must be reviewed, not heuristically swapped.
+    """
+    from app.modules.medicines.services.catalog_mapping import normalized
+    fixes = {
+        '16739': ('Exidamin', {'893110043900', 'VD-28330-17'}, '10mg',
+                  'Escitalopram (dưới dạng Escitalopram oxalat)'),
+        '16723': ('Mebamrol', {'893110045400', 'VD-28332-17'}, '100mg', 'Clozapin'),
+    }
+    fix = fixes.get(values.get('source_id')) if values.get('source') == 'DAV' else None
+    if fix:
+        name, registrations, quantity, ingredient = fix
+        if (normalized(values.get('name')) == normalized(name)
+                and values.get('registration_number') in registrations
+                and normalized(values.get('active_ingredient')) == normalized(quantity)
+                and normalized(values.get('strength')) == normalized(ingredient)):
+            return dict(values, active_ingredient=values['strength'], strength=values['active_ingredient'])
+    return values
+
+
 def normalize_dav_item(item):
+    from app.modules.medicines.services.reference_route import route_suggestion_fields
     basic = item.get("thongTinThuocCoBan") or {}
     registration = item.get("thongTinDangKyThuoc") or {}
     manufacturer = item.get("congTySanXuat") or {}
     registrant = item.get("congTyDangKy") or {}
 
-    return {
+    values = correct_verified_dav_identity({
         "source": "DAV",
         "source_id": str(item.get("id")) if item.get("id") is not None else None,
         "registration_number": item.get("soDangKy"),
@@ -104,7 +130,9 @@ def normalize_dav_item(item):
         "is_deleted": bool(item.get("isDeleted", False)),
         "dav_last_modified_at": _parse_datetime(item.get("lastModificationTime")),
         "raw_payload": item,
-    }
+    })
+    values.update(route_suggestion_fields(values['route'], values['dosage_form']))
+    return values
 
 
 def _find_existing(db: Session, normalized):
@@ -134,9 +162,8 @@ def upsert_dav_item(db: Session, item):
     return "inserted"
 
 
-def sync_dav_reference_catalog(db: Session, max_pages=None, page_size=1000, timeout=30):
+def sync_dav_reference_catalog(db: Session, page_size=1000, timeout=30):
     page_size = max(1, min(int(page_size or 1000), 1000))
-    max_pages = int(max_pages) if max_pages not in [None, "", 0, "0"] else None
 
     skip_count = 0
     page_count = 0
@@ -146,9 +173,6 @@ def sync_dav_reference_catalog(db: Session, max_pages=None, page_size=1000, time
     skipped = 0
 
     while True:
-        if max_pages is not None and page_count >= max_pages:
-            break
-
         page = fetch_dav_page(skip_count=skip_count, max_result_count=page_size, timeout=timeout)
         items = page["items"]
         total_count = page["total_count"]

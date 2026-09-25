@@ -1,0 +1,170 @@
+/* One composite control and one top-layer popup for every configured data source. */
+.qlpk-autocomplete {
+	min-inline-size: 0;
+	inline-size: 100%;
+	--autocomplete-font-size: var(--qlpk-font-size-base);
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__control {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem;
+	min-inline-size: 0;
+	padding: 0.25rem 0.45rem;
+	border: 0.0625rem solid var(--qlpk-color-border);
+	border-radius: 0.45rem;
+	background: var(--qlpk-color-surface, #ffffff);
+	cursor: text;
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__control:focus-within {
+	border-color: var(--qlpk-color-primary);
+	box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--qlpk-color-primary) 16%, transparent);
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__tags {
+	display: contents;
+}
+
+.qlpk-autocomplete [data-autocomplete-input] {
+	flex: 1 1 8rem;
+	min-inline-size: 4rem;
+	inline-size: 0;
+	max-inline-size: 100%;
+	padding: 0.15rem 0;
+	border: 0;
+	border-radius: 0;
+	outline: 0;
+	box-shadow: none;
+	background: transparent;
+	color: var(--qlpk-color-text);
+	font-size: var(--autocomplete-font-size);
+	font-weight: var(--qlpk-font-weight-regular);
+	line-height: var(--qlpk-line-height-normal);
+}
+
+.qlpk-autocomplete [data-autocomplete-input]:focus {
+	border: 0;
+	box-shadow: none;
+}
+
+.qlpk-autocomplete [data-autocomplete-input]::placeholder {
+	color: var(--qlpk-color-text-muted);
+	font-size: inherit;
+	font-weight: var(--qlpk-font-weight-regular);
+	font-style: normal;
+	opacity: 1;
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	max-inline-size: 100%;
+	padding: 0.18rem 0.35rem;
+	border-radius: 0.3rem;
+	background: var(--qlpk-color-primary-soft, #faf6e6);
+	color: var(--qlpk-color-text);
+	font-size: var(--autocomplete-font-size);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: var(--qlpk-line-height-normal);
+}
+
+.qlpk-autocomplete__tag-label {
+	min-inline-size: 0;
+	overflow-wrap: anywhere;
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__remove {
+	flex-shrink: 0;
+	padding: 0 0.1rem;
+	border: 0;
+	background: transparent;
+	color: var(--qlpk-color-text-muted);
+	font-size: var(--qlpk-font-size-md);
+	line-height: 1;
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__remove:hover,
+.qlpk-autocomplete .qlpk-autocomplete__remove:focus-visible {
+	color: var(--qlpk-feedback-error);
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__dropdown {
+	position: fixed;
+	inset: auto;
+	left: var(--autocomplete-left);
+	top: var(--autocomplete-top);
+	inline-size: var(--autocomplete-width);
+	max-inline-size: none;
+	max-block-size: var(--autocomplete-height);
+	margin: 0;
+	padding: 0;
+	border: 0.0625rem solid var(--qlpk-color-border);
+	border-radius: 0.45rem;
+	background: var(--qlpk-color-surface, #ffffff);
+	color: var(--qlpk-color-text);
+	box-shadow: 0 0.5rem 1rem rgb(53 40 33 / 16%);
+	overflow: hidden;
+}
+
+.qlpk-autocomplete__dropdown[data-placement="top"] {
+	transform: translateY(-100%);
+}
+
+.qlpk-autocomplete__list {
+	position: relative;
+	max-block-size: inherit;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__option {
+	display: block;
+	inline-size: 100%;
+	padding: 0.45rem 0.6rem;
+	border: 0;
+	border-block-end: 0.0625rem solid var(--qlpk-color-border);
+	background: transparent;
+	color: inherit;
+	text-align: start;
+	font-size: var(--autocomplete-font-size);
+	line-height: var(--qlpk-line-height-normal);
+	cursor: pointer;
+}
+
+.qlpk-autocomplete__option-title {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	font-weight: var(--qlpk-font-weight-medium);
+}
+
+.qlpk-autocomplete__option-detail {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--qlpk-color-text-muted);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-regular);
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__option:hover,
+.qlpk-autocomplete .qlpk-autocomplete__option.is-active,
+.qlpk-autocomplete .qlpk-autocomplete__option.is-selected {
+	background: var(--qlpk-color-primary-soft);
+}
+
+.qlpk-autocomplete .qlpk-autocomplete__status {
+	display: block;
+	inline-size: 100%;
+	padding: 0.4rem 0.6rem;
+	border: 0;
+	background: transparent;
+	color: var(--qlpk-color-text-muted);
+	font-size: var(--qlpk-font-size-sm);
+	text-align: start;
+}

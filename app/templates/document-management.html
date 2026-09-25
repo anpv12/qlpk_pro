@@ -9,7 +9,7 @@
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -18,21 +18,22 @@
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/document-management.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 </head>
-<body>
+<body class="qlpk-clinic-page document-management-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content">
-				<header class="page-header">
-					<h1><i class="bi bi-folder-symlink"></i> QUẢN LÝ TÀI LIỆU PHÒNG KHÁM</h1>
+				<header class="page-header qlpk-clinic-header">
+					<h1 class="qlpk-clinic-title "><i class="bi bi-folder-symlink"></i> Tài liệu phòng khám</h1>
 				</header>
 				<div class="doc-container">
 					<!-- Cột trái: Cây thư mục -->
 					<aside class="tree-sidebar">
 						<div class="tree-header">
 							<h3>CẤU TRÚC THƯ MỤC</h3>
-							<button class="btn-custom admin-only-btn doc-create-folder-btn" id="btnCreateFolder">
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-custom admin-only-btn doc-create-folder-btn" id="btnCreateFolder">
 								<i class="bi bi-plus-lg"></i> Tạo
 							</button>
 						</div>
@@ -51,7 +52,7 @@
 							<div class="d-flex gap-2">
 								<div class="input-group doc-search-group">
 									<input type="text" class="form-control doc-search-input" id="searchDocument" placeholder="Tìm file...">
-									<button class="btn btn-outline-secondary doc-search-button"><i class="bi bi-search"></i></button>
+									<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-outline-secondary doc-search-button"><i class="bi bi-search"></i></button>
 								</div>
 							</div>
 						</div>
@@ -65,10 +66,10 @@
 									</div>
 								</div>
 								<div class="d-flex gap-2">
-									<button class="btn-custom doc-add-link-btn" id="btnAddLink">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn-custom doc-add-link-btn" id="btnAddLink">
 										<i class="bi bi-link-45deg"></i> Thêm Link (Drive/Web)
 									</button>
-									<button class="btn-custom doc-upload-file-btn" id="btnUploadFile">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-custom doc-upload-file-btn" id="btnUploadFile">
 										<i class="bi bi-upload"></i> Chọn file từ máy tính
 									</button>
 									<input type="file" id="fileInputHidden" class="doc-hidden-input" multiple>
@@ -115,8 +116,8 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button class="btn btn-outline-secondary" onclick="$('#folderModal').removeClass('doc-modal-open')">Hủy</button>
-				<button class="btn btn-primary doc-primary-action" id="btnSaveFolder">Lưu thư mục</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" onclick="$('#folderModal').removeClass('doc-modal-open')">Hủy</button>
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveFolder">Lưu thư mục</button>
 			</div>
 		</div>
 	</div>
@@ -142,8 +143,8 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button class="btn btn-outline-secondary" onclick="$('#linkModal').removeClass('doc-modal-open')">Hủy</button>
-				<button class="btn btn-primary doc-primary-action" id="btnSaveLink">Lưu liên kết</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" onclick="$('#linkModal').removeClass('doc-modal-open')">Hủy</button>
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveLink">Lưu liên kết</button>
 			</div>
 		</div>
 	</div>

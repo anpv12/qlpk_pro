@@ -11,6 +11,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/catalog-crud-shell.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/catalog-dictionary.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
@@ -21,16 +22,18 @@
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
 </head>
 
-<body class="qlpk-admin-page">
+<body class="qlpk-admin-page qlpk-clinic-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content catalog-dict-main">
-				<div class="qlpk-admin-page-header">
-					<h1><i class="bi bi-droplet-half me-2"></i>Danh mục dị nguyên</h1>
-					<p class="qlpk-admin-page-subtitle">Quản lý các dị nguyên để tra cứu trong hồ sơ bệnh nhân</p>
+				<div class="qlpk-admin-page-header qlpk-clinic-header">
+					<h1 class="qlpk-clinic-title">Dị nguyên</h1>
+					<p class="qlpk-admin-page-subtitle qlpk-clinic-subtitle">Quản lý các dị nguyên để tra cứu trong hồ sơ bệnh nhân</p>
 				</div>
 
 				<div class="card-wrap">
@@ -40,16 +43,20 @@
 							<input type="text" id="al-search" placeholder="Tìm kiếm tên dị nguyên...">
 						</div>
 						<div class="right-group">
-							<div class="stat-badge"><span id="stat-total">0</span> dị nguyên</div>
-							<button class="btn-outline" id="btn-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
-							<button class="btn-outline" id="btn-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
-							<button class="btn-action" id="btn-add-allergen"><i class="bi bi-plus-circle"></i> Thêm mới</button>
+							<div class="qlpk-clinic-summary__item">
+								<span class="qlpk-clinic-summary__label">Dị nguyên</span>
+								<span class="qlpk-clinic-summary__value" id="stat-total">0</span>
+							</div>
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-outline" id="btn-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-outline" id="btn-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-action" id="btn-add-allergen"><i class="bi bi-plus-circle"></i> Thêm mới</button>
 								<input type="file" id="al-import-file" accept=".xlsx, .xls" class="catalog-dict-hidden">
 						</div>
 					</div>
 
 					<!-- Table -->
-					<table class="ai-table">
+					<div class="table-responsive">
+<table class="ai-table">
 						<thead>
 							<tr>
 								<th class="catalog-dict-col-index">STT</th>
@@ -64,18 +71,10 @@
 							</tr>
 						</tbody>
 					</table>
+</div>
 
 					<!-- Pagination -->
-					<div class="d-flex justify-content-between align-items-center mt-3 catalog-dict-pagination is-hidden" id="pagination-container">
-						<div class="catalog-dict-pagination-info">
-							Hiển thị <span id="page-start">0</span>-<span id="page-end">0</span> trong <span id="page-total">0</span> kết quả
-						</div>
-						<div class="d-flex gap-2 align-items-center">
-							<button class="btn btn-sm btn-outline catalog-dict-page-btn" id="btn-prev-page"><i class="bi bi-chevron-left"></i></button>
-							<span id="current-page-display" class="catalog-dict-page-current">1</span>
-							<button class="btn btn-sm btn-outline catalog-dict-page-btn" id="btn-next-page"><i class="bi bi-chevron-right"></i></button>
-						</div>
-					</div>
+					{% include 'partials/clinic-pagination.html' %}
 				</div>
 
 			</main>
@@ -105,8 +104,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
-						<button type="submit" class="btn btn-sm catalog-dict-primary-btn">Lưu dị nguyên</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-sm catalog-dict-primary-btn">Lưu dị nguyên</button>
 					</div>
 				</form>
 			</div>

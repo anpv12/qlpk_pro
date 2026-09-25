@@ -2,9 +2,32 @@
     'use strict';
 
     let currentPage = 1;
-    const pageSize = 20;
+    let pageSize = 10;
+    let listPagination;
+    let listRevision = 0;
     let totalItems = 0;
     let searchTimer = null;
+    let listController = null;
+    let activeListKey = '';
+    let summaryLoaded = false;
+    let exportController = null;
+
+    function cancelListRequest() {
+        listRevision += 1;
+        listController?.abort();
+        listController = null;
+        activeListKey = '';
+    }
+
+    function showListMessage(message) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.className = 'text-start text-muted py-4';
+        cell.textContent = message;
+        row.append(cell);
+        document.getElementById('referenceTableBody').replaceChildren(row);
+    }
 
     function getAuthHeader() {
         try {
@@ -75,7 +98,7 @@
         tbody.innerHTML = '';
 
         if (!items || items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-start text-muted py-4">Không có dữ liệu</td></tr>';
             return;
         }
 
@@ -107,7 +130,7 @@
                     <div class="muted-line mt-1">Đến: ${escapeHtml(formatDate(item.registration_expiry_date))}</div>
                 </td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-outline-primary reference-detail-btn" data-id="${item.id}" title="Xem chi tiết">
+                    <button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary reference-detail-btn" data-id="${item.id}" title="Xem chi tiết">
                         <i class="bi bi-eye"></i>
                     </button>
                 </td>
@@ -147,7 +170,8 @@
             detailRow('Hàm lượng', item.strength),
             detailRow('Dạng bào chế', item.dosage_form),
             detailRow('Đóng gói', item.packaging),
-            detailRow('Đường dùng', item.route),
+            detailRow(item.route || !item.suggested_route ? 'Đường dùng' : 'Đường dùng (gợi ý)',
+                item.route || item.suggested_route),
             detailRow('Tiêu chuẩn', item.standard),
             detailRow('Tuổi thọ', item.shelf_life),
             detailRow('Nhà sản xuất', item.manufacturer_name),
@@ -161,14 +185,12 @@
             detailRow('Trạng thái', getStatusText(item)),
         ].join('');
 
-        document.getElementById('referenceRawPayload').textContent = JSON.stringify(item.raw_payload || {}, null, 2);
     }
 
     async function openReferenceDetail(catalogId) {
         try {
             const content = document.getElementById('referenceDetailContent');
             content.innerHTML = '<div class="text-muted">Đang tải chi tiết...</div>';
-            document.getElementById('referenceRawPayload').textContent = '{}';
             const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('referenceDetailModal'));
             modal.show();
 
@@ -184,40 +206,107 @@
     }
 
     function updatePagination() {
-        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-        const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-        const end = Math.min(currentPage * pageSize, totalItems);
-        document.getElementById('pageStart').textContent = start;
-        document.getElementById('pageEnd').textContent = end;
-        document.getElementById('pageTotal').textContent = totalItems;
-        document.getElementById('currentPageDisplay').textContent = currentPage;
-        document.getElementById('prevPageBtn').disabled = currentPage <= 1;
-        document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+        listPagination.update({ page: currentPage, pageSize, total: totalItems });
     }
 
     async function loadData() {
+        window.clearTimeout(searchTimer);
         const search = document.getElementById('referenceSearch').value.trim();
         const status = document.getElementById('referenceStatus').value;
         const params = new URLSearchParams({
             search,
             status,
             page: String(currentPage),
-            per_page: String(pageSize)
+            per_page: String(pageSize),
+            include_summary: summaryLoaded ? '0' : '1'
         });
-
+        const key = params.toString();
+        if (listController && activeListKey === key) return;
+        cancelListRequest();
+        const revision = listRevision;
+        const controller = new AbortController();
+        listController = controller;
+        activeListKey = key;
+        const button = document.getElementById('referenceSearchButton');
+        button.disabled = true;
+        button.textContent = 'Đang tìm…';
+        const tbody = document.getElementById('referenceTableBody');
+        tbody.setAttribute('aria-busy', 'true');
+        showListMessage('Đang tìm thuốc DAV…');
+        document.getElementById('clinicPagination').classList.add('d-none');
+        const deadline = window.setTimeout(() => controller.abort(), 15000);
         try {
-            const response = await apiFetch(`/api/medicine-reference-catalog?${params.toString()}`);
+            const response = await apiFetch(`/api/medicine-reference-catalog?${params.toString()}`, {signal: controller.signal});
             const result = await response.json();
+            if (revision !== listRevision) return;
             if (!response.ok || !result.success) {
                 throw new Error(result.message || 'Không tải được danh mục thuốc');
             }
             totalItems = result.total || 0;
-            updateSummary(result.summary || {});
+            const lastPage = Math.max(1, Math.ceil(totalItems / pageSize));
+            if (currentPage > lastPage) { currentPage = lastPage; return loadData(); }
+            if (result.summary) { updateSummary(result.summary); summaryLoaded = true; }
             renderTable(result.data || []);
             updatePagination();
+            document.getElementById('clinicPagination').classList.remove('d-none');
         } catch (error) {
-            renderTable([]);
+            if (revision !== listRevision) return;
+            showListMessage(error.name === 'AbortError'
+                ? 'Tìm kiếm mất quá lâu. Nhấn Tìm kiếm để thử lại.'
+                : 'Chưa tải được kết quả. Nhấn Tìm kiếm để thử lại.');
             showToast('Không thể tải dữ liệu thuốc. Vui lòng thử lại.', 'danger');
+        } finally {
+            window.clearTimeout(deadline);
+            if (revision === listRevision) {
+                listController = null;
+                activeListKey = '';
+                tbody.setAttribute('aria-busy', 'false');
+                button.disabled = false;
+                button.textContent = 'Tìm kiếm';
+            }
+        }
+    }
+
+    async function exportDavCatalog() {
+        if (exportController) return;
+        const button = document.getElementById('referenceExportButton');
+        const originalLabel = button.innerHTML;
+        const controller = new AbortController();
+        exportController = controller;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.textContent = 'Đang xuất…';
+        const deadline = window.setTimeout(() => controller.abort(), 120000);
+        try {
+            const params = new URLSearchParams({
+                search: document.getElementById('referenceSearch').value.trim(),
+                status: document.getElementById('referenceStatus').value
+            });
+            const response = await apiFetch(`/api/medicine-reference-catalog/export/excel?${params}`, {signal: controller.signal});
+            if (!response.ok || !(response.headers.get('Content-Type') || '').includes('spreadsheetml.sheet')) {
+                throw new Error('Export failed');
+            }
+            const blob = await response.blob();
+            if (controller.signal.aborted) return;
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'danh_muc_thuoc_DAV.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+            showToast('Đã xuất danh mục thuốc DAV', 'success');
+        } catch (error) {
+            showToast(error.name === 'AbortError'
+                ? 'Xuất Excel mất quá lâu. Vui lòng thử lại.'
+                : 'Không thể xuất Excel. Vui lòng thử lại.', 'danger');
+        } finally {
+            window.clearTimeout(deadline);
+            exportController = null;
+            button.disabled = false;
+            button.setAttribute('aria-busy', 'false');
+            button.innerHTML = originalLabel;
         }
     }
 
@@ -229,11 +318,7 @@
         resultEl.textContent = 'Đang kéo dữ liệu từ DAV, vui lòng chờ...';
 
         try {
-            const syncScope = document.getElementById('syncScope').value;
             const payload = { page_size: 1000 };
-            if (syncScope === 'sample') {
-                payload.max_pages = 1;
-            }
             const response = await apiFetch('/api/medicine-reference-catalog/sync', {
                 method: 'POST',
                 body: JSON.stringify(payload)
@@ -246,6 +331,7 @@
             const sync = result.result || {};
             resultEl.textContent = `Nguồn ${sync.total_source || 0} thuốc, đã lấy ${sync.fetched || 0}, thêm ${sync.inserted || 0}, cập nhật ${sync.updated || 0}, bỏ qua ${sync.skipped || 0}.`;
             showToast('Đồng bộ DAV thành công', 'success');
+            summaryLoaded = false;
             currentPage = 1;
             await loadData();
         } catch (error) {
@@ -259,10 +345,25 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         if (!ensureToken()) return;
+        listPagination = window.QLPKPagination.create({ onChange(page, size) {
+            currentPage = page;
+            pageSize = size;
+            loadData();
+        } });
         loadData();
 
+        document.getElementById('referenceSearchForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            currentPage = 1;
+            loadData();
+        });
         document.getElementById('referenceSearch').addEventListener('input', function () {
             window.clearTimeout(searchTimer);
+            cancelListRequest();
+            document.getElementById('referenceSearchButton').disabled = false;
+            document.getElementById('referenceSearchButton').textContent = 'Tìm kiếm';
+            showListMessage('Đang tìm thuốc DAV…');
+            document.getElementById('clinicPagination').classList.add('d-none');
             searchTimer = window.setTimeout(function () {
                 currentPage = 1;
                 loadData();
@@ -272,24 +373,13 @@
             currentPage = 1;
             loadData();
         });
-        document.getElementById('prevPageBtn').addEventListener('click', function () {
-            if (currentPage > 1) {
-                currentPage -= 1;
-                loadData();
-            }
-        });
-        document.getElementById('nextPageBtn').addEventListener('click', function () {
-            if (currentPage < Math.ceil(totalItems / pageSize)) {
-                currentPage += 1;
-                loadData();
-            }
-        });
         document.getElementById('referenceTableBody').addEventListener('click', function (event) {
             const button = event.target.closest('.reference-detail-btn');
             if (!button) return;
             openReferenceDetail(button.dataset.id);
         });
         document.getElementById('syncDavBtn').addEventListener('click', syncDavCatalog);
+        document.getElementById('referenceExportButton').addEventListener('click', exportDavCatalog);
 
         if (window.QLPKRealtimePageHooks) {
             window.QLPKRealtimePageHooks.register({
@@ -298,10 +388,15 @@
                 handler: function (event) {
                     const entity = event && event.payload ? event.payload.entity : null;
                     if (!entity || entity === 'medicine_reference_catalog') {
+                        summaryLoaded = false;
                         loadData();
                     }
                 }
             });
         }
+        window.addEventListener('pagehide', function () {
+            cancelListRequest();
+            exportController?.abort();
+        });
     });
 })();

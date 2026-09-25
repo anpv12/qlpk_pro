@@ -1,0 +1,100 @@
+.doctor-reexam-calendar {
+	--reexam-primary: var(--qlpk-doctor-primary);
+	--fc-button-bg-color: var(--qlpk-doctor-primary); --fc-button-border-color: var(--qlpk-doctor-primary);
+	--fc-button-hover-bg-color: var(--qlpk-doctor-primary-strong); --fc-button-hover-border-color: var(--qlpk-doctor-primary-strong);
+	--fc-button-active-bg-color: var(--qlpk-doctor-primary-strong); --fc-button-active-border-color: var(--qlpk-doctor-primary-strong);
+	--fc-today-bg-color: var(--qlpk-doctor-primary-soft);
+	width: calc(100vw - 0.5rem); max-width: none; height: calc(100dvh - 0.5rem); max-height: none;
+	margin: auto; padding: 0; border: 0.0625rem solid var(--qlpk-color-border); border-radius: 0.625rem;
+	color: var(--qlpk-doctor-text); background: var(--qlpk-doctor-surface); font-family: var(--qlpk-font-family); font-size: var(--qlpk-font-size-base); font-weight: var(--qlpk-font-weight-regular); line-height: var(--qlpk-line-height-normal);
+}
+.doctor-reexam-calendar[open] { display: flex; flex-direction: column; }
+.doctor-reexam-calendar::backdrop { background: color-mix(in srgb, var(--qlpk-color-black) 45%, transparent); }
+.doctor-reexam-calendar__header { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--qlpk-workflow-context-header-bg); color: var(--qlpk-doctor-on-primary); }
+.doctor-reexam-calendar__header strong { font-size: var(--qlpk-font-size-md); }
+.doctor-reexam-calendar .doctor-reexam-calendar__header button { border: 0; font-size: var(--qlpk-font-size-3xl); line-height: 1;
+}
+.doctor-reexam-calendar .doctor-reexam-calendar__header button:not([data-qlpk-button], [data-qlpk-button] *) { background: transparent; color: var(--qlpk-doctor-on-primary);
+}
+.doctor-reexam-calendar__body { flex: 1; min-height: 0; display: grid; grid-template-columns: 20rem minmax(0, 1fr); }
+.doctor-reexam-calendar__sidebar { min-height: 0; overflow-y: auto; padding: 0.625rem; background: var(--qlpk-doctor-page-bg); border-right: 0.0625rem solid var(--qlpk-color-border); }
+.doctor-reexam-calendar__sidebar section { border-top: 0.0625rem solid var(--qlpk-color-border); margin-top: 0.875rem; padding-top: 0.75rem; }
+.doctor-reexam-calendar h3 { font-size: var(--qlpk-font-size-base); text-transform: uppercase; color: var(--qlpk-color-text-muted); margin: 0 0 0.5rem; }
+.doctor-reexam-calendar p { margin: 0 0 0.5rem; overflow-wrap: anywhere; }
+.doctor-reexam-calendar small { color: var(--qlpk-color-text-muted); font-size: var(--qlpk-font-size-sm); }
+.doctor-reexam-calendar__inputs { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.375rem; }
+.doctor-reexam-calendar button,
+.doctor-reexam-calendar input,
+.doctor-reexam-calendar select { font-family: inherit; font-size: var(--qlpk-font-size-base); line-height: var(--qlpk-line-height-normal); }
+.doctor-reexam-calendar__inputs label { min-width: 0; }
+.doctor-reexam-calendar__inputs input,
+.doctor-reexam-calendar__choices select { display: block; width: 100%; min-width: 0; border: 0.0625rem solid var(--qlpk-color-border-strong); border-radius: 0.3125rem; padding: 0.375rem 0.25rem; background: var(--qlpk-doctor-surface); color: var(--qlpk-doctor-text); }
+.doctor-reexam-calendar__count { display: flex; justify-content: space-between; padding: 0.3125rem 0.4375rem; margin-bottom: 0.25rem; border-radius: 0.25rem; background: var(--qlpk-doctor-surface-soft); font-weight: var(--qlpk-font-weight-semibold); }
+.doctor-reexam-calendar__main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 0.625rem 0.5rem 0.5rem; }
+.doctor-reexam-calendar__notice { flex: none; }
+.doctor-reexam-calendar [data-reexam="calendar"] { flex: 1; min-height: 0; }
+.doctor-reexam-calendar__footer { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 0.625rem; padding: 0.75rem; border-top: 0.0625rem solid var(--qlpk-color-border); }
+.doctor-reexam-calendar__footer strong { color: var(--qlpk-doctor-primary); }
+.doctor-reexam-calendar [data-reexam="error"] { color: var(--qlpk-feedback-error); margin: 0.25rem 0 0; }
+.doctor-reexam-calendar__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+.doctor-reexam-calendar .btn-success:not([data-qlpk-button], [data-qlpk-button] *) { background: var(--qlpk-workflow-context-header-bg); border-color: var(--qlpk-doctor-primary); color: var(--qlpk-doctor-on-primary);
+}
+.doctor-reexam-calendar .fc .fc-toolbar-title { font-size: var(--qlpk-font-size-lg); }
+.doctor-reexam-calendar .fc-toolbar-chunk { display: flex; align-items: center; }
+.doctor-reexam-calendar .fc-button-primary { background: var(--qlpk-workflow-context-header-bg); border-color: var(--reexam-primary); }
+.doctor-reexam-calendar .fc-col-header-cell-cushion,
+.doctor-reexam-calendar .fc-daygrid-day-number { color: var(--qlpk-doctor-text); text-decoration: none; }
+.doctor-reexam-calendar .fc-daygrid-event { font-size: var(--qlpk-font-size-base); cursor: pointer; }
+.doctor-reexam-calendar .fc-daygrid-event-dot { display: none; }
+.doctor-reexam-calendar .fc-daygrid-event .fc-event-time { flex-shrink: 0; }
+.doctor-reexam-calendar .fc-daygrid-dot-event { color: var(--qlpk-doctor-on-primary); padding: 0.0625rem 0.1875rem; border-radius: 0.1875rem; }
+.doctor-reexam-calendar .fc-daygrid-day { cursor: pointer; }
+.doctor-reexam-calendar .fc-day-today { background: var(--qlpk-doctor-primary-soft); }
+.doctor-reexam-calendar .reexam-selected { background: var(--qlpk-doctor-surface-soft); box-shadow: inset 0 0 0 0.125rem var(--qlpk-doctor-primary); }
+/* Fit the mini calendar to the sidebar without shrinking its typography. */
+.doctor-reexam-calendar .flatpickr-calendar.inline { width: 100%; box-shadow: none; background: transparent; }
+.doctor-reexam-calendar .flatpickr-rContainer,
+.doctor-reexam-calendar .flatpickr-days,
+.doctor-reexam-calendar .dayContainer { width: 100%; min-width: 0; max-width: none; }
+.doctor-reexam-calendar .flatpickr-day { max-width: none; height: 1.75rem; line-height: 1.75rem; font-size: var(--qlpk-font-size-base); }
+.doctor-reexam-calendar .flatpickr-day[hidden] { display: none; }
+.doctor-reexam-calendar .flatpickr-current-month,
+.doctor-reexam-calendar .flatpickr-current-month input.cur-year,
+.doctor-reexam-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+.doctor-reexam-calendar span.flatpickr-weekday { font-size: var(--qlpk-font-size-base); }
+.doctor-reexam-calendar .flatpickr-current-month { display: flex; justify-content: center; align-items: center; gap: .25rem; }
+.doctor-reexam-calendar .flatpickr-current-month .flatpickr-monthDropdown-months { min-width: 0; padding: 0; }
+.doctor-reexam-calendar .flatpickr-current-month .numInputWrapper { flex: 0 0 4.5em; }
+.doctor-reexam-calendar [data-reexam="mini"] > input { display: none; }
+@media (max-width: 47.5rem) {
+	.doctor-reexam-calendar__body { grid-template-columns: 18rem minmax(0, 1fr); }
+	.doctor-reexam-calendar .fc-header-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+	.doctor-reexam-calendar .fc-toolbar-title { font-size: var(--qlpk-font-size-base); }
+	.doctor-reexam-calendar__footer { align-items: flex-start; flex-direction: column; padding: 0.5rem; }
+}
+@media (max-width: 30rem) {
+	.doctor-reexam-calendar__body { display: block; overflow-y: auto; }
+	.doctor-reexam-calendar__sidebar { overflow: visible; }
+	.doctor-reexam-calendar__sidebar .flatpickr-calendar.inline { display: none; }
+	.doctor-reexam-calendar__main { height: 30rem; flex: none; }
+}
+
+@media (max-width: 22rem) {
+	.doctor-reexam-calendar__inputs { grid-template-columns: minmax(0, 1fr); }
+}
+
+.doctor-reexam-calendar__choices { display: grid; gap: .5rem; }
+.doctor-reexam-calendar__choices label { font-weight: var(--qlpk-font-weight-semibold); color: var(--qlpk-color-text-muted); }
+.doctor-reexam-calendar__choices select { padding: .5rem; }
+.doctor-reexam-calendar .btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-reexam-calendar .btn-success:active:not([data-qlpk-button], [data-qlpk-button] *) { background: var(--qlpk-workflow-context-header-bg); border-color: var(--qlpk-doctor-primary-strong);
+}
+.doctor-reexam-calendar .flatpickr-day.selected,
+.doctor-reexam-calendar .flatpickr-day.selected:hover { background: var(--qlpk-workflow-context-header-bg); border-color: var(--qlpk-doctor-primary); color: var(--qlpk-doctor-on-primary); }
+.doctor-reexam-calendar .flatpickr-day:hover { background: var(--qlpk-doctor-surface-soft); border-color: var(--qlpk-color-border); }
+.doctor-reexam-calendar .flatpickr-months .flatpickr-prev-month:hover svg,
+.doctor-reexam-calendar .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--qlpk-doctor-primary); }
+.doctor-reexam-calendar input:focus-visible,
+.doctor-reexam-calendar select:focus-visible,
+.doctor-reexam-calendar button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) { outline: .125rem solid var(--qlpk-doctor-primary); outline-offset: .125rem; box-shadow: none;
+}

@@ -64,8 +64,7 @@ $(function () {
 	let groupList = [];
 	let editingGroupId = null;
 	let deletingGroupId = null;
-	let currentPage = 1;
-	let pageSize = 10;
+
 
 	// Fetch group list from API
 	function fetchGroups(callback) {
@@ -77,15 +76,25 @@ $(function () {
 	}
 
 	// Render table nhóm quyền
-	function renderTable() {
+	const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderTable() {
+        const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
+            || String(value || '').toLowerCase().trim();
+        const keyword = normalize($('#searchInput').val());
+        listPagination.setItems(groupList.filter(group =>
+            [group.code, group.name, group.desc].some(value => normalize(value).includes(keyword))));
+    }
+    $('#groupFilterForm').on('submit', function (event) {
+        event.preventDefault();
+        renderTable();
+    });
+    $('#resetBtn').on('click', function () {
+        $('#searchInput').val('');
+        renderTable();
+    });
+    function renderPage(pageData) {
 		const tbody = $('#groupTable tbody');
 		tbody.empty();
-		let filtered = groupList; // TODO: filter logic
-		const total = filtered.length;
-		const pages = Math.ceil(total / pageSize);
-		const start = (currentPage - 1) * pageSize;
-		const end = start + pageSize;
-		const pageData = filtered.slice(start, end);
 		pageData.forEach((g, i) => {
 			tbody.append(`
         <tr>
@@ -94,15 +103,14 @@ $(function () {
           <td>${g.name}</td>
           <td>${renderPermBadges(g.permissions)}</td>
           <td>
-            <button class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>
-            <button class="action-btn edit-btn" data-id="${g.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-            <button class="action-btn delete-btn" data-id="${g.id}" title="Xoá"><i class="bi bi-trash"></i></button>
+            <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${g.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${g.id}" title="Xoá"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
       `);
 		});
-		$('#tableInfo').text(`${pageData.length} of ${total} items`);
-		renderPagination(pages);
+
 	}
 
 	function renderPermBadges(perms) {
@@ -123,19 +131,6 @@ $(function () {
 		});
 		return html;
 	}
-
-	function renderPagination(pages) {
-		const ul = $('#pagination');
-		ul.empty();
-		for (let i = 1; i <= pages; i++) {
-			ul.append(`<li class="page-item${i === currentPage ? ' active' : ''}"><a class="page-link" href="#">${i}</a></li>`);
-		}
-	}
-	$('#pagination').on('click', '.page-link', function (e) {
-		e.preventDefault();
-		currentPage = parseInt($(this).text());
-		renderTable();
-	});
 
 	// Tree quyền (checkbox cha/con, expand/collapse)
 	function renderPermTree(container, checked = [], readonly = false) {

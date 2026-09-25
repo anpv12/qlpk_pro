@@ -14,14 +14,21 @@ Moi task doc 5 file dau tien:
 
 Sau do chon route duoi day.
 
+Tiep tuc chuoi Hanh chinh/Le tan/Tu thuoc/Nhap kho/DAV: doc muc
+"Context chung đang tiếp tục — 22/09/2026" trong `references/refactor-progress.md`
+de nam quyet dinh hien hanh, owner va QA. Khong ghi nhat ky trung o module.
+
 ## Route Theo Task
+
+Mọi task thiết kế, mockup hoặc sửa nút phải đọc `references/ui/button-system.md`.
+Quy chuẩn này ưu tiên hơn các ghi chú lịch sử về màu nút trong brand-theme.
 
 | Task | Doc bat buoc | Khi nao doc them |
 | --- | --- | --- |
 | Hoi/bao cao nhanh, khong sua file | Code/tai lieu lien quan truc tiep | `references/refactor-progress.md` neu hoi tinh hinh/handoff |
 | Trace loi UI/logic, chua code | `references/qlpk-working-rules.md`, code owner lien quan | UI workflow thi doc them UI route; data/save thi doc data route |
 | UI mockup/thiet ke workflow | `references/business-map.md`, `references/ui/information-architecture.md`, `references/ui/design-from-data-checklist.md` | Workflow co file rieng thi doc workflow map/inventory |
-| Sua UI code | UI mockup route + `references/qlpk-working-rules.md`, code owner, CSS/token/component owner | `references/smoke-checks.md` truoc final validation |
+| Sua UI code | UI mockup route + `references/qlpk-working-rules.md`, `references/ui/brand-theme.md`, code owner, CSS/token/component owner | `references/smoke-checks.md` truoc final validation |
 | Data/API/save/load/database | `references/data-contracts.md`, `references/architecture-map.md`, code backend writer/reader | Module doc neu workflow thuoc module da tach |
 | Refactor/folder/module owner | `so-do-to-chuc.md`, `references/architecture-map.md`, `references/refactor-progress.md` | Module doc lien quan |
 | Chay app/smoke/browser QA | `references/ops-and-validation.md`, `references/smoke-checks.md` | Workflow-specific checklist neu co |
@@ -31,11 +38,13 @@ Sau do chon route duoi day.
 
 | Vung | Doc bat buoc |
 | --- | --- |
+| Autocomplete field / search-select / chips | `references/ui/autocomplete-field.md`, workflow doc của màn hình đang tích hợp |
 | Man bac si / `doctor-examination` | `references/doctor-examination-context.md`, `references/workflows/doctor-examination-business-map.md`, `references/workflows/doctor-examination-data-inventory.md`, `references/workflows/doctor-examination-navigation.md` |
 | Modal tìm kiếm/lịch sử bệnh nhân dùng chung | `references/ui/patient-history-modal.md`, workflow doc của màn hình đang tích hợp |
 | Le tan / tiep nhan | `references/modules/receptionist.md`, `references/business-map.md`; neu doi save/load thi them `references/data-contracts.md` |
 | Don thuoc | `references/modules/prescriptions.md`, `references/data-contracts.md` neu doi payload/save |
 | Chi dinh/orders | `references/modules/orders.md`, `references/data-contracts.md` neu doi payload/save |
+| Mẫu khảo sát/editor/chấm điểm | `references/modules/surveys.md`, `references/data-contracts.md`; thêm orders nếu đổi phiên/chỉ định |
 | Lich hen/appointments | `references/modules/appointments.md`, `references/data-contracts.md` neu doi payload/save |
 | Examinations/details/history/status | `references/modules/examinations.md`, `references/data-contracts.md` |
 

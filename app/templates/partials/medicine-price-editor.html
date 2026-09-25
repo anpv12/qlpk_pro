@@ -1,0 +1,39 @@
+<div class="modal" id="medicinePricePanel" tabindex="-1" aria-labelledby="medicinePriceTitle" aria-hidden="true">
+ <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+  <div class="modal-content">
+   <div class="modal-header">
+    <div class="mm-price-heading">
+     <h5 class="modal-title" id="medicinePriceTitle">Cập nhật giá bán</h5>
+     <p id="medicinePriceMedicine" class="mm-price-medicine mb-0"></p>
+    </div>
+    <button type="button" class="btn-close" id="medicinePriceClose" aria-label="Đóng"></button>
+   </div>
+   <div class="modal-body">
+  <p id="medicinePriceMessage" class="small" role="status" aria-live="polite"></p>
+  <div class="mm-price-values">
+    <div class="mm-price-field"><span class="form-label d-block">Giá cũ</span><strong class="mm-price-value" id="medicinePriceOld">—</strong></div>
+    <div class="mm-price-field"><label class="form-label" for="medicinePriceNew">Giá mới (đ) <span class="text-danger">*</span></label><input id="medicinePriceNew" class="form-control" type="number" min="0" max="99999999.99" step="0.01" inputmode="decimal"/></div>
+    <div class="mm-price-field"><span class="form-label d-block">Chênh lệch</span><strong class="mm-price-value" id="medicinePriceDifference" aria-live="polite">—</strong></div>
+  </div>
+  <div class="mm-price-period" aria-live="polite">
+    <p class="form-label">Thời gian áp dụng giá mới</p>
+    <dl class="mm-price-period-values mb-0">
+      <div><dt>Từ</dt><dd id="medicinePriceFrom" class="mb-0">Khi xác nhận giá mới</dd></div>
+      <div><dt>Đến</dt><dd id="medicinePriceTo" class="mb-0">Chưa xác định — đến lần đổi giá tiếp theo</dd></div>
+    </dl>
+  </div>
+  <details class="mm-price-history" id="medicinePriceHistory">
+    <summary>Lịch sử giá</summary>
+    <div class="mm-price-history-body">
+      <div class="table-responsive"><table class="table table-sm mm-price-history-table"><thead><tr><th>Giá cũ</th><th>Giá mới</th><th>Chênh lệch</th><th>Từ</th><th>Đến</th><th>Người cập nhật</th></tr></thead><tbody id="medicinePriceHistoryRows"></tbody></table></div>
+      <button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-primary mm-action-secondary mm-price-history-more" id="medicinePriceMore" hidden>Xem thêm</button>
+    </div>
+  </details>
+   </div>
+   <div class="modal-footer">
+    <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="medicinePriceCancel" type="button" class="btn btn-outline-primary">Hủy</button>
+    <button data-qlpk-button="execute" data-qlpk-button-variant="solid" id="medicinePriceConfirm" type="button" class="btn btn-primary mm-action-price" disabled>Xác nhận giá mới</button>
+   </div>
+  </div>
+ </div>
+</div>

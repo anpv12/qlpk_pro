@@ -4,6 +4,37 @@ Tài liệu này là context ngắn cho workflow lễ tân/tiếp nhận. Đọc
 
 ## Ownership
 
+- Giờ hẹn header (21/09/2026): input native `appointmentTime` giữ tối thiểu
+  9.25em theo font để đủ HH:mm và picker; cột giờ desktop dùng max-content. Container
+  Từ36rem header tách hai hàng: title/actions rồi schedule full-width;
+  từ62rem bốn field lịch cùng hàng, không ghép header lại ở màn rộng.
+  Hai header có block-size:auto, dùng chung line-height/padding/gap theo em;
+  bỏ token chiều cao4.5rem và công thức tính ngược trong scope lễ tân.
+  Control lịch/search có min-block-size2.2em để đủ native picker, không khóa
+  chiều cao tối đa; tiêu đề/actions dùng padding gọn chung. Khi schedule xuống
+  nhiều dòng ở màn hẹp, không ép chiều cao bằng queue hoặc cắt nội dung.
+  Không thay value/JS/save. Browser localhost8000 kiểm lịch thật18:45 ở
+  1920/1440/1024/390px, không bấm Lưu; giờ/phút/icon đầy đủ. Chưa kiểm riêng
+  Firefox hoặc browser zoom. Regression: `tests/receptionist_appointment_time_layout.test.js`.
+
+- Hai card hành chính/hỏi bệnh dùng chung layout owner
+  `components/patient-info-form.css`: từ container60rem, grid hai cột stretch
+  theo card cao hơn, phần sinh hiệu giãn tự nhiên để hai đáy bằng nhau.
+  Dưới60rem xếp dọc, chiều cao từng card theo nội dung. Không fixed height,
+  đo bằng JS hoặc override riêng màn bác sĩ.
+
+- Nhãn “Vừa cập nhật” (chốt 21/09/2026): chỉ lịch có `updated_at` mới nhất
+  trong toàn bộ danh sách đã lọc, trước phân trang, và thuộc ngày hiện tại
+  `Asia/Ho_Chi_Minh`. Trùng thời điểm chọn ID lớn hơn. Không fallback
+  `created_at`, không mặc định dòng đầu. Các dòng khác giữ trạng thái nghiệp vụ
+  (ở danh sách chờ là “Chờ chuyển khám”). Nhãn được xét lại mỗi lần tải API;
+  thứ tự danh sách hiện hữu giữ nguyên, không đổi dữ liệu/trạng thái lưu.
+- QA21/09: kiểm browser thật8000 danh sách20 dòng và tìm riêng Hà Kim Ngọc Hà,
+  dòng đầu hiện “Chờ chuyển khám”, console không lỗi. Test rollback trên
+  `qlpk_db` bao phủ hôm qua/hôm nay/null, mốc nửa đêm VN, tìm kiếm, phân trang,
+  đồng thời điểm và màn khác. Chưa pass visual/interactive QA nhánh nhãn dương
+  sau Lưu thật (không sửa hồ sơ để tạo timestamp phục vụ QA).
+
 - `patients`: định danh, liên hệ, nhân khẩu học và tiền sử nền của bệnh nhân.
 - `appointments`: ngày giờ hẹn, bác sĩ, dịch vụ/gói, loại lịch, trạng thái, ghi chú hành chính.
 - `examinations`: dữ liệu hỏi bệnh/lượt khám, lý do khám, triệu chứng, sinh hiệu và trạng thái khám được tạo cùng lịch mới.
@@ -17,7 +48,7 @@ Không dùng `appointment.notes` thay cho dữ liệu khám. Không để fronte
 - Vùng tiếp nhận `#vung2CardBody` hiện có contract sạch: `receptionist-intake-panel-header` là header chính của toàn panel, chứa title `Tiếp nhận bệnh nhân`, các field lịch hẹn `appointmentDate`/`appointmentTime`/`doctorId`/`serviceType`, action `uploadDocumentBtn` và `saveInfoBtn`; không khôi phục nút refresh trong header. Các field lịch trong header dùng nền trắng, chữ tối dễ đọc và chiều cao đồng bộ với nút action, không dùng nền nâu mờ khó nhìn. `receptionist-intake-grid` chứa 2 card chính: `receptionist-card--patient` là khối `Thông tin hành chính` gồm thông tin cá nhân, checkbox `reExaminationCheck` và sinh hiệu dạng editable input; `receptionist-card--visit` là khối `Thông tin hỏi bệnh` gồm trực tiếp các field hỏi bệnh (`mainReason`, `problemStartTime`, `severityLevel`, `symptomProgression`, `mainSymptoms`, `currentBehavior`), ghi chú hành chính, nguồn tiếp cận và tài liệu đính kèm (`uploadArea`, `documentFileInput`, `documentsList`). Nút `uploadDocumentBtn` nằm trên header chính nhưng vẫn điều khiển tài liệu trong khối hỏi bệnh. `receptionist-card--relatives` là panel full-width cho người thân liên kết. Không khôi phục modal hỏi bệnh/tài liệu riêng trên màn lễ tân; không có nút header `medicalHistoryBtn`/`documentBtn` trên lễ tân vì nội dung đã visible trong form chính. Chip tệp trong ghi chú chỉ là shortcut tới block tài liệu visible. Không khôi phục header profile/avatar `Hồ sơ bệnh nhân`; checkbox `reExaminationCheck` nằm trong header khối hành chính. Field `age` là hiển thị/tính toán theo `dateOfBirth`: frontend tự tính để hiển thị, backend cũng tự tính và lưu `patients.age` từ `date_of_birth`; form submit không gửi age như dữ liệu nhập độc lập. Sinh hiệu dùng tile `receptionist-vital-field` nhưng vẫn giữ nguyên ID input/hint để JS tính BMI và populate lịch sử hoạt động. Có thể chỉnh presentation trong `app/static/css/pages/receptionist-new.css`, nhưng phải giữ nguyên ID field/nút nghiệp vụ còn tồn tại vì helper JS lễ tân đang bind theo ID.
 - `severityLevel` vẫn là `<select id="severityLevel">` và là source of truth cho payload `severity_level`; dropdown trong form không gắn icon riêng. Mức độ được hiển thị nhanh bằng icon nhỏ cạnh tên bệnh nhân trong danh sách chờ bên trái, lấy từ `severity_level` trong appointment response.
 - Action icon của màn lễ tân dùng shared icon system (`icon-tokens.css`, `feedback-tokens.css`, `icon-system.js`) cho các nút danh sách chờ, người thân liên kết và tài liệu đính kèm. Các action lặp phải sinh qua `QLPKIconSystem.renderActionButton()` hoặc helper wrapper gọi hàm này; không quay lại raw `btn-outline-primary`/`btn-outline-danger`/`btn-success` cho các action lặp như xem/sửa/xóa/chuyển khám/tải tài liệu.
-- Typography màn lễ tân do `.receptionist-workspace-layout` sở hữu qua biến `--receptionist-font-*`, map về token shared `--qlpk-font-size-*`. Vùng nhập chính không dùng `xs/2xs` cho label/section/chip; giữ text chính `base`, label/meta/chip `sm`, title card `lg`, và chỉ dùng `xs` cho counter rất nhỏ như số thứ tự.
+ Typography và QA hiện hành của lễ tân đã hợp nhất tại mục “Context chung đang tiếp tục — 22/09/2026” trong `references/refactor-progress.md`. Thang fluid và số đo21/09 đã bị thay thế; không dùng làm chuẩn hiện hành.
 - Contract căn trục field: với mọi row ngang có `label + input/select/textarea`, label phải bắt đầu tại cùng inset với dòng chữ/placeholder đầu tiên trong control; dùng biến padding block responsive của control làm một source of truth, không căn giữa/căn đáy thủ công hoặc gán offset px. Owner shared là `patient-info-form.css` cho Thông tin hành chính và `patient-visit-info-form.css` cho Hỏi bệnh; `receptionist-new.css` áp dụng đúng contract cho bốn field lịch hẹn header. Không áp dụng quy tắc này cho checkbox, tile sinh hiệu, bảng, chip/autocomplete dropdown hoặc field đã xếp dọc.
 - Surface/color contract màn lễ tân cũng do `.receptionist-workspace-layout` sở hữu qua `--receptionist-tone-*`: page background trung tính `#f4f6f7`, surface chính trắng, surface phụ xám rất nhạt, line/text/muted/accent dùng token rõ tương phản. Vùng form tiếp nhận chỉ có 2 khối chính ngang cấp: `Thông tin hành chính` ở cột trái và `Thông tin hỏi bệnh` ở cột phải. Hai khối này có header visible thống nhất; các phần con như `Chỉ số sinh hiệu`, ghi chú, nguồn giới thiệu và tài liệu đính kèm chỉ dùng spacing/divider nhẹ bên trong khối cha, không dùng border-left nhiều màu và không được nâng thành khối ngang cấp. Không khôi phục các header phụ `Hỏi bệnh ban đầu`, `Ghi chú hành chính`, `Tài liệu đính kèm`. Ngoại lệ được phép có màu/border riêng: sinh hiệu tile, badge trạng thái, nút chính/nguy hiểm, upload dropzone và header chocolate shared.
 - Khung responsive của màn lễ tân dùng `.receptionist-workspace-switch` để chuyển giữa pane `Tiếp nhận` và `Danh sách chờ` trên tablet/mobile; desktop vẫn hiển thị hai vùng song song. Owner JS của switch là `app/static/js/receptionist/appointment-list-controls.js`.

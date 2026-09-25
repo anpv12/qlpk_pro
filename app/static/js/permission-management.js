@@ -13,7 +13,9 @@ $(function () {
   let groups = [];
   let selectedUserId = null;
   let selectedGroupIds = [];
-  let userGroups = [];
+  let userFilter = '';
+  let permissionRevision = 0;
+  let permissionsReady = false;
   let groupFilter = '';
 
   // Load danh sách user
@@ -34,30 +36,35 @@ $(function () {
     });
   }
 
-  // Load nhóm quyền của user
-  function fetchUserGroups(userId, callback) {
+  // The GET contract is an array of user-group assignments, not group_ids.
+  function fetchUserGroups(userId) {
+    const revision = ++permissionRevision;
+    permissionsReady = false;
+    selectedGroupIds = [];
+    $('#savePermissionBtn').prop('disabled', true);
+    renderGroupList();
     $.get(`/user-groups/${userId}`, function (data) {
-      userGroups = data.map(g => g.group_id);
+      if (revision !== permissionRevision || String(selectedUserId) !== String(userId)) return;
+      if (!Array.isArray(data)) {
+        showCustomToast('error', 'Dữ liệu nhóm quyền không hợp lệ');
+        return;
+      }
+      selectedGroupIds = data.map(g => String(g.group_id));
+      permissionsReady = true;
+      $('#savePermissionBtn').prop('disabled', false);
       renderGroupList();
-      if (callback) callback();
+    }).fail(function () {
+      if (revision !== permissionRevision) return;
+      showCustomToast('error', 'Không tải được quyền của người dùng. Vui lòng chọn lại.');
     });
   }
 
-  // Sau khi render user list, gán sự kiện click để bôi xanh user được chọn
   function bindUserClick() {
-    $('#userTree .user-item').off('click').on('click', function() {
+    $('#userTree .user-item').off('click').on('click', function () {
+      selectedUserId = $(this).attr('data-user-id');
       $('#userTree .user-item').removeClass('active');
       $(this).addClass('active');
-      const displayText = $(this).text().trim();
-      // Tìm user bằng cả full_name và username
-      selectedUserId = users.find(u => (u.full_name || u.username) === displayText)?.id;
-      if (selectedUserId) {
-        // Load nhóm quyền đã gán cho user này
-        $.get(`/user-groups/${selectedUserId}`, function(data) {
-          selectedGroupIds = data.group_ids || [];
-          renderGroupList();
-        });
-      }
+      fetchUserGroups(selectedUserId);
     });
   }
 
@@ -65,7 +72,9 @@ $(function () {
   function renderUserList() {
     const userTree = $('#userTree');
     userTree.empty();
-    if (users.length === 0) {
+    const keyword = normalizeSearchText(userFilter);
+    const filteredUsers = users.filter(u => [u.full_name, u.username].some(value => normalizeSearchText(value).includes(keyword)));
+    if (filteredUsers.length === 0) {
       userTree.append('<div class="text-muted">Không có người dùng</div>');
       return;
     }
@@ -80,7 +89,7 @@ $(function () {
     };
     
     let grouped = {};
-    users.forEach(u => {
+    filteredUsers.forEach(u => {
       let role = u.role || 'other';
       if (!grouped[role]) grouped[role] = [];
       grouped[role].push(u);
@@ -91,7 +100,10 @@ $(function () {
       const roleDisplay = roleMap[role] || role;
       userTree.append(`<div class="fw-bold mt-2 mb-1 permission-tree-heading">${roleDisplay}</div>`);
       grouped[role].forEach(u => {
-        userTree.append(`<div class="user-item mb-1 px-2 py-1 rounded">${u.full_name || u.username}</div>`);
+        userTree.append($('<div class="user-item mb-1 px-2 py-1 rounded"></div>')
+          .attr('data-user-id', u.id)
+          .toggleClass('active', String(u.id) === String(selectedUserId))
+          .text(u.full_name || u.username));
       });
     });
     bindUserClick();
@@ -114,7 +126,7 @@ $(function () {
     filteredGroups.forEach(g => {
       const checked = selectedGroupIds.includes(g.id + '') ? 'checked' : '';
       groupTree.append(`<div class="form-check group-checkbox mb-2">
-        <input class="form-check-input group-checkbox-input" type="checkbox" value="${g.id}" id="group_${g.id}" ${checked}>
+        <input class="form-check-input group-checkbox-input" type="checkbox" value="${g.id}" id="group_${g.id}" ${checked} ${permissionsReady ? '' : 'disabled'}>
         <label class="form-check-label" for="group_${g.id}">${g.name || g.desc || g.code} (${g.code})</label>
       </div>`);
     });
@@ -122,6 +134,7 @@ $(function () {
 
   // Khi tick checkbox, cập nhật selectedGroupIds
   $(document).on('change', '.group-checkbox-input', function() {
+    if (!permissionsReady) return;
     const gid = $(this).val();
     if ($(this).is(':checked')) {
       if (!selectedGroupIds.includes(gid)) selectedGroupIds.push(gid);
@@ -132,7 +145,7 @@ $(function () {
 
   // Khi nhấn Lưu, gửi API gán nhóm quyền cho user
   $('#savePermissionBtn').off('click').on('click', function() {
-    if (!selectedUserId) {
+    if (!selectedUserId || !permissionsReady) {
       showCustomToast('warning', 'Vui lòng chọn người dùng!');
       return;
     }
@@ -156,6 +169,11 @@ $(function () {
     window.location.href = '/login.html';
   });
 
+  $('#userSearchInput').on('input', function () {
+    userFilter = $(this).val();
+    renderUserList();
+  });
+
   // Bắt sự kiện tìm kiếm nhóm quyền
   $('#groupSearchInput').on('input', function() {
     groupFilter = $(this).val();
@@ -167,16 +185,16 @@ $(function () {
       if (selectedUserId && !users.some(u => String(u.id) === String(selectedUserId))) {
         selectedUserId = null;
         selectedGroupIds = [];
+        permissionsReady = false;
+        ++permissionRevision;
+        $('#savePermissionBtn').prop('disabled', true);
       }
       fetchGroups(function () {
         if (!selectedUserId) {
           renderGroupList();
           return;
         }
-        $.get(`/user-groups/${selectedUserId}`, function(data) {
-          selectedGroupIds = (Array.isArray(data) ? data : []).map(g => String(g.group_id));
-          renderGroupList();
-        });
+        fetchUserGroups(selectedUserId);
       });
     });
   }
@@ -195,6 +213,7 @@ $(function () {
   }
 
   // Khởi tạo
+  $('#savePermissionBtn').prop('disabled', true);
   registerRealtimeHooks();
   fetchUsers(function () {
     fetchGroups();

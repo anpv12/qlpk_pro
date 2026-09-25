@@ -39,11 +39,11 @@ class PrescriptionItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     prescription_id = Column(Integer, ForeignKey('prescriptions.id'), nullable=False)
     medicine_id = Column(Integer, ForeignKey('medicines.id'), nullable=True, index=True)
-    medicine_name = Column(String(255), nullable=False)
+    medicine_name = Column(String(500), nullable=False)
     unit_price = Column(Float, default=0)
     quantity = Column(Numeric(10, 3), default=1.0)  # Legacy decimals remain readable; new writes use whole dispensing units
     unit = Column(String(50), nullable=True)
-    strength = Column(String(100), nullable=True)
+    strength = Column(Text, nullable=True)
     route = Column(String(100), nullable=True)
     usage = Column(Text, nullable=True)
     is_external = Column(Boolean, default=False, nullable=False)

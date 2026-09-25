@@ -239,15 +239,17 @@
             margin-top: 24px;
         }
         .action-buttons button {
-            background: var(--primary);
-            color: #fff;
             border: none;
             padding: 10px 22px;
             font-size: var(--qlpk-font-size-lg, 16px);
             margin: 0 6px;
             cursor: pointer;
             border-radius: 4px;
-        }
+}
+.action-buttons button:not([data-qlpk-button], [data-qlpk-button] *) {
+            background: var(--primary);
+            color: #fff;
+}
         .vat-invoice-empty-row {
             text-align: center;
             font-style: italic;

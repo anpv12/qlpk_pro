@@ -1,5 +1,5 @@
 body {
-    background: #F8FAFC;
+    background: var(--qlpk-color-page-bg);
     font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
     margin: 0;
 }
@@ -14,85 +14,66 @@ body {
     max-width: 83.33333% !important;
 }
 
-.page-header {
-    padding: 16px 20px 10px;
-    border-bottom: 1px solid #E2E8F0;
-    background: #fff;
-}
-
-.page-title {
-    color: #0F766E;
-    font-size: var(--qlpk-font-size-3xl, 24px);
-    font-weight: var(--qlpk-font-weight-bold, 700);
-    margin: 0;
-}
-
-.page-subtitle {
-    color: #64748B;
-    font-size: var(--qlpk-font-size-base, 13px);
-    margin-top: 4px;
-}
 
 .toolbar {
     display: grid;
-    grid-template-columns: minmax(260px, 1fr) 160px 170px auto;
-    gap: 10px;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) 10rem auto auto;
+    gap: .625rem;
+    align-items: end;
     margin-bottom: 12px;
 }
 
 .content-wrap {
     padding: 16px 20px 24px;
+    font-size: var(--qlpk-font-size-base);
+}
+
+.medicine-reference-page .content-wrap :is(.form-control, .form-select, .btn) {
+    font-size: var(--clinic-control-font-size, inherit);
+}
+
+.toolbar .form-label {
+    margin-bottom: .375rem;
+    font-weight: var(--qlpk-font-weight-medium);
 }
 
 .surface {
     background: #fff;
-    border: 1px solid #E2E8F0;
-    border-radius: 8px;
-    padding: 14px;
+    border: 1px solid var(--qlpk-color-border);
+    border-radius: var(--clinic-surface-radius);
+    box-shadow: var(--clinic-surface-shadow);
+    padding: 0.875rem;
 }
 
-.summary-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.summary-pill {
-    border: 1px solid #CCFBF1;
-    background: #F0FDFA;
-    color: #0F766E;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: var(--qlpk-font-size-sm, 12px);
-    font-weight: var(--qlpk-font-weight-bold, 700);
-}
-
-.summary-pill span {
-    font-size: var(--qlpk-font-size-lg, 16px);
-    margin-right: 4px;
-}
 
 .reference-table {
     width: 100%;
+    min-width: 74rem;
     border-collapse: separate;
     border-spacing: 0;
     font-size: var(--qlpk-font-size-base, 13px);
 }
 
+.reference-table :is(th, td):is(:nth-child(2), :nth-child(5)) {
+    min-width: 14rem;
+}
+
+.reference-table :is(th, td):is(:nth-child(3), :nth-child(4)) {
+    min-width: 12rem;
+}
+
 .reference-table th {
-    background: #F1F5F9;
-    color: #475569;
+    background: var(--qlpk-brown-150);
+    color: var(--qlpk-brown-700);
     font-weight: var(--qlpk-font-weight-bold, 700);
     padding: 9px 10px;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid var(--qlpk-color-border);
     white-space: nowrap;
 }
 
 .reference-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid var(--qlpk-color-brown-soft);
     vertical-align: top;
 }
 
@@ -109,17 +90,23 @@ body {
 }
 
 .drug-name {
-    color: #0F766E;
-    font-weight: var(--qlpk-font-weight-bold, 700);
+    color: var(--qlpk-color-text);
+    font-weight: var(--qlpk-font-weight-semibold);
 }
 
 .muted-line {
-    color: #64748B;
-    font-size: var(--qlpk-font-size-sm, 12px);
+    color: var(--qlpk-color-text-muted);
+    font-size: inherit;
+}
+
+.reference-table .badge {
+    font-size: inherit;
+    font-weight: var(--qlpk-font-weight-medium);
+    line-height: inherit;
 }
 
 .sync-result {
-    color: #475569;
+    color: var(--qlpk-color-text-muted);
     font-size: var(--qlpk-font-size-sm, 12px);
     margin-top: 8px;
     min-height: 18px;
@@ -133,36 +120,19 @@ body {
 }
 
 .detail-label {
-    color: #64748B;
+    color: var(--qlpk-brown-700);
     font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
 .detail-value {
-    color: #1E293B;
+    color: var(--qlpk-color-text);
     white-space: pre-line;
 }
 
-.raw-json-box {
-    max-height: 260px;
-    overflow: auto;
-    background: #0F172A;
-    color: #E2E8F0;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: var(--qlpk-font-size-sm, 12px);
-}
-
-.pagination-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-    color: #64748B;
-    font-size: var(--qlpk-font-size-base, 13px);
-}
-
-@media (max-width: 900px) {
+@media (max-width: 56.25rem) {
     .toolbar {
         grid-template-columns: 1fr;
     }
 }
+
+.reference-toolbar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-bottom: 0.75rem; }

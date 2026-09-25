@@ -97,7 +97,7 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-summary__row--family {
-  --medical-history-summary-accent: #4f46e5;
+  --medical-history-summary-accent: var(--qlpk-color-primary);
   --medical-history-summary-bg: #eef2ff;
   --medical-history-summary-border: #c7d2fe;
   --medical-history-summary-label: #312e81;
@@ -129,23 +129,23 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-summary__row--safety {
-  --medical-history-summary-accent: #0f766e;
+  --medical-history-summary-accent: var(--qlpk-color-primary);
   --medical-history-summary-bg: #ecfdf5;
-  --medical-history-summary-border: #99f6e4;
-  --medical-history-summary-label: #115e59;
+  --medical-history-summary-border: var(--qlpk-color-border);
+  --medical-history-summary-label: var(--qlpk-color-primary-strong);
   --medical-history-summary-text: #052f2c;
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-summary__row--more {
-  --medical-history-summary-accent: #64748b;
-  --medical-history-summary-bg: #f8fafc;
+  --medical-history-summary-accent: var(--qlpk-color-text-muted);
+  --medical-history-summary-bg: var(--qlpk-color-page-bg);
   --medical-history-summary-border: #dbe4ee;
-  --medical-history-summary-label: #475569;
-  --medical-history-summary-text: #334155;
+  --medical-history-summary-label: var(--qlpk-color-text-muted);
+  --medical-history-summary-text: var(--qlpk-color-text-muted);
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-nav {
-  background: #f8fafc;
+  background: var(--qlpk-color-page-bg);
   border: 0.0625rem solid #dfe7ef;
   border-radius: 0.75rem;
   display: flex;
@@ -181,7 +181,7 @@
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item:focus-visible {
   background: #e8f4f1;
   border-color: #b9d8d2;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   outline: 0;
 }
 
@@ -190,8 +190,8 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active {
-  background: #0B5F56;
-  border-color: #0B5F56;
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
   box-shadow: 0 0.45rem 0.9rem rgba(11, 95, 86, 0.16);
   color: #ffffff;
 }
@@ -205,9 +205,9 @@
 
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item strong {
   align-items: center;
-  background: #e7f5f1;
+  background: var(--qlpk-color-primary-soft);
   border-radius: 999px;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--qlpk-font-size-sm, 12px);
@@ -219,12 +219,12 @@
 
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active strong {
   background: #ffffff;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item:not(.is-active) strong.has-data {
-  background: #e7f5f1;
-  color: #0B5F56;
+  background: var(--qlpk-color-primary-soft);
+  color: var(--qlpk-color-primary);
 }
 
 .inline-tien-su--doctor-flat .medical-history-workbench-main {
@@ -252,7 +252,7 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-section-head {
-  background: #0B5F56;
+  background: var(--qlpk-workflow-context-header-bg);
   border-bottom: 0.0625rem solid #084f48;
   color: #ffffff;
   font-size: var(--qlpk-font-size-md, 14px);
@@ -328,7 +328,7 @@
 }
 
 .medical-history-thoi-quen-cols {
-  background: #f1f5f9;
+  background: var(--qlpk-color-brown-soft);
   display: grid;
   gap: 1px;
   grid-column: 1 / -1;
@@ -394,7 +394,7 @@
 
 .medical-history-panel-header {
   background: #ffffff;
-  color: #111827;
+  color: var(--qlpk-color-text);
   padding: 12px 16px;
   font-size: var(--qlpk-font-size-md, 14px);
   font-weight: var(--qlpk-font-weight-bold, 700);
@@ -466,7 +466,7 @@
 }
 
 .medical-history-section-head {
-  background: #f9fafb;
+  background: var(--qlpk-color-surface-subtle);
   padding: 8px 14px;
   font-size: var(--qlpk-font-size-md, 14px);
   font-weight: var(--qlpk-font-weight-semibold, 600);
@@ -492,13 +492,13 @@
   flex-shrink: 0;
 }
 
-.medical-history-hint { font-size: var(--qlpk-font-size-md, 14px); color: #94a3b8; font-weight: var(--qlpk-font-weight-regular, 400); text-transform: none; letter-spacing: 0; }
+.medical-history-hint { font-size: var(--qlpk-font-size-md, 14px); color: var(--qlpk-color-text-muted); font-weight: var(--qlpk-font-weight-regular, 400); text-transform: none; letter-spacing: 0; }
 
 .medical-history-section-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
 
 .medical-history-chip-area {
   min-height: 32px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid var(--qlpk-color-border);
   border-radius: 5px;
   padding: 4px 7px;
   display: flex; flex-wrap: wrap; gap: 4px;
@@ -507,12 +507,12 @@
   transition: border-color .2s;
 }
 
-.medical-history-chip-area:focus-within { border-color: #0B5F56; box-shadow: 0 0 0 2px rgba(11,95,86,.1); }
+.medical-history-chip-area:focus-within { border-color: var(--qlpk-color-primary); box-shadow: 0 0 0 2px rgba(11,95,86,.1); }
 .medical-history-chip-area--gd:focus-within { border-color: #0d7a5f; box-shadow: 0 0 0 2px rgba(13,122,95,.1); }
 
 .medical-history-chip {
   display: inline-flex; align-items: center; gap: 3px;
-  background: #e6f7f2; color: #065f46; border: 1px solid #a7f3d0;
+  background: var(--qlpk-color-primary-soft); color: #065f46; border: 1px solid #a7f3d0;
   border-radius: 4px; padding: 2px 8px;
   font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500); white-space: nowrap;
 }
@@ -523,7 +523,7 @@
   border-color: #fca5a5;
 }
 
-.medical-history-chip--gd { background: #e6f7f2; color: #065f46; border-color: #a7f3d0; }
+.medical-history-chip--gd { background: var(--qlpk-color-primary-soft); color: #065f46; border-color: #a7f3d0; }
 .medical-history-chip--text { background: #fefce8; color: #78350f; border: 1px dashed #fbbf24; font-style: italic; }
 
 .medical-history-chip-remove { cursor: pointer; color: #6b7280; font-size: var(--qlpk-font-size-md, 14px); line-height: 1; margin-left: 1px; transition: color .15s; }
@@ -534,7 +534,7 @@
 .medical-history-chip-input {
   border: none; outline: none; font-size: var(--qlpk-font-size-md, 14px); font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
   flex: 1; min-width: 100px; padding: 1px 2px;
-  color: #1e2d40; background: transparent;
+  color: var(--qlpk-color-text); background: transparent;
 }
 
 .medical-history-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
@@ -542,11 +542,11 @@
 .medical-history-tab-btn {
   position: relative;
   padding: 4px 12px; border-radius: 4px; font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500);
-  border: 1.5px solid #cbd5e1; background: #fff; color: #64748b;
+  border: 1.5px solid var(--qlpk-color-border); background: #fff; color: var(--qlpk-color-text-muted);
   cursor: pointer; transition: all .15s;
 }
-.medical-history-tab-btn:hover { border-color: #0B5F56; color: #0B5F56; }
-.medical-history-tab-btn.active { background: #0B5F56; color: #fff; border-color: #0B5F56; }
+.medical-history-tab-btn:hover { border-color: var(--qlpk-color-primary); color: var(--qlpk-color-primary); }
+.medical-history-tab-btn.active { background: var(--qlpk-workflow-context-header-bg); color: #fff; border-color: var(--qlpk-color-primary); }
 
 .medical-history-tab-warn-icon {
   position: absolute;
@@ -583,7 +583,7 @@
 }
 
 .medical-history-suggestion-box {
-  border: 1px solid #e2e8f0; border-radius: 5px;
+  border: 1px solid var(--qlpk-color-border); border-radius: 5px;
   background: #fff;
   overflow: hidden;
 }
@@ -591,7 +591,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 1px;
-  background: #f1f5f9;
+  background: var(--qlpk-color-brown-soft);
 }
 
 .medical-history-suggestion-box > div.medical-history-hidden {
@@ -613,19 +613,19 @@
   }
 }
 .medical-history-suggestion-item:hover { background: #edf7f4; }
-.medical-history-suggestion-item.medical-history-selected { background: #e6f7f2; }
+.medical-history-suggestion-item.medical-history-selected { background: var(--qlpk-color-primary-soft); }
 
 .medical-history-item-check {
   width: 16px; height: 16px; border-radius: 3px;
-  border: 1.5px solid #cbd5e1; background: #fff;
+  border: 1.5px solid var(--qlpk-color-border); background: #fff;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: all .15s;
 }
-.medical-history-suggestion-item.medical-history-selected .medical-history-item-check { background: #0B5F56; border-color: #0B5F56; }
+.medical-history-suggestion-item.medical-history-selected .medical-history-item-check { background: var(--qlpk-workflow-context-header-bg); border-color: var(--qlpk-color-primary); }
 .medical-history-suggestion-item.medical-history-selected .medical-history-item-check::after { content: '✓'; color: #fff; font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-bold, 700); }
 
 .medical-history-icd-badge {
-  background: #faf6e6; color: #4b2719;
+  background: #faf6e6; color: var(--qlpk-brown-800);
   border: 1px solid #faf6e6; border-radius: 3px;
   padding: 1px 4px; font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600);
   white-space: nowrap; font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
@@ -638,13 +638,13 @@
   border-color: #fca5a5;
 }
 
-.medical-history-item-name { flex: 1; font-size: var(--qlpk-font-size-md, 14px); color: #1e2d40; }
+.medical-history-item-name { flex: 1; font-size: var(--qlpk-font-size-md, 14px); color: var(--qlpk-color-text); }
 
 .medical-history-group-label {
-  font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600); color: #64748b;
+  font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600); color: var(--qlpk-color-text-muted);
   text-transform: uppercase; letter-spacing: .04em;
-  padding: 6px 10px; background: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 6px 10px; background: var(--qlpk-color-page-bg);
+  border-bottom: 1px solid var(--qlpk-color-brown-soft);
   grid-column: 1 / -1;
 }
 
@@ -670,7 +670,7 @@
 }
 .medical-history-substance-table thead th {
   background: #f0f7f5;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   font-size: var(--qlpk-font-size-md, 14px);
   letter-spacing: .04em;
@@ -688,7 +688,7 @@
   padding: 4px 6px;
   vertical-align: middle;
   font-size: var(--qlpk-font-size-md, 14px);
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
 }
 
 /* Checkbox custom teal */
@@ -706,7 +706,7 @@
 }
 .medical-history-sub-check span {
   width: 15px; height: 15px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--qlpk-color-border);
   border-radius: 3px;
   background: #fff;
   display: inline-block;
@@ -715,8 +715,8 @@
   flex-shrink: 0;
 }
 .medical-history-sub-check input[type="checkbox"]:checked + span {
-  background: #0B5F56;
-  border-color: #0B5F56;
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
 }
 .medical-history-sub-check input[type="checkbox"]:checked + span::after {
   content: '';
@@ -736,13 +736,13 @@
   padding: 3px 7px;
   font-size: var(--qlpk-font-size-md, 14px);
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
   background: #fafafa;
   outline: none;
   transition: border-color .15s, background .15s;
 }
 .medical-history-sub-input:not(:disabled):focus {
-  border-color: #0B5F56;
+  border-color: var(--qlpk-color-primary);
   background: #fff;
   box-shadow: 0 0 0 2px rgba(11,95,86,.07);
 }
@@ -764,7 +764,7 @@
   display: inline-flex; align-items: center;
   border-radius: 4px; padding: 2px 8px;
   font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500); white-space: nowrap;
-  background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+  background: var(--qlpk-color-brown-soft); color: var(--qlpk-color-text-muted); border: 1px solid var(--qlpk-color-border);
 }
 .medical-history-chip--allergy.allergy-nghi { background: #fefce8; color: #92400e; border-color: #fde68a; }
 .medical-history-chip-row-label.allergy-nghi { color: #92400e; }
@@ -781,7 +781,7 @@
 
 .medical-history-allergy-table thead th {
   background: #f0f7f5;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   font-size: var(--qlpk-font-size-md, 14px);
   letter-spacing: .04em;
@@ -816,7 +816,7 @@
   padding: 4px 8px;
   font-size: var(--qlpk-font-size-md, 14px);
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
   background: #fff;
   outline: none;
   transition: border-color .15s, box-shadow .15s;
@@ -824,7 +824,7 @@
   appearance: textfield;
 }
 .medical-history-allergy-input:focus {
-  border-color: #0B5F56;
+  border-color: var(--qlpk-color-primary);
   box-shadow: 0 0 0 2px rgba(11,95,86,.08);
 }
 .medical-history-allergy-input::placeholder { color: #b0bec5; }
@@ -861,7 +861,7 @@
 .medical-history-radio-dot {
   width: 16px; height: 16px;
   border-radius: 50%;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--qlpk-color-border);
   background: #fff;
   display: inline-block;
   transition: border-color .15s, background .15s;
@@ -869,8 +869,8 @@
   flex-shrink: 0;
 }
 .medical-history-radio-wrap input[type="radio"]:checked + .medical-history-radio-dot {
-  border-color: #0B5F56;
-  background: #0B5F56;
+  border-color: var(--qlpk-color-primary);
+  background: var(--qlpk-workflow-context-header-bg);
 }
 .medical-history-radio-wrap input[type="radio"]:checked + .medical-history-radio-dot::after {
   content: '';
@@ -888,17 +888,22 @@
   align-items: center;
   justify-content: center;
   width: 24px; height: 24px;
-  border: 1px solid #fca5a5;
+	border-width: 1px;
+	border-style: solid;
   border-radius: 50%;
-  background: #fff;
-  color: #ef4444;
   font-size: var(--qlpk-font-size-md, 14px);
   line-height: 1;
   cursor: pointer;
   padding: 0;
+}
+/* Nút xóa dòng */
+.medical-history-row-remove:not([data-qlpk-button], [data-qlpk-button] *) {
+  border: 1px solid #fca5a5;
+  background: #fff;
+  color: #ef4444;
   transition: background .15s, color .15s;
 }
-.medical-history-row-remove:hover {
+.medical-history-row-remove:hover:not([data-qlpk-button], [data-qlpk-button] *) {
   background: #fef2f2;
   border-color: #ef4444;
   color: #b91c1c;
@@ -910,18 +915,23 @@
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border: 1.5px dashed #0B5F56;
+	border-width: 1.5px;
+	border-style: dashed;
   border-radius: 5px;
-  background: transparent;
-  color: #0B5F56;
   font-size: var(--qlpk-font-size-md, 14px);
   font-weight: var(--qlpk-font-weight-medium, 500);
   cursor: pointer;
   align-self: flex-start;
+}
+/* Nút thêm dòng */
+.medical-history-add-row-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+  border: 1.5px dashed var(--qlpk-color-primary);
+  background: transparent;
+  color: var(--qlpk-color-primary);
   transition: background .15s, color .15s;
 }
-.medical-history-add-row-btn:hover {
-  background: #e6f7f2;
+.medical-history-add-row-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-color-primary-soft);
 }
 
 /* ── ALLERGEN AUTOCOMPLETE DROPDOWN ── */
@@ -943,14 +953,14 @@
   padding: 5px 10px;
   font-size: var(--qlpk-font-size-md, 14px);
   cursor: pointer;
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
   transition: background .1s;
 }
 .allergen-ac-item:hover {
-  background: #f0fdfa;
+  background: var(--qlpk-color-primary-soft);
 }
 .allergen-ac-create {
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   font-weight: var(--qlpk-font-weight-medium, 500);
   border-top: 1px solid #e0f2ef;
   font-size: var(--qlpk-font-size-md, 14px);
@@ -960,7 +970,7 @@
   font-size: var(--qlpk-font-size-xs, 11px);
 }
 .allergen-ac-create:hover {
-  background: #e6f7f2;
+  background: var(--qlpk-color-primary-soft);
 }
 
 /* ── ĐÁNH GIÁ NGUY CƠ TỰ SÁT — Inline check/radio label ── */
@@ -1041,7 +1051,7 @@
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
-  background: #f1f5f9;
+  background: var(--qlpk-color-brown-soft);
   border-bottom: 1px solid #e2e8f0;
 }
 .prev-risk-label {
@@ -1062,7 +1072,7 @@
 .prev-risk-badge.risk-low    { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
 .prev-risk-badge.risk-mid    { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
 .prev-risk-badge.risk-high   { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
-.prev-risk-badge.risk-unknown{ background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.prev-risk-badge.risk-unknown{ background: var(--qlpk-color-brown-soft); color: #475569; border: 1px solid #cbd5e1; }
 .prev-risk-details {
   margin: 0;
   padding: 4px 10px 5px 10px;
@@ -1158,18 +1168,20 @@
   min-height: 2.25rem;
   padding: 0.45rem 0.7rem;
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
-
-.safety-plan-print-btn {
-  background: #fff;
-  border-color: #0B5F56;
-  color: #0B5F56;
+.safety-plan-action-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+  border: 0.0625rem solid;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
-.safety-plan-print-btn:hover,
-.safety-plan-print-btn:focus-visible {
-  background: #e7f5f1;
+.safety-plan-print-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: #fff;
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-primary);
+}
+.safety-plan-print-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.safety-plan-print-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-color-primary-soft);
   box-shadow: 0 0 0 0.15rem rgba(11, 95, 86, 0.16);
   outline: 0;
 }
@@ -1217,7 +1229,7 @@
 }
 
 .safety-plan-field-row {
-  --safety-plan-field-accent: #0B5F56;
+  --safety-plan-field-accent: var(--qlpk-color-primary);
   --safety-plan-field-bg: #ffffff;
   --safety-plan-field-soft: #eefaf6;
   background: var(--safety-plan-field-bg);
@@ -1233,8 +1245,8 @@
 }
 
 .safety-plan-field-row:nth-child(1) {
-  --safety-plan-field-accent: #0B5F56;
-  --safety-plan-field-soft: #e7f5f1;
+  --safety-plan-field-accent: var(--qlpk-color-primary);
+  --safety-plan-field-soft: var(--qlpk-color-primary-soft);
 }
 
 .safety-plan-field-row:nth-child(2) {
@@ -1284,7 +1296,7 @@
 
 .safety-plan-field-hint {
   font-size: var(--qlpk-font-size-md, 14px);
-  color: #94a3b8;
+  color: var(--qlpk-color-text-muted);
   font-weight: var(--qlpk-font-weight-regular, 400);
 }
 
@@ -1292,7 +1304,7 @@
   background: #ffffff;
   border: 0.0625rem solid #bfcede;
   border-radius: 0.6rem;
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
   font-size: var(--qlpk-font-size-base, 13px);
   line-height: 1.45;
@@ -1353,7 +1365,7 @@
   background: #fff;
   border: 0.0625rem solid #bfcede;
   border-radius: 0.55rem;
-  color: #1e2d40;
+  color: var(--qlpk-color-text);
   cursor: pointer;
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
   font-size: var(--qlpk-font-size-base, 13px);
@@ -1449,11 +1461,11 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-tab-btn {
-  background: #e7f5f1;
+  background: var(--qlpk-color-primary-soft);
   border-color: #b9ded6;
   border-width: 0.0625rem;
   border-radius: 0.5rem;
-  color: #0B5F56;
+  color: var(--qlpk-color-primary);
   flex: 0 0 auto;
   font-size: var(--qlpk-font-size-base, 13px);
   font-weight: var(--qlpk-font-weight-semibold, 600);
@@ -1466,13 +1478,13 @@
 .inline-tien-su--doctor-flat .medical-history-tab-btn:hover,
 .inline-tien-su--doctor-flat .medical-history-tab-btn:focus-visible {
   background: #d7eee8;
-  border-color: #0B5F56;
-  color: #0B5F56;
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-primary);
 }
 
 .inline-tien-su--doctor-flat .medical-history-tab-btn.active {
-  background: #0B5F56;
-  border-color: #0B5F56;
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
   color: #ffffff;
 }
 
@@ -1511,7 +1523,7 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-group-label {
-  background: #0B5F56;
+  background: var(--qlpk-workflow-context-header-bg);
   border-bottom: 0.0625rem solid #084f48;
   color: #ffffff;
   font-size: var(--qlpk-font-size-sm, 12px);

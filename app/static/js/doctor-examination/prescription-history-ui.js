@@ -4,6 +4,8 @@
 	const RUNTIME = window.QLPKDoctorModuleRegistry.get('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
 	const MODEL = window.QLPKDoctorModuleRegistry.get('prescriptionModel');
+	const TYPE_CONTRACT = window.PrescriptionTypeContract;
+	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 	if (!MODEL) throw new Error('Thiếu prescription model');
 	const { escapeHtml, formatCurrency, textOf, toNumber } = RUNTIME;
 	const DEFAULT_DOM = {
@@ -27,7 +29,7 @@
 					? record.prescriptions.filter(prescription => Array.isArray(prescription.medicines) && prescription.medicines.length)
 					: []
 			}))
-			.filter(visit => visit.prescriptions.length);
+			.filter(visit => visit.prescriptions.length || visit.record.medicine_transactions?.length);
 	}
 
 	function getEntries(history) {
@@ -68,12 +70,7 @@
 	}
 
 	function getPrescriptionTypeLabel(type) {
-		return {
-			BASIC: 'Đơn cơ bản',
-			H: 'Đơn hướng thần (H)',
-			N: 'Đơn gây nghiện (N)',
-			TOXIC: 'Đơn thuốc độc'
-		}[String(type || 'BASIC').toUpperCase()] || 'Đơn thuốc';
+		return TYPE_CONTRACT.getLabel(type);
 	}
 
 	function buildVisitListItem(visit, index, selectedIndex) {
@@ -141,12 +138,24 @@
 					<h4 id="doctorPrescriptionHistoryDetailHeading">${escapeHtml(record.doctor_name || 'Chưa rõ bác sĩ')}</h4>
 					<p><i class="bi bi-activity" aria-hidden="true"></i>${escapeHtml(diagnosis)}</p>
 				</div>
-				<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-history-action="reuse" data-prescription-history-index="${selectedIndex}">
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" ${visit.prescriptions.length ? '' : 'disabled'} class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-history-action="reuse" data-prescription-history-index="${selectedIndex}">
 					<i class="bi bi-copy" aria-hidden="true"></i><span>Áp dụng tất cả</span>
 				</button>
 			</header>
 			${medicalHistory ? `<div class="doctor-prescription-history-modal__context"><strong><i class="bi bi-journal-text" aria-hidden="true"></i>Bệnh sử</strong><p>${escapeHtml(medicalHistory)}</p></div>` : ''}
-			<div class="doctor-prescription-history-modal__prescriptions">${visit.prescriptions.map(buildPrescriptionTable).join('')}</div>`;
+			<div class="doctor-prescription-history-modal__prescriptions">${visit.prescriptions.map(buildPrescriptionTable).join('')}${buildLedgerTable(record.medicine_transactions)}</div>`;
+	}
+
+	function buildLedgerTable(transactions) {
+		if (!transactions?.length) return '<p>Chưa có chứng từ cấp/hoàn thuốc; không suy lô hoặc giá từ danh mục.</p>';
+		const money = value => value == null ? 'Chưa rõ' : escapeHtml(formatCurrency(value));
+		const balance = (value, unit) => value == null ? 'Chưa rõ' : escapeHtml(`${value} ${unit || ''}`);
+		const labels = { export: 'Cấp', return: 'Hoàn', import: 'Hoàn (cũ)', price_adjustment: 'Đổi giá' };
+		return `<section><h5>Giao dịch thuốc đã ghi nhận</h5><p>Giá nhập/bán chốt theo giao dịch; không phải tiền thực thu. Dòng đổi giá không đổi tồn kho.</p>
+			<div class="doctor-prescription-history-modal__table-wrap" role="region" aria-label="Giao dịch thuốc theo lô" tabindex="0">
+			<table class="table table-sm"><thead><tr><th>Thời điểm / loại</th><th>Thuốc</th><th>Lần nhập / lô</th><th>SL kho (+ hoàn / − cấp)</th><th>Tồn lô sau giao dịch</th><th>Tồn tổng sau giao dịch</th><th>Giá nhập</th><th>Giá bán</th><th>Tiền tăng/giảm</th></tr></thead><tbody>
+			${transactions.map(row => `<tr><td>${escapeHtml(row.created_at || '')}<br>${escapeHtml(labels[row.type] || row.type)} #${escapeHtml(String(row.id))}${row.original_transaction_id ? ` ← #${escapeHtml(String(row.original_transaction_id))}` : ''}</td><td>${escapeHtml(row.medicine_name || '')}${row.financial_trace_complete ? '' : '<br>Thiếu truy vết'}</td><td>${escapeHtml(row.receipt_reference || 'Chưa rõ')} / ${escapeHtml(row.batch_number || 'Chưa rõ')}</td><td>${escapeHtml(String(row.quantity))}</td><td>${balance(row.balance_after, row.unit)}</td><td>${balance(row.stock_balance_after, row.unit)}</td><td>${money(row.unit_cost_snapshot)}</td><td>${money(row.sale_unit_price)}</td><td>${money(row.sale_amount_delta)}</td></tr>`).join('')}
+			</tbody></table></div></section>`;
 	}
 
 	function setPanel(options = {}) {

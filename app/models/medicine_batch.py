@@ -9,7 +9,8 @@ class MedicineBatch(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     medicine_id = Column(Integer, ForeignKey('medicines.id'), nullable=False, index=True)
-    batch_number = Column(String(50), unique=True, nullable=False, index=True)  # LOT-01, LOT-02...
+    # One row per receipt line; a manufacturer's lot may arrive more than once.
+    batch_number = Column(String(50), nullable=False, index=True)
     import_date = Column(Date, nullable=False)  # Ngày nhập kho
     expiry_date = Column(Date, nullable=False, index=True)  # Ngày hết hạn
     quantity = Column(Numeric(10, 3), nullable=False)  # Số lượng nhập
@@ -55,7 +56,10 @@ class MedicineBatch(Base):
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'quantity': float(self.quantity) if self.quantity else 0,
             'remaining_quantity': float(self.remaining_quantity) if self.remaining_quantity else 0,
-            'import_price': float(self.import_price) if self.import_price else None,
+            'import_price': float(self.import_price) if self.import_price is not None else None,
+            'receipt_reference': f'NK-{self.id}',
+            'import_value': float(self.quantity * self.import_price) if self.import_price is not None else None,
+            'stock_value': float(self.remaining_quantity * self.import_price) if self.import_price is not None else None,
             'supplier_id': self.supplier_id,
             'supplier_name': self.supplier.name if self.supplier else None,
             'invoice_number': self.invoice_number,

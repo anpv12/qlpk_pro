@@ -20,7 +20,7 @@
 		}
 
 		const order = orders[orderIndex];
-		const currentStatus = order.status || 'draft';
+		const currentStatus = order.status || 'sent';
 		const isLocked = order.location_type === 'in' && currentStatus === 'completed';
 		if (isLocked) {
 			return { found: true, locked: true, orders, order };
@@ -79,7 +79,7 @@
 			const nextOrder = {
 				...existingOrder,
 				...orderData,
-				status: existingOrder.status || 'draft',
+				status: existingOrder.status || 'sent',
 				is_completed: existingOrder.is_completed || false
 			};
 			const nextOrders = [...orders];
@@ -91,7 +91,7 @@
 		const newOrder = {
 			tempId: `temp-${nextOrderTempId}`,
 			...orderData,
-			status: 'draft',
+			status: 'sent',
 			is_completed: false
 		};
 

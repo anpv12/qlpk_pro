@@ -755,17 +755,14 @@
 		return ['DOCTOR_EXAM', 'PSYCHOLOGIST_EXAM'].includes(String(status || '').trim().toUpperCase());
 	}
 
-	function buildVisitBadge({ isCurrentExam, isExamining, isToday, paymentStatus }) {
-		if (isExamining) {
-			return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--examining modal-history-visit-badge"><i class="bi bi-activity me-1"></i>Đang khám</span>';
-		}
+	function buildVisitBadge({ isCurrentExam, isToday, paymentStatus }) {
 		if (isCurrentExam) {
-			return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--current modal-history-visit-badge"><i class="bi bi-activity me-1"></i>Đang khám</span>';
+			return '<span class="modal-history-visit-label">Lượt hiện tại</span>';
 		}
 		if (isToday && paymentStatus !== 'PAID') {
-			return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--today modal-history-visit-badge">Hôm nay</span>';
+			return '<span class="modal-history-visit-label">Hôm nay</span>';
 		}
-		return '<span class="patient-search-modal__status-badge patient-search-modal__status-badge--history modal-history-visit-badge"><i class="bi bi-clock-history me-1"></i>Lịch sử</span>';
+		return '';
 	}
 
 	function defaultFormatDate(date) {
@@ -809,7 +806,7 @@
 		}
 		if (showDeleteAction) {
 			actionButtons.push(`
-                        <button class="btn btn-sm btn-outline-danger" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
                             <i class="bi bi-trash"></i>
                         </button>
                     `);
@@ -826,15 +823,15 @@
 
 		return `
                 <div class="${rowClasses}" data-index="${index}" data-exam-id="${exam.id}" data-appointment-id="${exam.appointment_id}" data-is-current="${isCurrentExam}">
-                    <div class="col-3 text-start col-history-date ps-3">
+                    <div class="col-3 text-start col-history-date">
                         <span class="modal-history-date-time">${formatDateTime(displayDate, options)}</span>
-                        <div>${statusBadge}</div>
+                        ${statusBadge}
                     </div>
                     <div class="col-5 text-start col-history-diagnosis">
                         <span class="d-block text-truncate" title="${description}">${description}</span>
 					</div>
 					<div class="col-2 text-center col-history-payment">
-						<span class="badge patient-search-modal__exam-status-badge${isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
+						<span class="qlpk-status patient-search-modal__exam-status-badge${isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
 							${getStatusText(exam.status)}
 						</span>
                     </div>
@@ -968,6 +965,8 @@
 			if (row) {
 				const index = Number(row.dataset.index);
 				if (!Number.isNaN(index) && typeof options.onSelect === 'function') {
+					container.querySelectorAll('.modal-history-item-user-selected').forEach(item => item.classList.remove('modal-history-item-user-selected'));
+					row.classList.add('modal-history-item-user-selected');
 					options.onSelect(index, event, row);
 				}
 			}

@@ -50,6 +50,7 @@ class AppointmentUpdate(BaseModel):
     notes: Optional[str] = None
 
 class AppointmentRead(AppointmentBase):
+    doctor_queue_entered_at: Optional[datetime] = None
     id: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]

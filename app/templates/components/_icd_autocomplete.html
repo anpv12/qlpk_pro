@@ -1,28 +1,21 @@
+{% from 'components/_autocomplete_field.html' import render_autocomplete_field %}
 {% macro render_icd_autocomplete(
-	mode,
-	input_id,
-	tags_id,
-	list_id,
-	root_id='',
-	container_id='',
-	dropdown_id='',
-	root_class='',
-	container_class='',
-	tags_class='',
-	input_class='form-control',
-	input_name='',
-	placeholder='',
-	aria_label='',
-	dropdown_class='',
-	list_class=''
+	mode, input_id, tags_id, list_id, root_id='', container_id='', dropdown_id='',
+	root_class='', container_class='', tags_class='', input_class='form-control',
+	input_name='', placeholder='', aria_label='', dropdown_class='', list_class=''
 ) -%}
-<div{% if root_id %} id="{{ root_id }}"{% endif %} class="icd-autocomplete{% if root_class %} {{ root_class }}{% endif %}" data-icd-autocomplete data-icd-mode="{{ mode }}">
-	<div{% if container_id %} id="{{ container_id }}"{% endif %} class="icd-input-container{% if container_class %} {{ container_class }}{% endif %}">
-		<div id="{{ tags_id }}" class="selected-icd-tags{% if tags_class %} {{ tags_class }}{% endif %}" data-icd-autocomplete-tags></div>
-		<input type="text" id="{{ input_id }}" class="{{ input_class }}"{% if input_name %} name="{{ input_name }}"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %} data-icd-autocomplete-input autocomplete="off">
-	</div>
-	<div{% if dropdown_id %} id="{{ dropdown_id }}"{% endif %} class="dropdown-menu{% if dropdown_class %} {{ dropdown_class }}{% endif %}" data-icd-autocomplete-dropdown>
-		<div id="{{ list_id }}"{% if list_class %} class="{{ list_class }}"{% endif %} data-icd-autocomplete-list></div>
-	</div>
-</div>
+{{ render_autocomplete_field(
+	input_id=input_id, tags_id=tags_id, list_id=list_id, root_id=root_id,
+	container_id=container_id, dropdown_id=dropdown_id,
+	root_class='icd-autocomplete ' ~ root_class,
+	container_class='icd-input-container ' ~ container_class,
+	tags_class='selected-icd-tags ' ~ tags_class, input_class=input_class,
+	input_name=input_name, placeholder=placeholder, aria_label=aria_label,
+	dropdown_class=dropdown_class, list_class=list_class,
+	root_attrs={'data-icd-autocomplete': '', 'data-icd-mode': mode},
+	input_attrs={'data-icd-autocomplete-input': ''},
+	tags_attrs={'data-icd-autocomplete-tags': ''},
+	dropdown_attrs={'data-icd-autocomplete-dropdown': ''},
+	list_attrs={'data-icd-autocomplete-list': ''}
+) }}
 {%- endmacro %}

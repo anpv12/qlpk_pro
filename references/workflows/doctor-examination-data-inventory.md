@@ -15,6 +15,25 @@ Mục tiêu: mọi khối UI phải trace được tới dữ liệu thật, end
 
 ## Runtime Load Flow
 
+Nút `Chuyển khám` dùng `TransferModal` chung qua registry `transferModal`.
+Nguồn chọn người nhận là `GET /users?role=...`; nguồn gợi ý người phụ trách là
+`GET /api/appointments/<id>`. `doctor-examination.js` cung cấp appointment
+đang chọn, `fromRole='doctor'`, guard load/history/context và callback clear
+surface/reload queue. Modal chỉ gọi `POST /api/appointments/transfer` với
+`appointment_ids`, `to_role`, `to_person_id` sau khi hook `beforeTransfer`
+đã lưu thành công qua `clinicalWorkspace.saveWorkspace`. Backend sở hữu
+appointment assignee/examination status và phát `appointment.changed`.
+Mở/hủy không lưu; phản hồi stale hoặc lỗi lưu không được chuyển. API và
+quy tắc trạng thái hiện có giữ nguyên.
+
+Từ 2026-09-09, nút `Lưu` gọi chuẩn bị giá trị mặc định cho 15 field của
+Khám chi tiết (7 Các cơ quan + 8 Khám tâm thần). Ô trống/whitespace nhận
+`Không ghi nhận bất thường`, đánh dấu đúng section dirty rồi gửi value
+tường minh qua section API vào `examination_details.field_value`. Owner
+allowlist/value là `clinical-detail-persistence.js`; không dùng default khi
+load hoặc từ DB schema, không sửa 4 field detail ở Khám & xử trí và không
+đổi dữ liệu cũ nếu chưa nhấn Lưu.
+
 Từ 2026-08-09, clinical workspace Doctor là runtime đang sống. Registry key
 `clinicalWorkspace` render context, compose shared patient forms, điều hướng và
 điều phối save; `clinicalExaminationForm` sở hữu field Khám và detail lifecycle;
@@ -26,7 +45,7 @@ draft-row lifecycle của Chỉ định. Xem navigation contract đầy đủ t�
 
 | Bước | Runtime owner | Endpoint/source | Ghi chú safety |
 | --- | --- | --- | --- |
-| Load danh sách chờ | `doctor-examination.js` + `ClinicalExaminationWaitingListUi` | `GET /api/appointments/` với `doctor=true`, status `doctor_exam/conclusion` | Danh sách chỉ để chọn appointment context |
+| Load danh sách chờ | `doctor-examination.js` + `ClinicalExaminationWaitingListUi` | `GET /api/appointments/` với `doctor=true`, `examination_status=doctor_queue` (DOCTOR_EXAM + CONCLUSION); lấy đủ pagination | Backend xếp `doctor_queue_entered_at DESC NULLS LAST, id DESC`; chỉ để chọn context, socket không tự chọn ca mới |
 | Chọn bệnh nhân/lịch hẹn | `selectPatientCard(appointmentId)` trong `doctor-examination.js` | appointment id từ waiting card | Tăng `state.loadToken`, set `isLoadingExaminationData=true`, clear surface trước khi fetch |
 | Load chi tiết ca | `loadAppointmentDetail()` | `GET /api/appointments/<id>/edit` | Có `@require_auth`; payload là combined appointment/patient/examination + `patient_info`, `doctor_info`, `service_info`, `package_info`, `examination_info` |
 | Render workspace khám | `registry.get('clinicalWorkspace').render()` | Payload chi tiết ca | Hiện patient header, patient/visit forms, clinical decision fields và section mặc định `doctorClinicalDecisionPanel` |
@@ -129,7 +148,7 @@ Owner component: `doctor-clinical-workspace.html` + `clinical-workspace-ui.js`.
 | `diagnosisTags`, `diagnosisIds`, `diagnosisSearch`, `diagnosis` | Chẩn đoán ICD-10 | `examination.diagnosis_ids` + display `diagnosis` | `examinations.diagnosis` stores raw ICD IDs/newer flow; display contract resolves text | Có | `PUT /api/appointments/<id>`; search `/api/icd/` | Edit ưu tiên IDs; textarea chỉ fallback |
 | `benhKemTheoTags`, `benhKemTheoIds`, `benhKemTheoSearch`, `benhKemTheo` | Bệnh kèm theo | `examination.benh_kem_theo_ids` + display | `examinations.benh_kem_theo` | Có | `PUT /api/appointments/<id>`; search `/api/icd/` | Không trộn với diagnosis chính |
 | `treatmentPlan` | Kết luận & Hướng Đ.trị | `examination.treatment_plan`, fallback `ke_hoach_can_thiep` | `examinations.treatment_plan` | Có | `PUT /api/appointments/<id>` | Vị trí 7; main clinical decision. |
-| `currentMedications` | Thuốc đang dùng | `examination.current_medications`, fallback `patient.current_medication` | `examinations.current_medications` | Có | `PUT /api/appointments/<id>` | Vị trí 8; plain-text input được chuẩn hóa thành JSON list, không phải đơn thuốc kê mới. |
+| `currentMedications`, `currentMedicationSearch`, `currentMedicationSelected` | Thuốc đang dùng | `examination.current_medications`; gợi ý từ `GET /api/medicine-reference-catalog?mode=autocomplete&status=all` | `examinations.current_medications` | Có | `PUT /api/appointments/<id>` | Vị trí 8; chọn nhiều thuốc DAV, bỏ từng tên. Hidden `currentMedications` giữ JSON list tên/hàm lượng; giữ tên cũ ngoài DAV, không tách dấu phẩy trong tên đã chọn. Không phải đơn thuốc kê mới, không liên kết kho hoặc trừ tồn. Từ khóa tìm không lưu/draft. |
 | `examinationNotes` | Lời dặn | `examination.loi_dan` | `examinations.loi_dan` | Có | `PUT /api/appointments/<id>` | Vị trí 9; không dùng `appointment.notes`. |
 
 ## Field Inventory - Vùng Khám Chi Tiết
@@ -212,12 +231,12 @@ The former `renderQuickOverview()` and `doctorRisk*` / `doctorQuick*` DOM contra
 | Tìm thuốc | `GET /api/medicines/` | selected medicine id in prescription payload | `medicines` for clinic stock | Focus vào ô tên thuốc trong kho mở danh sách mặc định; nhập tiếp sẽ lọc theo từ khóa; thuốc ngoài cơ sở không dùng catalog. `medicineSearchCache`, token/dropdown clear |
 | Tương tác thuốc | N/A | `POST /api/drug-interactions/check` | drug interaction service | `clearInteractionResults()` |
 | Dịch vụ đi kèm | `GET /services/appointment/<id>`, catalog Doctor `GET /services/?page=<n>&per_page=24` | `PUT /services/appointment/<id>/sync` | `appointment_services` | Registry key `servicesForm` owns `STATE.services`, `STATE.serviceCatalog`, catalog page/pagination, request token, render and clear; catalog price is read-only, quantity is the only inline editable selected-row field. Doctor payload only selects rows, quantity, and note: server resolves a new row from catalog and preserves an existing financial snapshot. `Tổng dự tính` is read-only UI derived from current service state by the canonical backend discount/tax formula and updates before save; the backend response remains canonical after sync. A paid or legacy-paid examination is immutable. Unparameterized `GET /services/` remains the legacy array contract for other callers. |
-| Chỉ định theo appointment | `GET /api/chi-dinh/appointment/<id>`, survey `GET /api/survey-templates-for-orders`, performer `GET /users/doctors` | `POST /api/chi-dinh/appointment/<id>` qua `supportModulesUi.saveAll()`; history `GET /api/chi-dinh/patient/<patient_id>?exclude_appointment_id=<id>` | `chi_dinh` và `survey_templates` | `indicationsForm` owns một ô nhập chung cho cả Doctor và Tâm lý gia. Dropdown gợi ý mẫu khảo sát; chọn mẫu sẽ gắn `survey_template_id` và gợi ý `default_performer_id`, còn text không chọn gợi ý lưu là `custom`. Performer vẫn cho phép đổi; selected rows, edit/delete, status display, dirty state, context token and draft snapshot vẫn do component này sở hữu. Không còn catalog ID/path. Tên chỉ định bị giới hạn 255 ký tự. Backend upsert sync xóa các dòng bị loại khỏi payload. History endpoint kiểm tra patient scope trước khi đọc. |
+| Chỉ định theo appointment | `GET /api/chi-dinh/appointment/<id>`, survey `GET /api/survey-templates-for-orders`, performer `GET /users/doctors` | `POST /api/chi-dinh/appointment/<id>` qua `supportModulesUi.saveAll()` | `chi_dinh` và `survey_templates` | `indicationsForm` owns một ô nhập chung cho cả Doctor và Tâm lý gia. Dropdown gợi ý mẫu khảo sát; chọn mẫu sẽ gắn `survey_template_id` và gợi ý `default_performer_id`, còn text không chọn gợi ý lưu là `custom`. Performer vẫn cho phép đổi; selected rows, edit/delete, status display, dirty state, context token and draft snapshot vẫn do component này sở hữu. Không còn catalog ID/path. Tên chỉ định bị giới hạn 255 ký tự. Backend upsert sync xóa các dòng bị loại khỏi payload. Panel không còn nút/bảng lịch sử riêng; backend history endpoint vẫn giữ cho consumer khác. |
 | Tài liệu | `GET /attachments/patients/<patient_id>/attachments` | upload `/attachments/upload`, download `/attachments/<id>/download`, delete `DELETE /attachments/<id>` | attachments/documents | `STATE.documents=[]`, `renderDocuments()` |
 | Lịch sử đơn thuốc | `GET /api/prescription/patient/<patient_id>/history` | `Áp dụng tất cả` copies selected medicines into current prescription draft; global Doctor `Lưu` remains the only writer | `prescriptions`, `prescription_items` read history + current prescription write | `prescription-ui.js` resets history dataset, selected visit and modal state; this is separate from examination-history UI |
 | Hoàn thành khám | N/A | Saves main form, prescription, services, then `PUT /examinations/<examination_id>/transfer-to-payment` | `examinations.status` + payment queue | afterComplete callback reloads list/surface |
 
-Visibility contract: there is no separate Doctor support workspace beyond the explicit Dịch vụ and Chỉ định root panes. Tab Khám mounts one inline vùng Khám chi tiết beside its primary form on desktop and below it on narrow screens; tab Dịch vụ mounts `#doctorServicePanel` as the service UI; tab Chỉ định mounts `#doctorIndicationsPanel` as a data-backed pane with current rows, one input that either selects a survey or accepts free text, inline history and no second save path. Documents remain in Hành chính and prescription history remains inside the prescription workspace. The workspace loads all 19 visible `examination_details` controls (doctor reason, Bệnh sử, KQ khám toàn thân, Biểu hiện chung, 7 cơ quan, and 8 tâm thần) through `modal-load`, then saves only the listed fields through three section-specific endpoints. It does not restore a modal, prescription service summary, hidden support panel, or second services view; retired Doctor mental aliases are archived and not presented.
+Visibility contract: there is no separate Doctor support workspace beyond the explicit Dịch vụ and Chỉ định root panes. Tab Khám mounts one inline vùng Khám chi tiết beside its primary form on desktop and below it on narrow screens; tab Dịch vụ mounts `#doctorServicePanel` as the service UI; tab Chỉ định mounts `#doctorIndicationsPanel` as a data-backed pane with current rows, one input that either selects a survey or accepts free text, no private inline history and no second save path. Documents remain in Hành chính and prescription history remains inside the prescription workspace. The workspace loads all 19 visible `examination_details` controls (doctor reason, Bệnh sử, KQ khám toàn thân, Biểu hiện chung, 7 cơ quan, and 8 tâm thần) through `modal-load`, then saves only the listed fields through three section-specific endpoints. It does not restore a modal, prescription service summary, hidden support panel, or second services view; retired Doctor mental aliases are archived and not presented.
 
 ## Save Payload - Khám Chính
 
@@ -365,6 +384,7 @@ not a server draft or a replacement for the DB/API read model.
 | Main clinical/detail fields | `registry.get('clinicalExaminationForm').clear()` via `clinicalWorkspace.clear()` | Clears all nine main tab Khám fields, 19 inline detail controls, and current meds. |
 | Detail load state | `registry.get('clinicalWorkspace').clear()` | Invalidates the detail promise with `contextToken`; a stale `modal-load` response cannot populate the new patient. |
 | ICD chips/search/dropdown | `registry.get('clinicalExaminationForm').clear()` via `clinicalWorkspace.clear()` | Clears arrays, hidden ID values and the shared autocomplete page/load-more state |
+| Thuốc đang dùng: tên đã chọn/query/kết quả/phân trang | `clinicalExaminationForm.clear()` và render/restore cùng component | Reset hidden JSON và danh sách chọn; hủy debounce/request bằng AbortController + context/generation token. Chặn chọn/bỏ trong lúc loading và history view. Draft dùng hidden JSON, marker/focus trỏ tới currentMedicationSearch. |
 | Timers | `clearAllTimers()` | Main save, prescription, service, ICD search, medicine search |
 | Prescription rows | `STATE.prescriptionRows=[]` | Render empty prescription list and quick count; the DOM contract is `#doctorPrescriptionList` with `role="list"` |
 | Services/catalog | `registry.get('servicesForm').clear()` resets `STATE.services=[]`, catalog page/pagination and invalidates the catalog request token | Render empty selected-service list and catalog pager; an in-flight page response cannot render into the next appointment |

@@ -8,6 +8,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const sourcePath = path.join(root, 'app/static/js/doctor-examination/prescription-model.js');
+const typeContractPath = path.join(root, 'app/static/js/prescriptions/shared/prescription-type-contract.js');
 const modules = new Map();
 const windowStub = {
 	QLPKDoctorModuleRegistry: {
@@ -36,6 +37,12 @@ const windowStub = {
 		return Number(raw);
 	}
 };
+
+vm.runInNewContext(fs.readFileSync(typeContractPath, 'utf8'), {
+	window: windowStub,
+	console,
+	Date
+}, { filename: typeContractPath });
 
 vm.runInNewContext(fs.readFileSync(sourcePath, 'utf8'), {
 	window: windowStub,

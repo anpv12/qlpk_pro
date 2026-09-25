@@ -1,6 +1,6 @@
 #duplicatePatientModal {
-	--duplicate-modal-brand: var(--qlpk-header-bg, #4b2719);
-	--duplicate-modal-brand-soft: #633621;
+	--duplicate-modal-brand: var(--qlpk-color-primary);
+	--duplicate-modal-brand-soft: var(--qlpk-color-primary-strong);
 	--duplicate-modal-text: #352821;
 	--duplicate-modal-muted: #725d51;
 	--duplicate-modal-line: #eadccf;
@@ -25,7 +25,7 @@
 #duplicatePatientModal .modal-header {
 	align-items: center;
 	border: 0;
-	background: linear-gradient(135deg, var(--duplicate-modal-brand), var(--duplicate-modal-brand-soft));
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fffaf3;
 	padding: 0.75rem 0.95rem;
 }
@@ -78,7 +78,7 @@
 .duplicate-patient-card:focus-visible {
 	border-color: var(--duplicate-modal-warning);
 	background: var(--duplicate-modal-warning-bg);
-	box-shadow: 0 0.35rem 1rem rgba(75, 39, 25, 0.1);
+	box-shadow: 0 0.35rem 1rem rgba(var(--qlpk-brown-800-rgb), 0.1);
 	outline: 0;
 	transform: translateY(-0.04rem);
 }
@@ -164,7 +164,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.4rem;
-	border: 0.0625rem solid transparent;
+	border-width: 0.0625rem;
+	border-style: solid;
 	border-radius: 999rem;
 	cursor: pointer;
 	font: inherit;
@@ -172,35 +173,40 @@
 	font-weight: var(--qlpk-font-weight-semibold);
 	line-height: 1.2;
 	padding: 0.5rem 0.85rem;
+}
+.duplicate-patient-modal__button:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid transparent;
 	transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
-
-.duplicate-patient-modal__button--ghost {
+.duplicate-patient-modal__button--ghost:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--duplicate-modal-line);
 	background: #ffffff;
 	color: var(--duplicate-modal-text);
 }
-
-.duplicate-patient-modal__button--secondary {
+.duplicate-patient-modal__button--secondary:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--duplicate-modal-warning-bg);
 	border-color: color-mix(in srgb, var(--duplicate-modal-warning) 34%, transparent);
 	color: var(--duplicate-modal-warning);
 }
-
-.duplicate-patient-modal__button--primary {
-	background: var(--duplicate-modal-brand);
+.duplicate-patient-modal__button--primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
 .duplicate-patient-modal__button:hover:not(:disabled),
 .duplicate-patient-modal__button:focus-visible:not(:disabled) {
-	box-shadow: 0 0.35rem 0.9rem rgba(75, 39, 25, 0.14);
-	outline: 0;
 	transform: translateY(-0.04rem);
+}
+.duplicate-patient-modal__button:hover:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *),
+.duplicate-patient-modal__button:focus-visible:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *) {
+	box-shadow: 0 0.35rem 0.9rem rgba(var(--qlpk-brown-800-rgb), 0.14);
+	outline: 0;
 }
 
 .duplicate-patient-modal__button:disabled {
 	cursor: not-allowed;
+}
+.duplicate-patient-modal__button:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: #d8d2cc;
 	color: #61564f;
 }

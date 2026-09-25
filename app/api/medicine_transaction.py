@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_
 from app.core.database import get_db
 from app.models.medicine_transaction import MedicineTransaction
@@ -26,8 +26,16 @@ def get_transactions(user):
         from_date = request.args.get('from_date', '')
         to_date = request.args.get('to_date', '')
         search = request.args.get('search', '')
+        batch_id = request.args.get('batch_id', type=int)
+        page = max(1, request.args.get('page', 1, type=int) or 1)
+        per_page = min(100, max(1, request.args.get('per_page', 50, type=int) or 50))
         
-        query = db.query(MedicineTransaction)
+        query = db.query(MedicineTransaction).options(
+            joinedload(MedicineTransaction.batch), joinedload(MedicineTransaction.medicine),
+            joinedload(MedicineTransaction.creator),
+        )
+        if batch_id:
+            query = query.filter(MedicineTransaction.batch_id == batch_id)
         
         # Filter theo loại giao dịch
         if transaction_type:
@@ -60,14 +68,19 @@ def get_transactions(user):
             )
         
         # Sắp xếp theo thời gian mới nhất
-        transactions = query.order_by(MedicineTransaction.created_at.desc()).limit(1000).all()
+        total = query.count()
+        transactions = query.order_by(MedicineTransaction.created_at.desc(), MedicineTransaction.id.desc()).offset(
+            (page - 1) * per_page).limit(per_page).all()
         
         data = [t.to_dict() for t in transactions]
         
         return jsonify({
             'success': True,
             'transactions': data,
-            'total': len(data)
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page,
         }), 200
         
     except Exception as e:
@@ -83,12 +96,12 @@ def create_transaction(user):
     """Reject direct ledger writes.
 
     Movement rows are append-only records produced by the batch import,
-    batch-adjustment, and prescription stock services.  A generic POST here
+    verified opening, and prescription stock services.  A generic POST here
     could make the ledger disagree with both the lot and aggregate balances.
     """
 
     return jsonify({
         'success': False,
-        'detail': 'Không ghi giao dịch kho trực tiếp. Hãy dùng API nhập lô, kiểm kê theo lô hoặc kê đơn.',
+        'detail': 'Không ghi giao dịch kho trực tiếp. Giao dịch được ghi nhận qua nhập kho hoặc cấp/hoàn thuốc.',
         'code': 'inventory.transaction_write_forbidden',
     }), 409

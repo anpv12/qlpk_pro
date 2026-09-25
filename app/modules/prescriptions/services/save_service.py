@@ -134,10 +134,21 @@ def collect_new_in_clinic_totals(medicines):
             errors.append(f"Vui lòng chọn thuốc từ kho: {medicine_name or 'Chưa có tên thuốc'}")
             continue
 
+        try:
+            sale_price = Decimal(str(medicine_data.get('unit_price', 0)))
+            if not sale_price.is_finite() or sale_price < 0 or sale_price >= Decimal('10000000000') or sale_price != sale_price.quantize(Decimal('0.01')):
+                raise ValueError
+        except (InvalidOperation, ValueError, TypeError):
+            errors.append(f"{medicine_name}: giá bán phải là số không âm, tối đa 2 chữ số thập phân")
+            continue
+        if medicine_id in totals and totals[medicine_id]['sale_unit_price'] != sale_price:
+            errors.append(f"{medicine_name}: cùng thuốc trong một lượt lưu phải có cùng giá bán")
+            continue
         if medicine_id not in totals:
             totals[medicine_id] = {
                 'medicine_name': medicine_name,
                 'total_in_clinic_qty': ZERO_QUANTITY,
+                'sale_unit_price': sale_price,
             }
         totals[medicine_id]['total_in_clinic_qty'] += Decimal(quantity)
     return totals, errors
@@ -446,6 +457,7 @@ def save_prescription_transaction(
     medicines,
     usage_instructions,
     re_examination_date,
+    re_examination_plan=None,
 ):
     """Own commit/rollback for one atomic prescription aggregate save."""
     try:
@@ -457,6 +469,9 @@ def save_prescription_transaction(
             usage_instructions=usage_instructions,
             re_examination_date=re_examination_date,
         )
+        if re_examination_plan is not None:
+            from app.modules.prescriptions.services.re_examination_service import apply_re_examination_plan
+            result['re_examination_sync_result'] = apply_re_examination_plan(db, re_examination_plan)
         db.commit()
         return result
     except Exception:

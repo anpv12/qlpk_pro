@@ -6,6 +6,7 @@ from .examination import Examination
 from .examination_detail import ExaminationDetail
 # ExaminationService model removed - using AppointmentService instead
 from .medicine import Medicine
+from .medicine_price_history import MedicinePriceHistory
 from .medicine_reference_catalog import MedicineReferenceCatalog
 from .medicine_category import MedicineCategory
 from .medicine_batch import MedicineBatch
@@ -67,6 +68,7 @@ __all__ = [
     "ExaminationDetail",
     # "ExaminationService", # Removed - using AppointmentService instead
     "Medicine",
+    "MedicinePriceHistory",
     "MedicineReferenceCatalog",
     "MedicineCategory",
     "MedicineBatch",

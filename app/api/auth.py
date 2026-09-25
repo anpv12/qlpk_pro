@@ -28,8 +28,8 @@ ALL_PERMISSIONS = [
     "hoadon", "chi-tieu", "thongke-thuoc", "ql-kho-thuoc", "ql-taikhoan", "ql-thuoc", "ql-phanquyen", "ql-nhomquyen",
     "ql-danhmuc-dichvu", "ql-danhmuc-thuoc", "ql-dichvu", "ql-goi-dichvu",
     "ql-mau-khaosat", "ql-danhmuc-icd", "ql-tu-viettat", "ql-ngayle",
-    "ql-tuong-tac-thuoc", "ql-hoat-chat",
-    "ca-nhan"
+    "ql-tuong-tac-thuoc", "ql-hoat-chat", "ql-di-nguyen", "ql-tailieu",
+    "ca-nhan", "ca-nhan-phimtat"
 ]
 
 def get_current_user(token: str):

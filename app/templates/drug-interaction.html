@@ -19,19 +19,22 @@
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/utils.js?v={{ app_version }}"></script>
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/catalog-crud-shell.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/drug-interaction.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
 </head>
 
-<body class="qlpk-admin-page">
+<body class="qlpk-admin-page qlpk-clinic-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content di-main-content">
-				<div class="qlpk-admin-page-header">
-					<h1><i class="bi bi-exclamation-triangle me-2"></i>Tương tác thuốc</h1>
-					<p class="qlpk-admin-page-subtitle">Quản lý các cặp hoạt chất và hướng dẫn xử trí tương tác</p>
+				<div class="qlpk-admin-page-header qlpk-clinic-header">
+					<h1 class="qlpk-clinic-title">Tương tác thuốc</h1>
+					<p class="qlpk-admin-page-subtitle qlpk-clinic-subtitle">Quản lý các cặp hoạt chất và hướng dẫn xử trí tương tác</p>
 				</div>
 
 				<div class="card-wrap">
@@ -41,16 +44,17 @@
 							<input type="text" id="di-search" placeholder="Tìm theo tên thuốc, hoạt chất...">
 						</div>
 						<div class="right-group">
-							<button class="btn-outline" id="btn-di-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
-							<button class="btn-outline" id="btn-di-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
-							<button class="btn-add" id="btn-add-interaction"><i
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-outline" id="btn-di-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-outline" id="btn-di-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-add" id="btn-add-interaction"><i
 									class="bi bi-plus-circle"></i> Thêm tương tác</button>
 							<input type="file" id="di-import-file" accept=".xlsx, .xls" class="di-hidden-input">
 						</div>
 					</div>
 
 					<!-- Table -->
-					<table class="di-table">
+					<div class="table-responsive">
+<table class="di-table">
 						<thead>
 							<tr>
 								<th class="di-col-stt">STT</th>
@@ -68,6 +72,8 @@
 							</tr>
 						</tbody>
 					</table>
+</div>
+{% include 'partials/clinic-pagination.html' %}
 				</div>
 
 			</main>
@@ -147,9 +153,9 @@
 
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-sm btn-secondary"
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-secondary"
 							data-bs-dismiss="modal">Hủy</button>
-						<button type="submit" class="btn btn-sm di-save-btn">Lưu tương tác</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-sm di-save-btn">Lưu tương tác</button>
 					</div>
 				</form>
 			</div>
@@ -181,7 +187,7 @@
 					<div class="view-field-value" id="view-notes">—</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-secondary"
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-secondary"
 						data-bs-dismiss="modal">Đóng</button>
 				</div>
 			</div>

@@ -61,7 +61,7 @@
 						<i class="bi bi-chevron-down collapse-icon appointment-sync-date-icon"></i>
 						<i class="bi bi-calendar3 appointment-sync-date-icon"></i>
 						${getDayName(dateKey)} - ${dateKey}
-						<span class="appointment-sync-badge appointment-sync-badge--info appointment-sync-date-count">${appointments.length} lịch hẹn</span>
+						<span class="qlpk-status appointment-sync-badge appointment-sync-badge--info appointment-sync-date-count">${appointments.length} lịch hẹn</span>
 					</td>
 				</tr>
 			`;
@@ -71,30 +71,30 @@
 		if (appointment.sync_status === 'synced') {
 			return `
 						<div class="verify-icons" data-appt-id="${appointment.id}">
-							<span class="appointment-sync-badge appointment-sync-badge--neutral"><i class="bi bi-hourglass-split"></i> Đang kiểm tra...</span>
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral"><i class="bi bi-hourglass-split"></i> Đang kiểm tra...</span>
 						</div>
 					`;
 		}
 
 		return `
 						<div class="verify-icons" data-appt-id="${appointment.id}">
-							<span class="appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>
 						</div>
 					`;
 	}
 
 	function buildActionButtonHtml(appointment) {
 		if (!appointment.doctor_has_calendar) {
-			return '<button class="btn appointment-button appointment-button--neutral appointment-button--sm action-btn appointment-calendar-action-nowrap" disabled><i class="bi bi-google"></i> Chưa kết nối</button>';
+			return '<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--neutral appointment-button--sm action-btn appointment-calendar-action-nowrap" disabled><i class="bi bi-google"></i> Chưa kết nối</button>';
 		}
 
 		if (appointment.sync_status === 'synced') {
-			return `<button class="btn appointment-button appointment-button--neutral appointment-button--sm action-btn" data-appt-id="${appointment.id}" disabled>
+			return `<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--neutral appointment-button--sm action-btn" data-appt-id="${appointment.id}" disabled>
 						<i class="bi bi-hourglass-split"></i> Đang kiểm tra...
 					</button>`;
 		}
 
-		return `<button class="btn appointment-button appointment-button--primary appointment-button--sm sync-single-btn action-btn" data-appt-id="${appointment.id}">
+		return `<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn appointment-button appointment-button--primary appointment-button--sm sync-single-btn action-btn" data-appt-id="${appointment.id}">
 						<i class="bi bi-arrow-repeat"></i> Đồng bộ
 					</button>`;
 	}

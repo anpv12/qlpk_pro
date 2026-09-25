@@ -96,9 +96,9 @@ $(document).ready(function() {
         if (isUserAdmin) {
             html += `
                     <div class="tree-actions">
-                        <button class="tree-action-btn add-subfolder" title="Thêm mục con" data-id="${folder.id}"><i class="bi bi-plus"></i></button>
-                        <button class="tree-action-btn edit-folder" title="Sửa tên" data-id="${folder.id}" data-name="${folder.name}"><i class="bi bi-pencil"></i></button>
-                        <button class="tree-action-btn delete-folder text-danger border-danger" title="Xóa" data-id="${folder.id}"><i class="bi bi-trash"></i></button>
+                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tree-action-btn add-subfolder" title="Thêm mục con" data-id="${folder.id}"><i class="bi bi-plus"></i></button>
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="tree-action-btn edit-folder" title="Sửa tên" data-id="${folder.id}" data-name="${folder.name}"><i class="bi bi-pencil"></i></button>
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="tree-action-btn delete-folder text-danger border-danger" title="Xóa" data-id="${folder.id}"><i class="bi bi-trash"></i></button>
                     </div>
             `;
         }
@@ -250,7 +250,7 @@ $(document).ready(function() {
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
                             <a ${link_target} class="action-icon" title="Truy cập/Tải xuống"><i class="bi ${doc.type === 'link' ? 'bi-box-arrow-up-right' : 'bi-download'}"></i></a>
-                            <button class="action-icon action-icon-danger delete-doc" data-id="${doc.id}" title="Xóa"><i class="bi bi-trash"></i></button>
+                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-icon action-icon-danger delete-doc" data-id="${doc.id}" title="Xóa"><i class="bi bi-trash"></i></button>
                         </div>
                     </td>
                 `;

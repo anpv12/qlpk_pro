@@ -23,16 +23,37 @@ from app.modules.prescriptions.view_models.print_prescription import (
     build_internal_prescription_print_view_model,
 )
 
+from app.modules.prescriptions.services.re_examination_service import plan_re_examination, ReExaminationValidationError
+
 logger = logging.getLogger(__name__)
 
 router = Blueprint('prescription_api', __name__)
+
+@router.route('/appointment/<int:appointment_id>/re-examination-calendar', methods=['GET'])
+@require_auth
+def re_examination_calendar(user, appointment_id):
+    """Read-only calendar selection; the prescription save remains the writer."""
+    from app.modules.prescriptions.services.re_examination_service import build_re_examination_calendar
+    db = next(get_db())
+    try:
+        original = db.get(Appointment, appointment_id)
+        if not original:
+            return jsonify({'detail': 'Không tìm thấy lượt khám.'}), 404
+        access_error = appointment_access_error(user, original)
+        if access_error:
+            return jsonify({'detail': access_error}), 403
+        return jsonify(build_re_examination_calendar(db, user, original, request.args))
+    except (ReExaminationValidationError, ValueError) as error:
+        return jsonify({'detail': str(error)}), 400
+    finally:
+        db.close()
 
 logger.debug("Prescription router created with name 'prescription_api'")
 
 @router.route('/save', methods=['POST'])
 @require_auth
 def save_prescription(user):
-    """Save one prescription aggregate and its inventory delta atomically."""
+    """Save prescription, inventory and requested schedule changes atomically."""
     db = None
     try:
         db = next(get_db())
@@ -54,29 +75,9 @@ def save_prescription(user):
         if access_error:
             return jsonify({'detail': access_error}), 403
 
-        # Only a CONFIRMED re-examination schedule is server-owned. A SCHEDULED
-        # child remains editable from the Doctor prescription workflow.
-        active_re_appointment = db.query(Appointment).filter(
-            Appointment.original_appointment_id == appointment_id,
-            Appointment.appointment_category == AppointmentCategory.RE_EXAMINATION,
-            Appointment.is_deleted == False,
-            Appointment.status != AppointmentStatus.CANCELLED,
-        ).order_by(Appointment.appointment_date.desc(), Appointment.id.desc()).first()
-        if (
-            active_re_appointment
-            and active_re_appointment.status == AppointmentStatus.CONFIRMED
-            and active_re_appointment.appointment_date
-        ):
-            re_exam_date_raw = active_re_appointment.appointment_date.date().isoformat()
-            re_exam_time_raw = active_re_appointment.appointment_date.strftime('%H:%M')
+        re_exam_plan = plan_re_examination(db, appointment_id, data, user_id=user.id)
+        re_examination_date = re_exam_plan['prescription_date']
 
-        re_examination_date = None
-        if re_exam_date_raw:
-            try:
-                re_examination_date = datetime.strptime(re_exam_date_raw, '%Y-%m-%d').date()
-            except Exception:
-                return jsonify({'detail': 'Invalid re_examination_date format, expected YYYY-MM-DD'}), 400
-        
         save_result = save_prescription_transaction(
             db,
             appointment_id=appointment_id,
@@ -84,6 +85,7 @@ def save_prescription(user):
             medicines=medicines,
             usage_instructions=usage_instructions,
             re_examination_date=re_examination_date,
+            re_examination_plan=re_exam_plan,
         )
         prescription_id = save_result['prescription_id']
         stock_updates = save_result['stock_updates']
@@ -99,33 +101,34 @@ def save_prescription(user):
                 'stock_updates_count': len(stock_updates),
             })
         
-        re_examination_sync_result = sync_re_examination_after_prescription_save(
-            db=db,
-            data=data,
-            appointment_id=appointment_id,
-            re_examination_date=re_examination_date,
-            re_exam_time_raw=re_exam_time_raw,
-            logger=logger,
-        )
-        
+        re_examination_sync_result = save_result['re_examination_sync_result']
+        try:
+            sync_re_examination_after_prescription_save(db, re_examination_sync_result, logger)
+        except Exception:
+            logger.exception('Post-commit scheduling integration failed')
+
         return jsonify({
             'message': 'Prescription saved successfully',
             'prescription_id': prescription_id,
             'stock_updates': stock_updates,
             'stock_allocation_states': stock_allocation_states,
             'prescription_codes_by_type': save_result['prescription_codes_by_type'],
-            # The prescription is already committed; expose scheduling as a
-            # separate result so the UI can report a truthful partial save.
+            # Schedule state was committed together with the prescription.
             're_examination_sync_result': re_examination_sync_result or {'ok': True}
         }), 200
         
+    except ReExaminationValidationError as e:
+        if db:
+            db.rollback()
+        return jsonify({'code': e.code, 'detail': str(e), 're_examination_snapshot': e.schedule}), 409 if e.code in {'re-examination-conflict', 're-examination-locked'} else 400
     except PrescriptionStockValidationError as e:
         if db:
             db.rollback()
         return jsonify({
-            'code': 'inventory.insufficient',
-            'detail': 'Không đủ tồn kho',
+            'code': e.code,
+            'detail': str(e) if e.code in {'inventory.batch_missing', 'inventory.batch_expired'} else 'Không đủ tồn kho',
             'errors': e.errors,
+            'shortage': e.shortage,
         }), 400
     except PrescriptionAppointmentNotFound:
         if db:

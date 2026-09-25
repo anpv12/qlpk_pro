@@ -4,22 +4,19 @@ let totalPages = 1;
 let currentSearch = '';
 let currentDiseaseGroup = '';
 let currentICDId = null;
+let pageSize = 10;
+let listPagination;
+let listRevision = 0;
 
-// Refresh token function
-async function refreshToken() {
-	try {
-		const response = await fetch('/api/token/refresh');
-		const data = await response.json();
-		if (data.token) {
-			localStorage.setItem('token', data.token);
-		}
-	} catch (error) {
-	}
-}
 let isEditMode = false;
+let isSavingICD = false;
 
 // Initialize page
 $(document).ready(function () {
+    listPagination = window.QLPKPagination.create({ onChange(page, size) {
+        pageSize = size;
+        loadICDList(page);
+    } });
 	loadICDList();
 	loadDiseaseGroups();
 	setupEventListeners();
@@ -28,11 +25,12 @@ $(document).ready(function () {
 
 // Setup event listeners
 function setupEventListeners() {
-	// Search input
-	$('#searchInput').on('keypress', function (e) {
-		if (e.which === 13) { // Enter key
-			searchICD();
-		}
+	$('#icdSearchForm').on('submit', function (event) {
+		event.preventDefault();
+		searchICD();
+	});
+	$('#icdTableBody').on('click', '#retryICDList', function () {
+		loadICDList(currentPage);
 	});
 
 	// Disease group filter change
@@ -41,7 +39,7 @@ function setupEventListeners() {
 	});
 
 	// Form validation
-	$('#icdForm input, #icdForm textarea').on('blur', function () {
+	$('#addICDForm input, #addICDForm textarea, #editICDForm input, #editICDForm textarea').on('blur', function () {
 		validateField($(this));
 	});
 
@@ -66,63 +64,46 @@ function setupEventListeners() {
 	});
 }
 
-// Load ICD list
+// Authentication is supplied by the shared fetch wrapper in utils.js.
+function renderICDState(message, retry = false) {
+	$('#icdTableBody').html(`<tr><td colspan="6" class="text-center py-4">
+		<div role="status">${window.QLPKSharedUtils.escapeHtml(message)}</div>
+		${retry ? '<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="retryICDList" class="btn btn-outline-primary mt-2">Thử lại</button>' : ''}
+	</td></tr>`);
+}
+
 async function loadICDList(page = 1) {
+	const revision = ++listRevision;
+	currentPage = page;
+	showLoading(true);
+	$('#clinicPagination').hide();
+	renderICDState('Đang tải danh sách ICD…');
 	try {
-		showLoading(true);
-
-		const params = new URLSearchParams({
-			skip: (page - 1) * 20,
-			limit: 20
-		});
-
-		if (currentSearch) {
-			params.append('search', currentSearch);
-		}
-
-		if (currentDiseaseGroup) {
-			params.append('disease_group', currentDiseaseGroup);
-		}
-
-		const response = await fetch(`/api/icd/?${params}`, {
-			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`,
-				'Content-Type': 'application/json'
-			}
-		});
-
+		const params = new URLSearchParams({ skip: (page - 1) * pageSize, limit: pageSize });
+		if (currentSearch) params.set('search', currentSearch);
+		if (currentDiseaseGroup) params.set('disease_group', currentDiseaseGroup);
+		const response = await fetch(`/api/icd/?${params}`);
+		if (revision !== listRevision) return;
 		if (!response.ok) {
-			if (response.status === 401) {
-				// Token không hợp lệ, thử lấy token mới
-				await refreshToken();
-				// Thử lại request
-				const retryResponse = await fetch(`/api/icd/?${params}`, {
-					method: 'GET',
-					headers: {
-						'Authorization': `Bearer ${localStorage.getItem('token')}`,
-						'Content-Type': 'application/json'
-					}
-				});
-				if (!retryResponse.ok) {
-					throw new Error('Lỗi khi tải danh sách ICD');
-				}
-				const retryData = await retryResponse.json();
-				renderICDList(retryData.data);
-				updatePagination(retryData.pagination);
-				return;
-			}
-			throw new Error('Lỗi khi tải danh sách ICD');
+			const message = response.status === 401
+				? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+				: response.status === 403 ? 'Bạn không có quyền xem danh mục ICD.'
+				: 'Không tải được danh sách ICD. Vui lòng thử lại.';
+			renderICDState(message, response.status !== 401 && response.status !== 403);
+			return;
 		}
-
 		const data = await response.json();
+		if (revision !== listRevision) return;
+		if (!Array.isArray(data.data) || !data.pagination) throw new Error('Invalid ICD list response');
+		const lastPage = Math.max(1, Number(data.pagination.total_pages) || 1);
+		if (page > lastPage) return loadICDList(lastPage);
 		renderICDList(data.data);
 		updatePagination(data.pagination);
-
+		$('#clinicPagination').show();
 	} catch (error) {
-		showToast('Lỗi khi tải danh sách ICD', 'error');
+		if (revision === listRevision) renderICDState('Không tải được danh sách ICD. Vui lòng thử lại.', true);
 	} finally {
-		showLoading(false);
+		if (revision === listRevision) showLoading(false);
 	}
 }
 
@@ -132,42 +113,39 @@ function renderICDList(icdList) {
 	tbody.empty();
 
 	if (icdList.length === 0) {
-		$('#emptyState').show();
-		$('#totalCount').text('0');
+		renderICDState('Không tìm thấy mã ICD phù hợp.');
 		return;
 	}
 
-	$('#emptyState').hide();
-	$('#totalCount').text(icdList.length);
 
 	icdList.forEach(icd => {
 		const row = `
             <tr>
                 <td>
-                    <code class="text-primary fw-bold">${icd.icd_code}</code>
+                    <span class="text-primary fw-bold">${icd.icd_code}</span>
                 </td>
                 <td>
                     <div class="fw-semibold">${icd.disease_name}</div>
                 </td>
                 <td>
-                    <div class="text-muted small">
+                    <div class="text-muted">
                         ${icd.description || 'Không có mô tả'}
                     </div>
                 </td>
                 <td>
-                    <div class="text-muted small">
+                    <div class="text-muted">
                         ${icd.disease_group || 'Chưa phân nhóm'}
                     </div>
                 </td>
                 <td>
-                    <small class="text-muted">${formatDate(icd.created_at)}</small>
+                    <span class="text-muted">${formatDate(icd.created_at)}</span>
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary" onclick="editICD(${icd.id})" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-primary" onclick="editICD(${icd.id})" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="deleteICD(${icd.id}, '${icd.icd_code}')" title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" onclick="deleteICD(${icd.id}, '${icd.icd_code}')" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -178,54 +156,21 @@ function renderICDList(icdList) {
 	});
 }
 
-// Load disease groups for filter
+// Groups populate the existing API-backed filter.
 async function loadDiseaseGroups() {
+	const select = $('#diseaseGroupFilter');
 	try {
-		const select = $('#diseaseGroupFilter');
+		const response = await fetch('/api/icd/groups/list');
+		if (!response.ok) return;
+		const groups = await response.json();
 		const selectedValue = select.val();
 		select.find('option').not('[value=""]').remove();
-
-		const response = await fetch('/api/icd/groups/list', {
-			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`,
-				'Content-Type': 'application/json'
-			}
-		});
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				// Token không hợp lệ, thử lấy token mới
-				await refreshToken();
-				// Thử lại request
-				const retryResponse = await fetch('/api/icd/groups/list', {
-					method: 'GET',
-					headers: {
-						'Authorization': `Bearer ${localStorage.getItem('token')}`,
-						'Content-Type': 'application/json'
-					}
-				});
-				if (!retryResponse.ok) {
-					throw new Error('Lỗi khi tải danh sách nhóm bệnh');
-				}
-				const retryGroups = await retryResponse.json();
-				retryGroups.forEach(group => {
-					select.append(`<option value="${group}">${group}</option>`);
-				});
-				if (selectedValue) select.val(selectedValue);
-				return;
-			}
-			throw new Error('Lỗi khi tải danh sách nhóm bệnh');
-		}
-
-		const groups = await response.json();
-
 		groups.forEach(group => {
-			select.append(`<option value="${group}">${group}</option>`);
+			select.append($('<option>').val(group).text(group));
 		});
 		if (selectedValue) select.val(selectedValue);
-
 	} catch (error) {
+		// The list remains usable if optional group choices are unavailable.
 	}
 }
 
@@ -277,7 +222,6 @@ async function editICD(icdId) {
 		const response = await fetch(`/api/icd/${icdId}`, {
 			method: 'GET',
 			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`,
 				'Content-Type': 'application/json'
 			}
 		});
@@ -310,27 +254,29 @@ async function editICD(icdId) {
 
 // Save ICD
 async function saveICD() {
-	if (!validateForm()) {
+	if (isSavingICD || !validateForm()) {
 		return;
 	}
+	const editing = isEditMode;
+	const recordId = currentICDId;
+	isSavingICD = true;
 
 	try {
 		showSaveLoading(true);
 
 		const formData = {
-			icd_code: isEditMode ? $('#editICDCode').val().trim() : $('#icdCode').val().trim(),
-			disease_name: isEditMode ? $('#editDiseaseName').val().trim() : $('#diseaseName').val().trim(),
-			description: isEditMode ? $('#editDescription').val().trim() : $('#description').val().trim(),
-			disease_group: isEditMode ? $('#editDiseaseGroup').val().trim() : $('#diseaseGroup').val().trim()
+			icd_code: editing ? $('#editICDCode').val().trim() : $('#icdCode').val().trim(),
+			disease_name: editing ? $('#editDiseaseName').val().trim() : $('#diseaseName').val().trim(),
+			description: editing ? $('#editDescription').val().trim() : $('#description').val().trim(),
+			disease_group: editing ? $('#editDiseaseGroup').val().trim() : $('#diseaseGroup').val().trim()
 		};
 
-		const url = isEditMode ? `/api/icd/${currentICDId}` : '/api/icd/';
-		const method = isEditMode ? 'PUT' : 'POST';
+		const url = editing ? `/api/icd/${recordId}` : '/api/icd/';
+		const method = editing ? 'PUT' : 'POST';
 
 		const response = await fetch(url, {
 			method: method,
 			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(formData)
@@ -344,11 +290,11 @@ async function saveICD() {
 		const result = await response.json();
 
 		showToast(
-			isEditMode ? 'Cập nhật mã ICD thành công' : 'Thêm mã ICD thành công',
+			editing ? 'Cập nhật mã ICD thành công' : 'Thêm mã ICD thành công',
 			'success'
 		);
 
-		if (isEditMode) {
+		if (editing) {
 			$('#editICDModal').modal('hide');
 		} else {
 			$('#addICDModal').modal('hide');
@@ -356,8 +302,9 @@ async function saveICD() {
 		loadICDList(currentPage);
 
 	} catch (error) {
-		showToast('Không thể tải dữ liệu ICD. Vui lòng thử lại.', 'error');
+		showToast('Không thể lưu mã ICD. Vui lòng kiểm tra thông tin và thử lại.', 'error');
 	} finally {
+		isSavingICD = false;
 		showSaveLoading(false);
 	}
 }
@@ -377,7 +324,6 @@ async function confirmDelete() {
 		const response = await fetch(`/api/icd/${currentICDId}`, {
 			method: 'DELETE',
 			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`,
 				'Content-Type': 'application/json'
 			}
 		});
@@ -392,7 +338,7 @@ async function confirmDelete() {
 		loadICDList(currentPage);
 
 	} catch (error) {
-		showToast('Không thể tải chi tiết ICD. Vui lòng thử lại.', 'error');
+		showToast('Không thể xóa mã ICD. Vui lòng thử lại.', 'error');
 	} finally {
 		showDeleteLoading(false);
 	}
@@ -411,12 +357,7 @@ async function exportICD() {
 			params.append('disease_group', currentDiseaseGroup);
 		}
 
-		const response = await fetch(`/api/icd/export?${params}`, {
-			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('token')}`
-			}
-		});
+		const response = await fetch(`/api/icd/export?${params}`);
 
 		if (!response.ok) {
 			throw new Error('Lỗi khi xuất dữ liệu');
@@ -513,74 +454,10 @@ function resetForm() {
 
 // Update pagination
 function updatePagination(paginationInfo) {
-	if (!paginationInfo) return;
-
-	currentPage = paginationInfo.current_page;
-	totalPages = paginationInfo.total_pages;
-
-	// Update pagination info
-	const startItem = (paginationInfo.current_page - 1) * paginationInfo.per_page + 1;
-	const endItem = Math.min(paginationInfo.current_page * paginationInfo.per_page, paginationInfo.total_count);
-	$('#paginationInfo').text(`Hiển thị ${startItem} - ${endItem} của ${paginationInfo.total_count} kết quả`);
-
-	// Create pagination buttons
-	const pagination = $('#pagination');
-	pagination.empty();
-
-	// Previous button
-	pagination.append(`
-        <li class="page-item ${!paginationInfo.has_prev ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadICDList(${currentPage - 1})" ${!paginationInfo.has_prev ? 'tabindex="-1"' : ''}>
-                <i class="bi bi-chevron-left"></i>
-            </a>
-        </li>
-    `);
-
-	// Page numbers
-	const startPage = Math.max(1, currentPage - 2);
-	const endPage = Math.min(totalPages, currentPage + 2);
-
-	// First page if not in range
-	if (startPage > 1) {
-		pagination.append(`
-            <li class="page-item">
-                <a class="page-link" href="#" onclick="loadICDList(1)">1</a>
-            </li>
-        `);
-		if (startPage > 2) {
-			pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
-		}
-	}
-
-	// Page numbers in range
-	for (let i = startPage; i <= endPage; i++) {
-		pagination.append(`
-            <li class="page-item ${i === currentPage ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="loadICDList(${i})">${i}</a>
-            </li>
-        `);
-	}
-
-	// Last page if not in range
-	if (endPage < totalPages) {
-		if (endPage < totalPages - 1) {
-			pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
-		}
-		pagination.append(`
-            <li class="page-item">
-                <a class="page-link" href="#" onclick="loadICDList(${totalPages})">${totalPages}</a>
-            </li>
-        `);
-	}
-
-	// Next button
-	pagination.append(`
-        <li class="page-item ${!paginationInfo.has_next ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadICDList(${currentPage + 1})" ${!paginationInfo.has_next ? 'tabindex="-1"' : ''}>
-                <i class="bi bi-chevron-right"></i>
-            </a>
-        </li>
-    `);
+    if (!paginationInfo) return;
+    currentPage = paginationInfo.current_page;
+    totalPages = paginationInfo.total_pages;
+    listPagination.update({ page: currentPage, pageSize: paginationInfo.per_page, total: paginationInfo.total_count });
 }
 
 // Utility functions
@@ -590,28 +467,12 @@ function formatDate(dateString) {
 }
 
 function showLoading(show) {
-	if (show) {
-		$('#loadingSpinner').show();
-		$('#icdTableBody').hide();
-	} else {
-		$('#loadingSpinner').hide();
-		$('#icdTableBody').show();
-	}
+	$('#icdTableBody').attr('aria-busy', String(show));
 }
 
 function showSaveLoading(show) {
-	const spinner = $('#saveSpinner');
-	const icon = $('#saveIcon');
-
-	if (show) {
-		spinner.removeClass('d-none');
-		icon.addClass('d-none');
-		$('#saveICDBtn').prop('disabled', true);
-	} else {
-		spinner.addClass('d-none');
-		icon.removeClass('d-none');
-		$('#saveICDBtn').prop('disabled', false);
-	}
+	$('#addICDForm button[type="submit"], #editICDForm button[type="submit"]')
+		.prop('disabled', show).attr('aria-busy', String(show));
 }
 
 function showDeleteLoading(show) {
@@ -725,7 +586,6 @@ function importICD() {
 // Import ICD data to server
 async function importICDData(rows) {
 	try {
-		const token = localStorage.getItem('token');
 		const icdData = [];
 		let validRows = 0;
 		let invalidRows = 0;
@@ -788,42 +648,15 @@ async function importICDData(rows) {
 		const response = await fetch('/api/icd/import', {
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({ icd_list: icdData })
 		});
 
-		if (!response.ok) {
-			if (response.status === 401) {
-				updateImportProgress('Token hết hạn, đang làm mới...', 85);
-				await refreshToken();
-
-				// Retry với token mới
-				const retryResponse = await fetch('/api/icd/import', {
-					method: 'POST',
-					headers: {
-						'Authorization': `Bearer ${localStorage.getItem('token')}`,
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ icd_list: icdData })
-				});
-
-				if (!retryResponse.ok) {
-					throw new Error('Lỗi khi import dữ liệu ICD');
-				}
-
-				const retryResult = await retryResponse.json();
-				hideImportProgressModal();
-				showImportResult(retryResult.success_count || icdData.length, invalidRows, errors, retryResult.errors || []);
-			} else {
-				throw new Error('Lỗi khi import dữ liệu ICD');
-			}
-		} else {
-			const result = await response.json();
-			hideImportProgressModal();
-			showImportResult(result.success_count || icdData.length, invalidRows, errors, result.errors || []);
-		}
+		if (!response.ok) throw new Error('ICD import failed');
+		const result = await response.json();
+		hideImportProgressModal();
+		showImportResult(result.success_count ?? icdData.length, invalidRows, errors, result.errors || []);
 
 		// Đóng modal import và reload data
 		$('#importModal').modal('hide');
@@ -966,9 +799,9 @@ function showImportResult(successCount, validationErrors, validationErrorList = 
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                             ${allErrors.length > 0 ? `
-                                <button type="button" class="btn btn-warning" onclick="exportImportErrors()">
+                                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-warning" onclick="exportImportErrors()">
                                     <i class="bi bi-download me-2"></i>Xuất danh sách lỗi
                                 </button>
                             ` : ''}

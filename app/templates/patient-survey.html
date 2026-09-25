@@ -7,8 +7,10 @@
 <title>Khảo sát Tâm lý</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+  {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/patient-survey.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/components/survey-result-summary.css?v={{ app_version }}">
 </head>
 <body>
   <!-- Alert container -->
@@ -21,6 +23,7 @@
         <h1 id="title" class="title">Chào mừng bạn đến với khảo sát tâm lý</h1>
         <div class="meta">
           <span class="pill" id="survey-name">🛡️ Đang tải...</span>
+          <span class="pill" id="survey-sync-state" role="status" aria-live="polite"></span>
         </div>
       </div>
              <aside class="user" aria-label="Thông tin người làm khảo sát">
@@ -43,6 +46,7 @@
     </div>
 
     <!-- Survey Content -->
+    <div id="survey-result-summary"></div>
     <div id="survey-content">
       <!-- Single question will be loaded here -->
     </div>
@@ -54,7 +58,7 @@
 
     <div class="actions">
       <div class="row">
-        <button id="start-over" class="btn btn-outline" type="button">Bắt đầu lại</button>
+        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="start-over" class="btn btn-outline" type="button">Bắt đầu lại</button>
         <button id="previous" class="btn btn-outline" type="button" disabled>Trước đó</button>
         <button id="next" class="btn btn-primary" type="button" disabled>Tiếp theo</button>
       </div>
@@ -67,6 +71,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="/static/js/permission-check.js?v={{ app_version }}"></script>
       <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/patient-survey.js') }}?v=2.7"></script>
+    <script src="/static/js/shared/survey-result-summary.js?v={{ app_version }}"></script>
+    <script src="{{ url_for('static', filename='js/patient-survey.js') }}?v={{ app_version }}"></script>
   </body>
   </html>

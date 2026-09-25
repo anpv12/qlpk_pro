@@ -134,7 +134,7 @@
 					relatives
 				};
 
-				component.render(printWindow, {
+				await component.render(printWindow, {
 					title: 'In đơn thuốc',
 					clinicInfo: getClinicInfoConfig(),
 					...data

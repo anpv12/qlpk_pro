@@ -3,13 +3,18 @@
 /* Button edit icon styles */
 #jointExamEditBtn:not(.receptionist-icon-action) {
     border: none !important;
-    background: none !important;
     padding: 0 !important;
     z-index: 10;
     position: relative;
 }
+/* CSS cho Joint Exam Table (Người đi khám cùng) - DRY */
 
-#jointExamEditBtn:not(.receptionist-icon-action):hover {
+/* Button edit icon styles */
+#jointExamEditBtn:not(.receptionist-icon-action):not([data-qlpk-button], [data-qlpk-button] *) {
+    border: none !important;
+    background: none !important;
+}
+#jointExamEditBtn:not(.receptionist-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: none !important;
 }
 
@@ -19,7 +24,7 @@
 }
 
 #jointExamEditBtn:not(.receptionist-icon-action):hover i {
-    color: #007bff;
+    color: var(--qlpk-color-primary);
 }
 
 /* Badge indicator cho joint exam edit button */
@@ -30,11 +35,16 @@
     right: -2px;
     width: 8px;
     height: 8px;
-    background: #28a745;
     border-radius: 50%;
+	border-width: 2px;
+	border-style: solid;
+    animation: pulse-badge 2s infinite;
+}
+/* Badge indicator cho joint exam edit button */
+#jointExamEditBtn:not(.receptionist-icon-action):not([data-qlpk-button], [data-qlpk-button] *)::after {
+    background: #28a745;
     border: 2px solid white;
     box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.3);
-    animation: pulse-badge 2s infinite;
 }
 
 @keyframes pulse-badge {
@@ -49,9 +59,11 @@
 }
 
 #jointExamEditBtn:not(.receptionist-icon-action):hover {
-    background: rgba(0, 123, 255, 0.1) !important;
     border-radius: 4px;
     padding: 2px 4px !important;
+}
+#jointExamEditBtn:not(.receptionist-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
+    background: rgba(0, 123, 255, 0.1) !important;
 }
 
 #jointExamModal .modal-content {
@@ -65,7 +77,7 @@
 #jointExamModal .modal-header {
     padding: 0.5rem 0.875rem;
     border-bottom: 0.0625rem solid rgba(214, 160, 105, 0.34);
-    background: linear-gradient(135deg, #4b2719 0%, #633621 100%);
+    background: var(--qlpk-workflow-context-header-bg);
     color: #fffaf3;
 }
 
@@ -93,21 +105,24 @@
 }
 
 #jointExamModal .modal-footer .joint-exam-close-btn {
-    border: 0.0625rem solid rgba(107, 66, 44, 0.3);
+	border-width: 0.0625rem;
+	border-style: solid;
     border-radius: 0.4375rem;
-    background: #fffdf9;
-    color: #5a301f;
     font-size: var(--qlpk-font-size-base, 0.8125rem);
     font-weight: var(--qlpk-font-weight-bold, 700);
     line-height: 1.2;
     padding: 0.4rem 0.75rem;
 }
-
-#jointExamModal .modal-footer .joint-exam-close-btn:hover,
-#jointExamModal .modal-footer .joint-exam-close-btn:focus-visible {
-    border-color: #6b422c;
+#jointExamModal .modal-footer .joint-exam-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+    border: 0.0625rem solid rgba(107, 66, 44, 0.3);
+    background: #fffdf9;
+    color: #5a301f;
+}
+#jointExamModal .modal-footer .joint-exam-close-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+#jointExamModal .modal-footer .joint-exam-close-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+    border-color: var(--qlpk-color-primary);
     background: #fff7ed;
-    color: #4b2719;
+    color: var(--qlpk-brown-800);
 }
 
 .joint-exam-table-toolbar {
@@ -121,21 +136,24 @@
     align-items: center;
     justify-content: center;
     gap: 0.35rem;
-    border: 0.0625rem solid rgba(107, 66, 44, 0.28);
+	border-width: 0.0625rem;
+	border-style: solid;
     border-radius: 0.375rem;
-    background: #fffdf9;
-    color: #5a301f;
     font-size: var(--qlpk-font-size-base, 0.8125rem);
     font-weight: var(--qlpk-font-weight-bold, 700);
     line-height: 1.2;
     padding: 0.375rem 0.75rem;
 }
-
-.joint-exam-add-btn:hover,
-.joint-exam-add-btn:focus-visible {
-    border-color: #4b2719;
+.joint-exam-add-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+    border: 0.0625rem solid rgba(107, 66, 44, 0.28);
+    background: #fffdf9;
+    color: #5a301f;
+}
+.joint-exam-add-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.joint-exam-add-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+    border-color: var(--qlpk-color-primary);
     background: #fff7ed;
-    color: #4b2719;
+    color: var(--qlpk-brown-800);
 }
 
 .joint-exam-table-body {
@@ -329,7 +347,7 @@
     inline-size: 0.4rem;
     block-size: 0.4rem;
     border-radius: 999rem;
-    background: #0f766e;
+    background: var(--qlpk-workflow-context-header-bg);
     transform: translateY(-50%);
     pointer-events: none;
 }
@@ -348,13 +366,17 @@
     justify-content: center;
     inline-size: 2rem;
     block-size: 2rem;
-    border: 0.0625rem solid transparent;
-    background: #fffdf9;
+	border-width: 0.0625rem;
+	border-style: solid;
     padding: 0;
     cursor: pointer;
     border-radius: 0.4375rem;
     font-size: var(--qlpk-font-size-md, 14px);
     line-height: 1;
+}
+.joint-exam-table .relative-row-actions button:not([data-qlpk-button], [data-qlpk-button] *) {
+    border: 0.0625rem solid transparent;
+    background: #fffdf9;
     transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
@@ -394,43 +416,35 @@
 	color: #1f2937;
 	margin-bottom: 0.2rem;
 }
-
-.joint-exam-table .relative-row-actions button.edit {
+.joint-exam-table .relative-row-actions button.edit:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: rgba(14, 116, 144, 0.2);
     color: #075e75;
 }
-
-.joint-exam-table .relative-row-actions button.edit:hover {
+.joint-exam-table .relative-row-actions button.edit:hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: #e6f7fb;
     border-color: rgba(14, 116, 144, 0.34);
 }
-
-.joint-exam-table .relative-row-actions button.remove {
+.joint-exam-table .relative-row-actions button.remove:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: rgba(185, 28, 28, 0.18);
     color: #b91c1c;
 }
-
-.joint-exam-table .relative-row-actions button.remove:hover {
+.joint-exam-table .relative-row-actions button.remove:hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: #fef2f2;
     border-color: rgba(185, 28, 28, 0.3);
 }
-
-.joint-exam-table .relative-row-actions button.btn-save {
-    border-color: rgba(15, 118, 110, 0.22);
-    color: #0f766e;
+.joint-exam-table .relative-row-actions button.btn-save:not([data-qlpk-button], [data-qlpk-button] *) {
+    border-color: rgba(var(--qlpk-color-primary-rgb), 0.22);
+    color: var(--qlpk-color-primary);
 }
-
-.joint-exam-table .relative-row-actions button.btn-save:hover {
+.joint-exam-table .relative-row-actions button.btn-save:hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: #e2f8f1;
-    border-color: rgba(15, 118, 110, 0.36);
+    border-color: rgba(var(--qlpk-color-primary-rgb), 0.36);
 }
-
-.joint-exam-table .relative-row-actions button.btn-cancel {
+.joint-exam-table .relative-row-actions button.btn-cancel:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: rgba(107, 66, 44, 0.18);
     color: #6b422c;
 }
-
-.joint-exam-table .relative-row-actions button.btn-cancel:hover {
+.joint-exam-table .relative-row-actions button.btn-cancel:hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: #fff7ed;
     border-color: rgba(107, 66, 44, 0.3);
 }
@@ -547,7 +561,7 @@
         gap: 0.4rem;
         padding: 0.5rem 0.625rem;
         border: 0.0625rem solid #eadccf;
-        border-left: 0.1875rem solid #0f766e;
+        border-left: 0.1875rem solid var(--qlpk-color-primary);
         border-radius: 0.5rem;
         background: #ffffff;
     }

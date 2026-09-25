@@ -141,7 +141,7 @@
 					className: 'doctor-service-selection__remove'
 				});
 			}
-			return '<button type="button" class="doctor-workspace-button doctor-service-selection__remove" data-service-row-action="remove">Xóa</button>';
+			return '<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-service-selection__remove" data-service-row-action="remove">Xóa</button>';
 		}
 
 		function isCatalogServiceSelected(item) {

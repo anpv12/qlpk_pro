@@ -134,6 +134,7 @@
 	function renderAutocompleteDropdown(dropdown, matches = [], options = {}) {
 		if (!dropdown) return false;
 		if (!matches || matches.length === 0) {
+			dropdown.classList.toggle('is-empty', Boolean(options.emptyText));
 			if (options.emptyText) {
 				dropdown.innerHTML = `<div class="autocomplete-empty" role="status">${(options.escapeHtml || String)(options.emptyText)}</div>`;
 				setAutocompleteDropdownVisible(dropdown, true);
@@ -143,6 +144,7 @@
 			return false;
 		}
 
+		dropdown.classList.remove('is-empty');
 		dropdown.innerHTML = renderOrderAutocompleteDropdownHtml(matches, {
 			selectedIndex: options.selectedIndex,
 			escapeHtml: options.escapeHtml,
@@ -255,6 +257,7 @@
 	}
 
 	function hideAutocompleteDropdown(dropdown, options = {}) {
+		if (dropdown) dropdown.classList.remove('is-empty');
 		setAutocompleteDropdownVisible(dropdown, false);
 		if (options.pathHint) {
 			options.pathHint.textContent = options.emptyText || 'Chưa chọn chỉ định nào.';

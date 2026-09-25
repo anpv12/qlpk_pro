@@ -103,7 +103,7 @@
 			</td>
 			<td>${utils.formatFileSize(Number(att.file_size || 0))}</td>
 			<td>${escapeHtml(formatDate(att.upload_date, options))}</td>
-			<td><span class="document-status-badge document-status-badge--saved">Đã lưu</span></td>
+			<td><span class="qlpk-status qlpk-status--success document-status-badge">Đã lưu</span></td>
 			<td class="document-actions-cell">
 				<div class="document-actions">
 					${viewButton}
@@ -136,7 +136,7 @@
 			</td>
 			<td>${utils.formatFileSize(docItem.size)}</td>
 			<td>${escapeHtml(formatDate(docItem.uploadDate, options))}</td>
-			<td><span class="document-status-badge document-status-badge--draft">Nháp</span></td>
+			<td><span class="qlpk-status qlpk-status--warning document-status-badge">Nháp</span></td>
 			<td class="document-actions-cell">
 				<div class="document-actions">
 					${downloadButton}

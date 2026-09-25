@@ -493,9 +493,10 @@ def get_my_busy_schedules(current_user):
         
         # Query lịch bận của bác sĩ hiện tại
         query = db.query(DoctorBusySchedule).filter(
-            DoctorBusySchedule.doctor_id == current_user.id,
-            DoctorBusySchedule.status == status
+            DoctorBusySchedule.doctor_id == current_user.id
         )
+        if status != 'all':
+            query = query.filter(DoctorBusySchedule.status == status)
         
         # Filter theo khoảng thời gian
         if date_from:
@@ -503,9 +504,9 @@ def get_my_busy_schedules(current_user):
         if date_to:
             query = query.filter(DoctorBusySchedule.end_datetime <= datetime.fromisoformat(date_to))
         
-        # Chỉ lấy các lịch bận chưa kết thúc (end_datetime >= now)
-        # Trừ khi có date_to được chỉ định (để xem lịch sử)
-        if not date_to:
+        # Mặc định chỉ hiện lịch đang hoạt động sắp tới; Tất cả/Đã hủy
+        # phải đọc được lịch sử của chính người dùng này.
+        if status == 'active' and not date_to:
             now = datetime.now(timezone.utc)
             query = query.filter(DoctorBusySchedule.end_datetime >= now)
         

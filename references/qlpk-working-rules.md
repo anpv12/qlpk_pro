@@ -24,6 +24,12 @@
 
 ## Implementation Discipline
 
+- Ngoại lệ bắt buộc cho NÚT HÀNH ĐỘNG: đọc `references/ui/button-system.md`.
+  Không dùng primary nâu/gradient hoặc palette theo role cho nút; chỉ dùng
+  token/style chung theo mức ưu tiên và nền chứa. Quy tắc này thay thế các
+  hướng dẫn màu nút cũ, không thay màu thương hiệu của header/tab/badge.
+
+- Khi user nói “màu chủ đạo”, dùng nâu sáng header `#7b472f`: nguồn duy nhất `--qlpk-brand-primary`, component gọi `--qlpk-color-primary`. Không dùng nâu đậm/chocolate hoặc ghi đè primary theo trang. Header chuyển sắc được giữ nguyên; chữ nội dung và màu trạng thái có vai trò riêng. Đọc `references/ui/brand-theme.md` và chạy brand guard khi đổi màu.
 - Keep backend, frontend, model, schema, migration, and template changes aligned.
 - Keep folder structure changes tied to a concrete workflow improvement, not cosmetic cleanup.
 - Avoid hardcoding clinical state, IDs, names, permissions, and workflow transitions in frontend logic when the backend can provide them.
@@ -33,6 +39,7 @@
 
 ## Frontend Rules
 
+- Autocomplete field: dùng owner chung theo `references/ui/autocomplete-field.md`; nguồn dữ liệu chỉ là adapter. Không tạo dropdown/chips/lifecycle riêng cho từng màn. Migrate autocomplete legacy theo scope được duyệt.
 - Frontend stack is Jinja + Bootstrap + jQuery + plain JavaScript. Do not introduce a SPA framework.
 - Workflow UI must be designed from actor/task and data owner, not from isolated database fields. For every new or changed UI block, identify the business task, source API, canonical owner table, editable/read-only state, component owner, clear/reset owner, and whether the information is visible immediately, collapsed, modal-only, or not shown. If a workflow has a data inventory, every visible field must trace back to it or the inventory must be updated first.
 - Reuse existing CSS files and DRY components before adding new styles. Shared UI primitives must have one owner: app header, dry/sidebar navigation, workspace shell/tabs/app launcher, common controls, shared modals, typography/colors/spacing tokens, and repeated layout patterns belong under the shared/template/component/app-shell layers. Pages may compose/configure these primitives and add workflow-private styles, but must not copy shared HTML/CSS/JS into many templates or create page-local clones of common controls.

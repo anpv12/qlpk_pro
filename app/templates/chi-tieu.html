@@ -11,6 +11,7 @@
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -27,7 +28,7 @@
 	<link rel="stylesheet" href="/static/css/chi-tieu.css?v={{ app_version }}">
 </head>
 
-<body>
+<body class="qlpk-data-tables">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
@@ -78,7 +79,7 @@
 							<div class="chart-card">
 								<div class="cc-header ct-card-header-tight ct-header-between">
 									<span><i class="bi bi-bar-chart-fill ct-icon-primary"></i> Thống kê thu chi</span>
-									<button class="ct-export-btn" onclick="exportThuChiExcel()" title="Xuất Excel Thu Chi">
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportThuChiExcel()" title="Xuất Excel Thu Chi">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
 								</div>
@@ -100,7 +101,7 @@
 										<button id="btnRevTime" class="rev-toggle-btn active" onclick="setRevView('time')">Theo thời gian</button>
 										<button id="btnRevService" class="rev-toggle-btn" onclick="setRevView('service')">Theo dịch vụ</button>
 										<button id="btnRevMedicine" class="rev-toggle-btn" onclick="setRevView('medicine')">Theo thuốc</button>
-										<button class="ct-export-btn" onclick="exportRevenueExcel()" title="Xuất Excel">
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportRevenueExcel()" title="Xuất Excel">
 											<i class="bi bi-file-earmark-excel"></i> Excel
 										</button>
 									</div>
@@ -117,7 +118,7 @@
 							<div class="chart-card ct-card-fill">
 								<div class="cc-header ct-card-header-tight ct-header-between">
 									<span><i class="bi bi-pie-chart-fill ct-icon-danger"></i> Chi tiêu</span>
-									<button class="ct-export-btn" onclick="exportChiTieuExcel()" title="Xuất Excel Chi tiêu">
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportChiTieuExcel()" title="Xuất Excel Chi tiêu">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
 								</div>
@@ -171,7 +172,7 @@
 								</div>
 							</div>
 							<div class="modal-footer bg-light border-0">
-								<button type="button" class="btn btn-secondary px-4 py-2 ct-btn-rounded" data-bs-dismiss="modal">Đóng</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary px-4 py-2 ct-btn-rounded" data-bs-dismiss="modal">Đóng</button>
 							</div>
 						</div>
 					</div>
@@ -201,14 +202,14 @@
 								</select>
 							</div>
 							<div class="ct-toolbar-actions">
-								<button class="tb-btn btn-outline" onclick="toggleConfig()"><i class="bi bi-columns-gap"></i> Cột</button>
-								<button class="btn-import-xl" onclick="downloadTemplate()" title="Tải file mẫu"><i class="bi bi-file-earmark-arrow-down"></i> Mẫu</button>
-								<button class="btn-import-xl" onclick="document.getElementById('importFile').click()"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" onclick="toggleConfig()"><i class="bi bi-columns-gap"></i> Cột</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-import-xl" onclick="downloadTemplate()" title="Tải file mẫu"><i class="bi bi-file-earmark-arrow-down"></i> Mẫu</button>
+								<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn-import-xl" onclick="document.getElementById('importFile').click()"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
 								<input type="file" id="importFile" accept=".csv,.txt,.xlsx" class="ct-hidden" onchange="importCSV(this)">
-								<button class="btn-export-xl" onclick="exportExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-export-xl" onclick="exportExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
 							</div>
 						</div>
-						<button class="add-row-btn" onclick="addRow()"><i class="bi bi-plus-circle"></i> Thêm khoản chi</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="add-row-btn" onclick="addRow()"><i class="bi bi-plus-circle"></i> Thêm khoản chi</button>
 						<div class="table-responsive">
 							<table class="expense-table" id="chiTable">
 								<thead id="chiHead"></thead>
@@ -234,12 +235,12 @@
 		<div class="config-panel">
 			<div class="config-header">
 				<h3><i class="bi bi-columns-gap me-2"></i>Cấu hình cột</h3>
-				<button class="ct-icon-button-muted" onclick="toggleConfig()">✕</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-icon-button-muted" onclick="toggleConfig()">✕</button>
 			</div>
 			<div class="config-body">
 				<p class="ct-config-help">Click <i class="bi bi-pencil"></i> sửa · <i class="bi bi-trash"></i> xóa</p>
 				<ul class="col-list" id="colList"></ul>
-				<button class="tb-btn btn-primary-custom ct-full-action" onclick="showAddCol()"><i class="bi bi-plus-lg"></i> Thêm cột mới</button>
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom ct-full-action" onclick="showAddCol()"><i class="bi bi-plus-lg"></i> Thêm cột mới</button>
 			</div>
 			<div id="colFormSection" class="ct-hidden">
 				<div class="ct-col-form-panel">
@@ -269,8 +270,8 @@
 					</div>
 				</div>
 				<div class="config-footer">
-					<button class="tb-btn btn-outline" onclick="hideAddCol()">Hủy</button>
-					<button class="tb-btn btn-primary-custom" onclick="saveCol()">Lưu cột</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" onclick="hideAddCol()">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom" onclick="saveCol()">Lưu cột</button>
 				</div>
 			</div>
 		</div>

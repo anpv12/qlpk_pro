@@ -68,6 +68,8 @@
 			showToast: null,
 			afterSave: null,
 			afterComplete: null,
+			onTransfer: null,
+			canTransfer: null,
 			dirty: false,
 			mainDirty: false,
 			mainRevision: 0,
@@ -184,6 +186,13 @@
 		return phaseLabels[phase] || '';
 	}
 
+	function syncTransferActionState(options = {}) {
+		const button = getWorkspaceRoot(getDocument(options)).querySelector('[data-doctor-workspace-action="transfer"]');
+		if (!button) return;
+		button.disabled = STATE.workspaceSaving || STATE.completing || !STATE.canTransfer?.();
+		button.setAttribute('aria-disabled', String(button.disabled));
+	}
+
 	function setBusy(doc, isBusy, phase = 'idle') {
 		const workspace = getElement(doc, 'doctorClinicalWorkspace');
 		const scope = getWorkspaceRoot(doc);
@@ -206,6 +215,7 @@
 
 		const status = getElement(doc, 'doctorWorkspaceSaveStatus');
 		if (status) status.textContent = isBusy ? getWorkspaceSaveStatusText(phase) : '';
+		syncTransferActionState({ document: doc });
 	}
 
 	function setWorkspaceSavePhase(doc, phase) {
@@ -452,6 +462,7 @@
 	}
 
 	function isClinicalDraftControl(control) {
+		if (control.hasAttribute?.('data-clinical-transient')) return false;
 		const view = control?.ownerDocument?.defaultView;
 		if (!view || !(control instanceof view.HTMLInputElement || control instanceof view.HTMLTextAreaElement || control instanceof view.HTMLSelectElement)) return false;
 		if (!control.id || control.disabled && control.type === 'hidden') return false;
@@ -572,6 +583,8 @@
 		STATE.showToast = options.showToast || STATE.showToast;
 		STATE.afterSave = options.afterSave || STATE.afterSave;
 		STATE.afterComplete = options.afterComplete || STATE.afterComplete;
+		STATE.onTransfer = options.onTransfer || STATE.onTransfer;
+		STATE.canTransfer = options.canTransfer || STATE.canTransfer;
 
 		const workspace = getElement(doc, 'doctorClinicalWorkspace');
 		if (!workspace) return false;
@@ -587,6 +600,7 @@
 		if (form) {
 			form.addEventListener('submit', event => event.preventDefault());
 			const handleFieldMutation = event => {
+				if (event.target?.hasAttribute?.('data-clinical-transient')) return;
 				const view = event.target?.ownerDocument?.defaultView;
 				if (!view || !(event.target instanceof view.HTMLInputElement || event.target instanceof view.HTMLTextAreaElement)) return;
 				if (clinicalForm.ownsField(event.target)) return;
@@ -622,9 +636,10 @@
 			}
 
 			const actionButton = event.target.closest('[data-doctor-workspace-action]');
-			if (!actionButton) return;
+			if (!actionButton || actionButton.disabled) return;
 			const action = actionButton.dataset.doctorWorkspaceAction;
-			if (action === 'save') saveWorkspace({ document: doc }).catch(() => {});
+			if (action === 'transfer') STATE.onTransfer?.();
+			if (action === 'save') saveWorkspace({ document: doc, applyDetailDefaults: true }).catch(() => {});
 			if (action === 'complete') completeNow({ document: doc }).catch(() => {});
 		});
 		doc.addEventListener(COMPONENT_CONFIG.historyEventName || 'qlpk:doctor-prescription-history-loaded', event => {
@@ -650,6 +665,7 @@
 		saveWorkspace,
 		hasUnsavedChanges,
 		resolveUnsavedChanges,
+		syncTransferActionState,
 		activateSection: activateWorkspaceSection,
 		refreshPatientHeader: options => {
 			const doc = getDocument(options);

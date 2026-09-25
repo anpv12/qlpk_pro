@@ -1,5 +1,39 @@
 # QLPK Architecture Map
 
+## Medicine price updates
+
+- `app/models/medicine_price_history.py` owns audit intervals;
+  `app/modules/medicines/services/price_history.py` owns price changes,
+  server timestamps, stale-write checks and paginated history.
+  `app/api/medicine.py` owns authenticated GET/POST price routes.
+- `app/static/js/medicines/price-editor.js` and
+  `app/templates/partials/medicine-price-editor.html` own the separate price dialog;
+  `clinic-catalog.js` integrates create/edit/reset without resubmitting price
+  on ordinary edits. showInventoryOverlay handles stacking/focus while the
+  original medicine form remains mounted. Catalog writer records initial prices
+  for POST/Excel.
+
+## Shared autocomplete field
+
+`components/autocomplete-field.js/.css` và template macro
+`components/_autocomplete_field.html` sở hữu control/tags/popup và
+lifecycle async dùng chung. ICD adapter giữ contract ID/mã; DAV field8
+adapter trong `clinical-examination-form.js` giữ tên/hàm lượng. Nguồn dữ
+liệu không tự render UI. Chuẩn: `references/ui/autocomplete-field.md`.
+
+- Phân trang 12 danh sách quản trị: `partials/clinic-pagination.html` và
+  `static/js/components/clinic-pagination.js` là renderer/control dùng chung;
+  page JS giữ API/bộ lọc và chọn adapter client hoặc metadata server.
+  Token pagination Tủ thuốc được dùng chung qua `shared/clinic-workspace.css`.
+
+- Visual foundation cho Tủ thuốc và 18 màn quản trị opt-in:
+  `app/static/css/shared/clinic-workspace.css` (nền/header/summary/tokens,
+  input/select, placeholder, nút và typography modal).
+  `shared/admin-management-ui.css` giữ bảng/layout admin và fallback control
+  cho trang không opt-in;
+  page CSS giữ workflow riêng. Phạm vi và ngoại lệ được kiểm tại
+  `scripts/check_brand_theme.py`; xem `references/ui/brand-theme.md`.
+
 ## Runtime Shape
 
 - Application type: Flask server-rendered web app.
@@ -25,11 +59,32 @@
 - Doctor examination: `app/static/js/doctor-examination.js` is the high-risk stateful page orchestrator for appointment/examination/detail/prescription/services APIs. Its active Doctor-private modules are listed in `references/doctor-examination-context.md`; prescription state remains owned only by `prescription-ui.js`, while `prescription-model.js`, `prescription-row-renderer.js`, and `prescription-history-ui.js` are stateless helpers. Draft recovery is device-local IndexedDB only, canonical server data remains DB-first, and restore is explicit. Doctor persistence is a manual global-save transaction; do not infer that the Doctor screen uses the psychologist or legacy autosave policy. Shared components and shared order helpers remain separate owners. The reusable patient search/history modal lifecycle is owned by `components/patient-history-modal.js`, not by this page orchestrator.
 - Psychologist examination: `app/static/js/psychologist-examination.js`, same `examination_details` storage with psychologist section mapping. Page-specific pure helpers now live under `app/static/js/psychologist-examination/` for core formatting/status helpers, while shared components/orders helpers handle the reusable shell behavior and the legacy orchestrator keeps wrapper/alias names for existing callers. Its patient search/history UI uses the same `QLPKPatientHistoryModal` instance and only supplies TLG-specific data/action adapters.
 - Prescriptions: `app/modules/prescriptions/api/public.py`, `app/modules/prescriptions/api/internal.py`, `app/modules/prescriptions/services/read_service.py`, `app/modules/prescriptions/services/save_service.py`, `app/modules/prescriptions/services/re_examination_service.py`, `app/modules/prescriptions/view_models/public_prescription.py`, `app/modules/prescriptions/view_models/print_prescription.py`, `app/api/prescription.py` compatibility wrapper, `app/models/prescription.py`, verify/frontend print/modal preview/modal print/shared document assets under `app/static/js/prescriptions/` and `app/static/css/prescriptions/`, prescription UI bridge inside examination JS/templates. Module context: `references/modules/prescriptions.md`.
-- Medicine/inventory: clinic stock reads remain in `app/api/medicine.py`, models `medicine.py`, `medicine_batch.py`, `medicine_transaction.py`, and `medicine-management.js`; canonical lot import/count writes are owned by `app/modules/medicines/services/inventory_service.py`. External DAV/reference drugs live separately in `app/models/medicine_reference_catalog.py`, `app/modules/medicines/api/reference_catalog.py`, services under `app/modules/medicines/services/`, page `app/templates/medicine-reference-catalog.html`, CSS `app/static/css/medicines/reference-catalog.css`, and JS `app/static/js/medicines/reference-catalog.js`; this catalog is search/sync/detail only and does not own stock.
+- Medicine/inventory: stock reads remain in `app/api/medicine.py`, models `medicine.py`, `medicine_batch.py`, `medicine_transaction.py`, and `medicine-management.js`; imports/opening registration belong to `app/modules/medicines/services/inventory_service.py` (manual count retired). `catalog_service.py` owns DAV-only clinic creation and settings updates; source mapping requires its trusted Python keyword `allow_reference_mapping=True`. `reference_review.py` owns authorized human preview/confirmation through `/api/medicines/<id>/reference-review`; `medicines/reference-review.js` owns the separate review modal and shared autocomplete adapter. User review was restored by the latest 2026-09-14 decision; previous automated links require human confirmation. `catalog_excel.py` shares the creation writer for Excel and its template. `medicines/clinic-catalog.js` owns DAV selection/reset for creation and locked source display for ordinary editing. The DAV screen/API (`medicine_reference_catalog.py`, `modules/medicines/api/reference_catalog.py`, `medicine-reference-catalog.html`, `medicines/reference-catalog.js`) still handles source sync/search/detail; its data links to clinic medicines by FK but never owns stock.
 - Clinical orders: `app/modules/orders/api/chi_dinh.py`, `app/modules/orders/api/survey.py`, clinical query/mutation/result-file services under `app/modules/orders/services/`, view models under `app/modules/orders/view_models/`, compatibility wrapper `app/api/chi_dinh.py`, and `app/models/chi_dinh.py`. The retired order catalog API/model/tables were removed in the 2026-08-31 cleanup. Module context: `references/modules/orders.md`.
 - Payment: `app/api/payment_waiting.py`, `app/templates/payment-waiting.html`, `app/static/js/payment-waiting.js`.
-- Surveys: `app/api/survey_*`, `app/models/survey_*`, survey template/session/response screens.
+- Surveys: `app/api/survey_*`, `app/models/survey_*`, survey template/session/response screens. CRUD owner `survey_templates.py`; `survey_template_management.py` only public list/duplicate. Scoring/validation owner `app/utils/survey_scoring.py`; context `references/modules/surveys.md`.
 - Supporting catalogs: ICD, active ingredients, allergens, services, packages, holidays, documents, addresses, busy schedules.
+
+## Order-survey lifecycle owner (2026-09-05)
+
+`app/modules/orders/services/survey_lifecycle.py` is shared by link generation,
+submission, order mutation and legacy reconciliation. It owns order status
+transitions and the atomic answer/score/session/order submission transaction.
+`app/static/js/orders/order-status-utils.js` owns shared display labels; CLS,
+Doctor and psychologist consume the same statuses. Order-scoped result reads
+live in the existing order blueprint; Xem kết quả opens the shared
+`patient-survey.html?review_order_id=<id>` renderer in read-only mode.
+`app/modules/orders/services/survey_draft.py` owns partial answer validation,
+session snapshots and revision-based draft writes. Patient autosave uses
+token-scoped `/api/survey-sessions/draft`; physician review polls the authorized
+order result endpoint every three seconds until closure. Draft data belongs
+to SurveySession, not SurveyResponse; only final submission creates a result.
+CLS detail is a single view: `loadOrderDetail` loads survey content directly,
+with no Bootstrap detail-tab state/listeners. Overview actions are owned by
+`renderSurveyActions`; the list's two status tabs remain separate filters.
+The same service owns result availability, manual finish and deadline expiry.
+The order blueprint reconciles deadlines on workflow API requests; the query
+service returns two-tab counts and the next expiry for a one-shot UI refresh.
 
 ## Frontend Structure
 

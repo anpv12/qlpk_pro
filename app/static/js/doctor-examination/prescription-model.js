@@ -6,6 +6,9 @@
 
 	const { textOf, toNumber } = RUNTIME;
 
+	const TYPE_CONTRACT = window.PrescriptionTypeContract;
+	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
+
 	const PRESCRIPTION_USAGE_MODES = {
 		TIME_SLOTS: 'time_slots',
 		TIMES_PER_DAY: 'times_per_day'
@@ -23,11 +26,7 @@
 	];
 
 	function normalizePrescriptionType(value) {
-		const raw = textOf(value).toUpperCase();
-		if (raw === 'H' || raw.includes('HƯỚNG')) return 'H';
-		if (raw === 'N' || raw.includes('NGHIỆN')) return 'N';
-		if (raw === 'TOXIC' || raw.includes('ĐỘC')) return 'TOXIC';
-		return 'BASIC';
+		return TYPE_CONTRACT.normalizeCatalogType(value);
 	}
 
 	function ensurePrescriptionUsageMode(value) {

@@ -1349,7 +1349,7 @@ function renderGrid() {
 				b += `<td><input class="cell-input" value="${val}" onchange="updateCell(${ri},'${col.id}',this.value)" placeholder=""></td>`;
 			}
 		}
-		b += `<td class="row-actions"><button onclick="deleteRow(${ri})" title="Xóa"><i class="bi bi-trash"></i></button></td></tr>`;
+		b += `<td class="row-actions"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" onclick="deleteRow(${ri})" title="Xóa"><i class="bi bi-trash"></i></button></td></tr>`;
 	});
 	document.getElementById('chiBody').innerHTML = b;
 
@@ -1577,7 +1577,7 @@ async function addRow() {
 	}
 }
 function deleteRow(ri) {
-	CustomModal.confirm('Xóa khoản chi này?', 'Xác nhận xóa', 'warning').then(async confirmed => {
+	CustomModal.confirm('Xóa khoản chi này?', 'Xác nhận xóa', 'warning', 'danger').then(async confirmed => {
 		if (!confirmed) return;
 		const row = rows[ri];
 		try {
@@ -1603,7 +1603,7 @@ function renderColList() {
 	const typeLabels = { number: 'Số', text: 'Văn bản', date: 'Ngày', time: 'Giờ', select: 'Dropdown', formula: 'Công thức', autocomplete: 'Tự động' };
 	document.getElementById('colList').innerHTML = columns.map(col => {
 		const fTag = col.type === 'formula' ? `<span class="ct-formula-summary">= ${col.formula}</span>` : '';
-		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${col.name}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button onclick="editCol('${col.id}')"><i class="bi bi-pencil"></i></button><button class="del-btn" onclick="deleteCol('${col.id}')"><i class="bi bi-trash"></i></button></div></li>`;
+		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${col.name}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" onclick="editCol('${col.id}')"><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" onclick="deleteCol('${col.id}')"><i class="bi bi-trash"></i></button></div></li>`;
 	}).join('');
 }
 function showAddCol() {
@@ -1658,7 +1658,7 @@ function saveCol() {
 	saveColumnsToServer();
 }
 function deleteCol(colId) {
-	CustomModal.confirm('Xóa cột này?', 'Xác nhận xóa cột', 'warning').then(confirmed => {
+	CustomModal.confirm('Xóa cột này?', 'Xác nhận xóa cột', 'warning', 'danger').then(confirmed => {
 		if (!confirmed) return;
 		const idx = columns.findIndex(c => c.id === colId);
 		if (idx > -1) columns.splice(idx, 1);

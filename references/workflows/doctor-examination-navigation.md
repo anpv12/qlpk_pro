@@ -6,6 +6,11 @@ This document is the runtime/navigation contract for the doctor clinical workspa
 
 ## Scope And Boundary
 
+Khám & xử trí và Khám chi tiết giữ nền tiêu đề nâu nhưng dùng biến thể
+`qlpk-patient-visit-card--neutral-border` từ `patient-visit-info-form.css`
+(2026-09-19): viền mảnh trung tính cả bốn cạnh, không nhấn màu trái lần nữa.
+Không đổi grid, vùng cuộn, navigation hay lifecycle dữ liệu.
+
 The navigation here is internal to the selected doctor's clinical workspace. It is not the shared app header, sidebar, app launcher, or workspace-tab shell.
 
 - It changes the visible workspace section; it does not navigate to another URL.
@@ -60,6 +65,14 @@ The Chỉ định pane has one input. Its dropdown always searches
 indication catalog.
 
 ## Clinical Panel Content Contract
+
+Cập nhật field8 ngày 2026-09-13: Thuốc đang dùng dùng input tìm DAV có
+placeholder `Tìm thuốc từ DAV…`, danh sách tên đã chọn có nút bỏ, dropdown
+12 kết quả/lần, cuộn tải tiếp. Đây là ngoại lệ autocomplete đối với quy
+tắc textarea không placeholder bên dưới. Dùng lõi chung ICD/DAV theo
+`references/ui/autocomplete-field.md`: chips/input cùng control, dropdown
+nổi native popover không làm giãn form, tự mở lên/xuống theo viewport.
+Panel body vẫn sở hữu cuộn nội dung. Từ khóa không phải dữ liệu hồ sơ.
 
 `#doctorClinicalDecisionPanel` is one clinical workspace, not a second navigation surface or a set of independently toggled task panels. Its DOM contains the paired clinical-card grid followed by `#doctorPrescriptionWorkspace`; the prescription panel is not a root navigation target.
 
@@ -178,7 +191,7 @@ delete or replace other persisted detail sections.
 
 - Above `86.24875rem`, the top navigation is a vertical edge rail beside the clinical stage. It uses intrinsic height and must not scroll internally.
 - At or below `86.24875rem`, it becomes a horizontal, overflow-x scrollable row below the main clinical stage; labels return to normal horizontal writing.
-- Detail-field groups use two equal columns from `48rem` and one column below that breakpoint; Thần kinh spans both desktop columns. Normal detail fields place their primary-text labels above their full-width textarea within that half-column, preventing the shared horizontal label/input rule from constricting clinical text entry. Their textarea has `padding-inline-start: 0`, so the label and entered text start on one vertical reading axis; the end padding remains for the resize control. All 15 detail controls deliberately omit a `placeholder`: the visible label is the only field cue and an empty entry surface remains blank. Both cards share the compact dark-green header/white title-icon treatment of the prescription workspace; their white entry surfaces retain teal strong for group titles, teal for add actions and focus, teal for the fixed numbered `1.`–`9.` decision labels, primary text for normal field labels and entered values, and two matching teal tints for dividers and entry underlines. The desktop root-rail uses the same teal family: active uses the primary teal, inactive uses a readable muted teal, and hover/focus uses the strong teal. Short labels with the explicit `doctor-clinical-detail-field--inline` modifier (`Tuần hoàn`, `Tiêu hoá`, `Thần kinh`, `Tri giác`, `Tư duy`, `Trí nhớ`, `Trí năng`) are the deliberate exception: their non-wrapping text label and textarea share one responsive row through `max-content minmax(0, 1fr)`. Every free-text control in both cards is a semantic textarea with an initial/minimum height of `1.65rem` and native vertical resizing for multiline entry; ICD diagnosis controls remain the shared autocomplete component. The label margin block-start and textarea padding block-start consume the same `--doctor-clinical-detail-entry-block-start` token so every inline label begins on the textarea's first text line. From `64rem`, the paired cards stretch to the taller content-driven card height; the form rows remain content-sized rather than distributing residual height into textareas. There is no JS-measured or fixed card height. Below `64rem`, the paired Khám grid becomes one column and keeps the document order Khám & xử trí, Khám chi tiết, then the full-width prescription block. At or below `47.99875rem`, the workspace remains bounded to the viewport; the page and clinical layout do not scroll, while the active panel body owns vertical overflow for dense clinical content. The mobile two-pane switch and narrow section rail may still scroll horizontally as navigation controls.
+- Detail-field groups use two equal columns from `48rem` and one column below that breakpoint; Thần kinh spans both desktop columns. All 15 fields place the label above the full-width textarea, with both starting on the same left axis; there is no short-label inline exception. Group headings use the brand heading color and bold weight, labels use medium weight, and all entered content uses regular weight with the readable primary content color. Normal findings are real saved content, never placeholders or disabled-looking text; presentation never matches the clinical value string. Field gaps are `0.5rem 0.75rem`, group-heading gaps `0.5rem`, and body group gaps `0.75rem`; rows stay content-sized. Every free-text control remains a semantic textarea with an initial/minimum height of `1.65rem` and native vertical resizing for multiline entry; ICD diagnosis controls remain the shared autocomplete component. From `64rem`, the paired cards stretch to the taller content-driven card height; the form rows remain content-sized rather than distributing residual height into textareas. There is no JS-measured or fixed card height. Below `64rem`, the paired Khám grid becomes one column and keeps the document order Khám & xử trí, Khám chi tiết, then the full-width prescription block. At or below `47.99875rem`, the workspace remains bounded to the viewport; the page and clinical layout do not scroll, while the active panel body owns vertical overflow for dense clinical content. The mobile two-pane switch and narrow section rail may still scroll horizontally as navigation controls.
 - Active links/buttons must expose `.is-active` and `aria-current="true"`; inactive sections/panes must be hidden and receive `aria-hidden="true"` where the top-level section owner manages it.
 - Preserve the explicit `aria-controls`/target ID relationship. Do not replace labels with icon-only controls unless an accessible name remains and visual QA confirms the clinical meaning is obvious.
 

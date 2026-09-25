@@ -1,20 +1,20 @@
 		:root {
-			--primary-blue: #155CA2;
-			--primary-dark: #0d4a7a;
+			--primary-blue: var(--qlpk-color-primary);
+			--primary-dark: var(--qlpk-color-primary-strong);
 			--success-green: #059669;
 			--warning-orange: #f59e0b;
 			--danger-red: #dc2626;
 		}
 
 		body {
-			background: #f7fafd;
+			background: var(--qlpk-color-page-bg);
 			font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		}
 
 		.main-content {
 			overflow-x: hidden;
 			padding: 5px 10px;
-			background-color: #f8f9fa;
+			background-color: var(--qlpk-color-page-bg);
 		}
 
 		/* Ensure Bootstrap grid works correctly with DRY sidebar */
@@ -86,11 +86,11 @@
 		.stat-card .stat-value {
 			font-size: var(--qlpk-font-size-2xl, 20px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #1e293b;
+			color: var(--qlpk-color-text);
 		}
 
 		.stat-card .stat-label {
-			color: #0a713e;
+			color: var(--qlpk-color-muted);
 			font-style: italic;
 		}
 
@@ -100,17 +100,17 @@
 		}
 
 		.stat-icon.blue {
-			background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+			background: var(--qlpk-workflow-context-header-bg);
 			color: white;
 		}
 
 		.stat-icon.green {
-			background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+			background: var(--qlpk-workflow-context-header-bg);
 			color: white;
 		}
 
 		.stat-icon.orange {
-			background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+			background: var(--qlpk-workflow-context-header-bg);
 			color: white;
 		}
 
@@ -120,7 +120,7 @@
 		}
 
 		.stat-icon.purple {
-			background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+			background: var(--qlpk-workflow-context-header-bg);
 			color: white;
 		}
 
@@ -133,9 +133,9 @@
 		}
 
 		.data-card .card-header {
-			background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+			background: linear-gradient(135deg, var(--qlpk-color-page-bg) 0%, var(--qlpk-color-brown-soft) 100%);
 			padding: 0.5rem 0.5rem;
-			border-bottom: 1px solid #e2e8f0;
+			border-bottom: 1px solid var(--qlpk-color-border);
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			color: var(--primary-blue);
 		}
@@ -146,10 +146,9 @@
 		}
 
 		.table thead th {
-			background: #14479b;
-			border-bottom: 2px solid #0d3a7d;
+			background: var(--qlpk-color-brown-soft);
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			color: #fff;
+			color: var(--qlpk-color-neutral-700);
 			padding: 0.5rem 0.75rem;
 			font-size: var(--qlpk-font-size-base, 13px);
 		}
@@ -157,29 +156,33 @@
 		.table tbody td {
 			padding: 0.5rem 0.75rem;
 			vertical-align: middle;
-			border-bottom: 1px solid #f1f5f9;
 		}
 
 		.table tbody tr:hover {
-			background: #f8fafc;
+			background: var(--qlpk-color-page-bg);
 		}
 
 		/* ==================== Buttons ==================== */
 		.btn-export {
-			background: linear-gradient(135deg, var(--success-green) 0%, #047857 100%);
-			color: white;
 			border: none;
 			padding: 0.5rem 1.25rem;
 			border-radius: 8px;
 			font-weight: var(--qlpk-font-weight-medium, 500);
+}
+/* ==================== Buttons ==================== */
+		.btn-export:not([data-qlpk-button], [data-qlpk-button] *) {
+			background: var(--qlpk-workflow-context-header-bg);
+			color: white;
 			transition: all 0.3s ease;
-		}
+}
 
 		.btn-export:hover {
 			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+.btn-export:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+			box-shadow: 0 4px 12px rgba(var(--qlpk-color-primary-rgb), 0.4);
 			color: white;
-		}
+}
 
 		/* ==================== Medicine Summary (shared JS + Table) ==================== */
 		.summary-qty {
@@ -188,6 +191,9 @@
 		}
 
 		.badge-type {
+			background: var(--qlpk-color-surface);
+			border: 1px solid var(--qlpk-color-border);
+			color: var(--qlpk-color-neutral-700);
 			font-size: var(--qlpk-font-size-xs, 11px);
 			font-weight: var(--qlpk-font-weight-medium, 500);
 		}
@@ -218,11 +224,11 @@
 
 		/* Row variants */
 		.row-grand-total {
-			background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+			background: var(--qlpk-color-surface);
 		}
 
 		.row-doctor-header {
-			background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+			background: var(--qlpk-color-surface);
 			cursor: pointer;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 		}
@@ -230,7 +236,7 @@
 		/* Medicine toggle & detail */
 		.medicine-toggle {
 			cursor: pointer;
-			color: #0d6efd;
+			color: var(--qlpk-color-primary);
 			text-decoration: none;
 			display: flex;
 			align-items: center;
@@ -238,16 +244,15 @@
 		}
 
 		.medicine-toggle:hover {
-			color: #0a58ca;
+			color: var(--qlpk-color-primary-strong);
 		}
 
 		.medicine-detail-row {
-			background: #f8f9fa;
+			background: var(--qlpk-color-surface);
 		}
 
 		.medicine-detail-row td {
 			padding: 8px 12px !important;
-			border-top: none !important;
 		}
 
 		/* Detail sub-table */
@@ -263,32 +268,27 @@
 		.detail-table th {
 			padding: 6px 10px;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			background: #e2e8f0;
+			background: var(--qlpk-color-brown-soft);
 			font-size: var(--qlpk-font-size-sm, 12px);
 		}
 
 		.detail-table td {
 			padding: 6px 10px;
-			border-bottom: 1px solid #f1f5f9;
-		}
-
-		.detail-table tr:last-child td {
-			border-bottom: none;
+			border: 1px solid var(--qlpk-color-border);
 		}
 
 		/* Status badges */
-		.status-sufficient {
-			background-color: #198754 !important;
-		}
+.status-sufficient {
+	--qlpk-status-color: var(--qlpk-feedback-success);
+}
 
-		.status-low {
-			background-color: #ffc107 !important;
-			color: #000 !important;
-		}
+.status-low {
+	--qlpk-status-color: var(--qlpk-feedback-warning);
+}
 
-		.status-restock {
-			background-color: #dc3545 !important;
-		}
+.status-restock {
+	--qlpk-status-color: var(--qlpk-feedback-error);
+}
 
 		/* ==================== Tabs ==================== */
 		.nav-tabs-custom {
@@ -308,12 +308,12 @@
 		}
 
 		.nav-tabs-custom .nav-link.active {
-			background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+			background: var(--qlpk-workflow-context-header-bg);
 			color: white;
 		}
 
 		.nav-tabs-custom .nav-link:hover:not(.active) {
-			background: #f1f5f9;
+			background: var(--qlpk-color-brown-soft);
 			color: var(--primary-blue);
 		}
 
@@ -394,7 +394,7 @@
 		.footer-bar {
 			background: #fff;
 			border-top: 1px solid #e0e0e0;
-			color: #155CA2;
+			color: var(--qlpk-color-primary);
 			font-size: var(--qlpk-font-size-lg, 16px);
 			padding: 10px 32px 8px 32px;
 			display: flex;
@@ -409,7 +409,7 @@
 		}
 
 		.footer-bar .help-link {
-			color: #155CA2;
+			color: var(--qlpk-color-primary);
 			text-decoration: none;
 			font-weight: var(--qlpk-font-weight-medium, 500);
 		}

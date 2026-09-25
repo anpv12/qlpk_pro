@@ -5,6 +5,7 @@ from datetime import datetime
 
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.examination import Examination
+from app.modules.appointments.services.doctor_queue import mark_doctor_queue_entry
 
 
 class AppointmentStatusTransitionNotFound(Exception):
@@ -90,6 +91,7 @@ def _get_examination_for_status_transition(db, appointment_id, statuses, not_fou
 
 
 def _set_examination_status(appointment, examination, new_status):
+    mark_doctor_queue_entry(appointment, examination.status, new_status)
     examination.status = new_status
     examination.updated_at = datetime.now()
 

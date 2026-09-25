@@ -114,17 +114,20 @@ def main() -> int:
         failures.append("Psychologist template chưa tải owner patient-history bridge")
 
     modal_css = read(CANONICAL_CSS)
+    if "prescription-standard-form.css" not in modal_css:
+        failures.append("Modal phải tải stylesheet biểu mẫu dùng chung với bản in")
+    form_css = read(ROOT / "app/static/css/prescriptions/components/prescription-standard-form.css")
     qr_image_rule = re.search(
-        r"\.patient-search-modal\s+\.rx-verify-qr-image\s*\{(?P<body>[^}]*)\}",
-        modal_css,
+        r"\.moh-qr-image\s*\{(?P<body>[^}]*)\}",
+        form_css,
         re.S,
     )
     if not qr_image_rule:
         failures.append("Modal thiếu owner kích thước ảnh QR xác thực")
     else:
         qr_rule_body = qr_image_rule.group("body")
-        if not re.search(r"inline-size:\s*8\.125rem\s*;", qr_rule_body):
-            failures.append("QR HTML modal phải hiển thị ở kích thước chuẩn 8.125rem")
+        if not re.search(r"inline-size:\s*25mm\s*;", qr_rule_body):
+            failures.append("QR HTML modal phải hiển thị ở kích thước chuẩn 25mm")
         if not re.search(r"max-inline-size:\s*100%\s*;", qr_rule_body):
             failures.append("QR HTML modal phải tự co trong ô chứa ở viewport hẹp")
         if not re.search(r"block-size:\s*auto\s*;", qr_rule_body):

@@ -58,7 +58,7 @@ function medicalHistoryAddAllergyRow(name, level, symptom) {
     <td class="text-center"><label class="medical-history-radio-wrap"><input type="radio" class="allergy-level" name="allergy_level_${idx}" value="nghi_ngo" ${level === 'nghi_ngo' ? 'checked' : ''}><span class="medical-history-radio-dot"></span></label></td>
     <td class="text-center"><label class="medical-history-radio-wrap"><input type="radio" class="allergy-level" name="allergy_level_${idx}" value="chac_chan" ${level === 'chac_chan' ? 'checked' : ''}><span class="medical-history-radio-dot"></span></label></td>
     <td><input type="text" class="medical-history-allergy-input allergy-symptom" placeholder="Biểu hiện..." value="${(symptom || '').replace(/"/g, '&quot;')}"></td>
-    <td class="text-center"><button type="button" class="medical-history-row-remove" title="Xóa dòng">×</button></td>`;
+    <td class="text-center"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="medical-history-row-remove" title="Xóa dòng">×</button></td>`;
   tbody.appendChild(tr);
   const removeButton = tr.querySelector('.medical-history-row-remove');
   if (removeButton) removeButton.dataset.medicalHistoryAction = 'remove-allergy-row';

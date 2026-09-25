@@ -1,6 +1,8 @@
 let currentData = [];
 let currentPage = 1;
-const pageSize = 20;
+let pageSize = 10;
+let listPagination;
+let listRevision = 0;
 let totalItems = 0;
 const escapeHtml = window.QLPKSharedUtils.escapeHtml;
 
@@ -31,6 +33,11 @@ function downloadProtectedFile(url, filename) {
 }
 
 $(document).ready(function () {
+    listPagination = window.QLPKPagination.create({ onChange(page, size) {
+        currentPage = page;
+        pageSize = size;
+        loadData();
+    } });
     loadData();
 
     let searchTimeout;
@@ -40,15 +47,6 @@ $(document).ready(function () {
             currentPage = 1;
             loadData();
         }, 500);
-    });
-
-    $('#btn-prev-page').on('click', function () {
-        if (currentPage > 1) { currentPage--; loadData(); }
-    });
-
-    $('#btn-next-page').on('click', function () {
-        const totalPages = Math.ceil(totalItems / pageSize);
-        if (currentPage < totalPages) { currentPage++; loadData(); }
     });
 
     $('#btn-add-allergen').on('click', function () {
@@ -116,14 +114,18 @@ $(document).ready(function () {
 });
 
 function loadData() {
+    const revision = ++listRevision;
     const search = $('#al-search').val().trim();
     $.ajax({
         url: `/api/allergen?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${pageSize}`,
         method: 'GET',
         success: function (res) {
+            if (revision !== listRevision) return;
             if (res.success) {
                 currentData = res.data;
                 totalItems = res.total;
+                const lastPage = Math.max(1, Math.ceil(totalItems / pageSize));
+                if (currentPage > lastPage) { currentPage = lastPage; loadData(); return; }
                 $('#stat-total').text(res.total);
                 renderTable(currentData);
                 renderPagination();
@@ -152,8 +154,8 @@ function renderTable(data) {
                 <td class="catalog-dict-name-cell">${escapeHtml(item.ten_di_nguyen)}</td>
                 <td class="text-muted catalog-dict-desc-cell">${item.mo_ta ? escapeHtml(item.mo_ta) : ''}</td>
                 <td class="catalog-dict-action-cell">
-                    <button class="btn btn-sm text-primary p-1" onclick="editItem(${item.id})" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn btn-sm text-danger p-1" onclick="deleteItem(${item.id})" title="Xóa"><i class="bi bi-trash3"></i></button>
+                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm text-primary p-1" onclick="editItem(${item.id})" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+                    <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm text-danger p-1" onclick="deleteItem(${item.id})" title="Xóa"><i class="bi bi-trash3"></i></button>
                 </td>
             </tr>
         `);
@@ -161,22 +163,7 @@ function renderTable(data) {
 }
 
 function renderPagination() {
-    if (totalItems === 0) {
-        $('#pagination-container').addClass('is-hidden');
-        return;
-    }
-    $('#pagination-container').removeClass('is-hidden');
-
-    const start = (currentPage - 1) * pageSize + 1;
-    const end = Math.min(currentPage * pageSize, totalItems);
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    $('#page-start').text(start);
-    $('#page-end').text(end);
-    $('#page-total').text(totalItems);
-    $('#current-page-display').text(currentPage);
-    $('#btn-prev-page').prop('disabled', currentPage === 1);
-    $('#btn-next-page').prop('disabled', currentPage >= totalPages);
+    listPagination.update({ page: currentPage, pageSize, total: totalItems });
 }
 
 function editItem(id) {

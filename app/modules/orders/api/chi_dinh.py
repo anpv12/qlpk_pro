@@ -44,10 +44,79 @@ from app.modules.orders.view_models.clinical_order import (
     build_chi_dinh_detail_response,
     build_chi_dinh_list_item,
 )
+from app.services.notification_service import NotificationService
 from app.realtime.events import emit_order_changed
+from app.modules.orders.services.survey_lifecycle import expire_due_order_surveys, finish_order_survey, SurveyLifecycleError
 
 router = Blueprint('chi_dinh', __name__)
 logger = logging.getLogger(__name__)
+notification_service = NotificationService()
+
+
+@router.before_app_request
+def reconcile_survey_deadlines():
+    # One deadline owner for list/detail, clinician forms and public submission.
+    if not request.path.startswith(('/api/chi-dinh', '/api/survey-sessions', '/api/survey-responses')):
+        return
+    db = next(get_db())
+    try:
+        changed = expire_due_order_surveys(db)
+        db.commit()
+        for order in changed:
+            emit_order_changed('survey_expired', order=order)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.route('/<int:chi_dinh_id>/finish-survey', methods=['POST'])
+@require_auth
+def finish_survey(user, chi_dinh_id):
+    db = next(get_db())
+    try:
+        role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        if role.lower() not in ('admin', 'doctor', 'psychologist'):
+            return jsonify(detail='Bạn không có quyền kết thúc khảo sát'), 403
+        _, access_error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if access_error:
+            return jsonify(detail=access_error), 403
+        order, changed = finish_order_survey(db, chi_dinh_id, actor_id=user.id)
+        db.commit()
+        if changed:
+            emit_order_changed('survey_finished', order=order)
+        return jsonify(success=True, data=order.to_dict())
+    except (ChiDinhNotFound, SurveyLifecycleError) as exc:
+        db.rollback()
+        return jsonify(detail=str(exc)), getattr(exc, 'status', 404)
+    finally:
+        db.close()
+
+
+def _emit_order_assignment_notifications(
+    db,
+    appointment,
+    assignments,
+    actor_user,
+):
+    """Persist assignment notifications after the order mutation is committed."""
+    if not assignments:
+        return
+    try:
+        notifications = notification_service.create_clinical_order_assignment_notifications(
+            db,
+            appointment,
+            assignments,
+            actor_user=actor_user,
+        )
+        payloads = notification_service.build_realtime_payloads(db, notifications)
+        db.commit()
+        notification_service.emit_realtime_payloads(payloads)
+    except Exception:
+        # A notification failure must not undo a successful clinical order save.
+        db.rollback()
+        logger.exception('Không thể tạo thông báo giao chỉ định')
 
 
 def _get_accessible_appointment(db, user, appointment_id):
@@ -66,7 +135,7 @@ def _get_accessible_chi_dinh(db, user, chi_dinh_id):
     if not appointment:
         return None, 'Không tìm thấy lịch hẹn của chỉ định này.'
     access_error = appointment_access_error(user, appointment)
-    if access_error:
+    if access_error and chi_dinh.in_house_unit_id != user.id:
         return None, access_error
     return chi_dinh, None
 
@@ -98,7 +167,7 @@ def save_chi_dinh_by_appointment(user, appointment_id):
     """Lưu danh sách chỉ định của appointment (UPSERT - giữ nguyên created_at cho record cũ)"""
     db = next(get_db())
     try:
-        _, access_error = _get_accessible_appointment(db, user, appointment_id)
+        appointment, access_error = _get_accessible_appointment(db, user, appointment_id)
         if access_error:
             return jsonify({'detail': access_error}), 403
         data = request.get_json(silent=True)
@@ -108,7 +177,23 @@ def save_chi_dinh_by_appointment(user, appointment_id):
             raise InvalidChiDinhPayload('Thiếu danh sách chỉ định')
         chi_dinh_list = data['chi_dinh']
 
+        existing_orders = get_chi_dinh_for_appointment(db, appointment_id)
+        existing_performers = {
+            item.id: item.in_house_unit_id
+            for item in existing_orders
+            if item.id is not None
+        }
         result_list = sync_chi_dinh_for_appointment(db, appointment_id, chi_dinh_list)
+        assignments = []
+        for item in result_list:
+            if item.id is None or item.id not in existing_performers:
+                assignments.append({'order': item, 'kind': 'created'})
+            elif existing_performers[item.id] != item.in_house_unit_id:
+                assignments.append({
+                    'order': item,
+                    'kind': 'assigned' if not existing_performers[item.id] else 'reassigned',
+                })
+
         db.commit()
 
         for item in result_list:
@@ -117,6 +202,7 @@ def save_chi_dinh_by_appointment(user, appointment_id):
         emit_order_changed('saved_for_appointment', appointment_id=appointment_id, extra={
             'order_count': len(result_list),
         })
+        _emit_order_assignment_notifications(db, appointment, assignments, user)
 
         return jsonify({
             'message': 'Lưu chỉ định thành công',
@@ -177,7 +263,9 @@ def get_chi_dinh_list(user):
             'total': chi_dinh_result.total,
             'page': chi_dinh_result.page,
             'per_page': chi_dinh_result.per_page,
-            'total_pages': chi_dinh_result.total_pages
+            'total_pages': chi_dinh_result.total_pages,
+            'group_counts': chi_dinh_result.group_counts,
+            'next_expiry_at': chi_dinh_result.next_expiry_at,
         }), 200
 
     except InvalidPagination as e:
@@ -422,5 +510,50 @@ def download_result_file(user, chi_dinh_id, file_id):
     except Exception as e:
         logger.error(f"Error downloading result file: {e}")
         return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
+    finally:
+        db.close()
+
+
+@router.route('/<int:chi_dinh_id>/survey-result', methods=['GET'])
+@require_auth
+def get_order_survey_result(user, chi_dinh_id):
+    from app.models.survey_response import SurveyResponse
+    from app.models.survey_session import SurveySession
+    from app.modules.orders.services.survey_draft import session_snapshot
+    db = next(get_db())
+    try:
+        order, error = _get_accessible_chi_dinh(db, user, chi_dinh_id)
+        if error:
+            return jsonify(success=False, message=error), 403
+        result = db.query(SurveyResponse).filter_by(order_id=order.id).order_by(
+            SurveyResponse.created_at.desc(), SurveyResponse.id.desc()).first()
+        if not result:
+            if not order.survey_template_id:
+                return jsonify(success=False, message='Chỉ định không có mẫu khảo sát'), 404
+            session = db.query(SurveySession).filter_by(order_id=order.id).order_by(SurveySession.id.desc()).first()
+            snapshot = session_snapshot(db, session) if session else {
+                'name': order.survey_template.name, 'content': order.survey_template.content}
+            patient = order.appointment.patient
+            return jsonify(success=True, data={
+                'order_id': order.id, 'order_status': order.status,
+                'survey_template_id': order.survey_template_id,
+                'patient': {'full_name': patient.full_name, 'phone': patient.phone},
+                'template_name': snapshot['name'], 'template_content': snapshot['content'],
+                'responses': session.draft_responses or {} if session else {},
+                'total_scores': None, 'review_state': 'draft' if session and session.draft_responses else 'empty',
+                'review_updated_at': session.draft_updated_at.isoformat() if session and session.draft_updated_at else None,
+                'can_live': order.status != 'completed',
+            })
+        snapshot = result.template_snapshot or {}
+        return jsonify(success=True, data={
+            **result.to_dict(), 'order_status': order.status,
+            'review_state': 'submitted', 'can_live': order.status != 'completed',
+            'review_updated_at': result.created_at.isoformat() if result.created_at else None,
+            'patient': {'full_name': result.patient.full_name, 'phone': result.patient.phone},
+            'template_name': snapshot.get('name', result.survey_template.name),
+            'template_content': snapshot.get('content', result.survey_template.content),
+        })
+    except ChiDinhNotFound:
+        return jsonify(success=False, message='Không tìm thấy chỉ định'), 404
     finally:
         db.close()

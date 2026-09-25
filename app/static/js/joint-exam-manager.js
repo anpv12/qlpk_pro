@@ -55,11 +55,12 @@
 	}
 
 	function renderJointExamActionButton(action, className, title, attrs = {}) {
+		const buttonRole = { edit: 'edit', delete: 'danger', save: 'execute', cancel: 'neutral' }[action] || 'neutral';
 		const attrHtml = Object.keys(attrs)
 			.filter(key => attrs[key] !== undefined && attrs[key] !== null)
 			.map(key => ` ${escapeAttribute(key)}="${escapeAttribute(attrs[key])}"`)
 			.join('');
-		return `<button type="button" class="${escapeAttribute(className)}" title="${escapeAttribute(title)}" aria-label="${escapeAttribute(title)}"${attrHtml}><i class="bi ${getJointExamActionIcon(action)}" aria-hidden="true"></i></button>`;
+		return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" type="button" class="${escapeAttribute(className)}" title="${escapeAttribute(title)}" aria-label="${escapeAttribute(title)}"${attrHtml}><i class="bi ${getJointExamActionIcon(action)}" aria-hidden="true"></i></button>`;
 	}
 
 	/**

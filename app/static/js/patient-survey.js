@@ -8,6 +8,16 @@ let totalQuestions = 0;
 let isSurveyClosed = false; // Survey đã đóng - read-only tuyệt đối
 let isSurveyCompleted = false; // Survey đã hoàn thành - có thể xem lại nhưng không sửa
 let isSurveyExpired = false; // Survey đã hết hạn - không thể điền hoặc submit
+const reviewOrderId = new URLSearchParams(window.location.search).get('review_order_id');
+let reviewData = null;
+let reviewTimer = null;
+let draftData = null;
+let draftRevision = 0;
+let draftTimer = null;
+let draftSaving = null;
+let lastSavedDraft = '';
+let draftBlocked = false;
+let draftBlockMessage = '';
 let surveySessionData = null; // Lưu thông tin session (expires_at, started_at, etc.)
 
 function setSurveyProgressBar(percentage) {
@@ -33,6 +43,8 @@ function getCurrentTemplateId() {
 }
 
 function saveSurveyResponsesToStorage() {
+    if (reviewOrderId !== null) return;
+    if (draftData) { queueSurveyDraft(); return; }
     const examinationId = localStorage.getItem('current_examination_id');
     const templateId = getCurrentTemplateId();
     
@@ -131,6 +143,11 @@ $(document).ready(function() {
     const isPreview = urlParams.get('preview') === 'true';
     
     
+    if (reviewOrderId !== null) {
+        loadOrderSurveyResult(reviewOrderId);
+        return;
+    }
+
     // Check if this is a preview mode
     if (isPreview && templateId) {
         // Preview mode - load specific template with full interaction
@@ -263,7 +280,7 @@ function showExpiredSurveyMessage() {
     hideActionButtons();
     
     // Hiển thị thông báo hết hạn
-    showAlert('error', '⏰ Khảo sát đã hết hạn. Thời hạn hoàn thành khảo sát là 24 giờ kể từ khi nhận link. Vui lòng liên hệ với cơ sở y tế để được cấp link mới.');
+    showAlert('error', 'Khảo sát đã hết hạn và ngừng nhận bài nộp. Vui lòng liên hệ cơ sở y tế nếu cần làm khảo sát mới.');
 }
 
 // Load patient information
@@ -307,35 +324,10 @@ function displayPatientInfo(patient) {
 // Format date time for display (convert từ UTC sang GMT+7)
 function formatDateTime(dateString) {
     if (!dateString) return '—';
-    try {
-        // Parse date string (backend trả về UTC)
-        let date = new Date(dateString);
-        
-        // Nếu date string không có timezone info (Z hoặc +00:00), assume là UTC
-        if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-            // Nếu là ISO string không có timezone, parse và treat as UTC
-            date = new Date(dateString + 'Z');
-        }
-        
-        // Convert từ UTC sang GMT+7 (Asia/Ho_Chi_Minh)
-        // GMT+7 = UTC+7 = 7 * 60 * 60 * 1000 milliseconds
-        const gmt7Offset = 7 * 60 * 60 * 1000;
-        const localDate = new Date(date.getTime() + gmt7Offset);
-        
-        // Format với timezone GMT+7
-        return localDate.toLocaleString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            timeZone: 'Asia/Ho_Chi_Minh'
-        });
-    } catch (e) {
-        console.error('Error formatting date:', e, dateString);
-        return '—';
-    }
+    const source = /(?:Z|[+-]\d{2}:?\d{2})$/.test(dateString) ? dateString : dateString + 'Z';
+    const date = new Date(source);
+    if (!Number.isFinite(date.getTime())) return '—';
+    return date.toLocaleString('vi-VN', {timeZone:'Asia/Ho_Chi_Minh', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'});
 }
 
 // Format duration (thời gian hoàn thành) từ milliseconds sang "X phút Y giây"
@@ -475,7 +467,7 @@ function loadPreviewTemplate(templateId) {
                 $('#survey-name').text(`🛡️ ${template.name}`);
                 
                 // Prepare questions from the template
-                prepareQuestions();
+                if (prepareQuestions() === false) return;
                 
                 
                 if (allQuestions.length > 0) {
@@ -524,7 +516,7 @@ function showAllQuestions() {
     // Add submit button at the bottom
     const submitButton = `
         <div class="submit-section survey-submit-section">
-            <button type="button" id="submitAllQuestions" class="btn btn-primary survey-submit-button">
+            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" id="submitAllQuestions" class="btn btn-primary survey-submit-button">
                 <i class="bi bi-check-circle me-2"></i>Gửi khảo sát
             </button>
         </div>
@@ -571,6 +563,8 @@ function showPreviewNotice() {
 
 // Load survey templates
 function loadSurveyTemplates() {
+    const token = new URLSearchParams(window.location.search).get('session_token');
+    if (token) { loadSessionSurveyDraft(token); return; }
     
     const surveyContent = $('#survey-content');
     const surveyLoading = $('#loading-spinner');
@@ -599,7 +593,7 @@ function loadSurveyTemplates() {
                 
                 if (response.success && response.data) {
                     surveyTemplates = [response.data];  // Single template array
-                    prepareQuestions();
+                    if (prepareQuestions() === false) return;
                     
                     // Update header with template info
                     $('#survey-name').text(`🛡️ ${response.data.name}`);
@@ -641,7 +635,7 @@ function loadSurveyTemplates() {
             
             if (response.success && response.data && response.data.length > 0) {
                 surveyTemplates = response.data;
-                prepareQuestions();
+                if (prepareQuestions() === false) return;
                 
                 // Update header with first template info
                 if (surveyTemplates.length > 0) {
@@ -676,15 +670,24 @@ function loadSurveyTemplates() {
 // Prepare all questions from templates
 function prepareQuestions() {
     allQuestions = [];
-    
+    const invalidTemplate = surveyTemplates.some(template => {
+        const content = template.content;
+        const questions = Array.isArray(content) ? content : content?.questions
+            || Object.values(template.questions_by_criteria || {}).flat();
+        return questions.some(question => question.id === undefined || question.id === null || question.id === '');
+    });
+    if (invalidTemplate) {
+        $('#loading-spinner, .actions, #survey-content').hide();
+        $('#no-survey-message').text('Mẫu khảo sát chưa sẵn sàng. Vui lòng liên hệ phòng khám để cập nhật mẫu và liên kết khảo sát.').show();
+        $('#next').prop('disabled', true);
+        showAlert('error', 'Mẫu khảo sát cần được cập nhật. Vui lòng liên hệ phòng khám.');
+        return false;
+    }
+
     surveyTemplates.forEach(template => {
         // Handle new structure (content.questions array)
         if (template.content && template.content.questions) {
             template.content.questions.forEach((question, index) => {
-                // Ensure question has an ID
-                if (!question.id && question.id !== 0) {
-                    question.id = `temp_${template.id}_${index}_${Date.now()}`;
-                }
                 allQuestions.push({
                     ...question,
                     template_id: template.id
@@ -696,10 +699,6 @@ function prepareQuestions() {
             Object.keys(template.questions_by_criteria).forEach(criteria => {
                 const questions = template.questions_by_criteria[criteria];
                 questions.forEach((question, index) => {
-                    // Ensure question has an ID
-                    if (!question.id && question.id !== 0) {
-                        question.id = `temp_${template.id}_${criteria}_${index}_${Date.now()}`;
-                    }
                     allQuestions.push({
                         ...question,
                         template_id: template.id,
@@ -711,10 +710,6 @@ function prepareQuestions() {
         // Handle direct content array (like DASS-21)
         else if (Array.isArray(template.content)) {
             template.content.forEach((question, index) => {
-                // Ensure question has an ID
-                if (!question.id && question.id !== 0) {
-                    question.id = `temp_${template.id}_${index}_${Date.now()}`;
-                }
                                               
                 allQuestions.push({
                     ...question,
@@ -772,6 +767,9 @@ function showQuestion(index) {
     
     // Restore previous answer if exists
     restoreAnswer(question.id);
+    if (isSurveyClosed || isSurveyCompleted || isSurveyExpired) {
+        $('#survey-content input, #survey-content select, #survey-content textarea').prop('disabled', true);
+    }
     
     // Bind question events
     bindQuestionEvents();
@@ -916,7 +914,7 @@ function renderMultipleChoiceQuestion(question, questionId) {
     let html = `
             <div class="group" role="radiogroup" aria-labelledby="${questionId}">
             ${answers.map((answer, answerIndex) => renderRadioOption(answer, questionId, answerIndex, disabledAttr)).join('')}
-                <div class="note">Mẹo: bấm phím <b>1–${answers.length}</b> để chọn nhanh</div>
+                ${reviewOrderId === null ? `<div class="note">Mẹo: bấm phím <b>1–${answers.length}</b> để chọn nhanh</div>` : ''}
             </div>
     `;
     return html;
@@ -948,7 +946,7 @@ function renderDropdownQuestion(question, questionId) {
                     ${disabledAttr}>
                 <option value="">Chọn một đáp án...</option>
                 ${answers.map((answer, answerIndex) => {
-                    const answerId = answer.id || answerIndex;
+                    const answerId = surveyOptionId(answer, answerIndex);
                     const answerText = answer.text || '';
                     return `<option value="${answerId}">${answerText}</option>`;
                 }).join('')}
@@ -1009,7 +1007,7 @@ function renderGridQuestion(question, questionId) {
                         <th class="grid-row-header"></th>
                         ${grid.columns.map(col => `
                             <th class="grid-column-header">
-                                ${col.text || col}
+                                ${col.text || col.label || col}
                             </th>
                         `).join('')}
                     </tr>
@@ -1028,7 +1026,7 @@ function renderGridQuestion(question, questionId) {
                                         <input type="${inputType}" 
                                                name="${questionId}_row_${rowIndex}" 
                                                id="${cellId}" 
-                                               value="${colIndex}" 
+                                               value="${surveyOptionId(col, colIndex)}"
                                                data-question-id="${question.id}"
                                                data-row-id="${rowId}"
                                                data-row-index="${rowIndex}"
@@ -1083,8 +1081,12 @@ function renderTimeQuestion(question, questionId) {
 }
 
 // Render Radio Option (for Multiple Choice)
+function surveyOptionId(answer, index) {
+    return answer.id === undefined || answer.id === null || answer.id === '' ? index : answer.id;
+}
+
 function renderRadioOption(answer, questionId, index, disabledAttr) {
-    const answerId = answer.id || index;
+    const answerId = surveyOptionId(answer, index);
     const answerText = answer.text || '';
     const answerScore = answer.score || answer.value || 0;
     const optionId = `${questionId}_${answerId}`;
@@ -1102,7 +1104,7 @@ function renderRadioOption(answer, questionId, index, disabledAttr) {
 
 // Render Checkbox Option (for Checkboxes)
 function renderCheckboxOption(answer, questionId, index, disabledAttr) {
-    const answerId = answer.id || index;
+    const answerId = surveyOptionId(answer, index);
     const answerText = answer.text || '';
     const answerScore = answer.score || answer.value || 0;
     const optionId = `${questionId}_${answerId}`;
@@ -1120,6 +1122,7 @@ function renderCheckboxOption(answer, questionId, index, disabledAttr) {
 
 // Bind question events
 function bindQuestionEvents() {
+    if (reviewOrderId !== null || isSurveyClosed || isSurveyCompleted || isSurveyExpired) return;
     
     // Radio button change event
     $('#survey-content').off('change', 'input[type="radio"]').on('change', 'input[type="radio"]', function() {
@@ -1345,6 +1348,7 @@ function bindNavigationEvents() {
             surveyResponses = {};
             currentQuestionIndex = 0;
             clearSurveyResponsesFromStorage();
+            saveSurveyResponsesToStorage();
             showQuestion(0);
         }
     });
@@ -1385,17 +1389,13 @@ function updateProgress() {
                     }
                 }
             });
-        } else if (response && (response.answer_id || response.answer_ids || response.answer_text || response.answer_value)) {
-            // For regular questions, validate the answer is not empty
-            const hasValidAnswer = 
-                (response.answer_id && response.answer_id !== '' && response.answer_id !== null) ||
-                (response.answer_ids && Array.isArray(response.answer_ids) && response.answer_ids.length > 0) ||
-                (response.answer_text && response.answer_text.trim() !== '') ||
-                (response.answer_value !== null && response.answer_value !== undefined && response.answer_value !== '');
-            
-            if (hasValidAnswer) {
-                actualResponseCount += 1;
-            }
+        } else if (response) {
+            // Numeric answer ID/value 0 is a saved answer too.
+            const hasValidAnswer = [response.answer_id, response.answer_ids,
+                response.answer_text, response.answer_value].some(value =>
+                value !== undefined && value !== null &&
+                (Array.isArray(value) ? value.length > 0 : String(value).trim() !== ''));
+            if (hasValidAnswer) actualResponseCount += 1;
         }
     });
     
@@ -1451,14 +1451,7 @@ function updateNavigationButtons() {
     const isLastQuestion = currentQuestionIndex === allQuestions.length - 1;
     
     // Check if question has a valid answer
-    let hasAnswer = false;
-    
-    // Special handling for grid questions (like DASS-21)
-    if (currentQuestion.type === 'multiple_choice_grid' || currentQuestion.type === 'checkbox_grid') {
-        hasAnswer = validateGridQuestion(currentQuestion, response);
-    } else {
-        hasAnswer = validateRegularQuestion(response);
-    }
+    const hasAnswer = canProceedSurveyQuestion(currentQuestion, response);
     
     // Previous button
     $('#previous').prop('disabled', isFirstQuestion);
@@ -1472,24 +1465,21 @@ function updateNavigationButtons() {
     
 }
 
-// Validate regular question
+function hasSurveyAnswer(value) {
+    return value !== undefined && value !== null &&
+        (Array.isArray(value) ? value.length > 0 : String(value).trim() !== '');
+}
+
+function canProceedSurveyQuestion(question, response) {
+    if (!question.required) return true;
+    return ['multiple_choice_grid', 'checkbox_grid'].includes(question.type)
+        ? validateGridQuestion(question, response) : validateRegularQuestion(response);
+}
+
+// Validate regular question, including numeric ID/value zero.
 function validateRegularQuestion(response) {
-    if (!response) {
-        return false;
-    }
-    
-    if (response.answer_id || response.answer_ids || response.answer_text || response.answer_value) {
-        // Check if the answer is not empty
-        if (response.answer_text && response.answer_text.trim() === '') {
-            return false;
-        }
-        if (response.answer_ids && response.answer_ids.length === 0) {
-            return false;
-        }
-        return true;
-    }
-    
-    return false;
+    return !!response && [response.answer_id, response.answer_ids,
+        response.answer_text, response.answer_value].some(hasSurveyAnswer);
 }
 
 // Validate grid question (DASS-21 with subquestions)
@@ -1509,12 +1499,12 @@ function validateGridQuestion(question, response) {
     
     // Check if all subquestions have been answered
     for (let i = 0; i < subquestions.length; i++) {
-        const subquestionId = subquestions[i].id || i.toString();
+        const subquestionId = subquestions[i].id ?? i.toString();
         const subquestionResponse = response.grid_responses[subquestionId];
 
         
         // Check if this subquestion has been answered
-        if (!subquestionResponse || subquestionResponse === null || subquestionResponse === undefined) {
+        if (!hasSurveyAnswer(subquestionResponse)) {
             return false;
         }
         
@@ -1631,7 +1621,7 @@ function restoreAnswer(questionId) {
             });
         }
         // Handle different response types for regular questions
-        else if (response.answer_id) {
+        else if (response.answer_id !== undefined && response.answer_id !== null) {
             // Radio button or dropdown
             const input = $(`input[name="q_${questionId}"][value="${response.answer_id}"], select[name="q_${questionId}"]`);
             if (input.length) {
@@ -1656,7 +1646,7 @@ function restoreAnswer(questionId) {
                 textInput.val(response.answer_text);
                 updateCharacterCounter(textInput);
             }
-        } else if (response.answer_value) {
+        } else if (response.answer_value !== undefined && response.answer_value !== null) {
             // Date, time, or datetime-local
             const dateInput = $(`input[name="q_${questionId}"]`);
             if (dateInput.length) {
@@ -1665,6 +1655,230 @@ function restoreAnswer(questionId) {
         }
     }
 }
+
+// Hydrate stored answer IDs into the existing question renderer's state.
+function restoreSavedSurveyResponses(answers) {
+    surveyResponses = {};
+    allQuestions.forEach(question => {
+        const key = `q_${question.id}`;
+        if (['multiple_choice_grid', 'checkbox_grid'].includes(question.type)) {
+            const gridResponses = {};
+            (question.grid?.rows || []).forEach((row, index) => {
+                const savedKey = String(row.question_id ?? row.id ?? index);
+                if (Object.prototype.hasOwnProperty.call(answers, savedKey)) {
+                    gridResponses[String(row.id ?? index)] = answers[savedKey];
+                }
+            });
+            if (Object.keys(gridResponses).length) surveyResponses[key] = {grid_responses: gridResponses};
+        } else if (Object.prototype.hasOwnProperty.call(answers, String(question.id))) {
+            const value = answers[String(question.id)];
+            const field = ['short_answer', 'paragraph'].includes(question.type) ? 'answer_text'
+                : ['date', 'time'].includes(question.type) ? 'answer_value'
+                : Array.isArray(value) ? 'answer_ids' : 'answer_id';
+            surveyResponses[key] = {[field]: value};
+        }
+    });
+}
+
+// Use the same question renderer for live progress and submitted results.
+async function loadOrderSurveyResult(orderId, refresh = false) {
+    clearTimeout(reviewTimer);
+    isSurveyClosed = true;
+    document.body.classList.add('survey-review');
+    if (!refresh) {
+        $('.actions, #survey-content, #no-survey-message').hide();
+        $('#title').text('Kết quả khảo sát');
+    }
+    const fail = message => {
+        $('#loading-spinner, #survey-content, .actions').hide();
+        $('#survey-name').text('Không thể xem kết quả');
+        $('#patient-name, #patient-phone').text('—');
+        $('#no-survey-message').text(message).show();
+    };
+    const token = localStorage.getItem('qlpk_token');
+    if (!token) { fail('Vui lòng đăng nhập tài khoản phòng khám rồi mở lại Xem kết quả.'); return; }
+    try {
+        if (!/^\d+$/.test(orderId)) throw new Error('Liên kết kết quả không hợp lệ.');
+        const response = await fetch(`/api/chi-dinh/${orderId}/survey-result`, {
+            headers: {Authorization: `Bearer ${token}`}, cache: 'no-store'
+        });
+        if (!response.ok) {
+            const message = response.status === 401 ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+                : response.status === 403 ? 'Bạn không có quyền xem kết quả chỉ định này.'
+                : response.status === 404 ? 'Không tìm thấy khảo sát.' : 'Không tải được kết quả. Vui lòng tải lại trang.';
+            if ([401, 403, 404].includes(response.status)) { fail(message); return; }
+            throw new Error(message);
+        }
+        const {data} = await response.json();
+        const changed = JSON.stringify(data) !== JSON.stringify(reviewData);
+        reviewData = data;
+        $('#survey-result-summary').html(window.renderSurveyResultSummary?.(data.result_summary) || '');
+        if (changed) {
+            surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
+            displayPatientInfo(data.patient);
+            $('#survey-name').text(data.template_name);
+            if (prepareQuestions() === false || !allQuestions.length) {
+                fail('Không có cấu trúc câu hỏi hợp lệ để hiển thị.'); return;
+            }
+            restoreSavedSurveyResponses(data.responses || {});
+            currentQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, allQuestions.length - 1));
+            $('#loading-spinner, #no-survey-message').hide();
+            $('.actions').show();
+            showClosedSurveyMessage();
+        }
+        const live = data.order_status === 'completed' ? 'Đã kết thúc'
+            : data.review_state === 'submitted' ? 'Đã nộp bài' : 'Tự cập nhật mỗi 3 giây';
+        $('#survey-sync-state').text(`${live}${data.review_updated_at ? ' · Cập nhật: ' + formatDateTime(data.review_updated_at) : ''}`);
+        if (data.can_live) reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
+    } catch (error) {
+        if (!refresh) fail('Không tải được kết quả khảo sát. Hệ thống đang thử kết nối lại.');
+        $('#survey-sync-state').text('Mất kết nối — dữ liệu có thể chưa mới nhất. Đang thử lại…');
+        reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
+    }
+}
+
+function reviewSummary() {
+    if (reviewData?.review_state === 'submitted') {
+        return {title: 'Bài đã nộp — chỉ xem', text: 'Đây là đáp án đã nộp và lưu thành công.'};
+    }
+    if (reviewData?.order_status === 'completed') {
+        return {title: 'Đã kết thúc — chưa nộp bài', text: 'Chỉ hiển thị phần đã được lưu trước khi khảo sát kết thúc.'};
+    }
+    if (reviewData?.review_state === 'empty') {
+        return {title: 'Chưa có câu trả lời — chưa nộp', text: 'Màn hình sẽ tự cập nhật khi bệnh nhân bắt đầu trả lời.'};
+    }
+    return {title: 'Đang làm — chưa nộp', text: 'Đáp án đang được cập nhật. Câu chưa trả lời sẽ để trống; đây chưa phải kết quả chính thức.'};
+}
+
+// Flatten one template's answers once for both autosave and final submission.
+function collectTemplateResponses(templateId) {
+    const answers = {};
+    allQuestions.filter(question => String(question.template_id) === String(templateId)).forEach(question => {
+        const response = surveyResponses[`q_${question.id}`];
+        if (!response) return;
+        if (response.grid_responses) {
+            (question.grid?.rows || []).forEach((row, index) => {
+                const value = response.grid_responses[String(row.id ?? index)];
+                if (value !== undefined) answers[String(row.question_id ?? row.id ?? index)] = value;
+            });
+        } else {
+            for (const field of ['answer_id', 'answer_ids', 'answer_text', 'answer_value']) {
+                if (response[field] !== undefined && response[field] !== null) {
+                    answers[String(question.id)] = response[field]; break;
+                }
+            }
+        }
+    });
+    return answers;
+}
+
+function draftStorageKey() {
+    return 'survey_draft_' + new URLSearchParams(window.location.search).get('session_token');
+}
+
+async function loadSessionSurveyDraft(token) {
+    $('.actions, #survey-content, #no-survey-message').hide();
+    $('#loading-spinner').show();
+    try {
+        const response = await fetch(`/api/survey-sessions/draft?session_token=${encodeURIComponent(token)}`, {cache: 'no-store'});
+        if (!response.ok) throw new Error('Không tải được tiến độ khảo sát. Vui lòng tải lại trang.');
+        const {data} = await response.json();
+        const params = new URLSearchParams(window.location.search);
+        if (String(data.patient_id) !== params.get('patient_id') || String(data.examination_id) !== params.get('examination_id') ||
+            (params.get('template_id') && String(data.survey_template_id) !== params.get('template_id'))) {
+            throw new Error('Liên kết không khớp phiên khảo sát.');
+        }
+        draftData = data; draftRevision = data.revision;
+        $('#survey-result-summary').html(window.renderSurveyResultSummary?.(data.result_summary) || '');
+        isSurveyCompleted = data.submitted;
+        isSurveyClosed = data.session_status === 'closed';
+        isSurveyExpired = data.session_status === 'expired';
+        if (data.validation_message && !isSurveyCompleted && !isSurveyClosed && !isSurveyExpired) {
+            $('#loading-spinner').hide();
+            $('#no-survey-message').text('Mẫu khảo sát cần được cấu hình đầy đủ trước khi làm bài. Vui lòng liên hệ phòng khám để cập nhật liên kết.').show();
+            return;
+        }
+        surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
+        $('#survey-name').text(data.template_name);
+        if (prepareQuestions() === false) return;
+        restoreSavedSurveyResponses(data.responses || {});
+        lastSavedDraft = JSON.stringify(collectTemplateResponses(data.survey_template_id));
+        if (!isSurveyCompleted && !isSurveyClosed && !isSurveyExpired) {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(draftStorageKey()) || 'null'); } catch (_) { /* Server draft is still usable. */ }
+            if (saved && saved.revision === draftRevision) {
+                restoreSavedSurveyResponses(saved.responses); queueSurveyDraft();
+            }
+        }
+        $('#loading-spinner').hide(); $('.actions').show();
+        if (isSurveyClosed || isSurveyCompleted || isSurveyExpired) {
+            showClosedSurveyMessage();
+        } else {
+            showQuestion(0);
+            $('#survey-sync-state').text('Tiến độ tự động lưu để bác sĩ theo dõi.');
+        }
+    } catch (error) {
+        $('#loading-spinner').hide();
+        $('#no-survey-message').text('Không tải được tiến độ khảo sát. Vui lòng kiểm tra liên kết hoặc tải lại trang.').show();
+    }
+}
+
+function queueSurveyDraft() {
+    if (!draftData || draftBlocked || reviewOrderId !== null || isSurveyCompleted || isSurveyClosed || isSurveyExpired) return;
+    const responses = collectTemplateResponses(draftData.survey_template_id);
+    localStorage.setItem(draftStorageKey(), JSON.stringify({revision: draftRevision, responses}));
+    clearTimeout(draftTimer);
+    $('#survey-sync-state').text('Đang lưu tiến độ…');
+    draftTimer = setTimeout(() => flushSurveyDraft(), 500);
+}
+
+async function flushSurveyDraft() {
+    clearTimeout(draftTimer);
+    if (!draftData || reviewOrderId !== null) return true;
+    if (draftBlocked || isSurveyClosed || isSurveyExpired) return false;
+    if (isSurveyCompleted) return true;
+    if (draftSaving) { await draftSaving; return flushSurveyDraft(); }
+    const responses = collectTemplateResponses(draftData.survey_template_id);
+    const sent = JSON.stringify(responses);
+    if (sent === lastSavedDraft) { $('#survey-sync-state').text('Đã lưu tiến độ'); return true; }
+    draftSaving = (async () => {
+        try {
+            const response = await fetch('/api/survey-sessions/draft', {method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_token: new URLSearchParams(window.location.search).get('session_token'),
+                    patient_id: draftData.patient_id, examination_id: draftData.examination_id,
+                    survey_template_id: draftData.survey_template_id, revision: draftRevision, responses})});
+            const payload = await response.json();
+            if (!response.ok) {
+                if (response.status === 409 || response.status === 410) {
+                    draftBlocked = true;
+                    draftBlockMessage = response.status === 409
+                        ? 'Bài đang được thay đổi ở phiên khác. Vui lòng tải lại trước khi tiếp tục.'
+                        : 'Khảo sát đã nộp hoặc đã kết thúc. Không nhận thêm thay đổi.';
+                    if (response.status === 410) {
+                        isSurveyClosed = true;
+                        $('#survey-content input, #survey-content select, #survey-content textarea').prop('disabled', true);
+                        loadSessionSurveyDraft(new URLSearchParams(window.location.search).get('session_token'));
+                    }
+                }
+                throw new Error(payload.message || 'Không lưu được tiến độ');
+            }
+            draftRevision = payload.data.revision; lastSavedDraft = sent;
+            const latest = collectTemplateResponses(draftData.survey_template_id);
+            localStorage.setItem(draftStorageKey(), JSON.stringify({revision: draftRevision, responses: latest}));
+            $('#survey-sync-state').text('Đã lưu tiến độ');
+            if (JSON.stringify(latest) !== sent) queueSurveyDraft();
+            return true;
+        } catch (error) {
+            $('#survey-sync-state').text(draftBlocked ? draftBlockMessage : 'Chưa đồng bộ — đang giữ trên máy và thử lại.');
+            if (!draftBlocked) draftTimer = setTimeout(() => flushSurveyDraft(), 3000);
+            return false;
+        } finally { draftSaving = null; }
+    })();
+    return draftSaving;
+}
+
+window.addEventListener('online', () => { if (draftData && !draftBlocked) queueSurveyDraft(); });
+window.addEventListener('pagehide', () => { clearTimeout(reviewTimer); clearTimeout(draftTimer); });
 
 // Load existing responses
 function loadExistingResponses() {
@@ -1757,7 +1971,7 @@ function loadExistingResponses() {
         // Helper function to load responses from server
         function loadResponsesFromServer(examinationId, sessionCreatedAt) {
             $.ajax({
-                url: `/api/survey-responses/examination/${examinationId}/public`,
+                url: `/api/survey-responses/examination/${examinationId}/public?session_token=${encodeURIComponent(new URLSearchParams(window.location.search).get('session_token') || '')}`,
                 method: 'GET',
                 success: function(response) {
 
@@ -1813,99 +2027,8 @@ function loadExistingResponses() {
                    
                     if (completeResponse) {
                         
-                        // Convert format: {questionId: answerId} -> {q_${questionId}: {answer_id: answerId}}
-                        // BUT: Need to handle grid questions specially - group them back into grid_responses
-                        surveyResponses = {};
-                        
-                        // First, identify which questions are grid questions
-                        const gridQuestionMap = {}; // {mainQuestionId: {rowIds: [...], question: {...}}}
-                        allQuestions.forEach(question => {
-                            if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
-                                const mainQuestionId = question.id;
-                                const gridRows = question.grid ? question.grid.rows : [];
-                                const rowIds = gridRows.map(row => {
-                                    // Use row.question_id if available, otherwise row.id, otherwise index
-                                    return (row.question_id || row.id || gridRows.indexOf(row).toString()).toString();
-                                });
-                                gridQuestionMap[mainQuestionId] = {
-                                    rowIds: rowIds,
-                                    question: question
-                                };
-                            }
-                        });
-                        
-                        // Group responses by main question (for grid) or individual (for regular)
-                        const groupedResponses = {}; // {mainQuestionId: {grid_responses: {...}} or {answer_id: ...}}
-                        
-                        Object.keys(completeResponse.responses || {}).forEach(questionId => {
-                            const answerId = completeResponse.responses[questionId];
-                            
-                            // Check if this questionId belongs to a grid question
-                            let belongsToGrid = false;
-                            let mainQuestionId = null;
-                            
-                            for (const [mainId, gridInfo] of Object.entries(gridQuestionMap)) {
-                                const questionIdStr = questionId.toString();
-                                if (gridInfo.rowIds.includes(questionIdStr) || 
-                                    gridInfo.rowIds.includes(parseInt(questionId))) {
-                                    belongsToGrid = true;
-                                    mainQuestionId = mainId;
-                                    break;
-                                }
-                            }
-                            
-                            if (belongsToGrid && mainQuestionId) {
-                                // This is a grid subquestion - group it
-                                // IMPORTANT: Map question_id từ server về row.id để khớp với data-row-id khi render
-                                const gridRows = gridQuestionMap[mainQuestionId].question.grid?.rows || [];
-                                let mappedRowId = questionId.toString(); // Default to questionId from server
-                                
-                                // Tìm row có question_id khớp, lấy row.id để làm key (giống như render dùng)
-                                for (let i = 0; i < gridRows.length; i++) {
-                                    const row = gridRows[i];
-                                    const rowQuestionId = (row.question_id || row.id || i.toString()).toString();
-                                    
-                                    if (rowQuestionId === questionId.toString()) {
-                                        // Dùng row.id || index làm key (giống như renderGridQuestion dùng cho data-row-id)
-                                        mappedRowId = (row.id !== undefined && row.id !== null) ? row.id.toString() : i.toString();
-                                        break;
-                                    }
-                                }
-                                
-                                if (!groupedResponses[mainQuestionId]) {
-                                    groupedResponses[mainQuestionId] = { grid_responses: {} };
-                                }
-                                if (!groupedResponses[mainQuestionId].grid_responses) {
-                                    groupedResponses[mainQuestionId].grid_responses = {};
-                                }
-                                // Dùng mappedRowId thay vì questionId để khớp với data-row-id khi restore
-                                groupedResponses[mainQuestionId].grid_responses[mappedRowId] = answerId;
-                            } else {
-                                // Regular question
-                                if (Array.isArray(answerId)) {
-                                    groupedResponses[questionId] = {
-                                        answer_ids: answerId,
-                                        score: 0
-                                    };
-                                } else if (typeof answerId === 'object' && answerId !== null) {
-                                    groupedResponses[questionId] = {
-                                        answer_id: answerId,
-                                        score: 0
-                                    };
-                                } else {
-                                    groupedResponses[questionId] = {
-                                        answer_id: answerId,
-                                        score: 0
-                                    };
-                                }
-                            }
-                        });
-                        
-                        // Convert groupedResponses to surveyResponses format with q_ prefix
-                        Object.keys(groupedResponses).forEach(questionId => {
-                            surveyResponses[`q_${questionId}`] = groupedResponses[questionId];
-                        });
-                  
+                        restoreSavedSurveyResponses(completeResponse.responses || {});
+
                         // Clear local storage since we're using server data
                         clearSurveyResponsesFromStorage();
                         
@@ -1947,6 +2070,7 @@ function loadExistingResponses() {
 
 // Update session status
 function updateSessionStatus(status) {
+    if (reviewOrderId !== null) return Promise.resolve();
     // Không update status nếu survey đã expired
     if (isSurveyExpired) {
         return Promise.resolve();
@@ -2014,7 +2138,8 @@ function updateSessionStatus(status) {
 }
 
 // Submit survey
-function submitSurvey() {
+async function submitSurvey() {
+    if (reviewOrderId !== null) return;
     // Check if this is preview mode
     if (isPreviewMode()) {
         // In preview mode, show success message but don't actually submit
@@ -2031,33 +2156,28 @@ function submitSurvey() {
     }
     
     if (isSurveyCompleted) {
-        showAlert('info', 'Khảo sát đã hoàn thành. Bạn có thể xem lại nhưng không thể gửi thêm.');
+        showAlert('info', 'Bài khảo sát đã được nộp. Bạn có thể xem lại nhưng không thể gửi thêm.');
         return; // Ngăn chặn gửi nếu khảo sát đã hoàn thành
     }
     
     if (isSurveyExpired) {
-        showAlert('error', '⏰ Khảo sát đã hết hạn. Thời hạn hoàn thành khảo sát là 24 giờ kể từ khi nhận link. Vui lòng liên hệ với cơ sở y tế để được cấp link mới.');
+        showAlert('error', 'Khảo sát đã hết hạn và ngừng nhận bài nộp. Vui lòng liên hệ cơ sở y tế nếu cần làm khảo sát mới.');
         return; // Ngăn chặn gửi nếu khảo sát đã hết hạn
     }
     
-    // Count actual responses (including grid_responses)
-    let actualResponseCount = 0;
-    Object.keys(surveyResponses).forEach(key => {
-        const response = surveyResponses[key];
-        if (response && response.grid_responses) {
-            // For grid questions, count each subquestion as a separate response
-            actualResponseCount += Object.keys(response.grid_responses).length;
-        } else if (response && (response.answer_id || response.answer_ids || response.answer_text || response.answer_value)) {
-            // For regular questions, count as 1 response
-            actualResponseCount += 1;
-        }
-    });
-    
-    if (actualResponseCount < totalQuestions) {
-        showAlert('error', `Vui lòng trả lời tất cả câu hỏi trước khi hoàn thành. (Đã trả lời: ${actualResponseCount}/${totalQuestions})`);
+    const missingRequired = allQuestions.find(question =>
+        !canProceedSurveyQuestion(question, surveyResponses[`q_${question.id}`]));
+    if (missingRequired) {
+        currentQuestionIndex = allQuestions.indexOf(missingRequired);
+        showQuestion(currentQuestionIndex);
+        showAlert('error', 'Vui lòng trả lời đủ các câu hỏi bắt buộc trước khi nộp bài.');
         return;
     }
     
+    if (!await flushSurveyDraft()) {
+        showAlert('error', 'Chưa đồng bộ được bài khảo sát. Vui lòng kiểm tra thông báo lưu tiến độ.');
+        return;
+    }
     const submitBtn = $('#next');
     const originalText = submitBtn.text();
     
@@ -2071,70 +2191,14 @@ function submitSurvey() {
     const submissions = [];
     
     surveyTemplates.forEach(template => {
-        const templateResponses = {};
-        let hasResponses = false;
-        // Find questions that belong to this template
-        allQuestions.forEach(question => {
-            if (question.template_id == template.id) {
-                const questionId = `q_${question.id}`;
-                const response = surveyResponses[questionId];
-                
-                if (response) {
-                    // Handle grid questions (like DASS-21 with subquestions)
-                    if (response.grid_responses) {
-                        // For grid questions, flatten grid_responses into individual question responses
-                        // Each subquestion (row) should be submitted as a separate entry
-                        // We need to map subquestion IDs from grid_responses to actual question IDs in template
-                        const gridRows = question.grid ? question.grid.rows : [];
-                        
-                        Object.keys(response.grid_responses).forEach(storedSubquestionId => {
-                            const subquestionAnswer = response.grid_responses[storedSubquestionId];
-                            
-                            // Try to find the matching row in the grid to get the correct question ID
-                            let actualQuestionId = storedSubquestionId; // Default to stored ID
-                            
-                            // Look for matching row by ID
-                            for (let i = 0; i < gridRows.length; i++) {
-                                const row = gridRows[i];
-                                const rowId = row.id || i.toString();
-                                
-                                // Match by ID (handle both string and number comparisons)
-                                if (String(rowId) === String(storedSubquestionId)) {
-                                    // If row has an explicit question_id, use that; otherwise use row.id
-                                    actualQuestionId = row.question_id || row.id || i.toString();
-                                    break;
-                                }
-                            }
-                            
-                            // Use the actual question ID as the key
-                            templateResponses[actualQuestionId] = subquestionAnswer;
-                            hasResponses = true;
-                        });
-                    }
-                    // Handle regular question response types
-                    else if (response.answer_id) {
-                        templateResponses[question.id] = response.answer_id;
-                        hasResponses = true;
-                    } else if (response.answer_ids) {
-                        templateResponses[question.id] = response.answer_ids;
-                        hasResponses = true;
-                    } else if (response.answer_text) {
-                        templateResponses[question.id] = response.answer_text;
-                        hasResponses = true;
-                    } else if (response.answer_value) {
-                        templateResponses[question.id] = response.answer_value;
-                        hasResponses = true;
-                    } else {
-                    }
-                } else {
-                }
-            }
-        });
+        const templateResponses = collectTemplateResponses(template.id);
+        const hasResponses = Object.keys(templateResponses).length > 0;
         if (hasResponses) {
             submissions.push({
                 examination_id: parseInt(examinationId),
                 survey_template_id: parseInt(template.id),
                 patient_id: parseInt(patientId),
+                session_token: new URLSearchParams(window.location.search).get('session_token'),
                 responses: templateResponses
             });
         }
@@ -2147,7 +2211,7 @@ function submitSurvey() {
     
     if (totalSubmissions === 0) {
         submitBtn.prop('disabled', false).text(originalText);
-        showAlert('error', 'Không có dữ liệu để gửi. Vui lòng thử lại.');
+        showAlert('error', 'Vui lòng trả lời ít nhất một câu hỏi trước khi nộp bài.');
         return;
     }
     
@@ -2163,6 +2227,7 @@ function submitSurvey() {
             data: JSON.stringify(submission),
             success: function(response) {
                 submittedCount++;
+                $('#survey-result-summary').html(window.renderSurveyResultSummary?.(response.data?.result_summary) || '');
                 
                 if (submittedCount === totalSubmissions) {
                     // All submissions completed
@@ -2171,9 +2236,11 @@ function submitSurvey() {
                     
                     // Set flag completed trước
                     isSurveyCompleted = true;
+                    clearTimeout(draftTimer);
+                    localStorage.removeItem(draftStorageKey());
                     
                     // Update session status to completed và đợi reload session data
-                    updateSessionStatus('completed').then(() => {
+                    checkSessionStatus(new URLSearchParams(window.location.search).get('session_token')).then(() => {
                         // Đảm bảo hiển thị thời gian hoàn thành ngay lập tức
                         if (surveySessionData) {
                             displaySurveyTimeInfo();
@@ -2204,7 +2271,7 @@ function showAlert(type, message) {
     const alertHtml = `
         <div class="custom-alert ${alertClass}" role="alert">
             <div class="alert-message">${message}</div>
-            <button type="button" class="alert-close" onclick="closeAlert(this)">×</button>
+            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="alert-close" onclick="closeAlert(this)">×</button>
         </div>
     `;
     
@@ -2238,14 +2305,14 @@ function hideActionButtons() {
     const completionHtml = `
         <div class="completion-message">
             <div class="completion-content">
-                <div class="completion-icon">✓</div>
+                <div class="completion-icon ${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? 'completion-icon--pending' : ''}">${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? '…' : '✓'}</div>
                 <div class="completion-text">
-                    <h4>Khảo sát đã hoàn thành!</h4>
-                    <p>Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.</p>
+                    <h4>${reviewOrderId !== null ? reviewSummary().title : isSurveyCompleted ? 'Nộp bài thành công!' : 'Khảo sát đã kết thúc'}</h4>
+                    <p>${reviewOrderId !== null ? reviewSummary().text : isSurveyCompleted ? 'Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.' : 'Các câu trả lời đã lưu được giữ lại. Khảo sát không nhận thêm thay đổi.'}</p>
                 </div>
             </div>
             <div class="completion-buttons">
-                <button type="button" class="btn btn-outline btn-return-to-view ${currentQuestionIndex === 0 ? 'survey-action-hidden' : ''}">Trở lại</button>
+                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline btn-return-to-view ${currentQuestionIndex === 0 ? 'survey-action-hidden' : ''}">Trở lại</button>
                 <button type="button" class="btn btn-primary btn-next-to-view ${currentQuestionIndex === allQuestions.length - 1 ? 'survey-action-hidden' : ''}">Tiếp theo</button>
             </div>
         </div>

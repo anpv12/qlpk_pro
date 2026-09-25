@@ -5,7 +5,7 @@
 
 .receptionist-card--relatives .relative-table-card {
 	border: 0.0625rem solid var(--receptionist-tone-line);
-	border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, #0f766e);
+	border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, var(--qlpk-color-primary));
 	border-radius: 0.5rem;
 	background: var(--receptionist-tone-surface);
 	box-shadow: none;
@@ -32,39 +32,40 @@
 	padding: 0.34rem var(--receptionist-intake-pad);
 	background: var(--receptionist-tone-surface);
 	border-bottom-color: var(--receptionist-tone-line);
-	color: var(--receptionist-section-header-text, #07564f);
+	color: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
 }
 
 .receptionist-card--relatives .relative-table-header h6 {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
-	color: var(--receptionist-section-header-text, #07564f);
+	color: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
 	line-height: 1.2;
 }
 
 .receptionist-card--relatives .relative-table-header h6 i {
 	margin-inline-end: 0;
-	color: var(--receptionist-section-header-icon, #0f766e);
+	color: var(--receptionist-section-header-icon, var(--qlpk-color-primary));
 }
 
 .receptionist-card--relatives .relative-table-actions button {
 	padding: 0.24rem 0.7rem;
-	border-color: var(--qlpk-header-bg, #4b2719);
-	background: var(--qlpk-header-bg, #4b2719);
-	color: #ffffff;
 	line-height: 1.2;
+}
+.receptionist-card--relatives .relative-table-actions button:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-color-primary);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: #ffffff;
 }
 
 .receptionist-card--relatives .relative-table-actions button .relative-table-title-icon {
 	color: currentColor;
 	margin-inline-end: 0.35rem;
 }
-
-.receptionist-card--relatives .relative-table-actions button:hover,
-.receptionist-card--relatives .relative-table-actions button:focus {
-	background: var(--qlpk-header-surface, #6d3d27);
-	border-color: var(--qlpk-header-surface, #6d3d27);
+.receptionist-card--relatives .relative-table-actions button:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-card--relatives .relative-table-actions button:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
+	border-color: var(--qlpk-color-primary-strong);
 	color: #ffffff;
 }
 
@@ -117,7 +118,7 @@
 	gap: 0;
 	padding: 0;
 	border: 0.0625rem solid var(--receptionist-tone-line);
-	border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, #0f766e);
+	border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, var(--qlpk-color-primary));
 	border-radius: 0.5rem;
 	background: var(--receptionist-tone-surface);
 	overflow: hidden;
@@ -134,7 +135,7 @@
 	padding: 0.34rem var(--receptionist-intake-pad);
 	border-block-end: 0.0625rem solid var(--receptionist-tone-line);
 	background: var(--receptionist-tone-surface);
-	color: var(--receptionist-section-header-text, #07564f);
+	color: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
 	font-size: var(--receptionist-font-section-title, var(--qlpk-font-size-sm));
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1.25;
@@ -143,7 +144,7 @@
 
 .receptionist-card--documents > .receptionist-documents-header i {
 	flex: 0 0 auto;
-	color: var(--receptionist-section-header-icon, #0f766e);
+	color: var(--receptionist-section-header-icon, var(--qlpk-color-primary));
 }
 
 .receptionist-card--documents > .receptionist-documents-header span:not(.receptionist-documents-count) {
@@ -161,10 +162,10 @@
 	block-size: 1.35rem;
 	margin-inline-start: 0.125rem;
 	padding: 0 0.4rem;
-	border: 0.0625rem solid rgba(15, 118, 110, 0.24);
+	border: 0.0625rem solid rgba(var(--qlpk-color-primary-rgb), 0.24);
 	border-radius: 999rem;
-	background: #e7f6f2;
-	color: #07564f;
+	background: var(--qlpk-color-primary-soft);
+	color: var(--qlpk-color-primary-strong);
 	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1;
@@ -233,8 +234,8 @@
 }
 
 .receptionist-card--documents .document-icon {
-	--receptionist-document-icon-color: #475569;
-	--receptionist-document-icon-bg: #f8fafc;
+	--receptionist-document-icon-color: var(--qlpk-color-text-muted);
+	--receptionist-document-icon-bg: var(--qlpk-color-page-bg);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -253,7 +254,7 @@
 }
 
 .receptionist-card--documents .document-icon--word {
-	--receptionist-document-icon-color: #2563eb;
+	--receptionist-document-icon-color: var(--qlpk-color-primary);
 	--receptionist-document-icon-bg: #eff6ff;
 }
 
@@ -279,32 +280,6 @@
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.receptionist-card--documents .document-status-badge {
-	--receptionist-document-status-color: var(--qlpk-feedback-neutral, #475569);
-	--receptionist-document-status-bg: var(--qlpk-feedback-neutral-bg, #f8fafc);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.1rem 0.4rem;
-	border: 0.0625rem solid color-mix(in srgb, var(--receptionist-document-status-color) 26%, transparent);
-	border-radius: 999rem;
-	background: var(--receptionist-document-status-bg);
-	color: var(--receptionist-document-status-color);
-	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-	line-height: 1.2;
-}
-
-.receptionist-card--documents .document-status-badge--saved {
-	--receptionist-document-status-color: var(--qlpk-feedback-success, #15803d);
-	--receptionist-document-status-bg: var(--qlpk-feedback-success-bg, #ecfdf3);
-}
-
-.receptionist-card--documents .document-status-badge--draft {
-	--receptionist-document-status-color: var(--qlpk-feedback-warning, #b45309);
-	--receptionist-document-status-bg: var(--qlpk-feedback-warning-bg, #fff7ed);
 }
 
 .receptionist-card--documents .document-actions {
@@ -381,7 +356,7 @@
 		gap: 0.38rem;
 		padding: 0.5rem 0.625rem;
 		border: 0.0625rem solid var(--receptionist-tone-line);
-		border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, #0f766e);
+		border-inline-start: 0.1875rem solid var(--receptionist-section-header-accent, var(--qlpk-color-primary));
 		border-radius: 0.5rem;
 		background: var(--receptionist-tone-surface);
 	}

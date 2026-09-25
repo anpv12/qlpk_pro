@@ -14,6 +14,7 @@
 		rel="stylesheet">
 
 	<!-- ── Local CSS (chỉ giữ những gì thực sự cần) ── -->
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 
@@ -43,7 +44,7 @@
 									placeholder="🔍  Tên bệnh nhân, SĐT..." autocomplete="off">
 							</div>
 
-							<button class="pw-btn-refresh" id="refreshListBtn">
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="pw-btn-refresh" id="refreshListBtn">
 								<i class="bi bi-arrow-clockwise"></i>Làm mới
 							</button>
 
@@ -80,10 +81,10 @@
 								Danh sách hóa đơn
 							</div>
 							<div class="pw-toolbar-actions">
-								<button class="pw-btn pw-btn--ghost" id="exportTableBtn">
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="pw-btn pw-btn--ghost" id="exportTableBtn">
 									<i class="bi bi-download"></i>Xuất dữ liệu
 								</button>
-								<button class="pw-btn pw-btn--primary" id="printBtn">
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="pw-btn pw-btn--primary" id="printBtn">
 									<i class="bi bi-file-earmark-text"></i>Hóa đơn
 								</button>
 							</div>
@@ -157,13 +158,13 @@
 					<!-- Content loaded by JS -->
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn" id="printInvoiceBtn">
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn" id="printInvoiceBtn">
 						<i class="bi bi-printer me-1"></i>In hóa đơn
 					</button>
-					<button type="button" class="btn" id="exportInvoiceBtn">
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn" id="exportInvoiceBtn">
 						Xác nhận hoá đơn
 					</button>
-					<button type="button" class="btn" data-bs-dismiss="modal">Huỷ</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn" data-bs-dismiss="modal">Huỷ</button>
 				</div>
 			</div>
 		</div>
@@ -198,8 +199,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-					<button type="button" class="btn btn-primary" id="saveServiceBtn">Lưu</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="saveServiceBtn">Lưu</button>
 				</div>
 			</div>
 		</div>

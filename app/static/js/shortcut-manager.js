@@ -24,7 +24,6 @@
 		{ label: 'Quản lý nhóm quyền', url: '/group-management.html' },
 		{ label: 'Quản lý người dùng', url: '/user-management.html' },
 		{ label: 'Dịch vụ', url: '/service-management.html' },
-		{ label: 'Gói dịch vụ', url: '/package-management.html' },
 		{ label: 'Cấu hình phím tắt', url: '/shortcut-settings.html' }
 	];
 
@@ -255,10 +254,14 @@
 			const tdAction = document.createElement('td');
 			const editBtn = document.createElement('button');
 			editBtn.className = 'btn btn-sm btn-outline-primary';
+			editBtn.dataset.qlpkButton = 'edit';
+			editBtn.dataset.qlpkButtonVariant = 'soft';
 			editBtn.dataset.action = 'edit';
 			editBtn.textContent = 'Sửa';
 			const delBtn = document.createElement('button');
 			delBtn.className = 'btn btn-sm btn-outline-danger';
+			delBtn.dataset.qlpkButton = 'danger';
+			delBtn.dataset.qlpkButtonVariant = 'soft';
 			delBtn.dataset.action = 'delete';
 			delBtn.textContent = 'Xóa';
 			tdAction.appendChild(editBtn);

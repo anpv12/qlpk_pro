@@ -7,19 +7,19 @@
  */
 
 .qlpk-admin-page {
-	--admin-bg: #f8fafc;
+	--admin-bg: var(--qlpk-workspace-bg);
 	--admin-surface: #ffffff;
-	--admin-text: #1e293b;
-	--admin-muted: #64748b;
-	--admin-muted-strong: #475569;
-	--admin-border: #e2e8f0;
-	--admin-border-strong: #cbd5e1;
-	--admin-accent: #0f766e;
-	--admin-accent-strong: #075e57;
-	--admin-accent-soft: #f0fdfa;
+	--admin-text: var(--qlpk-color-text);
+	--admin-muted: var(--qlpk-color-text-muted);
+	--admin-muted-strong: var(--qlpk-color-text-muted);
+	--admin-border: var(--qlpk-color-border);
+	--admin-border-strong: var(--qlpk-color-border);
+	--admin-accent: var(--qlpk-color-primary);
+	--admin-accent-strong: var(--qlpk-color-primary-strong);
+	--admin-accent-soft: var(--qlpk-color-primary-soft);
 	--admin-success: #15803d;
 	--admin-danger: #dc2626;
-	--admin-radius: 8px;
+	--admin-radius: var(--clinic-surface-radius);
 	background: var(--admin-bg);
 	color: var(--admin-text);
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
@@ -39,8 +39,8 @@
 }
 
 /* The injected application shell stylesheet is loaded after page assets and
- * intentionally paints workspaces warm. Admin catalogue pages keep the DAV
- * neutral canvas without changing that shell for any other workspace. */
+ * intentionally paints workspaces warm. Admin catalogue pages consume the same warm
+ * palette while keeping their own layout and scroll contracts. */
 body.qlpk-admin-page.qlpk-workspace-shell .main-content,
 body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	background: var(--admin-bg);
@@ -54,34 +54,6 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	min-height: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
-}
-
-.qlpk-admin-page .qlpk-admin-page-header,
-.qlpk-admin-page .header-bar {
-	flex: 0 0 auto;
-	margin: 0;
-	padding: 16px 20px 10px;
-	background: var(--admin-surface) !important;
-	border: 0;
-	border-bottom: 1px solid var(--admin-border);
-	border-radius: 0;
-}
-
-.qlpk-admin-page .qlpk-admin-page-header h1,
-.qlpk-admin-page .qlpk-admin-page-header h2,
-.qlpk-admin-page .page-title {
-	margin: 0;
-	color: var(--admin-accent);
-	font-size: var(--qlpk-font-size-3xl, 24px);
-	font-weight: var(--qlpk-font-weight-bold, 700);
-	line-height: 1.25;
-}
-
-.qlpk-admin-page .qlpk-admin-page-header p,
-.qlpk-admin-page .qlpk-admin-page-subtitle {
-	margin: 4px 0 0;
-	color: var(--admin-muted);
-	font-size: var(--qlpk-font-size-base, 13px);
 }
 
 .qlpk-admin-page .breadcrumb {
@@ -112,23 +84,22 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	color: var(--admin-border-strong);
 }
 
-.qlpk-admin-page .main-content > .card,
-.qlpk-admin-page .main-content > .card-wrap,
-.qlpk-admin-page .main-content > .qlpk-admin-surface,
-.qlpk-admin-page .main-content > .import-export-section,
-.qlpk-admin-page .main-content > .stm-card {
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card,
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card-wrap,
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .qlpk-admin-surface,
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .import-export-section,
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .stm-card {
 	margin: 12px 20px 0;
 }
 
 .qlpk-admin-page .card,
 .qlpk-admin-page .card-wrap,
 .qlpk-admin-page .qlpk-admin-surface,
-.qlpk-admin-page .stats-card,
 .qlpk-admin-page .import-export-section {
 	border: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius);
 	background: var(--admin-surface);
-	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+	box-shadow: var(--clinic-surface-shadow);
 }
 
 .qlpk-admin-page .card-header,
@@ -149,8 +120,35 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
+.qlpk-admin-page :is(.catalog-card-header, .service-card-header) {
+	flex-wrap: wrap;
+	gap: 0.625rem;
+}
+
+.qlpk-admin-page :is(.catalog-card-header, .service-card-header) .search-box {
+	min-width: 0;
+}
+
+@media (max-width: 36rem) {
+	.qlpk-admin-page :is(.catalog-card-header, .service-card-header) .search-box {
+		flex-basis: 100%;
+	}
+}
+
 .qlpk-admin-page .card-body {
 	padding: 14px;
+}
+
+/* Keep the visible Flatpickr field's outer corners even when generated
+ * hidden siblings trigger Bootstrap's input-group last-child reset. */
+.qlpk-admin-page .input-group:not(.has-validation) > .form-control:is(.qlpk-datepicker-alt-input, .flatpickr-mobile):not(.dropdown-toggle) {
+	border-top-right-radius: var(--clinic-control-radius, 0.5625rem);
+	border-bottom-right-radius: var(--clinic-control-radius, 0.5625rem);
+}
+
+.qlpk-admin-page .input-group > .input-group-text:first-child {
+	border-top-left-radius: var(--clinic-control-radius, 0.5625rem);
+	border-bottom-left-radius: var(--clinic-control-radius, 0.5625rem);
 }
 
 .qlpk-admin-page .card-footer {
@@ -168,6 +166,7 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	border: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius);
 	background: var(--admin-surface);
+	box-shadow: var(--clinic-surface-shadow);
 }
 
 .qlpk-admin-page .filter-bar > * {
@@ -178,7 +177,10 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 .qlpk-admin-page .filter-bar .form-select {
 	max-width: none;
 	min-height: 36px;
-	background: var(--admin-surface);
+}
+.qlpk-admin-page .filter-bar .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .filter-bar .form-select {
+	background-color: var(--admin-surface);
 }
 
 .qlpk-admin-page .filter-bar .btn {
@@ -189,21 +191,26 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	white-space: nowrap;
 }
 
-.qlpk-admin-page .form-control,
-.qlpk-admin-page .form-select,
-.qlpk-admin-page textarea.form-control {
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control,
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control {
+	border-width: 1px;
+	border-style: solid;
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+}
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: 1px solid var(--admin-border-strong);
-	border-radius: 6px;
 	background: var(--admin-surface);
 	color: var(--admin-text);
-	font-size: var(--qlpk-font-size-base, 13px);
 }
-
-.qlpk-admin-page .form-control:focus,
-.qlpk-admin-page .form-select:focus,
-.qlpk-admin-page textarea.form-control:focus {
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select:focus,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-accent);
-	box-shadow: 0 0 0 0.18rem rgba(15, 118, 110, 0.12);
+	box-shadow: 0 0 0 0.18rem rgba(var(--qlpk-color-primary-rgb), 0.12);
 }
 
 body.qlpk-admin-page .form-label,
@@ -218,70 +225,71 @@ body.qlpk-admin-page #userModal .form-check-label {
 	color: var(--admin-muted-strong);
 }
 
-.qlpk-admin-page .btn {
-	border-radius: 6px;
-	font-size: var(--qlpk-font-size-base, 13px);
+.qlpk-admin-page:not(.qlpk-clinic-page) .btn {
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
-
-.qlpk-admin-page .btn-primary,
-.qlpk-admin-page .btn-action,
-.qlpk-admin-page .btn-add,
-.qlpk-admin-page .catalog-dict-primary-btn,
-.qlpk-admin-page .di-save-btn {
+.qlpk-admin-page .btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-action:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-add:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-primary-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-accent) !important;
-	background: var(--admin-accent) !important;
+	background: var(--qlpk-workflow-context-header-bg) !important;
 	color: #fff !important;
 }
-
-.qlpk-admin-page .btn-primary:hover,
-.qlpk-admin-page .btn-action:hover,
-.qlpk-admin-page .btn-add:hover,
-.qlpk-admin-page .catalog-dict-primary-btn:hover,
-.qlpk-admin-page .di-save-btn:hover {
+.qlpk-admin-page .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-add:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-primary-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-accent-strong) !important;
-	background: var(--admin-accent-strong) !important;
+	background: var(--qlpk-workflow-context-header-bg) !important;
 	color: #fff !important;
 }
-
-.qlpk-admin-page .btn-outline-primary,
-.qlpk-admin-page .btn-outline,
-.qlpk-admin-page .btn-outline-success {
-	border-color: var(--admin-accent) !important;
-	background: transparent !important;
-	color: var(--admin-accent) !important;
+.qlpk-admin-page .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-success:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-brown-200) !important;
+	background: var(--admin-surface) !important;
+	color: var(--qlpk-brown-700) !important;
 }
-
-.qlpk-admin-page .btn-outline-primary:hover,
-.qlpk-admin-page .btn-outline:hover,
-.qlpk-admin-page .btn-outline-success:hover {
-	border-color: var(--admin-accent) !important;
-	background: var(--admin-accent-soft) !important;
-	color: var(--admin-accent) !important;
+.qlpk-admin-page .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-brown-300) !important;
+	background: var(--qlpk-brown-100) !important;
+	color: var(--qlpk-brown-700) !important;
 }
-
-.qlpk-admin-page .btn-success {
+.qlpk-admin-page .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-success) !important;
 	background: var(--admin-success) !important;
 	color: #fff !important;
 }
-
-.qlpk-admin-page .btn-secondary,
-.qlpk-admin-page .btn-outline-secondary {
+.qlpk-admin-page .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-border-strong);
 	background: var(--admin-surface);
 	color: var(--admin-muted-strong);
 }
-
-.qlpk-admin-page .btn-secondary:hover,
-.qlpk-admin-page .btn-outline-secondary:hover {
+.qlpk-admin-page .btn-secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-secondary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-muted);
-	background: #f1f5f9;
+	background: var(--qlpk-color-brown-soft);
 	color: var(--admin-text);
 }
 
 .qlpk-admin-page .table-responsive {
 	border-color: var(--admin-border);
+}
+
+.qlpk-admin-page .card-body.p-0 .table-responsive {
+	border-radius: 0 0 var(--admin-radius) var(--admin-radius);
+}
+
+.qlpk-admin-page table:has(#serviceTableBody) :is(th, td):nth-child(n+4) {
+	white-space: nowrap;
 }
 
 .qlpk-admin-page .table,
@@ -290,7 +298,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page #surveyTable {
 	width: 100%;
 	margin: 0;
-	border-collapse: separate;
+	border-collapse: collapse;
 	border-spacing: 0;
 	color: var(--admin-text);
 	font-size: var(--qlpk-font-size-base, 13px);
@@ -301,11 +309,10 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .di-table thead th,
 .qlpk-admin-page #surveyTable thead th {
 	padding: 9px 10px;
-	border: 0;
-	border-bottom: 1px solid var(--admin-border);
-	background: #f1f5f9 !important;
-	color: var(--admin-muted-strong) !important;
-	font-size: var(--qlpk-font-size-xs, 11px);
+	border: 1px solid var(--admin-border);
+	background: var(--qlpk-brown-150) !important;
+	color: var(--qlpk-brown-700) !important;
+	font-size: var(--qlpk-font-size-base, 13px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	text-align: left;
 	white-space: nowrap;
@@ -316,9 +323,9 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .di-table tbody td,
 .qlpk-admin-page #surveyTable tbody td {
 	padding: 9px 10px;
-	border: 0;
-	border-bottom: 1px solid #f1f5f9;
-	color: var(--admin-text);
+	border: 1px solid var(--qlpk-brown-100);
+	background: var(--admin-surface);
+	color: var(--qlpk-color-neutral-700);
 	vertical-align: middle;
 }
 
@@ -326,7 +333,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .ai-table tbody tr:hover td,
 .qlpk-admin-page .di-table tbody tr:hover td,
 .qlpk-admin-page #surveyTable tbody tr:hover td {
-	background: #f0fdfa;
+	background: var(--qlpk-brown-50);
 }
 
 .qlpk-admin-page .table .text-muted,
@@ -353,61 +360,67 @@ body.qlpk-admin-page #userModal .form-check-label {
 	margin-right: 3px;
 	padding: 0;
 	border: 0;
-	border-radius: 6px;
-	background: transparent;
-	color: var(--admin-muted);
+	border-radius: 0.5625rem;
 	font-size: var(--qlpk-font-size-md, 14px);
 	vertical-align: middle;
 }
-
-.qlpk-admin-page .action-btn:hover,
+.qlpk-admin-page .action-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .pw-action-btn,
+.qlpk-admin-page .stm-action-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-action-cell button:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-table button:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: var(--admin-muted);
+}
+.qlpk-admin-page .action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .pw-action-btn:hover,
-.qlpk-admin-page .stm-action-btn:hover,
-.qlpk-admin-page .catalog-dict-action-cell button:hover,
-.qlpk-admin-page .di-table button:hover {
-	background: #f0fdfa;
+.qlpk-admin-page .stm-action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-action-cell button:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-table button:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-color-primary-soft);
 	color: var(--admin-accent);
 }
-
-.qlpk-admin-page .action-btn.delete,
-.qlpk-admin-page .stm-action-btn--danger,
-.qlpk-admin-page .action-btn[title*="óa"] {
+.qlpk-admin-page .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .stm-action-btn--danger:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .action-btn[title*="óa"]:not([data-qlpk-button], [data-qlpk-button] *) {
 	color: var(--admin-danger);
 }
 
 body.qlpk-admin-page .table .action-btn:not(.delete) {
-	color: var(--admin-accent);
 	font-size: var(--qlpk-font-size-lg, 16px);
 }
+body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--admin-accent);
+}
 
-.qlpk-admin-page .pagination {
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination {
 	gap: 2px;
 }
 
-.qlpk-admin-page .pagination .page-link {
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-link {
 	min-width: 30px;
 	padding: 5px 9px;
 	border: 1px solid var(--admin-border);
-	border-radius: 6px;
+	border-radius: 0.5625rem;
 	background: var(--admin-surface);
 	color: var(--admin-muted-strong);
 	font-size: var(--qlpk-font-size-sm, 12px);
 	text-align: center;
 }
 
-.qlpk-admin-page .pagination .page-item.active .page-link {
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.active .page-link {
 	border-color: var(--admin-accent);
-	background: var(--admin-accent);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 }
 
-.qlpk-admin-page .pagination .page-item.disabled .page-link {
-	color: #94a3b8;
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.disabled .page-link {
+	color: var(--qlpk-color-text-muted);
 }
 
 .qlpk-admin-page .modal-content {
 	border: 1px solid var(--admin-border);
-	border-radius: var(--admin-radius);
+	border-radius: var(--clinic-surface-radius, var(--admin-radius));
 	box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
 	overflow: hidden;
 }
@@ -418,14 +431,14 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 	border: 0;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
-	background: var(--admin-accent) !important;
+	background: var(--qlpk-workflow-context-header-bg) !important;
 	color: #fff;
 }
 
 .qlpk-admin-page .modal-header .modal-title,
 .qlpk-admin-page .modal-header .modal-title i {
 	color: #fff !important;
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-md, 14px));
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
@@ -454,10 +467,8 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 /* Legacy admin templates carry rounded/pill utility classes. Keep their
  * hooks for JS, but make the rendered controls follow the compact catalog
  * contract. */
-.qlpk-admin-page .form-control.rounded-4,
-.qlpk-admin-page .form-select.rounded-4,
 .qlpk-admin-page .rounded-4 {
-	border-radius: var(--admin-radius) !important;
+	border-radius: var(--clinic-surface-radius, var(--admin-radius)) !important;
 }
 
 .qlpk-admin-page .shadow-sm {
@@ -468,20 +479,27 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 .qlpk-admin-page .um-btn-primary-pill-md,
 .qlpk-admin-page .gm-primary-action,
 .qlpk-admin-page .save-btn {
-	border: 1px solid var(--admin-accent) !important;
-	border-radius: 6px !important;
-	background: var(--admin-accent) !important;
-	color: #fff !important;
-	font-size: var(--qlpk-font-size-base, 13px) !important;
+	border-width: 1px;
+	border-style: solid;
+	border-radius: var(--clinic-control-radius, 0.5625rem) !important;
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px)) !important;
 	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
+}
+.qlpk-admin-page .um-btn-primary-pill-lg:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .gm-primary-action:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 1px solid var(--admin-accent) !important;
+	background: var(--qlpk-workflow-context-header-bg) !important;
+	color: #fff !important;
 }
 
 .qlpk-admin-page .um-btn-pill-lg,
 .qlpk-admin-page .um-btn-pill-md,
 .qlpk-admin-page .gm-pill-btn,
 .qlpk-admin-page .gm-pill-btn-sm {
-	border-radius: 6px !important;
-	font-size: var(--qlpk-font-size-base, 13px) !important;
+	border-radius: var(--clinic-control-radius, 0.5625rem) !important;
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px)) !important;
 	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
 }
 
@@ -505,8 +523,27 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 /* Permission matrix */
-.qlpk-admin-page .main-content > .row.mt-4,
-.qlpk-admin-page .main-content > .row.mb-4 {
+.qlpk-admin-page .qlpk-admin-table-surface {
+	margin: 0.75rem 1.25rem 0;
+	padding: 0.875rem;
+	border: 1px solid var(--admin-border);
+	border-radius: var(--admin-radius);
+	background: var(--admin-surface);
+	box-shadow: var(--clinic-surface-shadow);
+}
+
+.qlpk-admin-toolbar-top,
+.qlpk-admin-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.qlpk-admin-actions { gap: 0.5rem; }
+
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mt-4,
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4 {
 	margin: 12px 20px 0 !important;
 }
 
@@ -517,9 +554,8 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 
 .qlpk-admin-page .permission-tree-panel,
 .qlpk-admin-page .tree-perm {
-	border: 1px solid var(--admin-border);
-	border-radius: 6px;
-	background: #f8fafc;
+	border: 0;
+	background: var(--admin-surface);
 }
 
 .qlpk-admin-page .permission-tree-panel {
@@ -527,25 +563,8 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 .qlpk-admin-page .user-item.active {
-	background: #ccfbf1;
+	background: var(--qlpk-color-primary-soft);
 	color: var(--admin-accent-strong);
-}
-
-/* Text expansion summary surfaces */
-.qlpk-admin-page .stats-card {
-	min-height: 76px;
-	margin-bottom: 0;
-	padding: 12px 14px;
-}
-
-.qlpk-admin-page .stats-number {
-	color: var(--admin-accent);
-	font-size: var(--qlpk-font-size-3xl, 24px);
-}
-
-.qlpk-admin-page .stats-label {
-	color: var(--admin-muted);
-	font-size: var(--qlpk-font-size-sm, 12px);
 }
 
 .qlpk-admin-page .import-export-section {
@@ -553,32 +572,33 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 	padding: 12px 14px;
 }
 
-.qlpk-admin-page .main-content > .row.mb-4 {
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4 {
 	margin-bottom: 0 !important;
 }
 
-.qlpk-admin-page .main-content > .row.mb-3 {
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-3 {
 	margin: 12px 20px 0 !important;
 	padding: 10px;
 	border: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius);
 	background: var(--admin-surface);
+	row-gap: 0.5rem;
 }
 
-.qlpk-admin-page .main-content > .card:not(.modal-content) .card-body.p-0 {
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card:not(.modal-content) .card-body.p-0 {
 	padding: 0 !important;
 }
 
 /* Catalog dictionary pages already use the desired compact table markup. */
 .qlpk-admin-page .catalog-dict-main,
 .qlpk-admin-page .di-main-content {
-	padding: 16px 20px;
+	padding: 0;
 }
 
 .qlpk-admin-page .catalog-dict-main .card-wrap,
 .qlpk-admin-page .di-main-content .card-wrap {
-	margin: 0;
-	padding: 14px;
+	margin: 0.75rem 1.25rem;
+	padding: 0.875rem;
 }
 
 .qlpk-admin-page .catalog-dict-main .toolbar,
@@ -599,16 +619,14 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 
 .qlpk-admin-page .catalog-dict-main .modal-header,
 .qlpk-admin-page .di-main-content .modal-header {
-	background: var(--admin-accent) !important;
+	background: var(--qlpk-workflow-context-header-bg) !important;
 }
 
 /* Survey template page: retain its IDs/JS but use the same surface geometry. */
-.qlpk-admin-page.stm-page,
-.qlpk-admin-page.stm-page html,
-.qlpk-admin-page.stm-page body {
-	height: auto;
-	min-height: 100vh;
-	overflow: visible;
+.qlpk-admin-page.stm-page {
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
 	background: var(--admin-bg);
 }
 
@@ -617,11 +635,12 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 	width: 100% !important;
 	max-width: 100% !important;
 	flex: 0 0 100% !important;
-	height: auto;
-	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	min-height: 0;
 	padding: 0 !important;
-	overflow-x: hidden;
-	overflow-y: auto;
+	overflow: hidden;
 }
 
 .qlpk-admin-page .stm-main.col-md-10,
@@ -631,15 +650,29 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 	flex: 0 0 100% !important;
 }
 
+.qlpk-admin-page .stm-list-workspace {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.qlpk-admin-page .stm-list-workspace > .qlpk-admin-page-header {
+	flex-shrink: 0;
+}
+
 .qlpk-admin-page .stm-card {
 	position: static;
 	inset: auto;
-	min-height: calc(100vh - 24px);
+	flex: 1;
+	min-height: 0;
 	margin: 12px 20px;
 	border: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius);
 	background: var(--admin-surface);
-	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+	box-shadow: var(--clinic-surface-shadow);
 }
 
 .qlpk-admin-page .stm-card-body {
@@ -647,6 +680,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 .qlpk-admin-page .stm-toolbar {
+	flex-shrink: 0;
 	padding-bottom: 10px;
 	border-bottom: 1px solid var(--admin-border);
 }
@@ -663,21 +697,21 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 .qlpk-admin-page .stm-search input {
 	height: 36px;
 	border-color: var(--admin-border-strong);
-	border-radius: 6px;
+	border-radius: var(--clinic-control-radius, 0.5625rem);
 }
 
 .qlpk-admin-page .stm-table-wrap {
 	border-color: var(--admin-border);
-	border-radius: 6px;
+	border-radius: 0.5625rem;
+}
+
+.qlpk-admin-page .stm-table-wrap table {
+	height: auto;
 }
 
 .qlpk-admin-page .stm-table-wrap table thead th {
-	background: #f1f5f9;
+	background: var(--qlpk-color-brown-soft);
 	color: var(--admin-muted-strong);
-}
-
-.qlpk-admin-page .stm-pagination-bar {
-	border-top-color: var(--admin-border);
 }
 
 /* Long admin tables scroll inside their own surface on narrow screens. A
@@ -693,9 +727,27 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 	min-width: 740px;
 }
 
+.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(2) {
+	white-space: normal;
+	min-width: 20rem;
+	max-width: 28rem;
+}
+
+.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(5) {
+	min-width: 8rem;
+}
+
+.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(5) .badge {
+	white-space: nowrap;
+}
+
+.qlpk-admin-page #groupTable td:nth-child(4) {
+	white-space: normal;
+	min-width: 28rem;
+}
+
 .qlpk-admin-page table:has(#orderItemsTableBody),
 .qlpk-admin-page table:has(#holidayTableBody),
-.qlpk-admin-page table:has(#icdTableBody),
 .qlpk-admin-page table:has(#categoryTableBody),
 .qlpk-admin-page table:has(#serviceTableBody) {
 	min-width: 680px;
@@ -716,7 +768,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 /* Empty/placeholder states remain readable without adding a second card. */
-.qlpk-admin-page .main-content > .mt-5 {
+.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .mt-5 {
 	margin: 12px 20px 0 !important;
 	padding: 42px 20px;
 	border: 1px dashed var(--admin-border-strong);
@@ -726,11 +778,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 @media (max-width: 900px) {
-	.qlpk-admin-page .header-bar,
-	.qlpk-admin-page .qlpk-admin-page-header {
-		padding: 14px 12px 10px;
-	}
-
+	.qlpk-admin-page .qlpk-admin-table-surface,
 	.qlpk-admin-page .header-bar > .d-flex,
 	.qlpk-admin-page .qlpk-admin-page-header > .d-flex {
 		align-items: flex-start !important;
@@ -748,27 +796,27 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 		flex: 1 1 160px;
 	}
 
-	.qlpk-admin-page .main-content > .card,
-	.qlpk-admin-page .main-content > .card-wrap,
-	.qlpk-admin-page .main-content > .qlpk-admin-surface,
-	.qlpk-admin-page .main-content > .import-export-section,
-	.qlpk-admin-page .main-content > .stm-card,
-		.qlpk-admin-page .main-content > .row.mt-4,
-		.qlpk-admin-page .main-content > .row.mb-4,
-		.qlpk-admin-page .main-content > .row.mb-3,
-		.qlpk-admin-page .main-content > .mt-5 {
+	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card,
+	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card-wrap,
+	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .qlpk-admin-surface,
+	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .import-export-section,
+	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .stm-card,
+		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mt-4,
+		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4,
+		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-3,
+		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .mt-5 {
 		margin-right: 12px !important;
 		margin-left: 12px !important;
 	}
 
 	.qlpk-admin-page .catalog-dict-main,
 	.qlpk-admin-page .di-main-content {
-		padding: 12px;
+		padding: 0;
 	}
 
 	.qlpk-admin-page .catalog-dict-main .card-wrap,
 	.qlpk-admin-page .di-main-content .card-wrap {
-		margin: 0;
+		margin: 0.75rem;
 	}
 
 	.qlpk-admin-page .catalog-dict-main .toolbar,
@@ -810,11 +858,6 @@ body.qlpk-admin-page .table .action-btn:not(.delete) {
 }
 
 @media (max-width: 576px) {
-	.qlpk-admin-page .page-title,
-	.qlpk-admin-page .qlpk-admin-page-header h1,
-	.qlpk-admin-page .qlpk-admin-page-header h2 {
-		font-size: var(--qlpk-font-size-2xl, 20px);
-	}
 
 	.qlpk-admin-page .filter-bar > * {
 		flex-basis: 100%;

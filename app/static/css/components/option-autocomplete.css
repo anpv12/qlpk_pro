@@ -1,0 +1,50 @@
+/* Shared option lists. Modal/page owners configure stacking via variables. */
+.occupation-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: var(--option-dropdown-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: var(--option-dropdown-z-index, 1050);
+}
+
+.occupation-dropdown .occupation-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #f0f0f0;
+	transition: background-color 0.2s ease;
+}
+
+.occupation-dropdown .occupation-item:hover {
+	background-color: var(--qlpk-color-page-bg);
+}
+
+.occupation-dropdown .occupation-item.selected {
+	background-color: var(--qlpk-color-primary-soft);
+	color: var(--qlpk-color-primary);
+}
+
+.occupation-dropdown .occupation-item.new-occupation {
+	background-color: #fbf4e0;
+	color: #15721f;
+	border-left: 3px solid #ffbc00;
+}
+
+.occupation-dropdown .occupation-item.new-occupation:hover {
+	background-color: #ffeaa7;
+}
+
+.occupation-dropdown .no-results {
+	padding: 12px;
+	text-align: center;
+	color: #6c757d;
+	font-style: italic;
+}
+

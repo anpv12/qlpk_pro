@@ -9,8 +9,8 @@
 #personalDetailModal {
     position: fixed;
     z-index: 1060;
-    --personal-detail-header-bg: var(--qlpk-header-bg, #4b2719);
-    --personal-detail-header-bg-strong: #5a301f;
+    --personal-detail-header-bg: var(--qlpk-color-primary);
+    --personal-detail-header-bg-strong: var(--qlpk-color-primary-strong);
     --personal-detail-header-text: var(--qlpk-header-text, #fffaf3);
     --personal-detail-accent: var(--qlpk-header-accent, #d6a069);
     --personal-detail-surface: #fffdf9;
@@ -54,7 +54,7 @@
 }
 
 #personalDetailModal .modal-header {
-    background: linear-gradient(180deg, var(--personal-detail-header-bg-strong) 0%, var(--personal-detail-header-bg) 100%) !important;
+    background: var(--qlpk-workflow-context-header-bg) !important;
     color: var(--personal-detail-header-text) !important;
     border-radius: 0.75rem 0.75rem 0 0 !important;
     padding: 0.5rem 0.75rem !important;
@@ -101,14 +101,18 @@
 #personalDetailModal .modal-section .form-control,
 #personalDetailModal .modal-section .form-select {
     border-radius: 0.375rem !important;
-    border: 1px solid rgba(107, 66, 44, 0.24) !important;
+	border-width: 1px;
+	border-style: solid;
     padding: 0.4375rem 0.625rem !important;
     font-size: var(--qlpk-font-size-md, 14px) !important;
+}
+#personalDetailModal .modal-section .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+#personalDetailModal .modal-section .form-select {
+    border: 1px solid rgba(107, 66, 44, 0.24) !important;
     transition: all 0.2s ease !important;
     color: var(--personal-detail-text) !important;
 }
-
-#personalDetailModal .modal-section .form-control:focus,
+#personalDetailModal .modal-section .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 #personalDetailModal .modal-section .form-select:focus {
     border-color: var(--personal-detail-accent) !important;
     box-shadow: 0 0 0 0.18rem rgba(214, 160, 105, 0.22) !important;
@@ -269,7 +273,7 @@
 #modalReligionDropdown .autocomplete-item.new-occupation,
 #modalEthnicityDropdown .autocomplete-item.new-occupation {
     background-color: #fff8ed !important;
-    color: #4b2719 !important;
+    color: var(--qlpk-brown-800) !important;
     border-left: 0.1875rem solid var(--personal-detail-accent) !important;
 }
 
@@ -295,12 +299,12 @@
 }
 
 #personalDetailModal .autocomplete-dropdown::-webkit-scrollbar-thumb {
-    background: var(--personal-detail-header-bg);
+    background: var(--qlpk-workflow-context-header-bg);
     border-radius: 0.1875rem;
 }
 
 #personalDetailModal .autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
-    background: var(--personal-detail-header-bg-strong);
+    background: var(--qlpk-workflow-context-header-bg);
 }
 
 /* Custom scrollbar cho modal body */
@@ -314,12 +318,12 @@
 }
 
 #personalDetailModal .modal-body::-webkit-scrollbar-thumb {
-    background: var(--personal-detail-header-bg);
+    background: var(--qlpk-workflow-context-header-bg);
     border-radius: 0.25rem;
 }
 
 #personalDetailModal .modal-body::-webkit-scrollbar-thumb:hover {
-    background: var(--personal-detail-header-bg-strong);
+    background: var(--qlpk-workflow-context-header-bg);
 }
 
 /* CSS cho checkbox Mang thai trong modal */

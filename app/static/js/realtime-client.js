@@ -69,6 +69,8 @@
 
 	let socket = null;
 	let started = false;
+	let needsResync = false;
+	const seenEvents = new Set();
 
 	function normalizePath(pathname) {
 		let path = pathname || '/index.html';
@@ -131,6 +133,11 @@
 	}
 
 	function dispatchEvent(event) {
+		if (event.event_id) {
+			if (seenEvents.has(event.event_id)) return;
+			seenEvents.add(event.event_id);
+			if (seenEvents.size > 512) seenEvents.delete(seenEvents.values().next().value);
+		}
 		dispatchToWindow(window, event);
 		document.querySelectorAll('iframe.qlpk-workspace-iframe').forEach((iframe) => {
 			dispatchToWindow(iframe.contentWindow, event);
@@ -153,7 +160,7 @@
 			path: '/socket.io',
 			transports: ['websocket'],
 			upgrade: false,
-			auth: { token },
+			auth: callback => callback({ token: getToken() }),
 			reconnection: true,
 			reconnectionAttempts: Infinity,
 			reconnectionDelay: 700,
@@ -161,8 +168,15 @@
 			timeout: 10000,
 		});
 
-		socket.on('connect', subscribe);
-		socket.on('qlpk:connected', subscribe);
+		socket.on('connect', function () {
+			needsResync = true;
+			subscribe();
+		});
+		socket.on('qlpk:subscribed', function () {
+			if (!needsResync) return;
+			needsResync = false;
+			dispatchEvent({ type: 'realtime.resynced', payload: {} });
+		});
 		socket.on('qlpk:event', dispatchEvent);
 		socket.on('connect_error', function () {
 			dispatchEvent({ type: 'realtime.connection_error', payload: {} });
@@ -173,6 +187,8 @@
 
 	function stop() {
 		started = false;
+		needsResync = false;
+		seenEvents.clear();
 		if (socket) {
 			socket.disconnect();
 			socket = null;

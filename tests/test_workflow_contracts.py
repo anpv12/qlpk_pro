@@ -138,6 +138,24 @@ def test_clinical_order_scope_and_validation_contract() -> None:
     assert "surveyTemplateSelectResults.addEventListener('change'" not in order_management
 
 
+def test_order_management_survey_completion_contract() -> None:
+    order_management = read("app/static/js/order-management.js")
+    survey_templates = read("app/api/survey_templates.py")
+    survey_sessions = read("app/api/survey_sessions.py")
+    notifications = read("app/services/notification_service.py")
+
+    assert "questions_by_criteria" in survey_templates
+    assert "const completionTimestamp = response.updated_at || response.created_at;" in order_management
+    assert "currentSurveySession = surveySession;" in order_management
+    assert "if (previousStatus !== currentStatus)" in order_management
+    assert "create_clinical_order_assignment_notifications" in notifications
+    assert "create_survey_completed_notifications" in notifications
+    assert "clinical_order_assigned" in notifications
+    assert "survey_completed" in notifications
+    assert "completed_transition" not in survey_sessions
+    assert "submit_order_survey" in (ROOT / "app/api/survey_responses.py").read_text()
+
+
 def test_order_catalog_surface_is_removed() -> None:
     removed_paths = [
         "app/models/order_category.py",

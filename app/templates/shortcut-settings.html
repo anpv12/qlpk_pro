@@ -10,6 +10,7 @@
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/pages/shortcut-settings.css?v={{ app_version }}">
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
@@ -17,17 +18,19 @@
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<script src="/static/js/shortcut-manager.js?v={{ app_version }}"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 </head>
 
-<body>
+<body class="qlpk-data-tables qlpk-clinic-page qlpk-admin-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content" id="shortcutSettingsPage">
 				<div class="shortcut-page-wrap">
-					<div class="shortcut-header">
-						<h4>Cấu hình phím tắt menu</h4>
-						<p>Thiết lập tổ hợp phím để mở nhanh các màn hình trong hệ thống.</p>
+					<div class="qlpk-clinic-header">
+						<div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title">Phím tắt menu</h1>
+						<p class="qlpk-clinic-subtitle">Thiết lập tổ hợp phím để mở nhanh các màn hình trong hệ thống.</p></div>
 					</div>
 
 					<div id="shortcutAlert" class="alert shortcut-hidden"></div>
@@ -72,8 +75,8 @@
 									<span id="shortcutComboPreview" class="shortcut-combo-preview">Chưa chọn</span>
 								</div>
 								<div class="d-flex gap-2">
-									<button type="button" id="shortcutClearBtn" class="btn btn-outline-secondary">Làm mới</button>
-									<button type="submit" class="btn btn-primary">Lưu phím tắt</button>
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="shortcutClearBtn" class="btn btn-outline-secondary">Làm mới</button>
+									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-primary">Lưu phím tắt</button>
 								</div>
 							</div>
 						</form>

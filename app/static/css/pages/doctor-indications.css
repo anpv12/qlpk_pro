@@ -44,11 +44,6 @@
 	line-height: 1.2;
 }
 
-.doctor-indications-toolbar .doctor-workspace-button {
-	min-block-size: 1.9rem;
-	padding-block: 0.25rem;
-}
-
 .doctor-indications-layout {
 	display: grid;
 	grid-template-columns: minmax(15rem, 0.35fr) minmax(0, 1fr);
@@ -122,7 +117,7 @@
 }
 
 .doctor-indications-autocomplete > input[type="text"][aria-invalid="true"] {
-	border-color: var(--doctor-danger, #9b2c2c);
+	border-color: var(--qlpk-feedback-error);
 }
 
 .doctor-indications-autocomplete__icon {
@@ -166,6 +161,11 @@
 	display: block;
 }
 
+/* Empty feedback is informative only; it must not cover controls below the field. */
+.doctor-indications-autocomplete__dropdown.is-open.is-empty {
+	pointer-events: none;
+}
+
 .doctor-indications-autocomplete__dropdown .autocomplete-item {
 	padding: 0.45rem 0.55rem;
 	border-block-end: 0.0625rem solid var(--doctor-line);
@@ -197,7 +197,7 @@
 }
 
 .doctor-indications-autocomplete__dropdown .order-autocomplete-survey-badge {
-	background: var(--doctor-brown);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 	font-size: var(--qlpk-font-size-2xs);
 }
@@ -282,7 +282,7 @@
 	place-items: center;
 	align-self: stretch;
 	inline-size: 100%;
-	background: var(--doctor-brown);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -300,15 +300,15 @@
 }
 
 .doctor-indications-message[data-type="error"] {
-	color: var(--doctor-danger, #9b2c2c);
+	color: var(--qlpk-feedback-error);
 }
 
 .doctor-indications-message[data-type="warning"] {
-	color: var(--doctor-warning, #7b4b00);
+	color: var(--qlpk-feedback-warning);
 }
 
 .doctor-indications-message[data-type="success"] {
-	color: var(--doctor-success, #276749);
+	color: var(--qlpk-feedback-success);
 }
 
 .doctor-indications-list {
@@ -400,6 +400,12 @@
 	margin-inline-start: 0.2rem;
 }
 
+.doctor-indications-location-badge {
+	font-size: var(--qlpk-font-size-xs);
+	vertical-align: baseline;
+	white-space: nowrap;
+}
+
 .doctor-indications-table__group {
 	display: block;
 	margin-block-start: 0.15rem;
@@ -409,29 +415,16 @@
 	line-height: 1.25;
 }
 
-.doctor-indications-status {
-	display: inline-flex;
-	align-items: center;
-	min-block-size: 1.45rem;
-	padding: 0.15rem 0.4rem;
-	border: 0.0625rem solid currentColor;
-	border-radius: 999px;
-	font-size: var(--qlpk-font-size-xs);
-	font-weight: var(--qlpk-font-weight-semibold);
-	line-height: 1.1;
-	white-space: nowrap;
-}
-
 .doctor-indications-status.status-draft {
-	color: var(--doctor-warning, #7b4b00);
+	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 
 .doctor-indications-status.status-sent {
-	color: var(--doctor-brown);
+	--qlpk-status-color: var(--qlpk-feedback-info);
 }
 
 .doctor-indications-status.status-completed {
-	color: var(--doctor-success, #276749);
+	--qlpk-status-color: var(--qlpk-feedback-success);
 }
 
 .doctor-indications-table__empty td {
@@ -448,21 +441,6 @@
 	font-size: var(--qlpk-font-size-xl);
 }
 
-.doctor-indications-history {
-	grid-column: 1 / -1;
-	min-width: 0;
-	padding: 0.55rem;
-	border-block-start: 0.0625rem solid var(--doctor-line);
-}
-
-.doctor-indications-history .doctor-indications-list__header {
-	padding-inline: 0;
-}
-
-.doctor-indications-history-table {
-	min-inline-size: 54rem;
-}
-
 @media (max-width: 63.99875rem) {
 	.doctor-indications-layout {
 		grid-template-columns: minmax(0, 1fr);
@@ -471,10 +449,6 @@
 	.doctor-indications-form {
 		border-inline-end: 0;
 		border-block-end: 0.0625rem solid var(--doctor-line);
-	}
-
-	.doctor-indications-history {
-		grid-column: auto;
 	}
 }
 
@@ -524,4 +498,11 @@
 	.doctor-indications-table {
 		min-inline-size: 44rem;
 	}
+}
+
+.status-survey-sent {
+	--qlpk-status-color: var(--qlpk-feedback-warning);
+}
+.status-has-result {
+	--qlpk-status-color: var(--qlpk-feedback-success);
 }

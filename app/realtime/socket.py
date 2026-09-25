@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from typing import Iterable
+from uuid import uuid4
 
 from flask import request, session
 from flask_socketio import SocketIO, disconnect, emit, join_room
@@ -150,6 +151,7 @@ def emit_realtime_event(event_type: str, payload: dict | None = None, rooms: Ite
         return
 
     envelope = {
+        "event_id": uuid4().hex,
         "type": event_type,
         "payload": payload or {},
         "emitted_at": utc_now_iso(),

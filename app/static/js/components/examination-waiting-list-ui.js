@@ -124,6 +124,8 @@
 			.map((appointment, index) => buildWaitingListPatientCardHtml(appointment, index, options))
 			.join('');
 		bindWaitingListPatientCardEvents(tbody, options);
+		const selectedId = options.getSelectedAppointmentId?.();
+		if (selectedId) tbody.querySelector(`.qlpk-waiting-card[data-appointment-id="${Number(selectedId)}"]`)?.classList.add('is-selected');
 		return filteredAppointments;
 	}
 
@@ -137,20 +139,24 @@
 			const seenAppointmentIds = new Set();
 
 			for (const statusItem of statuses) {
-				const response = await options.apiCall(`/api/appointments/?examination_status=${statusItem}&page=${page}&per_page=${perPage}&${roleQueryParam}`);
-				if (!response || !response.ok) continue;
-
-				const data = await response.json();
-				if (!data.appointments) continue;
-
-				data.appointments.forEach(appointment => {
-					if (seenAppointmentIds.has(appointment.id)) return;
-					seenAppointmentIds.add(appointment.id);
-					appointments.push(appointment);
-				});
+				let nextPage = page;
+				do {
+					const response = await options.apiCall(`/api/appointments/?examination_status=${statusItem}&page=${nextPage}&per_page=${perPage}&${roleQueryParam}`);
+					if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
+					if (!response || !response.ok) throw new Error('Không thể tải danh sách chờ khám');
+					const data = await response.json();
+					if (!Array.isArray(data.appointments)) throw new Error('Danh sách chờ khám không hợp lệ');
+					data.appointments.forEach(appointment => {
+						if (seenAppointmentIds.has(appointment.id)) return;
+						seenAppointmentIds.add(appointment.id);
+						appointments.push(appointment);
+					});
+					nextPage = options.loadAllPages && data.pagination?.has_next ? data.pagination.next_page : null;
+				} while (nextPage);
 			}
 
-			appointments.sort((a, b) => b.id - a.id);
+			if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
+			if (!options.preserveServerOrder) appointments.sort((a, b) => b.id - a.id);
 
 			if (appointments.length > 0) {
 				if (typeof options.setAppointments === 'function') options.setAppointments(appointments);
@@ -165,12 +171,14 @@
 			if (typeof options.render === 'function') options.render();
 			return { appointments: [], status: 'empty' };
 		} catch (error) {
+			if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
 			if (typeof options.showError === 'function') options.showError(error);
 			return { appointments: [], status: 'error', error };
 		}
 	}
 
 	function createWaitingListAdapter(options = {}) {
+		let requestVersion = 0;
 		const getPerPage = typeof options.getPerPage === 'function'
 			? options.getPerPage
 			: () => options.perPage || 10;
@@ -189,6 +197,7 @@
 				document: getDocument(options),
 				appointments: getAppointments(),
 				patientSearchQuery: getPatientSearchQuery(),
+				getSelectedAppointmentId: options.getSelectedAppointmentId,
 				currentPage: getCurrentPage(),
 				perPage: getPerPage(),
 				formatDateDisplay: options.formatDateDisplay,
@@ -211,12 +220,16 @@
 		}
 
 		function loadAdapterAppointments(status = options.defaultStatus, page = 1) {
+			const version = ++requestVersion;
 			return loadCombinedAppointments({
 				apiCall: options.apiCall,
 				statuses: options.statuses,
 				page,
 				perPage: getPerPage(),
 				roleQueryParam: options.roleQueryParam,
+				loadAllPages: options.loadAllPages,
+				preserveServerOrder: options.preserveServerOrder,
+				isCurrentRequest: () => version === requestVersion,
 				setAppointments: options.setAppointments,
 				setCurrentPage: options.setCurrentPage,
 				setTotalPages: options.setTotalPages,

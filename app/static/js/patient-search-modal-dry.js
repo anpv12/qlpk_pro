@@ -318,7 +318,7 @@ async function printModalServices() {
 
 		// In bằng hàm chung
 		const printWindow = setupPrintWindow(invoiceHtml, 'In hóa đơn dịch vụ');
-		triggerPrint(printWindow);
+		await triggerPrint(printWindow);
 	} catch (error) {
 		console.error('Error printing services from modal:', error);
 		showCustomToast && showCustomToast('error', 'Không thể in hóa đơn dịch vụ. Vui lòng thử lại.');
@@ -355,7 +355,7 @@ async function printModalMedicalRecord() {
 
 		// In bằng hàm chung
 		const printWindow = setupPrintWindow(medicalRecordHtml, 'In bệnh án');
-		triggerPrint(printWindow);
+		await triggerPrint(printWindow);
 	} catch (error) {
 		console.error('Error printing medical record from modal:', error);
 		showCustomToast && showCustomToast('error', 'Không thể in bệnh án. Vui lòng thử lại.');
@@ -390,7 +390,7 @@ async function printModalMedicalRecordTLG() {
 		});
 
 		const printWindow = setupPrintWindow(medicalRecordHtml, 'In bệnh án TLG');
-		triggerPrint(printWindow);
+		await triggerPrint(printWindow);
 	} catch (error) {
 		console.error('Error printing medical record TLG from modal:', error);
 		showCustomToast && showCustomToast('error', 'Không thể in bệnh án tâm lý. Vui lòng thử lại.');
@@ -1627,83 +1627,35 @@ function getPrescriptionPrintStyles() {
  * Setup print window với HTML content và styles
  */
 
+const pendingPrintDocuments = new WeakMap();
+
 function setupPrintWindow(htmlContent, title = 'In đơn thuốc') {
-	const printWindow = window.open('', '_blank', 'width=900,height=700');
+	const printWindow = window.open('', '_blank');
 	if (!printWindow) {
-		showCustomToast && showCustomToast('error', 'Trình duyệt chặn cửa sổ in');
+		showCustomToast('error', 'Trình duyệt chặn tab xem trước');
 		return null;
 	}
-
-	const styles = getPrescriptionPrintStyles();
-	printWindow.document.open();
-	printWindow.document.write('<!DOCTYPE html>');
-	printWindow.document.write('<html lang="vi">');
-	printWindow.document.write('<head>');
-	printWindow.document.write('<meta charset="utf-8">');
-	printWindow.document.write(`<title>${title}</title>`);
-	printWindow.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">');
-	printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">');
-	printWindow.document.write('<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>');
-	const printStyle = printWindow.document.createElement('style');
-	printStyle.textContent = styles;
-	printWindow.document.head.appendChild(printStyle);
-	printWindow.document.write('</head>');
-	printWindow.document.write('<body>');
-	printWindow.document.write(htmlContent);
-	printWindow.document.write('<script>');
-	printWindow.document.write(`
-        // Tạo barcode sau khi document được load
-        window.addEventListener('load', function() {
-            // Tìm tất cả các element có class barcode-svg
-            const barcodeElements = document.querySelectorAll('.barcode-svg');
-            barcodeElements.forEach(function(svg) {
-                const id = svg.id;
-                if (id && id.startsWith('barcode-')) {
-                    const code = id.replace('barcode-', '');
-                    try {
-                        JsBarcode(svg, code, {
-                            format: "CODE128",
-                            width: 1.5,
-                            height: 35,
-                            displayValue: false,
-                            margin: 0
-                        });
-                        // Chốt attribute SVG sau khi JsBarcode render.
-                        svg.setAttribute('width', '200px');
-                        svg.setAttribute('height', '35px');
-                    } catch (e) {
-                        console.error('Lỗi tạo barcode:', e);
-                    }
-                }
-            });
-        });
-    `);
-	printWindow.document.write('</script>');
-	printWindow.document.write('</body>');
-	printWindow.document.write('</html>');
+	const document = new DOMParser().parseFromString('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>', 'text/html');
+	document.title = title;
+	const bootstrap = document.createElement('link');
+	bootstrap.rel = 'stylesheet';
+	bootstrap.href = '/static/vendor/pdf/bootstrap.min.css';
+	document.head.appendChild(bootstrap);
+	const styles = document.createElement('style');
+	styles.textContent = getPrescriptionPrintStyles();
+	document.head.appendChild(styles);
+	document.body.innerHTML = htmlContent;
+	pendingPrintDocuments.set(printWindow, '<!doctype html>' + document.documentElement.outerHTML);
+	printWindow.document.write('<meta charset="utf-8"><p>Đang tạo PDF...</p>');
 	printWindow.document.close();
-
 	return printWindow;
 }
 
-/**
- * Trigger print cho print window (DRY - dùng chung cho tất cả chức năng in)
- */
-
-function triggerPrint(printWindow) {
-	if (!printWindow) {
-		return;
-	}
-
-	printWindow.onload = () => {
-		printWindow.focus();
-		setTimeout(() => {
-			printWindow.print();
-			setTimeout(() => {
-				printWindow.close();
-			}, 100);
-		}, 250);
-	};
+async function triggerPrint(printWindow) {
+	if (!printWindow) return;
+	const html = pendingPrintDocuments.get(printWindow);
+	pendingPrintDocuments.delete(printWindow);
+	return window.QLPKPdfPreview.render(printWindow, html);
 }
 
 /**

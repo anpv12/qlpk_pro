@@ -1,11 +1,16 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
+from app.utils.search_normalization import normalized_text_expression
 
 
 class MedicineReferenceCatalog(Base):
     __tablename__ = "medicine_reference_catalog"
+    __table_args__ = (
+        UniqueConstraint('source', 'source_id', name='uq_medicine_reference_source'),
+        Index('idx_dav_name_order', 'name', 'registration_number', 'id'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     source = Column(String(50), nullable=False, default="DAV")
@@ -20,6 +25,8 @@ class MedicineReferenceCatalog(Base):
     dosage_form = Column(Text, nullable=True)
     packaging = Column(Text, nullable=True)
     route = Column(Text, nullable=True)
+    suggested_route = Column(Text, nullable=True)
+    suggested_route_rule_version = Column(String(32), nullable=True)
     standard = Column(Text, nullable=True)
     shelf_life = Column(Text, nullable=True)
 
@@ -61,6 +68,7 @@ class MedicineReferenceCatalog(Base):
             "dosage_form": self.dosage_form,
             "packaging": self.packaging,
             "route": self.route,
+            "suggested_route": None if str(self.route or '').strip() else self.suggested_route,
             "standard": self.standard,
             "shelf_life": self.shelf_life,
             "manufacturer_name": self.manufacturer_name,
@@ -79,3 +87,13 @@ class MedicineReferenceCatalog(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+for _field in ('name', 'active_ingredient', 'registration_number',
+               'old_registration_number', 'source_id', 'manufacturer_name'):
+    Index(
+        f'idx_dav_norm_{_field}_trgm',
+        normalized_text_expression(getattr(MedicineReferenceCatalog, _field)).label('normalized_value'),
+        postgresql_using='gin',
+        postgresql_ops={'normalized_value': 'gin_trgm_ops'},
+    )

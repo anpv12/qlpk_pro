@@ -152,7 +152,7 @@
 			});
 		}
 		return `
-			<button type="button" class="btn-add-relative relative-table-add-btn">
+			<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn-add-relative relative-table-add-btn">
 				<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i><span>Thêm người thân</span>
 			</button>
 		`;

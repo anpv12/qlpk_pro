@@ -1,7 +1,8 @@
 {% from 'components/_icd_autocomplete.html' import render_icd_autocomplete %}
+{% from 'components/_autocomplete_field.html' import render_autocomplete_field %}
 <section class="doctor-clinical-workspace" id="doctorClinicalWorkspace" data-doctor-component="clinical-workspace" aria-labelledby="doctorClinicalHeading" hidden>
 	<form class="doctor-clinical-form" id="doctorClinicalForm" autocomplete="off">
-		<header class="doctor-patient-hero" aria-labelledby="doctorClinicalHeading">
+		<header class="doctor-patient-hero" data-qlpk-button-surface="dark" aria-labelledby="doctorClinicalHeading">
 			<div class="doctor-patient-hero__summary">
 				<div class="doctor-patient-hero__body">
 					<div class="doctor-patient-hero__title-row">
@@ -27,19 +28,23 @@
 				</div>
 				<div class="doctor-patient-hero__actions">
 					<div class="doctor-patient-hero__action-buttons">
-						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorClinicalHistoryButton" data-doctor-clinical-action="history" aria-controls="patientSearchModal" title="Xem lịch sử khám" disabled>
+						<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary" id="doctorClinicalHistoryButton" data-doctor-clinical-action="history" aria-controls="patientSearchModal" title="Xem lịch sử khám" disabled>
 							<i class="bi bi-clock-history" aria-hidden="true"></i>
 							<span>Lịch sử</span>
 						</button>
-						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-history-view-exit hidden title="Quay lại lượt đang khám">
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-history-view-exit hidden title="Quay lại lượt đang khám">
 							<i class="bi bi-arrow-left" aria-hidden="true"></i>
 							<span>Về lượt hiện tại</span>
 						</button>
-						<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-workspace-action="save" aria-busy="false" aria-describedby="doctorWorkspaceSaveStatus">
+						<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-doctor-workspace-action="save" aria-busy="false" aria-describedby="doctorWorkspaceSaveStatus">
 							<i class="bi bi-floppy" data-doctor-workspace-save-icon aria-hidden="true"></i>
 							<span data-doctor-workspace-save-label>Lưu</span>
 						</button>
-						<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-doctor-workspace-action="complete" aria-describedby="doctorWorkspaceSaveStatus">
+						<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary qlpk-icon-text-button" data-doctor-workspace-action="transfer" aria-haspopup="dialog" aria-controls="transferModal" disabled>
+							<i class="bi bi-arrow-left-right qlpk-button-icon" aria-hidden="true"></i>
+							<span>Chuyển khám</span>
+						</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-doctor-workspace-action="complete" aria-describedby="doctorWorkspaceSaveStatus">
 							<i class="bi bi-check-circle-fill" aria-hidden="true"></i>
 							<span>Hoàn thành</span>
 						</button>
@@ -85,8 +90,8 @@
 						<span data-doctor-draft-message><span data-doctor-draft-message-prefix></span><strong class="doctor-draft-recovery__draft-count" data-doctor-draft-count></strong><span data-doctor-draft-message-suffix></span></span>
 					</div>
 					<div class="doctor-draft-recovery__actions">
-						<button type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="restore">Khôi phục</button>
-						<button type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="discard">Bỏ bản nháp</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="restore">Khôi phục</button>
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="doctor-draft-recovery__action" data-doctor-draft-action="discard">Bỏ bản nháp</button>
 					</div>
 				</section>
 				<div class="doctor-workbench" aria-label="Phiếu khám bác sĩ">
@@ -130,18 +135,18 @@
 							<div class="doctor-workbench-panel__body doctor-workbench-panel__body--clinical">
 								<div class="doctor-clinical-flow">
 									<div class="doctor-clinical-flow__clinical-grid">
-									<section class="doctor-clinical-section doctor-clinical-section--decision doctor-clinical-form-card qlpk-patient-visit-card receptionist-card" id="doctorDecisionTreatmentTask" aria-labelledby="doctorDecisionTreatmentHeading">
-						<header class="doctor-clinical-form-card__header">
+									<section class="doctor-clinical-section doctor-clinical-section--decision doctor-clinical-form-card qlpk-patient-visit-card qlpk-patient-visit-card--neutral-border receptionist-card" id="doctorDecisionTreatmentTask" aria-labelledby="doctorDecisionTreatmentHeading">
+						<header class="doctor-clinical-form-card__header" data-qlpk-button-surface="dark">
 							<div class="receptionist-section-title qlpk-patient-visit-card__title" id="doctorDecisionTreatmentHeading">
 								<i class="bi bi-clipboard2-pulse qlpk-section-icon" aria-hidden="true"></i>
 								<span>Khám &amp; xử trí</span>
 							</div>
 							<div class="doctor-clinical-form-card__header-actions">
-								<button type="button" class="doctor-clinical-section-jump doctor-clinical-history-action" data-prescription-history-action="toggle" aria-controls="doctorPrescriptionHistoryPanel" aria-expanded="false" hidden>
+								<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-clinical-section-jump doctor-clinical-history-action" data-prescription-history-action="toggle" aria-controls="doctorPrescriptionHistoryPanel" aria-expanded="false" hidden>
 									<i class="bi bi-clock-history" aria-hidden="true"></i>
 									<span>Lịch sử thuốc</span>
 								</button>
-								<button type="button" class="doctor-clinical-section-jump" data-prescription-navigation="jump" aria-controls="doctorPrescriptionWorkspace" aria-label="Đi đến vùng đơn thuốc">
+								<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-clinical-section-jump" data-prescription-navigation="jump" aria-controls="doctorPrescriptionWorkspace" aria-label="Đi đến vùng đơn thuốc">
 									<i class="bi bi-capsule" aria-hidden="true"></i>
 									<span>Đơn thuốc</span>
 									<strong id="doctorPrescriptionJumpCount">0</strong>
@@ -197,10 +202,20 @@
 												<span>7. Kết luận &amp; Hướng Đ.trị</span>
 														<textarea class="form-control" id="treatmentPlan" name="treatment_plan" rows="1"></textarea>
 											</label>
-											<label class="doctor-field doctor-field--full receptionist-paper-field">
-												<span>8. Thuốc đang dùng</span>
-														<textarea class="form-control" id="currentMedications" name="current_medications" rows="1"></textarea>
-											</label>
+											<div class="doctor-field doctor-field--full receptionist-paper-field">
+												<label class="doctor-field__label" for="currentMedicationSearch">8. Thuốc đang dùng</label>
+												{{ render_autocomplete_field(
+													input_id='currentMedicationSearch',
+													tags_id='currentMedicationSelected',
+													list_id='currentMedicationResults',
+													root_id='currentMedicationField',
+													dropdown_id='currentMedicationDropdown',
+													root_class='doctor-autocomplete-field',
+													placeholder='Tìm thuốc từ DAV…',
+													input_attrs={'data-clinical-transient': ''}
+												) }}
+												<input type="hidden" id="currentMedications" name="current_medications">
+											</div>
 											<label class="doctor-field doctor-field--full receptionist-paper-field">
 												<span>9. Lời dặn</span>
 														<textarea class="form-control" id="examinationNotes" name="loi_dan" rows="1"></textarea>
@@ -208,7 +223,7 @@
 										</div>
 									</section>
 
-									<section class="doctor-clinical-detail-panel qlpk-patient-visit-card receptionist-card" id="doctorClinicalDetailPanel" aria-labelledby="doctorClinicalDetailHeading">
+									<section class="doctor-clinical-detail-panel qlpk-patient-visit-card qlpk-patient-visit-card--neutral-border receptionist-card" id="doctorClinicalDetailPanel" aria-labelledby="doctorClinicalDetailHeading">
 										<header class="doctor-clinical-detail-panel__header">
 											<div class="receptionist-section-title qlpk-patient-visit-card__title" id="doctorClinicalDetailHeading">
 												<i class="bi bi-clipboard2-check qlpk-section-icon" aria-hidden="true"></i>
@@ -219,11 +234,11 @@
 											<section class="doctor-clinical-detail-panel__group" aria-labelledby="doctorClinicalOrgansHeading">
 												<h4 id="doctorClinicalOrgansHeading">1. Các cơ quan</h4>
 												<div class="doctor-clinical-detail-panel__fields">
-													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralCirculation">
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralCirculation">
 														<span class="form-label">Tuần hoàn</span>
 														<textarea class="form-control" id="examGeneralCirculation" rows="1"></textarea>
 													</label>
-													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralDigestive">
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examGeneralDigestive">
 														<span class="form-label">Tiêu hoá</span>
 														<textarea class="form-control" id="examGeneralDigestive" rows="1"></textarea>
 													</label>
@@ -243,7 +258,7 @@
 														<span class="form-label">Nội tiết-dinh dưỡng</span>
 														<textarea class="form-control" id="examGeneralEndocrineNutritionOthers" rows="1"></textarea>
 													</label>
-													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--full doctor-clinical-detail-field--inline receptionist-paper-field" for="examGeneralMental">
+													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--full receptionist-paper-field" for="examGeneralMental">
 														<span class="form-label">Thần kinh</span>
 														<textarea class="form-control" id="examGeneralMental" rows="1"></textarea>
 													</label>
@@ -261,11 +276,11 @@
 														<span class="form-label">Tình cảm, cảm xúc</span>
 														<textarea class="form-control" id="examMentalEmotions" rows="1"></textarea>
 													</label>
-													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalPerception">
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalPerception">
 														<span class="form-label">Tri giác</span>
 														<textarea class="form-control" id="examMentalPerception" rows="1"></textarea>
 													</label>
-													<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalThought">
+													<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalThought">
 														<span class="form-label">Tư duy</span>
 														<textarea class="form-control" id="examMentalThought" rows="1"></textarea>
 													</label>
@@ -277,11 +292,11 @@
 														<span class="form-label">Tập trung - chú ý</span>
 														<textarea class="form-control" id="examMentalAttention" rows="1"></textarea>
 											</label>
-											<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalIntelligence">
+											<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalIntelligence">
 														<span class="form-label">Trí năng</span>
 														<textarea class="form-control" id="examMentalIntelligence" rows="1"></textarea>
 											</label>
-											<label class="doctor-clinical-detail-field doctor-clinical-detail-field--inline receptionist-paper-field" for="examMentalMemory">
+											<label class="doctor-clinical-detail-field receptionist-paper-field" for="examMentalMemory">
 														<span class="form-label">Trí nhớ</span>
 														<textarea class="form-control" id="examMentalMemory" rows="1"></textarea>
 											</label>
@@ -296,7 +311,7 @@
 					<section class="doctor-prescription-editor" id="doctorPrescriptionWorkspace" data-doctor-component="prescription" aria-labelledby="doctorPrescriptionHeading">
 						<div class="doctor-prescription-editor__layout">
 							<div class="doctor-prescription-editor__main">
-								<header class="doctor-prescription-editor__header">
+								<header class="doctor-prescription-editor__header" data-qlpk-button-surface="dark">
 									<div class="doctor-prescription-editor__identity">
 										<span class="doctor-prescription-editor__icon" aria-hidden="true"><i class="bi bi-capsule"></i></span>
 										<div class="doctor-prescription-editor__title-copy">
@@ -310,13 +325,13 @@
 									<div class="doctor-prescription-editor__actions" aria-label="Thao tác đơn thuốc">
 										<div class="doctor-prescription-editor__summary" aria-label="Tóm tắt đơn thuốc">
 											<span><strong id="doctorPrescriptionItemsCount">0</strong> thuốc</span>
-											<span class="doctor-prescription-editor__save-status" id="doctorPrescriptionSaveStatus" data-status="idle" aria-live="polite">Chưa có thay đổi</span>
+											<span class="qlpk-status doctor-prescription-editor__save-status" id="doctorPrescriptionSaveStatus" data-status="idle" aria-live="polite">Chưa có thay đổi</span>
 										</div>
-										<button type="button" class="doctor-workspace-button" data-prescription-action="print">
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button" data-prescription-action="print">
 											<i class="bi bi-printer" aria-hidden="true"></i>
 											<span>In đơn</span>
 										</button>
-										<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-action="add-stock-row">
+										<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-action="add-stock-row">
 											<i class="bi bi-plus-circle" aria-hidden="true"></i>
 											<span>Thêm thuốc</span>
 										</button>
@@ -344,22 +359,17 @@
 												<span><i class="bi bi-calendar-check" aria-hidden="true"></i>Hẹn tái khám</span>
 												<div class="doctor-prescription-reexam-value">
 													<div class="doctor-prescription-reexam-line">
-														<label class="doctor-prescription-reexam-toggle" for="doctorPrescriptionReExamToggle">
-															<input type="checkbox" id="doctorPrescriptionReExamToggle">
-															<span>Đặt lịch</span>
-														</label>
+														<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button" id="doctorPrescriptionReExamButton" data-prescription-action="re-examination-calendar">Đặt lịch</button>
 														<label class="doctor-prescription-reexam-date" for="doctorPrescriptionReExamDateTime">
 															<span class="visually-hidden">Ngày giờ tái khám</span>
-															<input type="text" class="js-datepicker" id="doctorPrescriptionReExamDateTime" disabled
-																data-enable-time="true" data-date-format="Y-m-d H:i" data-alt-format="d/m/Y H:i"
-																data-min-date="today" placeholder="Chọn ngày giờ">
+															<input type="text" id="doctorPrescriptionReExamDateTime" disabled placeholder="Chưa chọn ngày giờ">
 														</label>
-														<span class="doctor-prescription-editor__reexam-status" id="doctorPrescriptionReExamStatus" data-status="idle" aria-live="polite">Chưa hẹn</span>
+														<span class="qlpk-status doctor-prescription-editor__reexam-status" id="doctorPrescriptionReExamStatus" data-status="idle" aria-live="polite">Chưa hẹn</span>
 													</div>
-													<p id="doctorPrescriptionReExamHint" class="doctor-prescription-editor__reexam-hint" aria-live="polite" hidden></p>
 												</div>
 											</div>
 										</div>
+										<p id="doctorPrescriptionReExamHint" class="doctor-prescription-editor__reexam-hint" aria-live="polite" hidden></p>
 									</section>
 
 								<section class="doctor-prescription-editor__medications" aria-labelledby="doctorPrescriptionMedicationsHeading">
@@ -391,7 +401,7 @@
 							<div class="doctor-prescription-history-modal" id="doctorPrescriptionHistoryPanel" role="dialog" aria-modal="true" aria-labelledby="doctorPrescriptionHistoryHeading" aria-hidden="true" hidden>
 								<div class="doctor-prescription-history-modal__backdrop" data-prescription-history-action="close" aria-hidden="true"></div>
 								<section class="doctor-prescription-history-modal__dialog" role="document">
-									<header class="doctor-prescription-history-modal__header">
+									<header class="doctor-prescription-history-modal__header" data-qlpk-button-surface="dark">
 										<div class="doctor-prescription-history-modal__title">
 											<span class="doctor-prescription-history-modal__icon" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
 											<div>
@@ -399,7 +409,7 @@
 												<p id="doctorPrescriptionHistoryPatient">Các đơn thuốc trước của bệnh nhân</p>
 											</div>
 										</div>
-										<button type="button" class="doctor-prescription-history-modal__close" data-prescription-history-action="close" aria-label="Đóng lịch sử thuốc">
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="doctor-prescription-history-modal__close" data-prescription-history-action="close" aria-label="Đóng lịch sử thuốc">
 											<i class="bi bi-x-lg" aria-hidden="true"></i>
 										</button>
 									</header>
@@ -426,7 +436,7 @@
 									</div>
 									<footer class="doctor-prescription-history-modal__footer">
 										<span>Chọn một đơn để xem chi tiết hoặc áp dụng vào đơn hiện tại.</span>
-										<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-prescription-history-action="close">Đóng</button>
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary" data-prescription-history-action="close">Đóng</button>
 									</footer>
 								</section>
 							</div>

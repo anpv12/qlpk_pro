@@ -7,6 +7,7 @@
 	const MAX_TABS = 10;
 	const RETIRED_WORKSPACE_PATHS = new Set([
 		'/order-catalog.html',
+		'/package-management.html',
 	]);
 	let initialized = false;
 	let nativeTabId = '';

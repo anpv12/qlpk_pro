@@ -13,6 +13,7 @@
 
 	<!-- Flatpickr CSS -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/user-management.css?v={{ app_version }}">
@@ -32,44 +33,41 @@
 	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
 </head>
 
-<body class="user-management-page qlpk-admin-page">
+<body class="user-management-page qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
 			<div id="sidebar-container" class="col-md-2"></div>
 			<main class="col-md-10 main-content">
-				<div class="header-bar">
-					<nav aria-label="breadcrumb">
-						<ol class="breadcrumb mb-1">
-							<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
-							<li class="breadcrumb-item"><a href="index.html">QUẢN LÝ</a></li>
-							<li class="breadcrumb-item active" aria-current="page">TÀI KHOẢN</li>
-						</ol>
-					</nav>
+				<div class="header-bar qlpk-clinic-header">
 					<div class="d-flex justify-content-between align-items-center">
-						<h2 class="page-title">QUẢN LÝ TÀI KHOẢN</h2>
-						<button class="btn btn-primary" id="addUserBtn"><i class="bi bi-plus-lg"></i> Thêm mới tài
+						<div class="qlpk-clinic-header-copy"><h2 class="qlpk-clinic-title page-title">Tài khoản</h2>
+<p class="qlpk-clinic-subtitle">Quản lý thông tin và trạng thái tài khoản</p></div>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary" id="addUserBtn"><i class="bi bi-plus-lg"></i> Thêm mới tài
 							khoản</button>
 					</div>
 				</div>
-				<div class="filter-bar mt-2 mb-3">
-					<input type="text" class="form-control um-filter-search" id="searchInput" placeholder="Tìm kiếm...">
-					<select class="form-select um-filter-category" id="categoryFilter">
-						<option>Danh mục thuốc</option>
-						<option>Chọn</option>
+				<form class="filter-bar mt-2 mb-3" id="filterForm" role="search">
+					<input type="search" class="form-control um-filter-search" id="searchInput" placeholder="Nhập họ tên, tài khoản hoặc số điện thoại">
+					<select class="form-select um-filter-role" id="roleFilter" aria-label="Lọc theo chức vụ">
+						<option value="">Tất cả chức vụ</option>
+						<option value="admin">Quản trị viên</option>
+						<option value="doctor">Bác sĩ</option>
+						<option value="PSYCHOLOGIST">Tâm lý gia</option>
+						<option value="staff">Nhân viên</option>
 					</select>
-					<input type="text" class="form-control js-datepicker um-filter-date" id="dateFilter" placeholder="dd/mm/yyyy"
-						autocomplete="off">
 					<select class="form-select um-filter-status" id="statusFilter">
 						<option value="">Tình trạng</option>
 						<option value="active">Hoạt động</option>
 						<option value="inactive">Không hoạt động</option>
 					</select>
-					<button class="btn btn-primary" id="searchBtn">Tìm kiếm</button>
-					<button class="btn btn-outline-primary" id="resetBtn">Làm mới</button>
-				</div>
-				<div class="table-responsive">
+					<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="submit" class="btn btn-primary" id="searchBtn">Tìm kiếm</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" id="resetBtn">Làm mới</button>
+				</form>
+				<div class="table-responsive qlpk-admin-table-surface">
 					<table class="table table-bordered align-middle" id="userTable">
 						<thead>
 							<tr>
@@ -88,14 +86,7 @@
 						</tbody>
 					</table>
 				</div>
-				<div class="d-flex justify-content-between align-items-center mt-2">
-					<div class="small text-muted" id="tableInfo">10 of 2100 items</div>
-					<nav>
-						<ul class="pagination mb-0" id="pagination">
-							<!-- Phân trang sẽ render ở đây -->
-						</ul>
-					</nav>
-				</div>
+				{% with pagination_class='qlpk-pagination--standalone' %}{% include 'partials/clinic-pagination.html' %}{% endwith %}
 			</main>
 		</div>
 		<div class="footer-bar">
@@ -138,24 +129,24 @@
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Số GP/Chứng chỉ hành
 									nghề</label>
-								<input type="text" class="form-control rounded-4 py-2 px-3" name="license_number"
+								<input type="text" class="form-control py-2 px-3" name="license_number"
 									placeholder="Nhập số chứng chỉ">
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Ngày cấp</label>
-								<input type="text" class="form-control rounded-4 py-2 px-3 js-datepicker"
+								<input type="text" class="form-control py-2 px-3 js-datepicker"
 									name="license_issue_date" placeholder="dd/mm/yyyy" autocomplete="off">
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Họ và tên <span
 										class="text-danger">*</span></label>
-								<input type="text" class="form-control rounded-4 py-2 px-3" name="full_name"
+								<input type="text" class="form-control py-2 px-3" name="full_name"
 									placeholder="Nhập họ và tên" required>
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Chức vụ <span
 										class="text-danger">*</span></label>
-								<select class="form-select rounded-4 py-2 px-3" name="role" required>
+								<select class="form-select py-2 px-3" name="role" required>
 									<option value="">Chọn chức vụ</option>
 									<option value="admin">Admin</option>
 									<option value="doctor">Bác sĩ</option>
@@ -167,7 +158,7 @@
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Giới tính <span
 										class="text-danger">*</span></label>
-								<select class="form-select rounded-4 py-2 px-3" name="gender" required>
+								<select class="form-select py-2 px-3" name="gender" required>
 									<option value="">Chọn giới tính</option>
 									<option value="male">Nam</option>
 									<option value="female">Nữ</option>
@@ -177,30 +168,30 @@
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Địa chỉ <span
 										class="text-danger">*</span></label>
-								<input type="text" class="form-control rounded-4 py-2 px-3" name="address"
+								<input type="text" class="form-control py-2 px-3" name="address"
 									placeholder="Nhập địa chỉ" required>
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Số điện thoại <span
 										class="text-danger">*</span></label>
-								<input type="text" class="form-control rounded-4 py-2 px-3" name="phone"
+								<input type="text" class="form-control py-2 px-3" name="phone"
 									placeholder="Nhập số điện thoại">
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Tên đăng nhập <span
 										class="text-danger">*</span></label>
-								<input type="text" class="form-control rounded-4 py-2 px-3" name="username"
+								<input type="text" class="form-control py-2 px-3" name="username"
 									placeholder="Nhập tên đăng nhập" required>
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Email</label>
-								<input type="email" class="form-control rounded-4 py-2 px-3" name="email"
+								<input type="email" class="form-control py-2 px-3" name="email"
 									placeholder="Nhập email">
 							</div>
 							<div class="col-md-6">
 								<label class="form-label fw-semibold">Mật khẩu <span
 										class="text-danger" id="passwordRequired">*</span></label>
-								<input type="password" class="form-control rounded-4 py-2 px-3" name="password"
+								<input type="password" class="form-control py-2 px-3" name="password"
 									id="passwordInput" placeholder="Nhập mật khẩu" required>
 							</div>
 							<div class="col-12 mt-2">
@@ -232,7 +223,7 @@
 										<span class="color-swatch" data-color="#ff5722" title="Đỏ cam"></span>
 										<span class="color-swatch" data-color="#3f51b5" title="Chàm"></span>
 										<span class="color-swatch" data-color="#009688" title="Xanh ngọc"></span>
-										<button type="button" class="btn btn-sm btn-outline-secondary um-clear-color-btn" id="clearCalendarColor">Xóa</button>
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-secondary um-clear-color-btn" id="clearCalendarColor">Xóa</button>
 									</div>
 								</div>
 							</div>
@@ -240,9 +231,9 @@
 						<div class="alert alert-danger mt-3 d-none" id="userFormError"></div>
 					</div>
 					<div class="modal-footer border-0 pt-0 justify-content-center um-footer-actions">
-						<button type="submit" class="btn px-5 py-2 fw-bold um-btn-primary-pill-lg">Lưu thông
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn px-5 py-2 fw-bold um-btn-primary-pill-lg">Lưu thông
 							tin</button>
-						<button type="button" class="btn btn-outline-primary px-5 py-2 fw-bold um-btn-pill-lg" data-bs-dismiss="modal">Huỷ</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary px-5 py-2 fw-bold um-btn-pill-lg" data-bs-dismiss="modal">Huỷ</button>
 					</div>
 				</form>
 			</div>
@@ -261,9 +252,9 @@
 				<div class="modal-body text-center pt-0">
 					<div class="mb-3 um-text-lg">Bạn có chắc chắn muốn xoá tài khoản này ?</div>
 					<div class="d-flex justify-content-center gap-3 mt-3">
-						<button type="button" class="btn px-4 py-2 fw-bold um-btn-primary-pill-md" id="confirmDeleteBtn">Xác
+						<button data-qlpk-button="danger" data-qlpk-button-variant="solid" type="button" class="btn px-4 py-2 fw-bold um-btn-primary-pill-md" id="confirmDeleteBtn">Xác
 							nhận</button>
-						<button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold um-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary px-4 py-2 fw-bold um-btn-pill-md" data-bs-dismiss="modal">Huỷ bỏ</button>
 					</div>
 				</div>
 			</div>

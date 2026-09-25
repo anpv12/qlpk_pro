@@ -1,8 +1,8 @@
 /* Shared clinical workflow shell used by doctor, psychologist, and receptionist pages. */
 :root {
 	--qlpk-page-bg: #fbf8f2;
-	--qlpk-clinical: #6b422c;
-	--qlpk-clinical-dark: #4a3328;
+	--qlpk-clinical: var(--qlpk-color-primary);
+	--qlpk-clinical-dark: var(--qlpk-color-primary-strong);
 	--qlpk-clinical-soft: rgba(185, 137, 94, 0.14);
 	--qlpk-warm-border: #e4d4c1;
 	--qlpk-surface: #fffdf9;
@@ -97,8 +97,7 @@ textarea.form-control {
 .card-header label {
 	color: var(--qlpk-text) !important;
 }
-
-.form-control:focus,
+.form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select:focus {
 	border-color: var(--qlpk-clinical);
 	box-shadow: 0 0 0 0.2rem rgba(185, 137, 94, 0.18);
@@ -108,9 +107,14 @@ textarea.form-control {
 .form-control:disabled,
 .form-select[readonly],
 .form-select:disabled {
+	cursor: not-allowed;
+}
+.form-control[readonly]:not([data-qlpk-button], [data-qlpk-button] *),
+.form-control:disabled:not([data-qlpk-button], [data-qlpk-button] *),
+.form-select[readonly],
+.form-select:disabled {
 	background-color: #f6efe6 !important;
 	color: var(--qlpk-muted);
-	cursor: not-allowed;
 }
 
 .required-field::after {
@@ -232,15 +236,15 @@ textarea.form-control {
 .btn {
 	border-radius: 8px;
 	font-weight: var(--qlpk-font-weight-medium, 500);
+}
+.btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	transition: all 0.15s ease-in-out;
 }
-
-.btn-success {
+.btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: var(--qlpk-olive);
 	border-color: var(--qlpk-olive);
 }
-
-.btn-success:hover {
+.btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #5f6649;
 	border-color: #5f6649;
 }
@@ -314,27 +318,19 @@ textarea.form-control {
 }
 
 .status-waiting {
-	background-color: #fff3dc;
-	color: var(--qlpk-clinical-dark);
-	border: 1px solid #e8c99f;
+	--qlpk-status-color: var(--qlpk-feedback-info);
 }
 
 .status-examining {
-	background-color: #eef1e5;
-	color: #4f5b37;
-	border: 1px solid #cfd7ba;
+	--qlpk-status-color: var(--qlpk-feedback-info);
 }
 
 .status-payment {
-	background-color: #f9e5dc;
-	color: #8a3f28;
-	border: 1px solid #edc3b3;
+	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 
 .status-completed {
-	background-color: #edf1e6;
-	color: #4f5b37;
-	border: 1px solid #cfd8bc;
+	--qlpk-status-color: var(--qlpk-feedback-success);
 }
 
 .search-result-item {
@@ -363,14 +359,15 @@ textarea.form-control {
 }
 
 .search-result-item .btn-outline-primary {
-	border-color: var(--qlpk-clinical);
-	color: var(--qlpk-clinical);
 	font-size: var(--qlpk-font-size-base, 13px);
 	padding: 0.25rem 0.5rem;
 }
-
-.search-result-item .btn-outline-primary:hover {
-	background-color: var(--qlpk-clinical);
+.search-result-item .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-clinical);
+	color: var(--qlpk-clinical);
+}
+.search-result-item .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: white;
 }
 
@@ -385,9 +382,11 @@ textarea.form-control {
 }
 
 .card-header .btn-outline-primary:hover {
+	transform: translateY(-1px);
+}
+.card-header .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-surface-soft);
 	color: var(--qlpk-text);
-	transform: translateY(-1px);
 	box-shadow: 0 2px 4px rgba(74, 51, 40, 0.08);
 }
 

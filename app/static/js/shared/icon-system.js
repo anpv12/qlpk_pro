@@ -20,6 +20,13 @@
 		error: 'bi-x-circle-fill'
 	};
 
+	const BUTTON_ROLES = {
+		add: 'execute', save: 'execute', transfer: 'execute', upload: 'execute',
+		view: 'view', search: 'view', info: 'view', edit: 'edit',
+		delete: 'danger', remove: 'danger', download: 'neutral',
+		refresh: 'neutral', cancel: 'neutral'
+	};
+
 	const FEEDBACK_ICONS = {
 		success: 'bi-check-circle-fill',
 		info: 'bi-info-circle-fill',
@@ -45,6 +52,15 @@
 		text: 'bi-file-earmark-text-fill',
 		file: 'bi-file-earmark-fill'
 	};
+
+	const SECTION_ICONS = {
+		medicine: 'bi-capsule', basic: 'bi-pencil-square', packaging: 'bi-box-seam',
+		pricing: 'bi-currency-dollar', warnings: 'bi-exclamation-triangle'
+	};
+
+	function renderSectionIcon(section, options = {}) {
+		return renderIcon(SECTION_ICONS[section] || ACTION_ICONS.info, {className: 'qlpk-section-icon', ...options});
+	}
 
 	function escapeHtml(value) {
 		return String(value == null ? '' : value)
@@ -97,6 +113,8 @@
 		const className = options.className ? ` ${escapeHtml(options.className)}` : '';
 		const attrs = Object.assign({}, options.attrs || {}, {
 			type: options.type || 'button',
+			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
+			'data-qlpk-button-variant': 'soft',
 			title,
 			'aria-label': label
 		});
@@ -110,6 +128,8 @@
 		const className = options.className ? ` ${escapeHtml(options.className)}` : '';
 		const attrs = Object.assign({}, options.attrs || {}, {
 			type: options.type || 'button',
+			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
+			'data-qlpk-button-variant': options.buttonVariant || 'soft',
 			title
 		});
 		return `<button class="qlpk-icon-text-button qlpk-icon-text-button--${escapeHtml(action)}${className}"${renderAttributes(attrs)}>${renderActionIcon(action, { className: 'qlpk-button-icon' })}<span>${escapeHtml(label)}</span></button>`;
@@ -132,6 +152,8 @@
 		FEEDBACK_ICONS,
 		SOURCE_ICONS,
 		FILE_ICONS,
+		SECTION_ICONS,
+		renderSectionIcon,
 		getActionIcon,
 		getFeedbackIcon,
 		getSourceIcon,

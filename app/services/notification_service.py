@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from app.core.database import get_db
 from app.models.notification import Notification
 from app.models.appointment import Appointment
+from app.models.chi_dinh import ChiDinh
+from app.models.examination import Examination
 from app.models.user import User
 from app.core.config import settings
 from app.realtime.events import emit_notification_changed
@@ -165,6 +167,179 @@ class NotificationService:
         normalized = normalize_role(role)
         users = db.query(User).filter(User.is_active.is_(True)).all()
         return [user for user in users if normalize_role(user.role) == normalized]
+
+    def _has_dedupe_key(self, db, *, appointment_id, recipient_user_id, event_type, dedupe_key):
+        """Avoid replaying the same workflow notification after a retry."""
+        if not dedupe_key or not recipient_user_id:
+            return False
+        rows = db.query(Notification).filter(
+            Notification.appointment_id == appointment_id,
+            Notification.recipient_user_id == recipient_user_id,
+            Notification.event_type == event_type,
+        ).all()
+        return any((row.payload or {}).get('dedupe_key') == dedupe_key for row in rows)
+
+    @staticmethod
+    def _performer_action_url(performer, appointment_id, order_id=None):
+        role = normalize_role(getattr(performer, 'role', None))
+        page = '/psychologist-examination.html' if role == 'psychologist' else '/doctor-examination.html'
+        query = f'?appointment_id={appointment_id}'
+        if order_id:
+            query += f'&order_id={order_id}'
+        return f'{page}{query}'
+
+    def create_clinical_order_assignment_notifications(
+        self,
+        db,
+        appointment,
+        assignments,
+        actor_user=None,
+    ):
+        """Create one inbox notification for each newly assigned performer.
+
+        ``assignments`` is a list of ``{'order': ChiDinh, 'kind': 'created'|
+        'assigned'|'reassigned'}`` entries prepared by the order mutation route.  The
+        route remains the source of truth for what changed; this service only
+        validates the recipient and builds the notification payload.
+        """
+        if not appointment:
+            return []
+
+        patient_name = appointment.patient.full_name if appointment.patient else 'Bệnh nhân'
+        notifications = []
+        for assignment in assignments or []:
+            order = assignment.get('order') if isinstance(assignment, dict) else None
+            kind = assignment.get('kind', 'created') if isinstance(assignment, dict) else 'created'
+            if not order or not order.id:
+                continue
+            if getattr(order, 'location_type', None) != 'in' or not getattr(order, 'in_house_unit_id', None):
+                continue
+
+            performer = db.query(User).filter(
+                User.id == order.in_house_unit_id,
+                User.is_active.is_(True),
+            ).first()
+            if not performer or normalize_role(getattr(performer, 'role', None)) not in ('doctor', 'psychologist'):
+                continue
+
+            event_type = 'clinical_order_reassigned' if kind == 'reassigned' else 'clinical_order_assigned'
+            timestamp = getattr(order, 'updated_at', None) or getattr(order, 'created_at', None)
+            timestamp_value = timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp or '')
+            dedupe_key = f'{event_type}:{order.id}:{performer.id}:{timestamp_value}'
+            if self._has_dedupe_key(
+                db,
+                appointment_id=appointment.id,
+                recipient_user_id=performer.id,
+                event_type=event_type,
+                dedupe_key=dedupe_key,
+            ):
+                continue
+
+            order_name = getattr(order, 'order_name', None) or 'chỉ định CLS'
+            title = 'Có chỉ định CLS mới' if kind != 'reassigned' else 'Chỉ định CLS được giao lại'
+            message = f'{patient_name} có {order_name} cần bạn thực hiện.'
+            notification = self.create_in_app_notification(
+                db,
+                appointment=appointment,
+                recipient_user_id=performer.id,
+                event_type=event_type,
+                title=title,
+                message=message,
+                action_url=self._performer_action_url(performer, appointment.id, order.id),
+                payload={
+                    'appointment_id': appointment.id,
+                    'order_id': order.id,
+                    'patient_id': appointment.patient_id,
+                    'patient_name': patient_name,
+                    'performer_id': performer.id,
+                    'assignment_kind': kind,
+                    'actor_user_id': getattr(actor_user, 'id', None),
+                    'dedupe_key': dedupe_key,
+                },
+            )
+            if notification:
+                notifications.append(notification)
+        return notifications
+
+    def create_survey_completed_notifications(
+        self,
+        db,
+        session,
+        template_id=None,
+        actor_user=None,
+    ):
+        """Notify the performer of the indication whose survey just completed."""
+        if not session or not getattr(session, 'examination_id', None):
+            return []
+
+        examination = db.query(Examination).filter(
+            Examination.id == session.examination_id
+        ).first()
+        appointment = db.query(Appointment).filter(
+            Appointment.id == getattr(examination, 'appointment_id', None)
+        ).first() if examination else None
+        if not appointment:
+            return []
+
+        query = db.query(ChiDinh).filter(
+            ChiDinh.appointment_id == appointment.id,
+            ChiDinh.survey_template_id.isnot(None),
+            ChiDinh.location_type.in_(['in', 'in_house']),
+            ChiDinh.in_house_unit_id.isnot(None),
+        )
+        if getattr(session, 'order_id', None):
+            query = query.filter(ChiDinh.id == session.order_id)
+        elif template_id:
+            query = query.filter(ChiDinh.survey_template_id == template_id)
+        orders = query.order_by(ChiDinh.created_at.desc(), ChiDinh.id.desc()).all()
+        if not orders:
+            return []
+
+        patient_name = appointment.patient.full_name if appointment.patient else 'Bệnh nhân'
+        notifications = []
+        for order in orders:
+            performer = db.query(User).filter(
+                User.id == order.in_house_unit_id,
+                User.is_active.is_(True),
+            ).first()
+            if not performer or normalize_role(getattr(performer, 'role', None)) not in ('doctor', 'psychologist'):
+                continue
+
+            event_type = 'survey_completed'
+            dedupe_key = f'{event_type}:{session.id}:{order.id}:{performer.id}'
+            if self._has_dedupe_key(
+                db,
+                appointment_id=appointment.id,
+                recipient_user_id=performer.id,
+                event_type=event_type,
+                dedupe_key=dedupe_key,
+            ):
+                continue
+
+            order_name = getattr(order, 'order_name', None) or 'khảo sát'
+            notification = self.create_in_app_notification(
+                db,
+                appointment=appointment,
+                recipient_user_id=performer.id,
+                event_type=event_type,
+                title='Kết quả khảo sát đã sẵn sàng',
+                message=f'{patient_name} đã hoàn thành {order_name}. Bạn có thể xem kết quả.',
+                action_url=self._performer_action_url(performer, appointment.id, order.id),
+                payload={
+                    'appointment_id': appointment.id,
+                    'examination_id': session.examination_id,
+                    'session_id': session.id,
+                    'order_id': order.id,
+                    'survey_template_id': order.survey_template_id,
+                    'patient_id': appointment.patient_id,
+                    'patient_name': patient_name,
+                    'actor_user_id': getattr(actor_user, 'id', None),
+                    'dedupe_key': dedupe_key,
+                },
+            )
+            if notification:
+                notifications.append(notification)
+        return notifications
 
     def create_transfer_notifications(self, db, appointment_ids, to_role, to_person_id, actor_user=None):
         target_role = normalize_role(to_role)

@@ -21,6 +21,25 @@
 @container receptionist-intake (min-width: 60rem) {
 	.receptionist-intake-grid {
 		grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
+		align-items: stretch;
+	}
+
+	.receptionist-intake-grid > .qlpk-patient-info-card {
+		grid-template-rows: auto auto minmax(0, 1fr);
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals {
+		grid-template-rows: auto minmax(0, 1fr);
+		min-block-size: 0;
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals .receptionist-vital-fields {
+		grid-auto-rows: minmax(0, 1fr);
+		min-block-size: 0;
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals .receptionist-vital-field {
+		align-content: center;
 	}
 
 	.receptionist-card--relatives,
@@ -33,12 +52,12 @@
 .qlpk-patient-info-card {
 	--qlpk-patient-info-surface: var(--receptionist-tone-surface, var(--qlpk-color-surface, #ffffff));
 	--qlpk-patient-info-muted-surface: var(--receptionist-tone-surface-muted, var(--qlpk-color-surface-muted, #fff7ed));
-	--qlpk-patient-info-line: var(--receptionist-tone-line, var(--qlpk-color-line, rgba(75, 39, 25, 0.16)));
-	--qlpk-patient-info-line-strong: var(--receptionist-tone-line-strong, var(--qlpk-color-line-strong, rgba(75, 39, 25, 0.28)));
+	--qlpk-patient-info-line: var(--receptionist-tone-line, var(--qlpk-color-line, rgba(var(--qlpk-brown-800-rgb), 0.16)));
+	--qlpk-patient-info-line-strong: var(--receptionist-tone-line-strong, var(--qlpk-color-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.28)));
 	--qlpk-patient-info-text: var(--receptionist-tone-text, var(--qlpk-color-text, #352821));
 	--qlpk-patient-info-muted: var(--receptionist-tone-muted, var(--qlpk-color-text-muted, #566366));
-	--qlpk-patient-info-accent: var(--receptionist-section-header-accent, var(--qlpk-color-primary, #0f766e));
-	--qlpk-patient-info-accent-strong: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong, #07564f));
+	--qlpk-patient-info-accent: var(--receptionist-section-header-accent, var(--qlpk-color-primary));
+	--qlpk-patient-info-accent-strong: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
 	--qlpk-patient-info-gap: var(--receptionist-field-gap, 0.625rem);
 	--qlpk-patient-info-inline-gap: var(--receptionist-inline-gap, 0.5rem);
 	--qlpk-patient-info-pad: var(--receptionist-intake-pad, 0.625rem);
@@ -102,7 +121,7 @@
 	border: 0.0625rem solid rgba(214, 160, 105, 0.38);
 	border-radius: 999rem;
 	background: var(--qlpk-patient-info-muted-surface);
-	color: var(--qlpk-color-chocolate, #4b2719);
+	color: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
 	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
 	font-weight: var(--qlpk-font-weight-semibold);
 }
@@ -223,17 +242,19 @@
 	min-width: 0;
 	border-width: 0 0 0.0625rem;
 	border-radius: 0;
-	border-color: rgba(111, 83, 64, 0.34);
-	background: transparent;
-	color: var(--qlpk-patient-info-text);
 	padding: var(--qlpk-patient-info-entry-block-start) var(--receptionist-underline-input-padding-inline, 0.42rem);
 	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
 	font-weight: var(--qlpk-font-weight-medium);
 	line-height: 1.35;
+}
+.qlpk-patient-info-card .receptionist-patient-fields .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-patient-fields .form-select {
+	border-color: rgba(111, 83, 64, 0.34);
+	background: transparent;
+	color: var(--qlpk-patient-info-text);
 	box-shadow: none;
 }
-
-.qlpk-patient-info-card .receptionist-patient-fields .form-control:focus,
+.qlpk-patient-info-card .receptionist-patient-fields .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-patient-info-card .receptionist-patient-fields .form-select:focus {
 	border-color: #b86f34;
 	box-shadow: 0 0.125rem 0 0 rgba(184, 111, 52, 0.12);
@@ -262,15 +283,16 @@
 	padding: 0;
 	border: 0;
 	border-radius: 0.4375rem;
-	background: transparent;
-	color: #7b675c;
 	transform: translateY(-50%);
 	z-index: 2;
 }
-
-.qlpk-patient-info-card .receptionist-icon-action:hover,
-.qlpk-patient-info-card .receptionist-icon-action:focus,
-.qlpk-patient-info-card .receptionist-icon-action:focus-visible {
+.qlpk-patient-info-card .receptionist-icon-action:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: #7b675c;
+}
+.qlpk-patient-info-card .receptionist-icon-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-icon-action:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-icon-action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: rgba(185, 137, 94, 0.14);
 	color: #6b422c;
 	outline: 0;
@@ -284,9 +306,11 @@
 	inline-size: 0.45rem;
 	block-size: 0.45rem;
 	border-radius: 999rem;
+	animation: qlpkPatientInfoDetailDotPulse 1.35s ease-in-out infinite;
+}
+.qlpk-patient-info-card .receptionist-icon-action:not([data-qlpk-button], [data-qlpk-button] *)::after {
 	background: #1fa463;
 	box-shadow: 0 0 0 0 rgba(31, 164, 99, 0.5);
-	animation: qlpkPatientInfoDetailDotPulse 1.35s ease-in-out infinite;
 }
 
 .qlpk-patient-info-card .receptionist-patient-fields [data-receptionist-inline-toggle][aria-expanded="true"] {
@@ -338,7 +362,7 @@
 	margin-block-start: -0.15rem;
 	padding: 0.62rem 0 0.2rem 0.78rem;
 	border-inline-start: 0.1875rem solid var(--qlpk-patient-info-accent);
-	background: linear-gradient(90deg, rgba(15, 118, 110, 0.08), rgba(255, 253, 249, 0));
+	background: linear-gradient(90deg, rgba(var(--qlpk-color-primary-rgb), 0.08), rgba(255, 253, 249, 0));
 }
 
 .qlpk-patient-info-card .receptionist-inline-detail-caption {
@@ -418,20 +442,21 @@
 	border: 0.125rem solid var(--qlpk-patient-info-accent);
 	border-radius: 0.25rem;
 	background-color: #ffffff;
-	box-shadow: 0 0 0 0.125rem rgba(15, 118, 110, 0.08);
+	box-shadow: 0 0 0 0.125rem rgba(var(--qlpk-color-primary-rgb), 0.08);
 }
 
 .qlpk-patient-info-card #mangThai:checked {
 	background-color: var(--qlpk-patient-info-accent);
+	background-image: var(--bs-form-check-bg-image), var(--qlpk-workflow-context-header-bg);
 	border-color: var(--qlpk-patient-info-accent);
 }
 
 .qlpk-patient-info-card #mangThai:focus {
-	box-shadow: 0 0 0 0.1875rem rgba(15, 118, 110, 0.18);
+	box-shadow: 0 0 0 0.1875rem rgba(var(--qlpk-color-primary-rgb), 0.18);
 }
 
 .qlpk-patient-info-card #age {
-	color: var(--qlpk-color-chocolate, #4b2719);
+	color: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
 	font-weight: var(--qlpk-font-weight-bold);
 }
 
@@ -451,8 +476,8 @@
 .qlpk-patient-info-card .receptionist-address-dropdown,
 .receptionist-address-dropdown--floating,
 .qlpk-patient-info-card .receptionist-smart-input-control .occupation-dropdown {
-	--qlpk-address-dropdown-line: var(--qlpk-patient-info-line, rgba(75, 39, 25, 0.16));
-	--qlpk-address-dropdown-line-strong: var(--qlpk-patient-info-line-strong, rgba(75, 39, 25, 0.28));
+	--qlpk-address-dropdown-line: var(--qlpk-patient-info-line, rgba(var(--qlpk-brown-800-rgb), 0.16));
+	--qlpk-address-dropdown-line-strong: var(--qlpk-patient-info-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.28));
 	--qlpk-address-dropdown-muted-surface: var(--qlpk-patient-info-muted-surface, #fff7ed);
 	--qlpk-address-dropdown-muted: var(--qlpk-patient-info-muted, #566366);
 	--qlpk-address-dropdown-text: var(--qlpk-patient-info-text, #352821);
@@ -493,7 +518,7 @@
 
 .qlpk-patient-info-card .receptionist-smart-input-control .dropdown-item.selected,
 .qlpk-patient-info-card .receptionist-smart-input-control .occupation-item.selected {
-	background-color: var(--qlpk-patient-info-accent);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -576,8 +601,8 @@
 }
 
 .qlpk-patient-info-card .receptionist-vital-field {
-	--vital-bg: #f8fafc;
-	--vital-border: #e2e8f0;
+	--vital-bg: var(--qlpk-color-page-bg);
+	--vital-border: var(--qlpk-color-border);
 	--vital-accent: #2f6f6d;
 	--vital-input-bg: rgba(255, 255, 255, 0.78);
 	--vital-text: #33443f;
@@ -657,13 +682,15 @@
 	min-width: 0;
 	padding: 0.025rem 0.32rem;
 	border: 0;
-	background: var(--vital-input-bg);
 	border-radius: 999rem;
-	color: var(--vital-accent);
 	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
 	font-weight: var(--qlpk-font-weight-bold);
 	line-height: 1.05;
 	text-align: center;
+}
+.qlpk-patient-info-card .receptionist-vital-field .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--vital-input-bg);
+	color: var(--vital-accent);
 	box-shadow: none;
 }
 

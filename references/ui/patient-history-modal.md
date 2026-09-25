@@ -6,19 +6,51 @@ tương tự.
 
 ## Owners
 
+Vạch trái của dòng lịch sử chỉ xuất hiện sau khi người dùng click chọn:
+`modal-history-item-user-selected` dùng màu primary chung. Mỗi danh sách chỉ
+có một vạch; click dòng khác chuyển vạch sang dòng đó. Preview vẫn được chọn
+mặc định như trước, nhưng `modal-history-item-active` không tự tạo vạch.
+Render lại danh sách/xóa context sẽ bỏ dấu chọn này. Trạng thái Đang khám và
+Lượt hiện tại giữ nhãn/nền hiện có, không sở hữu border-left riêng.
+
 - Markup duy nhất: `app/templates/partials/patient-search-modal.html`.
 - Layout duy nhất: `app/static/css/patient-search-modal.css`.
 - Low-level search/history primitives: `app/static/js/components/modal-patient-search-ui.js`.
+- History row renderer: `app/static/js/components/modal-medical-history-list-ui.js`.
 - Public lifecycle base: `app/static/js/components/patient-history-modal.js`, global
   `window.QLPKPatientHistoryModal`.
 - Optional default readers/renderers: `modal-history-data-runtime.js`.
 - Optional print actions: `modal-history-print-controller.js`.
 - Guardrail: `scripts/check_patient_history_modal_contract.py`.
 
-Trong tab Toa thuốc, `patient-search-modal.css` sở hữu kích thước hiển thị của
-`.rx-verify-qr-image`: QR là `8.125rem` (130px ở root mặc định), giữ tỷ lệ và
-tự co tối đa theo ô chứa. Độ phân giải tự nhiên của PNG có thể lớn hơn để ảnh
-nét, nhưng không được phép quyết định kích thước layout HTML của modal.
+Trong tab Toa thuốc, `prescription-modal-preview.js` gọi
+`buildPrescriptionScreenHTML()` trong shared `prescription-document-template.js`.
+CSS web riêng `prescriptions/components/prescription-screen.css` được import bởi
+`patient-search-modal.css`: thẻ trắng, logo/mã vạch hồ sơ, tiêu đề xanh và nhãn
+song ngữ theo mẫu user ngày 10/09/2026. Thông tin bệnh nhân 2 cột, co thành 1
+cột theo chiều rộng khung; không có kích thước A4 hoặc lề vật lý trên web.
+Danh sách thuốc dùng khoảng cách để phân tách, không kẻ ngang giữa các thuốc
+(theo phản hồi user 11/09/2026). Cột Số lượng và cột Giới tính/SĐT dùng chung
+`--rx-screen-columns`/`--rx-screen-column-gap`, căn trái cùng mốc. Heading
+thuốc bù indent của ordered list để grid không bị lệch 1.5rem; tên thuốc vẫn
+chừa chỗ cho số thứ tự. Ở container ≤34rem, cả hai về một cột và Số lượng
+nằm ngay dưới tên thuốc. Khối ký tên cũng dùng grid này: tất cả dòng ngày,
+chức danh, ký tên và tên bác sĩ nằm trong cột phải, căn trái cả chữ bên
+trong theo mốc Số lượng (không chỉ căn khung); mobile chuyển sang cột 1. Không dùng fit-content/margin auto để tự
+đẩy khối ký tên sang phải.
+Chuỗi constraint: modal body → row/column → right-inner → tab-content/pane/card
+(flex, min-height 0) → tab-body-scroll (scroll owner) → modalContentArea (inline
+size container) → rx-screen (width 100%, normal flow). Trên mobile, modal body
+cuộn và hai cột lịch sử/nội dung xếp dọc theo shell hiện có.
+
+Web và giấy dùng chung view-model cùng formatter tên thuốc/liều dùng; dữ liệu
+backend, lifecycle tải/xóa và chính sách tái khám giữ nguyên. Trường BHYT để
+trống vì Patient hiện chưa có field canonical. Tuổi tính tại ngày lượt khám.
+Nút In gọi `PrescriptionPrintDocument` → `buildPrescriptionPreviewHTML()`
+và CSS mẫu Bộ Y tế → `QLPKPdfPreview` để mở PDF thật trong tab mới;
+không tự in/tự đóng, người dùng dùng Ctrl+P/Cmd+P. Không clone DOM `.rx-screen`.
+Public verify vẫn dùng mẫu
+`buildPrescriptionPreviewHTML()` hiện tại. Không đưa CSS web vào print document.
 
 Modal dùng fixed DOM IDs nên contract là tối đa một instance trong một document.
 Nhiều workflow/page được reuse cùng component, không phải nhiều bản modal trong
@@ -85,6 +117,21 @@ Danh sách `Tìm kiếm bệnh nhân` chỉ trả hồ sơ có ít nhất một 
 `SCHEDULED`, `CANCELLED`, `NO_SHOW` hoặc đã xóa mềm không xuất hiện; lịch
 `CONFIRMED` gần nhất mới được dùng cho `last_appointment`.
 
-Trong bảng lịch sử, badge `Chờ thanh toán` (`WAITING_PAYMENT`) dùng semantic
-feedback success màu xanh lá; `Đang khám` vẫn dùng màu xanh dương và các trạng
-thái lịch sử khác giữ màu trung tính.
+## Nhãn và bố cục lịch sử (2026-09-10)
+
+- Cột ngày chỉ có nhãn chữ nhỏ `Lượt hiện tại` khi appointment trùng context
+  đang khám, hoặc `Hôm nay` theo ngày. Không lặp pill `Lịch sử`/`Đang khám`
+  dưới mỗi ngày. Trạng thái lâm sàng vẫn lấy từ `exam.status` ở cột trạng thái.
+- Badge trạng thái dùng primitive `qlpk-status`, map biến trong CSS owner
+  của modal: nền màu đặc, chữ trắng, bo góc 0.3rem, font small (12px) và
+  medium, padding 0.2rem 0.45rem. Theo phản hồi user, giữ màu trạng thái rõ:
+  đang khám xanh dương; chờ thanh toán amber; màu mặc định/chờ chuyển khám
+  dùng nâu thương hiệu thay xám. Không dùng lại nền xám hoặc chữ lớn/đậm.
+  Không thay palette trạng thái ở màn khác.
+- Header và row cùng grid: ngày 9rem, chẩn đoán co giãn, trạng thái 8.5rem,
+  thao tác 4.5rem. History section là inline-size container. Khi rộng tối đa
+  36rem, ẩn header và chuyển chẩn đoán xuống hàng riêng; ngày, trạng thái,
+  thao tác giữ hàng đầu. Scroll vẫn thuộc scroll-body hiện có.
+- Browser QA với Ngô Hiển Đạt (4 lượt) và Nguyễn Duy Bách (11 lượt, chẩn đoán
+  dài), đổi A→B→A, chọn lượt, ở 1600x900 và 390x844: badge một dòng, không
+  chồng/tràn ngang, console sạch. QA kết nối DB bằng transaction chỉ đọc.

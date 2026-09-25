@@ -2,12 +2,13 @@
 
 ``Medicine.stock_quantity`` is a materialized aggregate.  This module is the
 only owner used by medicine/batch APIs when a lot changes the aggregate and
-when an inventory movement is recorded.
+when an import or verified opening movement is recorded.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+from datetime import date
 from typing import Any, Optional
 
 from sqlalchemy.orm import Session
@@ -41,22 +42,6 @@ def parse_quantity(value: Any, field: str, *, allow_zero: bool = True) -> Decima
     return quantity
 
 
-def parse_delta(value: Any, field: str) -> Decimal:
-    """Parse a signed finite delta for adjustment calls."""
-
-    if value is None or value == "":
-        raise InventoryValidationError(f"{field} là bắt buộc")
-    try:
-        delta = Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError):
-        raise InventoryValidationError(f"{field} không hợp lệ")
-    if not delta.is_finite():
-        raise InventoryValidationError(f"{field} không hợp lệ")
-    if delta.as_tuple().exponent < -2:
-        raise InventoryValidationError(f"{field} chỉ hỗ trợ tối đa 2 chữ số thập phân")
-    return delta
-
-
 def lock_medicine(db: Session, medicine_id: int) -> Optional[Medicine]:
     """Lock the aggregate row before locking a related batch."""
 
@@ -78,6 +63,8 @@ def add_movement(
     price: Optional[Any],
     note: str,
     created_by: Optional[int],
+    balance_after: Optional[Decimal] = None,
+    stock_balance_after: Optional[Decimal] = None,
 ) -> MedicineTransaction:
     """Append one immutable movement row after the balance mutation."""
 
@@ -87,6 +74,8 @@ def add_movement(
         type=movement_type,
         quantity=quantity,
         price=price,
+        balance_after=balance_after,
+        stock_balance_after=stock_balance_after,
         note=note,
         created_by=created_by,
     )
@@ -111,9 +100,28 @@ def import_batch(
     """Create a lot and its import movement atomically in the current tx."""
 
     quantity_decimal = parse_quantity(quantity, "Số lượng nhập", allow_zero=False)
+    if quantity_decimal > Decimal('9999999.99'):
+        raise InventoryValidationError('Số lượng nhập vượt giới hạn của một lần nhập')
+    price_decimal = parse_quantity(import_price, "Đơn giá nhập")
+    if price_decimal > Decimal('99999999.99'):
+        raise InventoryValidationError('Đơn giá nhập vượt giới hạn cho phép')
+    if not isinstance(batch_number, str) or not batch_number.strip() or len(batch_number.strip()) > 50:
+        raise InventoryValidationError('Số lô thực tế là bắt buộc (tối đa 50 ký tự)')
+    batch_number = batch_number.strip()
+    if import_date > date.today() or expiry_date < import_date:
+        raise InventoryValidationError('Ngày nhập không được ở tương lai; hạn dùng không được trước ngày nhập')
     medicine = lock_medicine(db, medicine_id)
     if not medicine:
         raise LookupError("Không tìm thấy thuốc")
+    if medicine.category_type != 'DRUG':
+        raise InventoryValidationError('Bản ghi cũ cần đối chiếu DAV trước khi nhập thêm thuốc.')
+    existing = db.query(MedicineBatch.id).filter(
+        MedicineBatch.medicine_id == medicine_id,
+        MedicineBatch.batch_number == batch_number,
+        MedicineBatch.expiry_date != expiry_date,
+    ).first()
+    if existing:
+        raise InventoryValidationError('Cùng thuốc và số lô phải có cùng hạn dùng; hãy kiểm tra lại bao bì')
 
     batch = MedicineBatch(
         medicine_id=medicine_id,
@@ -124,7 +132,7 @@ def import_batch(
         # A newly imported lot is always fully available.  The balance cannot
         # be supplied independently of the import quantity.
         remaining_quantity=quantity_decimal,
-        import_price=import_price,
+        import_price=price_decimal,
         supplier_id=supplier_id,
         invoice_number=invoice_number,
         created_by=created_by,
@@ -141,76 +149,77 @@ def import_batch(
         batch_id=batch.id,
         movement_type="import",
         quantity=quantity_decimal,
-        price=import_price,
+        price=price_decimal,
+        balance_after=quantity_decimal,
+        stock_balance_after=medicine.stock_quantity,
         note=notes or "Nhập lô thuốc",
         created_by=created_by,
     )
     return medicine, batch, movement
 
 
-def adjust_batch(
-    db: Session,
-    *,
-    batch_id: int,
-    actual_quantity: Any = None,
-    delta: Any = None,
-    note: str,
-    created_by: Optional[int],
-):
-    """Adjust one lot and the aggregate with one append-only ledger row."""
-
-    if not note or not note.strip():
-        raise InventoryValidationError("Lý do điều chỉnh là bắt buộc")
-    if actual_quantity is None and delta is None:
-        raise InventoryValidationError("Cần số lượng thực tế hoặc chênh lệch")
-    if actual_quantity is not None and delta is not None:
-        raise InventoryValidationError("Chỉ gửi một trong actual_quantity hoặc delta")
-
-    batch_probe = db.query(MedicineBatch).filter(MedicineBatch.id == batch_id).first()
-    if not batch_probe:
-        raise LookupError("Không tìm thấy lô thuốc")
-    medicine = lock_medicine(db, batch_probe.medicine_id)
+def plan_existing_stock_batches(db, *, medicine_id, expected_stock, source_document, batches, lock=False):
+    """Validate a verified opening allocation. Never infer historical lots."""
+    medicine = lock_medicine(db, medicine_id) if lock else db.query(Medicine).filter_by(id=medicine_id).first()
     if not medicine:
-        raise LookupError("Không tìm thấy thuốc của lô")
-    batch = (
-        db.query(MedicineBatch)
-        .filter(MedicineBatch.id == batch_id)
-        .with_for_update()
-        .first()
-    )
-    if not batch:
-        raise LookupError("Không tìm thấy lô thuốc")
+        raise InventoryValidationError("Không tìm thấy thuốc")
+    expected = parse_quantity(expected_stock, "Tồn đã đối chiếu", allow_zero=False)
+    current = Decimal(str(medicine.stock_quantity or 0))
+    if expected != current:
+        raise InventoryValidationError("Tồn đã thay đổi; cần đối chiếu lại trước khi gán lô")
+    if db.query(MedicineBatch.id).filter_by(medicine_id=medicine_id).first():
+        raise InventoryValidationError("Thuốc đã có lô; không được gán tồn ban đầu lần nữa")
+    if not isinstance(source_document, str) or not source_document.strip() or len(source_document.strip()) > 300:
+        raise InventoryValidationError("Cần chứng từ/biên bản đối chiếu thực tế (tối đa 300 ký tự)")
+    if not isinstance(batches, list) or not batches:
+        raise InventoryValidationError("Cần danh sách lô đã xác nhận")
+    prepared, numbers = [], set()
+    for item in batches:
+        if not isinstance(item, dict):
+            raise InventoryValidationError("Thông tin lô không hợp lệ")
+        number = item.get('batch_number')
+        if not isinstance(number, str) or not number.strip() or len(number.strip()) > 50:
+            raise InventoryValidationError("Số lô thực tế là bắt buộc (tối đa 50 ký tự)")
+        number = number.strip()
+        if number in numbers or db.query(MedicineBatch.id).filter_by(medicine_id=medicine_id, batch_number=number).first():
+            raise InventoryValidationError(f"Số lô {number} bị trùng; cần kiểm tra lại chứng từ")
+        numbers.add(number)
+        try:
+            imported = date.fromisoformat(item['import_date'])
+            expiry = date.fromisoformat(item['expiry_date'])
+        except (KeyError, TypeError, ValueError):
+            raise InventoryValidationError("Cần ngày nhập và hạn dùng thực tế theo YYYY-MM-DD") from None
+        if imported > date.today() or expiry < imported:
+            raise InventoryValidationError("Ngày nhập/hạn dùng của lô không hợp lệ")
+        prepared.append({'batch_number': number, 'import_date': imported, 'expiry_date': expiry,
+                         'quantity': parse_quantity(item.get('quantity'), 'Số lượng thực tế của lô', allow_zero=False)})
+    if sum((item['quantity'] for item in prepared), ZERO) != current:
+        raise InventoryValidationError("Tổng số lượng các lô phải bằng tồn hiện hữu; không cộng thêm hoặc bỏ bớt tồn")
+    return medicine, prepared
 
-    old_quantity = Decimal(str(batch.remaining_quantity or 0))
-    if actual_quantity is not None:
-        new_quantity = parse_quantity(actual_quantity, "Số lượng thực tế")
-        movement_delta = new_quantity - old_quantity
-    else:
-        movement_delta = parse_delta(delta, "Chênh lệch")
-        new_quantity = old_quantity + movement_delta
-        if new_quantity < ZERO:
-            raise InventoryValidationError("Số lượng sau điều chỉnh không được âm")
 
-    if movement_delta == ZERO:
-        return medicine, batch, None, old_quantity, new_quantity
+def register_existing_stock_batches(db, *, medicine_id, expected_stock, source_document, batches, created_by):
+    """Register verified opening balances without importing inventory twice.
 
-    old_stock = Decimal(str(medicine.stock_quantity or 0))
-    new_stock = old_stock + movement_delta
-    if new_stock < ZERO:
-        raise InventoryValidationError(
-            "Tồn tổng hiện tại không đủ để ghi nhận chênh lệch giảm của lô"
-        )
-
-    batch.remaining_quantity = new_quantity
-    medicine.stock_quantity = new_stock
-    movement = add_movement(
-        db,
-        medicine_id=medicine.id,
-        batch_id=batch.id,
-        movement_type="adjustment",
-        quantity=movement_delta,
-        price=batch.import_price,
-        note=note.strip(),
-        created_by=created_by,
-    )
-    return medicine, batch, movement, old_quantity, new_quantity
+    The caller owns commit/rollback. Quantity is the verified opening balance,
+    not a claim about the historical import. Zero-delta adjustment events keep
+    aggregate stock and stock-movement totals unchanged and retain provenance.
+    """
+    medicine, prepared = plan_existing_stock_batches(
+        db, medicine_id=medicine_id, expected_stock=expected_stock,
+        source_document=source_document, batches=batches, lock=True)
+    created = []
+    for item in prepared:
+        note = (f"Gán tồn hiện hữu vào lô: {item['quantity']} {medicine.unit}; "
+                f"không thay đổi tồn tổng. Chứng từ: {source_document.strip()}")
+        batch = MedicineBatch(medicine_id=medicine.id, **item,
+                              remaining_quantity=item['quantity'], created_by=created_by, notes=note)
+        db.add(batch)
+        db.flush()
+        add_movement(db, medicine_id=medicine.id, batch_id=batch.id,
+                     movement_type='adjustment', quantity=ZERO, price=None,
+                     balance_after=item['quantity'],
+                     stock_balance_after=medicine.stock_quantity,
+                     note=note, created_by=created_by)
+        created.append(batch)
+    return created

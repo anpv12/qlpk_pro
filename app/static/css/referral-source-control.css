@@ -26,7 +26,7 @@
 	border: 1px solid var(--referral-source-border, #e4d4c1);
 	border-radius: 8px;
 	background: var(--referral-source-bg, #fffaf3);
-	color: var(--referral-source-color, #6b422c);
+	color: var(--referral-source-color, var(--qlpk-color-primary));
 	font-size: var(--qlpk-font-size-base, 13px);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	line-height: 1.2;
@@ -52,7 +52,7 @@
 	height: 16px;
 	border: 2px solid #fffdf9;
 	border-radius: 50%;
-	background: var(--referral-source-color, #6b422c);
+	background: var(--referral-source-color, var(--qlpk-color-primary));
 	color: #ffffff;
 	font-size: var(--qlpk-font-size-2xs, 10px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
@@ -67,7 +67,7 @@
 	width: 17px;
 	height: 17px;
 	border-radius: 50%;
-	background: var(--referral-source-color, #6b422c);
+	background: var(--referral-source-color, var(--qlpk-color-primary));
 	color: #ffffff;
 	font-size: var(--qlpk-font-size-sm, 12px);
 	line-height: 1;
@@ -76,14 +76,14 @@
 .referral-source-option:hover,
 .referral-source-option:focus {
 	background: var(--referral-source-hover, #fff3dc);
-	border-color: var(--referral-source-color, #6b422c);
+	border-color: var(--referral-source-color, var(--qlpk-color-primary));
 	box-shadow: 0 3px 8px rgba(74, 51, 40, 0.12);
-	color: var(--referral-source-color, #6b422c);
+	color: var(--referral-source-color, var(--qlpk-color-primary));
 }
 
 .referral-source-option.is-active {
-	background: var(--referral-source-color, #6b422c);
-	border-color: var(--referral-source-color, #6b422c);
+	background: var(--referral-source-color, var(--qlpk-color-primary));
+	border-color: var(--referral-source-color, var(--qlpk-color-primary));
 	color: #ffffff;
 	box-shadow: 0 0 0 2px #fffdf9, 0 0 0 5px var(--referral-source-ring, rgba(185, 137, 94, 0.28)), 0 5px 11px rgba(74, 51, 40, 0.2);
 	transform: translateY(-1px);
@@ -96,7 +96,7 @@
 
 .referral-source-option.is-active .referral-source-icon {
 	background: #fffdf9;
-	color: var(--referral-source-color, #6b422c);
+	color: var(--referral-source-color, var(--qlpk-color-primary));
 }
 
 .referral-source-facebook {

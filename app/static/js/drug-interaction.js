@@ -74,7 +74,9 @@
 	}
 
 	// ─── Render bảng ──────────────────────────────────────
-	function renderTable(data) {
+	const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderTable(data) { listPagination.setItems(data); }
+    function renderPage(data, offset) {
 		const tbody = document.getElementById('di-table-body');
 		if (!data.length) {
 			tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">
@@ -91,7 +93,7 @@
 				: '<span class="badge-type badge-approved"><i class="bi bi-check-circle-fill"></i> Được đồng thuận</span>';
 
 			return `<tr>
-				<td>${idx + 1}</td>
+				<td>${offset + idx + 1}</td>
 				<td>
 					<div class="fw-semibold">${hc1 || '—'}</div>
 				</td>
@@ -103,9 +105,9 @@
 				<td><div class="di-preline">${item.consequence || '—'}</div></td>
 				<td>
 					<div class="d-flex gap-1">
-						<button class="btn btn-sm btn-outline-secondary" title="Xem" onclick="DrugInteraction.view(${item.id})"><i class="bi bi-eye"></i></button>
-						<button class="btn btn-sm btn-outline-primary" title="Sửa" onclick="DrugInteraction.edit(${item.id})"><i class="bi bi-pencil"></i></button>
-						<button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="DrugInteraction.remove(${item.id})"><i class="bi bi-trash"></i></button>
+						<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-secondary" title="Xem" onclick="DrugInteraction.view(${item.id})"><i class="bi bi-eye"></i></button>
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" title="Sửa" onclick="DrugInteraction.edit(${item.id})"><i class="bi bi-pencil"></i></button>
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="DrugInteraction.remove(${item.id})"><i class="bi bi-trash"></i></button>
 					</div>
 				</td>
 			</tr>`;

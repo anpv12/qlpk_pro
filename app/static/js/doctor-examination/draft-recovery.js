@@ -356,6 +356,7 @@
 		if (!control) return null;
 		if (control.type !== 'hidden' && !control.hidden) return control;
 		const visibleId = {
+			currentMedications: 'currentMedicationSearch',
 			diagnosisIds: 'diagnosis',
 			benhKemTheoIds: 'benhKemTheo'
 		}[controlId];
@@ -400,10 +401,11 @@
 		[
 			{ key: 'usageMode', selector: '#doctorPrescriptionUsageMode' },
 			{ key: 'medicineDays', selector: '#doctorPrescriptionMedicineDays' },
-			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamToggle' },
-			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' }
+			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamButton' },
+			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' },
+			{ key: 'reExamSelection', selector: '#doctorPrescriptionReExamButton' }
 		].forEach(config => {
-			if (reExamLocked && ['reExamEnabled', 'reExamDateTime'].includes(config.key)) return;
+			if (reExamLocked && ['reExamEnabled', 'reExamDateTime', 'reExamSelection'].includes(config.key)) return;
 			if (sameValue(basePrescription[config.key], draftPrescription[config.key])) return;
 			targets.push({
 				sectionId: 'doctorClinicalDecisionPanel',
@@ -566,10 +568,11 @@
 		[
 			{ key: 'usageMode', selector: '#doctorPrescriptionUsageMode' },
 			{ key: 'medicineDays', selector: '#doctorPrescriptionMedicineDays' },
-			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamToggle' },
-			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' }
+			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamButton' },
+			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' },
+			{ key: 'reExamSelection', selector: '#doctorPrescriptionReExamButton' }
 		].forEach(config => {
-			if (reExamLocked && ['reExamEnabled', 'reExamDateTime'].includes(config.key)) return;
+			if (reExamLocked && ['reExamEnabled', 'reExamDateTime', 'reExamSelection'].includes(config.key)) return;
 			if (sameValue(basePrescription[config.key], draftPrescription[config.key])) return;
 			addRestoredControlMarker(doc.querySelector(config.selector));
 		});

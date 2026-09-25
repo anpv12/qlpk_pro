@@ -18,6 +18,22 @@
 
 	// Callback để reload danh sách sau khi chuyển thành công
 	let reloadCallback = null;
+	let transferOptions = {};
+	let sessionToken = 0;
+	let personRequestToken = 0;
+	let transferring = false;
+
+	function isCurrentSession(token) {
+		return token === sessionToken && (!transferOptions.isCurrent || transferOptions.isCurrent());
+	}
+
+	function setTransferring(busy) {
+		transferring = busy;
+		$('#transferModal').attr('aria-busy', String(busy));
+		$('#transferModal button').prop('disabled', busy);
+		$('#confirmTransferBtn').prop('disabled', busy || !currentTransferData.toPersonId);
+		$('#confirmTransferBtn span').text(busy ? 'Đang chuyển...' : 'Chuyển khám');
+	}
 
 	// Flag để kiểm tra modal đã được load chưa
 	let modalLoaded = false;
@@ -70,10 +86,13 @@
 	 * @param {String} fromRole - Role hiện tại: 'receptionist', 'doctor', 'psychologist'
 	 * @param {Function} onSuccess - Callback khi chuyển thành công (để reload danh sách)
 	 */
-	function openTransferModal(appointmentIds, fromRole, onSuccess) {
+	function openTransferModal(appointmentIds, fromRole, onSuccess, options = {}) {
+		if (transferring) return;
+		const token = ++sessionToken;
+		transferOptions = options;
 		// Đảm bảo modal đã được load trước
 		ensureModalLoaded(function () {
-			openTransferModalInternal(appointmentIds, fromRole, onSuccess);
+			if (isCurrentSession(token)) openTransferModalInternal(appointmentIds, fromRole, onSuccess);
 		});
 	}
 
@@ -81,6 +100,7 @@
 	 * Internal function để mở modal (sau khi đã load HTML)
 	 */
 	function openTransferModalInternal(appointmentIds, fromRole, onSuccess) {
+		const token = sessionToken;
 		// Chuyển đổi appointmentIds thành mảng nếu là số
 		if (!Array.isArray(appointmentIds)) {
 			appointmentIds = [appointmentIds];
@@ -95,6 +115,7 @@
 		currentTransferData.toRole = null;
 		currentTransferData.toPersonId = null;
 		currentTransferData.toPersonName = null;
+		setTransferring(false);
 
 		// Reset modal UI
 		$('.transfer-role-btn').removeClass('active').attr('aria-pressed', 'false').show();
@@ -110,11 +131,8 @@
 			bindTransferModalEvents();
 		}
 
-		// Hiển thị modal
-		$('#transferModal').modal('show');
-
 		// Sau khi modal được show, fetch appointment data và tự động active tab + chọn người nhận
-		$('#transferModal').one('shown.bs.modal', function () {
+		$('#transferModal').off('shown.bs.modal.transfer').one('shown.bs.modal.transfer', function () {
 			// Lấy appointment ID đầu tiên để fetch thông tin
 			const firstAppointmentId = appointmentIds[0];
 
@@ -127,6 +145,7 @@
 						'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token')
 					},
 					success: function (appointment) {
+						if (!isCurrentSession(token) || currentTransferData.toRole) return;
 
 						// Xác định role và person_id dựa trên appointment data
 						let targetRole = null;
@@ -182,6 +201,7 @@
 						}
 					},
 					error: function (xhr, status, error) {
+						if (!isCurrentSession(token) || currentTransferData.toRole) return;
 						console.error('Lỗi khi fetch appointment data:', error);
 						selectFirstVisibleRole();
 					}
@@ -190,6 +210,7 @@
 				selectFirstVisibleRole();
 			}
 		});
+		$('#transferModal').modal('show');
 	}
 
 	/**
@@ -242,6 +263,9 @@
 	 * @param {Function} callback - Callback được gọi sau khi load xong
 	 */
 	function loadPersonList(role, callback) {
+		const token = sessionToken;
+		const requestToken = ++personRequestToken;
+		const isCurrent = () => isCurrentSession(token) && requestToken === personRequestToken;
 		$('#personSelector').html(`
             <div class="transfer-loading-state">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -260,6 +284,7 @@
 				'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token')
 			},
 			success: function (response) {
+				if (!isCurrent()) return;
 				if (response && response.length > 0) {
 					let html = '';
 					response.forEach(user => {
@@ -276,8 +301,7 @@
 
 					// Gọi callback sau khi render xong
 					if (callback && typeof callback === 'function') {
-						// Đợi một chút để đảm bảo DOM đã được render
-						setTimeout(callback, 100);
+						callback();
 					}
 				} else {
 					$('#personSelector').html(`
@@ -292,6 +316,7 @@
 				}
 			},
 			error: function (xhr, status, error) {
+				if (!isCurrent()) return;
 				console.error('API error for role', role, ':', xhr.responseText);
 				$('#personSelector').html(`
                     <div class="transfer-error-state">
@@ -312,53 +337,47 @@
 	 * @param {String} toRole - Role đích: 'doctor', 'psychologist', 'receptionist'
 	 * @param {Number} toPersonId - ID người nhận
 	 */
-	function transferAppointments(appointmentIds, toRole, toPersonId) {
-		// Map role to database enum
-		const dbRole = mapRoleToDatabase(toRole);
-
-		const data = {
-			appointment_ids: appointmentIds,
-			to_role: dbRole,
-			to_person_id: toPersonId
-		};
-
-		$.ajax({
-			url: '/api/appointments/transfer',
-			method: 'POST',
-			headers: {
-				'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token'),
-				'Content-Type': 'application/json'
-			},
-			data: JSON.stringify(data),
-			success: function (response) {
-				$('#transferModal').modal('hide');
-
-				// Hiển thị thông báo thành công
-				if (typeof showCustomToast === 'function') {
-					showCustomToast('success', 'Đã chuyển khám.');
-				} else {
-					alert('Đã chuyển khám.');
-				}
-
-				// Đóng modal chi tiết nếu có
-				$('#addExaminationModal').modal('hide');
-
-				// Gọi callback để reload danh sách
-				if (reloadCallback && typeof reloadCallback === 'function') {
-					reloadCallback();
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('Transfer API error:', xhr.responseText);
-				const errorMessage = 'Không thể chuyển khám. Vui lòng kiểm tra lại.';
-
-				if (typeof showCustomToast === 'function') {
-					showCustomToast('error', errorMessage);
-				} else {
-					alert(errorMessage);
-				}
+	async function transferAppointments(appointmentIds, toRole, toPersonId) {
+		const token = sessionToken;
+		if (transferring || !isCurrentSession(token)) return;
+		const onSuccess = reloadCallback;
+		const beforeTransfer = transferOptions.beforeTransfer;
+		setTransferring(true);
+		try {
+			if (beforeTransfer && await beforeTransfer() !== true) return;
+			if (!isCurrentSession(token)) return;
+			await $.ajax({
+				url: '/api/appointments/transfer',
+				method: 'POST',
+				headers: {
+					'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token'),
+					'Content-Type': 'application/json'
+				},
+				data: JSON.stringify({
+					appointment_ids: appointmentIds,
+					to_role: mapRoleToDatabase(toRole),
+					to_person_id: toPersonId
+				})
+			});
+			setTransferring(false);
+			$('#transferModal').modal('hide');
+			if (typeof showCustomToast === 'function') {
+				showCustomToast('success', 'Đã chuyển khám.');
+			} else {
+				alert('Đã chuyển khám.');
 			}
-		});
+			$('#addExaminationModal').modal('hide');
+			if (typeof onSuccess === 'function') onSuccess();
+		} catch (error) {
+			console.error('Transfer failed:', error);
+			if (typeof showCustomToast === 'function') {
+				showCustomToast('error', 'Không thể chuyển khám. Vui lòng kiểm tra lại.');
+			} else {
+				alert('Không thể chuyển khám. Vui lòng kiểm tra lại.');
+			}
+		} finally {
+			if (token === sessionToken) setTransferring(false);
+		}
 	}
 
 	// ===== EVENT HANDLERS =====
@@ -377,6 +396,7 @@
 		$('#transferModal').off('click', '.transfer-role-btn').on('click', '.transfer-role-btn', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
+			if (transferring) return;
 
 			const role = $(this).data('role');
 
@@ -393,6 +413,7 @@
 
 		// Xử lý chọn người nhận
 		$('#transferModal').off('click', '.person-badge').on('click', '.person-badge', function () {
+			if (transferring) return;
 			const personId = $(this).data('person-id');
 			const personName = $(this).data('person-name');
 
@@ -439,8 +460,14 @@
 			);
 		});
 
+		$('#transferModal').off('hide.bs.modal.transfer').on('hide.bs.modal.transfer', function (event) {
+			if (transferring) event.preventDefault();
+		});
 		// Reset modal khi đóng - sử dụng namespace để tránh duplicate
 		$('#transferModal').off('hidden.bs.modal.transfer').on('hidden.bs.modal.transfer', function () {
+			sessionToken += 1;
+			personRequestToken += 1;
+			transferOptions = {};
 			currentTransferData = {
 				appointmentIds: [],
 				fromRole: null,

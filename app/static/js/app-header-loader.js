@@ -1413,6 +1413,10 @@
 		notificationRealtimeBound = true;
 		window.addEventListener('qlpk:realtime:event', function (event) {
 			const realtimeEvent = event && event.detail ? event.detail : null;
+			if (realtimeEvent?.type === 'realtime.resynced') {
+				loadNotifications({ silent: true });
+				return;
+			}
 			if (!realtimeEvent || realtimeEvent.type !== 'notification.changed') return;
 			const payload = realtimeEvent.payload || {};
 			if (Number.isFinite(Number(payload.unread_count))) {

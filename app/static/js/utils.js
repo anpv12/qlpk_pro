@@ -41,10 +41,10 @@ const AppointmentUtils = {
 	// Hàm lấy status badge HTML
 	getStatusBadge: function (status, className = '') {
 		const statusMap = {
-			scheduled: '<span class="badge bg-secondary ' + className + '">Chờ xác nhận</span>',
+			scheduled: '<span class="badge bg-warning ' + className + '">Chờ xác nhận</span>',
 			confirmed: '<span class="badge bg-success ' + className + '">Đã xác nhận</span>',
-			in_progress: '<span class="badge bg-warning ' + className + '">Đang khám</span>',
-			completed: '<span class="badge bg-info ' + className + '">Đã khám</span>',
+			in_progress: '<span class="badge bg-info ' + className + '">Đang khám</span>',
+			completed: '<span class="badge bg-success ' + className + '">Đã khám</span>',
 			cancelled: '<span class="badge bg-danger ' + className + '">Hủy</span>',
 			no_show: '<span class="badge bg-dark ' + className + '">Không đến</span>'
 		};
@@ -93,11 +93,11 @@ const AppointmentUtils = {
 	// Hàm lấy status badge class
 	getStatusBadgeClass: function (status) {
 		const classMap = {
-			scheduled: 'bg-secondary',
+			scheduled: 'bg-warning',
 			confirmed: 'bg-success',
-			completed: 'bg-info',
+			completed: 'bg-success',
 			cancelled: 'bg-danger',
-			in_progress: 'bg-warning',
+			in_progress: 'bg-info',
 			no_show: 'bg-dark'
 		};
 		return classMap[status] || classMap.scheduled;

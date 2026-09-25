@@ -1,0 +1,102 @@
+/* Shared paper form: Appendices I–III, Circular 26/2025/TT-BYT.
+ * Viewer owns scrolling/scaling; this document owns natural content flow.
+ * Print page margins live exclusively in prescription-print-document.css.
+ */
+.prescription-preview.prescription-preview--moh {
+	--moh-font-family: "Times New Roman", Times, serif;
+	--moh-text-size: 12pt;
+	--moh-title-size: 15pt;
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 210mm;
+	min-height: 0;
+	margin: 0 auto;
+	padding: 20mm 20mm 20mm 30mm;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	background: #fff;
+	color: #000;
+	font-family: var(--moh-font-family);
+	font-size: var(--moh-text-size);
+	font-weight: var(--qlpk-font-weight-regular, 400);
+	line-height: 1.2;
+	text-align: left;
+	overflow-wrap: anywhere;
+}
+.prescription-preview--moh * { box-sizing: border-box; }
+.prescription-preview--moh strong { font-weight: var(--qlpk-font-weight-bold, 700); }
+.moh-form { border: 1px solid #000; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.moh-code {
+	display: table;
+	max-width: 100%;
+	border-right: 1px solid #000;
+	border-bottom: 1px solid #000;
+	padding: 1.5mm 4mm;
+}
+.moh-content { padding: 4mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.moh-header { break-inside: avoid; break-after: avoid; }
+.moh-title {
+	margin: 3mm 0;
+	color: inherit;
+	font-family: inherit;
+	font-size: var(--moh-title-size);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: inherit;
+	text-align: center;
+}
+.moh-patient { break-inside: avoid; }
+.moh-patient > div { margin-bottom: 1.5mm; }
+.moh-field-line { display: flex; align-items: baseline; gap: 1.5mm; }
+.moh-field-value { flex: 1; min-width: 0; }
+.moh-patient-name .moh-field-value { font-weight: var(--qlpk-font-weight-bold, 700); }
+.moh-demographics { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) auto; column-gap: 3mm; align-items: baseline; }
+.moh-check {
+	display: inline-block;
+	width: 0.7em;
+	height: 0.7em;
+	line-height: 0.6;
+	border: 1px solid #000;
+	text-align: center;
+}
+.moh-blank { display: inline-block; width: 100%; min-width: 8mm; height: 6mm; border-bottom: 1px dotted #555; vertical-align: baseline; }
+.moh-code .moh-blank { width: 35mm; }
+.moh-diagnosis { padding-top: 1mm; }
+.moh-periods { margin: 3mm 0; line-height: 8mm; break-inside: avoid; }
+.moh-treatment-label, .moh-section-label { font-weight: var(--qlpk-font-weight-bold, 700); }
+.moh-treatment-label { margin: 4mm 0 2mm; break-after: avoid; }
+.moh-medicine { margin-bottom: 2.5mm; break-inside: avoid; page-break-inside: avoid; }
+.moh-medicine-heading {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 3mm;
+	align-items: baseline;
+}
+.moh-quantity { text-align: right; max-width: 48mm; }
+.moh-quantity-words { display: inline-block; max-width: 100%; }
+.moh-usage { padding: 0.5mm 0 0 4mm; white-space: pre-line; }
+.moh-advice { white-space: pre-line; margin-top: 3mm; orphans: 3; widows: 3; break-after: avoid; }
+.moh-section-label { margin-bottom: 1mm; break-after: avoid; }
+.moh-closing { break-inside: avoid; page-break-inside: avoid; }
+.moh-ending { break-inside: avoid; page-break-inside: avoid; }
+.moh-signature {
+	display: grid;
+	grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+	gap: 3mm;
+	margin-top: 0.5rem;
+	padding-bottom: 5mm;
+	break-inside: avoid;
+}
+.moh-qr { text-align: left; align-self: end; font-size: var(--qlpk-font-size-sm, 12px); }
+.moh-qr-image { display: block; inline-size: 25mm; max-inline-size: 100%; block-size: auto; }
+.moh-doctor { text-align: center; }
+.moh-doctor-name { padding-top: 25mm; font-weight: var(--qlpk-font-weight-bold, 700); }
+.moh-contact { position: static; break-inside: avoid; }
+.moh-contact > div + div { margin-top: 1mm; }
+.moh-companion { display: block; }
+.moh-companion .moh-field-value { display: block; }
+.moh-recipient { margin: 3mm -4mm -4mm; padding: 3mm 4mm; border-top: 1px solid #000; break-inside: avoid; }
+@media screen and (max-width: 48rem) {
+	.patient-search-modal .prescription-preview.prescription-preview--moh { padding: 4mm; }
+}

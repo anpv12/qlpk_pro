@@ -83,15 +83,14 @@ def _is_receptionist_list_request(args):
     return args.get('receptionist', 'false').lower() == 'true'
 
 def _mark_latest_edited_appointment(result, appointment_list, args):
-    """Mark the single receptionist row promoted by the list ordering."""
+    """Mark today's latest update in the filtered list, independent of page order."""
     if not _is_receptionist_list_request(args):
         return
-    page = args.get('page', 1, type=int) or 1
     for item in result:
-        item['is_latest_edited'] = False
-    if page != 1 or not result or not appointment_list.appointments:
-        return
-    result[0]['is_latest_edited'] = True
+        item['is_latest_edited'] = (
+            appointment_list.latest_edited_id is not None
+            and item.get('id') == appointment_list.latest_edited_id
+        )
 
 # Lấy danh sách lịch hẹn (filter theo ngày, bác sĩ, trạng thái, phân trang)
 @router.route('/', methods=['GET'])
@@ -646,17 +645,18 @@ def transfer_appointments(user):
         data = request.get_json()
         result = transfer_appointments_between_roles(db, user, data, logger=logger)
         db.commit()
-        emit_appointment_changed('transferred', extra={
-            'appointment_ids': data.get('appointment_ids', []),
-            'to_role': data.get('to_role'),
-            'to_person_id': data.get('to_person_id'),
-            'updated_count': result.updated_count,
-        })
+        if result.updated_count:
+            emit_appointment_changed('transferred', extra={
+                'appointment_ids': result.appointment_ids,
+                'to_role': data.get('to_role'),
+                'to_person_id': data.get('to_person_id'),
+                'updated_count': result.updated_count,
+            })
         _commit_workflow_notifications(
             db,
             lambda: notification_service.create_transfer_notifications(
                 db,
-                data.get('appointment_ids', []),
+                result.appointment_ids,
                 data.get('to_role'),
                 data.get('to_person_id'),
                 actor_user=user,

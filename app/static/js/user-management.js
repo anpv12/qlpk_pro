@@ -25,14 +25,28 @@ $(document).ready(function () {
 	let currentLicenseCertificateUrl = '';
 	let currentLicenseCertificateFileName = '';
 
-	function fetchUsers(params = {}) {
+	let usersRequestRevision = 0;
+	function fetchUsers(params = {
+		search: $('#searchInput').val(),
+		role: $('#roleFilter').val(),
+		status: $('#statusFilter').val()
+	}) {
+		const revision = ++usersRequestRevision;
 		$.get('/users/', params, function (data) {
+			if (revision !== usersRequestRevision) return;
 			users = data.items || data;
-			renderTable(users);
+			const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
+				|| String(value || '').toLowerCase().trim();
+			const keyword = normalize(params.search);
+			renderTable(users.filter(user =>
+				[user.full_name, user.username, user.phone].some(value => normalize(value).includes(keyword))
+				&& (!params.status || user.is_active === (params.status === 'active'))));
 		});
 	}
 
-	function renderTable(users) {
+	const listPagination = window.QLPKPagination.createClient({ render: renderPage });
+    function renderTable(users) { listPagination.setItems(users); }
+    function renderPage(users, offset) {
 		const tbody = $('#userTable tbody');
 		tbody.empty();
 		if (!users.length) {
@@ -42,7 +56,7 @@ $(document).ready(function () {
 		users.forEach((u, i) => {
 			tbody.append(`
       <tr>
-          <td>${i + 1}</td>
+          <td>${offset + i + 1}</td>
         <td>${u.full_name || ''}</td>
         <td>${u.username || ''}</td>
         <td>${roleLabel(u.role)}</td>
@@ -50,8 +64,8 @@ $(document).ready(function () {
         <td>${u.phone || ''}</td>
           <td>${u.is_active ? '<span class="badge bg-success">Hoạt động</span>' : '<span class="badge bg-secondary">Không hoạt động</span>'}</td>
         <td>
-            <button class="action-btn edit-btn" data-id="${u.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-            <button class="action-btn delete-btn" data-id="${u.id}" title="Xoá"><i class="bi bi-trash"></i></button>
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${u.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${u.id}" title="Xoá"><i class="bi bi-trash"></i></button>
         </td>
       </tr>
       `);

@@ -11,9 +11,9 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/color-tokens.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 
 
@@ -27,7 +27,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js"></script>
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/appointment-management.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/components/icd-autocomplete.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
 </head>
 
 <body>
@@ -37,14 +37,14 @@
 	<!-- Layout toàn màn hình -->
 	<div class="appointment-fullscreen">
 			<!-- TOP HEADER BAR -->
-			<div class="appt-header-bar">
+			<div class="appt-header-bar" data-qlpk-button-surface="dark">
 				<div class="appt-header-left">
 					<i class="bi bi-calendar-check"></i>
 				</div>
 			<div class="appt-search-wrapper">
 				<i class="bi bi-search search-icon"></i>
 				<input type="text" class="appt-calendar-search" id="calendarSearchInput" aria-label="Tìm theo tên, SĐT bệnh nhân" placeholder="Tìm theo tên, SĐT bệnh nhân...">
-				<button type="button" class="search-clear-btn" id="calendarSearchClear" title="Xóa" aria-label="Xóa tìm kiếm">&times;</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="search-clear-btn" id="calendarSearchClear" title="Xóa" aria-label="Xóa tìm kiếm">&times;</button>
 			</div>
 			<div class="appt-header-filter">
 				<label class="appt-header-filter-label" for="doctorFilter">Bác sĩ</label>
@@ -53,24 +53,24 @@
 				</select>
 			</div>
 			<div class="appt-header-actions">
-				<button class="btn appointment-button appointment-button--header appointment-button--sm" id="syncCalendarBtn" data-bs-toggle="modal"
+				<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm" id="syncCalendarBtn" data-bs-toggle="modal"
 					data-bs-target="#syncCalendarModal" title="Đồng bộ" aria-label="Đồng bộ lịch Google">
 					<i class="bi bi-arrow-repeat"></i> <span class="btn-text-label">Đồng bộ</span>
 				</button>
 				<div class="calendar-integration-section">
 					<div id="calendarStatus"></div>
-					<button class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="connectGoogleCalendarBtn" title="Kết nối Google Calendar" aria-label="Kết nối Google Calendar">
+					<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="connectGoogleCalendarBtn" title="Kết nối Google Calendar" aria-label="Kết nối Google Calendar">
 						<i class="bi bi-google"></i> <span class="btn-text-label">Kết nối Google Calendar</span>
 					</button>
-					<button class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="disconnectGoogleCalendarBtn" title="Ngắt kết nối Google Calendar" aria-label="Ngắt kết nối Google Calendar">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="disconnectGoogleCalendarBtn" title="Ngắt kết nối Google Calendar" aria-label="Ngắt kết nối Google Calendar">
 						<i class="bi bi-x-circle"></i> <span class="btn-text-label">Ngắt kết nối</span>
 					</button>
 				</div>
-				<button class="btn appointment-button appointment-button--header appointment-button--sm" data-bs-toggle="modal"
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn appointment-button appointment-button--header appointment-button--sm" data-bs-toggle="modal"
 					data-bs-target="#addAppointmentModal" title="Thêm lịch hẹn" aria-label="Thêm lịch hẹn">
 					<i class="bi bi-plus-circle"></i> <span class="btn-text-label">Thêm lịch hẹn</span>
 				</button>
-				<button class="btn appointment-button appointment-button--header appointment-button--sm" type="button" id="exportDataBtn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu lịch hẹn">
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm" type="button" id="exportDataBtn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu lịch hẹn">
 					<i class="bi bi-download"></i> <span class="btn-text-label">Xuất dữ liệu</span>
 				</button>
 
@@ -164,6 +164,7 @@
 	<script src="/static/js/appointment-management/edit-modal-ui-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/add-modal-ui-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/icd-data-loader.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/icd-multiselect-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/page-actions-utils.js?v={{ app_version }}"></script>

@@ -1,10 +1,10 @@
 	body {
-		background: #f5f7fb;
+		background: var(--qlpk-color-page-bg);
 	}
 
 	.main-content {
 		overflow-x: hidden;
-		padding: 24px;
+		padding: 0;
 	}
 
 	/* Tuân thủ layout sidebar dùng chung như service-management */
@@ -22,56 +22,34 @@
 		width: 100%;
 	}
 
-	.shortcut-header {
-		background: linear-gradient(135deg, #eef6ff 0%, #f0fdf4 100%);
-		border: 1px solid #cfe2ff;
-		border-radius: 12px;
-		padding: 14px 16px;
-		margin-bottom: 14px;
-	}
-
-	.shortcut-header h4 {
-		margin: 0;
-		font-size: var(--qlpk-font-size-xl, 18px);
-		font-weight: var(--qlpk-font-weight-bold, 700);
-		color: #0f172a;
-	}
-
-	.shortcut-header p {
-		margin: 4px 0 0;
-		font-size: var(--qlpk-font-size-md, 14px);
-		color: #64748b;
-	}
-
 	.shortcut-card {
-		border: 1px solid #dbeafe;
-		border-radius: 12px;
+		border: 1px solid var(--qlpk-color-border);
+		border-radius: var(--clinic-surface-radius);
 		background: #ffffff;
-		box-shadow: 0 4px 14px rgba(59, 130, 246, 0.08);
+		box-shadow: var(--clinic-surface-shadow);
+		margin: 0.75rem 1.25rem;
 	}
 
 	.shortcut-card .form-label {
 		font-weight: var(--qlpk-font-weight-semibold, 600);
-		color: #334155;
+		color: var(--qlpk-color-text-muted);
 	}
-
-	.shortcut-card .form-control,
-	.shortcut-card .form-select {
-		border-color: #d7dee8;
-	}
-
-	.shortcut-card .form-control:focus,
-	.shortcut-card .form-select:focus {
-		border-color: #60a5fa;
-		box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .18);
-	}
+.shortcut-card .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.shortcut-card .form-select {
+		border-color: var(--qlpk-color-border);
+}
+.shortcut-card .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.shortcut-card .form-select:focus {
+		border-color: var(--qlpk-color-primary);
+		box-shadow: 0 0 0 .2rem rgba(var(--qlpk-color-primary-rgb), .18);
+}
 
 	.shortcut-combo-preview {
 		font-size: var(--qlpk-font-size-md, 14px);
 		font-weight: var(--qlpk-font-weight-semibold, 600);
-		color: #1e293b;
-		background: #f8fafc;
-		border: 1px dashed #cbd5e1;
+		color: var(--qlpk-color-text);
+		background: var(--qlpk-color-page-bg);
+		border: 1px dashed var(--qlpk-color-border);
 		border-radius: 8px;
 		padding: 7px 10px;
 		display: inline-block;
@@ -81,17 +59,23 @@
 		font-size: var(--qlpk-font-size-md, 14px);
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
-		color: #64748b;
+		color: var(--qlpk-color-text-muted);
 	}
 
 	.table tbody td {
-		color: #0f172a;
+		color: var(--qlpk-color-text);
 	}
 
 		code {
+			color: var(--qlpk-color-primary);
 			font-size: var(--qlpk-font-size-base, 13px);
 		}
 
 .shortcut-hidden {
 	display: none;
+}
+
+@media (max-width: 36rem) {
+  .shortcut-card { margin-inline: 0.75rem; }
+  #shortcutForm > .d-flex { flex-wrap: wrap; gap: 0.75rem; }
 }

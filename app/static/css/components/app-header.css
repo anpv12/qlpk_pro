@@ -1,7 +1,7 @@
 :root {
-	--qlpk-header-bg: #4b2719;
-	--qlpk-header-surface: #6d3d27;
-	--qlpk-header-surface-strong: #7b472f;
+	--qlpk-header-bg: var(--qlpk-brown-800);
+	--qlpk-header-surface: var(--qlpk-color-header-light);
+	--qlpk-header-surface-strong: var(--qlpk-color-header-light);
 	--qlpk-header-line: rgba(255, 239, 221, 0.14);
 	--qlpk-header-text: #fffaf3;
 	--qlpk-header-muted: #ead3bd;
@@ -33,7 +33,7 @@
 	width: 100%;
 	margin: 0;
 	padding: 0.25rem 1.25rem;
-	background: linear-gradient(180deg, var(--qlpk-header-surface-strong, #7b472f) 0%, var(--qlpk-header-bg, #4b2719) 100%);
+	background: linear-gradient(180deg, var(--qlpk-header-surface-strong, var(--qlpk-color-header-light)) 0%, var(--qlpk-header-bg, var(--qlpk-brown-800)) 100%);
 	border-bottom: 1px solid var(--qlpk-header-line);
 	box-shadow: 0 2px 10px rgba(74, 37, 24, 0.18);
 	backdrop-filter: none;
@@ -95,7 +95,7 @@
 .qlpk-app-header__search-icon {
 	flex: 0 0 auto;
 	margin-left: 0.625rem;
-	color: var(--qlpk-header-bg, #4b2719);
+	color: var(--qlpk-header-bg, var(--qlpk-brown-800));
 	font-size: var(--qlpk-font-size-lg, 16px);
 	text-shadow: none;
 	-webkit-text-stroke: 0.02rem currentColor;
@@ -127,7 +127,7 @@
 	right: 0;
 	z-index: 1060;
 	display: none;
-	border: thin solid rgba(75, 39, 25, 0.18);
+	border: thin solid rgba(var(--qlpk-brown-800-rgb), 0.18);
 	border-radius: 0.75rem;
 	background: #fffdf9;
 	box-shadow: 0 1rem 2.75rem rgba(38, 24, 18, 0.2);
@@ -142,9 +142,9 @@
 
 .qlpk-app-header__global-search-status {
 	padding: 0.6875rem 0.875rem;
-	border-bottom: thin solid rgba(75, 39, 25, 0.1);
+	border-bottom: thin solid rgba(var(--qlpk-brown-800-rgb), 0.1);
 	background: #fff8ed;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-size: var(--qlpk-global-search-font-size);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
@@ -162,7 +162,7 @@
 .qlpk-app-header__global-search-group {
 	display: grid;
 	grid-template-columns: minmax(5.25rem, 8rem) minmax(0, 1fr);
-	border-bottom: thin solid rgba(75, 39, 25, 0.12);
+	border-bottom: thin solid rgba(var(--qlpk-brown-800-rgb), 0.12);
 }
 
 .qlpk-app-header__global-search-group:last-child {
@@ -172,7 +172,7 @@
 .qlpk-app-header__global-search-group-label {
 	padding: 0.875rem 0.75rem;
 	background: #fbf4ea;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-size: var(--qlpk-global-search-font-size);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1.25;
@@ -199,7 +199,7 @@
 	width: 100%;
 	padding: 0.6875rem 0.875rem;
 	border: 0;
-	border-bottom: thin solid rgba(75, 39, 25, 0.08);
+	border-bottom: thin solid rgba(var(--qlpk-brown-800-rgb), 0.08);
 	background: #fffdf9;
 	color: #352821;
 	text-align: left;
@@ -214,8 +214,7 @@
 .qlpk-app-header__global-search-item:last-child {
 	border-bottom: 0;
 }
-
-.qlpk-app-header__global-search-item[role="button"]:hover,
+.qlpk-app-header__global-search-item[role="button"]:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-app-header__global-search-item:focus,
 .qlpk-app-header__global-search-item.is-active {
 	background: #fff3dc;
@@ -223,7 +222,7 @@
 
 .qlpk-app-header__global-search-item.is-selected {
 	background: #fff0d3;
-	box-shadow: inset 0.1875rem 0 0 #0f766e;
+	box-shadow: inset 0.1875rem 0 0 var(--qlpk-color-primary);
 }
 
 .qlpk-app-header__global-search-group--history .qlpk-app-header__global-search-group-label {
@@ -234,7 +233,7 @@
 
 .qlpk-app-header__global-search-item--history {
 	background: linear-gradient(90deg, #e2f8f1 0%, #f3fff9 62%, #fffdf9 100%);
-	box-shadow: inset 0.3125rem 0 0 #0f766e, inset 0 0 0 thin rgba(15, 118, 110, 0.16);
+	box-shadow: inset 0.3125rem 0 0 var(--qlpk-color-primary), inset 0 0 0 thin rgba(var(--qlpk-color-primary-rgb), 0.16);
 }
 
 .qlpk-app-header__global-search-item--history:nth-child(even) {
@@ -261,7 +260,7 @@
 
 .qlpk-app-header__global-search-item--history.qlpk-app-header__global-search-item--latest {
 	background: linear-gradient(90deg, #d5f4e7 0%, #eefcf5 58%, #fffdf9 100%);
-	box-shadow: inset 0.375rem 0 0 #0f766e, inset 0 0 0 thin rgba(15, 118, 110, 0.2);
+	box-shadow: inset 0.375rem 0 0 var(--qlpk-color-primary), inset 0 0 0 thin rgba(var(--qlpk-color-primary-rgb), 0.2);
 }
 
 .qlpk-app-header__global-search-item--history.qlpk-app-header__global-search-item--latest:nth-child(even) {
@@ -269,7 +268,7 @@
 }
 
 .qlpk-app-header__global-search-item--history.qlpk-app-header__global-search-item--latest .qlpk-app-header__global-search-icon {
-	background: #0f766e;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -289,7 +288,7 @@
 	height: 2.25rem;
 	border-radius: 0.625rem;
 	background: #e7f6f3;
-	color: #0f766e;
+	color: var(--qlpk-color-primary);
 	font-size: var(--qlpk-global-search-font-size);
 }
 
@@ -344,7 +343,7 @@
 	width: fit-content;
 	max-width: 100%;
 	padding: 0.25rem 0.625rem;
-	border: thin solid rgba(15, 118, 110, 0.32);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.32);
 	border-radius: 999px;
 	background: #ffffff;
 	color: #0a514a;
@@ -373,7 +372,7 @@
 .qlpk-app-header__global-search-action {
 	white-space: nowrap;
 	padding: 0.3125rem 0.625rem;
-	border: thin solid rgba(15, 118, 110, 0.24);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.24);
 	border-radius: 999px;
 	background: #effdfb;
 	color: #0f5f58;
@@ -391,7 +390,7 @@
 
 .qlpk-app-header__global-search-action:hover,
 .qlpk-app-header__global-search-action:focus {
-	background: #0f766e;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -457,7 +456,7 @@
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1;
 	text-align: center;
-	box-shadow: 0 0 0 0.125rem var(--qlpk-header-bg, #4b2719), 0 0.125rem 0.25rem rgba(34, 16, 9, 0.28);
+	box-shadow: 0 0 0 0.125rem var(--qlpk-header-bg, var(--qlpk-brown-800)), 0 0.125rem 0.25rem rgba(34, 16, 9, 0.28);
 	pointer-events: none;
 }
 
@@ -495,10 +494,10 @@
 .qlpk-app-header__notification-read-all {
 	flex: 0 0 auto;
 	padding: 0.3125rem 0.625rem;
-	border: thin solid rgba(75, 39, 25, 0.32);
+	border: thin solid rgba(var(--qlpk-brown-800-rgb), 0.32);
 	border-radius: 999px;
 	background: #fff3dc;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	cursor: pointer;
@@ -507,12 +506,12 @@
 .qlpk-app-header__notification-read-all:hover,
 .qlpk-app-header__notification-read-all:focus {
 	background: #f7e7d2;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 }
 
 .qlpk-app-header__notification-read-all:disabled {
 	cursor: default;
-	border-color: rgba(75, 39, 25, 0.24);
+	border-color: rgba(var(--qlpk-brown-800-rgb), 0.24);
 	background: #f8efe3;
 	color: #5a301f;
 	opacity: 1;
@@ -548,7 +547,7 @@
 }
 
 .qlpk-app-header__notification-icon {
-	--qlpk-notification-icon-color: var(--qlpk-feedback-info, #2563eb);
+	--qlpk-notification-icon-color: var(--qlpk-feedback-info, var(--qlpk-color-primary));
 	--qlpk-notification-icon-bg: var(--qlpk-feedback-info-bg, #eff6ff);
 	display: inline-flex;
 	align-items: center;
@@ -641,7 +640,7 @@
 	justify-items: center;
 	gap: 0.375rem;
 	padding: 1.5rem 0.75rem;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	text-align: center;
@@ -671,7 +670,7 @@
 	gap: 0.375rem;
 	width: 100%;
 	padding: 0.4375rem 0.625rem;
-	border: thin solid rgba(15, 118, 110, 0.24);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.24);
 	border-radius: 999px;
 	background: #effdfb;
 	color: #0f5f58;
@@ -683,7 +682,7 @@
 
 .qlpk-app-header__notification-view-all:hover,
 .qlpk-app-header__notification-view-all:focus {
-	background: #0f766e;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -762,7 +761,7 @@
 .qlpk-notification-center-panel__close:hover,
 .qlpk-notification-center-panel__close:focus {
 	background: #fff3dc;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 }
 
 .qlpk-notification-center-panel__toolbar {
@@ -775,10 +774,10 @@
 
 .qlpk-notification-center-panel__filter {
 	padding: 0.375rem 0.75rem;
-	border: thin solid rgba(75, 39, 25, 0.22);
+	border: thin solid rgba(var(--qlpk-brown-800-rgb), 0.22);
 	border-radius: 999px;
 	background: #fffdf9;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-family: inherit;
 	font-size: var(--qlpk-font-size-base, 13px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
@@ -788,7 +787,7 @@
 .qlpk-notification-center-panel__filter.is-active,
 .qlpk-notification-center-panel__filter:hover,
 .qlpk-notification-center-panel__filter:focus {
-	border-color: rgba(15, 118, 110, 0.34);
+	border-color: rgba(var(--qlpk-color-primary-rgb), 0.34);
 	background: #e6f7fb;
 	color: #075e75;
 }
@@ -814,7 +813,7 @@
 	justify-items: center;
 	gap: 0.375rem;
 	padding: 1.5rem 0.875rem;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	text-align: center;
@@ -836,14 +835,14 @@
 	align-items: center;
 	gap: 0.5rem;
 	border: 0;
-	background: #4b2719;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fffaf3;
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
 .qlpk-notification-center-panel__read-all:hover,
 .qlpk-notification-center-panel__read-all:focus {
-	background: #5a301f;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fffaf3;
 }
 
@@ -966,7 +965,7 @@
 .qlpk-app-header__menu-action:hover,
 .qlpk-app-header__menu-action:focus {
 	background: #fff3dc;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 }
 
 .qlpk-app-header__logout,
@@ -1015,14 +1014,15 @@
 
 .qlpk-password-modal .form-control {
 	height: 38px;
-	border-color: rgba(107, 66, 44, 0.22);
 	border-radius: 10px;
-	background: #fff;
-	color: #352821;
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
-
-.qlpk-password-modal .form-control:focus {
+.qlpk-password-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: rgba(107, 66, 44, 0.22);
+	background: #fff;
+	color: #352821;
+}
+.qlpk-password-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: rgba(107, 66, 44, 0.5);
 	box-shadow: 0 0 0 0.18rem rgba(107, 66, 44, 0.12);
 }
@@ -1054,14 +1054,14 @@
 	align-items: center;
 	gap: 0.5rem;
 	border: 0;
-	background: #4b2719;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fffaf3;
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
 .qlpk-password-modal__submit:hover,
 .qlpk-password-modal__submit:focus {
-	background: #5a301f;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fffaf3;
 }
 
@@ -1155,7 +1155,7 @@
 
 	.qlpk-app-header__global-search-group-label {
 		padding: 0.55rem 0.75rem;
-		border-bottom: thin solid rgba(75, 39, 25, 0.08);
+		border-bottom: thin solid rgba(var(--qlpk-brown-800-rgb), 0.08);
 	}
 
 	.qlpk-app-header__global-search-item,
@@ -1195,7 +1195,7 @@ body.qlpk-workspace-shell .qlpk-workspace-main {
 	height: 100vh;
 	min-height: 0;
 	overflow: hidden;
-	background: #fbf8f2;
+	background: var(--qlpk-workspace-bg, #fbf8f2);
 }
 
 body.qlpk-workspace-shell .qlpk-app-header-host {
@@ -1319,7 +1319,7 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 .qlpk-app-launcher__backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgba(14, 57, 60, 0.22);
+	background: rgba(var(--qlpk-color-primary-rgb), 0.22);
 }
 
 .qlpk-app-launcher__panel {
@@ -1331,10 +1331,10 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	max-height: none;
 	margin: 0.375rem auto 0;
 	padding: clamp(0.375rem, 1.6vw, 0.75rem);
-	border: thin solid rgba(33, 150, 136, 0.18);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.18);
 	border-radius: 0.625rem;
-	background: linear-gradient(135deg, #f9fffc 0%, #effaf6 54%, #e4f4ef 100%);
-	box-shadow: 0 1.5rem 4.375rem rgba(14, 57, 60, 0.18);
+	background: linear-gradient(135deg, var(--qlpk-color-surface-warm) 0%, var(--qlpk-color-page-bg) 54%, var(--qlpk-color-brown-soft) 100%);
+	box-shadow: 0 1.5rem 4.375rem rgba(var(--qlpk-color-primary-rgb), 0.18);
 	overflow: hidden;
 }
 
@@ -1345,10 +1345,10 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	width: 100%;
 	height: clamp(2.25rem, 5dvh, 2.5rem);
 	padding: 0 clamp(0.5rem, 2vw, 0.75rem);
-	border: thin solid rgba(15, 118, 110, 0.2);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.2);
 	border-radius: 0.5rem;
-	background: #fbfffd;
-	color: #0f766e;
+	background: var(--qlpk-color-surface);
+	color: var(--qlpk-color-primary);
 }
 
 .qlpk-app-launcher__search input {
@@ -1356,13 +1356,13 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	border: 0;
 	outline: 0;
 	background: transparent;
-	color: #183c3c;
+	color: var(--qlpk-color-text);
 	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
 .qlpk-app-launcher__search input::placeholder {
-	color: #557673;
+	color: var(--qlpk-color-text-muted);
 }
 
 .qlpk-app-launcher__body {
@@ -1374,16 +1374,21 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 
 .qlpk-app-launcher__grid {
 	display: grid;
-	--qlpk-launcher-tile-bg: rgba(251, 255, 253, 0.82);
-	--qlpk-launcher-tile-hover-bg: #edf9f5;
-	--qlpk-launcher-tile-border: rgba(32, 168, 153, 0.28);
-	--qlpk-launcher-tile-border-hover: #0f766e;
-	--qlpk-launcher-icon-start: #0f766e;
-	--qlpk-launcher-icon-end: #46a38f;
-	--qlpk-launcher-icon-shadow: rgba(15, 118, 110, 0.22);
-	--qlpk-launcher-caption: #225b58;
-	--qlpk-launcher-group-bg: rgba(251, 255, 253, 0.72);
-	--qlpk-launcher-group-border: rgba(32, 168, 153, 0.2);
+	--qlpk-launcher-tile-bg: rgba(255, 253, 249, 0.82);
+	--qlpk-launcher-tile-hover-bg: var(--qlpk-color-primary-soft);
+	--qlpk-launcher-tile-border: rgba(var(--qlpk-color-primary-rgb), 0.28);
+	--qlpk-launcher-tile-border-hover: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-start: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-end: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-shadow: rgba(var(--qlpk-color-primary-rgb), 0.22);
+	--qlpk-launcher-caption: var(--qlpk-color-primary);
+	/* Tier mặc định. Mỗi nhóm ghi đè để có định danh thị giác riêng bằng
+	 * sắc độ, không bằng hue mới. */
+	--qlpk-launcher-tier-ink: var(--qlpk-brown-800);
+	--qlpk-launcher-tier-chip: var(--qlpk-brown-150);
+	--qlpk-launcher-tier-chip-hover: var(--qlpk-brown-200);
+	--qlpk-launcher-group-bg: rgba(255, 253, 249, 0.72);
+	--qlpk-launcher-group-border: rgba(var(--qlpk-color-primary-rgb), 0.2);
 	grid-template-rows: auto minmax(0, 1fr);
 	gap: clamp(0.375rem, 1.6vw, 0.625rem);
 	min-height: 0;
@@ -1406,11 +1411,11 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	--qlpk-launcher-tab-bg: rgba(251, 255, 253, 0.74);
-	--qlpk-launcher-tab-border: rgba(15, 118, 110, 0.2);
-	--qlpk-launcher-tab-color: #225b58;
-	--qlpk-launcher-tab-active-bg: #0f766e;
-	--qlpk-launcher-tab-active-border: #0f766e;
+	--qlpk-launcher-tab-bg: rgba(255, 253, 249, 0.74);
+	--qlpk-launcher-tab-border: rgba(var(--qlpk-color-primary-rgb), 0.2);
+	--qlpk-launcher-tab-color: var(--qlpk-color-primary);
+	--qlpk-launcher-tab-active-bg: var(--qlpk-color-primary);
+	--qlpk-launcher-tab-active-border: var(--qlpk-color-primary);
 	height: clamp(1.875rem, 4.5dvh, 2.25rem);
 	padding: 0 clamp(0.375rem, 1.6vw, 0.625rem);
 	border: thin solid var(--qlpk-launcher-tab-border);
@@ -1424,33 +1429,12 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	cursor: pointer;
 }
 
-.qlpk-app-launcher__tab--operations {
-	--qlpk-launcher-tab-bg: #effdfb;
-	--qlpk-launcher-tab-border: rgba(15, 118, 110, 0.26);
-	--qlpk-launcher-tab-color: #176762;
-	--qlpk-launcher-tab-active-bg: #0f766e;
-	--qlpk-launcher-tab-active-border: #0f766e;
-}
 
-.qlpk-app-launcher__tab--inventory {
-	--qlpk-launcher-tab-bg: #f3fbef;
-	--qlpk-launcher-tab-border: rgba(79, 132, 70, 0.28);
-	--qlpk-launcher-tab-color: #3d6c45;
-	--qlpk-launcher-tab-active-bg: #4f8446;
-	--qlpk-launcher-tab-active-border: #4f8446;
-}
 
-.qlpk-app-launcher__tab--admin {
-	--qlpk-launcher-tab-bg: #eef8ff;
-	--qlpk-launcher-tab-border: rgba(36, 95, 133, 0.28);
-	--qlpk-launcher-tab-color: #245f85;
-	--qlpk-launcher-tab-active-bg: #245f85;
-	--qlpk-launcher-tab-active-border: #245f85;
-}
 
 .qlpk-app-launcher__tab.is-active {
 	border-color: var(--qlpk-launcher-tab-active-border);
-	background: var(--qlpk-launcher-tab-active-bg);
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #ffffff;
 }
 
@@ -1470,11 +1454,31 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	display: grid;
 }
 
+/* Phân tầng nhóm theo tần suất dùng: nghiệp vụ lõi đậm nhất, quản trị lùi lại.
+ * Chỉ đổi độ sáng và một điểm nhấn gold, giữ nguyên hệ nâu-kem. */
+.qlpk-app-launcher__group--operations {
+	--qlpk-launcher-tier-ink: var(--qlpk-brown-800);
+	--qlpk-launcher-tier-chip: var(--qlpk-brown-200);
+	--qlpk-launcher-tier-chip-hover: var(--qlpk-brown-300);
+}
+
+.qlpk-app-launcher__group--inventory {
+	--qlpk-launcher-tier-ink: var(--qlpk-brown-700);
+	--qlpk-launcher-tier-chip: color-mix(in srgb, var(--qlpk-color-gold) 30%, var(--qlpk-brown-100));
+	--qlpk-launcher-tier-chip-hover: color-mix(in srgb, var(--qlpk-color-gold) 48%, var(--qlpk-brown-100));
+}
+
+.qlpk-app-launcher__group--admin {
+	--qlpk-launcher-tier-ink: var(--qlpk-brown-500);
+	--qlpk-launcher-tier-chip: var(--qlpk-brown-150);
+	--qlpk-launcher-tier-chip-hover: var(--qlpk-brown-200);
+}
+
 .qlpk-app-launcher__group-title {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	color: var(--qlpk-launcher-caption);
+	color: var(--qlpk-launcher-tier-ink);
 	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1.2;
@@ -1487,7 +1491,7 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	width: 0.5rem;
 	height: 0.5rem;
 	border-radius: 50%;
-	background: linear-gradient(135deg, var(--qlpk-launcher-icon-start) 0%, var(--qlpk-launcher-icon-end) 100%);
+	background: var(--qlpk-launcher-tier-ink);
 }
 
 .qlpk-app-launcher__row {
@@ -1500,47 +1504,8 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	min-height: 0;
 }
 
-.qlpk-app-launcher__group--operations,
-.qlpk-app-launcher__row--operations {
-	--qlpk-launcher-tile-bg: rgba(237, 253, 250, 0.94);
-	--qlpk-launcher-tile-hover-bg: #def8f4;
-	--qlpk-launcher-tile-border: rgba(15, 118, 110, 0.28);
-	--qlpk-launcher-tile-border-hover: #0f8f83;
-	--qlpk-launcher-icon-start: #0f766e;
-	--qlpk-launcher-icon-end: #18a99d;
-	--qlpk-launcher-icon-shadow: rgba(15, 118, 110, 0.22);
-	--qlpk-launcher-caption: #176762;
-	--qlpk-launcher-group-bg: linear-gradient(135deg, rgba(239, 253, 250, 0.78) 0%, rgba(224, 248, 244, 0.7) 100%);
-	--qlpk-launcher-group-border: rgba(20, 148, 134, 0.34);
-}
 
-.qlpk-app-launcher__group--inventory,
-.qlpk-app-launcher__row--inventory {
-	--qlpk-launcher-tile-bg: rgba(246, 252, 241, 0.94);
-	--qlpk-launcher-tile-hover-bg: #edf8e7;
-	--qlpk-launcher-tile-border: rgba(79, 132, 70, 0.32);
-	--qlpk-launcher-tile-border-hover: #4f8446;
-	--qlpk-launcher-icon-start: #4f8446;
-	--qlpk-launcher-icon-end: #7aaa58;
-	--qlpk-launcher-icon-shadow: rgba(79, 132, 70, 0.22);
-	--qlpk-launcher-caption: #3d6c45;
-	--qlpk-launcher-group-bg: linear-gradient(135deg, rgba(246, 252, 241, 0.8) 0%, rgba(233, 247, 227, 0.72) 100%);
-	--qlpk-launcher-group-border: rgba(79, 132, 70, 0.32);
-}
 
-.qlpk-app-launcher__group--admin,
-.qlpk-app-launcher__row--admin {
-	--qlpk-launcher-tile-bg: rgba(240, 249, 255, 0.94);
-	--qlpk-launcher-tile-hover-bg: #e3f3ff;
-	--qlpk-launcher-tile-border: rgba(36, 95, 133, 0.3);
-	--qlpk-launcher-tile-border-hover: #245f85;
-	--qlpk-launcher-icon-start: #245f85;
-	--qlpk-launcher-icon-end: #4f9abd;
-	--qlpk-launcher-icon-shadow: rgba(36, 95, 133, 0.22);
-	--qlpk-launcher-caption: #245f85;
-	--qlpk-launcher-group-bg: linear-gradient(135deg, rgba(240, 249, 255, 0.82) 0%, rgba(225, 242, 252, 0.74) 100%);
-	--qlpk-launcher-group-border: rgba(36, 95, 133, 0.32);
-}
 
 .qlpk-app-launcher__row--admin {
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.25rem), 1fr));
@@ -1557,7 +1522,7 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	border: thin solid var(--qlpk-launcher-tile-border);
 	border-radius: 0.75rem;
 	background: var(--qlpk-launcher-tile-bg);
-	color: #1e3433;
+	color: var(--qlpk-color-text);
 	cursor: pointer;
 	text-align: center;
 	transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
@@ -1576,10 +1541,14 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	width: clamp(2.25rem, 8vw, 2.75rem);
 	height: clamp(2.25rem, 8vw, 2.75rem);
 	border-radius: 0.625rem;
-	background: linear-gradient(135deg, var(--qlpk-launcher-icon-start) 0%, var(--qlpk-launcher-icon-end) 100%);
-	box-shadow: inset 0 -0.875rem 1.5rem var(--qlpk-launcher-icon-shadow);
-	color: #ffffff;
+	background: var(--qlpk-launcher-tier-chip);
+	color: var(--qlpk-launcher-tier-ink);
 	font-size: var(--qlpk-font-size-2xl, 1.25rem);
+	transition: background 160ms ease;
+}
+
+.qlpk-app-launcher__tile:hover i {
+	background: var(--qlpk-launcher-tier-chip-hover);
 }
 
 .qlpk-app-launcher__tile strong {
@@ -1706,7 +1675,7 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 .qlpk-workspace-tab.is-active {
 	border-color: var(--qlpk-header-accent);
 	background: #fff3dc;
-	color: #4b2719;
+	color: var(--qlpk-brown-800);
 	box-shadow: inset 0 -0.125rem 0 var(--qlpk-header-accent, #d6a069);
 }
 
@@ -1736,7 +1705,7 @@ body.qlpk-workspace-shell .qlpk-app-header-host {
 	position: relative;
 	flex: 1 1 auto;
 	min-height: 0;
-	background: #fbf8f2;
+	background: var(--qlpk-workspace-bg, #fbf8f2);
 }
 
 .qlpk-workspace-pane {
@@ -1790,7 +1759,7 @@ body.qlpk-embedded-page .qlpk-workspace-main {
 	margin-left: 0 !important;
 	padding-left: 0 !important;
 	padding-right: 0 !important;
-	background: #fbf8f2;
+	background: var(--qlpk-workspace-bg, #fbf8f2);
 }
 
 @media (max-width: 1120px) {

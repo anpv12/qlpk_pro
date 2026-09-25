@@ -14,7 +14,7 @@
 /* Phần tiêu đề chính */
 .welcome-header {
     margin-bottom: 10px;
-    border-bottom: 1.5px solid #E2E8F0;
+    border-bottom: 1.5px solid var(--qlpk-color-border);
     padding-bottom: 8px;
 }
 

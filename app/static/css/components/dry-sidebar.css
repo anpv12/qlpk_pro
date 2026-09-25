@@ -1,10 +1,10 @@
 /* CSS Variables for Sidebar */
 :root {
 	--sidebar-bg: #ffffff;
-	--sidebar-hover-bg: #f9fafb;
+	--sidebar-hover-bg: var(--qlpk-color-surface-subtle);
 	--sidebar-active-bg: #f7f1eb;
 	--sidebar-active-text: #7c3f16;
-	--sidebar-text: #111827;
+	--sidebar-text: var(--qlpk-color-text);
 	--sidebar-muted: #667085;
 	--sidebar-border: #e5e7eb;
 	--sidebar-soft-border: #e5e7eb;

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from app.core.database import get_db, SessionLocal
 from app.models.survey_criteria import SurveyCriteria
 from app.api.auth import require_auth
+from app.utils.survey_template_policy import require_survey_manager
 from app.realtime.events import emit_catalog_changed
 import logging
 
@@ -41,6 +42,7 @@ def get_survey_criteria(user):
 
 @survey_criteria_bp.route('/survey-criteria/', methods=['POST'])
 @require_auth
+@require_survey_manager
 def create_survey_criteria(user):
     """Tạo tiêu chí khảo sát mới"""
     try:
@@ -98,6 +100,7 @@ def create_survey_criteria(user):
 
 @survey_criteria_bp.route('/survey-criteria/<int:criteria_id>', methods=['PUT'])
 @require_auth
+@require_survey_manager
 def update_survey_criteria(user, criteria_id):
     """Cập nhật tiêu chí khảo sát"""
     try:
@@ -161,6 +164,7 @@ def update_survey_criteria(user, criteria_id):
 
 @survey_criteria_bp.route('/survey-criteria/<int:criteria_id>', methods=['DELETE'])
 @require_auth
+@require_survey_manager
 def delete_survey_criteria(user, criteria_id):
     """Xóa tiêu chí khảo sát (soft delete)"""
     try:

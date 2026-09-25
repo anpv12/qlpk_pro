@@ -27,7 +27,7 @@
 			const contentArea = document.getElementById('modalContentArea');
 			if (!contentArea || !prescriptionTabData) return;
 
-			const buildPrescriptionPreviewHTML = resolveFunction(deps, 'buildPrescriptionPreviewHTML');
+			const buildPrescriptionScreenHTML = resolveFunction(deps, 'buildPrescriptionScreenHTML');
 			const createBarcodesInElement = resolveFunction(deps, 'createBarcodesInElement');
 			const {
 				prescriptions,
@@ -51,9 +51,8 @@
 			}
 
 			let combinedHtml = '';
-			prescriptions.forEach((rx, index) => {
+			prescriptions.forEach(rx => {
 				const pType = rx.type || 'BASIC';
-				const pageColors = PRESCRIPTION_PAGE_COLORS[pType] || { accent: '#6c757d', label: pType };
 
 				const perTypePrescriptionData = {
 					medicines: rx.medicines || [],
@@ -61,11 +60,12 @@
 					prescription_type: rx.type || 'BASIC',
 					usage_instructions: fullPrescriptionData?.usage_instructions || '',
 					re_examination_date: fullPrescriptionData?.re_examination_date || null,
+					show_re_examination_date: fullPrescriptionData?.show_re_examination_date,
 					re_examination_time: fullPrescriptionData?.re_examination_time || null,
 					total_amount: rx.total_amount || 0
 				};
 
-				const previewHtml = buildPrescriptionPreviewHTML({
+				const previewHtml = buildPrescriptionScreenHTML({
 					clinicInfo,
 					patient,
 					history,
@@ -76,18 +76,7 @@
 					overridePrescriptionType: pType
 				});
 
-				const typeBadge = totalPages > 1 ? `
-					<div style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; margin-bottom: 8px; background: #f8f9fa; border-left: 4px solid ${pageColors.accent}; border-radius: 0 6px 6px 0;">
-						<span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${pageColors.accent}; flex-shrink: 0;"></span>
-						<span style="font-weight: var(--qlpk-font-weight-semibold, 600); font-size: var(--qlpk-font-size-md, 14px); color: ${pageColors.accent};">${pageColors.label}</span>
-					</div>
-				` : '';
-
-				const separator = index < totalPages - 1 ? `
-					<div style="border-top: 2px dashed #dee2e6; margin: 16px 0;"></div>
-				` : '';
-
-				combinedHtml += typeBadge + previewHtml + separator;
+				combinedHtml += previewHtml;
 			});
 
 			contentArea.innerHTML = combinedHtml;

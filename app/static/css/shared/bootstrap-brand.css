@@ -1,0 +1,116 @@
+/* Map Bootstrap's brand controls to the clinic palette. Semantic feedback
+ * colors remain Bootstrap/feedback-token owned. Load after Bootstrap. */
+:root {
+	--bs-success-rgb: var(--qlpk-feedback-success-rgb);
+	--bs-info-rgb: var(--qlpk-feedback-info-rgb);
+	--bs-warning-rgb: var(--qlpk-feedback-warning-rgb);
+	--bs-danger-rgb: var(--qlpk-feedback-error-rgb);
+	--bs-secondary-rgb: var(--qlpk-feedback-neutral-rgb);
+	--bs-primary: var(--qlpk-color-primary);
+	--bs-primary-rgb: var(--qlpk-color-primary-rgb);
+	--bs-primary-text-emphasis: var(--qlpk-color-primary-strong);
+	--bs-primary-bg-subtle: var(--qlpk-color-primary-soft);
+	--bs-primary-border-subtle: var(--qlpk-color-border);
+	--bs-link-color: var(--qlpk-color-primary);
+	--bs-link-color-rgb: var(--qlpk-color-primary-rgb);
+	--bs-link-hover-color: var(--qlpk-color-primary-strong);
+	--bs-link-hover-color-rgb: var(--qlpk-color-primary-strong-rgb);
+	--bs-body-color: var(--qlpk-color-text);
+	--bs-body-bg: var(--qlpk-color-page-bg);
+	--bs-border-color: var(--qlpk-color-border);
+	--bs-tertiary-bg: var(--qlpk-color-brown-soft);
+}
+.btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	--bs-btn-border-color: var(--qlpk-color-primary);
+	--bs-btn-hover-bg: var(--qlpk-color-primary-strong);
+	--bs-btn-hover-border-color: var(--qlpk-color-primary-strong);
+	--bs-btn-hover-color: var(--qlpk-color-white);
+	--bs-btn-active-bg: var(--qlpk-color-primary-strong);
+	--bs-btn-active-border-color: var(--qlpk-color-primary-strong);
+	--bs-btn-active-color: var(--qlpk-color-white);
+	--bs-btn-focus-shadow-rgb: var(--qlpk-color-primary-rgb);
+	--bs-btn-disabled-border-color: var(--qlpk-color-primary);
+}
+.btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	--bs-btn-bg: var(--qlpk-color-primary);
+	--bs-btn-color: var(--qlpk-color-white);
+	--bs-btn-disabled-bg: var(--qlpk-color-primary);
+	--bs-btn-disabled-color: var(--qlpk-color-white);
+}
+.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	--bs-btn-color: var(--qlpk-color-primary);
+	--bs-btn-disabled-color: var(--qlpk-color-primary);
+}
+.btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.btn-outline-primary:active:not([data-qlpk-button], [data-qlpk-button] *),
+.btn-outline-primary.active:not([data-qlpk-button], [data-qlpk-button] *),
+.btn-check:checked + .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.show > .btn-outline-primary.dropdown-toggle:not([data-qlpk-button], [data-qlpk-button] *),
+.bg-primary,
+.text-bg-primary,
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link,
+.pagination .page-item.active .page-link,
+.pagination .page-link.active,
+.progress-bar {
+	background-image: var(--qlpk-workflow-context-header-bg);
+}
+.nav-pills { --bs-nav-pills-link-active-bg: var(--qlpk-color-primary); }
+.pagination {
+	--bs-pagination-color: var(--qlpk-color-primary);
+	--bs-pagination-hover-color: var(--qlpk-color-primary-strong);
+	--bs-pagination-focus-color: var(--qlpk-color-primary-strong);
+	--bs-pagination-focus-box-shadow: 0 0 0 .25rem var(--qlpk-color-border-light);
+	--bs-pagination-active-bg: var(--qlpk-color-primary);
+	--bs-pagination-active-border-color: var(--qlpk-color-primary);
+}
+.progress { --bs-progress-bar-bg: var(--qlpk-color-primary); }
+.form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.form-select:focus,
+.form-check-input:focus {
+	border-color: var(--qlpk-color-focus);
+	box-shadow: 0 0 0 .25rem var(--qlpk-color-border-light);
+}
+.form-check-input:checked {
+	background-color: var(--qlpk-color-primary);
+	border-color: var(--qlpk-color-primary);
+}
+.form-check-input:checked,
+.form-check-input:indeterminate {
+	background-image: var(--bs-form-check-bg-image), var(--qlpk-workflow-context-header-bg);
+}
+.accordion {
+	--bs-accordion-active-color: var(--qlpk-color-primary);
+	--bs-accordion-active-bg: var(--qlpk-color-primary-soft);
+	--bs-accordion-btn-focus-box-shadow: 0 0 0 .25rem var(--qlpk-color-border-light);
+}
+
+/* Native choice controls also appear in survey grids and permission trees. */
+input[type="checkbox"], input[type="radio"] {
+	accent-color: var(--qlpk-color-primary);
+}
+
+/* Opt-in for operational data tables; status colors belong to badges, not rows. */
+.qlpk-data-tables .table {
+	--bs-table-bg: var(--qlpk-color-surface);
+	--bs-table-color: var(--qlpk-color-neutral-700);
+	--bs-table-border-color: var(--qlpk-color-border);
+	--bs-table-hover-bg: var(--qlpk-color-page-bg);
+	--bs-table-hover-color: var(--qlpk-color-neutral-700);
+	--bs-table-striped-bg: transparent;
+	border-collapse: collapse;
+}
+.qlpk-data-tables .table > :not(caption) > * > * {
+	border: 1px solid var(--bs-table-border-color);
+}
+.qlpk-data-tables .table > thead {
+	--bs-table-bg: var(--qlpk-color-brown-soft);
+}
+.qlpk-data-tables .table > tbody > tr:hover > * {
+	--bs-table-bg-state: var(--bs-table-hover-bg);
+}
+.qlpk-data-tables .table > tbody > tr:has(.qlpk-row-select:checked) > * {
+	--bs-table-bg-state: var(--qlpk-color-primary-soft);
+}

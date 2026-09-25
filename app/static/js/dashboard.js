@@ -413,7 +413,7 @@ class DashboardManager {
 					<td class="py-2">${it.doctor_name}</td>
 					<td class="py-2 dashboard-cell-muted">${it.service || '—'}</td>
 					<td class="pe-3 py-2 text-center">
-						<span class="dashboard-status-pill ${this.getExamStatusClass(it.status)}">${it.status}</span>
+						<span class="qlpk-status dashboard-status-pill ${this.getExamStatusClass(it.status)}">${it.status}</span>
 					</td>
 				</tr>`;
 			}).join('');

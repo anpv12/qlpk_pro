@@ -175,12 +175,12 @@
 
 	function renderRecentlyEditedBadge(isRecentlyEdited) {
 		if (!isRecentlyEdited) return '';
-		return '<span class="qlpk-waiting-card__edited-badge"><i class="bi bi-clock-history" aria-hidden="true"></i><span>Vừa cập nhật</span></span>';
+		return '<span class="qlpk-status qlpk-status--success qlpk-waiting-card__edited-badge"><i class="bi bi-clock-history" aria-hidden="true"></i><span>Vừa cập nhật</span></span>';
 	}
 
 	function renderStatusBadgeHtml(statusText, statusClass, statusBadgeClass) {
 		if (!statusText) return '';
-		return `<span class="${joinClasses('qlpk-waiting-card__status', statusClass, statusBadgeClass)}">${escapeHtml(statusText)}</span>`;
+		return `<span class="${joinClasses('qlpk-status', 'qlpk-waiting-card__status', statusClass, statusBadgeClass)}">${escapeHtml(statusText)}</span>`;
 	}
 
 	function renderActionButton(action, title, attrs = {}, className = '') {
@@ -191,7 +191,8 @@
 
 		const attrHtml = buildAttributes(Object.assign({ type: 'button', title, 'aria-label': title }, attrs));
 		const fallbackIcon = action === 'delete' ? 'bi-trash' : action === 'edit' ? 'bi-pencil-square' : 'bi-arrow-right-circle';
-		return `<button class="${escapeHtml(buttonClass)}"${attrHtml ? ` ${attrHtml}` : ''}><i class="bi ${fallbackIcon}" aria-hidden="true"></i></button>`;
+		const buttonRole = action === 'delete' ? 'danger' : action === 'edit' ? 'edit' : 'execute';
+		return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" class="${escapeHtml(buttonClass)}"${attrHtml ? ` ${attrHtml}` : ''}><i class="bi ${fallbackIcon}" aria-hidden="true"></i></button>`;
 	}
 
 	function normalizeActionConfig(actionConfig, appointment = {}) {
@@ -371,7 +372,7 @@
 		const patientAfterHtml = options.patientAfterHtml || '';
 		const identityHtml = buildIdentityHtml(options.identityItems || []);
 		const scheduleItems = [options.timeText, options.dateText].filter(Boolean);
-		const statusClass = joinClasses('qlpk-waiting-card__status', options.statusClass, options.statusBadgeClass);
+		const statusClass = joinClasses('qlpk-status', 'qlpk-waiting-card__status', options.statusClass, options.statusBadgeClass);
 		const statusHtml = options.statusText
 			? `<div class="qlpk-waiting-card__status-wrap"><span class="${statusClass}">${escapeHtml(options.statusText)}</span></div>`
 			: '';
@@ -404,7 +405,7 @@
 		const patientAfterHtml = options.patientAfterHtml || '';
 		const identityHtml = options.identityHtml || buildIdentityHtml(options.identityItems || []);
 		const statusHtml = options.statusHtml || renderStatusBadgeHtml(options.statusText || '', options.statusClass, options.statusBadgeClass);
-		const statusClass = joinClasses('qlpk-waiting-card__status', options.statusClass, options.statusBadgeClass);
+		const statusClass = joinClasses('qlpk-status', 'qlpk-waiting-card__status', options.statusClass, options.statusBadgeClass);
 		const metaHtml = options.metaHtml || buildMetaHtml(options.metaItems || []);
 		const actionsHtml = options.actionsHtml || '';
 		const articleAttrs = attrs ? ` ${attrs}` : '';

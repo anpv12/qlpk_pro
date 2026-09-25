@@ -72,7 +72,7 @@
 				<form class="doctor-clinical-form" id="patientForm" autocomplete="off">
 					<input type="hidden" id="patientId" name="patientId">
 
-					<header class="doctor-patient-hero" aria-labelledby="psychologistClinicalHeading">
+					<header class="doctor-patient-hero" data-qlpk-button-surface="dark" aria-labelledby="psychologistClinicalHeading">
 						<div class="doctor-patient-hero__summary">
 							<div class="doctor-patient-hero__body">
 								<div class="doctor-patient-hero__title-row">
@@ -83,13 +83,13 @@
 							</div>
 							<div class="doctor-patient-hero__actions">
 								<div class="doctor-patient-hero__action-buttons">
-									<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="historyBtn">
+									<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="historyBtn">
 										<i class="bi bi-clock-history" aria-hidden="true"></i><span>Lịch sử</span>
 									</button>
-									<button type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="saveInfoBtn">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="saveInfoBtn">
 										<i class="bi bi-floppy" aria-hidden="true"></i><span>Lưu</span>
 									</button>
-									<button type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="completeExaminationBtn">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="completeExaminationBtn">
 										<i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Hoàn thành</span>
 									</button>
 								</div>

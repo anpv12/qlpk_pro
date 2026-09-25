@@ -1,23 +1,25 @@
 		/* Add/Import buttons */
 		.btn-action {
-			background: #0F766E;
-			color: #fff;
 			border: none;
-			border-radius: 8px;
+			border-radius: var(--clinic-control-radius, 8px);
 			padding: 7px 12px;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
 			cursor: pointer;
 			display: flex;
 			align-items: center;
 			gap: 5px;
 			white-space: nowrap;
-		}
-
-		.btn-action:hover {
-			background: #0D6B63;
+}
+/* Add/Import buttons */
+		.btn-action:not([data-qlpk-button], [data-qlpk-button] *) {
+			background: var(--qlpk-workflow-context-header-bg);
 			color: #fff;
-		}
+}
+.btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+			background: var(--qlpk-workflow-context-header-bg);
+			color: #fff;
+}
 		
 		/* Modal compact */
 		.modal-header {
@@ -35,7 +37,7 @@
 		.section-title {
 			font-size: var(--qlpk-font-size-base, 13px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #1E293B;
+			color: var(--qlpk-color-text);
 			margin-bottom: 6px;
 			display: flex;
 			align-items: center;
@@ -43,7 +45,7 @@
 		}
 
 		.section-title i {
-			color: #0F766E;
+			color: var(--qlpk-color-primary);
 		}
 		
 		/* Switch toggle for status */
@@ -52,17 +54,16 @@
 			cursor: pointer;
 		}
 			.form-switch .form-check-input:checked {
-				background-color: #0F766E;
-				border-color: #0F766E;
+				background-image: var(--bs-form-check-bg-image), var(--qlpk-workflow-context-header-bg);
+				border-color: var(--qlpk-color-primary);
 			}
 
 .catalog-dict-main {
 	padding: 16px 20px;
 }
 
-.catalog-dict-hidden,
-.catalog-dict-pagination.is-hidden {
-	display: none !important;
+.catalog-dict-hidden {
+	display: none;
 }
 
 .catalog-dict-col-index {
@@ -82,22 +83,8 @@
 	text-align: center;
 }
 
-.catalog-dict-pagination-info {
-	font-size: var(--qlpk-font-size-base, 13px);
-	color: #64748B;
-}
-
-.catalog-dict-page-btn {
-	padding: 4px 10px;
-}
-
-.catalog-dict-page-current {
-	font-size: var(--qlpk-font-size-base, 13px);
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-}
-
 .catalog-dict-modal-header {
-	background: #0F766E;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 	border-radius: 8px 8px 0 0;
 }
@@ -105,15 +92,14 @@
 .catalog-dict-modal-body {
 	padding: 10px;
 }
-
-.catalog-dict-primary-btn {
-	background: #0F766E;
+.catalog-dict-primary-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
 	color: #fff;
 }
 
 .catalog-dict-name-cell {
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	color: #0F766E;
+	color: var(--qlpk-color-primary);
 }
 
 .catalog-dict-desc-cell {

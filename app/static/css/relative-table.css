@@ -12,7 +12,7 @@
     align-items: center;
     padding: 10px 12px;
     background: #ffffff;
-    color: #111827;
+    color: var(--qlpk-color-text);
     border-bottom: 1px solid #e5e7eb;
 }
 
@@ -26,27 +26,32 @@
 
 .relative-table-title-icon {
 	margin-inline-end: 0.5rem;
-	color: #0f766e;
+	color: var(--qlpk-color-primary);
 }
 
 .relative-table-add-btn {
     border-radius: 50px;
     font-size: var(--qlpk-font-size-sm, 12px) !important;
     padding: 6px 16px;
+	border-width: 1px;
+	border-style: solid;
+}
+.relative-table-add-btn:not([data-qlpk-button], [data-qlpk-button] *) {
     border: 1px solid #d9dee7;
     background: #ffffff;
-    color: #111827;
+    color: var(--qlpk-color-text);
     transition: background 0.2s, color 0.2s;
 }
-
-.relative-table-add-btn:hover {
-    background: #f9fafb;
-    color: #111827;
+.relative-table-add-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+    background: var(--qlpk-color-surface-subtle);
+    color: var(--qlpk-color-text);
 }
 
 .relative-table-add-btn:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
+}
+.relative-table-add-btn:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
+    opacity: 0.5;
 }
 
 .relative-table-body {
@@ -107,7 +112,7 @@
 }
 
 .relative-table thead th {
-    background: #f9fafb;
+    background: var(--qlpk-color-surface-subtle);
     font-size: var(--qlpk-font-size-sm, 12px);
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -210,7 +215,7 @@
         gap: 0.38rem;
         padding: 0.5rem 0.625rem;
         border: 1px solid #e5e7eb;
-        border-left: 0.1875rem solid var(--receptionist-section-header-accent, #0f766e);
+        border-left: 0.1875rem solid var(--receptionist-section-header-accent, var(--qlpk-color-primary));
         border-radius: 0.5rem;
         background: #ffffff;
     }
@@ -300,7 +305,7 @@
 
 .relative-row-input:focus {
     outline: none;
-    border-color: #0d6efd;
+    border-color: var(--qlpk-color-primary);
     box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
 }
 
@@ -316,7 +321,7 @@
 }
 
 .relative-table-emergency-icon {
-	color: #198754;
+	color: var(--qlpk-feedback-success);
 	font-size: var(--qlpk-font-size-2xl, 20px);
 }
 
@@ -337,28 +342,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+.relative-row-actions button:not(.qlpk-icon-action):not([data-qlpk-button], [data-qlpk-button] *) {
     background: none;
     color: #dc3545;
     transition: background 0.2s;
 }
-
-.relative-row-actions button:not(.qlpk-icon-action):hover {
+.relative-row-actions button:not(.qlpk-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: rgba(220, 53, 69, 0.12);
 }
-
-.relative-row-actions .btn-save:not(.qlpk-icon-action) {
+.relative-row-actions .btn-save:not(.qlpk-icon-action):not([data-qlpk-button], [data-qlpk-button] *) {
     color: #198754;
 }
-
-.relative-row-actions .btn-save:not(.qlpk-icon-action):hover {
+.relative-row-actions .btn-save:not(.qlpk-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: rgba(25, 135, 84, 0.15);
 }
-
-.relative-row-actions .btn-cancel:not(.qlpk-icon-action) {
+.relative-row-actions .btn-cancel:not(.qlpk-icon-action):not([data-qlpk-button], [data-qlpk-button] *) {
     color: #6c757d;
 }
-
-.relative-row-actions .btn-cancel:not(.qlpk-icon-action):hover {
+.relative-row-actions .btn-cancel:not(.qlpk-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background: rgba(108, 117, 125, 0.15);
 }
 
@@ -369,7 +371,7 @@
 }
 
 .relative-name-link {
-    color: #0d6efd;
+    color: var(--qlpk-color-primary);
     font-weight: var(--qlpk-font-weight-semibold, 600);
     cursor: pointer;
     text-decoration: none;
@@ -404,7 +406,7 @@
     height: 18px;
     border-radius: 50%;
     border: 2px solid rgba(13, 110, 253, 0.2);
-    border-top-color: #0d6efd;
+    border-top-color: var(--qlpk-color-primary);
     animation: relativeSpin 0.8s linear infinite;
 }
 
@@ -473,7 +475,7 @@
 
 .relative-search-item:hover,
 .relative-search-item.active {
-    background-color: #e3f2fd;
+    background-color: var(--qlpk-color-primary-soft);
 }
 
 .relative-search-item.no-results {

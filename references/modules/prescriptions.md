@@ -1,17 +1,258 @@
 # Prescription Module Context
 
+### PDF preview (2026-09-21)
+
+- Caller `PrescriptionPrintDocument.render()` phải await: HTML mẫu in hiện
+  hữu gửi tới `POST /api/print/preview.pdf`, mở Blob PDF trong tab đã tạo khi
+  click. Không print/afterprint/auto-close; Ctrl+P/Cmd+P do người dùng chọn.
+- QR fetch same-origin rồi inline; thiếu QR bắt buộc phải báo lỗi. Barcode
+  dùng JsBarcode nội bộ; không lưu draft hoặc thay đổi lượt khám.
+- Worker dùng process riêng, chỉ đọc static và dữ liệu HTML nhận vào,
+  không chạy JS client, không truy DB/API hoặc tải tài nguyên mạng ngoài.
+
+## Lịch sử kê đơn theo lần nhập tại tủ thuốc (2026-09-21)
+
+- Nút mở lịch sử dùng class `mm-receipt-history-button`: hover/focus-visible/
+  active đồng bộ chữ trắng với gradient thương hiệu, không kế thừa chữ tối
+  của các nút phụ modal nhập. Không animate màu chữ khi gradient đổi ngay.
+- Thanh lọc dùng chung geometry cho input/select/button trong scope
+  `receiptDispensingFilters`: min-height36px, padding6px10px, line-height,
+  font và radius chung. Không dùng chiều cao cố định hoặc bỏ focus ring;
+  select giữ padding phải dành cho mũi tên. Không sửa primitive toàn cục.
+- UI sửa theo phản hồi thẩm mỹ: header dùng gradient thương hiệu chung,
+  body/footer nền trắng, header bảng xám trung tính; không phủ kem modal.
+  Theo yêu cầu user, bỏ khối tên thuốc/lô/ngày nhập phía trên thanh lọc
+  cùng writer và CSS riêng; batch ID nội bộ vẫn lọc đúng lần nhập.
+  Bệnh nhân là thông tin chính, ngày khám là dòng phụ; cấp/hoàn
+  có cột Loại riêng, số lượng/tồn căn phải. Modal giới hạn 76rem, cuộn trong bảng;
+  footer gọn và chỉ hiện nút phân trang khi có hơn một trang.
+- Trong tab Lịch sử nhập, mỗi dòng có nút “Lịch sử kê đơn” mở modal riêng
+  `receiptDispensingModal`; không chia đôi bảng hoặc mở chi tiết inline.
+  Đóng modal giữ bộ lọc, trang và focus của danh sách nhập.
+- Dùng GET `/api/medicine/statistics/ledger?batch_id=...`, lọc đúng ID
+  `medicine_batches`, không gom theo chuỗi số lô vì nhiều lần nhập có thể
+  cùng số lô. Quyền đọc và payload ledger hiện có được giữ nguyên.
+- Modal đọc bệnh nhân/lượt khám, ngày khám, thời điểm cấp/hoàn, số lượng,
+  người thực hiện, `balance_after` (tồn lần nhập) và `stock_balance_after`
+  (tồn tổng thuốc) ngay sau giao dịch. Không lấy tồn hiện tại thay lịch sử.
+- Tìm tên bệnh nhân (có/không dấu) qua `patient_search`, lọc `movement_type`
+  (export/return/price_adjustment) ở backend trước phân trang; lọc hoàn gồm
+  import cũ có note hoàn theo đơn. Bộ lọc chỉ trong batch đang mở, reset khi
+  mở lô khác; response cũ không ghi đè. Tìm kiếm bằng Enter/nút Tìm kiếm,
+  đổi Loại áp dụng ngay; Xóa lọc về trang đầu.
+- Không hiển thị ID lượt khám/lần nhập. Cột Thay đổi kho giữ dấu quantity:
+  âm là trừ, dương có dấu cộng, 0 là Không đổi. Thứ tự mới nhất trước được
+  ghi rõ, ngày khám tách thời điểm thao tác.
+- Dữ liệu cũ thiếu snapshot hiển thị “Chưa ghi nhận”, thiếu liên kết hiển thị
+  “Chưa liên kết lượt khám”. Backend trả `stock_balance_inconsistent` khi
+  cả hai snapshot có giá trị và tồn lô lớn hơn tổng; UI cảnh báo cần đối soát,
+  không chỉnh số hoặc suy tồn. Không suy bệnh nhân
+  từ ghi chú, không backfill hoặc cân lại tồn. Không thêm bảng, không đổi
+  writer cấp/hoàn, không đưa lịch sử giao dịch trở lại ô thuốc màn bác sĩ.
+- QA và giới hạn: `reports/receipt-dispensing-modal-2026-09-21/qa.md`.
+
+## Cách dùng trên bản in/xem trước (2026-09-20)
+
+- Theo yêu cầu user, `prescriptionFormUsage` chỉ hiển thị `usage.note` hoặc
+  usage dạng text cũ; không dựng thêm câu từ schedule/route/medicine_days.
+  Ghi chú đã được editor tự điền hoặc bác sĩ sửa là nguồn nội dung duy nhất.
+- Ghi chú trống giữ placeholder của renderer; không fallback suy liều.
+  Không đổi payload/save, số lượng hay logic tự điền ghi chú ở editor.
+- QA:3 file test standard_form/screen/followup_print đạt; browser local8000
+  đơn798362009001-H trên trang xác thực dùng renderer mẫu giấy hiển thị
+  đúng một câu “Uống 2 viên buổi sáng, trong 30 ngày.”, số lượng60 viên.
+  Không gửi lệnh in vật lý, không sửa đơn hoặc DB.
+
 Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa đơn thuốc, mẫu in, QR verify, prescription public API, shared prescription template, hoặc prescription view model.
 
+## Nhóm đơn theo loại trong bảng kê (2026-09-11)
+
+- Layout cập nhật 2026-09-13: với table-layout fixed, đặt bề rộng tại ô
+  header Lịch uống của hàng đầu (28% cho bốn buổi, 16% cho hai cột lần/ngày).
+  Cột tên thuốc nhận phần còn lại; không đặt width chỉ ở td liều của tbody
+  vì trình duyệt dùng hàng đầu để chia cột. Header/footer cho phép wrap.
+  Body clinical sở hữu cuộn dọc, có gutter stable và khoảng phải 0.65rem
+  cho scrollbar dạng overlay. Bảng vẫn cuộn ngang trong table-wrap.
+- `prescription-row-renderer.js` là owner duy nhất của markup bảng kê. Bảng gom
+  dòng theo loại tài liệu qua `PrescriptionTypeContract.toDocumentType`, thứ tự
+  cố định `DOCUMENT_TYPES` = BASIC → H → N, mỗi nhóm có một hàng tiêu đề
+  `doctor-prescription-table__group-row` kèm mã đơn riêng. STT đánh lại từ 1 ở
+  mỗi nhóm. Thuốc TOXIC tồn đọng rơi về nhóm BASIC đúng theo hợp đồng in.
+- Mã đơn theo loại lấy từ `STATE.prescriptionCodesByType`, truyền vào renderer
+  qua `codesByType`. Nhóm chưa có mã hiển thị `Chưa cấp mã đơn`. Không suy mã
+  từ display text và không tự sinh mã ở frontend.
+- Thứ tự `STATE.prescriptionRows` không đổi; gom nhóm chỉ ở tầng hiển thị. Mọi
+  handler vẫn tra dòng theo `data-prescription-row-id` (uid), không theo index,
+  nên đổi thứ tự hiển thị không ảnh hưởng sửa/xóa/lưu. Hai `<tr>` mỗi thuốc
+  (body + note) đều mang `data-prescription-type`.
+- Colspan hàng nhóm tính bằng `getTableColumnCount(mode)`: 4 cột lịch uống + 6
+  = 10, hoặc chế độ Liều/lần + Lần/ngày là 2 + 6 = 8. Sửa cột bảng phải sửa hàm
+  này, không hardcode.
+- Màu: owner token ở `doctor-prescription.css` (`--qlpk-rx-basic/h/n`).
+  BASIC dùng nâu thương hiệu `--qlpk-color-chocolate`, H tím `#7e57c2`, N cam
+  `#f4511e`; nền nhóm là color-mix 7% trên trắng, thanh accent viền trái.
+  Dropdown tìm thuốc trong `doctor-examination.css` trỏ về đúng token này.
+  **Không dùng `--qlpk-workflow-context-header-bg` cho token màu**: biến đó là
+  linear-gradient, đưa vào `color-mix` hoặc `border` sẽ hỏng im lặng (nền mất,
+  viền về 0) mà không báo lỗi console.
+- QA 2026-09-11: renderer test phủ BASIC/H/N lẫn lộn (thứ tự vào N,BASIC,H,N ra
+  đúng BASIC→H→N; STT 1 / 1 / 1,2), một nhóm, hai nhóm, ba nhóm, bảng rỗng,
+  chế độ Liều/lần colspan 8, thiếu mã đơn, và thuốc TOXIC. Browser ca 1101 dữ
+  liệu thật: 2 dải nhóm đúng nhãn và đúng mã C/H, computed style đúng nâu và
+  tím, không lỗi console. Chưa QA browser nhóm N vì kho không còn thuốc N.
+
+## Contract loại đơn thuốc và chính sách TOXIC (2026-09-11)
+
+- Owner duy nhất: `app/static/js/prescriptions/shared/prescription-type-contract.js`
+  (`window.PrescriptionTypeContract`). Trước đó có 3 bản `normalizePrescriptionType`
+  rời nhau cho cùng một khái niệm. Không tự viết lại hàm phân loại ở nơi khác.
+- Hai khái niệm tách bạch: `normalizeCatalogType` trả loại thuốc trong danh mục
+  (`BASIC/H/N/TOXIC`), còn `toDocumentType` trả loại **tài liệu in** (`BASIC/H/N`,
+  TOXIC quy về BASIC). Trang in phải dùng `toDocumentType`; model/danh mục dùng
+  `normalizeCatalogType`. Nhãn hiển thị lấy từ `getLabel`/`getShortLabel`.
+- Consumer: `prescription-model.js`, `prescription-history-ui.js`,
+  `prescription-print-document.js`. Mỗi consumer throw nếu thiếu contract; phải
+  nạp contract trước chúng trong `doctor-examination-entry.js` và trong
+  `psychologist-examination.html`. Sandbox test/VM cũng phải nạp file này trước.
+- Hai nhánh dựng trang in là **cố ý**, không phải fallback thừa:
+  `buildGroupedPageModels` dùng nhóm backend cho dữ liệu đã lưu (in từ modal
+  lịch sử); `buildFlatPageModels` gom lại ở FE cho màn bác sĩ vì luồng đó in
+  đúng bảng đang mở gồm sửa chưa lưu (`doctor-prescription-print.js` đặt
+  `preferGroupedPrescriptions: false`). Không xóa nhánh flat.
+- TOXIC bị chặn tại nguồn ghi: API tạo/sửa thuốc và import Excel chỉ nhận
+  `BASIC/H/N`; template Excel bỏ lựa chọn "Thuốc độc". Lý do: vòng lặp lưu đơn
+  `save_service.build_prescriptions_by_type` chỉ duyệt `['BASIC','H','N']`, nên
+  thuốc TOXIC sẽ bị bỏ im lặng khi kê. Các `type_map` xuất Excel/PDF vẫn giữ
+  nhãn TOXIC để hiển thị dữ liệu cũ. Muốn dùng thuốc độc thật thì phải bổ sung
+  loại đơn thứ tư đầy đủ (mã đơn, mẫu in, vòng lặp lưu), không nới riêng validate.
+- QA 2026-09-11: 15 case đối chiếu contract khớp 100% hành vi cũ của cả hai bản
+  normalize; `check_prescription_print_contract`, `check_doctor_examination_contract`,
+  `check_prescription_stock_contract`, `check_frontend_contract`, `check_api_auth_contract`
+  và 17 test JS đạt. API trả 400 cho `prescription_type=TOXIC`, vẫn nhận H.
+  Browser màn bác sĩ ca 1101: đơn 3 thuốc load đúng, chip H trong dropdown không
+  hồi quy, không lỗi console, không ghi dữ liệu. Chưa QA browser màn tâm lý.
+
+## Dropdown dịch vụ/bác sĩ tái khám (2026-09-07)
+
+- API calendar trả `services`, `doctors`, `selection` từ danh mục thật. Lịch
+  mới mặc định Khám tổng quát + actor; lịch cũ dùng đúng lựa chọn đã lưu.
+  Không đổi phạm vi xem danh sách lịch khi đổi dropdown bác sĩ.
+- Modal chỉ trả ngày giờ + selection vào draft. Đóng bỏ thay đổi; chuyển
+  tháng giữ lựa chọn; đổi bệnh nhân reset draft. Recovery lưu selection;
+  chỉ đổi dropdown cũng đánh dấu chưa lưu. Footer nhắc Lưu màn khám giữ lại.
+- Save nhận `re_examination_selection: {doctor_id, service_id, package_id}`;
+  snapshot/read/save-result cùng trả selection. So sánh ý định gồm ngày giờ
+  và lựa chọn, giữ no-op của editor cũ chưa thay đổi, chặn snapshot cũ khi sửa.
+  Backend kiểm bác sĩ active (doctor/psychologist hoặc actor), dịch vụ active;
+  gói cũ được giữ nhưng không cho chọn gói mới qua dropdown dịch vụ.
+- Bỏ các dòng phụ thống kê/phạm vi quyền xem/hướng dẫn click lịch. Chi tiết
+  lịch hẹn vẫn hiện khi bấm sự kiện. Token typography và màu dùng chung.
+- QA: 42 test policy PostgreSQL rollback đạt, gồm create/read/retry,
+  selection-only update, dữ liệu sai/inactive, stale snapshot và khóa lịch.
+  Browser dữ liệu thật kiểm default, đổi lựa chọn/tháng, đóng/xác nhận/mở lại,
+  chuyển hai bệnh nhân và desktop/mobile; không lỗi JS, không ghi lịch thật.
+
+### Số tuần của lịch nhỏ
+
+- Flatpickr dựng 42 ô nhưng modal chỉ hiện các tuần có ngày thuộc tháng
+  đang xem. `onDayCreate` tính đầu tuần kế tiếp sau cuối tháng theo locale;
+  các ngày vượt mốc này dùng `hidden`, CSS chỉ scope trong modal tái khám.
+  Không ẩn toàn bộ ngày ngoài tháng; vẫn chọn được ngày giao tháng.
+- Browser đạt tháng 9/2026 (35 ô, hết 04/10), 2/2027 (28 ô), 3/2026 (42 ô),
+  2/2024 nhuận và 12/2026 qua năm mới. Đổi tháng qua lại cập nhật đúng;
+  chọn 04/10 từ tháng 9 cập nhật ngày và chuyển lịch sang tháng 10. Không lỗi JS.
+
+## Typography modal lịch tái khám (2026-09-07)
+
+- Owner: `app/static/css/components/re-examination-calendar.css`. Font-family,
+  font-size, font-weight và line-height dùng token `shared/typography.css`;
+  tiêu đề modal dùng md, nội dung/nhãn/ngày lịch dùng base, chú thích dùng sm.
+  Không khai báo literal px trong CSS component; kích thước bố cục dùng rem,
+  em, phần trăm và fr. Màu modal dùng token doctor nâu–kem, trạng thái dùng
+  feedback token; không giữ palette xanh riêng trong FullCalendar/Flatpickr.
+- Sidebar desktop 20rem; ô ngày/giờ chia 3:2, màn rất hẹp xếp dọc. Lịch nhỏ
+  giữ font base, tháng/năm cùng hàng; mobile ẩn calendar inline do Flatpickr
+  sinh ra. Body mobile dùng block và cuộn để sidebar/lịch chính không chồng.
+- QA trình duyệt trên API lịch thực tế: 1900/1366/768/390/320, font tính ra
+  đúng 14/13/12, không tràn ngang hoặc lỗi JS. Đây là QA presentation và
+  đọc lịch; không tạo/sửa lịch hoặc kiểm chứng luồng lưu trong lượt này.
+
+## Thiếu lô và gán tồn hiện hữu (2026-09-06)
+
+- Lỗi cấp mới khi thuốc có tồn tổng nhưng không có lô trả
+  `inventory.batch_missing`; lô còn số lượng nhưng toàn bộ lô sử dụng được đã
+  hết hạn trả `inventory.batch_expired`. API trả detail có tên thuốc và hướng
+  xử lý. Shared feedback và workspace save controller giữ detail này; không
+  thay bằng thông báo thiếu tồn chung. `inventory.insufficient` vẫn dùng cho
+  thiếu số lượng thông thường. Không nới điều kiện cấp thuốc theo lô.
+- `inventory_service.plan_existing_stock_batches` và
+  `register_existing_stock_batches` là owner gán tồn ban đầu chưa có lô.
+  Chỉ nhận thuốc chưa có lô, expected_stock bằng tồn hiện tại và tổng số lượng
+  các lô xác nhận bằng đúng tồn đó. Bắt buộc số lô, ngày nhập, hạn dùng và nguồn
+  đối chiếu; không tự lấy hạn dùng danh mục hoặc tạo số lô ngẫu nhiên.
+- Quantity/remaining_quantity của lô mới là số dư mở đầu đã xác nhận ở thời
+  điểm chuyển đổi, không phải tuyên bố về số lượng nhập lịch sử. Không đổi tồn
+  tổng. Mỗi lô có movement adjustment delta 0 kèm nguồn và số lượng gán trong
+  note để giữ lịch sử mà không làm tăng tổng nhập. Lô hết hạn vẫn bị chặn cấp.
+- Entry point local: `scripts/register_existing_medicine_stock.py <manifest>`
+  mặc định chỉ validate trong transaction READ ONLY. `--apply` cần actor-id
+  quản trị viên và file `--backup` mới để giữ plan trước/sau; khóa thuốc theo
+  thứ tự ID, validate tất cả, commit/rollback toàn bộ. Lần chạy lại bị chặn vì
+  thuốc đã có lô. Đây là công cụ đối soát local, chưa thêm nút vào màn kho.
+- Không dùng công cụ này để tự xử lý thuốc đã có lô nhưng lệch tồn; các case
+  đó cần đối soát chứng từ; UI/API kiểm kê thủ công đã gỡ ngày 2026-09-12,
+  không tự bù chênh lệch. Báo cáo và manifest còn thiếu dữ liệu nằm tại
+  `reports/inventory-lot-audit-20260906/`. Không tự lưu lại đơn bệnh nhân.
+- QA: 13 tests PostgreSQL rollback cho gán tồn/cấp 6 viên, không tăng tồn hai
+  lần, nguồn thiếu, số lượng lệch, lặp, nhiều lô, hết hạn và error API; 5 audit
+  tests đạt. Browser kiểm chuỗi response -> shared feedback -> workspace save
+  toast với response lỗi mô phỏng trên màn bác sĩ có dữ liệu ca 1101; mọi
+  request ghi bị chặn trong browser QA. Không gọi lưu đơn thật, không sửa kho
+  thật. Frontend syntax, prescription stock và user feedback contracts đạt.
+
+## Seed kiểm thử local đã áp dụng (2026-09-06)
+
+Theo yêu cầu explicit của người dùng, 25 thuốc tồn dương thiếu lô đã được gán lô `SEED-LOCAL-20260906-<id>`, giữ nguyên tồn tổng và ghi movement delta 0. Đây là ngoại lệ seed kiểm thử được yêu cầu riêng: số lô là giả lập; 23 hạn dùng giả lập một năm, 2 hạn dùng lấy từ danh mục chưa đối chiếu chứng từ. Không dùng dữ liệu seed như lô thực tế hoặc tự mở rộng quy tắc này cho nhập kho. Service vẫn không tự sinh giá trị mặc định.
+
+Đã sao lưu database, kiểm chứng cấp thêm 6 viên Mirtazapine mã 7485 trong transaction rollback: tồn/lô 1460 → 1454 → rollback về 1460. Hai thuốc cũ không bị trừ thêm; đơn 1101 chưa được lưu lại. Còn 13 mã lệch tồn (gồm 1 mã chỉ còn lô hết hạn) cần đối soát riêng. Chi tiết: `reports/inventory-local-seed-20260906-131835/README.md`.
+
 ## Ownership
+
+Context chung các sửa UI22/09 (Tủ thuốc/Nhập kho/DAV, QA và giới hạn)
+đã hợp nhất tại mục “Context chung đang tiếp tục — 22/09/2026” trong
+`references/refactor-progress.md`. Không ghi nhật ký từng phản hồi ở đây.
+
+Chốt UI21/09: bỏ riêng disclosure “Tồn sau từng giao dịch” trong ô thuốc
+màn kê đơn. Giữ nguyên “Tồn tổng hiện tại”, tên lô và “Đã cấp”. Snapshot,
+API, giao dịch kho và bảng lịch sử/thống kê không đổi.
+
+Follow-up 20/09: thêm một cột nullable `stock_balance_after` sau 5 cột truy vết
+đã có; không thêm bảng/backfill/đối soát. `balance_after` = tồn của lần nhập/lô
+ngay sau giao dịch; cột mới = tồn tổng ngay sau giao dịch. Đọc/Lưu trả
+`batch_allocation.stock_movements` / `stock_allocation_states[].stock_movements`.
+Editor tách “Tồn tổng hiện tại” và chi tiết “Tồn sau từng giao dịch”; lịch sử
+đơn và thống kê có hai cột tồn lịch sử. Thiếu snapshot hiển thị “Chưa rõ”.
+QA và giới hạn UI: `reports/stock-balance-snapshot-2026-09-20/qa.md`.
+
+Từ 2026-09-10, mỗi batch ID là một lần nhập/tồn đầu riêng, nên nhiều ID có
+thể cùng số lô. FEFO vẫn hạn dùng → ngày nhập → ID; hoàn trả đúng ID đã cấp.
+Giao dịch mới ghi giá vốn từ lần nhập và `balance_after`; thiếu giá giữ null,
+không ghi 0 mặc định. Không tính lại giá vốn hoặc tồn sau cho movement cũ.
+Việc Lưu đơn vẫn là thời điểm xuất kho; chưa bổ sung bước xác nhận bốc thuốc
+thực tế hoặc nối thanh toán trong lát Tủ thuốc này.
+
+User chốt ngày 2026-09-12: một thuốc bốc từ một số lô trên bao bì, có thể
+gồm nhiều lần nhập của cùng lô, giữ giá vốn từng lần nhập. Đây là yêu cầu
+đích chưa triển khai: FEFO hiện vẫn có thể cấp từ nhiều số lô khi lưu đơn.
 
 - `prescriptions`: header đơn thuốc, mã đơn, loại đơn, metadata cách tính liều/số ngày trong cột legacy `cach_dung`, ngày tái khám và tổng tiền.
 - `prescription_items`: từng dòng thuốc và là owner duy nhất của số lượng hiện đang lưu/cấp theo appointment.
 - `medicine_batches.remaining_quantity`: tồn hiện hành của từng lô; lô còn hạn được cấp theo FEFO.
 - `medicines.stock_quantity`: tồn tổng hiện hành dùng bởi các màn kho khác. Cấp/hoàn có truy vết cập nhật cùng đúng delta với lô; hoàn phần đơn cũ không có lô chỉ cập nhật tồn tổng.
-- Nhập lô/kiểm kê theo lô thuộc owner `app/modules/medicines/services/inventory_service.py`; không sửa `medicines.stock_quantity` trực tiếp từ danh mục hoặc ledger API.
-- `medicine_transactions`: lịch sử movement append-only. Dòng có truy vết dùng `batch_id` hiện hữu để chỉ đúng lô và hai mẫu `note` hiện hữu (`Xuất theo đơn thuốc - Lịch hẹn ID: ...` / `Hoàn lại tồn kho - Lịch hẹn ID: ...`) để giới hạn movement của đúng appointment. Hoàn phần legacy dùng đúng note hoàn với `batch_id=NULL`, ghi nhận biến động tồn tổng mà không đoán lô. Tổng movement theo appointment/lô chỉ dùng để trả lời lô nào còn đang cấp cho đơn, không thay `prescription_items` làm owner số lượng đơn hoặc `remaining_quantity` làm owner số dư lô. Không thêm cột liên kết mới.
+- Nhập lô/gán tồn đầu đã xác minh thuộc owner `app/modules/medicines/services/inventory_service.py`; đường kiểm kê thủ công đã gỡ. Không sửa `medicines.stock_quantity` trực tiếp từ danh mục hoặc ledger API.
+- `medicine_transactions`: append-only; từ 2026-09-20 thêm đúng 5 cột theo mục Visit medication ledger trong `references/data-contracts.md`, không thêm bảng. `ledger_service.py` ghi snapshot cấp/hoàn/đổi giá cùng transaction Lưu; `ledger_report.py` đọc thống kê tiền theo ngày giao dịch. Dòng mới nối appointment trực tiếp; note chính xác chỉ fallback cho dòng cũ. Không suy giá/lô cũ, không thay owner số lượng đơn/tồn lô. Hoàn hết vẫn đọc lịch sử được; đơn giá khác nhau trên hai dòng cùng thuốc trong một lần lưu bị từ chối.
 - `examinations.diagnosis`: chẩn đoán raw theo ICD IDs trong flow mới.
-- `appointment_relatives`: người đi cùng/người nhận thuốc cho footer đơn H/N.
+- `appointment_relatives`: người đi cùng lượt khám và liên hệ/người đưa trẻ; không xác nhận ai nhận thuốc.
 - `patients`: thông tin định danh, liên hệ, ngày sinh, giới tính, địa chỉ.
 
 ## Module Island Hiện Tại
@@ -19,14 +260,18 @@ Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa
 - `app/modules/prescriptions/api/public.py`: public routes cho QR verify, gồm page/API dữ liệu và endpoint PNG sinh QR xác thực cùng domain; QR không phụ thuộc dịch vụ ảnh bên thứ ba.
 - `app/modules/prescriptions/api/internal.py`: internal routes cho màn bác sĩ và prescription save/load/history; route đọc/history gọi service thay vì tự build payload.
 - `app/modules/prescriptions/services/read_service.py`: owner cho payload đọc đơn theo appointment và lịch sử đơn thuốc theo patient.
-- Contract đọc tái khám: `GET /api/prescription/appointment/<appointment_id>` trả `re_examination_date`, `re_examination_time`, `re_examination_service_id`, `re_examination_appointment_id`, `re_examination_status` từ appointment tái khám con còn active khi tồn tại, kể cả khi appointment gốc chưa có dòng prescription; `prescriptions.re_examination_date` chỉ là fallback legacy khi chưa có appointment con.
-- Contract trạng thái lịch tái khám: `re_examination_appointment_id` chỉ cho biết lịch con đã tồn tại, không phải cờ khóa. Lịch `SCHEDULED` vẫn được sửa/hủy từ Doctor và save result trả explicit `status`; chỉ lịch `CONFIRMED` là bất biến, `POST /api/prescription/save` phải giữ nguyên ngày/giờ, trả `re_examination_sync_result.skipped=already_confirmed` + `status=CONFIRMED`, Doctor khóa checkbox/datepicker và bản nháp không được ghi đè hai control này.
+- Contract đọc tái khám: dùng lịch con theo `original_appointment_id` + `RE_EXAMINATION`, chọn theo `created_at DESC, id DESC`, không theo ngày hẹn có thể sửa. Giữ cả `CANCELLED`/soft-delete để không nhầm lịch đã hủy thành chưa có lịch. `prescriptions.re_examination_date` chỉ là ngày legacy, không chứng minh đã có appointment. Reader/save trả `re_examination_snapshot`: appointment_id, datetime, status, version (updated_at), editable, lock_reason và selection (doctor_id, service_id, package_id).
+- Contract quyền sửa: chỉ `SCHEDULED`, chưa soft-delete, và giờ hẹn đang lưu > giờ hiện tại mới được sửa/hủy tại Doctor. `CONFIRMED`, `NO_SHOW`, `CANCELLED`, hoặc lịch đến/quá giờ đều khóa. Giữ nguyên lịch vẫn được lưu thuốc, không kiểm tra lại ngày tương lai hay gọi Calendar/reminder. Thay đổi lịch phải có snapshot đã tải; backend đối chiếu identity/version/status hiện tại. Lịch thay đổi ở nơi khác trả 409 kèm snapshot mới; UI báo tại vùng tái khám. Request lặp có cùng kết quả lịch là no-op.
+- Mặc định tạo lịch mới (chốt 06/09/2026): bác sĩ mặc định lấy từ `user.id` đã xác thực ở API, không kế thừa bác sĩ lượt cũ. Từ 07/09, dropdown cho phép đổi qua `re_examination_selection` sau khi backend kiểm danh mục/bác sĩ đang hoạt động; trường doctor_id/service_id rời ngoài contract này vẫn không được dùng. Dịch vụ là đúng một dòng `services` đang hoạt động có tên Khám tổng quát (so sánh trim/case-insensitive); lấy ID và thời lượng thực từ danh mục, không hardcode ID. Thiếu/trùng dịch vụ mặc định thì trả lỗi tại vùng tái khám trước khi ghi. Không tự seed danh mục hoặc lấy dịch vụ đầu tiên của lượt hiện tại.
+- Mặc định trên chỉ áp dụng khi `action=create`. Khi chỉ sửa ngày giờ lịch đã có, giữ nguyên bác sĩ, dịch vụ/gói của appointment và examination hiện hữu; khi chủ động đổi dropdown, cập nhật cả hai trong cùng transaction; không yêu cầu danh mục mặc định còn hoạt động để sửa lịch cũ. Đơn thuốc trống vẫn tạo lịch/examination bình thường, không tạo prescription header giả.
+- Nút Lưu chung vẫn lưu thuốc và lịch. Frontend gửi ngày giờ + snapshot; không tự dời lịch đã có khi đổi số ngày điều trị. Khóa checkbox/datepicker theo policy, bảo toàn status thật (không đổi thành ERROR), clear snapshot/error khi chuyển bệnh nhân. Lịch chưa có được tạo khi người dùng thay đổi chọn đặt lịch/ngày giờ; ngày legacy giữ nguyên không tự sinh lịch mới.
+
 - Contract tính ngày Doctor: khi bật `Đặt lịch`, ngày giờ mặc định được tính từ ngày local hiện tại cộng đúng số nguyên không âm ở `Số ngày điều trị`, giờ mặc định `09:00`; không fallback ngầm sang 7 ngày. Giá trị trống/không hợp lệ không tự sinh ngày và validation vẫn yêu cầu ngày trước khi lưu.
 - Contract overview Doctor: không còn control `Cách dùng chung`; hướng dẫn từng thuốc thuộc `prescription_items.usage`. Ba control `Cách tính liều`, `Số ngày điều trị`, `Hẹn tái khám` nằm cùng một hàng khi prescription component đủ rộng, reflow thành hai hàng rồi một cột theo container. `prescriptions.cach_dung` vẫn giữ JSON `schedule_mode`/`medicine_days`; giá trị `global_usage` cũ được frontend bảo toàn khi save nhưng không còn tham gia draft/focus hoặc được nhập mới.
 - Contract tính số lượng Doctor: `Số ngày điều trị` trống không chặn tính toán; các thao tác chủ động chọn thuốc, sửa liều, đổi cách tính hoặc xóa số ngày dùng hệ số 1 ngày để cập nhật ngay số lượng và thành tiền. Nhập `N` ngày sẽ tính lại theo `liều mỗi ngày × N`; xóa `N` quay về liều của 1 ngày. Riêng lần tải đơn cũ, khôi phục nháp hoặc áp dụng đơn lịch sử có `medicine_days` trống phải giữ `prescription_items.quantity` đã lưu, không tự biến đổi dữ liệu trước khi bác sĩ chỉnh công thức.
-- `app/modules/prescriptions/services/save_service.py`: owner transaction của save path. Service khóa row `appointments`, đọc baseline duy nhất từ `prescription_items`, gom payload theo `medicine_id`, gọi batch stock owner theo thứ tự medicine id, tạo/update/xóa header/items rồi tự commit hoặc rollback toàn bộ. Route chỉ còn auth/parse, gọi service, emit event và chạy side effect tái khám sau commit.
+- `app/modules/prescriptions/services/save_service.py`: owner transaction của save path. Service khóa row `appointments`, đọc baseline duy nhất từ `prescription_items`, gom payload theo `medicine_id`, gọi batch stock owner theo thứ tự medicine id, tạo/update/xóa header/items rồi tự commit hoặc rollback toàn bộ. Route auth/parse, gọi plan tái khám khóa appointment gốc + lịch con, validate trước khi ghi đơn; save service ghi đơn/kho/lịch/examination trong cùng transaction. Chỉ realtime/Calendar/reminder chạy sau commit.
 - `app/modules/prescriptions/services/stock_service.py`: owner cấp/hoàn kho cho prescription. Service khóa `medicines` rồi các `medicine_batches` theo thứ tự ổn định; cấp mới bị giới hạn bởi cả tồn tổng và lô còn hạn, cấp lô theo FEFO, hoàn phần đã truy vết về đúng lô theo reverse-FEFO, hoàn phần legacy chỉ về tồn tổng, append movement bằng mẫu note appointment hiện hữu, và build allocation state cho API/UI.
-- `app/modules/prescriptions/services/re_examination_service.py`: owner tạm thời cho side effects tái khám sau khi lưu đơn thuốc, gồm tạo/cập nhật/hủy appointment tái khám, examination liên quan, Google Calendar và reminder; giữ nguyên commit con và cách nuốt lỗi legacy.
+- `app/modules/prescriptions/services/re_examination_service.py`: owner policy đọc/plan/apply lịch tái khám của Doctor. `plan_re_examination` khóa gốc và lịch con, xác định unchanged/create/update/cancel; `apply_re_examination_plan` chỉ flush. `save_service` commit/rollback đơn, kho, lô, movement, lịch và examination cùng nhau. Hàm `sync_re_examination_after_prescription_save` chỉ còn integrations sau commit, gọi owner Calendar dùng chung; unchanged bỏ qua toàn bộ. Các màn đặt lịch khác giữ workflow riêng, không thay đổi API của Lễ tân trong đợt này.
 - `app/modules/prescriptions/view_models/public_prescription.py`: view model public prescription verify.
 - `app/modules/prescriptions/view_models/print_prescription.py`: internal view model cho print/preview đơn thuốc theo appointment, gom patient/history/examinationDetail/examinationDetailsBySection/prescriptionData/relatives bằng contract backend, trong đó diagnosis/benh_kem_theo là display text và `*_ids` giữ raw ICD IDs.
 - `app/modules/prescriptions/public_api.py` và `app/modules/prescriptions/view_model.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
@@ -36,13 +281,48 @@ Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa
 - `app/static/js/prescriptions/pages/verify-prescription.js`: page bootstrap cho QR verify, chỉ fetch public API và gọi renderer dùng chung.
 - `app/static/js/prescriptions/pages/doctor-prescription-print.js`: adapter dữ liệu in từ màn bác sĩ; nhận dependency từ `prescription-ui.js` qua factory để giữ appointment hiện tại và `prescriptionCodesByType` không bị global hóa, sau đó giao tài liệu cho component in dùng chung.
 - `app/static/js/prescriptions/components/prescription-modal-preview.js`: preview/tab đơn thuốc trong modal lịch sử bệnh nhân; giữ expose `window.renderPrescriptionPage`, `window.setupPrescriptionTabPagination`, `window.PRESCRIPTION_PAGE_COLORS` và `_prescriptionTabPageIndex` cho caller cũ.
-- `app/static/css/patient-search-modal.css`: owner presentation của document HTML trong modal; header logo/thông tin/cụm mã cùng căn đỉnh, badge và barcode dùng khoảng cách gọn. Title hai dòng của đơn thuốc đặt spacing trên `.prescription-title-section`, còn title đơn dòng hóa đơn/bệnh án đặt trên `.prescription-preview__title--document`, cùng contract hiển thị `20px 0 45px`. QR xác thực trong HTML modal hiển thị ở `8.125rem` (130px với root mặc định), giữ tỷ lệ và tự co theo ô chứa; kích thước PNG tự nhiên không được quyết định layout.
+- `app/static/css/patient-search-modal.css`: owner modal/scroll và tài liệu khác; import prescription-standard-form.css cho đơn thuốc, không sở hữu lại layout giấy.
 - `app/static/js/prescriptions/components/prescription-modal-print.js`: adapter dữ liệu in từ modal lịch sử legacy; đọc modal state qua `window.modalSelectedPatient`, `window.modalMedicalHistoryData`, `window.modalSelectedHistoryIndex`, giao tài liệu cho component in dùng chung và giữ expose `window.printModalPrescription` cho caller cũ.
-- `app/static/js/prescriptions/components/prescription-print-document.js`: owner duy nhất của page model BASIC/H/N, print context, cửa sổ loading/error, document shell, asset A4, barcode, image/font readiness và lifecycle gọi `window.print()` cho mọi luồng in đơn thuốc. Popup loading, document và error đều điều hướng qua Blob URL cùng origin; không ghi lại `about:blank` bằng `document.open/write/close` sau async. QR xác thực là print asset bắt buộc: chỉ gọi in khi ảnh có `naturalWidth > 0`; nếu tải lỗi/hết timeout thì giữ cửa sổ ở trạng thái `data-print-ready="error"` và hiện cảnh báo, không in bản thiếu QR.
-- `app/static/css/prescriptions/components/prescription-print-document.css`: owner duy nhất của layout A4 khi in đơn thuốc; logo/thông tin/cụm mã cùng hàng, badge mã đơn ở đầu cụm phải, barcode + mã hồ sơ nằm bên dưới. Nội dung dùng normal flow theo chiều cao thật, QR/chữ ký theo sát lời dặn bằng khoảng cách cố định, không ép `280mm` hoặc dùng `margin-top: auto`; trang BASIC/H/N sau trang đầu dùng `break-before`, footer dưới 18 tuổi nằm trong flow và chống tách trang. CSS preview modal và CSS form Doctor không được ghi đè layout này.
+- `app/static/js/prescriptions/components/prescription-print-document.js`: owner dựng HTML mẫu giấy theo nhóm BASIC/H/N; `render()` async gọi QLPKPdfPreview tạo PDF. Worker đợi font/ảnh, render barcode local và từ chối PDF khi thiếu QR bắt buộc. Không tự in hoặc tự đóng tab.
+- `app/static/css/prescriptions/components/prescription-print-document.css`: shell A4, lề trên/phải/dưới 20mm, trái 30mm; loại đơn sau bắt đầu trang mới. Layout giấy do prescription-standard-form.css sở hữu: Times New Roman 12pt, khung đen trắng với đệm 4mm, QR 25mm; nội dung normal flow, nhóm thuốc cuối/lời dặn/ký/liên hệ/người nhận tránh tách trang.
 - `app/static/js/prescriptions/components/prescription-preview-scaler.js`: component scale document preview cho viewer mobile/verify.
-- `app/static/js/prescriptions/shared/prescription-document-template.js`: document template dùng chung cho print/verify/preview; expose các helper global legacy như `buildPrescriptionPreviewHTML()` để giữ caller cũ hoạt động. Ảnh QR bản in dùng `GET /api/public/prescription/<code>/verification-qr.png` và được đánh dấu `data-required-print-asset="verification-qr"`.
-- `scripts/check_prescription_print_contract.py`: guardrail cho A4 owner, normal-flow pagination, spacing QR/chữ ký, footer H/N dưới 18 tuổi, QR cùng domain và print readiness; được chạy trong `check_frontend_contract.py`.
+- `app/static/js/prescriptions/shared/prescription-document-template.js`: sở hữu shared view-model/formatter cùng hai renderer: `buildPrescriptionPreviewHTML()` cho giấy/public verify và `buildPrescriptionScreenHTML()` cho tab Toa thuốc trên web. Modal gọi renderer web qua registry; print controller giữ renderer giấy. CSS web riêng `prescription-screen.css` không được load vào tài liệu in. Ảnh QR bản in dùng `GET /api/public/prescription/<code>/verification-qr.png` và được đánh dấu `data-required-print-asset="verification-qr"`.
+- `scripts/check_prescription_print_contract.py`: kiểm A4, stylesheet dùng chung, normal flow, footer, QR cùng domain và readiness. Không tự đóng popup tại afterprint vì Chrome còn mở hộp thoại lưu PDF.
+
+## Mẫu Bộ Y tế (2026-09-09)
+
+- Chuẩn: Phụ lục I/II/III, Thông tư 26/2025/TT-BYT, PDF chính thức
+  https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/7/26-byt.pdf, trang 12–14.
+  Cập nhật 10/09/2026 theo yêu cầu người dùng: nhãn hiển thị lấy nguyên văn
+  `Đơn H.docx` (Căn cước công dân, Số thẻ bảo hiểm y tế (nếu có), Địa chỉ
+  liên hệ, Tên bố hoặc mẹ của trẻ hoặc người đưa trẻ đến khám bệnh, chữa bệnh,
+  Căn cước công dân của người nhận thuốc; câu “Khám lại xin mang theo đơn này.”).
+  H có dòng Đợt trống như Word; N giữ ba dòng Đợt. Vì vậy không mô tả bản này
+  là bản sao nguyên văn phụ lục chính thức. Số chú thích không thuộc nhãn in.
+- Giữ mã đơn/QR, nhãn tiếng Việt; bỏ logo/quảng bá/song ngữ/barcode hồ sơ.
+  Không in tiêu đề phụ lục hoặc phần hướng dẫn điền mẫu của văn bản pháp quy.
+- Trẻ dưới 72 tháng tính tuổi tháng tại ngày khám, in cân nặng/người đưa trẻ.
+  Dòng người nhận H/N độc lập tuổi; không suy người đi cùng là người nhận.
+- BHYT, người nhận thuốc và khoảng ngày từng đợt H/N chưa có nguồn lưu riêng:
+  để trống trên giấy, không suy ngày từ tái khám hay cập nhật dữ liệu.
+  Kiểm điều kiện thuốc/cấp ba bản H/N/cam kết N không thuộc lát mẫu giấy này.
+- Số lượng <10 có 0 đầu; N thêm số lượng bằng chữ. Giữ quantity/schedule,
+  route/ghi chú/medicine_days đã lưu; thiếu schedule không tự sinh liều.
+- Public view model thêm weight, loi_dan, benh_kem_theo từ examination;
+  verify dùng cùng template, vẫn ẩn QR/chữ ký theo contract public hiện hữu.
+- Chain: modal flex/min-height:0 → tab-body-scroll → content → tài liệu;
+  verify viewer 800px → scaler; print A4 → pages 160mm → form → thuốc →
+  nhóm ký/liên hệ/người nhận. Không ép chiều cao toàn trang hay ghim footer.
+- Cập nhật bố cục 10/09: field trống dùng dòng kẻ chấm co giãn cao 6mm;
+  cân nặng có vùng viết riêng, BHYT/người đưa trẻ/người nhận dùng hết bề ngang
+  còn lại; chữ ký dành 25mm. Không thay nhãn Word hay giá trị đã lưu.
+  Hàm lượng đầy đủ đã có trong tên không nối lại; chỉ gộp số cuối với đơn vị
+  khi tên đúng bằng hoạt chất + số đó. Giữ nguyên mọi ghi chú cách dùng.
+- QA bố cục 10/09: Node standard-form/followup, frontend gate; Chrome PDF
+  ca ảnh 1101 một trang, H/N thật mỗi mẫu một trang; ca 442 sáu thuốc hai
+  trang; N QA 24 thuốc bốn trang, đủ thứ tự và thuốc cuối cùng trang với ký.
+  Đã render/đọc toàn bộ 10 trang của 6 ca; DB QA chỉ đọc. Không ép đơn dài
+  về một trang bằng cách giảm chữ hay rút ngắn nội dung.
 
 ## Ghi chú cách dùng thuốc
 
@@ -165,11 +445,17 @@ Ghi chú triển khai 2026-08-12: chuẩn hóa `PrescriptionPrintDocument` làm 
 
 ## Render Context Contract
 
+- Từ 08/09/2026, `show_re_examination_date` do backend tính qua
+  `show_re_examination_date_on_prescription`: false khi lịch con mới nhất đã
+  CANCELLED hoặc xóa mềm. Template dùng chung ẩn dòng Tái khám ngày trong
+  print/preview/verify; adapter modal/verify giữ cờ, Doctor giữ cờ từ payload
+  backend khi ghép thuốc/ngày đang nhập. Ngày lịch sử, snapshot và logic lưu
+  vẫn giữ nguyên; không có lịch con thì ngày legacy vẫn được hiển thị.
 - Web/in là document layout chuẩn.
 - Verify/mobile là viewer, không được phá layout document.
-- Cặp cột patient/medicine giữ 6/4 trên verify mobile.
+- Verify mobile scale toàn bộ biểu mẫu Bộ Y tế; không đổi thứ tự field hoặc các cột tên thuốc/số lượng.
 - Verify có thể ẩn QR nội bộ/chữ ký của bản in bằng options, nhưng không đổi cấu trúc mẫu.
-- HTML modal và A4 có CSS owner riêng: modal giới hạn `.rx-verify-qr-image` ở `8.125rem`; bản in tiếp tục dùng kích thước A4 của `prescription-print-document.css`. Không sửa độ phân giải ảnh nguồn để chữa layout.
+- Từ 09/09/2026, HTML modal và A4 dùng chung prescription-standard-form.css, QR 25mm; prescription-print-document.css chỉ giữ shell/lề A4. Không sửa độ phân giải ảnh nguồn để chữa layout.
 - Shared template phải giữ default tương thích với caller cũ.
 - `buildPrescriptionDocumentViewModel()` trong shared template là lớp normalize frontend cuối cùng: không để raw numeric ICD ID hiển thị thành chẩn đoán nếu backend/caller đưa nhầm raw value.
 - Page verify không được tự render mẫu đơn lớn; chỉ fetch public API, gọi `buildPrescriptionPreviewHTML()` và dùng `prescription-preview-scaler.js` để scale viewer.
@@ -205,6 +491,18 @@ Bugfix thực tế 2026-06-07: chuẩn hóa identity thuốc phòng khám theo `
 
 ## Next Refactor Steps
 
-1. Commit boundary của đơn chính đã thuộc `save_service`; side effect tái khám vẫn cố ý chạy sau commit và trả kết quả riêng, chưa nhập vào transaction tồn kho.
+1. Từ 06/09/2026, commit boundary bao gồm đơn/kho/lịch tái khám/examination. Chỉ Calendar/reminder/realtime ở ngoài transaction; không biến lỗi giao lịch bên ngoài thành lỗi lưu đơn đã commit.
 2. Khi đủ smoke checks, cân nhắc gom template/static prescription vào thư mục con rõ nghĩa.
 3. Nếu đổi API shape, cập nhật `references/data-contracts.md` và checklist liên quan cùng lúc.
+
+## QA khóa và lưu tái khám — 06/09/2026
+
+- `tests/test_prescription_re_examination_policy.py`: API thực trong PostgreSQL outer rollback; trạng thái/giờ hẹn, lịch không đổi, sửa/hủy có điều kiện, tạo và retry, conflict snapshot, giữ lịch hủy, thứ tự identity, ngày legacy, rollback toàn bộ khi ghi lịch lỗi; kiểm khóa parent/child bằng hai connection. Cùng `tests/test_existing_stock_lots.py`: 38 tests đạt.
+- Browser ca thật 1101/lịch 1149 NO_SHOW: ngày 17/08/2026 09:00 hiển thị đúng, controls khóa, đổi số ngày thuốc không dời lịch. Nút Lưu header chạy API blueprint thật qua bridge localhost với transaction rollback, thành công. Không ghi lại đơn hoặc lịch bệnh nhân. Các trạng thái CONFIRMED/CANCELLED/SCHEDULED quá giờ/tương lai được kiểm interaction bằng fixture trên editor có dữ liệu; API dùng dữ liệu PostgreSQL rollback tương ứng. Ngày mới quá khứ bị chặn tại chỗ trước request. Đã kiểm clear snapshot/error và chuyển sang bệnh nhân khác, đối chiếu snapshot mới với API đọc; không lẫn dữ liệu lịch. Không gửi Calendar/email trong QA.
+- Đã bỏ keyword legacy `Examination.symptoms` khỏi nhánh tạo tái khám; model hiện tại không còn field này. Trước đây nhánh này có thể tạo lịch xong rồi lỗi tạo examination; nay cùng transaction và có test tạo mới.
+
+## QA mặc định lịch tái khám mới — 06/09/2026
+
+42 tests API/PostgreSQL rollback đạt (policy tái khám + lô thuốc). Bổ sung trường hợp không kê thuốc, lượt hiện tại không có dịch vụ/gói, user thực hiện khác bác sĩ lượt gốc, payload cố ghi đè bác sĩ/dịch vụ không được dùng; appointment và examination mới đều lấy actor xác thực + Khám tổng quát. Kiểm danh mục thiếu/trùng bị chặn atomically và sửa lịch cũ vẫn giữ bác sĩ/dịch vụ khi mặc định đã ngừng hoạt động. Không sửa dữ liệu lịch bệnh nhân để áp dụng mặc định hồi tố.
+
+Browser QA ca 1242: 0 thuốc, bấm Lưu header thành công qua API blueprint trong outer rollback; không tạo đơn giả, lịch đã có giữ nguyên bác sĩ/dịch vụ/ngày giờ, không có lỗi JavaScript. Các kiểm thử tạo lịch mới dùng fixture PostgreSQL rollback; ca 1242 đã có lịch khi kiểm lại nên không thay/xóa lịch đó để thử tạo mới.

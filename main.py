@@ -11,6 +11,7 @@ from app.models.administrative_unit import AdministrativeUnit
 from app.utils.api_error_contract import attach_stable_error_code
 from app.api.appointment import router as appointment_router
 from app.api.auth import router as auth_router, check_router, require_auth
+from app.api.pdf_preview import pdf_preview_bp
 from app.api.user import user_router
 from app.api.patient import router as patient_router
 from app.api.group import router as group_router
@@ -231,6 +232,7 @@ def check_allowed_host():
 
 # Đăng ký blueprints
 app.register_blueprint(auth_router)
+app.register_blueprint(pdf_preview_bp)
 app.register_blueprint(check_router)
 app.register_blueprint(user_router)
 app.register_blueprint(group_router)
@@ -335,7 +337,7 @@ def service_management_page():
 
 @app.route('/package-management.html')
 def package_management_page():
-    return render_template('package-management.html')
+    return redirect(url_for('index_page'))
 
 @app.route('/medicine-management.html')
 def medicine_management_page():
