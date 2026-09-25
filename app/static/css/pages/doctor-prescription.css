@@ -152,8 +152,7 @@
 
 .doctor-prescription-editor__save-status[data-status="dirty"],
 .doctor-prescription-editor__save-status[data-status="saving"],
-.doctor-prescription-editor__reexam-status[data-status="pending"],
-.doctor-prescription-editor__reexam-status[data-status="invalid"] {
+.doctor-prescription-editor__reexam-status[data-status="pending"] {
 	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 

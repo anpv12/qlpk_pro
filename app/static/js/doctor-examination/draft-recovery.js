@@ -29,7 +29,7 @@
 	};
 
 	function getDocument(options = {}) {
-		return options.document || STATE.document || document;
+		return RUNTIME.getDocument({ document: options.document || STATE.document });
 	}
 
 	const { normalizeId } = RUNTIME;

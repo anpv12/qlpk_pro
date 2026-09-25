@@ -12,36 +12,7 @@
 	 * surface here makes the eventual module migration mechanical.
 	 */
 	function createState(initialState = {}) {
-		const state = { ...initialState };
-		const listeners = new Set();
-
-		return Object.freeze({
-			get(key) {
-				return key === undefined ? { ...state } : state[key];
-			},
-			set(key, value) {
-				state[key] = value;
-				listeners.forEach(listener => listener({ [key]: value }, { ...state }));
-				return value;
-			},
-			patch(values = {}) {
-				Object.assign(state, values);
-				listeners.forEach(listener => listener({ ...values }, { ...state }));
-				return { ...state };
-			},
-			snapshot() {
-				return { ...state };
-			},
-			subscribe(listener) {
-				if (typeof listener !== 'function') return () => {};
-				listeners.add(listener);
-				return () => listeners.delete(listener);
-			},
-			clear() {
-				Object.keys(state).forEach(key => delete state[key]);
-				listeners.forEach(listener => listener({}, {}));
-			}
-		});
+		return createStateBridge({ ...initialState });
 	}
 
 	function createStateBridge(target) {
@@ -170,7 +141,7 @@
 		if (!context || currentContext === context) currentContext = null;
 	}
 
-	const api = Object.freeze({ create, createState, createStateBridge, setCurrent, getCurrent, clearCurrent });
+	const api = Object.freeze({ create, setCurrent, getCurrent, clearCurrent });
 	window.QLPKDoctorComponentContext = api;
 	if (window.QLPKDoctorModuleRegistry?.register) {
 		window.QLPKDoctorModuleRegistry.register('doctorComponentContext', api);

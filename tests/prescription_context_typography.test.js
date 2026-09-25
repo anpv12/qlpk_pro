@@ -54,19 +54,16 @@ test('actionable re-examination errors retain a separate live region', () => {
 
 test('locked explanation uses status tooltip, clears on patient change and preserves errors', () => {
     const vm = require('node:vm');
+    const { REEXAM_FILES, loadDoctorRegistry } = require('./helpers/doctor-registry');
     const script = fs.readFileSync('app/static/js/doctor-examination/prescription-ui.js', 'utf8');
     const source = script.slice(script.indexOf('function syncPrescriptionReExamStatus(doc)'), script.indexOf('function syncPrescriptionReExamControls(doc)'));
     const status = { dataset: {} };
     const hint = { dataset: {} };
-    const state = { reExaminationAppointmentId: 1, reExaminationDraftDateTime: '2026-07-06', reExaminationError: '' };
-    let locked = true;
+    const state = { reExaminationAppointmentId: 1, reExaminationStatus: 'NO_SHOW', reExaminationDraftDateTime: '2026-07-06', reExaminationError: '' };
     const context = vm.createContext({
         STATE: state,
-        getElement: (_, id) => id === 'doctorPrescriptionReExamStatus' ? status : hint,
-        isReExaminationLocked: () => locked,
-        getReExaminationStatus: () => 'NO_SHOW',
-        reExaminationLockReason: () => 'Lịch tái khám không đến; không thể sửa hoặc hủy tại màn này.',
-        hasReExaminationChanges: () => false
+        REEXAM: loadDoctorRegistry(REEXAM_FILES).require('prescriptionReExam'),
+        getElement: (_, id) => id === 'doctorPrescriptionReExamStatus' ? status : hint
     });
     vm.runInContext(source, context);
     context.syncPrescriptionReExamStatus({});
@@ -79,7 +76,6 @@ test('locked explanation uses status tooltip, clears on patient change and prese
     assert.equal(hint.hidden, false);
     assert.equal(hint.textContent, state.reExaminationError);
     assert.equal(hint.dataset.status, 'error');
-    locked = false;
     state.reExaminationError = '';
     state.reExaminationAppointmentId = null;
     state.reExaminationDraftDateTime = '';

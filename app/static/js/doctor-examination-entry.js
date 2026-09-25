@@ -59,6 +59,7 @@ import './doctor-examination/medical-history-bridge.js';
 import './doctor-examination/patient-history-bridge.js';
 import './doctor-examination/support-runtime.js';
 import './doctor-examination/prescription-model.js';
+import './doctor-examination/prescription-reexam-ui.js';
 import './doctor-examination/prescription-row-renderer.js';
 import './doctor-examination/prescription-history-ui.js';
 import './doctor-examination/prescription-ui.js';

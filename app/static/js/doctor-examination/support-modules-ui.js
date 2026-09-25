@@ -14,10 +14,6 @@
 	};
 	const instances = new WeakMap();
 
-	function getDocument(options = {}) {
-		return options.document || document;
-	}
-
 	function create(options = {}) {
 		const runtime = options.runtime || REGISTRY.require('supportRuntime');
 		if (!runtime) throw new Error('Thiếu support runtime');
@@ -64,7 +60,7 @@
 
 		function bind(bindOptions = {}) {
 			state.context = bindOptions.context || state.context;
-			const doc = getDocument(bindOptions);
+			const doc = runtime.getDocument(bindOptions);
 			state.isLoading = bindOptions.isLoading || state.isLoading;
 			if (typeof runtime.configure === 'function') runtime.configure(bindOptions);
 			const prescription = getPrescriptionUi();
@@ -80,7 +76,7 @@
 
 		function clear(optionsForClear = {}) {
 			state.context = optionsForClear.context || state.context;
-			const doc = getDocument(optionsForClear);
+			const doc = runtime.getDocument(optionsForClear);
 			const prescription = getPrescriptionUi();
 			if (prescription && typeof prescription.clear === 'function') prescription.clear({ document: doc, context: state.context });
 			getServicesForm().clear({ document: doc, context: state.context });
@@ -89,7 +85,7 @@
 
 		async function load(context = {}) {
 			state.context = context.context || state.context;
-			const doc = getDocument(context);
+			const doc = runtime.getDocument(context);
 			const appointment = context.payload || context.appointment || {};
 			const appointmentId = context.appointmentId || appointment.id || appointment.appointment?.id;
 			const patient = appointment.patient_info || appointment.patient || {};
@@ -108,7 +104,7 @@
 
 		async function saveAll(saveOptions = {}) {
 			state.context = saveOptions.context || state.context;
-			const doc = getDocument(saveOptions);
+			const doc = runtime.getDocument(saveOptions);
 			const onlyDirty = saveOptions.onlyDirty !== false;
 			const prescription = getPrescriptionUi();
 			const services = getServicesForm();
@@ -233,7 +229,7 @@
 
 		function restoreDraftSnapshot(snapshot = {}, restoreOptions = {}) {
 			state.context = restoreOptions.context || state.context;
-			const doc = getDocument(restoreOptions);
+			const doc = runtime.getDocument(restoreOptions);
 			const prescription = getPrescriptionUi();
 			const services = getServicesForm();
 			const indications = getIndicationsForm();

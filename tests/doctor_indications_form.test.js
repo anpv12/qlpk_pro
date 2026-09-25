@@ -62,6 +62,12 @@ function createHarness() {
   };
   const runtime = {
     getDocument() { return document; },
+    getScopedDocument() { return document; },
+    mergeConfig(defaults, config, nestedKeys = []) {
+      const source = config || {};
+      const nested = nestedKeys.map(key => [key, { ...(defaults[key] || {}), ...(source[key] || {}) }]);
+      return { ...defaults, ...source, ...Object.fromEntries(nested) };
+    },
     getElement(doc, id) { return doc.getElementById(id); },
     textOf(value) { return value == null ? '' : String(value); },
     normalizeId(value) {

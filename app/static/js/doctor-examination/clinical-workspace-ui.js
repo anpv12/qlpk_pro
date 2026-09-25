@@ -6,6 +6,7 @@
 	const RUNTIME = REGISTRY.get('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
 	const {
+		getDocument,
 		textOf,
 		hasValue,
 		setText: runtimeSetText,
@@ -104,10 +105,6 @@
 			element.scrollLeft = 0;
 		});
 	}
-
-		function getDocument(options) {
-			return options && options.document ? options.document : document;
-		}
 
 		function getElement(doc, id) {
 			const physicalId = resolveDomId(id);

@@ -14,8 +14,25 @@
 		});
 	}
 
-	function getDocument(options = {}) {
-		return options.document || document;
+	function getDocument(options) {
+		return options?.document || document;
+	}
+
+	function getScopedDocument(context, config = {}) {
+		return window.QLPKDoctorModuleRegistry.require('componentDomScope').create({
+			document: getDocument(context),
+			rootId: config.rootId,
+			strictRoot: config.strictRoot
+		});
+	}
+
+	function mergeConfig(defaults, config, nestedKeys = []) {
+		const source = config || {};
+		return {
+			...defaults,
+			...source,
+			...Object.fromEntries(nestedKeys.map(key => [key, { ...(defaults[key] || {}), ...(source[key] || {}) }]))
+		};
 	}
 
 	function getElement(doc, id) {
@@ -277,6 +294,8 @@
 	const api = {
 		configure,
 		getDocument,
+		getScopedDocument,
+		mergeConfig,
 		getElement,
 		textOf,
 		hasText,

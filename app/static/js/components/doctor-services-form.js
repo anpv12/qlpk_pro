@@ -30,17 +30,9 @@
 		endpoints: DEFAULT_ENDPOINTS
 	};
 
-	function mergeConfig(config = {}) {
-		return {
-			...DEFAULT_CONFIG,
-			...config,
-			dom: { ...DEFAULT_DOM, ...(config.dom || {}) },
-			endpoints: { ...DEFAULT_ENDPOINTS, ...(config.endpoints || {}) }
-		};
-	}
+	const mergeConfig = config => RUNTIME.mergeConfig(DEFAULT_CONFIG, config, ['dom', 'endpoints']);
 
 	const {
-		getDocument: getRuntimeDocument,
 		getElement,
 		textOf,
 		toNumber,
@@ -58,10 +50,7 @@
 		const config = mergeConfig(options.config);
 		const SERVICE_CATALOG_PER_PAGE = Math.max(1, Number(config.perPage) || DEFAULT_CONFIG.perPage);
 		function getDocument(context = {}) {
-			const sourceDocument = getRuntimeDocument(context);
-			const scope = REGISTRY.get('componentDomScope');
-			if (!scope || typeof scope.create !== 'function') return sourceDocument;
-			return scope.create({ document: sourceDocument, rootId: config.rootId, strictRoot: config.strictRoot });
+			return RUNTIME.getScopedDocument(context, config);
 		}
 		const STATE = {
 			bound: false,

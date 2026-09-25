@@ -62,6 +62,7 @@ REGISTRY_OWNERS = {
     "prescriptionModel": "app/static/js/doctor-examination/prescription-model.js",
     "prescriptionRows": "app/static/js/doctor-examination/prescription-row-renderer.js",
     "prescriptionHistory": "app/static/js/doctor-examination/prescription-history-ui.js",
+    "prescriptionReExam": "app/static/js/doctor-examination/prescription-reexam-ui.js",
     "prescriptionForm": "app/static/js/doctor-examination/prescription-ui.js",
     "servicesForm": "app/static/js/components/doctor-services-form.js",
     "indicationsForm": "app/static/js/components/doctor-indications-form.js",

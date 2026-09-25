@@ -43,8 +43,9 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		const MODEL = options.model || registry?.get('prescriptionModel');
 		const ROWS = options.rows || registry?.get('prescriptionRows');
 		const HISTORY = options.history || registry?.get('prescriptionHistory');
+		const REEXAM = options.reExam || registry?.get('prescriptionReExam');
 		if (!RUNTIME) throw new Error('Thiếu prescription support runtime');
-		if (!MODEL || !ROWS || !HISTORY) throw new Error('Thiếu prescription dependencies');
+		if (!MODEL || !ROWS || !HISTORY || !REEXAM) throw new Error('Thiếu prescription dependencies');
 
 		const dom = { ...DEFAULT_DOM, ...(config.dom || {}) };
 		const endpoints = { ...DEFAULT_ENDPOINTS, ...(config.endpoints || {}) };
@@ -460,21 +461,12 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		element.textContent = label || 'Chưa có thay đổi';
 	}
 
-	function getReExaminationStatus() {
-		return textOf(STATE.reExaminationStatus).toUpperCase();
-	}
-
 	function isReExaminationLocked() {
-		if (!STATE.reExaminationAppointmentId) return false;
-		const when = new Date(String(STATE.reExaminationDateTime || '').replace(' ', 'T'));
-		return STATE.reExaminationSnapshot?.editable === false
-			|| getReExaminationStatus() !== 'SCHEDULED'
-			|| !Number.isFinite(when.getTime()) || when <= new Date();
+		return REEXAM.isLocked(STATE);
 	}
 
 	function reExaminationLockReason() {
-		return STATE.reExaminationSnapshot?.lock_reason
-			|| 'Lịch tái khám đã đến hoặc quá giờ hẹn; không thể sửa hoặc hủy tại màn này.';
+		return REEXAM.lockReason(STATE);
 	}
 
 	function showReExaminationError(doc, message) {
@@ -487,71 +479,25 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		}
 	}
 
-	function normalizeReExaminationDateTime(value) {
-		const parsed = parseDateTimeInputValue(value);
-		return parsed.date ? `${parsed.date} ${parsed.time || '09:00'}` : '';
-	}
-
 	function sameReExaminationSelection(a, b) {
-		return ['doctor_id', 'service_id', 'package_id'].every(key => (a?.[key] || null) === (b?.[key] || null));
+		return REEXAM.sameSelection(a, b);
 	}
 
-	function hasReExaminationChanges(doc) {
-		const enabled = Boolean(STATE.reExaminationDraftDateTime);
-		const persistedEnabled = Boolean(STATE.reExaminationAppointmentId || STATE.reExaminationDateTime);
-		if (enabled !== persistedEnabled) return true;
-		return normalizeReExaminationDateTime(STATE.reExaminationDraftDateTime)
-			!== normalizeReExaminationDateTime(STATE.reExaminationDateTime)
-			|| (enabled && !sameReExaminationSelection(STATE.reExaminationDraftSelection, STATE.reExaminationSnapshot?.selection));
+	function hasReExaminationChanges() {
+		return REEXAM.hasChanges(STATE);
 	}
 
 	function syncPrescriptionReExamStatus(doc) {
-		const element = getElement(doc, 'doctorPrescriptionReExamStatus');
-		const hint = getElement(doc, 'doctorPrescriptionReExamHint');
-		if (!element) return;
-		const locked = isReExaminationLocked();
-		const persisted = Boolean(STATE.reExaminationAppointmentId);
-		const enabled = locked || Boolean(STATE.reExaminationDraftDateTime);
-		const date = STATE.reExaminationDraftDateTime;
-		let status = 'idle';
-		let label = 'Chưa hẹn';
-		if (locked) {
-			status = 'locked';
-			label = ({ CONFIRMED: 'Đã xác nhận', NO_SHOW: 'Không đến', CANCELLED: 'Đã hủy' })[getReExaminationStatus()] || 'Đã quá giờ hẹn';
-		} else if (enabled && Boolean(STATE.reExaminationError)) {
-			status = 'error';
-			label = 'Cần kiểm tra lịch';
-		} else if (enabled && !date) {
-			status = 'invalid';
-			label = 'Cần ngày';
-		} else if (persisted && enabled && !hasReExaminationChanges(doc)) {
-			status = 'scheduled';
-			label = 'Đã tạo lịch';
-		} else if (enabled || (persisted && hasReExaminationChanges(doc))) {
-			status = 'pending';
-			label = 'Chưa lưu';
-		}
-		element.dataset.status = status;
-		element.textContent = label;
-		element.title = locked ? reExaminationLockReason() : '';
-		if (hint) {
-			const message = STATE.reExaminationError || (!locked && enabled && !date
-				? 'Chọn ngày giờ tái khám để lưu đơn.' : '');
-			hint.dataset.status = STATE.reExaminationError ? 'error' : '';
-			hint.hidden = !message;
-			hint.textContent = message;
-		}
+		REEXAM.renderStatus({
+			state: STATE,
+			statusElement: getElement(doc, 'doctorPrescriptionReExamStatus'),
+			hintElement: getElement(doc, 'doctorPrescriptionReExamHint')
+		});
 	}
 
 	function syncPrescriptionReExamControls(doc) {
-		const button = getElement(doc, 'doctorPrescriptionReExamButton');
-		const locked = isReExaminationLocked();
-		if (locked) setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
-		if (button) {
-			button.disabled = locked || !STATE.prescriptionLoaded || STATE.prescriptionSaving;
-			button.title = locked ? reExaminationLockReason() : '';
-			button.textContent = STATE.reExaminationDraftDateTime ? 'Đổi lịch' : 'Đặt lịch';
-		}
+		if (isReExaminationLocked()) setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
+		REEXAM.renderButton({ state: STATE, buttonElement: getElement(doc, 'doctorPrescriptionReExamButton') });
 		syncPrescriptionReExamStatus(doc);
 	}
 
@@ -902,7 +848,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		}
 
 		STATE.reExaminationError = '';
-		if (!hasReExaminationChanges(doc)) return true;
+		if (!hasReExaminationChanges()) return true;
 		const enabled = Boolean(STATE.reExaminationDraftDateTime);
 		const parsed = parseDateTimeInputValue(STATE.reExaminationDraftDateTime);
 		const when = new Date(`${parsed.date || ''}T${parsed.time || '09:00'}`);
