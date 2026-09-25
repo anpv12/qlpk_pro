@@ -38,40 +38,24 @@ body[data-doctor-ui] .main-content {
 
 .doctor-workspace {
 	--doctor-context-header-block-size: var(--qlpk-workflow-context-header-block-size, 4.5rem);
-	--doctor-cream: var(--qlpk-doctor-page-bg);
 	--doctor-brown: var(--qlpk-doctor-primary);
-	--doctor-brown-strong: var(--doctor-brown);
-	--doctor-teal: var(--doctor-brown);
-	--doctor-teal-strong: var(--doctor-brown);
 	--doctor-interactive: var(--doctor-brown);
-	--doctor-interactive-strong: var(--doctor-teal-strong);
+	--doctor-interactive-strong: var(--doctor-brown);
 	--doctor-interactive-soft: var(--qlpk-doctor-primary-soft);
-	--doctor-brown-veil: rgba(var(--qlpk-brown-800-rgb), 0.06);
 	--doctor-section-header-bg: var(--qlpk-workflow-context-header-bg, var(--qlpk-doctor-primary));
 	--doctor-section-header-border: var(--doctor-brown, var(--qlpk-doctor-primary));
 	--doctor-section-header-text: var(--qlpk-doctor-on-primary);
-	--doctor-bg: var(--doctor-cream);
+	--doctor-bg: var(--qlpk-doctor-page-bg);
 	--doctor-surface: var(--qlpk-doctor-surface);
 	--doctor-surface-soft: var(--qlpk-doctor-surface-soft);
 	--doctor-text: var(--qlpk-doctor-text);
 	--doctor-muted: var(--qlpk-doctor-muted);
 	--doctor-line: var(--qlpk-doctor-line);
 	--doctor-line-strong: var(--qlpk-doctor-line-strong);
-	--doctor-primary: var(--doctor-interactive);
-	--doctor-primary-strong: var(--doctor-interactive-strong);
-	--doctor-primary-soft: var(--doctor-interactive-soft);
-	--doctor-blue: var(--doctor-interactive);
-	--doctor-blue-strong: var(--doctor-interactive-strong);
-	--doctor-blue-soft: var(--doctor-interactive-soft);
 	--doctor-danger: var(--qlpk-doctor-danger);
-	--doctor-danger-soft: var(--qlpk-doctor-danger-soft);
 	--doctor-warning: var(--qlpk-doctor-warning);
-	--doctor-warning-soft: var(--qlpk-doctor-warning-soft);
-	--doctor-safe: var(--doctor-brown);
-	--doctor-chocolate: var(--doctor-brown);
-	--doctor-focus: var(--doctor-teal-strong);
 	--doctor-shadow: var(--qlpk-doctor-shadow-color);
-	--qlpk-color-page-bg: var(--doctor-cream);
+	--qlpk-color-page-bg: var(--doctor-bg);
 	--qlpk-color-surface: var(--doctor-surface);
 	--qlpk-color-surface-muted: var(--doctor-surface-soft);
 	--qlpk-color-surface-subtle: rgba(var(--qlpk-brown-800-rgb), 0.04);
@@ -89,7 +73,7 @@ body[data-doctor-ui] .main-content {
 	--qlpk-workflow-context-header-muted: var(--qlpk-doctor-header-muted);
 	--qlpk-workflow-context-header-accent: var(--qlpk-doctor-on-primary);
 	--qlpk-workflow-context-header-border: var(--qlpk-doctor-header-border);
-	--qlpk-page-bg: var(--doctor-cream);
+	--qlpk-page-bg: var(--doctor-bg);
 	--qlpk-surface: var(--doctor-surface);
 	--qlpk-surface-soft: var(--doctor-surface-soft);
 	--receptionist-page-bg: var(--doctor-bg);
@@ -161,16 +145,16 @@ body[data-doctor-ui] .main-content {
 .doctor-workspace .qlpk-queue-panel__body,
 .doctor-workspace .qlpk-queue-panel--exam .qlpk-queue-panel__body,
 .doctor-workspace .qlpk-waiting-card__schedule {
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 }
 
 .doctor-workspace .qlpk-queue-panel {
-	--qlpk-queue-panel-body-bg: #ffffff;
-	--qlpk-queue-panel-search-bg: #ffffff;
+	--qlpk-queue-panel-body-bg: var(--qlpk-doctor-surface);
+	--qlpk-queue-panel-search-bg: var(--qlpk-doctor-surface);
 }
 
 .doctor-workspace .qlpk-waiting-card--timeline .qlpk-waiting-card__timeline-content::after {
-	box-shadow: 0 0 0 0.1875rem #ffffff;
+	box-shadow: 0 0 0 0.1875rem var(--qlpk-color-white);
 }
 
 .doctor-workspace .qlpk-waiting-card--timeline.is-selected .qlpk-waiting-card__avatar,
@@ -178,7 +162,7 @@ body[data-doctor-ui] .main-content {
 	border-color: color-mix(in srgb, var(--doctor-brown) 58%, transparent);
 	background: var(--qlpk-workflow-context-header-bg);
 	box-shadow: 0 0.5rem 1.125rem color-mix(in srgb, var(--doctor-brown) 24%, transparent);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-exam-surface {
@@ -229,7 +213,7 @@ body[data-doctor-ui] .main-content {
 }
 
 .doctor-exam-empty-state__icon {
-	color: var(--doctor-chocolate);
+	color: var(--doctor-brown);
 	font-size: var(--qlpk-font-size-3xl);
 	line-height: 1;
 }
@@ -268,7 +252,7 @@ body[data-doctor-ui] .main-content {
 	overflow: hidden;
 	border: 0.0625rem solid var(--doctor-line);
 	border-radius: 0.625rem;
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	box-shadow: 0 0.18rem 0.7rem var(--doctor-shadow);
 }
 
@@ -318,7 +302,7 @@ body[data-doctor-ui] .main-content {
 	border: 0.0625rem solid var(--doctor-interactive-strong);
 	border-radius: 0.42rem;
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-draft-recovery[hidden] {
@@ -328,7 +312,7 @@ body[data-doctor-ui] .main-content {
 .doctor-draft-recovery[data-state="restored"] {
 	border-color: var(--doctor-interactive-strong);
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-draft-recovery__message,
@@ -358,7 +342,7 @@ body[data-doctor-ui] .main-content {
 	margin-inline: 0.22rem;
 	border-radius: 999rem;
 	background: var(--qlpk-feedback-error);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-bold);
 	line-height: 1;
@@ -540,7 +524,7 @@ body[data-doctor-ui] .main-content {
 	padding: 0.2rem 0.6rem;
 	border: 0.0625rem solid var(--qlpk-workflow-context-header-text, #fffaf3);
 	border-radius: 999rem;
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-brown, var(--qlpk-brown-800));
 	font-size: var(--qlpk-font-size-md);
 	font-weight: var(--qlpk-font-weight-bold);
@@ -623,19 +607,19 @@ body[data-doctor-ui] .main-content {
 }
 .doctor-patient-hero__actions .doctor-workspace-button--secondary:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--doctor-line-strong);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-text);
 	box-shadow: none;
 }
 .doctor-patient-hero__actions .doctor-workspace-button--secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .doctor-patient-hero__actions .doctor-workspace-button--secondary:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--doctor-brown);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-text);
 }
 .doctor-patient-hero__actions .doctor-workspace-button--primary:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--doctor-interactive);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 	box-shadow: none;
 }
@@ -651,7 +635,7 @@ body[data-doctor-ui] .main-content {
 }
 .doctor-patient-hero__actions .doctor-workspace-button:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--doctor-line-strong);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-text);
 	opacity: 0.72;
 }
@@ -770,18 +754,16 @@ body[data-doctor-ui] .main-content {
 #doctorDecisionTreatmentTask,
 #doctorClinicalDetailPanel {
 	--doctor-clinical-heading: var(--doctor-interactive);
-	--doctor-clinical-action: var(--doctor-brown);
 	--doctor-clinical-content: var(--qlpk-patient-visit-text);
 	--doctor-clinical-label: var(--doctor-clinical-content);
-	--doctor-clinical-divider: var(--doctor-line);
 	--doctor-clinical-field-line: var(--doctor-line-strong);
-	--qlpk-patient-visit-line: var(--doctor-clinical-divider);
+	--qlpk-patient-visit-line: var(--doctor-line);
 	--qlpk-patient-visit-line-strong: var(--doctor-clinical-field-line);
 }
 
 .doctor-clinical-detail-panel {
-	--doctor-clinical-detail-accent: var(--doctor-clinical-action);
-	--doctor-clinical-detail-line: var(--doctor-clinical-divider);
+	--doctor-clinical-detail-accent: var(--doctor-interactive);
+	--doctor-clinical-detail-line: var(--doctor-line);
 	--doctor-clinical-detail-entry-block-start: var(--receptionist-underline-input-padding-block);
 	align-content: start;
 }
@@ -1109,7 +1091,7 @@ body[data-doctor-ui] .main-content {
 }
 .doctor-service-catalog__pagination button:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: 0.0625rem solid color-mix(in srgb, var(--doctor-brown) 48%, transparent);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 }
 
@@ -1119,7 +1101,7 @@ body[data-doctor-ui] .main-content {
 	padding: 0.25rem 1.75rem 0.25rem 0.5rem;
 	border: 0.0625rem solid color-mix(in srgb, var(--doctor-brown) 48%, transparent);
 	border-radius: 0.35rem;
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 	font: inherit;
 	font-size: var(--qlpk-font-size-xs);
@@ -1246,9 +1228,9 @@ body[data-doctor-ui] .main-content {
 }
 
 .doctor-service-selection__quantity input:focus {
-	border-color: var(--doctor-primary);
+	border-color: var(--doctor-interactive);
 	outline: 0;
-	box-shadow: 0 0 0 0.15rem var(--doctor-focus);
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
 }
 
 .doctor-service-selection__remove {
@@ -1354,12 +1336,12 @@ body[data-doctor-ui] .main-content {
 }
 
 .doctor-support-dropdown {
-	--doctor-dropdown-surface: var(--doctor-surface, #ffffff);
+	--doctor-dropdown-surface: var(--doctor-surface, var(--qlpk-doctor-surface));
 	--doctor-dropdown-text: var(--doctor-text, #1f1a16);
 	--doctor-dropdown-muted: var(--doctor-muted, var(--qlpk-brown-800));
 	--doctor-dropdown-line: var(--doctor-line, rgba(var(--qlpk-brown-800-rgb), 0.2));
 	--doctor-dropdown-line-strong: var(--doctor-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.34));
-	--doctor-dropdown-soft: var(--doctor-interactive-soft, #fbf8f2);
+	--doctor-dropdown-soft: var(--doctor-interactive-soft, var(--qlpk-doctor-primary-soft));
 	--doctor-dropdown-accent: var(--doctor-brown, var(--qlpk-color-primary));
 	--doctor-dropdown-rx-h: var(--qlpk-rx-h, #7e57c2);
 	--doctor-dropdown-rx-n: var(--qlpk-rx-n, #f4511e);
@@ -1471,7 +1453,7 @@ body[data-doctor-ui] .main-content {
 	padding: 0 0.3rem;
 	border-radius: 0.35rem;
 	background: var(--doctor-dropdown-accent);
-	color: #fff;
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-xs);
 	font-weight: var(--qlpk-font-weight-bold);
 	line-height: 1.35;
@@ -1523,7 +1505,7 @@ body[data-doctor-ui] .main-content {
 	padding: 0.42rem 0.56rem;
 	border: 0.0625rem solid var(--doctor-line-strong);
 	border-radius: 0.4rem;
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-text);
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-medium);
@@ -1549,9 +1531,9 @@ body[data-doctor-ui] .main-content {
 .doctor-clinical-main .doctor-field textarea:focus,
 .doctor-clinical-main .doctor-field input:focus,
 .doctor-clinical-main .doctor-field select:focus {
-	border-color: var(--doctor-primary);
+	border-color: var(--doctor-interactive);
 	outline: 0;
-	box-shadow: 0 0 0 0.15rem var(--doctor-focus);
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
 }
 
 /* The clinical decision form reuses the single-frame paper card from intake. */
@@ -1597,7 +1579,7 @@ body[data-doctor-ui] .main-content {
 }
 .doctor-clinical-section-jump:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: 0.0625rem solid color-mix(in srgb, var(--doctor-brown) 34%, transparent);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 }
 
@@ -1940,28 +1922,28 @@ compact warning without adding label chrome. */
 }
 .doctor-workspace-button:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: 0.0625rem solid var(--doctor-line-strong);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-text);
 }
 .doctor-workspace-button:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .doctor-workspace-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--doctor-primary);
-	color: var(--doctor-primary);
+	border-color: var(--doctor-interactive);
+	color: var(--doctor-interactive);
 	outline: 0;
 }
 .doctor-workspace-button--primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--doctor-primary);
+	border-color: var(--doctor-interactive);
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 .doctor-workspace-button--primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .doctor-workspace-button--primary:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 .doctor-workspace-button--secondary:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: color-mix(in srgb, var(--doctor-brown) 46%, transparent);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 }
 .doctor-workspace-button--secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
@@ -1997,22 +1979,22 @@ compact warning without adding label chrome. */
 }
 
 .doctor-workspace .qlpk-patient-info-card .receptionist-vital-field--temperature {
-	--vital-bg: #fbf8f2;
-	--vital-border: color-mix(in srgb, var(--doctor-brown) 34%, #fbf8f2);
+	--vital-bg: var(--qlpk-doctor-primary-soft);
+	--vital-border: color-mix(in srgb, var(--doctor-brown) 34%, var(--qlpk-doctor-primary-soft));
 	--vital-accent: var(--doctor-brown);
 	--vital-text: var(--doctor-brown);
 }
 
 .doctor-workspace :is(.qlpk-patient-info-card, .qlpk-patient-visit-card) .referral-source-medpro {
 	--referral-source-color: var(--doctor-brown);
-	--referral-source-soft: #fbf8f2;
-	--referral-source-border: color-mix(in srgb, var(--doctor-brown) 30%, #fbf8f2);
+	--referral-source-soft: var(--qlpk-doctor-primary-soft);
+	--referral-source-border: color-mix(in srgb, var(--doctor-brown) 30%, var(--qlpk-doctor-primary-soft));
 	--referral-source-ring: color-mix(in srgb, var(--doctor-brown) 22%, transparent);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-summary__row:not(.medical-history-workbench-summary__row--allergy):not(.medical-history-workbench-summary__row--risk) {
 	--medical-history-summary-accent: var(--doctor-brown);
-	--medical-history-summary-bg: #ffffff;
+	--medical-history-summary-bg: var(--qlpk-doctor-surface);
 	--medical-history-summary-border: var(--doctor-line);
 	--medical-history-summary-label: var(--doctor-text);
 	--medical-history-summary-text: var(--doctor-text);
@@ -2020,7 +2002,7 @@ compact warning without adding label chrome. */
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav {
 	border-color: var(--doctor-line);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav__item:hover,
@@ -2031,14 +2013,14 @@ compact warning without adding label chrome. */
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav__item:focus-visible {
-	box-shadow: 0 0 0 0.15rem var(--doctor-focus);
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active {
 	border-color: var(--doctor-interactive);
 	background: var(--qlpk-workflow-context-header-bg);
 	box-shadow: 0 0.45rem 0.9rem color-mix(in srgb, var(--doctor-brown) 16%, transparent);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav__item :is(strong, strong.has-data),
@@ -2048,7 +2030,7 @@ compact warning without adding label chrome. */
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active strong {
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 }
 
@@ -2057,7 +2039,7 @@ compact warning without adding label chrome. */
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-icd-input-container, .medical-history-chip-area--allergy) {
-	border-color: color-mix(in srgb, var(--doctor-brown) 26%, #fbf8f2);
+	border-color: color-mix(in srgb, var(--doctor-brown) 26%, var(--qlpk-doctor-primary-soft));
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-chip, .medical-history-chip--gd) {
@@ -2084,7 +2066,7 @@ compact warning without adding label chrome. */
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-tab-btn {
 	border-color: color-mix(in srgb, var(--doctor-brown) 38%, transparent);
-	background: #ffffff;
+	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-interactive);
 }
 
@@ -2099,18 +2081,18 @@ compact warning without adding label chrome. */
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-sub-check, .medical-history-risk-inline-check) input:checked + span {
 	border-color: var(--doctor-interactive);
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-chip-area, .medical-history-sub-input, .medical-history-allergy-input):focus-within,
 .doctor-workspace .inline-tien-su--doctor-flat :is(.safety-plan-textarea, .safety-plan-member-select):focus {
 	border-color: var(--doctor-interactive);
-	box-shadow: 0 0 0 0.15rem var(--doctor-focus);
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-substance-table, .medical-history-allergy-table) thead th {
 	border-color: var(--doctor-line-strong);
-	background: #fbf8f2;
+	background: var(--qlpk-doctor-primary-soft);
 	color: var(--doctor-text);
 }
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-add-row-btn, .safety-plan-print-btn):not([data-qlpk-button], [data-qlpk-button] *) {
@@ -2120,7 +2102,7 @@ compact warning without adding label chrome. */
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-add-row-btn, .safety-plan-print-btn):hover:not([data-qlpk-button], [data-qlpk-button] *),
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-add-row-btn, .safety-plan-print-btn):focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--doctor-interactive-soft);
-	box-shadow: 0 0 0 0.15rem var(--doctor-focus);
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .safety-plan-upload-btn {
@@ -2135,7 +2117,6 @@ compact warning without adding label chrome. */
 }
 
 .doctor-section-edge-nav {
-	--doctor-section-rail-accent: var(--doctor-interactive);
 	--doctor-section-rail-accent-strong: var(--doctor-interactive-strong);
 	--doctor-section-rail-muted: var(--doctor-interactive);
 	--doctor-section-rail-soft: var(--doctor-interactive-soft);
@@ -2190,7 +2171,7 @@ compact warning without adding label chrome. */
 
 .doctor-section-edge-nav__item.is-active {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-section-edge-nav__label {
@@ -2371,7 +2352,7 @@ compact warning without adding label chrome. */
 	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-frame-host,
 	body[data-doctor-ui].qlpk-workspace-shell #qlpkWorkspaceNativePane.is-active {
 		block-size: 100%;
-		background: #ffffff;
+		background: var(--qlpk-doctor-surface);
 		height: 100%;
 		min-block-size: 0;
 		overflow: hidden;

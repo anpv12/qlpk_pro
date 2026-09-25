@@ -1,21 +1,10 @@
 /* Canonical layout contract for the Doctor workspace.
  * Page-specific styles may add visuals, but must not redefine these geometry
  * and state rules. */
-body[data-doctor-ui] {
-	--doctor-component-gap: var(--qlpk-doctor-space-2);
-	--doctor-component-radius: var(--qlpk-doctor-radius-md);
-	--doctor-component-border: var(--qlpk-doctor-line);
-	--doctor-component-surface: var(--qlpk-doctor-surface);
-	--doctor-component-text: var(--qlpk-doctor-text);
-	--doctor-component-muted: var(--qlpk-doctor-muted);
-	--doctor-component-interactive: var(--qlpk-doctor-primary);
-	--doctor-component-focus: var(--qlpk-color-focus);
-}
-
 body[data-doctor-ui] [data-doctor-component] {
 	min-inline-size: 0;
 	box-sizing: border-box;
-	color: var(--doctor-component-text);
+	color: var(--qlpk-doctor-text);
 }
 
 body[data-doctor-ui] [data-doctor-component] *,
@@ -44,7 +33,7 @@ body[data-doctor-ui] [data-doctor-component][data-load-state='error'] {
 /* Composite ICD controls expose focus on their outer container via
  * :focus-within; the inner query input must not receive a second outline. */
 body[data-doctor-ui] [data-doctor-component] :where(button, input:not([data-autocomplete-input]), select, textarea):focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
-	outline: 0.125rem solid var(--doctor-component-focus);
+	outline: 0.125rem solid var(--qlpk-color-focus);
 	outline-offset: 0.125rem;
 }
 
@@ -53,16 +42,16 @@ body[data-doctor-ui] .doctor-component-empty {
 	place-items: center;
 	min-block-size: 8rem;
 	padding: var(--qlpk-doctor-space-4);
-	color: var(--doctor-component-muted);
+	color: var(--qlpk-doctor-muted);
 	text-align: center;
 }
 
 body[data-doctor-ui] [data-doctor-component][data-state='loading'] {
-	background: var(--doctor-component-surface);
+	background: var(--qlpk-doctor-surface);
 }
 
 body[data-doctor-ui] [data-doctor-component][data-state='empty'] {
-	background: var(--doctor-component-surface-soft);
+	background: var(--qlpk-doctor-surface-soft);
 }
 
 body[data-doctor-ui] .doctor-component--hidden {

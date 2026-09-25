@@ -198,7 +198,7 @@
 
 .doctor-indications-autocomplete__dropdown .order-autocomplete-survey-badge {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-2xs);
 }
 
@@ -283,7 +283,7 @@
 	align-self: stretch;
 	inline-size: 100%;
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .doctor-indications-form__actions > .doctor-workspace-button {
