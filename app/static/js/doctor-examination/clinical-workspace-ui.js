@@ -83,6 +83,7 @@
 			currentData: null,
 			context: null
 		};
+		const MAIN_CHANGES = RUNTIME.createChangeTracker(STATE, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
 		let clinicalForm = null;
 
 		function resolveDomId(id) {
@@ -310,8 +311,7 @@
 
 	function resetClinicalSaveState() {
 		STATE.dirty = false;
-		STATE.mainDirty = false;
-		STATE.mainRevision = 0;
+		MAIN_CHANGES.reset();
 		STATE.saving = false;
 		STATE.workspaceSaving = false;
 		STATE.workspacePhase = 'idle';
@@ -505,10 +505,7 @@
 			restored += 1;
 		});
 		if (restored) {
-			if (restoredMainControl) {
-				STATE.mainDirty = true;
-				STATE.mainRevision += 1;
-			}
+			if (restoredMainControl) MAIN_CHANGES.mark();
 				syncClinicalDirtyState();
 		}
 		if (!isCurrent()) return { restored: 0 };
@@ -533,6 +530,7 @@
 	}
 	const workspaceSaveController = saveControllerFactory.create({
 		state: STATE,
+		mainChanges: MAIN_CHANGES,
 		getDocument,
 		textOf,
 		valueOf,
@@ -603,8 +601,7 @@
 				if (clinicalForm.ownsField(event.target)) return;
 				if (!isWorkspaceOwnedField(event.target)) return;
 				if (event.target.id === 'weight' || event.target.id === 'height') updateBmiFromVitals(doc);
-				STATE.mainDirty = true;
-				STATE.mainRevision += 1;
+				MAIN_CHANGES.mark();
 				syncClinicalDirtyState();
 			};
 			form.addEventListener('input', handleFieldMutation);
@@ -615,8 +612,7 @@
 					return;
 				}
 				if (view && event.target instanceof view.HTMLSelectElement && isWorkspaceOwnedField(event.target)) {
-					STATE.mainDirty = true;
-					STATE.mainRevision += 1;
+					MAIN_CHANGES.mark();
 					syncClinicalDirtyState();
 				}
 			});

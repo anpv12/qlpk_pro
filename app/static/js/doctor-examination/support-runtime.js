@@ -35,6 +35,30 @@
 		};
 	}
 
+	function createChangeTracker(state, { revisionKey, dirtyKey }) {
+		return Object.freeze({
+			mark() {
+				state[revisionKey] += 1;
+				state[dirtyKey] = true;
+			},
+			restore(dirty) {
+				state[dirtyKey] = Boolean(dirty);
+				if (state[dirtyKey]) state[revisionKey] += 1;
+			},
+			reset() {
+				state[dirtyKey] = false;
+				state[revisionKey] = 0;
+			},
+			capture: () => state[revisionKey],
+			changedSince: revision => revision !== state[revisionKey],
+			settle(revision) {
+				if (revision !== state[revisionKey]) return false;
+				state[dirtyKey] = false;
+				return true;
+			}
+		});
+	}
+
 	function getElement(doc, id) {
 		return doc.getElementById(id);
 	}
@@ -296,6 +320,7 @@
 		getDocument,
 		getScopedDocument,
 		mergeConfig,
+		createChangeTracker,
 		getElement,
 		textOf,
 		hasText,

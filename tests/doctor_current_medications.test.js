@@ -2,6 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {createEnvironment} = require('./helpers/autocomplete-dom');
+const {loadSupportRuntime} = require('./helpers/doctor-registry');
+const {createChangeTracker} = loadSupportRuntime();
 
 function setup() {
   const env = createEnvironment(), requests = [];
@@ -20,7 +22,7 @@ function setup() {
   env.load('app/static/js/components/autocomplete-field.js');
   const modules = new Map([
     ['clinicalDetails', {fields: [], create: () => ({getConfig: () => null, load: async () => true})}],
-    ['supportRuntime', {}], ['autocompleteField', window.QLPKAutocompleteField]
+    ['supportRuntime', {createChangeTracker}], ['autocompleteField', window.QLPKAutocompleteField]
   ]);
   window.QLPKDoctorModuleRegistry = {get: key => modules.get(key), require: key => modules.get(key),
     register: (key, value) => modules.set(key, value)};

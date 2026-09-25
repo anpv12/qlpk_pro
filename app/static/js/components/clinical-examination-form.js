@@ -38,7 +38,6 @@
 			patientId: null,
 			examinationId: null,
 			currentData: null,
-			revision: 0,
 			mainDirty: false,
 			mainRevision: 0,
 			detailDirtySections: new Set(),
@@ -50,6 +49,7 @@
 			icdLoadPromise: null,
 			isLoading: options.isLoading || (() => false)
 		};
+		const MAIN_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
 		const getDocument = options.getDocument || (context => context && context.document ? context.document : document);
 		const getElement = options.getElement || ((doc, id) => doc.getElementById(id));
 		const getValue = options.getValue || ((doc, id) => {
@@ -266,14 +266,12 @@
 
 		function markDirty(control) {
 			if (isLoading()) return;
-			state.revision += 1;
 			const config = detailsPersistence.getConfig(control);
 			if (config) {
 				state.detailDirtySections.add(config.section);
 				state.detailRevisions[config.section] = (state.detailRevisions[config.section] || 0) + 1;
 			} else {
-				state.mainDirty = true;
-				state.mainRevision += 1;
+				MAIN_CHANGES.mark();
 			}
 			syncDirtyState();
 		}
@@ -297,9 +295,7 @@
 			state.detailsLoadError = null;
 			state.detailsLoadPromise = null;
 			state.icdLoadPromise = null;
-			state.revision = 0;
-			state.mainDirty = false;
-			state.mainRevision = 0;
+			MAIN_CHANGES.reset();
 			state.detailDirtySections.clear();
 			state.detailRevisions = {};
 			icdInstances.forEach(instance => instance.clear({ silent: true }));
@@ -343,9 +339,7 @@
 			state.patientId = textOf(patient.id || appointment.patient_id);
 			state.examinationId = textOf(examination.id || appointment.examination_id);
 			state.currentData = payload;
-			state.revision = 0;
-			state.mainDirty = false;
-			state.mainRevision = 0;
+			MAIN_CHANGES.reset();
 			state.detailDirtySections.clear();
 			state.detailRevisions = {};
 			state.detailsLoaded = false;
@@ -420,11 +414,7 @@
 				.map(field => restoreIcdDraftField(doc, field, controls[field.hiddenControlId], token)));
 			if (!isCurrent()) return { restored: 0 };
 			if (restored) {
-				state.revision += 1;
-				if (mainRestored) {
-					state.mainDirty = true;
-					state.mainRevision += 1;
-				}
+				if (mainRestored) MAIN_CHANGES.mark();
 				detailSections.forEach(section => {
 					state.detailDirtySections.add(section);
 					state.detailRevisions[section] = (state.detailRevisions[section] || 0) + 1;
@@ -486,7 +476,7 @@
 				examinationId: state.examinationId
 			}),
 			markMainSaved: revision => {
-				if (revision === state.mainRevision) state.mainDirty = false;
+				MAIN_CHANGES.settle(revision);
 				syncDirtyState();
 			},
 			getContextToken: () => state.contextToken,

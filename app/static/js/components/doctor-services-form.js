@@ -71,6 +71,7 @@
 			nextServiceRowId: 1,
 			serviceOptions: new Map()
 		};
+		const CHANGES = RUNTIME.createChangeTracker(STATE, { revisionKey: 'servicesRevision', dirtyKey: 'servicesDirty' });
 
 		function requestJson(url, requestOptions = {}) {
 			return RUNTIME.requestJson(url, requestOptions);
@@ -100,8 +101,7 @@
 		}
 
 		function markDirty() {
-			STATE.servicesRevision += 1;
-			STATE.servicesDirty = true;
+			CHANGES.mark();
 		}
 
 		function normalizeService(item = {}) {
@@ -231,8 +231,7 @@
 		function resetContextData(doc) {
 			STATE.services = [];
 			STATE.servicesLoaded = false;
-			STATE.servicesDirty = false;
-			STATE.servicesRevision = 0;
+			CHANGES.reset();
 			STATE.servicesSaving = false;
 			STATE.serviceCatalog = [];
 			STATE.serviceCatalogLoaded = false;
@@ -252,8 +251,7 @@
 				if (!isCurrentToken(token, appointmentId)) return false;
 				STATE.services = Array.isArray(data && data.services) ? data.services.map(normalizeService) : [];
 				STATE.servicesLoaded = true;
-				STATE.servicesDirty = false;
-				STATE.servicesRevision = 0;
+				CHANGES.reset();
 				renderServices(doc);
 				return true;
 			} catch (error) {
@@ -330,17 +328,16 @@
 				throw error;
 			}
 			if (STATE.servicesSaving) return { skipped: true, reason: 'saving', module: 'services' };
-			const revision = STATE.servicesRevision;
+			const revision = CHANGES.capture();
 			STATE.servicesSaving = true;
 			try {
 				const data = await requestJson(getEndpoint('sync', { appointmentId }), {
 					method: 'PUT',
 					body: { services: collect() }
 				});
-				const hasNewChanges = revision !== STATE.servicesRevision;
+				const hasNewChanges = !CHANGES.settle(revision);
 				if (!hasNewChanges) {
 					STATE.services = Array.isArray(data && data.services) ? data.services.map(normalizeService) : STATE.services;
-					STATE.servicesDirty = false;
 					renderServices(doc);
 				}
 				showToast(hasNewChanges ? 'info' : 'success', hasNewChanges ? 'Đã lưu dịch vụ trước đó; có thay đổi mới cần lưu lại.' : 'Đã lưu dịch vụ', options);
@@ -450,8 +447,7 @@
 				discount_percent: row.discountPercent,
 				tax_percent: row.taxPercent
 			}));
-			STATE.servicesDirty = Boolean(restoreOptions.dirty);
-			if (STATE.servicesDirty) STATE.servicesRevision += 1;
+			CHANGES.restore(restoreOptions.dirty);
 			renderServices(doc);
 			return true;
 		}

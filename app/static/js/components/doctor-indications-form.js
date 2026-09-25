@@ -85,6 +85,7 @@
 			saving: false,
 			editingTempId: null
 		};
+		const CHANGES = RUNTIME.createChangeTracker(STATE, { revisionKey: 'ordersRevision', dirtyKey: 'ordersDirty' });
 
 		function getDocument(context = {}) {
 			return RUNTIME.getScopedDocument(context, config);
@@ -530,8 +531,7 @@
 		}
 
 		function markDirty() {
-			STATE.ordersRevision += 1;
-			STATE.ordersDirty = true;
+			CHANGES.mark();
 		}
 
 		function handleSubmit(doc) {
@@ -588,8 +588,7 @@
 				if (!currentToken(token, appointmentId)) return false;
 				STATE.rows = mapServerRows(data?.chi_dinh || []);
 				STATE.ordersLoaded = true;
-				STATE.ordersDirty = false;
-				STATE.ordersRevision = 0;
+				CHANGES.reset();
 				renderCurrentRows(doc);
 				return true;
 			} catch (error) {
@@ -609,12 +608,12 @@
 			}
 			const appointmentId = STATE.appointmentId;
 			const token = STATE.contextToken;
-			const revision = STATE.ordersRevision;
+			const revision = CHANGES.capture();
 			const request = ++STATE.realtimeRequest;
 			try {
 				const data = await requestJson(endpoint('appointment', { appointmentId }), { method: 'GET' });
 				if (!currentToken(token, appointmentId) || request !== STATE.realtimeRequest) return false;
-				if (STATE.saving || STATE.ordersDirty || STATE.editingTempId || revision !== STATE.ordersRevision) return false;
+				if (STATE.saving || STATE.ordersDirty || STATE.editingTempId || CHANGES.changedSince(revision)) return false;
 				STATE.rows = mapServerRows(data?.chi_dinh || []);
 				STATE.realtimePending = false;
 				renderCurrentRows(doc);
@@ -672,8 +671,7 @@
 			STATE.performers = [];
 			STATE.performersLoaded = false;
 			STATE.ordersLoaded = false;
-			STATE.ordersDirty = false;
-			STATE.ordersRevision = 0;
+			CHANGES.reset();
 			STATE.saving = false;
 			STATE.editingTempId = null;
 			renderNameField(doc);
@@ -690,7 +688,7 @@
 			if (STATE.isLoading && STATE.isLoading()) return { skipped: true, reason: 'loading', module: 'indications' };
 			if (!STATE.ordersLoaded) throw new Error('Chưa tải xong chỉ định của lượt khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.');
 			if (STATE.saving) return { skipped: true, reason: 'saving', module: 'indications' };
-			const revision = STATE.ordersRevision;
+			const revision = CHANGES.capture();
 			STATE.saving = true;
 			setFormReady(doc);
 			try {
@@ -707,13 +705,13 @@
 					method: 'POST',
 					body: { chi_dinh: buildSavePayload() }
 				});
-				if (revision === STATE.ordersRevision) {
+				const saved = CHANGES.settle(revision);
+				if (saved) {
 					STATE.rows = mapServerRows(data?.chi_dinh || []);
-					STATE.ordersDirty = false;
 					renderCurrentRows(doc);
 				}
-				showToast(revision === STATE.ordersRevision ? 'success' : 'info', revision === STATE.ordersRevision ? 'Đã lưu chỉ định.' : 'Đã lưu chỉ định trước đó; thay đổi mới vẫn chưa lưu.', options);
-				return { status: 'success', module: 'indications', data, hasNewChanges: revision !== STATE.ordersRevision };
+				showToast(saved ? 'success' : 'info', saved ? 'Đã lưu chỉ định.' : 'Đã lưu chỉ định trước đó; thay đổi mới vẫn chưa lưu.', options);
+				return { status: 'success', module: 'indications', data, hasNewChanges: !saved };
 			} finally {
 				STATE.saving = false;
 				setFormReady(doc);
@@ -728,8 +726,7 @@
 		function restoreDraftSnapshot(snapshot = {}, restoreOptions = {}) {
 			const doc = getDocument(restoreOptions);
 			STATE.rows = (Array.isArray(snapshot.rows) ? snapshot.rows : []).map(row => normalizeRow(cloneDraftValue(row)));
-			STATE.ordersDirty = Boolean(restoreOptions.dirty);
-			if (STATE.ordersDirty) STATE.ordersRevision += 1;
+			CHANGES.restore(restoreOptions.dirty);
 			renderCurrentRows(doc);
 			setFormReady(doc);
 			return true;

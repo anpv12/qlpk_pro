@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadSupportRuntime } = require('./helpers/doctor-registry');
 
 const source = fs.readFileSync(
   path.join(__dirname, '..', 'app/static/js/components/doctor-indications-form.js'),
@@ -91,7 +92,8 @@ function createHarness() {
     markRestoredRows() {},
     changedRowIndexes() { return []; },
     configure() {},
-    getCurrentAppointmentId(state) { return state.appointmentId; }
+    getCurrentAppointmentId(state) { return state.appointmentId; },
+    createChangeTracker: loadSupportRuntime().createChangeTracker
   };
   const registration = {};
   const orderAutocompleteUtils = {

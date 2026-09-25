@@ -242,6 +242,22 @@ def main() -> int:
         if shared_global_read.search(text):
             failures.append(f"Doctor module đọc thẳng tài sản dùng chung qua window: {path.relative_to(ROOT)}")
 
+    manual_change_tracking = re.compile(
+        r"\b(?:STATE|state)\.(?:prescription|services|orders|main)(?:Revision\s*(?:\+=|=(?!=))|Dirty\s*=(?!=))"
+    )
+    for relative_path in (
+        "app/static/js/doctor-examination/prescription-ui.js",
+        "app/static/js/components/doctor-services-form.js",
+        "app/static/js/components/doctor-indications-form.js",
+        "app/static/js/doctor-examination/clinical-workspace-ui.js",
+        "app/static/js/doctor-examination/workspace-save-controller.js",
+        "app/static/js/components/clinical-examination-form.js",
+    ):
+        path = ROOT / relative_path
+        text = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+        if manual_change_tracking.search(text):
+            failures.append(f"Doctor module tự tăng revision/dirty thay vì dùng createChangeTracker: {relative_path}")
+
     for section_id in ROOT_SECTION_IDS:
         count = parser.root_section_ids.count(section_id)
         if count != 1:

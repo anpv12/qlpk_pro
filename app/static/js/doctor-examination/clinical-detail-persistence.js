@@ -158,10 +158,7 @@
 				state.detailDirtySections.add(section);
 				state.detailRevisions[section] = (state.detailRevisions[section] || 0) + 1;
 			});
-			if (changedSections.size) {
-				state.revision += 1;
-				syncDirtyState();
-			}
+			if (changedSections.size) syncDirtyState();
 			return changedSections.size > 0;
 		}
 

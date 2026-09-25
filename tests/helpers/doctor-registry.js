@@ -2,9 +2,13 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const REEXAM_FILES = Object.freeze([
+const RUNTIME_FILES = Object.freeze([
   'app/static/js/doctor-examination/module-registry.js',
-  'app/static/js/doctor-examination/support-runtime.js',
+  'app/static/js/doctor-examination/support-runtime.js'
+]);
+
+const REEXAM_FILES = Object.freeze([
+  ...RUNTIME_FILES,
   'app/static/js/prescriptions/shared/prescription-type-contract.js',
   'app/static/js/prescriptions/shared/prescription-dose-utils.js',
   'app/static/js/doctor-examination/prescription-model.js',
@@ -18,4 +22,8 @@ function loadDoctorRegistry(files) {
   return window.QLPKDoctorModuleRegistry;
 }
 
-module.exports = { REEXAM_FILES, loadDoctorRegistry };
+function loadSupportRuntime() {
+  return loadDoctorRegistry(RUNTIME_FILES).require('supportRuntime');
+}
+
+module.exports = { RUNTIME_FILES, REEXAM_FILES, loadDoctorRegistry, loadSupportRuntime };

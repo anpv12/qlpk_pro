@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const {loadSupportRuntime} = require('./helpers/doctor-registry');
+const {createChangeTracker} = loadSupportRuntime();
 const modules = new Map();
 const window = {QLPKDoctorModuleRegistry:{register:(name, value)=>modules.set(name,value)}};
 for (const file of ['clinical-detail-persistence.js','workspace-save-controller.js']) {
@@ -51,7 +53,8 @@ async function main() {
 
   let prepared=0;
   const controllerState={appointment:{id:101},contextToken:1};
-  const controller=modules.get('workspaceSaveController').create({state:controllerState,getDocument:()=>({}),
+  const controller=modules.get('workspaceSaveController').create({state:controllerState,
+    mainChanges:createChangeTracker(controllerState,{revisionKey:'mainRevision',dirtyKey:'mainDirty'}),getDocument:()=>({}),
     textOf:String,valueOf:a=>a,apiCall:async()=>({ok:true}),isLoading:()=>false,
     getClinicalForm:()=>({prepareEmptyDetailDefaults:()=>prepared++,getSaveState:()=>({mainDirty:false,detailDirtySections:new Set(),detailsLoaded:true})})
   });

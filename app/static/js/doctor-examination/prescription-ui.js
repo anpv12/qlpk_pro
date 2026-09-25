@@ -130,6 +130,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		medicineDropdownRowUid: '',
 		medicineDropdownActiveIndex: -1
 	};
+	const CHANGES = RUNTIME.createChangeTracker(STATE, { revisionKey: 'prescriptionRevision', dirtyKey: 'prescriptionDirty' });
 
 	function getCurrentAppointmentId() {
 		return RUNTIME.getCurrentAppointmentId(STATE);
@@ -249,8 +250,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 	}
 
 	function markPrescriptionDirty() {
-		STATE.prescriptionRevision += 1;
-		STATE.prescriptionDirty = true;
+		CHANGES.mark();
 		if (STATE.document) {
 			setPrescriptionSaveStatus(STATE.document, 'dirty', 'Chưa lưu thay đổi');
 			syncPrescriptionReExamControls(STATE.document);
@@ -354,8 +354,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		STATE.appointmentDate = null;
 		STATE.prescriptionRows = [];
 		STATE.prescriptionLoaded = false;
-		STATE.prescriptionDirty = false;
-		STATE.prescriptionRevision = 0;
+		CHANGES.reset();
 		STATE.prescriptionSaving = false;
 		STATE.prescriptionUsageMode = PRESCRIPTION_USAGE_MODES.TIME_SLOTS;
 		STATE.preservedGlobalUsage = '';
@@ -435,8 +434,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			STATE.reExaminationDraftSelection = snapshot.reExamSelection || STATE.reExaminationSnapshot?.selection || null;
 		}
 		syncPrescriptionReExamControls(doc);
-		STATE.prescriptionDirty = Boolean(options.dirty);
-		if (STATE.prescriptionDirty) STATE.prescriptionRevision += 1;
+		CHANGES.restore(options.dirty);
 		syncPrescriptionRowQuantities(doc);
 		renderPrescriptionRows(doc);
 		return true;
@@ -772,8 +770,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			syncPrescriptionRowQuantities(doc, { markAllocationStale: false });
 			STATE.prescriptionLoaded = true;
 			syncPrescriptionReExamControls(doc);
-			STATE.prescriptionDirty = false;
-			STATE.prescriptionRevision = 0;
+			CHANGES.reset();
 			const hasPersistedPrescription = Boolean(
 				STATE.prescriptionRows.length
 				|| (data.prescriptions || []).length
@@ -887,7 +884,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		if (STATE.prescriptionSaving) return { skipped: true, reason: 'saving', module: 'prescription' };
 		validatePrescriptionBeforeSave(doc);
 
-		const revision = STATE.prescriptionRevision;
+		const revision = CHANGES.capture();
 		const payload = collectPrescriptionPayload(doc);
 		STATE.prescriptionSaving = true;
 		setPrescriptionSaveStatus(doc, 'saving', 'Đang lưu');
@@ -900,14 +897,13 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			STATE.prescriptionCodesByType = data && data.prescription_codes_by_type ? data.prescription_codes_by_type : STATE.prescriptionCodesByType;
 			applyStockAllocationStates(data && data.stock_allocation_states);
 			const reExamSync = data && data.re_examination_sync_result;
-			const hasNewChanges = revision !== STATE.prescriptionRevision;
+			const hasNewChanges = !CHANGES.settle(revision);
 			applyReExaminationSyncState(reExamSync);
 			if (!hasNewChanges) {
 				STATE.reExaminationDraftSelection = STATE.reExaminationSnapshot?.selection || null;
 				setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
 			}
 			STATE.reExaminationError = '';
-			if (!hasNewChanges) STATE.prescriptionDirty = false;
 			renderPrescriptionRows(doc);
 			updatePrescriptionFooter(doc);
 

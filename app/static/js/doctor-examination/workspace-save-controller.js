@@ -5,6 +5,8 @@
 
 	function create(options = {}) {
 		const state = options.state;
+		const mainChanges = options.mainChanges;
+		if (!mainChanges) throw new Error('Thiếu tracker thay đổi của vùng Khám');
 		const getDocument = options.getDocument;
 		const textOf = options.textOf;
 		const valueOf = options.valueOf;
@@ -238,7 +240,7 @@
 				let detailsResult = { skipped: true, reason: 'clean' };
 			if (shouldSaveMain) {
 				setWorkspaceSavePhase(doc, 'main');
-				const mainRevision = state.mainRevision;
+				const mainRevision = mainChanges.capture();
 				const clinicalMainRevision = clinicalState.mainRevision;
 					const historyRevision = medicalHistory && typeof medicalHistory.getSaveRevision === 'function'
 						? medicalHistory.getSaveRevision()
@@ -257,7 +259,7 @@
 					throw new Error(await readResponseError(response, 'Không lưu được dữ liệu khám'));
 					}
 				if (medicalHistory && typeof medicalHistory.markSaved === 'function') medicalHistory.markSaved(historyRevision);
-				if (mainRevision === state.mainRevision) state.mainDirty = false;
+				mainChanges.settle(mainRevision);
 				if (clinicalForm?.markMainSaved) clinicalForm.markMainSaved(clinicalMainRevision);
 					mainResult = { status: 'success', appointmentId };
 				}

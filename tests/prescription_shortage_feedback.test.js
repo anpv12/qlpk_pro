@@ -3,6 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { loadSupportRuntime } = require('./helpers/doctor-registry');
+const { createChangeTracker } = loadSupportRuntime();
 
 const shortage = {
     medicine_name: 'Diazepam 5mg', unit: 'viên', requested_quantity: '150',
@@ -15,8 +17,9 @@ async function saveFailure(payload, code = 'inventory.insufficient', extra = [])
     const window = { QLPKDoctorModuleRegistry: { register: (name, module) => { controllerModule = module; } } };
     vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/workspace-save-controller.js', 'utf8'), { window });
     const error = Object.assign(new Error('Không đủ thuốc trong kho'), { code, payload });
+    const state = { appointment: { id: 1 }, contextToken: 1 };
     const controller = controllerModule.create({
-        state: { appointment: { id: 1 }, contextToken: 1 }, getDocument: () => ({}),
+        state, mainChanges: createChangeTracker(state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' }), getDocument: () => ({}),
         textOf: String, valueOf: value => value, apiCall: async () => { throw new Error('Unexpected write'); },
         setWorkspaceSavePhase: () => {}, setBusy: () => {}, getDraftRecovery: () => null,
         getSupportModules: () => ({ saveAll: async () => ({ status: 'error', failedModules: [
