@@ -418,9 +418,10 @@ def main() -> int:
             "chọn thuốc, sửa liều, sửa số ngày và đổi cách tính liều"
         )
     for marker in (
-        "grid-template-columns: minmax(15rem, 0.85fr) minmax(15rem, 0.8fr) minmax(30rem, 2fr);",
-        "@container doctor-prescription-main (max-width: 60rem)",
+        "grid-template-columns: max-content max-content minmax(0, 1fr);",
+        "@container doctor-prescription-main (max-width: 66rem)",
         "@container doctor-prescription-main (max-width: 38rem)",
+        "@container doctor-prescription-main (max-width: 26rem)",
     ):
         if marker not in prescription_css:
             failures.append(f"Doctor prescription overview thiếu layout contract: {marker}")

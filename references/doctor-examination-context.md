@@ -124,8 +124,9 @@ The route also loads shared components for queue cards, patient/intake forms,
 medical-history controls, documents, ICD data, relatives, and modal shells.
 Those components are supporting owners, not a second Doctor-workspace owner.
 
-There are now twenty-seven live Doctor-private files under `app/static/js/doctor-examination/`
-in this snapshot, plus shared component owners under
+There are now twenty-eight live Doctor-private files under `app/static/js/doctor-examination/`
+in this snapshot. Twenty-seven are imported by the entry; `re-examination-calendar.js`
+is imported only by `prescription-ui.js` through a static ESM import. Shared component owners live under
 `app/static/js/components/` and the page orchestrator `doctor-examination.js`. Do not add
 script tags or documentation references for retired
 `prescription-*`, `patient-switch-*`, or `examination-data-load-*` helper
@@ -155,6 +156,7 @@ files unless a separately approved runtime slice reintroduces them.
 | Prescription model | `app/static/js/doctor-examination/prescription-model.js` | Pure schedule/usage/type/date normalization, derived quantity calculation, and payload helpers; no DOM, API, or state. |
 | Prescription row presentation | `app/static/js/doctor-examination/prescription-row-renderer.js` | Renders current medicine rows and updates row totals through callbacks; no API, save, or prescription state. |
 | Prescription history presentation | `app/static/js/doctor-examination/prescription-history-ui.js` | Renders the dedicated large medication-history modal: prescription-bearing visits on the left, selected prescription tables on the right, and no API, save, or prescription state. It reuses the canonical prescription model to display JSONB usage as readable instructions. |
+| Re-examination calendar | `app/static/js/doctor-examination/re-examination-calendar.js` | Selection-only modal imported by `prescription-ui.js`. It lazy-loads pinned FullCalendar 5.11.3, reads the calendar API through the injected `requestJson`, and returns the chosen slot through `onConfirm`; patient context, draft, and save stay in `prescription-ui.js`. |
 | Services form component | `app/static/js/components/doctor-services-form.js`, registry key `servicesForm` | Appointment-service state, catalog pagination, selected-row render, clear/load/save, dirty state, and draft snapshot. |
 | Indications form component | `app/static/js/components/doctor-indications-form.js`, registry key `indicationsForm` | Data-backed Chỉ định pane lifecycle: free-text/survey selection, performers, current appointment rows, patient history, edit/delete, dirty/save and draft restore. The shared autocomplete is survey-only; this component remains the only selection and save owner. |
 | Services and support save facade | `app/static/js/doctor-examination/support-modules-ui.js`, registry key `supportModulesUi` | Composes prescription + services owners and exposes the single support save facade; no service row/catalog state. |

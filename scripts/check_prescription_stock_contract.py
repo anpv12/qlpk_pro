@@ -110,11 +110,16 @@ def main():
     _require(save_controller, "supportResult.successMessages[0]", "workspace save feedback display", errors)
     _require(row_renderer, 'class="doctor-prescription-batch"', "always-visible Doctor batch block", errors)
     _require(row_renderer, "function updateBatchAllocation", "targeted batch status renderer", errors)
-    _require(row_renderer, "if (state && status !== 'allocated') return '';", "hide passive non-allocated batch states", errors)
-    _require(row_renderer, "if (!state || status !== 'allocated') return '';", "allocated-only batch detail guard", errors)
+    _require(row_renderer, "if (!state) return '';", "no allocation state renders no batch block", errors)
+    _require(
+        row_renderer,
+        "if (status !== 'allocated' || !allocations.length) return '';",
+        "allocated-only batch detail guard hides passive states",
+        errors,
+    )
     _require(row_renderer, "Cần lưu để cập nhật lô", "pending allocation feedback", errors)
     _require(row_renderer, "Đã cấp ${escapeHtml(formatAllocationQuantity(allocation.quantity))}", "allocated quantity per lot", errors)
-    _require(row_renderer, "Tồn kho: <strong>", "single current stock display label", errors)
+    _require(row_renderer, "Tồn tổng hiện tại: <strong>", "single current stock display label", errors)
     _require(row_renderer, 'class="doctor-prescription-table__quantity-unit-input"', "external unit editor beside quantity", errors)
     _require(row_renderer, "row.isExternal", "unit editor source guard", errors)
     for retired_stock_ui in (
