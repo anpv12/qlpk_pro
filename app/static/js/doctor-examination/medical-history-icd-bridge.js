@@ -85,8 +85,8 @@
 
 	function setupICDMultiSelect(fieldId, mode) {
 		const config = getModeConfig(mode);
-    const Component = REGISTRY.get('icdAutocomplete') || window.QLPKIcdAutocomplete;
-		if (!config || typeof Component !== 'function') return false;
+		const Component = REGISTRY.require('icdAutocomplete');
+		if (!config) return false;
 		if (getIcdComponent(mode)) return true;
 		const container = getElement(config.containerId);
 		const root = container?.closest('[data-icd-autocomplete]');
@@ -111,9 +111,7 @@
 	}
 
 	function loadICDData(query = '') {
-    const loader = REGISTRY.get('icdDataLoader') || window.ClinicalIcdDataLoader;
-    if (!loader || typeof loader.loadICDData !== 'function') return Promise.resolve([]);
-		return loader.loadICDData(query, {
+		return REGISTRY.require('icdDataLoader').loadICDData(query, {
 			getAuthHeader,
 			missingTokenMessage: 'Không tìm thấy token để tải danh mục ICD.'
 		});

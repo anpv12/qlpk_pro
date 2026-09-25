@@ -237,7 +237,6 @@
 				apiCall,
 				getAuthHeader,
 				showToast: showCustomToast,
-				showConfirmationDialog: getModule('confirmationDialog')?.confirm,
 				formatDateDisplay,
 				getCurrentPatientId: () => state.currentPatientId,
 				getRelativeTableInstance: () => state.relativeTableInstance,

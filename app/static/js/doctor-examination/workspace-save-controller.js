@@ -405,44 +405,21 @@
 				return typeof onDeny === 'function' && (await onDeny()) !== false;
 			};
 
-			if (!window.Swal || typeof window.Swal.fire !== 'function') {
-				if (typeof showToast === 'function') showToast('error', 'Không thể mở hộp thoại xác nhận. Vui lòng ở lại ca khám.');
-				return false;
-			}
-			let result;
-			try {
-				result = await window.Swal.fire({
-					icon: 'warning',
-					title: dialog.title,
-					text: dialog.message,
-					showCancelButton: options.showCancelButton !== false,
-					showDenyButton: true,
-					confirmButtonText: dialog.confirmButtonText,
-					denyButtonText: dialog.denyButtonText,
-					cancelButtonText: dialog.cancelButtonText,
-					buttonsStyling: false,
-					reverseButtons: true,
-					focusCancel: true,
-					allowOutsideClick: false,
-					allowEscapeKey: options.allowEscapeKey !== false,
-					customClass: {
-						container: 'qlpk-confirm-container',
-						popup: 'qlpk-confirm-dialog qlpk-confirm-dialog--warning',
-						icon: 'qlpk-confirm-dialog__icon',
-						title: 'qlpk-confirm-dialog__title',
-						htmlContainer: 'qlpk-confirm-dialog__text',
-						actions: 'qlpk-confirm-dialog__actions',
-						confirmButton: 'qlpk-confirm-dialog__button qlpk-confirm-dialog__button--warning',
-						denyButton: 'qlpk-confirm-dialog__button qlpk-confirm-dialog__button--ghost',
-						cancelButton: 'qlpk-confirm-dialog__button qlpk-confirm-dialog__button--ghost'
-					}
-				});
-			} catch (error) {
-				if (typeof showToast === 'function') showToast('error', 'Không thể mở hộp thoại xác nhận. Vui lòng ở lại ca khám.');
-				return false;
-			}
-			if (result.isConfirmed) return saveAndContinue();
-			if (result.isDenied) return denyAndContinue();
+			const choice = await registry.require('confirmationDialog').choose({
+				variant: 'warning',
+				icon: 'warning',
+				title: dialog.title,
+				text: dialog.message,
+				confirmText: dialog.confirmButtonText,
+				denyText: dialog.denyButtonText,
+				cancelText: dialog.cancelButtonText,
+				showCancelButton: options.showCancelButton !== false,
+				allowEscapeKey: options.allowEscapeKey !== false,
+				showToast,
+				failureMessage: 'Không thể mở hộp thoại xác nhận. Vui lòng ở lại ca khám.'
+			});
+			if (choice === 'confirm') return saveAndContinue();
+			if (choice === 'deny') return denyAndContinue();
 			return false;
 		}
 

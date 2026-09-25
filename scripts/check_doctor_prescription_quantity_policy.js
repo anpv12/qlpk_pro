@@ -9,6 +9,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const sourcePath = path.join(root, 'app/static/js/doctor-examination/prescription-model.js');
 const typeContractPath = path.join(root, 'app/static/js/prescriptions/shared/prescription-type-contract.js');
+const doseUtilsPath = path.join(root, 'app/static/js/prescriptions/shared/prescription-dose-utils.js');
 const modules = new Map();
 const windowStub = {
 	QLPKDoctorModuleRegistry: {
@@ -27,22 +28,16 @@ const windowStub = {
 		register(name, value) {
 			modules.set(name, value);
 		}
-	},
-	parseFractionalQuantity(value) {
-		const raw = String(value || '').trim().replace(',', '.');
-		if (raw.includes('/')) {
-			const [numerator, denominator] = raw.split('/').map(Number);
-			return denominator ? numerator / denominator : Number.NaN;
-		}
-		return Number(raw);
 	}
 };
 
-vm.runInNewContext(fs.readFileSync(typeContractPath, 'utf8'), {
-	window: windowStub,
-	console,
-	Date
-}, { filename: typeContractPath });
+for (const dependencyPath of [typeContractPath, doseUtilsPath]) {
+	vm.runInNewContext(fs.readFileSync(dependencyPath, 'utf8'), {
+		window: windowStub,
+		console,
+		Date
+	}, { filename: dependencyPath });
+}
 
 vm.runInNewContext(fs.readFileSync(sourcePath, 'utf8'), {
 	window: windowStub,

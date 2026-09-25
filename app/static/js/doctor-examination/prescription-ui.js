@@ -131,9 +131,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 	};
 
 	function getCurrentAppointmentId() {
-		return RUNTIME.normalizeId(STATE.appointmentId)
-			|| RUNTIME.normalizeId(options.getAppointmentId?.())
-			|| RUNTIME.normalizeId(config.getAppointmentId?.());
+		return RUNTIME.getCurrentAppointmentId(STATE);
 	}
 
 	function getMedicineDropdown(doc) {
@@ -1430,14 +1428,8 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 	}
 
 	const doctorConfig = window.QLPKDoctorModuleRegistry.get('doctorComponentConfig');
-	const getDoctorPageContext = () => window.QLPKDoctorModuleRegistry.get('doctorComponentContext')?.getCurrent?.() || null;
-	const getDoctorPageState = () => getDoctorPageContext()?.stateObject || null;
 	const doctorInstance = create({
-		config: doctorConfig?.prescription || {},
-		getAppointmentId: () => getDoctorPageState()?.currentAppointmentId || null,
-		getPatientId: () => getDoctorPageState()?.currentPatientId || null,
-		isLoading: () => Boolean(getDoctorPageState()?.isLoadingExaminationData),
-		showToast: (type, message) => getDoctorPageContext()?.runtime?.showCustomToast?.(type, message)
+		config: doctorConfig?.prescription || {}
 	});
 
 	function getOrCreate(options = {}) {

@@ -6,9 +6,9 @@
 	const RUNTIME = REGISTRY.get('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
 
-	const ORDER_STATE_UTILS = REGISTRY.get('orderSelectionStateUtils') || window.ClinicalOrderSelectionStateUtils || {};
-	const STATUS_UTILS = REGISTRY.get('orderStatusUtils') || window.ClinicalOrderStatusUtils || {};
-	const AUTOCOMPLETE_UTILS = window.ClinicalOrderAutocompleteUtils || {};
+	const ORDER_STATE_UTILS = REGISTRY.require('orderSelectionStateUtils');
+	const STATUS_UTILS = REGISTRY.require('orderStatusUtils');
+	const AUTOCOMPLETE_UTILS = REGISTRY.require('orderAutocompleteUtils');
 
 	const DEFAULT_DOM = {
 		root: 'doctorIndicationsPanel',
@@ -168,9 +168,7 @@
 		}
 
 		function getStatusConfig(status) {
-			return typeof STATUS_UTILS.getOrderStatusConfig === 'function'
-				? STATUS_UTILS.getOrderStatusConfig(status)
-				: { label: status || 'Chuyển thực hiện', className: 'status-sent' };
+			return STATUS_UTILS.getOrderStatusConfig(status);
 		}
 
 		function getPerformerName(row) {
@@ -266,7 +264,6 @@
 
 		function setupNameAutocomplete(doc) {
 			if (STATE.autocomplete) return true;
-			if (typeof AUTOCOMPLETE_UTILS.setupOrderFormAutocomplete !== 'function') return false;
 			const input = el(doc, 'name');
 			const dropdown = el(doc, 'nameDropdown');
 			if (!input || !dropdown) return false;
@@ -334,25 +331,11 @@
 		}
 
 		function buildSavePayload() {
-			if (typeof ORDER_STATE_UTILS.buildOrdersSavePayload === 'function') {
-				return ORDER_STATE_UTILS.buildOrdersSavePayload(STATE.rows, {
-					nullEmptyInHouseUnitId: true,
-					emptyStringInHouseUnit: true,
-					includeSurveyTemplate: true
-				});
-			}
-			return STATE.rows.map(row => ({
-				id: row.id || undefined,
-				survey_template_id: row.survey_template_id || null,
-				order_name: row.order_name,
-				location_type: row.location_type,
-				in_house_unit_id: row.in_house_unit_id || null,
-				in_house_unit: row.in_house_unit || '',
-				out_facility: row.out_facility || '',
-				scheduled_for: row.scheduled_for,
-				status: row.status,
-				is_completed: row.is_completed,
-			}));
+			return ORDER_STATE_UTILS.buildOrdersSavePayload(STATE.rows, {
+				nullEmptyInHouseUnitId: true,
+				emptyStringInHouseUnit: true,
+				includeSurveyTemplate: true
+			});
 		}
 
 		function setMessage(doc, message = '', type = 'info') {
@@ -722,17 +705,15 @@
 			STATE.saving = true;
 			setFormReady(doc);
 			try {
-				if (typeof ORDER_STATE_UTILS.refreshSelectedOrderStatusesBeforeSave === 'function') {
-					const refreshed = await ORDER_STATE_UTILS.refreshSelectedOrderStatusesBeforeSave({
-						apiCall: (url, requestOptions) => STATE.apiCall(url, requestOptions),
-						appointmentId,
-						getSelectedOrders: () => STATE.rows,
-						setSelectedOrders: value => { STATE.rows = value.map(normalizeRow); },
-						console,
-						getCurrentAppointmentId: () => RUNTIME.getCurrentAppointmentId(STATE)
-					});
-					if (refreshed.canceled) return { skipped: true, reason: 'stale-context', module: 'indications' };
-				}
+				const refreshed = await ORDER_STATE_UTILS.refreshSelectedOrderStatusesBeforeSave({
+					apiCall: (url, requestOptions) => STATE.apiCall(url, requestOptions),
+					appointmentId,
+					getSelectedOrders: () => STATE.rows,
+					setSelectedOrders: value => { STATE.rows = value.map(normalizeRow); },
+					console,
+					getCurrentAppointmentId: () => RUNTIME.getCurrentAppointmentId(STATE)
+				});
+				if (refreshed.canceled) return { skipped: true, reason: 'stale-context', module: 'indications' };
 				const data = await requestJson(endpoint('appointment', { appointmentId }), {
 					method: 'POST',
 					body: { chi_dinh: buildSavePayload() }
@@ -848,7 +829,7 @@
 	}
 
 	REGISTRY.register('indicationsForm', { create, defaults: mergeConfig() }, {
-		dependencies: ['supportRuntime', 'componentDomScope', 'iconSystem', 'confirmationDialog'],
+		dependencies: ['supportRuntime', 'componentDomScope', 'iconSystem', 'confirmationDialog', 'orderSelectionStateUtils', 'orderStatusUtils', 'orderAutocompleteUtils'],
 		owner: 'doctor/indications'
 	});
 })(window, document);

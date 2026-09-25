@@ -49,6 +49,11 @@ function createFixture() {
 		},
 		get(name) {
 			return registrations.get(name) || null;
+		},
+		require(name) {
+			const value = registrations.get(name);
+			if (!value) throw new Error(`Thiếu Doctor module: ${name}`);
+			return value;
 		}
 	};
 
@@ -59,6 +64,8 @@ function createFixture() {
 		this.renderSelected = () => {};
 		this.clear = () => {};
 	}
+	registry.register('icdAutocomplete', FakeIcdAutocomplete);
+	registry.register('icdDataLoader', { loadICDData: async () => [] });
 
 	const window = {
 		Element: FakeElement,
@@ -67,9 +74,7 @@ function createFixture() {
 		QLPKMedicalHistoryBootstrapConfig: {
 			root: '#doctorHistoryPanel',
 			rootId: 'doctorHistoryPanel'
-		},
-		QLPKIcdAutocomplete: FakeIcdAutocomplete,
-		ClinicalIcdDataLoader: { loadICDData: async () => [] }
+		}
 	};
 	window.window = window;
 

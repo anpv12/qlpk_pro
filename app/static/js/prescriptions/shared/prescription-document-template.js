@@ -1,19 +1,7 @@
 // Shared Prescription Template Helpers
 // ============================================
-// Self-contained utilities — guard pattern để không conflict với doctor-examination.js
+// Dose helpers are legacy global aliases of PrescriptionDoseUtils; the guard pattern keeps classic pages compatible.
 // ============================================
-
-if (typeof PRESCRIPTION_USAGE_MODES === 'undefined') {
-	var PRESCRIPTION_USAGE_MODES = { TIMES_PER_DAY: 'times_per_day', TIME_SLOTS: 'time_slots' };
-}
-
-if (typeof ensureValidPrescriptionUsageMode === 'undefined') {
-	var ensureValidPrescriptionUsageMode = function ensureValidPrescriptionUsageMode(mode) {
-		return mode === PRESCRIPTION_USAGE_MODES.TIME_SLOTS
-			? PRESCRIPTION_USAGE_MODES.TIME_SLOTS
-			: PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY;
-	};
-}
 
 if (typeof toNumber === 'undefined') {
 	var toNumber = function toNumber(value, fallback) {
@@ -132,107 +120,35 @@ if (typeof buildPrescriptionDocumentViewModel === 'undefined') {
 	}
 }
 
-if (typeof gcd === 'undefined') {
-	var gcd = function gcd(a, b) {
-		a = Math.abs(a); b = Math.abs(b);
-		while (b) { var t = b; b = a % b; a = t; }
-		return a;
-	};
-}
-
-if (typeof decimalToFraction === 'undefined') {
-	var decimalToFraction = function decimalToFraction(decimal) {
-		if (decimal === 0) return null;
-		const tolerance = 0.0001;
-		for (let den = 2; den <= 10; den++) {
-			const num = Math.round(decimal * den);
-			if (num > 0 && Math.abs(num / den - decimal) < tolerance) {
-				const d = gcd(num, den);
-				return { numerator: num / d, denominator: den / d };
-			}
-		}
-		return null;
-	};
+function requirePrescriptionDoseUtils() {
+	if (!window.PrescriptionDoseUtils) throw new Error('Thiếu tiện ích liều thuốc dùng chung');
+	return window.PrescriptionDoseUtils;
 }
 
 if (typeof parseFractionalQuantity === 'undefined') {
 	var parseFractionalQuantity = function parseFractionalQuantity(value) {
-		if (value === null || value === undefined || value === '') return null;
-		if (typeof value === 'number') return isNaN(value) ? null : value;
-		const str = String(value).trim();
-		if (!str) return null;
-		if (str.includes('/')) {
-			const parts = str.split('/').map(function (p) { return p.trim(); });
-			if (parts.length === 2) {
-				const num = parseFloat(parts[0]), den = parseFloat(parts[1]);
-				if (!isNaN(num) && !isNaN(den) && den !== 0) return num / den;
-			}
-			return null;
-		}
-		const decimal = parseFloat(str.replace(',', '.'));
-		return isNaN(decimal) ? null : decimal;
+		return requirePrescriptionDoseUtils().parseDose(value, null);
 	};
 }
 
 if (typeof formatDoseAsFraction === 'undefined') {
 	var formatDoseAsFraction = function formatDoseAsFraction(value) {
-		if (value === null || value === undefined || value === '') return '0';
-		const num = parseFloat(value);
-		if (isNaN(num) || num <= 0) return '0';
-		if (num === Math.floor(num)) return num.toString();
-		if (num < 1) {
-			const frac = decimalToFraction(num);
-			if (frac) return frac.numerator + '/' + frac.denominator;
-		}
-		return num.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+		return requirePrescriptionDoseUtils().formatDose(value);
 	};
-}
-
-if (typeof window !== 'undefined' && typeof window.formatDoseAsFraction !== 'function') {
-	window.formatDoseAsFraction = formatDoseAsFraction;
 }
 
 if (typeof normalizeScheduleData === 'undefined') {
 	var normalizeScheduleData = function normalizeScheduleData(rawSchedule) {
-		rawSchedule = rawSchedule || {};
-		const timesPerDay = rawSchedule.times_per_day || {};
-		const timeSlots = rawSchedule.time_slots || {};
-		return {
-			mode: ensureValidPrescriptionUsageMode(rawSchedule.mode),
-			times_per_day: {
-				qty_per_time: Math.max(0.001, parseFractionalQuantity(timesPerDay.qty_per_time) || 1),
-				times_per_day: Math.max(1, toNumber(timesPerDay.times_per_day, 1))
-			},
-			time_slots: {
-				morning: Math.max(0, toNumber(timeSlots.morning, 0)),
-				noon: Math.max(0, toNumber(timeSlots.noon, 0)),
-				afternoon: Math.max(0, toNumber(timeSlots.afternoon, 0)),
-				evening: Math.max(0, toNumber(timeSlots.evening, 0))
-			}
-		};
+		const doseUtils = requirePrescriptionDoseUtils();
+		return doseUtils.normalizeSchedule(rawSchedule, undefined, { defaultMode: doseUtils.USAGE_MODES.TIMES_PER_DAY });
 	};
 }
 
 if (typeof parseMedicineUsagePayload === 'undefined') {
 	var parseMedicineUsagePayload = function parseMedicineUsagePayload(rawUsage) {
-		if (typeof rawUsage === 'string') {
-			const trimmed = rawUsage.trim();
-			if (trimmed.startsWith('{')) {
-					try {
-						const parsed = JSON.parse(trimmed);
-						const note = typeof parsed.note === 'string' ? parsed.note : '';
-						return {
-							note: note,
-							note_mode: parsed.note_mode || parsed.noteMode || '',
-							schedule: normalizeScheduleData(parsed.schedule || {})
-						};
-					} catch (e) {
-						return { note: trimmed, note_mode: 'manual', schedule: normalizeScheduleData() };
-					}
-				}
-				return { note: trimmed, note_mode: 'manual', schedule: normalizeScheduleData() };
-			}
-			return { note: '', note_mode: 'generated', schedule: normalizeScheduleData() };
+		const doseUtils = requirePrescriptionDoseUtils();
+		const parsed = doseUtils.parseUsage(rawUsage, undefined, { defaultMode: doseUtils.USAGE_MODES.TIMES_PER_DAY });
+		return { note: parsed.note, note_mode: parsed.noteMode, schedule: parsed.schedule };
 	};
 }
 

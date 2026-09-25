@@ -88,27 +88,35 @@ function createHarness() {
     getCurrentAppointmentId(state) { return state.appointmentId; }
   };
   const registration = {};
+  const orderAutocompleteUtils = {
+    setupOrderFormAutocomplete() {
+      return { hide() {} };
+    }
+  };
   const registry = {
     get(name) {
       if (name === 'supportRuntime') return runtime;
       if (name === 'componentDomScope') return { create() { return document; } };
-      if (name === 'orderSelectionStateUtils') return {};
-      if (name === 'orderStatusUtils') return {};
+      if (name === 'orderSelectionStateUtils') return window.ClinicalOrderSelectionStateUtils;
+      if (name === 'orderStatusUtils') return window.ClinicalOrderStatusUtils;
+      if (name === 'orderAutocompleteUtils') return orderAutocompleteUtils;
       if (name === 'confirmationDialog') return { confirm: async () => false };
       return null;
+    },
+    require(name) {
+      const value = this.get(name);
+      if (!value) throw new Error(`Thiếu Doctor module: ${name}`);
+      return value;
     },
     register(name, value) {
       registration[name] = value;
     }
   };
-  const window = {
-    QLPKDoctorModuleRegistry: registry,
-    ClinicalOrderAutocompleteUtils: {
-      setupOrderFormAutocomplete() {
-        return { hide() {} };
-      }
-    }
-  };
+  const window = { QLPKDoctorModuleRegistry: registry };
+  for (const file of ['order-status-utils.js', 'order-selection-state-utils.js']) {
+    const utilsPath = path.join(__dirname, '..', 'app/static/js/orders', file);
+    vm.runInNewContext(fs.readFileSync(utilsPath, 'utf8'), { window, console });
+  }
   vm.runInNewContext(source, { window, document, console });
   return {
     document,

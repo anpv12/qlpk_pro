@@ -10,6 +10,13 @@
 		options: {}
 	};
 	const DOCUMENT_DRAFT_KEY = 'doctor:patient_documents_draft';
+	const REGISTRY = window.QLPKDoctorModuleRegistry;
+	if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
+	const ATTACHMENT_UTILS = REGISTRY.require('documentAttachmentUtils');
+	const ATTACHMENT_LIST = REGISTRY.require('documentAttachmentList');
+	const ATTACHMENT_CONTROLS = REGISTRY.require('documentAttachmentControls');
+	const RELATIVES_TABLE = REGISTRY.require('patientRelativesTable');
+	const CONFIRMATION_DIALOG = REGISTRY.require('confirmationDialog');
 
 	function getOption(name, fallback) {
 		return typeof STATE.options[name] === 'function' ? STATE.options[name]() : fallback;
@@ -20,18 +27,16 @@
 	}
 
 	function renderDocumentsList() {
-		const list = window.ReceptionistDocumentAttachmentList;
-		if (!list || typeof list.renderDocumentsList !== 'function') return;
-		list.renderDocumentsList({
+		ATTACHMENT_LIST.renderDocumentsList({
 			document,
-			utils: window.ReceptionistDocumentAttachmentUtils,
+			utils: ATTACHMENT_UTILS,
 			getAttachments: () => STATE.attachments,
 			getUploadedDocuments: () => STATE.uploadedDocuments,
 			formatDateDisplay: STATE.options.formatDateDisplay,
 			openAttachmentPreviewInNewTab,
 			apiCall: STATE.options.apiCall,
 			showToast,
-			showConfirmationDialog: STATE.options.showConfirmationDialog || window.QLPKConfirmationDialog?.confirm,
+			showConfirmationDialog: CONFIRMATION_DIALOG.confirm,
 			loadAttachmentsForCurrentPatient,
 			downloadDraftDocument: downloadDocument,
 			deleteDraftDocument: deleteDocument
@@ -44,7 +49,7 @@
 			document,
 			URL: window.URL,
 			fetch: window.fetch.bind(window),
-			showConfirmationDialog: STATE.options.showConfirmationDialog || window.QLPKConfirmationDialog?.confirm,
+			showConfirmationDialog: CONFIRMATION_DIALOG.confirm,
 			getAuthHeader: STATE.options.getAuthHeader,
 			showToast,
 			getUploadedDocuments: () => STATE.uploadedDocuments,
@@ -80,18 +85,14 @@
 	}
 
 	function validateFile(file) {
-		const utils = window.ReceptionistDocumentAttachmentUtils;
-		if (!utils || typeof utils.validateFile !== 'function') return true;
-		return utils.validateFile(file, getAttachmentOptions({
+		return ATTACHMENT_UTILS.validateFile(file, getAttachmentOptions({
 			maxSizeBytes: STATE.maxSizeBytes,
 			maxSizeMb: STATE.maxSizeMb
 		}));
 	}
 
 	async function uploadFile(file, patientId, options = {}) {
-		const utils = window.ReceptionistDocumentAttachmentUtils;
-		if (!utils || typeof utils.uploadFile !== 'function') return false;
-		return utils.uploadFile(file, patientId, getAttachmentOptions({
+		return ATTACHMENT_UTILS.uploadFile(file, patientId, getAttachmentOptions({
 			maxSizeBytes: STATE.maxSizeBytes,
 			maxSizeMb: STATE.maxSizeMb,
 			isDraft: options.isDraft,
@@ -106,48 +107,31 @@
 	}
 
 	async function loadAttachmentsForCurrentPatient() {
-		const controls = window.ReceptionistDocumentAttachmentControls;
-		if (!controls || typeof controls.loadAttachmentsForCurrentPatient !== 'function') {
-			renderDocumentsList();
-			return false;
-		}
-		return controls.loadAttachmentsForCurrentPatient(getControlsOptions());
+		return ATTACHMENT_CONTROLS.loadAttachmentsForCurrentPatient(getControlsOptions());
 	}
 
 	async function openAttachmentPreviewInNewTab(attachmentId, filename) {
-		const utils = window.ReceptionistDocumentAttachmentUtils;
-		if (!utils || typeof utils.openAttachmentPreviewInNewTab !== 'function') return;
-		await utils.openAttachmentPreviewInNewTab(attachmentId, filename, getAttachmentOptions());
+		await ATTACHMENT_UTILS.openAttachmentPreviewInNewTab(attachmentId, filename, getAttachmentOptions());
 	}
 
 	function downloadDocument(docId) {
-		const utils = window.ReceptionistDocumentAttachmentUtils;
-		if (utils && typeof utils.downloadDraftDocument === 'function') {
-			utils.downloadDraftDocument(docId, getAttachmentOptions());
-		}
+		ATTACHMENT_UTILS.downloadDraftDocument(docId, getAttachmentOptions());
 	}
 
 	function deleteDocument(docId) {
-		const utils = window.ReceptionistDocumentAttachmentUtils;
-		if (utils && typeof utils.deleteDraftDocument === 'function') {
-			utils.deleteDraftDocument(docId, getAttachmentOptions());
-		}
+		ATTACHMENT_UTILS.deleteDraftDocument(docId, getAttachmentOptions());
 	}
 
 	function initialize(options = {}) {
 		STATE.options = { ...STATE.options, ...options };
-		const relativeTable = window.ReceptionistPatientRelativesTable;
-		if (relativeTable && typeof relativeTable.bindInitialLoad === 'function' && typeof STATE.options.getRelativeTableInstance === 'function') {
-			relativeTable.bindInitialLoad({
+		if (typeof STATE.options.getRelativeTableInstance === 'function') {
+			RELATIVES_TABLE.bindInitialLoad({
 				document,
 				getInstance: STATE.options.getRelativeTableInstance,
 				setInstance: STATE.options.setRelativeTableInstance
 			});
 		}
-		const controls = window.ReceptionistDocumentAttachmentControls;
-		if (controls && typeof controls.initializeDocumentUpload === 'function') {
-			controls.initializeDocumentUpload(getControlsOptions()).catch(() => {});
-		}
+		ATTACHMENT_CONTROLS.initializeDocumentUpload(getControlsOptions()).catch(() => {});
 		renderDocumentsList();
 		return true;
 	}
@@ -160,9 +144,8 @@
 
 	function syncPatient(patientId, options = {}) {
 		STATE.options.appointmentDate = options.appointmentDate || null;
-		const relativeTable = window.ReceptionistPatientRelativesTable;
-		if (relativeTable && typeof relativeTable.syncPatient === 'function' && typeof STATE.options.getRelativeTableInstance === 'function') {
-			const instance = relativeTable.syncPatient(
+		if (typeof STATE.options.getRelativeTableInstance === 'function') {
+			const instance = RELATIVES_TABLE.syncPatient(
 				STATE.options.getRelativeTableInstance(),
 				patientId,
 				{
@@ -186,7 +169,7 @@
 		return false;
 	}
 
-	window.QLPKDoctorModuleRegistry.register('documentAttachments', {
+	REGISTRY.register('documentAttachments', {
 		initialize,
 		clear,
 		syncPatient,

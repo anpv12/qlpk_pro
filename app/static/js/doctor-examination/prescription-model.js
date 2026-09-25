@@ -9,14 +9,16 @@
 	const TYPE_CONTRACT = window.PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 
-	const PRESCRIPTION_USAGE_MODES = {
-		TIME_SLOTS: 'time_slots',
-		TIMES_PER_DAY: 'times_per_day'
-	};
-	const PRESCRIPTION_USAGE_NOTE_MODES = {
-		GENERATED: 'generated',
-		MANUAL: 'manual'
-	};
+	const DOSE = window.PrescriptionDoseUtils;
+	if (!DOSE) throw new Error('Thiếu tiện ích liều thuốc dùng chung');
+
+	const PRESCRIPTION_USAGE_MODES = DOSE.USAGE_MODES;
+	const PRESCRIPTION_USAGE_NOTE_MODES = DOSE.NOTE_MODES;
+	const ensurePrescriptionUsageMode = DOSE.ensureUsageMode;
+	const normalizeUsageNoteMode = DOSE.normalizeNoteMode;
+	const parseDoseValue = DOSE.parseDose;
+	const normalizeSchedulePayload = DOSE.normalizeSchedule;
+	const parseMedicineUsage = DOSE.parseUsage;
 
 	const PRESCRIPTION_SLOT_DEFS = [
 		{ key: 'morning', field: 'morning', label: 'Sáng' },
@@ -29,42 +31,11 @@
 		return TYPE_CONTRACT.normalizeCatalogType(value);
 	}
 
-	function ensurePrescriptionUsageMode(value) {
-		const raw = textOf(value);
-		return raw === PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY
-			? PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY
-			: PRESCRIPTION_USAGE_MODES.TIME_SLOTS;
-	}
-
-	function normalizeUsageNoteMode(value, fallback = PRESCRIPTION_USAGE_NOTE_MODES.MANUAL) {
-		return textOf(value).toLowerCase() === PRESCRIPTION_USAGE_NOTE_MODES.GENERATED
-			? PRESCRIPTION_USAGE_NOTE_MODES.GENERATED
-			: fallback;
-	}
-
-	function parseDoseValue(value, fallback = 0) {
-		const raw = textOf(value);
-		if (!raw || raw === '-') return fallback;
-		if (typeof window.parseFractionalQuantity === 'function') {
-			const parsed = window.parseFractionalQuantity(raw);
-			return Number.isFinite(parsed) ? parsed : fallback;
-		}
-		if (raw.includes('/')) {
-			const [num, den] = raw.split('/').map(item => Number(item.trim().replace(',', '.')));
-			if (Number.isFinite(num) && Number.isFinite(den) && den !== 0) return num / den;
-		}
-		const parsed = Number(raw.replace(',', '.'));
-		return Number.isFinite(parsed) ? parsed : fallback;
-	}
-
 	function formatDoseValue(value) {
 		const parsed = Number(value);
 		if (!Number.isFinite(parsed) || parsed <= 0) return '';
-		if (typeof window.formatDoseAsFraction === 'function') {
-			const formatted = window.formatDoseAsFraction(parsed);
-			return formatted === '0' ? '' : formatted;
-		}
-		return parsed % 1 === 0 ? String(parsed) : String(parsed).replace('.', ',');
+		const formatted = DOSE.formatDose(parsed);
+		return formatted === '0' ? '' : formatted;
 	}
 
 	function parseMedicineDays(value, fallback = null) {
@@ -77,30 +48,6 @@
 	function roundPrescriptionQuantity(value) {
 		const parsed = Number(value);
 		return Number.isFinite(parsed) ? Math.ceil(Math.max(0, parsed)) : 0;
-	}
-
-	function normalizeSchedulePayload(rawSchedule = {}, mode) {
-		const normalizedMode = ensurePrescriptionUsageMode(mode || rawSchedule.mode || PRESCRIPTION_USAGE_MODES.TIME_SLOTS);
-		const source = { ...rawSchedule, mode: normalizedMode };
-		if (typeof window.normalizeScheduleData === 'function') {
-			const normalized = window.normalizeScheduleData(source);
-			return { ...normalized, mode: normalizedMode };
-		}
-		const timesPerDay = source.times_per_day || {};
-		const timeSlots = source.time_slots || {};
-		return {
-			mode: normalizedMode,
-			times_per_day: {
-				qty_per_time: Math.max(0.001, parseDoseValue(timesPerDay.qty_per_time, 1) || 1),
-				times_per_day: Math.max(1, toNumber(timesPerDay.times_per_day, 1))
-			},
-			time_slots: {
-				morning: Math.max(0, parseDoseValue(timeSlots.morning, 0)),
-				noon: Math.max(0, parseDoseValue(timeSlots.noon, 0)),
-				afternoon: Math.max(0, parseDoseValue(timeSlots.afternoon, 0)),
-				evening: Math.max(0, parseDoseValue(timeSlots.evening, 0))
-			}
-		};
 	}
 
 	function calculatePrescriptionQuantity(row = {}, medicineDays, mode) {
@@ -131,40 +78,6 @@
 			.filter(slot => schedule.time_slots[slot.field] > 0)
 			.map(slot => `${formatDoseValue(schedule.time_slots[slot.field])} ${unit} buổi ${slot.label.toLowerCase()}`);
 		return slotParts.length ? `${route} ${slotParts.join(', ')}, trong ${days} ngày.` : '';
-	}
-
-	function parseMedicineUsage(rawUsage, mode) {
-		const rawText = textOf(rawUsage);
-		const fallback = {
-			note: rawText,
-			noteMode: rawText ? PRESCRIPTION_USAGE_NOTE_MODES.MANUAL : PRESCRIPTION_USAGE_NOTE_MODES.GENERATED,
-			schedule: normalizeSchedulePayload({}, mode)
-		};
-		if (!rawText) return fallback;
-		if (typeof window.parseMedicineUsagePayload === 'function') {
-			const parsed = window.parseMedicineUsagePayload(rawUsage);
-			return {
-				note: textOf(parsed && parsed.note),
-				noteMode: normalizeUsageNoteMode(
-					parsed && (parsed.note_mode || parsed.noteMode),
-					parsed && parsed.note ? PRESCRIPTION_USAGE_NOTE_MODES.MANUAL : PRESCRIPTION_USAGE_NOTE_MODES.GENERATED
-				),
-				schedule: normalizeSchedulePayload(parsed && parsed.schedule ? parsed.schedule : {}, mode)
-			};
-		}
-		try {
-			const parsed = JSON.parse(textOf(rawUsage));
-			return {
-				note: textOf(parsed.note),
-				noteMode: normalizeUsageNoteMode(
-					parsed.note_mode || parsed.noteMode,
-					parsed.note ? PRESCRIPTION_USAGE_NOTE_MODES.MANUAL : PRESCRIPTION_USAGE_NOTE_MODES.GENERATED
-				),
-				schedule: normalizeSchedulePayload(parsed.schedule || {}, mode)
-			};
-		} catch (error) {
-			return fallback;
-		}
 	}
 
 	function buildMedicineUsagePayload(row, mode) {

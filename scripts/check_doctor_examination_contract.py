@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 from pathlib import Path
+import re
 import subprocess
 from urllib.parse import urlsplit
 
@@ -200,8 +201,45 @@ def main() -> int:
     if platform_import in entry_text and root_import in entry_text:
         if entry_text.index(platform_import) > entry_text.index(root_import):
             failures.append("platform boundaries phải được import trước page orchestrator")
+        boundaries_index = entry_text.index(platform_import)
+        for shared_import in (
+            "./components/icd-autocomplete.js",
+            "./components/icd-data-loader.js",
+            "./orders/order-selection-state-utils.js",
+            "./orders/order-autocomplete-utils.js",
+            "./receptionist/document-attachment-controls.js",
+            "./prescriptions/pages/doctor-prescription-print.js",
+            "./transfer-modal-dry.js",
+        ):
+            if f"'{shared_import}'" not in entry_text or entry_text.index(f"'{shared_import}'") > boundaries_index:
+                failures.append(f"shared asset phải được import trước platform boundaries: {shared_import}")
+        for feature_import in (
+            "./components/medical-history-form.js",
+            "./doctor-examination/medical-history-icd-bridge.js",
+            "./components/doctor-indications-form.js",
+            "./doctor-examination/document-attachments-bridge.js",
+        ):
+            if f"'{feature_import}'" in entry_text and entry_text.index(f"'{feature_import}'") < boundaries_index:
+                failures.append(f"Doctor feature phải được import sau platform boundaries: {feature_import}")
     else:
         failures.append("Doctor entry thiếu thứ tự platform boundaries/page orchestrator")
+
+    registry_fallback = re.compile(r"(?:REGISTRY|registry)\.get\([^)]*\)\s*\|\|\s*window\.|\|\|\s*window\.QLPKConfirmationDialog")
+    shared_global_read = re.compile(r"window\.(?:ReceptionistDocumentAttachment\w+|ClinicalOrder\w+Utils|QLPKIcdAutocomplete|ClinicalIcdDataLoader|QLPKConfirmationDialog|Swal)\b")
+    for path in (
+        *ACTIVE_JS_ROOT.glob("*.js"),
+        ROOT / "app/static/js/doctor-examination.js",
+        ROOT / "app/static/js/components/doctor-indications-form.js",
+        ROOT / "app/static/js/components/doctor-services-form.js",
+        ROOT / "app/static/js/components/clinical-examination-form.js",
+    ):
+        if path.name == "platform-boundaries.js" or not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if registry_fallback.search(text):
+            failures.append(f"Doctor module còn nhánh registry/window dự phòng: {path.relative_to(ROOT)}")
+        if shared_global_read.search(text):
+            failures.append(f"Doctor module đọc thẳng tài sản dùng chung qua window: {path.relative_to(ROOT)}")
 
     for section_id in ROOT_SECTION_IDS:
         count = parser.root_section_ids.count(section_id)
