@@ -22,7 +22,8 @@ function setup() {
   env.load('app/static/js/components/autocomplete-field.js');
   const modules = new Map([
     ['clinicalDetails', {fields: [], create: () => ({getConfig: () => null, load: async () => true})}],
-    ['supportRuntime', {createChangeTracker}], ['autocompleteField', window.QLPKAutocompleteField]
+    ['supportRuntime', {createChangeTracker, getDocument: options => options?.document || doc}],
+    ['autocompleteField', window.QLPKAutocompleteField]
   ]);
   window.QLPKDoctorModuleRegistry = {get: key => modules.get(key), require: key => modules.get(key),
     register: (key, value) => modules.set(key, value)};

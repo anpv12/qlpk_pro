@@ -413,8 +413,10 @@ record is obsolete and is deleted silently; canonical DB data stays on screen.
   `supportRuntime.mergeConfig`.
 - `getDocument` helpers in shared `components/*` files (form/DOM utils,
   patient forms, workflow two-pane, waiting list) run on pages without
-  `supportRuntime`; Doctor-private modules delegate to
-  `supportRuntime.getDocument/getScopedDocument`. `component-context.js` keeps
+  `supportRuntime`, and `medical-history-substance-fields.js` loads before
+  `support-runtime.js`. Doctor-private modules, `clinical-examination-form.js`,
+  `doctor-services-form.js` and `doctor-indications-form.js` delegate to
+  `supportRuntime.getDocument/getScopedDocument`; `component-context.js` keeps
   its own scoped variant because it owns the scope factory.
 - Change tracking not on `createChangeTracker`: `medical-history-form.js` loads
   before `support-runtime.js` in the entry and also settles a second

@@ -50,7 +50,7 @@
 			isLoading: options.isLoading || (() => false)
 		};
 		const MAIN_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
-		const getDocument = options.getDocument || (context => context && context.document ? context.document : document);
+		const getDocument = options.getDocument || RUNTIME.getDocument;
 		const getElement = options.getElement || ((doc, id) => doc.getElementById(id));
 		const getValue = options.getValue || ((doc, id) => {
 			const element = getElement(doc, id);
