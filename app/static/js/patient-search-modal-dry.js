@@ -10,16 +10,7 @@
 // Shared Constants — Dùng chung cả doctor & psychologist
 // ============================================
 if (typeof PRESCRIPTION_USAGE_MODES === 'undefined') {
-	var PRESCRIPTION_USAGE_MODES = {
-		TIMES_PER_DAY: 'times_per_day',
-		TIME_SLOTS: 'time_slots'
-	};
-}
-
-function ensureValidPrescriptionUsageMode(mode) {
-	return mode === PRESCRIPTION_USAGE_MODES.TIME_SLOTS
-		? PRESCRIPTION_USAGE_MODES.TIME_SLOTS
-		: PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY;
+	var PRESCRIPTION_USAGE_MODES = requirePrescriptionDoseUtils().USAGE_MODES;
 }
 
 // ============================================
@@ -1884,7 +1875,6 @@ Object.defineProperty(window, '_prescriptionTabPageIndex', {
 // Expose functions lên window để các file khác access
 // ============================================
 window.PRESCRIPTION_USAGE_MODES = PRESCRIPTION_USAGE_MODES;
-window.ensureValidPrescriptionUsageMode = ensureValidPrescriptionUsageMode;
 window.buildSelectOptions = buildSelectOptions;
 window.updateServiceAmountDisplayFromValue = updateServiceAmountDisplayFromValue;
 window.getToastIcon = getToastIcon;
