@@ -491,9 +491,14 @@ compatibility-sensitive, or out of scope for the current Khám cleanup.
   parity against the previous commit for the Doctor, Psychologist and verify
   pages (0 computed-style diffs, including four viewports with a real dense
   appointment), and identical UI state and write payloads for the re-exam,
-  save/race, patient-switch dialog and medicine-search scenarios. The real
-  patient queue on localhost was empty, so this is **chưa pass
-  visual/interactive QA** on live patients.
+  save/race, patient-switch dialog and medicine-search scenarios. A final
+  checkpoint-to-HEAD comparison (`69c6c9c` → HEAD) with read-only DB fixtures
+  also matched for: dense 1101 and sparse 1977 across all tabs at 1440/700 px,
+  the re-exam calendar (open, pick, confirm, saved payload), ICD search, patient
+  attachments (list and delete dialog), and the stored 30-tablet prescription
+  of appointment 1136 (30 / 14 / empty treatment days). The real patient queue on
+  localhost was empty, so this is **chưa pass visual/interactive QA** on live
+  patients.
 
 ## Cleanup Record 2026-07-29
 

@@ -84,7 +84,9 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
   so với commit trước: 0 lệch computed style ở Doctor, Tâm lý gia, verify (có
   4 viewport với ca dày 1101 và ca thưa 1977 dựng từ DB chỉ đọc), trạng thái UI
   và payload ghi giống hệt cho tái khám, lưu/sửa khi đang lưu, hộp thoại đổi
-  bệnh nhân 3 nút, xóa chỉ định 2 nút, tìm thuốc. `check_frontend_contract` và
+  bệnh nhân 3 nút, xóa chỉ định 2 nút, tìm thuốc; so thẳng `69c6c9c` → HEAD
+  cũng khớp cho lịch tái khám (mở/chọn/xác nhận/payload lưu), tìm ICD, tài
+  liệu đính kèm (danh sách + hộp thoại xóa) và đơn thật 30 viên của ca 1136. `check_frontend_contract` và
   `check_user_feedback_contract` vẫn fail trước và sau ở file ngoài màn Bác sĩ
   (medicine-management, feedback-tokens, user-management). Queue thật trống
   nên **chưa pass visual/interactive QA** trên bệnh nhân thật.
