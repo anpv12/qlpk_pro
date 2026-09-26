@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadSupportRuntime } = require('./helpers/doctor-registry');
 
 const read = relativePath => fs.readFileSync(
 	path.join(__dirname, '..', relativePath),
@@ -67,6 +68,7 @@ function createFixture() {
 	registry.register('icdAutocomplete', FakeIcdAutocomplete);
 	registry.register('icdDataLoader', { loadICDData: async () => [] });
 	registry.register('doctorComponentConfig', { history: { rootId: 'doctorHistoryPanel' } });
+	registry.register('supportRuntime', loadSupportRuntime());
 
 	const window = {
 		Element: FakeElement,

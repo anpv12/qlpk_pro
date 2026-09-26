@@ -22,11 +22,11 @@
 	};
 
 	function mergeConfig(config = {}) {
+		const merged = RUNTIME.mergeConfig(DEFAULT_CONFIG, config);
 		return {
-			...DEFAULT_CONFIG,
-			...config,
-			mainFields: config.mainFields || DEFAULT_MAIN_FIELDS,
-			detailFields: Array.isArray(config.detailFields) ? config.detailFields : DETAILS.fields
+			...merged,
+			mainFields: merged.mainFields || DEFAULT_MAIN_FIELDS,
+			detailFields: Array.isArray(merged.detailFields) ? merged.detailFields : DETAILS.fields
 		};
 	}
 
@@ -50,6 +50,7 @@
 			isLoading: options.isLoading || (() => false)
 		};
 		const MAIN_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
+		const DETAIL_CHANGES = RUNTIME.createSectionChangeTracker(state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
 		const getDocument = options.getDocument || RUNTIME.getDocument;
 		const getElement = options.getElement || ((doc, id) => doc.getElementById(id));
 		const getValue = options.getValue || ((doc, id) => {
@@ -267,12 +268,8 @@
 		function markDirty(control) {
 			if (isLoading()) return;
 			const config = detailsPersistence.getConfig(control);
-			if (config) {
-				state.detailDirtySections.add(config.section);
-				state.detailRevisions[config.section] = (state.detailRevisions[config.section] || 0) + 1;
-			} else {
-				MAIN_CHANGES.mark();
-			}
+			if (config) DETAIL_CHANGES.mark(config.section);
+			else MAIN_CHANGES.mark();
 			syncDirtyState();
 		}
 
@@ -296,8 +293,7 @@
 			state.detailsLoadPromise = null;
 			state.icdLoadPromise = null;
 			MAIN_CHANGES.reset();
-			state.detailDirtySections.clear();
-			state.detailRevisions = {};
+			DETAIL_CHANGES.reset();
 			icdInstances.forEach(instance => instance.clear({ silent: true }));
 			fieldIds.forEach(id => setValue(doc, id, ''));
 			medicationInstances.forEach(instance => instance.reset());
@@ -340,8 +336,7 @@
 			state.examinationId = textOf(examination.id || appointment.examination_id);
 			state.currentData = payload;
 			MAIN_CHANGES.reset();
-			state.detailDirtySections.clear();
-			state.detailRevisions = {};
+			DETAIL_CHANGES.reset();
 			state.detailsLoaded = false;
 			state.detailsLoadError = null;
 			renderClinicalFields(doc, payload, token);
@@ -415,10 +410,7 @@
 			if (!isCurrent()) return { restored: 0 };
 			if (restored) {
 				if (mainRestored) MAIN_CHANGES.mark();
-				detailSections.forEach(section => {
-					state.detailDirtySections.add(section);
-					state.detailRevisions[section] = (state.detailRevisions[section] || 0) + 1;
-				});
+				detailSections.forEach(section => DETAIL_CHANGES.mark(section));
 				syncDirtyState();
 			}
 			return { restored };
@@ -427,6 +419,7 @@
 		const detailsPersistence = DETAILS.create({
 			fields: config.detailFields,
 			state,
+			detailChanges: DETAIL_CHANGES,
 			getElement,
 			getValue,
 			setValue,

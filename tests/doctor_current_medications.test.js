@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {createEnvironment} = require('./helpers/autocomplete-dom');
 const {loadSupportRuntime} = require('./helpers/doctor-registry');
-const {createChangeTracker} = loadSupportRuntime();
+const supportRuntime = loadSupportRuntime();
 
 function setup() {
   const env = createEnvironment(), requests = [];
@@ -22,7 +22,7 @@ function setup() {
   env.load('app/static/js/components/autocomplete-field.js');
   const modules = new Map([
     ['clinicalDetails', {fields: [], create: () => ({getConfig: () => null, load: async () => true})}],
-    ['supportRuntime', {createChangeTracker, getDocument: options => options?.document || doc}],
+    ['supportRuntime', {...supportRuntime, getDocument: options => options?.document || doc}],
     ['autocompleteField', window.QLPKAutocompleteField]
   ]);
   window.QLPKDoctorModuleRegistry = {get: key => modules.get(key), require: key => modules.get(key),

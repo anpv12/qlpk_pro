@@ -248,7 +248,9 @@ def main() -> int:
             failures.append(f"Doctor module đọc thẳng tài sản dùng chung qua window: {path.relative_to(ROOT)}")
 
     manual_change_tracking = re.compile(
-        r"\b(?:STATE|state)\.(?:prescription|services|orders|main)(?:Revision\s*(?:\+=|=(?!=))|Dirty\s*=(?!=))"
+        r"\b(?:STATE|state)\.(?:prescription|services|orders|main|manual)(?:Revision\s*(?:\+=|=(?!=))|Dirty\s*=(?!=))"
+        r"|\bstate\.detailDirtySections\.(?:add|delete|clear)\("
+        r"|\bstate\.detailRevisions\s*(?:\[[^\]]*\]\s*=(?!=)|=(?!=))"
     )
     for relative_path in (
         "app/static/js/doctor-examination/prescription-ui.js",
@@ -257,6 +259,8 @@ def main() -> int:
         "app/static/js/doctor-examination/clinical-workspace-ui.js",
         "app/static/js/doctor-examination/workspace-save-controller.js",
         "app/static/js/components/clinical-examination-form.js",
+        "app/static/js/doctor-examination/clinical-detail-persistence.js",
+        "app/static/js/components/medical-history-form.js",
     ):
         path = ROOT / relative_path
         text = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""

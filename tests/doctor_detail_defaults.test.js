@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const {loadSupportRuntime} = require('./helpers/doctor-registry');
-const {createChangeTracker} = loadSupportRuntime();
+const {createChangeTracker, createSectionChangeTracker} = loadSupportRuntime();
 const modules = new Map();
 const window = {QLPKDoctorModuleRegistry:{register:(name, value)=>modules.set(name,value)}};
 for (const file of ['clinical-detail-persistence.js','workspace-save-controller.js']) {
@@ -19,6 +19,7 @@ async function main() {
   const writes = [];
   let fail = false;
   const details = modules.get('clinicalDetails').create({state,
+    detailChanges:createSectionChangeTracker(state,{revisionsKey:'detailRevisions',dirtyKey:'detailDirtySections'}),
     getElement:(_,id)=>controls.get(id),getValue:(_,id)=>controls.get(id).value.trim(),
     setValue:(_,id,value)=>{controls.get(id).value=value;},textOf:value=>String(value||''),hasValue:value=>value!=null,
     syncDirtyState:()=>{},parseResponseError:async()=> 'QA failure',

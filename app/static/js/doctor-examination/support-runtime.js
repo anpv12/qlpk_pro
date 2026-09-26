@@ -59,6 +59,25 @@
 		});
 	}
 
+	function createSectionChangeTracker(state, { revisionsKey, dirtyKey }) {
+		return Object.freeze({
+			mark(section) {
+				state[revisionsKey][section] = (state[revisionsKey][section] || 0) + 1;
+				state[dirtyKey].add(section);
+			},
+			reset() {
+				state[dirtyKey].clear();
+				state[revisionsKey] = {};
+			},
+			capture: section => state[revisionsKey][section] || 0,
+			settle(section, revision) {
+				if (revision !== (state[revisionsKey][section] || 0)) return false;
+				state[dirtyKey].delete(section);
+				return true;
+			}
+		});
+	}
+
 	function getElement(doc, id) {
 		return doc.getElementById(id);
 	}
@@ -321,6 +340,7 @@
 		getScopedDocument,
 		mergeConfig,
 		createChangeTracker,
+		createSectionChangeTracker,
 		getElement,
 		textOf,
 		hasText,

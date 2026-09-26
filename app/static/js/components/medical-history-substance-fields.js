@@ -6,9 +6,7 @@
     'inhalants', 'sedatives', 'hallucinogens', 'opioids', 'other_substance'
   ];
 
-  function getDocument(options = {}) {
-    return options.document || document;
-  }
+  const getDocument = window.QLPKDoctorModuleRegistry.require('supportRuntime').getDocument;
 
   function getIds(options = {}) {
     return Array.isArray(options.substanceIds) ? options.substanceIds : DEFAULT_SUBSTANCE_IDS;

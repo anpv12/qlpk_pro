@@ -33,6 +33,7 @@
 	}
 
 	function create(options = {}) {
+		const RUNTIME = window.QLPKDoctorModuleRegistry.require('supportRuntime');
 		const sourceDocument = options.document || document;
 		const configuredRoot = options.root || (options.rootId ? `#${options.rootId}` : null);
 		const root = resolveRoot(configuredRoot, sourceDocument);
@@ -54,6 +55,7 @@
       actions: Object.create(null),
       cleanups: []
     };
+    const MANUAL_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'manualRevision', dirtyKey: 'manualDirty' });
 
 		const modeConfig = Object.keys({ ...DEFAULT_MODE_CONFIG, ...(options.modeConfig || {}) }).reduce((result, mode) => {
 			result[mode] = { ...DEFAULT_MODE_CONFIG[mode], ...(options.modeConfig?.[mode] || {}) };
@@ -154,8 +156,7 @@
 
       markDirty() {
         if (this.isLoading() || state.suppressHistoryEmit) return false;
-        state.manualRevision += 1;
-        state.manualDirty = true;
+        MANUAL_CHANGES.mark();
         return true;
       },
 
@@ -189,8 +190,7 @@
         state.contextToken += 1;
         state.isHydrating = false;
         state.recoveryDirty = false;
-        state.manualDirty = false;
-        state.manualRevision = 0;
+        MANUAL_CHANGES.reset();
         this.callAction('clearMedicalHistoryTimers');
 
         state.suppressHistoryEmit = true;
@@ -223,8 +223,7 @@
         const isCurrentLoad = () => token === state.contextToken;
         state.isHydrating = true;
         state.recoveryDirty = false;
-        state.manualDirty = false;
-        state.manualRevision = 0;
+        MANUAL_CHANGES.reset();
         try {
           await this.callAction('restoreSelectedHistory', data.physicalHistory || [], 'physHistory', { isCurrentLoad });
           if (!isCurrentLoad()) return false;
@@ -298,15 +297,14 @@
       },
 
       markSaved(revision) {
-        if (revision !== state.manualRevision) return false;
+        if (!MANUAL_CHANGES.settle(revision)) return false;
         this.callAction('clearMedicalHistoryTimers');
-        state.manualDirty = false;
         state.recoveryDirty = false;
         return true;
       },
 
       getSaveRevision() {
-        return state.manualRevision;
+        return MANUAL_CHANGES.capture();
       },
 
       parseHistoryEntries(value) {
@@ -341,8 +339,7 @@
           this.callAction('populatePlan', snapshot.safetyPlan || {});
           this.callAction('restoreSafetyPlanSupporters', snapshot.safetyPlan || {});
           state.recoveryDirty = Boolean(options.dirty);
-          state.manualDirty = Boolean(options.dirty);
-          if (options.dirty) state.manualRevision += 1;
+          MANUAL_CHANGES.restore(options.dirty);
           if (state.recoveryDirty) {
             root.classList.add('is-draft-restored');
             root.dataset.draftRestored = 'true';

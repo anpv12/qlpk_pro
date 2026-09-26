@@ -112,6 +112,8 @@
 
 	function create(options = {}) {
 		const state = options.state;
+		const detailChanges = options.detailChanges;
+		if (!detailChanges) throw new Error('Thiếu tracker thay đổi của chi tiết khám');
 		const getElement = options.getElement;
 		const getValue = options.getValue;
 		const setValue = options.setValue;
@@ -154,10 +156,7 @@
 				setValue(doc, config.controlId, NORMAL_DETAIL_VALUE);
 				changedSections.add(config.section);
 			});
-			changedSections.forEach(section => {
-				state.detailDirtySections.add(section);
-				state.detailRevisions[section] = (state.detailRevisions[section] || 0) + 1;
-			});
+			changedSections.forEach(section => detailChanges.mark(section));
 			if (changedSections.size) syncDirtyState();
 			return changedSections.size > 0;
 		}
@@ -229,7 +228,7 @@
 
 			const detailsBySection = groupBySection(details);
 			const sectionRevisions = Object.keys(detailsBySection).reduce((revisions, section) => {
-				revisions[section] = state.detailRevisions[section] || 0;
+				revisions[section] = detailChanges.capture(section);
 				return revisions;
 			}, {});
 			for (const [section, fields] of Object.entries(detailsBySection)) {
@@ -243,9 +242,7 @@
 				if (!response || !response.ok) {
 					throw new Error(await parseResponseError(response, 'Không lưu được chi tiết khám'));
 				}
-				if (revision === (state.detailRevisions[section] || 0)) {
-					state.detailDirtySections.delete(section);
-				}
+				detailChanges.settle(section, revision);
 			}
 			syncDirtyState();
 			return { status: 'success', appointmentId, sections: Object.keys(detailsBySection) };

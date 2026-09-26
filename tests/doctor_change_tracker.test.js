@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadSupportRuntime } = require('./helpers/doctor-registry');
 
-const { createChangeTracker } = loadSupportRuntime();
+const { createChangeTracker, createSectionChangeTracker } = loadSupportRuntime();
 const setup = () => {
     const state = { rowsRevision: 0, rowsDirty: false };
     return { state, changes: createChangeTracker(state, { revisionKey: 'rowsRevision', dirtyKey: 'rowsDirty' }) };
@@ -46,4 +46,26 @@ test('tracker is a frozen stateless view over the given state', () => {
     assert.equal(changes.capture(), 7);
     assert.equal(changes.settle(7), true);
     assert.equal(state.rowsDirty, false);
+});
+
+test('section tracker keeps one dirty set and one revision map per owner', () => {
+    const state = { detailDirtySections: new Set(), detailRevisions: {} };
+    const changes = createSectionChangeTracker(state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
+    assert.equal(changes.capture('a'), 0);
+    changes.mark('a');
+    changes.mark('a');
+    changes.mark('b');
+    assert.deepEqual([...state.detailDirtySections], ['a', 'b']);
+    assert.deepEqual({ ...state.detailRevisions }, { a: 2, b: 1 });
+
+    const saving = changes.capture('a');
+    changes.mark('a');
+    assert.equal(changes.settle('a', saving), false, 'a changed during save stays dirty');
+    assert.equal(changes.settle('b', changes.capture('b')), true);
+    assert.deepEqual([...state.detailDirtySections], ['a']);
+
+    changes.reset();
+    assert.equal(state.detailDirtySections.size, 0);
+    assert.deepEqual(Object.keys(state.detailRevisions), []);
+    assert.equal(Object.isFrozen(changes), true);
 });

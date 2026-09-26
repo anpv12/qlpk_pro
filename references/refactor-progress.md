@@ -72,13 +72,16 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
   với Dịch vụ; (6) contract check theo layout/markup hiện tại; (7) commit toàn
   bộ việc dở, `reports/` vào `.gitignore`; (8) ghim chart.js 4.5.1,
   flatpickr 4.6.13, sweetalert2 11.26.25, echarts 5.6.0 (file giống byte bản cũ),
-  contract chặn URL jsDelivr không có x.y.z; (9) `getDocument`/`mergeConfig`/`createChangeTracker` về
-  `support-runtime.js`, bỏ `createState` thừa, `prescription-ui.js` 1461→1229
+  contract chặn URL jsDelivr không có x.y.z; (9) `getDocument`/`mergeConfig`/`createChangeTracker`/
+  `createSectionChangeTracker` về `support-runtime.js` (kể cả Tiền sử, chi tiết
+  Khám, substance fields; `support-runtime` nạp ngay sau component context), bỏ
+  `createState` thừa, `prescription-ui.js` 1461→1229
   dòng (tách `prescriptionReExam`, `prescriptionMedicineSearch`), tài liệu 30
   file. Nợ còn lại có lý do ghi tại mục Known Debt của
   `references/doctor-examination-context.md` (mergeConfig/getDocument của
-  component dùng chung với Lễ tân, tracker Tiền sử/chi tiết Khám, `@media`
-  viewport, override trong rule nhóm).
+  component dùng chung với Lễ tân — ngoài scope; `@media` viewport là hợp đồng
+  responsive đã ghi trong navigation map, không phải nợ; override trong rule
+  nhóm là composition có chủ đích).
   QA: 229 Node tests; contract Doctor/stock/print/ICD/history/tabs/brand/
   Lễ tân/medical-history; draft recovery 15 ca, quantity 8 ca; headless Chrome
   so với commit trước: 0 lệch computed style ở Doctor, Tâm lý gia, verify (có
