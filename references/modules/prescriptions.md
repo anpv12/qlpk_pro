@@ -88,7 +88,8 @@ Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa
 - Colspan hàng nhóm tính bằng `getTableColumnCount(mode)`: 4 cột lịch uống + 6
   = 10, hoặc chế độ Liều/lần + Lần/ngày là 2 + 6 = 8. Sửa cột bảng phải sửa hàm
   này, không hardcode.
-- Màu: owner token ở `doctor-prescription.css` (`--qlpk-rx-basic/h/n`).
+- Màu: owner token ở `shared/color-tokens.css` (`--qlpk-rx-basic/h/n`, khai báo tại `:root`;
+  từ 26/09 không còn khai báo trong `doctor-prescription.css`).
   BASIC dùng nâu thương hiệu `--qlpk-color-chocolate`, H tím `#7e57c2`, N cam
   `#f4511e`; nền nhóm là color-mix 7% trên trắng, thanh accent viền trái.
   Dropdown tìm thuốc trong `doctor-examination.css` trỏ về đúng token này.
@@ -326,9 +327,23 @@ gồm nhiều lần nhập của cùng lô, giữ giá vốn từng lần nhập
 
 ## Ghi chú cách dùng thuốc
 
+- `app/static/js/prescriptions/shared/prescription-dose-utils.js`
+  (`window.PrescriptionDoseUtils`) là owner duy nhất parse/format liều, lịch
+  dùng và JSON `usage` (`parseDose`, `formatDose`, `normalizeSchedule`,
+  `parseUsage`, usage/note modes). Doctor, Tâm lý gia và trang verify QR đều
+  nạp file này trước `prescription-document-template.js`; các global cũ của
+  template (`parseFractionalQuantity`, `formatDoseAsFraction`,
+  `normalizeScheduleData`, `parseMedicineUsagePayload`) chỉ ủy quyền với mode
+  mặc định lần/ngày, và `patient-search-modal-dry.js` lấy `USAGE_MODES` từ đây.
 - `app/static/js/doctor-examination/prescription-model.js` sở hữu generator
   `buildMedicineUsageNote()` và hai mode lịch dùng: theo buổi hoặc theo
-  lần/ngày.
+  lần/ngày; phần parse liều/lịch dùng ủy quyền cho `PrescriptionDoseUtils`.
+- Màn Bác sĩ tách hai owner thuần khỏi `prescription-ui.js`:
+  `prescription-reexam-ui.js` (registry `prescriptionReExam`: quy tắc khóa,
+  thay đổi và nhãn badge/nút tái khám) và
+  `prescription-medicine-search-ui.js` (registry `prescriptionMedicineSearch`:
+  dropdown tìm thuốc trong kho, debounce, phím mũi tên, vị trí). State, lưu và
+  áp thuốc vào dòng vẫn chỉ thuộc `prescription-ui.js`.
 - `app/static/js/doctor-examination/prescription-ui.js` gọi generator khi
   thay đổi liều, số ngày, đường dùng, đơn vị hoặc mode; `usageNoteMode` bảo vệ
   ghi chú bác sĩ nhập tay khỏi bị ghi đè.

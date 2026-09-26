@@ -37,7 +37,7 @@
   owner gọi `init()` sau `medical-history-icd-bridge.js`, để các action ICD của
   Bản thân/Gia đình được gắn trước khi người dùng nhập.
 
-Last reconciled with runtime: 2026-08-31.
+Last reconciled with runtime: 2026-09-26.
 
 ## Component foundation and migration boundary (2026-08-13)
 
@@ -83,49 +83,63 @@ patient B is selected.
 
 `app/templates/doctor-examination.html` loads one Doctor ESM entry:
 `app/static/js/doctor-examination-entry.js`. The entry imports these active
-Doctor-private modules in this order (shared assets between them are omitted):
+Doctor-private modules in this order (shared assets between them are omitted,
+except that every shared asset, including
+`prescriptions/shared/prescription-dose-utils.js` before
+`prescription-document-template.js`, is imported before
+`platform-boundaries.js`):
 
 1. `doctor-examination/module-registry.js`
 2. `doctor-examination/page-runtime.js`
 3. `components/component-dom-scope.js`
-4. `components/doctor-component-config.js`
-5. `components/medical-history-form.js`
-6. `components/medical-history-substance-fields.js`
-7. `doctor-examination/medical-history-icd-bridge.js`
-8. `doctor-examination/medical-history-context.js`
-9. `doctor-examination/medical-history-core.js`
-10. `doctor-examination/medical-history-workbench.js`
-11. `doctor-examination/medical-history-allergy.js`
-12. `doctor-examination/medical-history-risk.js`
-13. `doctor-examination/medical-history-suggestions.js`
-14. `doctor-examination/medical-history-bindings.js`
-15. `doctor-examination/safety-plan.js`
-16. `doctor-examination/medical-history-bridge.js`
-17. `doctor-examination/patient-history-bridge.js`
-18. `doctor-examination/support-runtime.js`
-19. `doctor-examination/prescription-model.js`
-20. `doctor-examination/prescription-row-renderer.js`
-21. `doctor-examination/prescription-history-ui.js`
-22. `doctor-examination/prescription-ui.js`
-23. `components/doctor-services-form.js`
-24. `components/doctor-indications-form.js`
-25. `doctor-examination/support-modules-ui.js`
-26. `doctor-examination/clinical-detail-persistence.js`
-27. `components/clinical-examination-form.js`
-28. `doctor-examination/workspace-save-controller.js`
-29. `doctor-examination/clinical-workspace-ui.js`
-30. `doctor-examination/draft-recovery.js`
-31. `doctor-examination/document-attachments-bridge.js`
-32. `doctor-examination/workspace-leave-guard.js`
-33. `doctor-examination/platform-boundaries.js`
-34. `doctor-examination.js`
+4. `doctor-examination/component-context.js`
+5. `components/doctor-component-config.js`
+6. `doctor-examination/platform-boundaries.js`
+7. `components/medical-history-form.js`
+8. `components/medical-history-substance-fields.js`
+9. `doctor-examination/medical-history-icd-bridge.js`
+10. `doctor-examination/medical-history-context.js`
+11. `doctor-examination/medical-history-core.js`
+12. `doctor-examination/medical-history-workbench.js`
+13. `doctor-examination/medical-history-allergy.js`
+14. `doctor-examination/medical-history-risk.js`
+15. `doctor-examination/medical-history-suggestions.js`
+16. `doctor-examination/medical-history-bindings.js`
+17. `doctor-examination/safety-plan.js`
+18. `doctor-examination/medical-history-bridge.js`
+19. `doctor-examination/patient-history-bridge.js`
+20. `doctor-examination/support-runtime.js`
+21. `doctor-examination/prescription-model.js`
+22. `doctor-examination/prescription-reexam-ui.js`
+23. `doctor-examination/prescription-medicine-search-ui.js`
+24. `doctor-examination/prescription-row-renderer.js`
+25. `doctor-examination/prescription-history-ui.js`
+26. `doctor-examination/prescription-ui.js`
+27. `components/doctor-services-form.js`
+28. `components/doctor-indications-form.js`
+29. `doctor-examination/support-modules-ui.js`
+30. `doctor-examination/clinical-detail-persistence.js`
+31. `components/clinical-examination-form.js`
+32. `doctor-examination/workspace-save-controller.js`
+33. `doctor-examination/clinical-workspace-ui.js`
+34. `doctor-examination/draft-recovery.js`
+35. `doctor-examination/document-attachments-bridge.js`
+36. `doctor-examination/workspace-leave-guard.js`
+37. `doctor-examination.js`
+
+`platform-boundaries.js` registers the shared classic assets
+(`confirmationDialog`, order utils, attachment utils/list/controls, ICD owners,
+transfer modal, print adapter) before any Doctor feature module runs, so Doctor
+modules read them with `registry.require(...)` only; a `registry.get() ||
+window.*` fallback or a direct `window.<shared asset>`/`Swal` read is rejected by
+`scripts/check_doctor_examination_contract.py`.
 
 The route also loads shared components for queue cards, patient/intake forms,
 medical-history controls, documents, ICD data, relatives, and modal shells.
 Those components are supporting owners, not a second Doctor-workspace owner.
 
-There are now twenty-eight live Doctor-private files under `app/static/js/doctor-examination/`
-in this snapshot. Twenty-seven are imported by the entry; `re-examination-calendar.js`
+There are now thirty live Doctor-private files under `app/static/js/doctor-examination/`
+in this snapshot. Twenty-nine are imported by the entry; `re-examination-calendar.js`
 is imported only by `prescription-ui.js` through a static ESM import. Shared component owners live under
 `app/static/js/components/` and the page orchestrator `doctor-examination.js`. Do not add
 script tags or documentation references for retired
@@ -152,7 +166,11 @@ files unless a separately approved runtime slice reintroduces them.
 | Medical history workbench | `app/static/js/doctor-examination/medical-history-workbench.js` | History workbench summary, target activation, tabs, filters, and workbench event wiring. |
 | Medical history base component | `app/static/js/components/medical-history-form.js` | Scoped root, action registry, event lifecycle, clear/populate/collect/save contract, dirty revision, context token, and destroy. |
 | Medical history bridge | `app/static/js/doctor-examination/medical-history-bridge.js` | Doctor adapter only: normalize the backend `medical_history` envelope and expose the base component to the page save/patient-switch lifecycle. |
-| Prescription state/lifecycle | `app/static/js/doctor-examination/prescription-ui.js` | The only prescription state, medicine search, load/clear/save, print, reuse, event binding, and draft snapshot owner. It delegates pure model and presentation helpers below; those helpers do not load/save or own state. |
+| Prescription state/lifecycle | `app/static/js/doctor-examination/prescription-ui.js` | The only prescription state, load/clear/save, print, reuse, event binding, and draft snapshot owner. It delegates pure model, re-exam status, medicine-search and presentation helpers below; those helpers do not load/save or own prescription state. Dirty/revision uses `supportRuntime.createChangeTracker`; the appointment id comes from `supportRuntime.getCurrentAppointmentId(state)` like Services/Indications. |
+| Shared dose math | `app/static/js/prescriptions/shared/prescription-dose-utils.js`, global `window.PrescriptionDoseUtils` | The only parser/formatter for doses, schedules and usage JSON (`parseDose`, `formatDose`, `normalizeSchedule`, `parseUsage`, usage/note modes). Loaded by Doctor, Psychologist and the public verify page before `prescription-document-template.js`; the template's legacy globals and `prescription-model.js` only delegate. |
+| Re-examination status | `app/static/js/doctor-examination/prescription-reexam-ui.js`, registry key `prescriptionReExam` | Pure lock/change/label rules for the re-exam badge and button (`isLocked`, `hasChanges`, `describe`, `renderStatus`, `renderButton`); reads the prescription state passed in, never loads, saves or owns it. |
+| Medicine search dropdown | `app/static/js/doctor-examination/prescription-medicine-search-ui.js`, registry key `prescriptionMedicineSearch` | Floating stock-medicine dropdown: debounced search, latest-query-wins token, keyboard navigation, positioning and option lookup. Applying a medicine to a row, quantity recalculation and dirty marking stay in `prescription-ui.js`. |
+| Confirmation dialogs | `app/static/js/shared/confirmation-dialog.js`, registry key `confirmationDialog` | Shared SweetAlert wrapper: `confirm()` for two-button decisions (for example deleting an indication) and `choose()` returning `confirm`/`deny`/`cancel` for the three-button unsaved-changes decision in `workspace-save-controller.js`. |
 | Prescription model | `app/static/js/doctor-examination/prescription-model.js` | Pure schedule/usage/type/date normalization, derived quantity calculation, and payload helpers; no DOM, API, or state. |
 | Prescription row presentation | `app/static/js/doctor-examination/prescription-row-renderer.js` | Renders current medicine rows and updates row totals through callbacks; no API, save, or prescription state. |
 | Prescription history presentation | `app/static/js/doctor-examination/prescription-history-ui.js` | Renders the dedicated large medication-history modal: prescription-bearing visits on the left, selected prescription tables on the right, and no API, save, or prescription state. It reuses the canonical prescription model to display JSONB usage as readable instructions. |
@@ -160,7 +178,8 @@ files unless a separately approved runtime slice reintroduces them.
 | Services form component | `app/static/js/components/doctor-services-form.js`, registry key `servicesForm` | Appointment-service state, catalog pagination, selected-row render, clear/load/save, dirty state, and draft snapshot. |
 | Indications form component | `app/static/js/components/doctor-indications-form.js`, registry key `indicationsForm` | Data-backed Chỉ định pane lifecycle: free-text/survey selection, performers, current appointment rows, patient history, edit/delete, dirty/save and draft restore. The shared autocomplete is survey-only; this component remains the only selection and save owner. |
 | Services and support save facade | `app/static/js/doctor-examination/support-modules-ui.js`, registry key `supportModulesUi` | Composes prescription + services owners and exposes the single support save facade; no service row/catalog state. |
-| Shared support runtime | `app/static/js/doctor-examination/support-runtime.js` | Shared DOM, formatting, API, token, and draft-row helpers; no clinical or prescription state. |
+| Shared support runtime | `app/static/js/doctor-examination/support-runtime.js` | Shared DOM, formatting, API, token, and draft-row helpers plus `getDocument`, `getScopedDocument` (root-scoped document through `componentDomScope`), `mergeConfig(defaults, config, nestedKeys)` and `createChangeTracker(state, { revisionKey, dirtyKey })`; no clinical or prescription state. |
+| Component context | `app/static/js/doctor-examination/component-context.js`, registry key `doctorComponentContext` | Page context (`create`, `setCurrent`, `getCurrent`, `clearCurrent`) with scoped document, mount lifecycle and events; its state bridge is created directly from the initial state. |
 | Device-local recovery | `app/static/js/doctor-examination/draft-recovery.js` | IndexedDB baseline/snapshot comparison, explicit restore/discard, and restored-value markers. |
 | Workspace markup | `app/templates/partials/doctor-clinical-workspace.html` | Patient context header, five root sections, inline prescription, service region, and the data-backed indication pane. |
 | Doctor shell/workspace presentation | `app/static/css/pages/doctor-examination.css` | Scoped Doctor palette, responsive rail, workspace layout, clinical/service presentation, and recovery markers. |
@@ -386,6 +405,41 @@ record is obsolete and is deleted silently; canonical DB data stays on screen.
   intentional shared/app-shell boundaries and are allowlisted by the Doctor
   contract checker; Doctor-private assets must not be added back as classic
   script tags.
+- `mergeConfig` copies that intentionally stay local:
+  `clinical-examination-form.js` replaces `mainFields`/`detailFields` wholesale
+  (not a nested shallow merge), and `patient-intake-form.js`,
+  `patient-info-form.js`, `patient-visit-info-form.js` are shared with Lễ tân,
+  where `supportRuntime` is not loaded. Doctor-only components use
+  `supportRuntime.mergeConfig`.
+- `getDocument` helpers in shared `components/*` files (form/DOM utils,
+  patient forms, workflow two-pane, waiting list) run on pages without
+  `supportRuntime`; Doctor-private modules delegate to
+  `supportRuntime.getDocument/getScopedDocument`. `component-context.js` keeps
+  its own scoped variant because it owns the scope factory.
+- Change tracking not on `createChangeTracker`: `medical-history-form.js` loads
+  before `support-runtime.js` in the entry and also settles a second
+  `recoveryDirty` flag; clinical detail sections keep a per-section revision map
+  (`detailRevisions`) rather than one counter. Prescription, Services,
+  Indications, the workspace main fields, the clinical form main fields and the
+  save controller use the tracker, and the contract checker rejects manual
+  `*Revision`/`*Dirty` writes in those files.
+- CSS viewport `@media` rules that remain: page shell/two-pane and rail
+  breakpoints (48/64/86.25/96rem) are page-level by design; component-level
+  rules (service catalog and indications at 64rem, prescription editor/history
+  modal at 48/68rem, medicine meta at 25rem, psychologist clinical grid) are
+  candidates for container queries. Converting them changes behaviour because
+  container width differs from viewport width, so it needs a separate slice
+  with visual QA on real patients at several widths.
+- 10 overridden declarations in `doctor-examination.css` and 9 in
+  `doctor-prescription.css` sit in grouped selector rules where a later, more
+  specific rule overrides one member; the grouped declaration still applies to
+  the other members, so they are intentional composition, not dead code.
+- `doctor-prescription.css` keeps the literal fallbacks in
+  `var(--qlpk-feedback-warning, #c2410c)` and
+  `var(--qlpk-feedback-success, #15803d)` because
+  `scripts/check_prescription_stock_contract.py` requires those exact strings.
+  Every other Doctor CSS colour comes from `shared/color-tokens.css`, which the
+  Doctor contract checker enforces.
 
 ## Utility Cleanup Status
 
@@ -399,8 +453,42 @@ The dedicated read-only guard `scripts/check_doctor_examination_contract.py`
 now locks the active script order, five root sections, canonical owner
 assignments, retired aliases, and the single prescription owner.
 
-The three remaining debt items above are intentionally cross-screen,
+The remaining debt items above are intentionally cross-screen,
 compatibility-sensitive, or out of scope for the current Khám cleanup.
+
+## Cleanup Record 2026-09-26
+
+- Dose math has one owner (`PrescriptionDoseUtils`). The duplicate helpers in
+  `prescription-model.js`, the template and `psychologist-examination/core-utils.js`
+  were removed or turned into delegates; parity over 980 stored usages × 3
+  modes gave identical quantity, note and payload.
+- Shared assets reach Doctor modules only through the registry
+  (`platform-boundaries.js` loads early); the unsaved-changes dialog uses
+  `confirmationDialog.choose()` instead of calling SweetAlert directly.
+- Prescription reads the appointment id through the same runtime getter as
+  Services/Indications.
+- `prescription-ui.js` went from 1461 to 1229 lines: re-exam status and the
+  medicine-search dropdown moved into their own owners; unused
+  `getReExaminationStatus`/`normalizeReExaminationDateTime` wrappers, the unused
+  `invalid` re-exam state and its CSS selector were removed.
+- Revision/dirty bookkeeping for Prescription, Services, Indications and the
+  main clinical fields uses one `createChangeTracker`; the write-only
+  `state.revision` counter in the clinical form was removed.
+- CSS: the component base reads `--qlpk-doctor-*` tokens directly, alias
+  variables were folded into canonical names, all remaining literal colours
+  moved into `shared/color-tokens.css` (including the `--qlpk-rx-*` prescription
+  class colours and Doctor shadow/backdrop tokens), three duplicate rules were
+  merged and fully overridden declarations removed.
+- Contract checks match the current layout and stock markup; chart.js and
+  flatpickr CDN URLs are pinned.
+- QA evidence: Node tests, Doctor/prescription/print/ICD/history/tabs/brand
+  contract scripts, draft-recovery and quantity policies; headless Chrome
+  parity against the previous commit for the Doctor, Psychologist and verify
+  pages (0 computed-style diffs, including four viewports with a real dense
+  appointment), and identical UI state and write payloads for the re-exam,
+  save/race, patient-switch dialog and medicine-search scenarios. The real
+  patient queue on localhost was empty, so this is **chưa pass
+  visual/interactive QA** on live patients.
 
 ## Cleanup Record 2026-07-29
 

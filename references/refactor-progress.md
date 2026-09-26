@@ -61,6 +61,33 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
 
 ### Quyết định hiện hành
 
+- Dọn nợ kỹ thuật màn Bác sĩ 25–26/09 (9 mục, commit `69c6c9c`…`ab3945a`):
+  (1) liều thuốc một owner `PrescriptionDoseUtils`, bỏ bản sao ở model,
+  template và `psychologist-examination/core-utils.js`; (2) tài sản dùng chung
+  chỉ lấy qua registry, `platform-boundaries.js` nạp sớm; (3) hộp thoại chưa
+  lưu dùng `confirmationDialog.choose()`; (4) CSS base đọc token
+  `--qlpk-doctor-*`, gộp alias, toàn bộ màu cứng chuyển vào
+  `shared/color-tokens.css` (trừ 2 fallback stock contract bắt buộc), gộp 3 rule
+  trùng và bỏ khai báo bị ghi đè; (5) mã lịch hẹn Đơn thuốc lấy qua cùng getter
+  với Dịch vụ; (6) contract check theo layout/markup hiện tại; (7) commit toàn
+  bộ việc dở, `reports/` vào `.gitignore`; (8) ghim chart.js 4.5.1 và
+  flatpickr 4.6.13; (9) `getDocument`/`mergeConfig`/`createChangeTracker` về
+  `support-runtime.js`, bỏ `createState` thừa, `prescription-ui.js` 1461→1229
+  dòng (tách `prescriptionReExam`, `prescriptionMedicineSearch`), tài liệu 30
+  file. Nợ còn lại có lý do ghi tại mục Known Debt của
+  `references/doctor-examination-context.md` (mergeConfig/getDocument của
+  component dùng chung với Lễ tân, tracker Tiền sử/chi tiết Khám, `@media`
+  viewport, override trong rule nhóm).
+  QA: 229 Node tests; contract Doctor/stock/print/ICD/history/tabs/brand/
+  Lễ tân/medical-history; draft recovery 15 ca, quantity 8 ca; headless Chrome
+  so với commit trước: 0 lệch computed style ở Doctor, Tâm lý gia, verify (có
+  4 viewport với ca dày 1101 và ca thưa 1977 dựng từ DB chỉ đọc), trạng thái UI
+  và payload ghi giống hệt cho tái khám, lưu/sửa khi đang lưu, hộp thoại đổi
+  bệnh nhân 3 nút, xóa chỉ định 2 nút, tìm thuốc. `check_frontend_contract` và
+  `check_user_feedback_contract` vẫn fail trước và sau ở file ngoài màn Bác sĩ
+  (medicine-management, feedback-tokens, user-management). Queue thật trống
+  nên **chưa pass visual/interactive QA** trên bệnh nhân thật.
+
 - Đơn thuốc — mốc một dòng context25/09 (tiếp): user thấy editor1130px vẫn
   xuống2 dòng dù đủ chỗ. Đo harness CSS+markup thật (Chrome153, Roboto): ba
   nhóm cần997px (Đặt lịch/Chưa hẹn) đến1039px (Đổi lịch + badge dài nhất
@@ -70,8 +97,9 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
   hai dòng khi≤1056px, không tràn;7 Node checks, brand guard, workspace tabs
   và diff check đạt; localhost8000 phục vụ CSS mới, không lỗi console. Queue
   trống nên **chưa pass visual/interactive QA** trên hồ sơ thật.
-  `check_doctor_examination_contract.py` fail từ bản layout 25/09 (vẫn đòi grid
-  minmax(15rem…) và mốc60rem của HEAD), không do mốc66rem; chờ user chốt sửa.
+  `check_doctor_examination_contract.py` đã được cập nhật theo layout hiện tại
+  (grid max-content + mốc 66/38/26rem) trong commit `f70ea5f` ngày 25/09 và
+  đang pass.
 
 - Đơn thuốc — bố cục context25/09: sửa tại overview grid (2 nhóm max-content
   + tái khám nhận phần còn lại), nhãn max-content thay cột0.48fr gây chồng
@@ -4694,7 +4722,9 @@ open decisions, not a chronological log of retired helper files.
 | `app/static/js/doctor-examination/document-attachments-bridge.js` | Doctor-owned attachment state and adapter to shared document controls/list. |
 | `app/static/js/doctor-examination/workspace-leave-guard.js` | Native unload and keyboard reload guard, delegating decisions to the workspace save owner. |
 | `app/static/js/doctor-examination/medical-history-bridge.js` | Manual Tiền sử snapshot/dirty state; Doctor config is `autoSave: false`. |
-| `app/static/js/doctor-examination/prescription-ui.js` | The only prescription state/lifecycle owner: medicine search, load/clear/save, print/reuse, events, and prescription draft snapshot. |
+| `app/static/js/doctor-examination/prescription-ui.js` | The only prescription state/lifecycle owner: load/clear/save, print/reuse, events, applying a searched medicine to a row, and prescription draft snapshot. |
+| `app/static/js/doctor-examination/prescription-reexam-ui.js` | Pure re-exam lock/change/label rules for the badge and button (registry `prescriptionReExam`); no state/API/save owner. |
+| `app/static/js/doctor-examination/prescription-medicine-search-ui.js` | Stock-medicine search dropdown: debounce, latest-query token, keyboard and positioning (registry `prescriptionMedicineSearch`); no prescription state/API/save owner. |
 | `app/static/js/doctor-examination/prescription-model.js` | Pure prescription type, schedule/usage, payload, and date normalization; no DOM/API/state. |
 | `app/static/js/doctor-examination/prescription-row-renderer.js` | Current medicine-row rendering and row-total presentation through callbacks; no state/API/save owner. |
 | `app/static/js/doctor-examination/prescription-history-ui.js` | History-modal rendering/toggle presentation through callbacks; no state/API/save owner. |
