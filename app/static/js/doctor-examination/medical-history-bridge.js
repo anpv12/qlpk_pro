@@ -137,7 +137,7 @@
   }
 
 	const doctorBridge = create({
-		config: REGISTRY.get('doctorComponentConfig')?.history || {}
+		config: REGISTRY.require('doctorComponentConfig').history || {}
 	});
 	REGISTRY.register('medicalHistoryBridge', Object.assign(doctorBridge, { create }));
 })(window, document);

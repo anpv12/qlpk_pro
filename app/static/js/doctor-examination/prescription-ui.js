@@ -1203,9 +1203,9 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 	};
 	}
 
-	const doctorConfig = window.QLPKDoctorModuleRegistry.get('doctorComponentConfig');
+	const doctorConfig = window.QLPKDoctorModuleRegistry.require('doctorComponentConfig');
 	const doctorInstance = create({
-		config: doctorConfig?.prescription || {}
+		config: doctorConfig.prescription || {}
 	});
 
 	function getOrCreate(options = {}) {
@@ -1220,7 +1220,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		return instance;
 	}
 
-	const doctorRoot = document.getElementById(doctorConfig?.prescription?.rootId || DEFAULT_DOM.workspace);
+	const doctorRoot = document.getElementById(doctorConfig.prescription?.rootId || DEFAULT_DOM.workspace);
 	if (doctorRoot) instances.set(doctorRoot, doctorInstance);
 	window.QLPKDoctorModuleRegistry.register('prescriptionForm', { create, getOrCreate }, {
 		owner: 'doctor/prescription',

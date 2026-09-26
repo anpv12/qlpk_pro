@@ -66,6 +66,7 @@ function createFixture() {
 	}
 	registry.register('icdAutocomplete', FakeIcdAutocomplete);
 	registry.register('icdDataLoader', { loadICDData: async () => [] });
+	registry.register('doctorComponentConfig', { history: { rootId: 'doctorHistoryPanel' } });
 
 	const window = {
 		Element: FakeElement,

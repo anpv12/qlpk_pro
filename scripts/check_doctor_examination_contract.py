@@ -226,7 +226,11 @@ def main() -> int:
     else:
         failures.append("Doctor entry thiếu thứ tự platform boundaries/page orchestrator")
 
-    registry_fallback = re.compile(r"(?:REGISTRY|registry)\.get\([^)]*\)\s*\|\|\s*window\.|\|\|\s*window\.QLPKConfirmationDialog")
+    registry_fallback = re.compile(
+        r"(?:REGISTRY|registry)\??\.get\([^)]*\)\s*\|\|\s*(?:window\.|\{\s*\})"
+        r"|\|\|\s*window\.QLPKConfirmationDialog"
+        r"|\.get\('(?:doctorComponentConfig|confirmationDialog)'\)"
+    )
     shared_global_read = re.compile(r"window\.(?:ReceptionistDocumentAttachment\w+|ClinicalOrder\w+Utils|QLPKIcdAutocomplete|ClinicalIcdDataLoader|QLPKConfirmationDialog|Swal)\b")
     for path in (
         *ACTIVE_JS_ROOT.glob("*.js"),

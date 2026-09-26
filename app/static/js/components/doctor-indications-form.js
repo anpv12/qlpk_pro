@@ -9,6 +9,7 @@
 	const ORDER_STATE_UTILS = REGISTRY.require('orderSelectionStateUtils');
 	const STATUS_UTILS = REGISTRY.require('orderStatusUtils');
 	const AUTOCOMPLETE_UTILS = REGISTRY.require('orderAutocompleteUtils');
+	const CONFIRMATION_DIALOG = REGISTRY.require('confirmationDialog');
 
 	const DEFAULT_DOM = {
 		root: 'doctorIndicationsPanel',
@@ -559,18 +560,15 @@
 		async function handleDelete(doc, tempId) {
 			const row = STATE.rows.find(item => String(item.tempId) === String(tempId));
 			if (!row) return false;
-			const confirm = REGISTRY.get('confirmationDialog')?.confirm;
-			if (typeof confirm !== 'function') {
-				showToast('error', 'Không thể mở hộp thoại xác nhận. Vui lòng tải lại trang.');
-				return false;
-			}
-			const confirmed = await confirm({
+			const confirmed = await CONFIRMATION_DIALOG.confirm({
 				title: 'Xóa chỉ định?',
 				text: `Chỉ định "${row.order_name}" sẽ được xóa khi bạn nhấn Lưu.`,
 				icon: 'warning',
 				variant: 'danger',
 				confirmText: 'Xóa chỉ định',
-				cancelText: 'Hủy'
+				cancelText: 'Hủy',
+				showToast,
+				failureMessage: 'Không thể mở hộp thoại xác nhận. Vui lòng tải lại trang.'
 			});
 			if (!confirmed) return false;
 			STATE.rows = STATE.rows.filter(item => String(item.tempId) !== String(tempId));

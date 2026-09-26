@@ -682,10 +682,11 @@
 		return instance;
 	}
 
+	const doctorConfig = REGISTRY.require('doctorComponentConfig');
 	const defaultInstance = getOrCreate({
 		config: {
-			...(REGISTRY.get('doctorComponentConfig') || {}),
-			...(REGISTRY.get('doctorComponentConfig')?.workspace || {})
+			...doctorConfig,
+			...(doctorConfig.workspace || {})
 		},
 		getPrescriptionUi: () => REGISTRY.get('prescriptionForm')?.getOrCreate?.(),
 		getSupportModulesUi: () => REGISTRY.get('supportModulesUi') || null,

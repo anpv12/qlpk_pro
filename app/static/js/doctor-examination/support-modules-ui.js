@@ -306,7 +306,7 @@
 	}
 
 	const defaultInstance = getOrCreate({
-		config: REGISTRY.get('doctorComponentConfig')?.support || {},
+		config: REGISTRY.require('doctorComponentConfig').support || {},
 		getPrescriptionUi: () => REGISTRY.get('prescriptionForm')?.getOrCreate?.(),
 		servicesFactory: REGISTRY.get('servicesForm'),
 		indicationsFactory: REGISTRY.get('indicationsForm')

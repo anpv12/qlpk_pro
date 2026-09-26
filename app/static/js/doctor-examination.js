@@ -5,7 +5,7 @@
 	if (!PAGE_RUNTIME) throw new Error('Thiếu Doctor page runtime');
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
 	if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
-	const COMPONENT_CONFIG = REGISTRY.get('doctorComponentConfig') || {};
+	const COMPONENT_CONFIG = REGISTRY.require('doctorComponentConfig');
 	const SUPPORT_RUNTIME = REGISTRY.get('supportRuntime');
 	if (!SUPPORT_RUNTIME) throw new Error('Thiếu Doctor support runtime');
 	const COMPONENT_CONTEXT_API = window.QLPKDoctorComponentContext;
