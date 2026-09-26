@@ -11,10 +11,6 @@
 	 * reaching into window/document implicitly.  Keeping the compatibility
 	 * surface here makes the eventual module migration mechanical.
 	 */
-	function createState(initialState = {}) {
-		return createStateBridge({ ...initialState });
-	}
-
 	function createStateBridge(target) {
 		const listeners = new Set();
 		return Object.freeze({
@@ -51,7 +47,7 @@
 		const config = options.config || registry?.get?.('doctorComponentConfig') || {};
 		const scopeFactory = options.scopeFactory || window.QLPKComponentDomScope;
 		const stateObject = options.stateObject || null;
-		const state = options.state || (stateObject ? createStateBridge(stateObject) : createState(options.initialState));
+		const state = options.state || createStateBridge(stateObject || { ...options.initialState });
 		const lifecycle = new Map();
 		const events = new Map();
 
