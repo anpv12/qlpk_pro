@@ -1,5 +1,6 @@
 import {
   debugLog as medicalHistoryDebugLog,
+  escapeHtml as medicalHistoryEscapeHtml,
   getAuthHeader as medicalHistoryGetAuthHeader,
   getComponent as medicalHistoryGetComponent,
   getIcdLookup as medicalHistoryGetIcdLookup
@@ -180,8 +181,8 @@ function medicalHistoryRenderSuggestions() {
 
       itemDiv.innerHTML = `
         <div class="medical-history-item-check"></div>
-        <span class="medical-history-icd-badge">${icdObj.icd_code}</span>
-        <span class="medical-history-item-name">${icdObj.disease_name}</span>
+        <span class="medical-history-icd-badge">${medicalHistoryEscapeHtml(icdObj.icd_code)}</span>
+        <span class="medical-history-item-name">${medicalHistoryEscapeHtml(icdObj.disease_name)}</span>
       `;
 
       if (groupName === 'thoi-quen') {
@@ -249,8 +250,8 @@ function medicalHistoryRenderSuggestions() {
 
       itemDiv.innerHTML = `
         <div class="medical-history-item-check"></div>
-        <span class="medical-history-icd-badge">${icdObj.icd_code}</span>
-        <span class="medical-history-item-name">${icdObj.disease_name}</span>
+        <span class="medical-history-icd-badge">${medicalHistoryEscapeHtml(icdObj.icd_code)}</span>
+        <span class="medical-history-item-name">${medicalHistoryEscapeHtml(icdObj.disease_name)}</span>
       `;
 
       container.appendChild(itemDiv);

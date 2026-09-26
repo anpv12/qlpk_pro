@@ -42,6 +42,10 @@ const callAction = (name, ...args) => {
   return typeof action === 'function' ? action(...args) : undefined;
 };
 
+const getSupportRuntime = () => window.QLPKDoctorModuleRegistry.require('supportRuntime');
+const escapeHtml = value => getSupportRuntime().escapeHtml(value);
+const escapeAttr = value => getSupportRuntime().escapeAttr(value);
+
 const setVisible = (element, visible, displayValue = '') => {
   if (!element) return;
   element.classList.toggle('medical-history-hidden', !visible);
@@ -51,6 +55,8 @@ const setVisible = (element, visible, displayValue = '') => {
 export {
   callAction,
   debugLog,
+  escapeAttr,
+  escapeHtml,
   getAuthHeader,
   getComponent,
   getIcdLookup,

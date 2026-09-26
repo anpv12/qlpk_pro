@@ -1,5 +1,7 @@
 import {
   callAction as medicalHistoryCallAction,
+  escapeAttr as medicalHistoryEscapeAttr,
+  escapeHtml as medicalHistoryEscapeHtml,
   getComponent as medicalHistoryGetComponent,
   getJsonAuthHeaders as medicalHistoryGetJsonAuthHeaders
 } from './medical-history-context.js';
@@ -54,10 +56,10 @@ function medicalHistoryAddAllergyRow(name, level, symptom) {
   tr.className = 'allergy-row';
   tr.dataset.idx = idx;
   tr.innerHTML = `
-    <td><div class="allergen-ac-wrap"><input type="text" class="medical-history-allergy-input allergy-name allergen-ac-input" placeholder="Tên thuốc / dị nguyên..." value="${(name || '').replace(/"/g, '&quot;')}" autocomplete="off"><div class="allergen-ac-dropdown"></div></div></td>
+    <td><div class="allergen-ac-wrap"><input type="text" class="medical-history-allergy-input allergy-name allergen-ac-input" placeholder="Tên thuốc / dị nguyên..." value="${medicalHistoryEscapeAttr(name || '')}" autocomplete="off"><div class="allergen-ac-dropdown"></div></div></td>
     <td class="text-center"><label class="medical-history-radio-wrap"><input type="radio" class="allergy-level" name="allergy_level_${idx}" value="nghi_ngo" ${level === 'nghi_ngo' ? 'checked' : ''}><span class="medical-history-radio-dot"></span></label></td>
     <td class="text-center"><label class="medical-history-radio-wrap"><input type="radio" class="allergy-level" name="allergy_level_${idx}" value="chac_chan" ${level === 'chac_chan' ? 'checked' : ''}><span class="medical-history-radio-dot"></span></label></td>
-    <td><input type="text" class="medical-history-allergy-input allergy-symptom" placeholder="Biểu hiện..." value="${(symptom || '').replace(/"/g, '&quot;')}"></td>
+    <td><input type="text" class="medical-history-allergy-input allergy-symptom" placeholder="Biểu hiện..." value="${medicalHistoryEscapeAttr(symptom || '')}"></td>
     <td class="text-center"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="medical-history-row-remove" title="Xóa dòng">×</button></td>`;
   tbody.appendChild(tr);
   const removeButton = tr.querySelector('.medical-history-row-remove');
@@ -258,7 +260,7 @@ async function fetchAllergenSuggestions(q, input, dropdown, positionDropdown) {
     if (q && !exactMatch) {
       const createDiv = document.createElement('div');
       createDiv.className = 'allergen-ac-item allergen-ac-create';
-      const safeQ = q.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const safeQ = medicalHistoryEscapeHtml(q);
       createDiv.innerHTML = `<i class="fas fa-plus allergen-ac-create-icon"></i>Thêm "<b>${safeQ}</b>" vào danh mục`;
       createDiv.addEventListener('mousedown', async function (e) {
         e.preventDefault();
