@@ -366,7 +366,7 @@ body[data-doctor-ui] .main-content {
 }
 .doctor-draft-recovery__action:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .doctor-draft-recovery__action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: rgb(255 255 255 / 14%);
+	background: rgba(var(--qlpk-color-white-rgb), 0.14);
 	outline: 0;
 }
 
@@ -431,11 +431,11 @@ body[data-doctor-ui] .main-content {
 	min-block-size: var(--doctor-context-header-block-size);
 	padding: 0;
 	border: 0;
-	border-block-end: 0.0625rem solid var(--qlpk-workflow-context-header-border, rgba(214, 160, 105, 0.28));
+	border-block-end: 0.0625rem solid var(--qlpk-workflow-context-header-border, rgba(var(--qlpk-color-gold-rgb), 0.28));
 	border-radius: 0;
 	background: var(--qlpk-workflow-context-header-bg, var(--qlpk-color-primary));
 	box-shadow: none;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	overflow: hidden;
 	grid-column: 1 / -1;
 	grid-row: 1;
@@ -477,7 +477,7 @@ body[data-doctor-ui] .main-content {
 	min-width: 0;
 	margin: 0;
 	overflow: hidden;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	font-size: var(--qlpk-font-size-md);
 	font-weight: var(--qlpk-font-weight-bold);
 	line-height: 1.2;
@@ -488,7 +488,7 @@ body[data-doctor-ui] .main-content {
 .doctor-patient-hero__latest-visit {
 	display: inline-flex;
 	align-items: center;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-semibold);
 	line-height: 1.2;
@@ -503,7 +503,7 @@ body[data-doctor-ui] .main-content {
 	align-items: center;
 	gap: 0.25rem;
 	min-width: 0;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-bold);
 	line-height: 1.2;
@@ -522,7 +522,7 @@ body[data-doctor-ui] .main-content {
 	align-items: center;
 	min-height: 1.75rem;
 	padding: 0.2rem 0.6rem;
-	border: 0.0625rem solid var(--qlpk-workflow-context-header-text, #fffaf3);
+	border: 0.0625rem solid var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	border-radius: 999rem;
 	background: var(--qlpk-doctor-surface);
 	color: var(--doctor-brown, var(--qlpk-brown-800));
@@ -539,7 +539,7 @@ body[data-doctor-ui] .main-content {
 	min-width: 0;
 	margin: 0;
 	overflow: hidden;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-medium);
 	line-height: 1.25;
@@ -558,7 +558,7 @@ body[data-doctor-ui] .main-content {
 }
 
 .doctor-patient-hero__history-item strong {
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 	font-weight: var(--qlpk-font-weight-bold);
 }
 
@@ -570,7 +570,7 @@ body[data-doctor-ui] .main-content {
 
 .doctor-patient-hero__history-divider {
 	flex: 0 0 auto;
-	color: var(--qlpk-workflow-context-header-text, #fffaf3);
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
 }
 
 .doctor-patient-hero__actions {
@@ -1337,14 +1337,14 @@ body[data-doctor-ui] .main-content {
 
 .doctor-support-dropdown {
 	--doctor-dropdown-surface: var(--doctor-surface, var(--qlpk-doctor-surface));
-	--doctor-dropdown-text: var(--doctor-text, #1f1a16);
+	--doctor-dropdown-text: var(--doctor-text, var(--qlpk-color-ink));
 	--doctor-dropdown-muted: var(--doctor-muted, var(--qlpk-brown-800));
 	--doctor-dropdown-line: var(--doctor-line, rgba(var(--qlpk-brown-800-rgb), 0.2));
 	--doctor-dropdown-line-strong: var(--doctor-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.34));
 	--doctor-dropdown-soft: var(--doctor-interactive-soft, var(--qlpk-doctor-primary-soft));
 	--doctor-dropdown-accent: var(--doctor-brown, var(--qlpk-color-primary));
-	--doctor-dropdown-rx-h: var(--qlpk-rx-h, #7e57c2);
-	--doctor-dropdown-rx-n: var(--qlpk-rx-n, #f4511e);
+	--doctor-dropdown-rx-h: var(--qlpk-rx-h);
+	--doctor-dropdown-rx-n: var(--qlpk-rx-n);
 	box-sizing: border-box;
 	position: absolute;
 	inset-inline: 0;
@@ -2043,14 +2043,14 @@ compact warning without adding label chrome. */
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat :is(.medical-history-chip, .medical-history-chip--gd) {
-	border-color: #faf6e6;
-	background: #faf6e6;
+	border-color: var(--qlpk-color-surface-chip);
+	background: var(--qlpk-color-surface-chip);
 	color: var(--doctor-brown);
 }
 
 .doctor-workspace .inline-tien-su--doctor-flat .medical-history-icd-badge {
-	border-color: #faf6e6;
-	background: #faf6e6;
+	border-color: var(--qlpk-color-surface-chip);
+	background: var(--qlpk-color-surface-chip);
 	color: var(--doctor-brown);
 }
 
@@ -2302,7 +2302,7 @@ compact warning without adding label chrome. */
 		border: 0.0625rem solid var(--qlpk-workflow-line);
 		border-radius: 0.625rem;
 		background: color-mix(in srgb, var(--qlpk-workflow-surface) 94%, transparent);
-		box-shadow: 0 0.375rem 0.875rem rgb(92 48 27 / 6%);
+		box-shadow: var(--qlpk-doctor-shadow-tabs);
 	}
 
 	.doctor-workspace .qlpk-workflow-two-pane__queue,

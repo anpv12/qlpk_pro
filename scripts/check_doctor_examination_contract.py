@@ -259,6 +259,26 @@ def main() -> int:
         if manual_change_tracking.search(text):
             failures.append(f"Doctor module tự tăng revision/dirty thay vì dùng createChangeTracker: {relative_path}")
 
+    raw_color_literal = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(\s*\d")
+    contract_color_fallbacks = (
+        "var(--qlpk-feedback-warning, #c2410c)",
+        "var(--qlpk-feedback-success, #15803d)",
+    )
+    for relative_path in (
+        "app/static/css/components/doctor-component-base.css",
+        "app/static/css/pages/doctor-examination.css",
+        "app/static/css/pages/doctor-indications.css",
+        "app/static/css/pages/doctor-prescription.css",
+    ):
+        path = ROOT / relative_path
+        text = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+        text = re.sub(r"/\*.*?\*/", lambda match: "\n" * match[0].count("\n"), text, flags=re.DOTALL)
+        for fallback in contract_color_fallbacks:
+            text = text.replace(fallback, " " * len(fallback))
+        for match in raw_color_literal.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            failures.append(f"{relative_path}:{line}: dùng token màu trong shared/color-tokens.css thay vì {match[0]}")
+
     for section_id in ROOT_SECTION_IDS:
         count = parser.root_section_ids.count(section_id)
         if count != 1:

@@ -149,7 +149,7 @@
 	border: 0.0625rem solid var(--doctor-line-strong);
 	border-radius: 0.35rem;
 	background: var(--doctor-surface);
-	box-shadow: 0 0.55rem 1.2rem rgba(77, 38, 23, 0.18);
+	box-shadow: var(--qlpk-doctor-shadow-dropdown);
 }
 
 .doctor-indications-autocomplete__dropdown--upward {
