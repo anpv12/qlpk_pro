@@ -15,8 +15,13 @@ const REEXAM_FILES = Object.freeze([
   'app/static/js/doctor-examination/prescription-reexam-ui.js'
 ]);
 
-function loadDoctorRegistry(files) {
-  const window = {};
+const MEDICINE_SEARCH_FILES = Object.freeze([
+  ...REEXAM_FILES.slice(0, -1),
+  'app/static/js/doctor-examination/prescription-medicine-search-ui.js'
+]);
+
+function loadDoctorRegistry(files, windowProps = {}) {
+  const window = { ...windowProps };
   const context = vm.createContext({ window, document: {}, console });
   for (const file of files) vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   return window.QLPKDoctorModuleRegistry;
@@ -26,4 +31,4 @@ function loadSupportRuntime() {
   return loadDoctorRegistry(RUNTIME_FILES).require('supportRuntime');
 }
 
-module.exports = { RUNTIME_FILES, REEXAM_FILES, loadDoctorRegistry, loadSupportRuntime };
+module.exports = { RUNTIME_FILES, REEXAM_FILES, MEDICINE_SEARCH_FILES, loadDoctorRegistry, loadSupportRuntime };

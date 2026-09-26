@@ -44,8 +44,9 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		const ROWS = options.rows || registry?.get('prescriptionRows');
 		const HISTORY = options.history || registry?.get('prescriptionHistory');
 		const REEXAM = options.reExam || registry?.get('prescriptionReExam');
+		const MEDICINE_SEARCH = options.medicineSearch || registry?.get('prescriptionMedicineSearch');
 		if (!RUNTIME) throw new Error('Thiếu prescription support runtime');
-		if (!MODEL || !ROWS || !HISTORY || !REEXAM) throw new Error('Thiếu prescription dependencies');
+		if (!MODEL || !ROWS || !HISTORY || !REEXAM || !MEDICINE_SEARCH) throw new Error('Thiếu prescription dependencies');
 
 		const dom = { ...DEFAULT_DOM, ...(config.dom || {}) };
 		const endpoints = { ...DEFAULT_ENDPOINTS, ...(config.endpoints || {}) };
@@ -66,8 +67,6 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			textOf,
 			toNumber,
 			normalizeId,
-			escapeHtml,
-			escapeAttr,
 			formatCurrency,
 			draftRowsWithoutRuntimeIds,
 			getRowUidFromTarget
@@ -122,95 +121,20 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		prescriptionHistoryLoaded: false,
 		prescriptionHistoryPanelOpen: false,
 		prescriptionHistorySelectedIndex: 0,
-		nextPrescriptionRowId: 1,
-		medicineSearchTimer: null,
-		medicineSearchToken: 0,
-		medicineOptions: new Map(),
-		medicineDropdownInput: null,
-		medicineDropdownRowUid: '',
-		medicineDropdownActiveIndex: -1
+		nextPrescriptionRowId: 1
 	};
 	const CHANGES = RUNTIME.createChangeTracker(STATE, { revisionKey: 'prescriptionRevision', dirtyKey: 'prescriptionDirty' });
+	const SEARCH = MEDICINE_SEARCH.create({
+		requestJson,
+		getEndpoint: query => (typeof endpoints.medicines === 'function'
+			? endpoints.medicines(query)
+			: (endpoints.medicines || `/api/medicines/?search=${encodeURIComponent(query)}&per_page=8`)),
+		getDocument: () => STATE.document || document,
+		isRowCurrent: row => findPrescriptionRow(row.uid) === row
+	});
 
 	function getCurrentAppointmentId() {
 		return RUNTIME.getCurrentAppointmentId(STATE);
-	}
-
-	function getMedicineDropdown(doc) {
-		const dropdownId = 'doctorMedicineDropdown';
-		let dropdown = doc.getElementById(dropdownId);
-		if (dropdown) return dropdown;
-		dropdown = doc.createElement('div');
-		dropdown.id = dropdownId;
-		dropdown.className = 'doctor-support-dropdown doctor-support-dropdown--floating';
-		dropdown.dataset.prescriptionDropdown = 'true';
-		dropdown.setAttribute('role', 'listbox');
-		dropdown.hidden = true;
-		(doc.body || doc.documentElement).appendChild(dropdown);
-		return dropdown;
-	}
-
-	function updateMedicineInputState(input, expanded, dropdownId = 'doctorMedicineDropdown') {
-		if (!input) return;
-		input.setAttribute('aria-expanded', String(Boolean(expanded)));
-		if (expanded) input.setAttribute('aria-controls', dropdownId);
-		else input.removeAttribute('aria-activedescendant');
-	}
-
-	function positionMedicineDropdown(doc) {
-		const dropdown = getMedicineDropdown(doc);
-		const input = STATE.medicineDropdownInput;
-		if (!input || dropdown.hidden || !input.isConnected) return;
-		const view = doc.defaultView || window;
-		const rect = input.getBoundingClientRect();
-		const edge = 8;
-		const gap = 4;
-		const availableBelow = Math.max(0, view.innerHeight - rect.bottom - edge - gap);
-		const availableAbove = Math.max(0, rect.top - edge - gap);
-		const openAbove = availableBelow < 240 && availableAbove > availableBelow;
-		const maxWidth = Math.max(260, view.innerWidth - (edge * 2));
-		const width = Math.min(Math.max(rect.width, 320), maxWidth);
-		const maxHeight = Math.max(96, Math.min(320, openAbove ? availableAbove : availableBelow));
-
-		dropdown.style.width = `${width}px`;
-		dropdown.style.maxHeight = `${maxHeight}px`;
-		dropdown.style.left = `${Math.min(Math.max(edge, rect.left), Math.max(edge, view.innerWidth - width - edge))}px`;
-		dropdown.style.top = openAbove
-			? `${Math.max(edge, rect.top - Math.min(dropdown.offsetHeight || maxHeight, maxHeight) - gap)}px`
-			: `${Math.min(view.innerHeight - edge - Math.min(dropdown.offsetHeight || maxHeight, maxHeight), rect.bottom + gap)}px`;
-		dropdown.dataset.placement = openAbove ? 'above' : 'below';
-	}
-
-	function hideMedicineDropdown(doc) {
-		const dropdown = getMedicineDropdown(doc);
-		if (STATE.medicineSearchTimer) clearTimeout(STATE.medicineSearchTimer);
-		STATE.medicineSearchTimer = null;
-		STATE.medicineSearchToken += 1;
-		dropdown.hidden = true;
-		dropdown.innerHTML = '';
-		STATE.medicineDropdownInput?.removeAttribute('aria-busy');
-		updateMedicineInputState(STATE.medicineDropdownInput, false);
-		STATE.medicineDropdownInput = null;
-		STATE.medicineDropdownRowUid = '';
-		STATE.medicineDropdownActiveIndex = -1;
-	}
-
-	function setActiveMedicineOption(doc, index) {
-		const dropdown = getMedicineDropdown(doc);
-		const options = Array.from(dropdown.querySelectorAll('[data-medicine-select]'));
-		if (!options.length) return;
-		STATE.medicineDropdownActiveIndex = Math.max(0, Math.min(index, options.length - 1));
-		options.forEach((option, optionIndex) => {
-			const active = optionIndex === STATE.medicineDropdownActiveIndex;
-			option.classList.toggle('is-active', active);
-			option.setAttribute('aria-selected', String(active));
-		});
-		const activeOption = options[STATE.medicineDropdownActiveIndex];
-		if (activeOption) {
-			updateMedicineInputState(STATE.medicineDropdownInput, true);
-			STATE.medicineDropdownInput?.setAttribute('aria-activedescendant', activeOption.id);
-			activeOption.scrollIntoView({ block: 'nearest' });
-		}
 	}
 
 	let printController = null;
@@ -369,7 +293,6 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		STATE.prescriptionHistoryLoaded = false;
 		STATE.prescriptionHistoryPanelOpen = false;
 		STATE.prescriptionHistorySelectedIndex = 0;
-		STATE.medicineOptions.clear();
 		setValue(doc, 'doctorPrescriptionMedicineDays', '');
 		setPrescriptionReExamDate(doc, '');
 		syncPrescriptionReExamControls(doc);
@@ -378,7 +301,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		setPrescriptionHistoryPanel(doc, false);
 		renderPrescriptionRows(doc);
 		renderPrescriptionHistory(doc);
-		hideMedicineDropdown(doc);
+		SEARCH.reset(doc);
 	}
 
 	function getDraftSnapshot(options = {}) {
@@ -446,10 +369,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		STATE.appointmentId = null;
 		STATE.patientId = null;
 		STATE.appointmentDate = null;
-		if (STATE.medicineSearchTimer) clearTimeout(STATE.medicineSearchTimer);
-		STATE.medicineSearchTimer = null;
-		STATE.medicineSearchToken += 1;
-		hideMedicineDropdown(doc);
+		SEARCH.hide(doc);
 		resetContextData(doc);
 	}
 	function setPrescriptionSaveStatus(doc, status, label) {
@@ -942,75 +862,8 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		}
 	}
 
-	function renderMedicineDropdown(doc, input, row, medicines) {
-		const dropdown = getMedicineDropdown(doc);
-		STATE.medicineOptions.clear();
-		STATE.medicineDropdownInput = input;
-		STATE.medicineDropdownRowUid = row.uid;
-		STATE.medicineDropdownActiveIndex = -1;
-		input?.removeAttribute('aria-busy');
-		updateMedicineInputState(input, true);
-		if (!Array.isArray(medicines) || !medicines.length) {
-			dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Không tìm thấy thuốc trong kho</div>';
-			dropdown.hidden = false;
-			positionMedicineDropdown(doc);
-			return;
-		}
-		dropdown.innerHTML = medicines.map((medicine, index) => {
-			const optionKey = `${row.uid}:${medicine.id}`;
-			STATE.medicineOptions.set(optionKey, medicine);
-			const rxType = normalizePrescriptionType(medicine.prescription_type);
-			const rxLabel = rxType === 'H' ? 'Đơn hướng thần (H)' : rxType === 'N' ? 'Đơn gây nghiện (N)' : '';
-			const rxClass = rxLabel ? ` doctor-support-dropdown__item--rx-${rxType.toLowerCase()}` : '';
-			const rxFlag = rxLabel
-				? `<span class="doctor-support-dropdown__flag" title="${escapeAttr(rxLabel)}" aria-label="${escapeAttr(rxLabel)}">${escapeHtml(rxType)}</span>`
-				: '';
-			return `
-				<button type="button" id="doctorMedicineOption-${escapeAttr(row.uid)}-${index}" class="doctor-support-dropdown__item${rxClass}" data-medicine-select="${escapeAttr(optionKey)}" role="option" aria-selected="false">
-					<span class="doctor-support-dropdown__title">${rxFlag}${escapeHtml(medicine.name)}</span>
-					<span class="doctor-support-dropdown__meta">${escapeHtml([medicine.strength, medicine.unit, `Tồn kho ${medicine.stock_quantity ?? 0}`, formatCurrency(medicine.unit_price)].filter(Boolean).join(' · '))}</span>
-				</button>
-			`;
-		}).join('');
-		dropdown.hidden = false;
-		positionMedicineDropdown(doc);
-	}
-
-	function scheduleMedicineSearch(input, row) {
-		if (row.isExternal) return;
-		const doc = STATE.document || document;
-		const query = input.value.trim();
-		hideMedicineDropdown(doc);
-		const token = ++STATE.medicineSearchToken;
-		const dropdown = getMedicineDropdown(doc);
-		STATE.medicineDropdownInput = input;
-		STATE.medicineDropdownRowUid = row.uid;
-		STATE.medicineDropdownActiveIndex = -1;
-		input.setAttribute('aria-busy', 'true');
-		updateMedicineInputState(input, true);
-		dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Đang tải danh sách thuốc...</div>';
-		dropdown.hidden = false;
-		positionMedicineDropdown(doc);
-		STATE.medicineSearchTimer = window.setTimeout(async () => {
-			try {
-				const medicineEndpoint = typeof endpoints.medicines === 'function'
-					? endpoints.medicines(query)
-					: (endpoints.medicines || `/api/medicines/?search=${encodeURIComponent(query)}&per_page=8`);
-				const data = await requestJson(medicineEndpoint);
-				if (token !== STATE.medicineSearchToken
-					|| !input.isConnected
-					|| findPrescriptionRow(row.uid) !== row) return;
-				renderMedicineDropdown(doc, input, row, data && data.medicines ? data.medicines : []);
-			} catch (error) {
-				if (token === STATE.medicineSearchToken) hideMedicineDropdown(doc);
-			} finally {
-				if (token === STATE.medicineSearchToken) STATE.medicineSearchTimer = null;
-			}
-		}, query ? 250 : 0);
-	}
-
 	function applyMedicineSelection(doc, optionKey) {
-		const medicine = STATE.medicineOptions.get(optionKey);
+		const medicine = SEARCH.getOption(optionKey);
 		if (!medicine) return false;
 		const rowUid = optionKey.split(':')[0];
 		const row = findPrescriptionRow(rowUid);
@@ -1029,7 +882,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		row.batchAllocation = null;
 		row.batchAllocationStale = false;
 		row.usageNoteMode = PRESCRIPTION_USAGE_NOTE_MODES.GENERATED;
-		hideMedicineDropdown(doc);
+		SEARCH.hide(doc);
 		markPrescriptionDirty();
 		syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
 		syncPrescriptionUsageNotes(doc);
@@ -1123,7 +976,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			}
 			syncBatchAllocationStaleness();
 			updateBatchAllocationDisplays(doc);
-			scheduleMedicineSearch(target, row);
+			SEARCH.search(target, row);
 		} else if (field === 'quantity') {
 			return false;
 		} else if (field === 'unit') {
@@ -1260,33 +1113,14 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			if (!target || target.tagName !== 'INPUT' || target.dataset.prescriptionField !== 'name') return;
 			const rowUid = getRowUidFromTarget(target, '[data-prescription-row-id]', 'data-prescription-row-id');
 			const row = findPrescriptionRow(rowUid);
-			if (row && !row.isExternal) scheduleMedicineSearch(target, row);
+			if (row && !row.isExternal) SEARCH.search(target, row);
 		});
 
 		workspace.addEventListener('keydown', event => {
 			const target = event.target;
 			if (!(target instanceof window.HTMLInputElement) || target.dataset.prescriptionField !== 'name') return;
-			const dropdown = getMedicineDropdown(doc);
-			if (event.key === 'Escape') {
-				hideMedicineDropdown(doc);
-				return;
-			}
-			if (dropdown.hidden || target !== STATE.medicineDropdownInput) return;
-			const options = Array.from(dropdown.querySelectorAll('[data-medicine-select]'));
-			if (!options.length) return;
-			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-				event.preventDefault();
-				const direction = event.key === 'ArrowDown' ? 1 : -1;
-				const current = STATE.medicineDropdownActiveIndex;
-				setActiveMedicineOption(doc, current < 0
-					? (direction > 0 ? 0 : options.length - 1)
-					: current + direction);
-				return;
-			}
-			if (event.key === 'Enter' && STATE.medicineDropdownActiveIndex >= 0) {
-				event.preventDefault();
-				applyMedicineSelection(doc, options[STATE.medicineDropdownActiveIndex].dataset.medicineSelect);
-			}
+			const optionKey = SEARCH.handleKeydown(doc, event);
+			if (optionKey) applyMedicineSelection(doc, optionKey);
 		});
 
 		doc.addEventListener('input', event => {
@@ -1317,11 +1151,11 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 				return;
 			}
 			if (!event.target.closest('.doctor-prescription-cell__input--search')
-				&& !event.target.closest('[data-prescription-dropdown]')) hideMedicineDropdown(doc);
+				&& !event.target.closest('[data-prescription-dropdown]')) SEARCH.hide(doc);
 		});
 
-		doc.addEventListener('scroll', () => positionMedicineDropdown(doc), true);
-		(doc.defaultView || window).addEventListener('resize', () => positionMedicineDropdown(doc));
+		doc.addEventListener('scroll', () => SEARCH.position(doc), true);
+		(doc.defaultView || window).addEventListener('resize', () => SEARCH.position(doc));
 
 		STATE.bound = true;
 		return true;
