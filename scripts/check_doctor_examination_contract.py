@@ -283,6 +283,15 @@ def main() -> int:
             line = text.count("\n", 0, match.start()) + 1
             failures.append(f"{relative_path}:{line}: dùng token màu trong shared/color-tokens.css thay vì {match[0]}")
 
+    unpinned_cdn = re.compile(r"cdn\.jsdelivr\.net/npm/((?:@[\w.-]+/)?[\w.-]+?)(?:@(\d+))?(?=[\"'/])")
+    for template in sorted((ROOT / "app/templates").rglob("*.html")):
+        source = template.read_text(encoding="utf-8", errors="ignore")
+        for match in unpinned_cdn.finditer(source):
+            line = source.count("\n", 0, match.start()) + 1
+            failures.append(
+                f"{template.relative_to(ROOT)}:{line}: CDN {match[1]} phải ghim phiên bản đầy đủ (x.y.z)"
+            )
+
     for section_id in ROOT_SECTION_IDS:
         count = parser.root_section_ids.count(section_id)
         if count != 1:

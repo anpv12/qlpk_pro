@@ -479,8 +479,11 @@ compatibility-sensitive, or out of scope for the current Khám cleanup.
   moved into `shared/color-tokens.css` (including the `--qlpk-rx-*` prescription
   class colours and Doctor shadow/backdrop tokens), three duplicate rules were
   merged and fully overridden declarations removed.
-- Contract checks match the current layout and stock markup; chart.js and
-  flatpickr CDN URLs are pinned.
+- Contract checks match the current layout and stock markup. CDN URLs are
+  pinned to full versions (chart.js 4.5.1, flatpickr 4.6.13, sweetalert2
+  11.26.25, echarts 5.6.0; the pinned files are byte-identical to what the
+  loose URLs served on 25–26/09), and the Doctor contract rejects a new
+  jsDelivr URL without an x.y.z version in any template.
 - QA evidence: Node tests, Doctor/prescription/print/ICD/history/tabs/brand
   contract scripts, draft-recovery and quantity policies; headless Chrome
   parity against the previous commit for the Doctor, Psychologist and verify

@@ -70,8 +70,9 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
   `shared/color-tokens.css` (trừ 2 fallback stock contract bắt buộc), gộp 3 rule
   trùng và bỏ khai báo bị ghi đè; (5) mã lịch hẹn Đơn thuốc lấy qua cùng getter
   với Dịch vụ; (6) contract check theo layout/markup hiện tại; (7) commit toàn
-  bộ việc dở, `reports/` vào `.gitignore`; (8) ghim chart.js 4.5.1 và
-  flatpickr 4.6.13; (9) `getDocument`/`mergeConfig`/`createChangeTracker` về
+  bộ việc dở, `reports/` vào `.gitignore`; (8) ghim chart.js 4.5.1,
+  flatpickr 4.6.13, sweetalert2 11.26.25, echarts 5.6.0 (file giống byte bản cũ),
+  contract chặn URL jsDelivr không có x.y.z; (9) `getDocument`/`mergeConfig`/`createChangeTracker` về
   `support-runtime.js`, bỏ `createState` thừa, `prescription-ui.js` 1461→1229
   dòng (tách `prescriptionReExam`, `prescriptionMedicineSearch`), tài liệu 30
   file. Nợ còn lại có lý do ghi tại mục Known Debt của
