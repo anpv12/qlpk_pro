@@ -13,7 +13,7 @@ from app.modules.medicines.services.catalog_service import CatalogValidationErro
 from app.modules.medicines.services.reference_review import can_review_reference, review_preview, confirm_reference
 import logging
 from datetime import datetime, date, timezone
-from sqlalchemy import func, and_, or_, text
+from sqlalchemy import func, or_
 
 logger = logging.getLogger(__name__)
 
@@ -564,7 +564,7 @@ def get_dashboard(user):
                         if days_to_expiry <= medicine.expiry_warning_days:
                             warning_count += 1
                 except Exception:
-                    pass
+                    logger.warning('Bỏ qua cảnh báo hạn dùng của thuốc %s vì dữ liệu lô không hợp lệ', medicine.id, exc_info=True)
         
         return jsonify({
             'total_medicines': total_medicines,
@@ -859,7 +859,7 @@ def get_statistics_prescriptions(user):
             }
         
         # === Query examination_count per doctor (lượt khám thật, không phụ thuộc prescription) ===
-        from app.models.examination import Examination, ExaminationStatus as ExamStatus
+        from app.models.examination import Examination
         
         
         exam_query = db.query(
@@ -894,8 +894,6 @@ def get_statistics_prescriptions(user):
                 doctors_data[doc_id]['examination_count'] = count
         
         # === Query service_count per doctor (từ appointments.service_id — nguồn đúng duy nhất) ===
-        from app.models.service import Service
-        
         svc_query = db.query(
             Examination.doctor_id,
             func.count(Appointment.service_id)
@@ -1046,15 +1044,10 @@ def get_statistics_prescriptions(user):
                     '_prescription_types': set()
                 }
             
-            # Calculate medicine stats for this prescription
-            medicine_count = len(pres.items)
             total_amount = float(pres.total_amount) if pres.total_amount else 0
             
             # Get services
             services = ', '.join([s.service.name for s in appt.appointment_services if s.service]) if appt.appointment_services else ''
-            
-            # Collect individual service names for aggregation
-            service_names = [s.service.name for s in appt.appointment_services if s.service] if appt.appointment_services else []
             
             # Calculate treatment days (from prescription items usage)
             treatment_days = 0
@@ -1322,7 +1315,6 @@ def get_statistics_prescription_history(user):
     from app.models.appointment import Appointment
     from app.models.user import User as UserModel
     from app.models.patient import Patient
-    from sqlalchemy.orm import joinedload
 
     db = next(get_db())
     try:

@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, request
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.examination import Examination, ExaminationStatus
 # ExaminationService import removed - using AppointmentService instead
@@ -232,7 +231,6 @@ def update_examination_service(user, examination_id, service_id):
         )
         
         # Cập nhật updated_at
-        from datetime import datetime
         service.updated_at = datetime.utcnow()
 
         db.commit()

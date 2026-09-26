@@ -3,7 +3,6 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.patient import Patient
 from app.models.attachment import Attachment
-from app.schemas.attachment import AttachmentCreate, AttachmentResponse
 from app.api.auth import require_auth
 from app.realtime.events import emit_document_changed
 from app.utils.upload_storage import upload_dir, upload_path
@@ -48,6 +47,7 @@ def validate_file_size(file):
         size = file.stream.tell()
         file.stream.seek(0)
     except Exception:
+        logger.warning('Không đọc được kích thước tập tin tải lên, bỏ qua kiểm tra dung lượng', exc_info=True)
         size = 0
 
     if size > max_bytes:
@@ -208,7 +208,6 @@ def upload_attachment_general(user):
             
             # Tạo tên file unique - giữ nguyên tên file gốc
             original_filename = normalize_filename(file.filename)
-            file_extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
             unique_filename = f"{uuid.uuid4()}_{original_filename}"
             
             get_attachment_upload_dir()

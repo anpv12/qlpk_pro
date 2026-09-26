@@ -335,11 +335,9 @@ def get_examination_info(user, examination_id: int):
         
         # Lấy thông tin psychologist nếu có (dựa vào appointment.psychologist)
         psychologist_name = "Tâm lý gia"
-        try:
-            if examination.appointment and examination.appointment.psychologist:
-                psychologist_name = examination.appointment.psychologist.full_name
-        except Exception:
-            pass
+        psychologist = getattr(examination.appointment, 'psychologist', None)
+        if psychologist and psychologist.full_name:
+            psychologist_name = psychologist.full_name
         
         diagnosis_contract = build_icd_display_contract(db, examination.diagnosis)
 
