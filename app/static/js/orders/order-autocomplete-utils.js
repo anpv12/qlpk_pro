@@ -184,7 +184,7 @@
 		};
 		const hide = (hideOptions = {}) => setSelectedIndex(hideAutocompleteDropdown(dropdown, hideOptions));
 
-		const searchOrders = (query, searchOptions = {}) => buildOrderAutocompleteMatches({
+		const searchOrders = (query) => buildOrderAutocompleteMatches({
 			query,
 			surveyTemplates: typeof options.getSurveyTemplates === 'function' ? options.getSurveyTemplates() : options.surveyTemplates,
 			normalizeSearch: Boolean(options.normalizeSearch),
@@ -467,6 +467,4 @@
 	};
 
 	window.ClinicalOrderAutocompleteUtils = api;
-	window.DoctorExaminationOrderAutocompleteUtils = api;
-	window.PsychologistExaminationOrderAutocompleteUtils = api;
 })();

@@ -70,7 +70,7 @@ function medicalHistoryApplySuicideIcd(icd) {
  * Gọi từ onchange của mỗi checkbox trong bảng tự sát/tự hại.
  * id của note input theo quy ước: checkbox id thay _check → _note
  */
-async function medicalHistorySuicideToggleChip(checkbox, icd, name) {
+async function medicalHistorySuicideToggleChip(checkbox, icd) {
     if (checkbox.checked) {
         medicalHistoryApplySuicideIcd(icd);
     } else {

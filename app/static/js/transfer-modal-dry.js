@@ -35,8 +35,6 @@
 		$('#confirmTransferBtn span').text(busy ? 'Đang chuyển...' : 'Chuyển khám');
 	}
 
-	// Flag để kiểm tra modal đã được load chưa
-	let modalLoaded = false;
 	let modalLoading = false;
 
 	/**
@@ -45,7 +43,6 @@
 	function ensureModalLoaded(callback) {
 		// Nếu modal đã có trong DOM, gọi callback ngay
 		if ($('#transferModal').length > 0) {
-			modalLoaded = true;
 			if (callback) callback();
 			return;
 		}
@@ -65,7 +62,6 @@
 			.done(function (html) {
 				// Thêm modal vào body
 				$('body').append(html);
-				modalLoaded = true;
 				modalLoading = false;
 				// Bind event handlers sau khi modal được load vào DOM
 				bindTransferModalEvents();
@@ -315,7 +311,7 @@
 					}
 				}
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr) {
 				if (!isCurrent()) return;
 				console.error('API error for role', role, ':', xhr.responseText);
 				$('#personSelector').html(`

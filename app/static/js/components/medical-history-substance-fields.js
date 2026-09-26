@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
   'use strict';
 
   const DEFAULT_SUBSTANCE_IDS = [
@@ -74,4 +74,4 @@
   }
 
   window.QLPKDoctorModuleRegistry.register('medicalHistorySubstanceFields', { bind, collect, populate, reset });
-})(window, document);
+})(window);

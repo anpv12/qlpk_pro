@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
 	'use strict';
 
 	function getStorageToken(storage) {
@@ -80,4 +80,4 @@
 	window.getAuthHeader = getAuthHeader;
 	window.formatDateDisplay = formatDateDisplay;
 	window.showCustomToast = showCustomToast;
-})(window, document);
+})(window);

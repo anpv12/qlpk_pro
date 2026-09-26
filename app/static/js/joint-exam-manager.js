@@ -378,7 +378,6 @@
 						this.onReloadFamilyMembers();
 					}
 				} else {
-					const errorData = await response.json();
 					this.showToast('error', 'Không thể thêm người đi khám cùng. Vui lòng kiểm tra lại.');
 				}
 			} catch (error) {
@@ -556,7 +555,6 @@
 						this.onReloadFamilyMembers();
 					}
 				} else {
-					const errorData = await response.json();
 					this.showToast('error', 'Không thể cập nhật người đi khám cùng. Vui lòng kiểm tra lại.');
 				}
 			} catch (error) {
@@ -595,7 +593,6 @@
 						this.onReloadFamilyMembers();
 					}
 				} else {
-					const errorData = await response.json();
 					this.showToast('error', 'Không thể xóa người đi khám cùng. Vui lòng thử lại.');
 				}
 			} catch (error) {

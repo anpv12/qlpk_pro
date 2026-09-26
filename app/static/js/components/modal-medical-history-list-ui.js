@@ -646,7 +646,7 @@
 		return payload && payload.detail ? payload.detail : fallbackText;
 	}
 
-	function buildDeleteExaminationCatchMessage(error) {
+	function buildDeleteExaminationCatchMessage() {
 		return 'Không thể xóa lượt khám. Vui lòng thử lại.';
 	}
 

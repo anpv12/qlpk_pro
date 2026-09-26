@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
 	'use strict';
 
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
@@ -816,4 +816,4 @@
 		dependencies: ['supportRuntime', 'componentDomScope', 'iconSystem', 'confirmationDialog', 'orderSelectionStateUtils', 'orderStatusUtils', 'orderAutocompleteUtils'],
 		owner: 'doctor/indications'
 	});
-})(window, document);
+})(window);

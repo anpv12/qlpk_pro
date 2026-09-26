@@ -135,10 +135,6 @@
 				return uploadedAttachment || true;
 			}
 
-			let errorData = {};
-			try {
-				errorData = await response.json();
-			} catch (e) { }
 			if (shouldShowToast) {
 				if (response.status === 413) {
 					showToast(options, 'error', `Tệp quá lớn. Vui lòng chọn tệp không quá ${options.maxSizeMb || 50} MB.`);

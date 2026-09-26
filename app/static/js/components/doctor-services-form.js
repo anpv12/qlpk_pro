@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
 	'use strict';
 
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
@@ -472,4 +472,4 @@
 		dependencies: ['supportRuntime', 'componentDomScope', 'iconSystem'],
 		owner: 'doctor/services'
 	});
-})(window, document);
+})(window);

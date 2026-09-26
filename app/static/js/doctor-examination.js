@@ -50,7 +50,6 @@
 	COMPONENT_CONTEXT_API.setCurrent?.(COMPONENT_CONTEXT);
 	const getModule = name => COMPONENT_CONTEXT.getModule(name);
 	const requireModule = name => COMPONENT_CONTEXT.getModule(name, true);
-	window.QLPKDoctorPageContext = COMPONENT_CONTEXT;
 	let waitingListAdapter = null;
 	let patientHistoryModal = null;
 

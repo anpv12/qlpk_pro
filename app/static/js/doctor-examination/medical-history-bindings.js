@@ -1,7 +1,7 @@
 /* Doctor medical-history event owner.
  * Markup declares intent with data-* attributes; this file owns dispatch.
  */
-(function (window, document) {
+(function (window) {
   'use strict';
 
   const component = new Proxy({}, {
@@ -149,7 +149,7 @@
     if (medicalHistoryAction === 'substance-toggle') {
       callAction('substanceToggleChip', target, target.dataset.icd || '', target.dataset.name || '');
     } else if (medicalHistoryAction === 'suicide-toggle') {
-      callAction('suicideToggleChip', target, target.dataset.icd || '', target.dataset.name || '');
+      callAction('suicideToggleChip', target, target.dataset.icd || '');
     } else if (medicalHistoryAction === 'risk-toggle') {
       callAction('riskToggle', target.name, target.dataset.riskNote, target.dataset.riskEnableNote === 'true');
     } else if (medicalHistoryAction === 'risk-sync') {
@@ -216,4 +216,4 @@
   }
 
   component.registerActions({ bindEvents: bind });
-})(window, document);
+})(window);

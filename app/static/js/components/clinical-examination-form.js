@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
 	'use strict';
 
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
@@ -303,7 +303,7 @@
 		function renderClinicalFields(doc, payload = {}, token = state.contextToken) {
 			const examination = payload.examination_info || {};
 			const patient = payload.patient_info || {};
-			Object.entries(config.mainFields).forEach(([name, field]) => {
+			Object.values(config.mainFields).forEach(field => {
 				let value = readPayloadValue(field, examination, patient);
 				if (field.kind === 'medication') value = serializeMedicationInput(value);
 				if (field.kind === 'icd') value = '';
@@ -488,4 +488,4 @@
 	}
 
 	REGISTRY.register('clinicalExaminationForm', { create, defaults: mergeConfig() });
-})(window, document);
+})(window);

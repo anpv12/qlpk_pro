@@ -18,6 +18,4 @@
 	};
 
 	window.ClinicalOrderStatusUtils = api;
-	window.DoctorExaminationOrderStatusUtils = api;
-	window.PsychologistExaminationOrderStatusUtils = api;
 })();

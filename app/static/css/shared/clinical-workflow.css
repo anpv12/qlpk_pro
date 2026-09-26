@@ -73,12 +73,6 @@ textarea.form-control {
 	text-align: left !important;
 }
 
-.card-header .form-label.text-uppercase {
-	align-self: flex-start !important;
-	text-align: left !important;
-	color: var(--qlpk-text) !important;
-}
-
 .card-header div[style] .form-label {
 	align-self: flex-start !important;
 	text-align: left !important;
@@ -135,24 +129,6 @@ textarea.form-control {
 	border-radius: 12px 12px 0 0 !important;
 }
 
-.modal-tabs {
-	border-bottom: 1px solid var(--qlpk-warm-border);
-	background: var(--qlpk-surface-soft);
-}
-
-.modal-tabs .nav-tabs {
-	border-bottom: none;
-	margin-bottom: 0;
-}
-
-.modal-tabs .nav-link {
-	border: none;
-	border-radius: 0;
-	color: var(--qlpk-muted);
-	font-weight: var(--qlpk-font-weight-medium, 500);
-	padding: 12px 20px;
-}
-
 .modal-tabs .nav-link:hover {
 	border-color: transparent;
 	color: var(--qlpk-clinical);
@@ -178,25 +154,6 @@ textarea.form-control {
 	border-color: var(--qlpk-clinical) !important;
 }
 
-.document-item {
-	border: 1px solid var(--qlpk-warm-border);
-	border-radius: 8px;
-	padding: 12px;
-	margin-bottom: 10px;
-	background: var(--qlpk-surface);
-	transition: all 0.3s ease;
-}
-
-.document-item:hover {
-	box-shadow: 0 4px 12px rgba(74, 51, 40, 0.1);
-}
-
-.document-item .document-info {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
 .document-item .document-icon {
 	width: 40px;
 	height: 40px;
@@ -208,18 +165,9 @@ textarea.form-control {
 	color: var(--qlpk-clinical);
 }
 
-.document-item .document-details {
-	flex: 1;
-}
-
 .document-item .document-name {
 	font-weight: var(--qlpk-font-weight-medium, 500);
 	margin-bottom: 2px;
-}
-
-.document-item .document-size {
-	font-size: var(--qlpk-font-size-md, 14px);
-	color: var(--qlpk-muted);
 }
 
 .document-item .document-actions {
@@ -247,19 +195,6 @@ textarea.form-control {
 .btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: #5f6649;
 	border-color: #5f6649;
-}
-
-.address-inline-section {
-	background: var(--qlpk-surface-soft);
-	border-radius: 8px;
-	padding: 16px;
-	margin-top: 16px;
-}
-
-.address-inline-section h6 {
-	color: var(--qlpk-clinical-dark);
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-	margin-bottom: 12px;
 }
 
 .autocomplete-dropdown {
@@ -331,18 +266,6 @@ textarea.form-control {
 
 .status-completed {
 	--qlpk-status-color: var(--qlpk-feedback-success);
-}
-
-.search-result-item {
-	transition: background-color 0.2s ease;
-}
-
-.search-result-item:hover {
-	background-color: var(--qlpk-surface-soft);
-}
-
-.search-result-item.cursor-pointer {
-	cursor: pointer;
 }
 
 .search-result-item.py-2 {

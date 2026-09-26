@@ -177,7 +177,6 @@
 	}
 
 	function render(options = {}) {
-		const doc = options.document || document;
 		const dom = { ...DEFAULT_DOM, ...(options.dom || {}) };
 		const scope = getScope(options);
 		const list = scope.querySelector(`#${dom.list}`);

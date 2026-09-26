@@ -202,21 +202,6 @@
 	font-size: var(--qlpk-font-size-2xs);
 }
 
-.doctor-indications-autocomplete__dropdown .order-autocomplete-order-name {
-	color: var(--doctor-brown);
-	font-size: var(--qlpk-font-size-sm);
-	font-weight: var(--qlpk-font-weight-semibold);
-	line-height: 1.25;
-}
-
-.doctor-indications-autocomplete__dropdown .order-autocomplete-breadcrumb {
-	margin-block-start: 0.12rem;
-	color: var(--doctor-muted) !important;
-	font-size: var(--qlpk-font-size-xs);
-	line-height: 1.25;
-	white-space: normal;
-}
-
 .doctor-indications-autocomplete__dropdown .autocomplete-empty {
 	padding: 0.65rem 0.55rem;
 	color: var(--doctor-muted);
@@ -404,19 +389,6 @@
 	font-size: var(--qlpk-font-size-xs);
 	vertical-align: baseline;
 	white-space: nowrap;
-}
-
-.doctor-indications-table__group {
-	display: block;
-	margin-block-start: 0.15rem;
-	color: var(--doctor-text);
-	font-size: var(--qlpk-font-size-xs);
-	font-weight: var(--qlpk-font-weight-regular);
-	line-height: 1.25;
-}
-
-.doctor-indications-status.status-draft {
-	--qlpk-status-color: var(--qlpk-feedback-warning);
 }
 
 .doctor-indications-status.status-sent {

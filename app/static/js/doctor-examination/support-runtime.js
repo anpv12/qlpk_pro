@@ -296,7 +296,8 @@
 
 	function draftRowsWithoutRuntimeIds(rows) {
 		return (Array.isArray(rows) ? rows : []).map(row => {
-			const { uid, ...draftRow } = row || {};
+			const draftRow = { ...(row || {}) };
+			delete draftRow.uid;
 			return cloneDraftValue(draftRow);
 		});
 	}

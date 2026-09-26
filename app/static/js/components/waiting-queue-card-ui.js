@@ -405,7 +405,6 @@
 		const patientAfterHtml = options.patientAfterHtml || '';
 		const identityHtml = options.identityHtml || buildIdentityHtml(options.identityItems || []);
 		const statusHtml = options.statusHtml || renderStatusBadgeHtml(options.statusText || '', options.statusClass, options.statusBadgeClass);
-		const statusClass = joinClasses('qlpk-status', 'qlpk-waiting-card__status', options.statusClass, options.statusBadgeClass);
 		const metaHtml = options.metaHtml || buildMetaHtml(options.metaItems || []);
 		const actionsHtml = options.actionsHtml || '';
 		const articleAttrs = attrs ? ` ${attrs}` : '';

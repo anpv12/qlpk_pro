@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
   'use strict';
 
   const REGISTRY = window.QLPKDoctorModuleRegistry;
@@ -248,4 +248,4 @@
 		toggleICDSelection,
 		getSelectedICDs: ensureSelectedICDs
 	});
-})(window, document);
+})(window);

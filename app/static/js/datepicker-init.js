@@ -95,7 +95,7 @@ function initDatepickers(selector) {
 		// Use getAttribute to get only the value from HTML, not from browser cache
 		const initialValue = el.getAttribute('value') || '';
 
-		const fp = flatpickr(el, {
+		flatpickr(el, {
 			dateFormat: dateFormat,
 			altInput: useAltInput,
 			altFormat: altFormat,
@@ -186,7 +186,7 @@ if (document.readyState === 'loading') {
 }
 
 // Re-initialize when modals are shown (for Bootstrap modals)
-document.addEventListener('shown.bs.modal', function (e) {
+document.addEventListener('shown.bs.modal', function () {
 	initDatepickers('.js-datepicker');
 });
 

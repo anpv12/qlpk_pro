@@ -37,15 +37,6 @@ body[data-doctor-ui] [data-doctor-component] :where(button, input:not([data-auto
 	outline-offset: 0.125rem;
 }
 
-body[data-doctor-ui] .doctor-component-empty {
-	display: grid;
-	place-items: center;
-	min-block-size: 8rem;
-	padding: var(--qlpk-doctor-space-4);
-	color: var(--qlpk-doctor-muted);
-	text-align: center;
-}
-
 body[data-doctor-ui] [data-doctor-component][data-state='loading'] {
 	background: var(--qlpk-doctor-surface);
 }
@@ -54,6 +45,3 @@ body[data-doctor-ui] [data-doctor-component][data-state='empty'] {
 	background: var(--qlpk-doctor-surface-soft);
 }
 
-body[data-doctor-ui] .doctor-component--hidden {
-	display: none !important;
-}

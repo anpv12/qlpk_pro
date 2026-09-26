@@ -243,10 +243,6 @@
     text-align: center;
 }
 
-.relative-emergency-contact-icon {
-    font-size: var(--qlpk-font-size-2xl, 20px);
-}
-
 .relative-cell-overlay {
     position: relative;
     z-index: 1000;

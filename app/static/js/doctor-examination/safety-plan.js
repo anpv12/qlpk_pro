@@ -114,11 +114,6 @@ async function safetyPlanLoadFamilyMembers(patientId, savedSupporters = [], opti
 }
 
 /**
- * Khi chọn người thân ở 1 slot (no-op: SĐT đã nhúng trong option text)
- */
-function safetyPlanSyncSupportSlot(order) { /* no-op */ }
-
-/**
  * Populate 4 fields + file status từ safety_plan object
  */
 function safetyPlanPopulatePlan(plan) {
@@ -304,7 +299,6 @@ medicalHistoryGetComponent().registerActions({
     getAuthHeader: safetyPlanGetAuthHeader,
     getAuthHeaders: safetyPlanGetAuthHeaders,
     loadFamilyMembers: safetyPlanLoadFamilyMembers,
-    syncSupportSlot: safetyPlanSyncSupportSlot,
     populatePlan: safetyPlanPopulatePlan,
     resetPlan: safetyPlanResetPlan,
     updateFileStatus: safetyPlanUpdateFileStatus,

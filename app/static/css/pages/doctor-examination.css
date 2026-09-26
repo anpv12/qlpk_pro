@@ -4,7 +4,6 @@ body[data-doctor-ui] {
 	font-family: var(--qlpk-font-family);
 }
 
-
 body[data-doctor-ui] > .container-fluid,
 body[data-doctor-ui] > .container-fluid > .row,
 body[data-doctor-ui] .main-content {
@@ -681,42 +680,6 @@ body[data-doctor-ui] .main-content {
 	background: transparent;
 }
 
-.doctor-workbench-panel__header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 0.75rem;
-	min-width: 0;
-	padding: 0.7rem 0.8rem 0.55rem;
-	border-block-end: 0.0625rem solid var(--doctor-line);
-}
-
-.doctor-workbench-panel__header div {
-	min-width: 0;
-}
-
-.doctor-workbench-panel__eyebrow,
-.doctor-workbench-panel__meta {
-	color: var(--doctor-muted);
-	font-size: var(--qlpk-font-size-xs);
-	font-weight: var(--qlpk-font-weight-bold);
-	line-height: 1.2;
-	text-transform: uppercase;
-}
-
-.doctor-workbench-panel__header h3 {
-	margin: 0.12rem 0 0;
-	color: var(--doctor-text);
-	font-size: var(--qlpk-font-size-base);
-	font-weight: var(--qlpk-font-weight-bold);
-	line-height: 1.2;
-}
-
-.doctor-workbench-panel__meta {
-	text-align: end;
-	white-space: nowrap;
-}
-
 .doctor-workbench-panel__body {
 	display: grid;
 	gap: 0.65rem;
@@ -929,7 +892,6 @@ body[data-doctor-ui] .main-content {
 .doctor-icd-field input {
 	min-width: 0;
 }
-
 
 .doctor-clinical-form-card .qlpk-autocomplete [data-autocomplete-control] {
 	min-block-size: 2.1rem;
@@ -1327,7 +1289,6 @@ body[data-doctor-ui] .main-content {
 	.doctor-service-selection__total {
 		grid-template-columns: minmax(0, 1fr) clamp(10rem, 22%, 14rem) clamp(4.5rem, 10%, 6rem) 2.5rem;
 	}
-
 
 }
 
@@ -2450,7 +2411,6 @@ compact warning without adding label chrome. */
 	.doctor-workspace-button {
 		flex: 0 0 auto;
 	}
-
 
 	.doctor-icd-field {
 		grid-template-columns: minmax(0, 1fr);

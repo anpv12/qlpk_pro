@@ -486,6 +486,4 @@
 	};
 
 	window.ClinicalOrderSelectionStateUtils = api;
-	window.DoctorExaminationOrderSelectionStateUtils = api;
-	window.PsychologistExaminationOrderSelectionStateUtils = api;
 })();

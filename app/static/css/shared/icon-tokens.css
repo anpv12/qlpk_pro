@@ -119,13 +119,6 @@
 	--qlpk-icon-action-color: var(--qlpk-icon-action-cancel);
 }
 
-.qlpk-icon-inline {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	line-height: 1;
-}
-
 .qlpk-icon-text-button {
 	display: inline-flex;
 	align-items: center;

@@ -4,7 +4,7 @@
 	const RUNTIME = window.QLPKDoctorModuleRegistry.get('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
 
-	const { textOf, toNumber } = RUNTIME;
+	const { textOf } = RUNTIME;
 
 	const TYPE_CONTRACT = window.PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
