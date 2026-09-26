@@ -497,9 +497,34 @@ compatibility-sensitive, or out of scope for the current Khám cleanup.
   also matched for: dense 1101 and sparse 1977 across all tabs at 1440/700 px,
   the re-exam calendar (open, pick, confirm, saved payload), ICD search, patient
   attachments (list and delete dialog), and the stored 30-tablet prescription
-  of appointment 1136 (30 / 14 / empty treatment days). The real patient queue on
-  localhost was empty, so this is **chưa pass visual/interactive QA** on live
-  patients.
+  of appointment 1136 (30 / 14 / empty treatment days).
+- Live QA (26/09, HEAD `ff04b1b`, backend + PostgreSQL thật on localhost:8000,
+  admin session, headless Chrome 1440×900 and 700×800): the real
+  `doctor_queue` was empty, so the queue response was replaced by the real
+  `/api/appointments/{id}/edit` payloads of 1101 (dense: 6 medicines, 3
+  services, 2 indications, re-exam "Không đến") and 435 (sparse); every other
+  request hit the real API (36–41 calls per run). Verified: patient card →
+  5 tabs → attachments list; treatment-days edit and medicine search
+  (`diaze` → 2 real stock rows, pick → id/type/stock/quantity applied) with the
+  dropdown inside the viewport at both widths; ICD search; delete-indication
+  dialog (2 buttons); unsaved-changes dialog on patient switch (3 buttons,
+  "Ở lại" keeps state, "Bỏ thay đổi" loads 435); re-exam calendar (real
+  events/services/doctors, pick → "Chưa lưu"/"Đổi lịch"); substance-use tick →
+  history dirty → patient switch resets the checkbox and the payload; at 700 px
+  the queue pane switch shows, card selection returns to the main pane and
+  document overflow is 0 on every tab. 0 page errors, 0 console errors, 0 HTTP
+  ≥400. All non-GET requests were aborted, so no data was written and the
+  real Save/Complete round trip is **chưa pass visual/interactive QA**.
+- Psychologist page, same live setup (1440 and 700): load 1101/435, 5 tabs,
+  overflow 0, Tiền sử and Khám edits set their dirty flags, patient switch
+  resets them. Pre-existing gap found, not changed (outside the Doctor
+  scope): `psychologist-examination-entry.js` never imports
+  `medical-history-bridge.js`, so the substance-use actions
+  (`reset`/`populate`/`collectSubstanceUseHistory`) are not registered there —
+  a ticked substance checkbox survives a patient switch and is never part of
+  the history save payload; the same tick on the Doctor page is cleared and
+  collected correctly. The Psychologist page also has no unsaved-changes
+  guard on patient switch. Both behaviours are identical at `69c6c9c`.
 
 ## Cleanup Record 2026-07-29
 

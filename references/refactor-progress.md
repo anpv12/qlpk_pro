@@ -91,8 +91,22 @@ song; không tự coi quyết định cũ là hiện hành nếu mục này đã
   cũng khớp cho lịch tái khám (mở/chọn/xác nhận/payload lưu), tìm ICD, tài
   liệu đính kèm (danh sách + hộp thoại xóa) và đơn thật 30 viên của ca 1136. `check_frontend_contract` và
   `check_user_feedback_contract` vẫn fail trước và sau ở file ngoài màn Bác sĩ
-  (medicine-management, feedback-tokens, user-management). Queue thật trống
-  nên **chưa pass visual/interactive QA** trên bệnh nhân thật.
+  (medicine-management, feedback-tokens, user-management).
+  QA thật 26/09 (HEAD `ff04b1b`, backend + DB thật localhost:8000, phiên
+  admin, Chrome headless 1440×900 và 700×800): queue thật trống nên danh sách
+  chờ được thay bằng payload `/api/appointments/{id}/edit` thật của ca 1101
+  (dày) và 435 (thưa), mọi request khác đi API thật; đã kiểm chọn ca, 5 tab,
+  tài liệu đính kèm, sửa số ngày, tìm thuốc (2 dòng tồn kho thật, chọn áp dụng
+  đúng), tìm ICD, hộp thoại xóa chỉ định, hộp thoại đổi bệnh nhân 3 nút, lịch
+  tái khám thật, tick chất gây nghiện → đổi bệnh nhân xóa đúng; ở 700 px nút
+  chuyển pane hiện, chọn ca quay về pane chính, overflow 0 mọi tab; 0 lỗi
+  trang/console/HTTP. Mọi request ghi bị chặn nên không ghi dữ liệu; vòng
+  Lưu/Hoàn thành thật vẫn **chưa pass visual/interactive QA**. Trang Tâm lý
+  cùng thiết lập: tải/5 tab/overflow 0/cờ dirty Tiền sử + Khám đúng; phát
+  hiện khoảng trống có sẵn (giống `69c6c9c`, ngoài scope, không sửa): entry
+  Tâm lý không nạp `medical-history-bridge.js` nên tick chất gây nghiện không
+  được xóa khi đổi bệnh nhân và không vào payload lưu; trang này cũng không
+  có hộp thoại chưa lưu khi đổi bệnh nhân.
 
 - Đơn thuốc — mốc một dòng context25/09 (tiếp): user thấy editor1130px vẫn
   xuống2 dòng dù đủ chỗ. Đo harness CSS+markup thật (Chrome153, Roboto): ba
