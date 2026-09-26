@@ -412,13 +412,6 @@ body[data-doctor-ui] .main-content {
 	scrollbar-gutter: auto;
 }
 
-.doctor-workbench-panel {
-	border: 0.0625rem solid var(--doctor-line);
-	border-radius: 0.55rem;
-	background: var(--doctor-surface);
-	box-shadow: 0 0.18rem 0.7rem var(--doctor-shadow);
-}
-
 .doctor-patient-hero {
 	box-sizing: border-box;
 	display: grid;
@@ -675,6 +668,10 @@ body[data-doctor-ui] .main-content {
 	min-block-size: 0;
 	block-size: 100%;
 	overflow: hidden;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.55rem;
+	background: var(--doctor-surface);
+	box-shadow: 0 0.18rem 0.7rem var(--doctor-shadow);
 }
 
 .doctor-workbench-panel--clinical {
@@ -774,7 +771,8 @@ body[data-doctor-ui] .main-content {
 	min-width: 0;
 	margin-inline: calc(var(--qlpk-patient-visit-pad) * -1);
 	padding-inline: var(--qlpk-patient-visit-pad);
-	border-block-end: 0.0625rem solid var(--qlpk-patient-visit-line);
+	border-block-end-width: 0.0625rem;
+	border-block-end-style: solid;
 }
 
 .doctor-clinical-form-card__header,
@@ -1292,6 +1290,8 @@ body[data-doctor-ui] .main-content {
 
 	.doctor-service-catalog {
 		grid-template-rows: auto minmax(0, 1fr);
+		border-block-end: 0;
+		border-inline-end: 0.0625rem solid var(--doctor-line-strong);
 	}
 
 	.doctor-service-selection {
@@ -1328,10 +1328,6 @@ body[data-doctor-ui] .main-content {
 		grid-template-columns: minmax(0, 1fr) clamp(10rem, 22%, 14rem) clamp(4.5rem, 10%, 6rem) 2.5rem;
 	}
 
-	.doctor-service-catalog {
-		border-block-end: 0;
-		border-inline-end: 0.0625rem solid var(--doctor-line-strong);
-	}
 
 }
 
@@ -2336,13 +2332,6 @@ compact warning without adding label chrome. */
 }
 
 @media (max-width: 47.99875rem) {
-	body[data-doctor-ui].qlpk-workspace-shell {
-		block-size: 100dvh;
-		height: 100dvh;
-		min-block-size: 0;
-		overflow: hidden;
-	}
-
 	body[data-doctor-ui].qlpk-workspace-shell,
 	body[data-doctor-ui].qlpk-workspace-shell > .container-fluid,
 	body[data-doctor-ui].qlpk-workspace-shell > .container-fluid > .row,
@@ -2361,14 +2350,6 @@ compact warning without adding label chrome. */
 	body[data-doctor-ui].qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) #qlpkWorkspaceNativePane.is-active {
 		overflow-x: hidden;
 		overflow-y: hidden;
-	}
-
-	.doctor-workspace {
-		block-size: 100%;
-		max-block-size: 100%;
-		min-block-size: 0;
-		overflow: hidden;
-		padding-inline: 0;
 	}
 
 	/* A grid item's percentage height can resolve to its content at this breakpoint.
@@ -2413,7 +2394,7 @@ compact warning without adding label chrome. */
 	.doctor-workspace {
 		grid-template-rows: auto minmax(0, 1fr);
 		align-content: stretch;
-		min-block-size: 0;
+		padding-inline: 0;
 	}
 
 	.doctor-workspace .qlpk-workflow-two-pane__main.is-active {
