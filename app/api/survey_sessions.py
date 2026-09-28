@@ -18,7 +18,6 @@ import base64
 from datetime import datetime, timedelta, timezone
 import uuid
 import logging
-from sqlalchemy import text
 from copy import deepcopy
 
 survey_sessions = Blueprint('survey_sessions', __name__)
@@ -341,7 +340,6 @@ def get_survey_status(user, examination_id):
         status = session_row.status
         expires_at = session_row.expires_at
         created_at = session_row.created_at
-        updated_at = session_row.updated_at
         started_at = session_row.started_at
         template_id = session_row.survey_template_id
         
@@ -446,7 +444,6 @@ def update_survey_status(user, session_id):
             return jsonify(success=False, message='Link khảo sát không còn cho phép thay đổi'), 409
         # Update session status
         now = get_current_datetime()
-        previous_status = session_row.status
         # Convert string to enum
         status_enum = None
         if status == 'pending':

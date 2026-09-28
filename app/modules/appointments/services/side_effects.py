@@ -24,6 +24,7 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
     from app.models.user import User, UserRole
 
     try:
+        all_succeeded = True
         users_to_sync = set()
 
         users_to_sync.add(appt.doctor_id)
@@ -47,6 +48,7 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
             ).all()
 
             for event in calendar_events:
+                deleted = False
                 if event.user_id:
                     conn = db.query(GoogleCalendarConnection).filter(
                         GoogleCalendarConnection.user_id == event.user_id,
@@ -54,11 +56,13 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
                     ).first()
                     if conn:
                         try:
-                            GoogleCalendarService.delete_event(event, conn)
-                            active_logger.info(f"Deleted event {event.event_id} for user {event.user_id}")
+                            deleted = GoogleCalendarService.delete_event(event, conn) is True
                         except Exception as e:
                             active_logger.warning(f"Could not delete event on Google: {e}")
-                db.delete(event)
+                if deleted:
+                    db.delete(event)
+                else:
+                    all_succeeded = False
 
         else:
             for user_id in users_to_sync:
@@ -68,6 +72,7 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
                 ).first()
 
                 if not conn:
+                    all_succeeded = False
                     continue
 
                 existing_event = db.query(GoogleCalendarEvent).filter(
@@ -77,14 +82,14 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
 
                 if existing_event:
                     if action == 'update':
-                        update_success = GoogleCalendarService.update_event(appt, existing_event, conn)
-                        if update_success:
+                        update_success = GoogleCalendarService.update_event(appt, existing_event, conn, report_missing=True)
+                        if update_success is True:
                             existing_event.updated_at = datetime.now()
                             active_logger.info(f"Updated event {existing_event.event_id} for user {user_id}")
-                        else:
-                            db.delete(existing_event)
+                        elif update_success is None:
                             event_id = GoogleCalendarService.create_event(appt, conn)
                             if event_id:
+                                db.delete(existing_event)
                                 new_event = GoogleCalendarEvent(
                                     appointment_id=appt.id,
                                     user_id=user_id,
@@ -93,6 +98,10 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
                                 )
                                 db.add(new_event)
                                 active_logger.info(f"Recreated event {event_id} for user {user_id}")
+                            else:
+                                all_succeeded = False
+                        else:
+                            all_succeeded = False
                 else:
                     event_id = GoogleCalendarService.create_event(appt, conn)
                     if event_id:
@@ -104,9 +113,11 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
                         )
                         db.add(new_event)
                         active_logger.info(f"Created event {event_id} for user {user_id}")
+                    else:
+                        all_succeeded = False
 
         db.commit()
-        return True
+        return all_succeeded
 
     except Exception as e:
         active_logger.error(f"Error in sync_calendar_for_appointment: {e}")
@@ -183,8 +194,8 @@ def sync_re_examination_calendar_on_create(
         active_logger.error(outer_error_message.format(error=e))
         try:
             db.commit()
-        except Exception:
-            pass
+        except Exception as commit_exc:
+            active_logger.error(f"Commit sau lỗi side-effect thất bại: {commit_exc}")
 
 
 def apply_appointment_update_side_effects(
@@ -215,56 +226,10 @@ def apply_appointment_update_side_effects(
         )
 
 def sync_transferred_appointment_calendar(db, appointment, old_doctor_id, logger_override=None):
-    """Sync Google Calendar when an appointment is transferred to another doctor."""
-    active_logger = logger_override or logger
+    """Enqueue calendar work in the caller's transaction; never call Google here."""
+    from app.modules.appointments.services.calendar_transfer import enqueue_calendar_transfer
 
-    if appointment.doctor_id == old_doctor_id:
-        return False
-
-    try:
-        from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
-        from app.services.google_calendar_service import GoogleCalendarService
-
-        calendar_event = db.query(GoogleCalendarEvent).filter(
-            GoogleCalendarEvent.appointment_id == appointment.id
-        ).first()
-
-        if calendar_event:
-            old_connection = db.query(GoogleCalendarConnection).filter(
-                GoogleCalendarConnection.user_id == old_doctor_id,
-                GoogleCalendarConnection.is_active == True
-            ).first()
-
-            if old_connection:
-                try:
-                    GoogleCalendarService.delete_event(calendar_event, old_connection)
-                    active_logger.info(f"Deleted Google Calendar event from old doctor {old_doctor_id} for appointment {appointment.id}")
-                except Exception as e:
-                    active_logger.error(f"Error deleting event from old doctor calendar: {e}")
-
-                db.delete(calendar_event)
-                calendar_event = None
-
-            new_connection = db.query(GoogleCalendarConnection).filter(
-                GoogleCalendarConnection.user_id == appointment.doctor_id,
-                GoogleCalendarConnection.is_active == True
-            ).first()
-
-            if new_connection:
-                event_id = GoogleCalendarService.create_event(appointment, new_connection)
-                if event_id:
-                    calendar_event = GoogleCalendarEvent(
-                        appointment_id=appointment.id,
-                        user_id=appointment.doctor_id,
-                        event_id=event_id
-                    )
-                    db.add(calendar_event)
-                    active_logger.info(f"Created Google Calendar event {event_id} for new doctor {appointment.doctor_id} for appointment {appointment.id}")
-
-        return True
-    except Exception as e:
-        active_logger.error(f"Error syncing Google Calendar for transferred appointment {appointment.id}: {e}")
-        return False
+    return enqueue_calendar_transfer(db, appointment, old_doctor_id)
 
 
 def schedule_appointment_update_reminder(appointment_id, notification_service, logger_override=None):

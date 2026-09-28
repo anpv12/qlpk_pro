@@ -13,9 +13,7 @@ from app.services.kinship_service import (
     get_reverse_kinship,
     normalize_kinship,
 )
-from sqlalchemy.orm import joinedload
 from datetime import datetime
-import json
 import logging
 
 family_member_router = Blueprint('family_member', __name__)
@@ -353,30 +351,15 @@ def search_relatives(user):
         patients = query.offset((page - 1) * per_page).limit(per_page).all()
         logger.debug("Family member search page size: %s", len(patients))
         
-        # Helper to format diagnosis text nicely
         def format_diagnosis_text(appointment):
             if not appointment:
                 return None
-            
-            diagnosis = appointment.diagnosis
-            if diagnosis:
-                parts = [
-                    (diagnosis.main_disease or '').strip(),
-                    (diagnosis.comorbid_disease or '').strip(),
-                    (diagnosis.differential_diagnosis or '').strip()
-                ]
-                formatted = ' | '.join([part for part in parts if part])
-                if formatted:
-                    return formatted
-            
-            # Fall back to examination.diagnosis text field
             examination = db.query(Examination).filter(
                 Examination.appointment_id == appointment.id
             ).order_by(Examination.id.desc()).first()
             if examination and examination.diagnosis:
                 from app.utils.examination_utils import resolve_diagnosis_to_str
-                return resolve_diagnosis_to_str(db, examination.diagnosis).strip()
-            
+                return resolve_diagnosis_to_str(db, examination.diagnosis).strip() or None
             return None
 
         # Get latest appointment for each patient

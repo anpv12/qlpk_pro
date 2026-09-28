@@ -3,7 +3,7 @@ from app.models.holiday import Holiday
 from app.core.database import get_db
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
-from datetime import datetime, date
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)

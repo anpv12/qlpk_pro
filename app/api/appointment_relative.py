@@ -444,9 +444,6 @@ def update_appointment_relative(user, relative_id):
                     'message': 'Không tìm thấy bệnh nhân được chọn'
                 }), 404
             
-            # Lấy appointment để có appointment_date
-            appointment = db.query(Appointment).filter(Appointment.id == appointment_relative.appointment_id).first()
-            
             # Lấy joint_date từ data hoặc dùng ngày hôm nay
             joint_date = None
             if data.get('joint_date'):

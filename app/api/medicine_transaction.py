@@ -1,15 +1,14 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_
+from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
 from app.core.database import get_db
 from app.models.medicine_transaction import MedicineTransaction
 from app.models.medicine import Medicine
 from app.models.medicine_batch import MedicineBatch
 from app.api.auth import require_auth
-from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
-from datetime import datetime, date
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 

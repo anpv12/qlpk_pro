@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.core.database import get_db
-from sqlalchemy import or_, text, select, exists, func
+from sqlalchemy import or_, text, select
 from datetime import datetime # Added for date parsing if needed for date_of_birth
 from app.utils import generate_patient_code # New: Import the utility function
 from app.utils.patient_utils import calculate_age # Import function to calculate age
@@ -83,7 +83,6 @@ def list_patients(user):
         
         # Nếu có filter appointment_status, JOIN với bảng appointments
         if appointment_status:
-            from app.models.appointment import AppointmentStatus
             status_filter = appointment_status.upper()
             
             # Query với JOIN để lấy patients có appointments với status cụ thể
@@ -371,18 +370,7 @@ def get_patient(user, patient_id):
                 # New fields from modal "Hỏi bệnh"
                 'physical_history': populate_history_icd_details(db, patient.physical_history),
                 'severity_level': patient.severity_level,
-                'allergies': patient.allergies,
                 'current_medication': patient.current_medication,
-                # New address fields
-                'province': patient.province,
-                'district': patient.district,
-                'ward': patient.ward,
-                'address_detail': patient.address_detail,
-                # New personal info fields
-                'nationality': patient.nationality,
-                'religion': patient.religion,
-                'ethnicity': patient.ethnicity,
-                'education_level': patient.education_level,
                 'substance_use_history': patient.substance_use_history or {},
                 'safety_plan': patient.safety_plan or {}
             }

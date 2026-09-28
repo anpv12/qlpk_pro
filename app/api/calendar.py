@@ -1,138 +1,147 @@
 from flask import Blueprint, request, jsonify, redirect, session
 from app.core.database import get_db
-from app.api.auth import require_auth, get_current_user
+from app.api.auth import require_auth
 from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
 from app.models.user import User
 from app.services.google_calendar_service import GoogleCalendarService
 from app.core.config import settings
 from app.realtime.events import emit_appointment_changed
+from app.modules.appointments.services.calendar_access import (
+    CalendarAccessError, calendar_actor, manages_all_calendars, parse_calendar_ids,
+    calendar_date_range, prepare_calendar_batch, scope_calendar_query,
+)
 from datetime import datetime
+import hashlib
+import hmac
+import secrets
+import time
 import logging
+from app.services.access_sessions import SessionStoreUnavailable, session_digest_is_active
+from app.services.auth import decode_access_claims
+from app.services.browser_sessions import request_access_token
 
 logger = logging.getLogger(__name__)
 
 calendar_bp = Blueprint('calendar', __name__, url_prefix='/api/calendar')
+OAUTH_SESSION_KEY = 'google_calendar_oauth'
+OAUTH_STATE_TTL_SECONDS = 600
+
+
+def _google_redirect_uri():
+    if settings.GOOGLE_REDIRECT_URI:
+        return settings.GOOGLE_REDIRECT_URI
+    return request.host_url.rstrip('/') + '/api/calendar/oauth/google/callback'
+
+
+def _calendar_redirect(error=None):
+    return redirect('/appointment-management.html?' + (f'calendar_error={error}' if error else 'calendar_connected=google'))
+
+
+def _begin_google_oauth(user):
+    token = request_access_token()
+    claims = decode_access_claims(token) or {}
+    if claims.get('session_user_id') != user.id or not isinstance(claims.get('jti'), str):
+        raise CalendarAccessError('Phiên đăng nhập không hợp lệ', 401)
+    state = secrets.token_urlsafe(32)
+    auth_url, code_verifier = GoogleCalendarService.get_authorization_url(_google_redirect_uri(), state)
+    session.pop('google_calendar_user_id', None)
+    session[OAUTH_SESSION_KEY] = {
+        'state': state, 'code_verifier': code_verifier, 'user_id': user.id,
+        'session_id': claims['jti'], 'session_generation': claims.get('session_generation'),
+        'token_digest': hashlib.sha256(token.encode()).hexdigest(),
+        'expires_at': int(time.time()) + OAUTH_STATE_TTL_SECONDS,
+    }
+    return auth_url
+
+
+def _valid_pending_oauth(pending, state):
+    return (isinstance(pending, dict) and isinstance(state, str) and isinstance(pending.get('state'), str)
+            and hmac.compare_digest(state.encode(), pending['state'].encode())
+            and type(pending.get('user_id')) is int and isinstance(pending.get('code_verifier'), str)
+            and type(pending.get('expires_at')) is int and pending['expires_at'] >= time.time())
+
+
+def _oauth_user(db, pending, lock=False):
+    query = db.query(User).filter(User.id == pending['user_id']).populate_existing()
+    user = (query.with_for_update(read=True) if lock else query).first()
+    active_session = session_digest_is_active(pending.get('session_id'), pending.get('token_digest'),
+                                              user_id=pending['user_id'], generation=pending.get('session_generation'))
+    return user if user and user.is_active is True and active_session else None
+
 
 @calendar_bp.route('/connect/google/init', methods=['GET'])
 @require_auth
 def connect_google_init(user: User):
-    """Endpoint trung gian để lấy authorization URL - trả về JSON"""
+    """Return the Google consent URL bound to the current login session."""
     try:
-        # Lấy redirect URI
-        if settings.GOOGLE_REDIRECT_URI:
-            redirect_uri = settings.GOOGLE_REDIRECT_URI
-        else:
-            base_url = request.host_url.rstrip('/')
-            redirect_uri = f"{base_url}/api/calendar/oauth/google/callback"
-        
-        # Lưu user_id vào session để dùng trong callback
-        session['google_calendar_user_id'] = user.id
-        
-        auth_url = GoogleCalendarService.get_authorization_url(redirect_uri)
-        return jsonify({'url': auth_url}), 200
-    except Exception as e:
-        logger.error(f"Error initiating Google Calendar connection: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'url': _begin_google_oauth(user)}), 200
+    except CalendarAccessError as error:
+        return jsonify({'error': str(error)}), error.status_code
+    except Exception as error:
+        logger.error('Error initiating Google Calendar connection: %s', type(error).__name__)
+        return jsonify({'error': 'Không thể bắt đầu kết nối Google Calendar'}), 500
 
 @calendar_bp.route('/connect/google', methods=['GET'])
 @require_auth
 def connect_google(user: User):
-    """Bắt đầu quá trình kết nối Google Calendar"""
+    """Redirect to the Google consent URL bound to the current login session."""
     try:
-        # Lấy redirect URI từ request
-        from app.core.config import settings
-        if settings.GOOGLE_REDIRECT_URI:
-            redirect_uri = settings.GOOGLE_REDIRECT_URI
-        else:
-            base_url = request.host_url.rstrip('/')
-            redirect_uri = f"{base_url}/api/calendar/oauth/google/callback"
-        
-        # Lưu user_id vào session để dùng trong callback
-        session['google_calendar_user_id'] = user.id
-        
-        auth_url = GoogleCalendarService.get_authorization_url(redirect_uri)
-        return redirect(auth_url)
-    except Exception as e:
-        logger.error(f"Error initiating Google Calendar connection: {e}")
-        return jsonify({'error': str(e)}), 500
+        return redirect(_begin_google_oauth(user))
+    except CalendarAccessError as error:
+        return jsonify({'error': str(error)}), error.status_code
+    except Exception as error:
+        logger.error('Error initiating Google Calendar connection: %s', type(error).__name__)
+        return jsonify({'error': 'Không thể bắt đầu kết nối Google Calendar'}), 500
 
 @calendar_bp.route('/oauth/google/callback', methods=['GET'])
 def google_callback():
-    """Callback từ Google OAuth"""
+    """Complete OAuth only for the browser, account and login session that began it."""
+    pending = session.pop(OAUTH_SESSION_KEY, None)
+    session.pop('google_calendar_user_id', None)
+    if not _valid_pending_oauth(pending, request.args.get('state')):
+        return _calendar_redirect('invalid_state')
+    if request.args.get('error'):
+        return _calendar_redirect('access_denied')
+    code = request.args.get('code')
+    if not code:
+        return _calendar_redirect('no_code')
+    db = next(get_db())
     try:
-        code = request.args.get('code')
-        error = request.args.get('error')
-        
-        if error:
-            logger.error(f"Google OAuth error: {error}")
-            return redirect('/appointment-management.html?calendar_error=' + error)
-        
-        if not code:
-            return redirect('/appointment-management.html?calendar_error=no_code')
-        
-        # Lấy user_id từ session
-        user_id = session.get('google_calendar_user_id')
-        if not user_id:
-            return redirect('/appointment-management.html?calendar_error=no_session')
-        
-        # Lấy redirect URI
-        if settings.GOOGLE_REDIRECT_URI:
-            redirect_uri = settings.GOOGLE_REDIRECT_URI
-        else:
-            base_url = request.host_url.rstrip('/')
-            redirect_uri = f"{base_url}/api/calendar/oauth/google/callback"
-        
-        # Đổi code lấy token
-        tokens = GoogleCalendarService.exchange_code_for_token(code, redirect_uri)
-        
-        db = next(get_db())
-        try:
-            connection = db.query(GoogleCalendarConnection).filter(
-                GoogleCalendarConnection.user_id == user_id
-            ).first()
-            
-            if connection:
-                # Cập nhật connection hiện có
-                connection.access_token = tokens['access_token']
-                
-                # Chỉ cập nhật refresh_token nếu Google trả về (lần đầu hoặc có prompt='consent')
-                # Nếu không, GIỮ NGUYÊN cái cũ để tránh làm hỏng token
-                new_refresh_token = tokens.get('refresh_token')
-                if new_refresh_token:
-                    connection.refresh_token = new_refresh_token
-                    
-                connection.token_expires_at = tokens['expires_at']
-                connection.is_active = True
-            else:
-                # Tạo connection mới
-                connection = GoogleCalendarConnection(
-                    user_id=user_id,
-                    access_token=tokens['access_token'],
-                    refresh_token=tokens['refresh_token'],
-                    token_expires_at=tokens['expires_at'],
-                    is_active=True
-                )
-                db.add(connection)
-            
-            db.commit()
-            emit_appointment_changed('calendar_connected', extra={'user_id': user_id})
-            logger.info(f"Google Calendar connected for user {user_id}")
-            
-            # Xóa session
-            session.pop('google_calendar_user_id', None)
-            
-            return redirect('/appointment-management.html?calendar_connected=google')
-            
-        except Exception as e:
+        if not _oauth_user(db, pending):
+            return _calendar_redirect('session_expired')
+        db.rollback()
+        tokens = GoogleCalendarService.exchange_code_for_token(code, _google_redirect_uri(), pending['code_verifier'])
+        if not _oauth_user(db, pending, lock=True):
             db.rollback()
-            logger.error(f"Error saving Google Calendar connection: {e}")
-            return redirect('/appointment-management.html?calendar_error=' + str(e))
-        finally:
-            db.close()
-            
-    except Exception as e:
-        logger.error(f"Error in Google OAuth callback: {e}")
-        return redirect('/appointment-management.html?calendar_error=' + str(e))
+            return _calendar_redirect('session_expired')
+        user_id = pending['user_id']
+        connection = db.query(GoogleCalendarConnection).filter(
+            GoogleCalendarConnection.user_id == user_id
+        ).with_for_update().first()
+        if connection:
+            connection.access_token = tokens['access_token']
+            if tokens.get('refresh_token'):
+                connection.refresh_token = tokens['refresh_token']
+            connection.token_expires_at = tokens['expires_at']
+            connection.is_active = True
+        else:
+            db.add(GoogleCalendarConnection(
+                user_id=user_id, access_token=tokens['access_token'], refresh_token=tokens['refresh_token'],
+                token_expires_at=tokens['expires_at'], is_active=True,
+            ))
+        db.commit()
+        emit_appointment_changed('calendar_connected', extra={'user_id': user_id})
+        logger.info('Google Calendar connected for user %s', user_id)
+        return _calendar_redirect()
+    except SessionStoreUnavailable:
+        db.rollback()
+        return _calendar_redirect('session_unavailable')
+    except Exception as error:
+        db.rollback()
+        logger.error('Error completing Google Calendar connection: %s', type(error).__name__)
+        return _calendar_redirect('oauth_failed')
+    finally:
+        db.close()
 
 @calendar_bp.route('/disconnect', methods=['POST'])
 @require_auth
@@ -196,10 +205,14 @@ def validate_connections(user: User):
     
     db = next(get_db())
     try:
+        actor = calendar_actor(db, user)
         # Lấy tất cả connections active
-        connections = db.query(GoogleCalendarConnection).filter(
+        query = db.query(GoogleCalendarConnection).filter(
             GoogleCalendarConnection.is_active == True
-        ).all()
+        )
+        if not manages_all_calendars(actor):
+            query = query.filter(GoogleCalendarConnection.user_id == actor.id)
+        connections = query.all()
         
         validated = []
         invalidated = []
@@ -296,6 +309,8 @@ def validate_connections(user: User):
         
     except Exception as e:
         db.rollback()
+        if isinstance(e, CalendarAccessError):
+            return jsonify({'error': str(e)}), e.status_code
         logger.error(f"Error validating connections: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
@@ -315,11 +330,11 @@ def get_sync_status(user: User):
     """
     from datetime import datetime
     from app.models.appointment import Appointment, AppointmentStatus
-    from sqlalchemy import func
     from sqlalchemy.orm import joinedload
     
     db = next(get_db())
     try:
+        actor = calendar_actor(db, user)
         # Parse date range
         date_from = request.args.get('from')
         date_to = request.args.get('to')
@@ -327,24 +342,19 @@ def get_sync_status(user: User):
         if not date_from or not date_to:
             return jsonify({'error': 'Vui lòng cung cấp from và to'}), 400
         
-        try:
-            from_date = datetime.strptime(date_from, '%Y-%m-%d')
-            to_date = datetime.strptime(date_to, '%Y-%m-%d')
-            # Set to end of day
-            to_date = to_date.replace(hour=23, minute=59, second=59)
-        except ValueError:
-            return jsonify({'error': 'Định dạng ngày không hợp lệ (YYYY-MM-DD)'}), 400
+        from_date, to_date = calendar_date_range(date_from, date_to)
         
         # Query appointments (không lấy CANCELLED)
-        appointments = db.query(Appointment).options(
+        query = db.query(Appointment).options(
             joinedload(Appointment.doctor),
             joinedload(Appointment.patient)
         ).filter(
             Appointment.appointment_date >= from_date,
-            Appointment.appointment_date <= to_date,
+            Appointment.appointment_date < to_date,
             Appointment.status != AppointmentStatus.CANCELLED,
             Appointment.is_deleted == False
-        ).order_by(Appointment.appointment_date.asc()).all()
+        )
+        appointments = scope_calendar_query(query, actor).order_by(Appointment.appointment_date.asc()).all()
         
         # Lấy danh sách doctor_ids đã liên kết Google Calendar
         doctor_ids = list(set([a.doctor_id for a in appointments if a.doctor_id]))
@@ -449,6 +459,8 @@ def get_sync_status(user: User):
         })
         
     except Exception as e:
+        if isinstance(e, CalendarAccessError):
+            return jsonify({'error': str(e)}), e.status_code
         logger.error(f"Error getting sync status: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
@@ -467,11 +479,9 @@ def verify_events(user: User):
     
     db = next(get_db())
     try:
-        data = request.get_json()
-        appointment_ids = data.get('appointment_ids', [])
-        
-        if not appointment_ids:
-            return jsonify({'error': 'Vui lòng cung cấp appointment_ids'}), 400
+        actor = calendar_actor(db, user)
+        appointment_ids = parse_calendar_ids(request.get_json(silent=True))
+        prepare_calendar_batch(db, actor, appointment_ids)
         
         # Lấy tất cả calendar events cho các appointments
         events = db.query(GoogleCalendarEvent).filter(
@@ -564,6 +574,8 @@ def verify_events(user: User):
         })
         
     except Exception as e:
+        if isinstance(e, CalendarAccessError):
+            return jsonify({'error': str(e)}), e.status_code
         logger.error(f"Error verifying events: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
@@ -583,32 +595,16 @@ def sync_appointments(user: User):
     
     db = next(get_db())
     try:
-        data = request.get_json()
-        appointment_ids = data.get('appointment_ids', [])
-        
-        if not appointment_ids:
-            return jsonify({'error': 'Vui lòng chọn ít nhất 1 lịch hẹn'}), 400
+        actor = calendar_actor(db, user)
+        appointment_ids = parse_calendar_ids(request.get_json(silent=True))
+        appointments = prepare_calendar_batch(db, actor, appointment_ids, write=True)
         
         results = {}  # {appt_id: {doctor_verified, receptionist_verified, sync_status, errors}}
         synced_ids = []
         failed_ids = []
         
-        for appt_id in appointment_ids:
-            appt = db.query(Appointment).filter(
-                Appointment.id == appt_id,
-                Appointment.is_deleted == False
-            ).first()
-            
-            if not appt:
-                results[str(appt_id)] = {
-                    'status': 'not_found',
-                    'doctor_verified': None,
-                    'receptionist_verified': None,
-                    'sync_status': 'error',
-                    'errors': ['Không tìm thấy lịch hẹn']
-                }
-                failed_ids.append(appt_id)
-                continue
+        for appt in appointments:
+            appt_id = appt.id
             
             # Xác định users cần sync (Bác sĩ/Tâm lý gia + Lễ tân đã kết nối)
             users_to_sync = []
@@ -644,7 +640,7 @@ def sync_appointments(user: User):
                 GoogleCalendarConnection.is_active == True
             ).all()
             
-            for conn in staff_connections:
+            for conn in staff_connections if manages_all_calendars(actor) else []:
                 users_to_sync.append({
                     'user_id': conn.user_id,
                     'role': 'receptionist',
@@ -676,15 +672,17 @@ def sync_appointments(user: User):
                     # 2. Kiểm tra và xóa TẤT CẢ records cũ nếu event không còn trên Calendar
                     valid_event = None
                     for existing_event in existing_events:
-                        is_exists = GoogleCalendarService.verify_event(existing_event.event_id, conn)
+                        is_exists = GoogleCalendarService.verify_event(existing_event.event_id, conn, strict=True)
                         if is_exists:
                             # Giữ lại event hợp lệ đầu tiên
                             if not valid_event:
                                 valid_event = existing_event
                             else:
                                 # Xóa các event trùng lặp (giữ lại 1)
-                                logger.info(f"Deleting duplicate event record {existing_event.event_id}")
-                                db.delete(existing_event)
+                                if existing_event.event_id == valid_event.event_id or GoogleCalendarService.delete_event(existing_event, conn):
+                                    db.delete(existing_event)
+                                else:
+                                    raise RuntimeError('Chưa xóa được lịch Google trùng; giữ liên kết để thử lại')
                         else:
                             # Event đã bị xóa trên Calendar → Xóa record
                             logger.info(f"Event {existing_event.event_id} no longer exists, deleting record")
@@ -713,7 +711,7 @@ def sync_appointments(user: User):
                     # 4. VERIFY lại event trên Calendar
                     if valid_event:
                         valid_event.updated_at = datetime.now()
-                        is_verified = GoogleCalendarService.verify_event(valid_event.event_id, conn)
+                        is_verified = GoogleCalendarService.verify_event(valid_event.event_id, conn, strict=True)
                         if role == 'doctor':
                             appt_result['doctor_verified'] = is_verified
                         else:
@@ -770,6 +768,8 @@ def sync_appointments(user: User):
         
     except Exception as e:
         db.rollback()
+        if isinstance(e, CalendarAccessError):
+            return jsonify({'error': str(e)}), e.status_code
         logger.error(f"Error syncing appointments: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
@@ -787,23 +787,21 @@ def delete_all_calendar_events(user: User):
     
     db = next(get_db())
     try:
-        data = request.get_json() or {}
-        from_date = data.get('from_date')
-        to_date = data.get('to_date')
+        actor = calendar_actor(db, user)
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise CalendarAccessError('Dữ liệu xóa lịch không hợp lệ')
+        from_dt, to_dt = calendar_date_range(data.get('from_date'), data.get('to_date'))
+        appointment_query = db.query(Appointment).filter(
+            Appointment.appointment_date >= from_dt, Appointment.appointment_date < to_dt,
+        )
+        appointments = scope_calendar_query(appointment_query, actor, write=True).order_by(Appointment.id).populate_existing().with_for_update().all()
+        appointment_ids = [appointment.id for appointment in appointments]
         
         # Build query cho appointments trong khoảng ngày
-        query = db.query(GoogleCalendarEvent).join(
-            Appointment, 
-            GoogleCalendarEvent.appointment_id == Appointment.id
-        )
-        
-        if from_date:
-            from_dt = datetime.strptime(from_date, '%Y-%m-%d')
-            query = query.filter(Appointment.appointment_date >= from_dt)
-        
-        if to_date:
-            to_dt = datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-            query = query.filter(Appointment.appointment_date <= to_dt)
+        query = db.query(GoogleCalendarEvent).filter(GoogleCalendarEvent.appointment_id.in_(appointment_ids))
+        if not manages_all_calendars(actor):
+            query = query.filter(GoogleCalendarEvent.user_id == actor.id)
         
         # Lấy tất cả events
         events = query.all()
@@ -837,7 +835,6 @@ def delete_all_calendar_events(user: User):
                     'user_id': event.user_id
                 })
             else:
-                # Không có connection, vẫn cần xóa DB record
                 event_data.append({
                     'event_id': event.event_id,
                     'db_event_id': event.id,
@@ -855,8 +852,7 @@ def delete_all_calendar_events(user: User):
             import time
             
             if not data['access_token']:
-                # Không có credentials, coi như thành công để xóa DB
-                return (data['db_event_id'], True, None)
+                return (data['db_event_id'], False, 'Chưa có kết nối Google hoạt động; giữ liên kết để thử lại')
             
             for attempt in range(max_retries):
                 try:
@@ -880,23 +876,22 @@ def delete_all_calendar_events(user: User):
                     
                     return (data['db_event_id'], True, None)
                 except Exception as e:
-                    error_str = str(e)
+                    from googleapiclient.errors import HttpError
+                    status = e.resp.status if isinstance(e, HttpError) else None
                     # 410 = đã xóa rồi, 404 = không tồn tại -> coi như thành công
-                    if '410' in error_str or '404' in error_str:
+                    if status in (410, 404):
                         return (data['db_event_id'], True, None)
                     
                     # Rate limit -> retry với exponential backoff
-                    if '403' in error_str and 'rateLimitExceeded' in error_str:
+                    if status == 429 or (status == 403 and 'rateLimitExceeded' in str(e)):
                         if attempt < max_retries - 1:
                             wait_time = (2 ** attempt) * 1  # 1s, 2s, 4s
                             time.sleep(wait_time)
                             continue
                     
-                    logger.warning(f"Could not delete event {data['event_id']} from Google (attempt {attempt + 1}): {e}")
+                    logger.warning('Could not delete Google event %s', data['event_id'])
                     
-                    # Nếu là lần cuối hoặc lỗi khác rate limit
-                    if attempt == max_retries - 1:
-                        return (data['db_event_id'], False, error_str)
+                    return (data['db_event_id'], False, 'Chưa xóa được lịch Google; giữ liên kết để thử lại')
             
             return (data['db_event_id'], False, "Max retries exceeded")
         
@@ -938,6 +933,8 @@ def delete_all_calendar_events(user: User):
         
     except Exception as e:
         db.rollback()
+        if isinstance(e, CalendarAccessError):
+            return jsonify({'error': str(e)}), e.status_code
         logger.error(f"Error deleting calendar events: {e}")
         return jsonify({'error': str(e)}), 500
     finally:

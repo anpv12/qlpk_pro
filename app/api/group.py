@@ -1,11 +1,15 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.group import Group
 from app.models.user import UserGroup
-from app.schemas.group import GroupCreate, GroupRead, GroupUpdate
+from app.schemas.group import GroupCreate, GroupRead
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.utils.account_access import (
+    require_account_permission, can_delegate_group, permission_set,
+    forbidden_account_action,
+)
+from types import SimpleNamespace
 import json
 
 router = Blueprint('group', __name__, url_prefix='/groups')
@@ -13,6 +17,7 @@ router = Blueprint('group', __name__, url_prefix='/groups')
 # Lấy danh sách nhóm quyền
 @router.route('/', methods=['GET'])
 @require_auth
+@require_account_permission('ql-nhomquyen', 'ql-phanquyen')
 def list_groups(user):
     db = next(get_db())
     try:
@@ -34,10 +39,15 @@ def list_groups(user):
 # Tạo mới nhóm quyền
 @router.route('/', methods=['POST'])
 @require_auth
+@require_account_permission('ql-nhomquyen')
 def create_group(user):
     db = next(get_db())
     try:
         data = request.get_json()
+        if not isinstance(data, dict) or not isinstance(data.get('permissions', []), list) or permission_set(data.get('permissions', [])) is None:
+            return jsonify(detail='Danh sách quyền không hợp lệ.'), 400
+        if not can_delegate_group(user, SimpleNamespace(permissions=data.get('permissions', []))):
+            return forbidden_account_action()
         if db.query(Group).filter(Group.code == data.get('code')).first():
             return jsonify({'detail': 'Mã nhóm quyền đã tồn tại!'}), 400
         
@@ -65,6 +75,7 @@ def create_group(user):
 # Lấy chi tiết nhóm quyền
 @router.route('/<int:group_id>', methods=['GET'])
 @require_auth
+@require_account_permission('ql-nhomquyen', 'ql-phanquyen')
 def get_group(user, group_id):
     db = next(get_db())
     try:
@@ -85,6 +96,7 @@ def get_group(user, group_id):
 # Cập nhật nhóm quyền
 @router.route('/<int:group_id>', methods=['PUT'])
 @require_auth
+@require_account_permission('ql-nhomquyen')
 def update_group(user, group_id):
     db = next(get_db())
     try:
@@ -92,11 +104,18 @@ def update_group(user, group_id):
         group = db.query(Group).filter(Group.id == group_id).first()
         if not group:
             return jsonify({'detail': 'Không tìm thấy nhóm quyền!'}), 404
+        if not isinstance(data, dict):
+            return jsonify(detail='Danh sách quyền không hợp lệ.'), 400
+        permissions = data.get('permissions', json.loads(group.permissions) if group.permissions else [])
+        if not isinstance(permissions, list) or permission_set(permissions) is None:
+            return jsonify(detail='Danh sách quyền không hợp lệ.'), 400
+        if not can_delegate_group(user, group) or not can_delegate_group(user, SimpleNamespace(permissions=permissions)):
+            return forbidden_account_action()
         
         group.code = data.get('code', group.code)
         group.name = data.get('name', group.name)
         group.desc = data.get('desc', group.desc)
-        group.permissions = json.dumps(data.get('permissions', []))
+        group.permissions = json.dumps(permissions)
         
         db.commit()
         db.refresh(group)
@@ -116,12 +135,15 @@ def update_group(user, group_id):
 # Xoá nhóm quyền
 @router.route('/<int:group_id>', methods=['DELETE'])
 @require_auth
+@require_account_permission('ql-nhomquyen')
 def delete_group(user, group_id):
     db = next(get_db())
     try:
         group = db.query(Group).filter(Group.id == group_id).first()
         if not group:
             return jsonify({'detail': 'Không tìm thấy nhóm quyền!'}), 404
+        if not can_delegate_group(user, group):
+            return forbidden_account_action()
         
         # Xóa tất cả UserGroup records liên quan trước khi xóa Group
         # Điều này cần thiết vì group_id có NOT NULL constraint

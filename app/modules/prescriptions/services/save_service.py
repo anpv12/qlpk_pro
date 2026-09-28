@@ -1,8 +1,7 @@
 """Atomic persistence owner for the internal prescription save workflow."""
 
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
-import math
+from decimal import Decimal, InvalidOperation, ROUND_CEILING
 
 from sqlalchemy import func
 
@@ -23,6 +22,10 @@ class PrescriptionSaveError(Exception):
 
 class PrescriptionAppointmentNotFound(PrescriptionSaveError):
     """Raised when the aggregate row disappears before it can be locked."""
+
+
+class PrescriptionInputValidationError(PrescriptionSaveError):
+    """Reject invalid prescription input before any inventory mutation."""
 
 
 def _parse_medicine_id(value):
@@ -59,19 +62,23 @@ def _as_quantity_decimal(value):
 def normalize_prescription_quantity(value):
     """Return the whole dispensing quantity while keeping dose fractions in usage."""
     try:
-        parsed = float(value or 0)
-    except (TypeError, ValueError):
-        return 0
-    if not math.isfinite(parsed):
-        return 0
-    return math.ceil(max(0.0, parsed))
+        parsed = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        raise PrescriptionInputValidationError('Số lượng thuốc phải là số không âm hợp lệ.') from None
+    if not parsed.is_finite() or parsed < 0 or parsed > Decimal('9999999'):
+        raise PrescriptionInputValidationError('Số lượng thuốc phải từ 0 đến 9999999.')
+    return int(parsed.to_integral_value(rounding=ROUND_CEILING))
 
 
 def normalize_prescription_medicines(medicines):
     """Normalize every incoming prescription row before price/stock/item writes."""
     normalized = []
-    for medicine_data in medicines or []:
-        item = dict(medicine_data or {})
+    if not isinstance(medicines, list):
+        raise PrescriptionInputValidationError('Danh sách thuốc không hợp lệ.')
+    for medicine_data in medicines:
+        if not isinstance(medicine_data, dict):
+            raise PrescriptionInputValidationError('Dòng thuốc không hợp lệ.')
+        item = dict(medicine_data)
         item['quantity'] = normalize_prescription_quantity(item.get('quantity'))
         normalized.append(item)
     return normalized
@@ -188,6 +195,10 @@ def group_medicines_by_prescription_type(medicines, medicine_catalog):
             medicine_obj.get('prescription_type') if medicine_obj
             else medicine_data.get('prescription_type') or 'BASIC'
         ) or 'BASIC'
+        if med_type not in ('BASIC', 'H', 'N'):
+            raise PrescriptionInputValidationError(
+                f'{medicine_name}: loại đơn {med_type} chưa được hỗ trợ; đơn chưa được lưu.'
+            )
         if med_type not in medicines_by_type:
             medicines_by_type[med_type] = []
         medicines_by_type[med_type].append(medicine_data)
@@ -199,6 +210,7 @@ def group_medicines_by_prescription_type(medicines, medicine_catalog):
 def generate_prescription_code(db_session, prescription_type_char, exclude_ids=None):
     """Generate a unique prescription code using the legacy sequence logic."""
     today = date.today()
+    db_session.execute(func.pg_advisory_xact_lock(79836, 1).select())
     count = db_session.query(Prescription).filter(
         Prescription.created_at >= datetime.combine(today, datetime.min.time()),
         Prescription.created_at < datetime.combine(today, datetime.max.time())
@@ -206,7 +218,7 @@ def generate_prescription_code(db_session, prescription_type_char, exclude_ids=N
     next_seq = count + 1
     facility_code = '79836'
     date_code = f"{today.day:02d}{today.month:02d}"
-    for _ in range(100):
+    while True:
         seq_code = f"{next_seq:03d}"
         candidate = f"{facility_code}{date_code}{seq_code}-{prescription_type_char}"
         q = db_session.query(Prescription).filter(Prescription.prescription_code == candidate)
@@ -215,7 +227,6 @@ def generate_prescription_code(db_session, prescription_type_char, exclude_ids=N
         if not q.first():
             return candidate
         next_seq += 1
-    return None
 
 def sync_prescriptions_by_type(
     db,

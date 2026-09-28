@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from app.core.database import get_db
 from app.models.icd import ICD

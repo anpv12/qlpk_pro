@@ -78,6 +78,6 @@ class DriveService:
         try:
             self.service.files().delete(fileId=file_id).execute()
             return True
-        except Exception as e:
+        except Exception:
             logger.exception("Lỗi khi xóa file trên Drive")
             return False

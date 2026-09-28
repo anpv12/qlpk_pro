@@ -1,13 +1,18 @@
 from flask import Blueprint, request, jsonify
-from app.models.user import User, UserGroup, UserRole
-from app.models.group import Group
+from app.models.user import User
 from app.core.database import get_db
-from app.services.auth import authenticate_user, create_access_token, get_password_hash
-from app.schemas.user import UserCreate, UserLogin
+from app.services.auth import authenticate_user, create_access_token, decode_access_token, get_password_hash, token_matches_user
+from app.schemas.user import UserCreate
+from app.services.session_identity import ALL_PERMISSIONS, session_user_payload
+from app.core.login_throttle import limit_login_attempts
+from app.services.auth import decode_access_claims
+from app.services.access_sessions import revoke_session, SessionStoreUnavailable
+from app.services.browser_sessions import (
+    browser_cookie_token, request_access_token, browser_session_request_allowed,
+    same_origin_request, browser_session_payload, set_browser_session, clear_browser_session,
+)
 from datetime import datetime, timedelta
-import jwt
 from functools import wraps
-import json
 
 import logging
 
@@ -23,33 +28,20 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-ALL_PERMISSIONS = [
-    "dashboard", "lichhen", "qlkham-letan", "qlkham-bs", "qlkham-tamly", "qlkham-cls",
-    "hoadon", "chi-tieu", "thongke-thuoc", "ql-kho-thuoc", "ql-taikhoan", "ql-thuoc", "ql-phanquyen", "ql-nhomquyen",
-    "ql-danhmuc-dichvu", "ql-danhmuc-thuoc", "ql-dichvu", "ql-goi-dichvu",
-    "ql-mau-khaosat", "ql-danhmuc-icd", "ql-tu-viettat", "ql-ngayle",
-    "ql-tuong-tac-thuoc", "ql-hoat-chat", "ql-di-nguyen", "ql-tailieu",
-    "ca-nhan", "ca-nhan-phimtat"
-]
 
 def get_current_user(token: str):
     """
     Decodes a JWT token and retrieves the corresponding user from the database.
     Manages its own database session.
     """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-    except jwt.PyJWTError:
-        # Token is invalid (e.g., expired, tampered)
+    username = decode_access_token(token)
+    if not username:
         return None
     
     db = next(get_db()) # Get a new database session
     try:
         user = db.query(User).filter(User.username == username).first()
-        return user
+        return user if token_matches_user(token, user) else None
     finally:
         db.close() # Ensure the database session is closed
 
@@ -60,25 +52,33 @@ def require_auth(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        token = request_access_token()
+        if not token:
             return jsonify({'detail': 'Not authenticated: Missing or malformed Authorization header'}), 401, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        token = auth_header.split(' ')[1]
-        user = get_current_user(token)
-        if not user:
+        if not browser_session_request_allowed(token):
+            return jsonify(code='auth.csrf_invalid', detail='Yêu cầu không đúng nguồn hoặc mã bảo vệ phiên.'), 403
+        try:
+            user = get_current_user(token)
+        except SessionStoreUnavailable:
+            return jsonify(code='system.unavailable', detail='Tạm thời không thể xác minh phiên.'), 503
+        if not user or user.is_active is not True:
             return jsonify({'detail': 'Invalid or expired token'}), 401, {'Content-Type': 'application/json; charset=utf-8'}
         
         # Update last_login for online tracking
+        activity_db = None
         try:
             from datetime import timezone as tz
-            db = next(get_db())
-            db.query(User).filter(User.id == user.id).update(
+            activity_db = next(get_db())
+            activity_db.query(User).filter(User.id == user.id).update(
                 {'last_login': datetime.now(tz.utc)})
-            db.commit()
-            db.close()
-        except Exception:
-            pass
+            activity_db.commit()
+        except Exception as exc:
+            if activity_db is not None:
+                activity_db.rollback()
+            logger.warning('Không cập nhật được last_login cho user %s: %s', getattr(user, 'id', None), exc)
+        finally:
+            if activity_db is not None:
+                activity_db.close()
 
         # Pass the user object to the decorated function
         return f(user, *args, **kwargs)
@@ -92,13 +92,16 @@ def require_admin(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        token = request_access_token()
+        if not token:
             return jsonify({'detail': 'Not authenticated: Missing or malformed Authorization header'}), 401, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        token = auth_header.split(' ')[1]
-        user = get_current_user(token)
-        if not user:
+        if not browser_session_request_allowed(token):
+            return jsonify(code='auth.csrf_invalid', detail='Yêu cầu không đúng nguồn hoặc mã bảo vệ phiên.'), 403
+        try:
+            user = get_current_user(token)
+        except SessionStoreUnavailable:
+            return jsonify(code='system.unavailable', detail='Tạm thời không thể xác minh phiên.'), 503
+        if not user or user.is_active is not True:
             return jsonify({'detail': 'Invalid or expired token'}), 401, {'Content-Type': 'application/json; charset=utf-8'}
         
         if user.role != 'admin':
@@ -109,27 +112,36 @@ def require_admin(f):
     return decorated_function
 
 @router.route('/login', methods=['POST'])
+@limit_login_attempts
 def login(): # Corrected function name from 'cllogin' to 'login'
     """
     Handles user login, authenticates credentials, and issues a JWT access token.
     Retrieves and returns user-specific permissions based on roles and groups.
     """
+    cookie_mode = request.headers.get('X-QLPK-Session') == 'cookie'
+    if browser_cookie_token() and not cookie_mode:
+        return jsonify(code='auth.cookie_required', detail='Phiên trình duyệt không thể đổi sang Bearer ngầm.'), 403
+    if cookie_mode and (not same_origin_request() or (not settings.DEBUG and not request.is_secure)):
+        return jsonify(code='auth.origin_invalid', detail='Đăng nhập trình duyệt yêu cầu đúng nguồn và HTTPS.'), 403
     db = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'detail': 'Username and password required'}), 400
         username = data.get('username')
         password = data.get('password')
             
-        if not username or not password:
+        if not isinstance(username, str) or not username.strip() or not isinstance(password, str) or not password:
             return jsonify({'detail': 'Username and password required'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
             
         user = authenticate_user(db, username, password)
-        if not user:
+        if not user or user.is_active is not True:
             return jsonify({'detail': 'Invalid credentials'}), 401, {'Content-Type': 'application/json; charset=utf-8'}
             
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.username}, expires_delta=access_token_expires
+            data={"sub": user.username, **({'transport': 'cookie'} if cookie_mode else {})},
+            expires_delta=access_token_expires, user=user
         )
 
         # Update last_login
@@ -137,56 +149,54 @@ def login(): # Corrected function name from 'cllogin' to 'login'
         user.last_login = datetime.now(tz.utc)
         db.commit()
 
-        # Lấy danh sách quyền của user
-        if user.role == UserRole.ADMIN:
-            user_permissions = ALL_PERMISSIONS
-            logger.info(f"User {user.id} ({user.username}) is ADMIN - granted all permissions")
-        else:
-            groups = db.query(Group).join(UserGroup).filter(UserGroup.user_id == user.id).all()
-            logger.info(f"User {user.id} ({user.username}, role: {user.role}) has {len(groups)} groups")
-            
-            if len(groups) == 0:
-                logger.warning(f"User {user.id} ({user.username}, role: {user.role}) has NO groups assigned - permissions will be empty!")
-            
-            user_permissions = []
-            for group in groups:
-                logger.info(f"  - Group: {group.name} (id: {group.id}), permissions: {group.permissions}")
-                if group.permissions:
-                    try:
-                        # Ensure permissions are loaded correctly from JSON string
-                        # Assuming group.permissions stores a JSON string like '["perm1", "perm2"]'
-                        group_perms = json.loads(group.permissions)
-                        if isinstance(group_perms, list):
-                            user_permissions.extend(group_perms)
-                            logger.info(f"    Added {len(group_perms)} permissions: {group_perms}")
-                        else:
-                            logger.error(f"Warning: Group {group.name} has malformed permissions (not a list): {group.permissions}")
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Warning: Could not decode permissions for group {group.name}: {e}")
-                    except Exception as e:
-                        logger.error(f"Unexpected error processing permissions for group {group.name}: {e}")
-                else:
-                    logger.warning(f"    Group {group.name} has no permissions field")
-            user_permissions = list(set(user_permissions))  # Remove duplicates
-            logger.info(f"Final permissions for user {user.id}: {user_permissions}")
-            
-        return jsonify({
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "full_name": user.full_name,
-                "email": user.email,
-                "role": user.role,
-                "permissions": user_permissions # Return the resolved permissions
-            }
-        }), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        payload = {'user': session_user_payload(user)}
+        if cookie_mode:
+            payload.update(browser_session_payload(access_token))
+            return set_browser_session(jsonify(payload), access_token)
+        payload.update(access_token=access_token, token_type='bearer')
+        response = jsonify(payload)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except SessionStoreUnavailable:
+        db.rollback()
+        return jsonify(code='system.unavailable', detail='Chưa thể tạo phiên đăng nhập.'), 503
     except Exception as e:
         logger.error(f"Login error: {e}")
         return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
+
+@router.route('/logout', methods=['POST'])
+@require_auth
+def logout(user):
+    token = request_access_token()
+    claims = decode_access_claims(token)
+    try:
+        revoke_session(claims)
+    except Exception:
+        return jsonify(code='system.unavailable', detail='Chưa thể thu hồi phiên đăng nhập.'), 503
+    from app.realtime.socket import disconnect_token_clients
+    disconnect_token_clients(token)
+    response = jsonify(success=True)
+    return clear_browser_session(response) if browser_cookie_token() else response
+
+
+@router.route('/session', methods=['GET'])
+@require_auth
+def browser_session_info(user):
+    if not browser_cookie_token():
+        return jsonify(code='auth.cookie_required', detail='Phiên trình duyệt chưa được thiết lập.'), 400
+    db = next(get_db())
+    try:
+        current = db.query(User).filter(User.id == user.id).first()
+        if not current or current.is_active is not True:
+            return jsonify(detail='Phiên đăng nhập không còn hiệu lực.'), 401
+        response = jsonify(**browser_session_payload(request_access_token()), user=session_user_payload(current))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    finally:
+        db.close()
+
 
 @router.route('/register', methods=['POST'])
 @require_admin
@@ -252,48 +262,12 @@ def get_current_user_info(user: User):
     """
     db = next(get_db())
     try:
-        # Re-fetch user to ensure relationships (like groups) are loaded
-        # or load permissions directly if not eagerly loaded
-        # Re-querying here is okay if user object from decorator is detached
-        user_with_groups = db.query(User).filter(User.id == user.id).first()
-
-        user_permissions = []
-        if user_with_groups:
-            if user_with_groups.role == UserRole.ADMIN:
-                user_permissions = ALL_PERMISSIONS
-                logger.info(f"User {user.id} ({user.username}) is ADMIN - granted all permissions")
-            else:
-                # Fix: Use 'groups' instead of 'user_groups' to match the User model
-                groups = user_with_groups.groups # Access the relationship
-                logger.info(f"User {user.id} ({user.username}, role: {user_with_groups.role}) has {len(groups)} groups")
-                
-                if len(groups) == 0:
-                    logger.warning(f"User {user.id} ({user.username}, role: {user_with_groups.role}) has NO groups assigned - permissions will be empty!")
-                
-                for user_group_assoc in groups:
-                    group = user_group_assoc.group # Get the Group object
-                    logger.info(f"  - Group: {group.name if group else 'None'} (id: {group.id if group else 'N/A'}), permissions: {group.permissions if group else 'None'}")
-                    if group and group.permissions:
-                        try:
-                            group_perms = json.loads(group.permissions)
-                            if isinstance(group_perms, list):
-                                user_permissions.extend(group_perms)
-                                logger.info(f"    Added {len(group_perms)} permissions: {group_perms}")
-                        except json.JSONDecodeError as e:
-                            logger.error(f"Warning: Could not decode permissions for group {group.name}: {e}")
-                    elif group:
-                        logger.warning(f"    Group {group.name} has no permissions field")
-                user_permissions = list(set(user_permissions)) # Remove duplicates
-                logger.info(f"Final permissions for user {user.id}: {user_permissions}")
-
-        return jsonify({
-            "id": user.id,
-            "username": user.username,
-            "full_name": user.full_name,
-            "email": user.email,
-            "role": user.role,
-            "permissions": user_permissions # Include permissions here too
-        }), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        current = db.query(User).filter(User.id == user.id).first()
+        if not current or current.is_active is not True:
+            return jsonify(detail='Phiên đăng nhập không còn hiệu lực.'), 401
+        response = jsonify(session_user_payload(current))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
     except Exception as e:
         logger.error(f"Error getting user info: {e}")
         return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}

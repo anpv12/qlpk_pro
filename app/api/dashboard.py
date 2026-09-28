@@ -1,6 +1,6 @@
 """Dashboard API — Revenue & ICD stats"""
 from flask import Blueprint, jsonify, request
-from sqlalchemy import String, cast, func, extract, text
+from sqlalchemy import String, cast, func, text
 from app.core.database import get_db
 from app.models.examination import Examination, ExaminationStatus
 from app.models.appointment import Appointment
@@ -785,7 +785,6 @@ def get_exam_today(user):
         today_end = dt.combine(today, dt.max.time())
 
         # Count appointments today that have examinations
-        from sqlalchemy.orm import joinedload
         appointments_today = db.query(Appointment).filter(
             Appointment.appointment_date >= today_start,
             Appointment.appointment_date <= today_end,
@@ -825,7 +824,6 @@ def get_top_icd(user):
     db = next(get_db())
     try:
         from datetime import date, timedelta, datetime as dt
-        from app.models.icd import ICD
 
         today = date.today()
         default_from = (today - timedelta(days=6)).isoformat()
@@ -1153,12 +1151,11 @@ def export_thu_chi_excel(user):
     """Xuất Excel thống kê thu chi theo ngày"""
     import io
     from datetime import date, timedelta, datetime as dt
-    from app.models.service import Service
     from app.models.prescription import Prescription, PrescriptionItem
     from app.models.expense import Expense
     try:
         import openpyxl
-        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side, numbers
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
         from flask import send_file
     except ImportError:
         return jsonify({'error': 'openpyxl chưa được cài đặt'}), 500
@@ -1180,8 +1177,6 @@ def export_thu_chi_excel(user):
         if end_date > today:
             end_date = today
 
-        start = dt.combine(start_date, dt.min.time())
-        end = dt.combine(end_date, dt.max.time())
         period_label = f"{start_date.strftime('%d/%m/%Y')} – {end_date.strftime('%d/%m/%Y')}"
 
         # --- Styles ---
@@ -1192,7 +1187,6 @@ def export_thu_chi_excel(user):
         data_font = Font(name='Arial', size=10)
         center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
         right_align = Alignment(horizontal='right', vertical='center')
-        white_fill = PatternFill("solid", fgColor="FFFFFF")
         total_fill = PatternFill("solid", fgColor="F0FDF4")
 
         # --- Query revenue per day ---

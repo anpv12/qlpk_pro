@@ -10,6 +10,7 @@ from app.utils.allergy_contract import AllergyContractError
 from app.utils.medical_history_contract import MedicalHistoryContractError
 from app.utils.risk_assessment import RiskAssessmentContractError
 from app.utils.clinical_access import appointment_access_error
+from app.modules.appointments.services.calendar_transfer import schedule_calendar_transfer_drain
 from app.modules.appointments.services import (
     AppointmentAdminValidationError,
     AppointmentConfirmationNotFound,
@@ -642,9 +643,10 @@ def transfer_appointments(user):
     """Chuyển appointments giữa các role"""
     db = next(get_db())
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
         result = transfer_appointments_between_roles(db, user, data, logger=logger)
         db.commit()
+        schedule_calendar_transfer_drain(result.calendar_appointment_ids)
         if result.updated_count:
             emit_appointment_changed('transferred', extra={
                 'appointment_ids': result.appointment_ids,
@@ -652,16 +654,17 @@ def transfer_appointments(user):
                 'to_person_id': data.get('to_person_id'),
                 'updated_count': result.updated_count,
             })
-        _commit_workflow_notifications(
-            db,
-            lambda: notification_service.create_transfer_notifications(
+        if result.updated_count:
+            _commit_workflow_notifications(
                 db,
-                result.appointment_ids,
-                data.get('to_role'),
-                data.get('to_person_id'),
-                actor_user=user,
+                lambda: notification_service.create_transfer_notifications(
+                    db,
+                    result.appointment_ids,
+                    data.get('to_role'),
+                    data.get('to_person_id'),
+                    actor_user=user,
+                )
             )
-        )
         
         return jsonify({
             "success": True,
@@ -669,7 +672,8 @@ def transfer_appointments(user):
             "updated_count": result.updated_count
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentTransferValidationError as e:
-        return jsonify({"detail": str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
+        db.rollback()
+        return jsonify({"detail": str(e)}), e.status_code, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
         db.rollback()
         logger.error(f"Error in transfer_appointments: {e}")

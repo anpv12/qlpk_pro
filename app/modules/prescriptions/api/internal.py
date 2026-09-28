@@ -24,6 +24,7 @@ from app.modules.prescriptions.view_models.print_prescription import (
 )
 
 from app.modules.prescriptions.services.re_examination_service import plan_re_examination, ReExaminationValidationError
+from app.modules.prescriptions.services.save_service import PrescriptionInputValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,10 @@ def save_prescription(user):
             're_examination_sync_result': re_examination_sync_result or {'ok': True}
         }), 200
         
+    except PrescriptionInputValidationError as e:
+        if db:
+            db.rollback()
+        return jsonify({'code': 'prescription.invalid_input', 'detail': str(e)}), 400
     except ReExaminationValidationError as e:
         if db:
             db.rollback()

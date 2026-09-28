@@ -1,7 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, request, jsonify
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.auth import require_auth
@@ -848,7 +847,6 @@ def import_services(current_user):
         
         # Read Excel file
         import pandas as pd
-        from io import BytesIO
         
         try:
             df = pd.read_excel(file, header=0)

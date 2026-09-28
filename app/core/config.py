@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional, List
-import os
 import time
 
 
@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:123456@postgres:5432/qlpk_db"
     
     # JWT
-    SECRET_KEY: str = "qlpk-production-secret-key-2024"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 0  # Token không hết hạn (0 = không hết hạn)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=480, ge=0, le=1440)
     
     # App
     APP_NAME: str = "QLPK - Hệ thống quản lý phòng khám tâm lý"
@@ -25,6 +25,11 @@ class Settings(BaseSettings):
 
     # Realtime Socket.IO
     REALTIME_REDIS_URL: Optional[str] = None
+    SESSION_REDIS_URL: Optional[str] = None
+    LOGIN_REDIS_URL: Optional[str] = None
+    LOGIN_ACCOUNT_ATTEMPTS: int = Field(default=10, ge=1, le=1000)
+    LOGIN_IP_ATTEMPTS: int = Field(default=60, ge=1, le=10000)
+    LOGIN_WINDOW_SECONDS: int = Field(default=300, ge=1, le=3600)
     
     # Versioning for Cache Invalidation
     APP_VERSION: str = str(int(time.time()))
@@ -45,7 +50,7 @@ class Settings(BaseSettings):
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SENDER_EMAIL: str = "anp65521@gmail.com"
-    SENDER_PASSWORD: str = "qzeq ymxe fwsd foci"
+    SENDER_PASSWORD: str = ""
     EMAIL_TIMEOUT_SECONDS: int = 30  # Timeout cho email sending
     EMAIL_USE_TLS: bool = True  # Sử dụng TLS encryption
     EMAIL_USE_SSL: bool = False  # Không sử dụng SSL

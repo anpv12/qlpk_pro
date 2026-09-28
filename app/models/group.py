@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
 from app.core.database import Base
 
 class Group(Base):

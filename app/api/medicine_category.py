@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.medicine_category import MedicineCategory
 from app.api.auth import require_auth

@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.service_category import ServiceCategory
-from app.schemas.service_category import ServiceCategoryCreate, ServiceCategoryUpdate, ServiceCategoryRead
+from app.schemas.service_category import ServiceCategoryCreate, ServiceCategoryUpdate
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 
@@ -171,7 +170,7 @@ def delete_service_category(user, category_id):
                 service_names.append(f"... và {service_count - 3} dịch vụ khác")
             
             return jsonify({
-                'detail': f'Cannot delete category with associated services',
+                'detail': 'Cannot delete category with associated services',
                 'message': f'Danh mục "{category.name}" có {service_count} dịch vụ liên quan: {", ".join(service_names)}. Vui lòng xóa hoặc chuyển các dịch vụ này trước khi xóa danh mục.',
                 'service_count': service_count,
                 'services': [{'id': s.id, 'name': s.name} for s in category.services]
@@ -207,7 +206,6 @@ def import_service_categories(user):
         
         # Read Excel file
         import pandas as pd
-        from io import BytesIO
         
         try:
             df = pd.read_excel(file, header=0)

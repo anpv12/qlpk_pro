@@ -120,7 +120,7 @@ def build_re_examination_calendar(db, user, original, args):
                 db.query(Service).filter(Service.is_active == True).order_by(Service.name).all()]
     from app.models.user import UserRole
     from sqlalchemy import or_
-    doctors = [{'id': item.id, 'name': item.full_name} for item in db.query(User).filter(
+    doctors = [{'id': item.id, 'name': item.full_name, 'calendar_color': item.calendar_color} for item in db.query(User).filter(
         User.is_active == True, or_(User.role.in_([UserRole.DOCTOR, UserRole.PSYCHOLOGIST]), User.id == user.id)
     ).order_by(User.full_name).all()]
     if child and child.package:
@@ -128,7 +128,7 @@ def build_re_examination_calendar(db, user, original, args):
     if child and child.service and not any(item['kind'] == 'service' and item['id'] == child.service_id for item in services):
         services.append({'id': child.service_id, 'name': child.service.name, 'kind': 'service', 'disabled': True})
     if doctor and not any(item['id'] == doctor.id for item in doctors):
-        doctors.append({'id': doctor.id, 'name': doctor.full_name, 'disabled': True})
+        doctors.append({'id': doctor.id, 'name': doctor.full_name, 'calendar_color': doctor.calendar_color, 'disabled': True})
     # Reuse the appointment list's actor scope; never widen a doctor's visibility.
     result = get_appointment_list(db, user, MultiDict({
         'date_from': start.strftime('%Y-%m-%d'), 'date_to': end.strftime('%Y-%m-%d'),
@@ -147,6 +147,8 @@ def build_re_examination_calendar(db, user, original, args):
             'duration': appointment.duration_minutes or 60,
             'patient_name': appointment.patient.full_name if appointment.patient else '',
             'doctor_name': appointment.doctor.full_name if appointment.doctor else '',
+            'doctor_id': appointment.doctor_id,
+            'doctor_color': appointment.doctor.calendar_color if appointment.doctor else None,
             'service_name': service.name if service else '',
             'status': _enum_value(appointment.status),
         })

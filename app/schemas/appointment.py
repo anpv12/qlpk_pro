@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from decimal import Decimal
 from app.models.appointment import AppointmentStatus, AppointmentType, AppointmentCategory
 
 class AppointmentBase(BaseModel):

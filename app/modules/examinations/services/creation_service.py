@@ -268,5 +268,6 @@ def sync_legacy_examination_google_calendar(db, appointment, logger=None):
             logger.error(f"Error syncing examination appointment to Google Calendar: {exc}")
         try:
             db.commit()
-        except Exception:
-            pass
+        except Exception as commit_exc:
+            if logger:
+                logger.error(f"Commit sau lỗi đồng bộ Google Calendar thất bại: {commit_exc}")

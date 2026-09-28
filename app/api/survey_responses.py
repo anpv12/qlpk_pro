@@ -1,12 +1,9 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.survey_response import SurveyResponse
 from app.models.survey_template import SurveyTemplate
 from app.utils.survey_scoring import survey_questions_by_criteria
 from app.models.examination import Examination
-from app.models.patient import Patient
-from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_survey_changed
 from app.utils.survey_scoring import score_survey_responses

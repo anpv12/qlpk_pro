@@ -1,13 +1,11 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.text_expansion import TextExpansion
-from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalized_contains
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 import pandas as pd
 import io
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from app.models.examination import Examination, ExaminationStatus
 from app.modules.examinations.view_models.management import get_examination_status_text
 from app.modules.appointments.services.doctor_queue import mark_doctor_queue_entry
+from app.modules.examinations.services.management_query import get_active_management_examination
 
 class StatusTransitionExaminationNotFound(Exception):
     """Raised when an examination row does not exist for a status transition."""
@@ -69,8 +70,10 @@ def confirm_examination_result(db, examination_id):
         'status': examination.status.value,
     }
 
-def update_management_examination_status_result(db, examination_id, data):
-    examination = get_examination_for_status_transition(db, examination_id, active_only=True)
+def update_management_examination_status_result(db, examination_id, data, user):
+    examination = get_active_management_examination(db, examination_id, user, for_update=True)
+    if not isinstance(data, dict):
+        raise InvalidStatusValue()
     new_status = data.get('status')
     if not new_status or new_status not in [status.value for status in ExaminationStatus]:
         raise InvalidStatusValue()

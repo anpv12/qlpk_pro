@@ -1,7 +1,12 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, Response, render_template, request, jsonify, redirect, url_for, send_from_directory
+from werkzeug.utils import safe_join
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.core.config import settings
+from app.core.security_config import validate_security_config
+
+validate_security_config(settings)
+
 from app.core.database import engine
 from app.models import Base, User, Patient, Appointment
 from app.models.occupation import Occupation
@@ -9,6 +14,9 @@ from app.models.sexual_orientation import SexualOrientation
 from app.models.administrative_region import AdministrativeRegion
 from app.models.administrative_unit import AdministrativeUnit
 from app.utils.api_error_contract import attach_stable_error_code
+from app.core.http_cache import versioned_static_cache_control
+from app.core.security_headers import apply_security_headers, uses_insecure_default_secret
+from app.core.static_modules import is_safe_asset_version, stamp_css_imports, stamp_module_imports
 from app.api.appointment import router as appointment_router
 from app.api.auth import router as auth_router, check_router, require_auth
 from app.api.pdf_preview import pdf_preview_bp
@@ -67,6 +75,7 @@ from app.realtime import init_realtime, socketio
 
 
 # Tạo database tables với retry logic
+import logging
 import os
 import time
 import psycopg2
@@ -111,6 +120,10 @@ app = Flask(__name__,
            template_folder='app/templates',
            static_folder='app/static')
 app.config['SECRET_KEY'] = settings.SECRET_KEY
+if uses_insecure_default_secret(settings.SECRET_KEY):
+    logging.getLogger(__name__).critical(
+        'SECRET_KEY đang dùng giá trị mặc định trong mã nguồn; đặt SECRET_KEY riêng trong .env trước khi chạy production.'
+    )
 
 # ProxyFix để Flask nhận biết HTTPS từ nginx
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -168,8 +181,19 @@ def add_html_cache_headers(response):
     return response
 
 @app.after_request
+def add_versioned_static_cache_headers(response):
+    cache_control = versioned_static_cache_control(request.path, request.args.get('v'), response.status_code)
+    if cache_control:
+        response.headers['Cache-Control'] = cache_control
+    return response
+
+@app.after_request
 def add_json_error_code(response):
     return attach_stable_error_code(response)
+
+@app.after_request
+def add_security_headers(response):
+    return apply_security_headers(response, is_secure=request.is_secure)
 
 @app.route('/favicon.ico')
 def favicon():
@@ -178,6 +202,42 @@ def favicon():
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
+
+
+@app.route('/static/js/<path:filename>')
+def versioned_static_js(filename):
+    version = request.args.get('v')
+    js_folder = os.path.join(app.static_folder, 'js')
+    if not filename.endswith('.js') or not is_safe_asset_version(version):
+        return send_from_directory(js_folder, filename)
+    file_path = safe_join(js_folder, filename)
+    if not file_path or not os.path.isfile(file_path):
+        return send_from_directory(js_folder, filename)
+    with open(file_path, 'r', encoding='utf-8') as handle:
+        source = handle.read()
+    stat = os.stat(file_path)
+    response = Response(stamp_module_imports(source, version), mimetype='text/javascript')
+    response.set_etag(f'{int(stat.st_mtime)}-{stat.st_size}-{version}')
+    response.last_modified = stat.st_mtime
+    return response.make_conditional(request)
+
+
+@app.route('/static/css/<path:filename>')
+def versioned_static_css(filename):
+    version = request.args.get('v')
+    css_folder = os.path.join(app.static_folder, 'css')
+    if not filename.endswith('.css') or not is_safe_asset_version(version):
+        return send_from_directory(css_folder, filename)
+    file_path = safe_join(css_folder, filename)
+    if not file_path or not os.path.isfile(file_path):
+        return send_from_directory(css_folder, filename)
+    with open(file_path, 'r', encoding='utf-8') as handle:
+        source = handle.read()
+    stat = os.stat(file_path)
+    response = Response(stamp_css_imports(source, version), mimetype='text/css')
+    response.set_etag(f'{int(stat.st_mtime)}-{stat.st_size}-{version}')
+    response.last_modified = stat.st_mtime
+    return response.make_conditional(request)
 
 
 # CORS - Cấu hình chi tiết cho development và production
@@ -425,9 +485,7 @@ def document_management_page():
 @app.route('/api/token/refresh')
 @require_auth
 def refresh_token_api(user):
-    from app.services.auth import create_access_token
-    token = create_access_token({"sub": user.username})
-    return jsonify({"token": token})
+    return jsonify(code='auth.login_required', detail='Vui lòng đăng nhập lại để tạo phiên mới.'), 410
 
 @app.route('/chi-tieu')
 @app.route('/chi-tieu.html')

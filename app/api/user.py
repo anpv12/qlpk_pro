@@ -1,19 +1,25 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models.user import User as UserModel, UserRole, UserGroup
+from app.models.user import User as UserModel, UserRole
 from app.models.doctor import Doctor
-from app.models.group import Group
 # NEW: Import Patient model and schema for the debug route
 from app.models.patient import Patient as PatientModel 
 from app.schemas.patient import Patient as PatientSchema 
-from app.schemas.user import UserBase, UserCreate, UserRead 
-from typing import List, Optional
-from app.services.auth import get_password_hash, verify_password
-from app.api.auth import require_auth, ALL_PERMISSIONS
+from app.schemas.user import UserCreate, UserRead
+from app.services.auth import get_password_hash, verify_password, create_access_token, token_matches_user
+from app.services.access_sessions import revoke_account_sessions, SessionStoreUnavailable
+from app.services.session_identity import session_user_payload
+from app.services.browser_sessions import browser_cookie_token, request_access_token, browser_session_payload, set_browser_session
+from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
+from app.realtime.socket import disconnect_user_clients
 from app.utils.upload_storage import normalize_upload_url, upload_dir, upload_url
-import json
+from app.utils.image_optimizer import InvalidImageError, optimize_image
+from app.utils.account_access import (
+    require_account_permission, is_account_admin, can_manage_account,
+    forbidden_account_action,
+)
+from app.utils.clinical_access import patient_access_error, user_role_value
 
 # Changed Blueprint name for clarity (e.g., if you also have an 'auth' blueprint)
 import logging
@@ -30,6 +36,7 @@ def _user_read_payload(user):
 
 @user_router.route("/", methods=['POST'])
 @require_auth
+@require_account_permission('ql-taikhoan')
 def create_user(current_user):
     """
     Creates a new user in the database.
@@ -37,6 +44,8 @@ def create_user(current_user):
     """
     db = next(get_db())
     try:
+        if not is_account_admin(current_user):
+            return forbidden_account_action()
         data = request.get_json()
         
         # Convert empty email string to None
@@ -82,6 +91,7 @@ def create_user(current_user):
 
 @user_router.route("/", methods=['GET'])
 @require_auth
+@require_account_permission('ql-taikhoan', 'ql-phanquyen')
 def read_users(current_user):
     """
     Retrieves a list of all users, with optional filtering by 'role'.
@@ -103,15 +113,23 @@ def read_users(current_user):
 
 @user_router.route("/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
 @require_auth
+@require_account_permission('ql-taikhoan')
 def read_user(current_user, user_id):
     """
     Retrieves a single user by their ID.
     """
     db = next(get_db())
     try:
-        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        query = db.query(UserModel).filter(UserModel.id == user_id)
+        if request.method != 'GET':
+            query = query.with_for_update()
+        user = query.first()
         if user is None:
             return jsonify({"detail": "User not found"}), 404, {'Content-Type': 'application/json; charset=utf-8'}
+        if request.method != 'GET' and not can_manage_account(current_user, user):
+            return forbidden_account_action()
+        if request.method == 'DELETE' and not is_account_admin(current_user):
+            return forbidden_account_action()
         
         if request.method == 'GET':
             # Return the user's data transformed by UserRead schema and include license_number if any
@@ -133,12 +151,22 @@ def read_user(current_user, user_id):
                                 user_json['license_certificate_original_filename'] = parts[0].split('/')[-1]
                         if doctor_profile.license_issue_date:
                             user_json['license_issue_date'] = doctor_profile.license_issue_date.isoformat()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning('Không đọc được hồ sơ bác sĩ của user %s: %s', user_id, exc)
             return jsonify(user_json), 200, {'Content-Type': 'application/json; charset=utf-8'}
         elif request.method == 'PUT':
             # Update user
             data = request.get_json()
+            if not isinstance(data, dict):
+                return jsonify(detail='Dữ liệu tài khoản không hợp lệ.'), 400
+            if any(key in data and type(data[key]) is not bool for key in ('is_active', 'can_view_all_patients')):
+                return jsonify(detail='Trạng thái tài khoản phải là giá trị đúng/sai.'), 400
+            if not is_account_admin(current_user):
+                protected_fields = ('role', 'is_active', 'can_view_all_patients')
+                if any(key in data and data[key] != getattr(user, key) for key in protected_fields) or data.get('password'):
+                    return forbidden_account_action()
+            if any(key in data and data[key] != getattr(user, key) for key in ('is_active', 'role', 'can_view_all_patients')) or data.get('password'):
+                revoke_account_sessions(user.id)
             
             # Update fields if provided
             if 'full_name' in data:
@@ -194,11 +222,15 @@ def read_user(current_user, user_id):
             return jsonify(UserRead.model_validate(user).model_dump()), 200, {'Content-Type': 'application/json; charset=utf-8'}
         elif request.method == 'DELETE':
             # Delete user (soft delete by setting is_active = False)
+            revoke_account_sessions(user.id)
             user.is_active = False
             db.commit()
             emit_catalog_changed('user_deleted', entity='user', entity_id=user_id, extra={'role': getattr(user.role, 'value', user.role)})
             return jsonify({"detail": "User deleted successfully"}), 200, {'Content-Type': 'application/json; charset=utf-8'}
             
+    except SessionStoreUnavailable:
+        db.rollback()
+        return jsonify(code='system.unavailable', detail='Chưa thể thu hồi phiên; tài khoản chưa được cập nhật.'), 503
     except Exception as e:
         db.rollback()
         logger.error(f"Error with user {user_id}: {e}")
@@ -209,9 +241,15 @@ def read_user(current_user, user_id):
 
 @user_router.route("/<int:user_id>/avatar", methods=['POST'])
 @require_auth
+@require_account_permission('ql-taikhoan')
 def upload_avatar(current_user, user_id):
     db = next(get_db())
     try:
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if not user:
+            return jsonify(detail='User không tồn tại'), 404
+        if not can_manage_account(current_user, user):
+            return forbidden_account_action()
         if 'file' not in request.files:
             return jsonify({'detail': 'Không có file'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         file = request.files['file']
@@ -224,14 +262,14 @@ def upload_avatar(current_user, user_id):
             return jsonify({'detail': 'Định dạng không hỗ trợ'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
 
         import uuid
+        try:
+            optimized, ext = optimize_image(file.read(), ext)
+        except InvalidImageError:
+            return jsonify({'detail': 'Tệp không phải ảnh hợp lệ'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         avatar_dir = upload_dir('avatars')
         filename = f"{uuid.uuid4().hex}.{ext}"
         save_path = avatar_dir / filename
-        file.save(save_path)
-
-        user = db.query(UserModel).filter(UserModel.id == user_id).first()
-        if not user:
-            return jsonify({'detail': 'User không tồn tại'}), 404, {'Content-Type': 'application/json; charset=utf-8'}
+        save_path.write_bytes(optimized)
 
         public_url = upload_url('avatars', filename)
         user.avatar = public_url
@@ -248,9 +286,15 @@ def upload_avatar(current_user, user_id):
 
 @user_router.route("/<int:user_id>/license-certificate", methods=['POST'])
 @require_auth
+@require_account_permission('ql-taikhoan')
 def upload_license_certificate(current_user, user_id):
     db = next(get_db())
     try:
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if not user:
+            return jsonify(detail='User không tồn tại'), 404
+        if not can_manage_account(current_user, user):
+            return forbidden_account_action()
         if 'file' not in request.files:
             return jsonify({'detail': 'Không có file'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         file = request.files['file']
@@ -261,10 +305,6 @@ def upload_license_certificate(current_user, user_id):
         ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
         if ext not in allowed:
             return jsonify({'detail': 'Định dạng không hỗ trợ. Chỉ chấp nhận: PDF, JPG, PNG, DOC, DOCX'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-
-        user = db.query(UserModel).filter(UserModel.id == user_id).first()
-        if not user:
-            return jsonify({'detail': 'User không tồn tại'}), 404, {'Content-Type': 'application/json; charset=utf-8'}
 
         # Chỉ cho phép với role doctor hoặc PSYCHOLOGIST
         if user.role not in ['doctor', 'DOCTOR', 'PSYCHOLOGIST']:
@@ -311,32 +351,14 @@ def get_current_user(user):
     """
     db = next(get_db())
     try:
-        # Lấy permissions của user
-        user_permissions = []
-        if user.role == UserRole.ADMIN:
-            user_permissions = ALL_PERMISSIONS
-        else:
-            groups = db.query(Group).join(UserGroup).filter(UserGroup.user_id == user.id).all()
-            for group in groups:
-                if group.permissions:
-                    try:
-                        group_perms = json.loads(group.permissions)
-                        if isinstance(group_perms, list):
-                            user_permissions.extend(group_perms)
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Could not decode permissions for group {group.name}: {e}")
-            user_permissions = list(set(user_permissions))  # Remove duplicates
-        
+        user = db.query(UserModel).filter(UserModel.id == user.id).first()
+        if not user or user.is_active is not True:
+            return jsonify(detail='Phiên đăng nhập không còn hiệu lực.'), 401
         user_data = {
-            'id': user.id,
-            'username': user.username,
-            'full_name': user.full_name,
-            'email': user.email,
+            **session_user_payload(user),
             'avatar': normalize_upload_url(user.avatar),
-            'role': user.role,
             'phone': user.phone,
             'is_active': user.is_active,
-            'permissions': user_permissions  # Thêm permissions
         }
         
         # Thêm license_number nếu có
@@ -345,10 +367,12 @@ def get_current_user(user):
                 doctor_profile = db.query(Doctor).filter(Doctor.user_id == user.id).first()
                 if doctor_profile and doctor_profile.license_number:
                     user_data['license_number'] = doctor_profile.license_number
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning('Không đọc được số chứng chỉ của user %s: %s', user.id, exc)
             
-        return jsonify(user_data), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        response = jsonify(user_data)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
     except Exception as e:
         logger.error(f"Error getting current user: {e}")
         return jsonify({"detail": "Failed to retrieve current user", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
@@ -360,31 +384,72 @@ def get_current_user(user):
 def change_current_user_password(current_user):
     db = next(get_db())
     try:
-        data = request.get_json(silent=True) or {}
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify(detail='Dữ liệu mật khẩu không hợp lệ.'), 400
         current_password = data.get('current_password') or data.get('currentPassword')
         new_password = data.get('new_password') or data.get('newPassword')
 
-        if not current_password or not new_password:
+        if not isinstance(current_password, str) or not isinstance(new_password, str) or not current_password or not new_password:
             return jsonify({'detail': 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
 
         if len(str(new_password)) < 6:
             return jsonify({'detail': 'Mật khẩu mới phải có ít nhất 6 ký tự'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
 
-        user = db.query(UserModel).filter(UserModel.id == current_user.id).first()
+        user = db.query(UserModel).filter(UserModel.id == current_user.id).with_for_update().first()
         if not user:
             return jsonify({'detail': 'Không tìm thấy tài khoản'}), 404, {'Content-Type': 'application/json; charset=utf-8'}
+
+        if not token_matches_user(request_access_token(), user):
+            return jsonify(detail='Phiên đăng nhập không còn hiệu lực.'), 401
 
         if not verify_password(current_password, user.hashed_password):
             return jsonify({'detail': 'Mật khẩu hiện tại không đúng'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
 
         user.hashed_password = get_password_hash(new_password)
+        cookie_mode = bool(browser_cookie_token())
+        replacement_token = create_access_token({'sub': user.username, **({'transport': 'cookie'} if cookie_mode else {})}, user=user)
         db.commit()
+        disconnect_user_clients(user.id)
 
-        return jsonify({'success': True, 'detail': 'Đổi mật khẩu thành công'}), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        payload = {'success': True, 'detail': 'Đổi mật khẩu thành công'}
+        if cookie_mode:
+            payload.update(browser_session_payload(replacement_token))
+            payload['user'] = session_user_payload(user)
+            return set_browser_session(jsonify(payload), replacement_token)
+        payload.update(access_token=replacement_token, token_type='bearer')
+        response = jsonify(payload)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except SessionStoreUnavailable:
+        db.rollback()
+        return jsonify(code='system.unavailable', detail='Chưa thể cập nhật phiên đăng nhập; mật khẩu chưa được lưu.'), 503
     except Exception as e:
         db.rollback()
         logger.error(f"Error changing password for user {getattr(current_user, 'id', None)}: {e}")
         return jsonify({'detail': 'Không thể đổi mật khẩu'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
+    finally:
+        db.close()
+
+
+TRANSFER_RECIPIENT_ROLES = {'doctor': UserRole.DOCTOR, 'psychologist': UserRole.PSYCHOLOGIST, 'staff': UserRole.STAFF}
+
+
+@user_router.route("/transfer-recipients", methods=['GET'])
+@require_auth
+def get_transfer_recipients(current_user):
+    """Minimal active recipients for the transfer workflow; full account data stays admin-only."""
+    role = TRANSFER_RECIPIENT_ROLES.get(str(request.args.get('role', '')).lower())
+    if role is None:
+        return jsonify({'detail': 'Nhóm nhận chuyển khám không hợp lệ'}), 400
+    db = next(get_db())
+    try:
+        actor = db.query(UserModel).filter(UserModel.id == current_user.id, UserModel.is_active.is_(True)).first()
+        if not actor or user_role_value(actor) not in {'admin', 'staff', 'doctor', 'psychologist'}:
+            return jsonify({'detail': 'Không có quyền chuyển khám'}), 403
+        people = db.query(UserModel).filter(UserModel.is_active.is_(True), UserModel.role == role,
+                                            UserModel.id != actor.id).order_by(UserModel.full_name, UserModel.id).all()
+        return jsonify([{'id': person.id, 'full_name': person.full_name, 'role': role.value} for person in people])
     finally:
         db.close()
 
@@ -445,6 +510,9 @@ def get_patient_by_id(current_user, patient_id):
     """
     db = next(get_db())
     try:
+        access_error = patient_access_error(db, current_user, patient_id)
+        if access_error:
+            return jsonify(detail=access_error), 403
         db_patient = db.query(PatientModel).filter(PatientModel.id == patient_id).first()
         if db_patient is None:
             return jsonify({"detail": "Patient not found"}), 404, {'Content-Type': 'application/json; charset=utf-8'}

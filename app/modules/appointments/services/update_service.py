@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+import logging
 import pytz
 
 from app.models.examination import Examination, ExaminationStatus, ExaminationType
@@ -33,6 +34,9 @@ from app.utils.allergy_contract import normalize_allergy_entries
 from app.utils.risk_assessment import normalize_risk_assessment, validate_risk_assessment
 from app.utils.referral_source import apply_referral_source
 from sqlalchemy import and_
+
+
+logger = logging.getLogger(__name__)
 
 
 class AppointmentAdminValidationError(Exception):
@@ -496,7 +500,8 @@ def apply_examination_vitals(examination, data):
             if field in NUMERIC_VITAL_FIELDS:
                 try:
                     value = float(value)
-                except Exception:
+                except (TypeError, ValueError):
+                    logger.warning('Bỏ qua sinh hiệu %s không phải số: %r', field, value)
                     continue
             setattr(examination, field, value)
             updated_any = True

@@ -15,7 +15,6 @@ import os
 import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
-import json
 from copy import deepcopy
 
 survey_templates_router = Blueprint('survey_templates', __name__)

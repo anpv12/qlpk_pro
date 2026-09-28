@@ -109,7 +109,7 @@ def download_template(user):
 def export_excel(user):
     """Xuất Excel chi tiêu có format"""
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
 
     db = next(get_db())
@@ -215,7 +215,6 @@ def export_excel(user):
                     # Chuyển string dd/mm/yyyy → Python date để Excel nhận thật sự là ngày
                     if val and isinstance(val, str):
                         try:
-                            from datetime import date as date_type
                             cell.value = datetime.strptime(val, '%d/%m/%Y').date()
                         except ValueError:
                             pass

@@ -31,3 +31,18 @@ class GoogleCalendarEvent(Base):
     
     appointment = relationship("Appointment", backref="google_calendar_event")
     user = relationship("User")
+
+
+class GoogleCalendarTransferJob(Base):
+    __tablename__ = 'google_calendar_transfer_jobs'
+
+    id = Column(Integer, primary_key=True)
+    appointment_id = Column(Integer, ForeignKey('appointments.id', ondelete='CASCADE'), nullable=False, index=True)
+    old_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    target_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    event_id = Column(String(255), nullable=False, unique=True)
+    attempts = Column(Integer, nullable=False, default=0, server_default='0')
+    next_attempt_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(String(80), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

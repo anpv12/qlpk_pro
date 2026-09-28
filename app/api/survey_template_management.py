@@ -1,19 +1,12 @@
-from flask import Blueprint, request, jsonify, current_app
-from sqlalchemy.orm import Session
+from flask import Blueprint, request, jsonify
 from app.core.database import SessionLocal
 from app.models.survey_template import SurveyTemplate
-from app.models.user import User
-from app.api.survey_templates import resolve_default_performer_id, validate_survey_name
+from app.api.survey_templates import validate_survey_name
 from app.utils.survey_scoring import normalize_survey_content, validate_survey_content
 from app.utils.survey_template_policy import require_survey_manager, survey_template_readiness
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalized_contains
-from typing import List, Optional
-import json
-import uuid
-from datetime import datetime
-import os
 
 router = Blueprint('survey_template_management', __name__)
 

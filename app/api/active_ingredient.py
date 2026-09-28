@@ -4,7 +4,6 @@ from app.models.active_ingredient import ActiveIngredient
 from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
-from sqlalchemy import or_
 import pandas as pd
 import io
 

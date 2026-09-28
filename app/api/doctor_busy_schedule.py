@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.core.database import get_db
 from app.models.doctor_busy_schedule import DoctorBusySchedule
-from app.models.user import User
 from app.api.auth import require_auth
 from app.realtime.events import emit_busy_schedule_changed, emit_notification_changed
 from app.modules.appointments.services.scheduling_conflict import (
@@ -219,8 +218,8 @@ def create_doctor_busy_schedule(current_user):
     finally:
         try:
             db.close()
-        except:
-            pass
+        except Exception as exc:
+            logger.warning('Không đóng được session DB: %s', exc)
 
 # Cập nhật lịch bận
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/<int:schedule_id>', methods=['PUT'])

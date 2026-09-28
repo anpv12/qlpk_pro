@@ -7,13 +7,21 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from google.auth.transport.requests import Request
 from app.core.database import get_db
 from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
 from app.models.appointment import Appointment, AppointmentStatus
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class CalendarEventRetired(Exception):
+    """The provider positively confirmed that an event identity is retired."""
+
+
+class CalendarVerificationUnavailable(Exception):
+    """The provider did not establish whether an event exists."""
+
 
 # Google Calendar API Scopes
 # Full calendar scope is required by validate/trace flows that read primary calendar info.
@@ -41,8 +49,8 @@ def _parse_google_token_error(response) -> str:
         error_code = payload.get('error')
         if error_code:
             return str(error_code)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug('Google Calendar error payload không phải JSON: %s', exc)
     return response.text or f'http_{response.status_code}'
 
 
@@ -125,33 +133,37 @@ class GoogleCalendarService:
         raise FileNotFoundError("credentials.json not found. Please place it in the project root.")
     
     @staticmethod
-    def get_authorization_url(redirect_uri: str) -> str:
-        """Tạo URL để user authorize Google Calendar"""
+    def get_authorization_url(redirect_uri: str, state: str) -> tuple:
+        """Return the Google consent URL and its PKCE verifier."""
         try:
             credentials_path = GoogleCalendarService.get_credentials_file_path()
             flow = Flow.from_client_secrets_file(
                 credentials_path,
                 scopes=SCOPES,
-                redirect_uri=redirect_uri
+                redirect_uri=redirect_uri,
+                autogenerate_code_verifier=True,
             )
             authorization_url, _ = flow.authorization_url(
                 access_type='offline',
-                prompt='consent'  # Force consent để lấy refresh token
+                prompt='consent',
+                state=state,
             )
-            return authorization_url
+            return authorization_url, flow.code_verifier
         except Exception as e:
-            logger.error(f"Error creating authorization URL: {e}")
+            logger.error('Error creating authorization URL: %s', type(e).__name__)
             raise
     
     @staticmethod
-    def exchange_code_for_token(code: str, redirect_uri: str) -> dict:
+    def exchange_code_for_token(code: str, redirect_uri: str, code_verifier: str) -> dict:
         """Đổi authorization code lấy access token và refresh token"""
         try:
             credentials_path = GoogleCalendarService.get_credentials_file_path()
             flow = Flow.from_client_secrets_file(
                 credentials_path,
                 scopes=SCOPES,
-                redirect_uri=redirect_uri
+                redirect_uri=redirect_uri,
+                code_verifier=code_verifier,
+                autogenerate_code_verifier=False,
             )
             flow.fetch_token(code=code)
             credentials = flow.credentials
@@ -162,7 +174,7 @@ class GoogleCalendarService:
                 'expires_at': credentials.expiry
             }
         except Exception as e:
-            logger.error(f"Error exchanging code for token: {e}")
+            logger.error('Error exchanging code for token: %s', type(e).__name__)
             raise
     
     @staticmethod
@@ -385,12 +397,50 @@ class GoogleCalendarService:
             return None
     
     @staticmethod
+    def upsert_transfer_event(appointment, connection, event_id) -> bool:
+        """Retry a committed transfer with the same provider-side event identity."""
+        try:
+            import httplib2
+            from google_auth_httplib2 import AuthorizedHttp
+
+            credentials = GoogleCalendarService.get_valid_credentials(connection)
+            if not credentials:
+                return False
+            service = build('calendar', 'v3', http=AuthorizedHttp(credentials, http=httplib2.Http(timeout=15)))
+            event = GoogleCalendarService.build_event_payload(appointment)
+            marker = {'qlpk_transfer_event': event_id, 'qlpk_appointment_id': str(appointment.id)}
+            event['extendedProperties'] = {'private': marker}
+            try:
+                service.events().insert(calendarId='primary', body={**event, 'id': event_id}).execute()
+            except HttpError as error:
+                if error.resp.status != 409:
+                    raise
+                try:
+                    existing = service.events().get(calendarId='primary', eventId=event_id).execute()
+                except HttpError as get_error:
+                    if get_error.resp.status == 410:
+                        raise CalendarEventRetired() from get_error
+                    raise
+                if existing.get('status') == 'cancelled':
+                    raise CalendarEventRetired()
+                if existing.get('extendedProperties', {}).get('private') != marker:
+                    return False
+                service.events().patch(calendarId='primary', eventId=event_id, body=event).execute()
+            return True
+        except CalendarEventRetired:
+            raise
+        except Exception:
+            logger.warning('Google Calendar transfer event remains pending for appointment %s', appointment.id)
+            return False
+
+    @staticmethod
     def update_event(
         appointment: Appointment,
         calendar_event: GoogleCalendarEvent,
-        connection: GoogleCalendarConnection
-    ) -> bool:
-        """Cập nhật event trên Google Calendar"""
+        connection: GoogleCalendarConnection,
+        *, report_missing=False,
+    ) -> Optional[bool]:
+        """Update an event; report_missing opts into None for confirmed absence."""
         try:
             credentials = GoogleCalendarService.get_valid_credentials(connection)
             if not credentials:
@@ -405,17 +455,20 @@ class GoogleCalendarService:
                     eventId=calendar_event.event_id
                 ).execute()
             except HttpError as get_error:
-                if get_error.resp.status == 404:
+                if get_error.resp.status in (404, 410):
                     # Event không tồn tại trên Google Calendar (có thể đã bị xóa thủ công)
                     # KHÔNG tạo mới ở đây vì không có DB session để commit
                     # Thay vào đó, log warning và return False
                     # Caller sẽ xử lý logic tạo mới nếu cần
                     logger.warning(f"Google Calendar event {calendar_event.event_id} not found (may have been deleted)")
-                    return False
+                    return None if report_missing else False
                 else:
                     # Lỗi khác (không phải 404)
                     raise
             
+            if event.get('status') == 'cancelled':
+                return None if report_missing else False
+
             # Sử dụng helper để tạo event payload (DRY)
             # Merge với event hiện tại để giữ lại các field của Google
             new_payload = GoogleCalendarService.build_event_payload(appointment)
@@ -463,7 +516,7 @@ class GoogleCalendarService:
             
         except HttpError as error:
             # Nếu event đã bị xóa rồi, coi như thành công
-            if error.resp.status == 404:
+            if error.resp.status in (404, 410):
                 logger.warning(f"Google Calendar event {calendar_event.event_id} not found (may have been deleted)")
                 return True
             logger.error(f'Error deleting Google Calendar event: {error}')
@@ -475,16 +528,16 @@ class GoogleCalendarService:
     @staticmethod
     def verify_event(
         event_id: str,
-        connection: GoogleCalendarConnection
+        connection: GoogleCalendarConnection,
+        *, strict=False,
     ) -> bool:
-        """
-        Verify event thực sự tồn tại trên Google Calendar của user.
-        Trả về True nếu event tồn tại, False nếu không.
-        """
+        """Verify existence; strict mode raises when absence cannot be established."""
         try:
             credentials = GoogleCalendarService.get_valid_credentials(connection)
             if not credentials:
                 logger.warning(f"Cannot get credentials to verify event {event_id}")
+                if strict:
+                    raise CalendarVerificationUnavailable()
                 return False
             
             service = build('calendar', 'v3', credentials=credentials)
@@ -504,13 +557,17 @@ class GoogleCalendarService:
                 return True
                 
             except HttpError as error:
-                if error.resp.status == 404:
+                if error.resp.status in (404, 410):
                     logger.info(f"Event {event_id} not found on Google Calendar")
                     return False
                 else:
                     logger.error(f"Error verifying event {event_id}: {error}")
+                    if strict:
+                        raise CalendarVerificationUnavailable() from error
                     return False
                     
         except Exception as e:
             logger.error(f'Unexpected error verifying Google Calendar event: {e}')
+            if strict:
+                raise CalendarVerificationUnavailable('Chưa xác minh được lịch Google; liên kết được giữ để thử lại.') from e
             return False

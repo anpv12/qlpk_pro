@@ -437,8 +437,8 @@ def get_ward_by_name():
     finally:
         try:
             db.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning('Không đóng được session DB: %s', exc)
 
 @vietnam_address_bp.route('/vietnam-address/import-data', methods=['POST'])
 @require_auth

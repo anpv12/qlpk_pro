@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 medicine_router = Blueprint('medicine', __name__)
 
 
+def latest_batch_of(batches):
+    return max(batches, key=lambda batch: (
+        batch.import_date,
+        batch.created_at or datetime.min.replace(tzinfo=timezone.utc),
+        batch.id,
+    ), default=None)
+
+
 @medicine_router.route('/medicine/statistics/ledger', methods=['GET'])
 @require_auth
 def get_dispensing_ledger(user):
@@ -120,12 +128,6 @@ def get_medicines(user):
         # `latest_batch_pricing` phải cùng thứ tự ưu tiên với GET một thuốc
         # (import_date -> created_at -> id, mới nhất trước) để "Giá nhập"
         # trên bảng danh sách và trên form khớp nhau.
-        def latest_batch_of(batches):
-            if not batches:
-                return None
-            return max(batches, key=lambda b: (
-                b.import_date, b.created_at or datetime.min.replace(tzinfo=timezone.utc), b.id))
-
         # Convert to dict & computed filters
         medicines_data = []
         for medicine in medicines:
@@ -1242,10 +1244,7 @@ def get_statistics_inventory(user):
             export_qty = dispensed_map.get(med.id, 0)
             
             # Get latest batch info
-            latest_batch = None
-            if med.batches:
-                sorted_batches = sorted(med.batches, key=lambda b: b.expiry_date or date.min, reverse=True)
-                latest_batch = sorted_batches[0] if sorted_batches else None
+            latest_batch = latest_batch_of(med.batches)
             
             # Determine status
             status = 'Đủ hàng'
@@ -1259,11 +1258,8 @@ def get_statistics_inventory(user):
             type_map = {'BASIC': 'Cơ bản', 'H': 'Thuốc H', 'N': 'Thuốc N', 'TOXIC': 'Thuốc độc'}
             
             # Get import price from latest batch or medicine
-            import_price = 0
-            if latest_batch and latest_batch.import_price:
-                import_price = float(latest_batch.import_price)
-            elif med.import_price:
-                import_price = float(med.import_price)
+            import_price = (float(latest_batch.import_price)
+                            if latest_batch and latest_batch.import_price is not None else None)
             
             data.append({
                 'id': med.id,
@@ -1274,8 +1270,8 @@ def get_statistics_inventory(user):
                 'import_price': import_price,
                 'unit_price': float(med.unit_price) if med.unit_price else 0,
 
-                'export_quantity': int(export_qty),
-                'stock_quantity': int(stock_qty),
+                'export_quantity': export_qty,
+                'stock_quantity': stock_qty,
                 'batch_number': latest_batch.batch_number if latest_batch else '-',
                 'expiry_date': latest_batch.expiry_date.strftime('%d/%m/%Y') if latest_batch and latest_batch.expiry_date else '-',
                 'status': status
@@ -1289,8 +1285,8 @@ def get_statistics_inventory(user):
             'success': True,
             'summary': {
 
-                'total_export': int(total_export),
-                'total_stock': int(total_stock)
+                'total_export': total_export,
+                'total_stock': total_stock
             },
             'medicines': data
         }), 200
@@ -1789,20 +1785,14 @@ def export_statistics_excel(user):
             stock_qty = float(med.stock_quantity) if med.stock_quantity else 0
             export_qty = dispensed_map.get(med.id, 0)
             
-            latest_batch = None
-            if med.batches:
-                sorted_batches = sorted(med.batches, key=lambda b: b.expiry_date or date.min, reverse=True)
-                latest_batch = sorted_batches[0] if sorted_batches else None
+            latest_batch = latest_batch_of(med.batches)
             
             status = 'Đủ hàng'
             if med.low_stock_threshold and stock_qty <= med.low_stock_threshold:
                 status = 'Cần nhập' if stock_qty == 0 else 'Sắp hết'
             
-            import_price = 0
-            if latest_batch and latest_batch.import_price:
-                import_price = float(latest_batch.import_price)
-            elif med.import_price:
-                import_price = float(med.import_price)
+            import_price = (float(latest_batch.import_price)
+                            if latest_batch and latest_batch.import_price is not None else None)
             
             expiry = latest_batch.expiry_date.strftime('%d/%m/%Y') if latest_batch and latest_batch.expiry_date else '-'
             
@@ -1812,8 +1802,8 @@ def export_statistics_excel(user):
                 type_map.get(med.prescription_type, 'Cơ bản'),
                 import_price,
                 float(med.unit_price) if med.unit_price else 0,
-                int(export_qty),
-                int(stock_qty),
+                export_qty,
+                stock_qty,
                 expiry,
                 status
             ]

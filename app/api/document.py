@@ -1,13 +1,11 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
-from sqlalchemy import exc
 from app.core.database import SessionLocal
 from app.models.document_folder import DocumentFolder
 from app.models.document import Document
 from app.api.auth import require_auth
 from app.realtime.events import emit_document_changed
 from app.services.drive_service import DriveService
-import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -291,7 +289,7 @@ def delete_document(current_user, doc_id):
             try:
                 drive_service = DriveService()
                 drive_service.delete_file(doc.google_drive_file_id)
-            except Exception as e:
+            except Exception:
                 logger.exception("Lỗi không thể xóa file trên Drive")
                 # Vẫn tiếp tục xóa trong DB để tránh rác
                 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.realtime.socket import emit_realtime_event
+from app.realtime.socket import emit_realtime_event, disconnect_user_clients
 
 
 def _enum_value(value):
@@ -186,6 +186,12 @@ def emit_patient_changed(action="changed", patient=None, patient_id=None, appoin
 
 
 def emit_catalog_changed(action="changed", entity=None, entity_id=None, extra=None, rooms=None):
+    if entity == 'group' and action in {'group_updated', 'group_deleted'}:
+        disconnect_user_clients()
+    elif entity == 'user_group':
+        disconnect_user_clients((extra or {}).get('user_id'))
+    elif entity == 'user' and action in {'user_updated', 'user_deleted'}:
+        disconnect_user_clients(entity_id)
     payload = {
         "action": action,
         "entity": entity,
@@ -313,10 +319,13 @@ def emit_notification_changed(action="changed", user_id=None, role=None, extra=N
     payload = {"action": action, "user_id": user_id, "role": role}
     if extra:
         payload.update(extra)
-    target_rooms = list(rooms or [])
+    target_rooms = []
     if user_id:
         target_rooms.append(f"user:{user_id}")
-    if role:
-        target_rooms.append(f"role:{role}")
-    target_rooms.append("workflow:operations")
+    elif role:
+        normalized_role = str(getattr(role, 'value', role)).lower()
+        if normalized_role in {'admin', 'staff', 'doctor', 'psychologist'}:
+            target_rooms.append(f'role:{normalized_role}')
+    if not target_rooms:
+        return
     emit_realtime_event("notification.changed", payload, rooms=list(dict.fromkeys(target_rooms)))

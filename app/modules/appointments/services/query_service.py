@@ -7,7 +7,7 @@ import urllib.parse
 
 import pytz
 
-from sqlalchemy import case, desc, func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import joinedload
 
 from app.models.appointment import Appointment, AppointmentStatus

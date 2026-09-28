@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.supplier import Supplier
 from app.api.auth import require_auth

@@ -11,7 +11,7 @@ No legacy movement is inferred from display text or medicine names.
 """
 
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from uuid import uuid4
 

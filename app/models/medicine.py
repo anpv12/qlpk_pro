@@ -1,8 +1,12 @@
+import logging
 from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, Boolean, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+logger = logging.getLogger(__name__)
 
 
 class Medicine(Base):
@@ -96,8 +100,8 @@ class Medicine(Base):
         try:
             if self.batches:
                 batch_count = len(self.batches)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning('Không đếm được số lô của thuốc %s: %s', getattr(self, 'id', None), exc)
 
         return {
             'id': self.id,

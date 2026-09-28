@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.package import Package
-from app.schemas.package import PackageCreate, PackageUpdate, PackageRead
+from app.schemas.package import PackageCreate, PackageUpdate
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 
