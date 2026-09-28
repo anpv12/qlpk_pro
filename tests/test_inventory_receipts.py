@@ -39,7 +39,7 @@ def case(monkeypatch):
                 yield child
             for module in (auth, medicines, batches, ledger):
                 monkeypatch.setattr(module, 'get_db', scoped_db)
-            for module in (medicines, batches, ledger):
+            for module in (medicines, batches):
                 monkeypatch.setattr(module, 'emit_inventory_changed', lambda *args, **kwargs: None)
             monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin'))
             app = Flask(__name__)

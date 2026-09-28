@@ -30,7 +30,6 @@ REQUIRED_ADAPTERS = (
     "app/static/js/utils.js",
     "app/static/js/doctor-examination/page-runtime.js",
     "app/static/js/receptionist/page-core-utils.js",
-    "app/static/js/patient-search-modal-dry.js",
     "app/static/js/appointment-management/feedback-utils.js",
     "app/static/js/order-management.js",
     "app/static/js/payment-waiting.js",

@@ -7,6 +7,13 @@ const css = fs.readFileSync('app/static/css/pages/doctor-prescription.css', 'utf
 const template = fs.readFileSync('app/templates/partials/doctor-clinical-workspace.html', 'utf8');
 const rule = selector => css.slice(css.indexOf(`${selector} {`)).split('}')[0];
 
+test('treatment days and unit form a centered group inside the control', () => {
+    assert.match(rule('.doctor-prescription-summary-field__input-line'), /justify-content: center/);
+    assert.match(rule('.doctor-prescription-summary-field__input-line input'), /text-align: center/);
+    assert.match(rule('.doctor-prescription-summary-field__input-line input'), /flex: 0 1 3ch/);
+    assert.match(rule('.doctor-prescription-summary-field__input-line small'), /padding-inline-end: 0/);
+});
+
 test('context labels keep intrinsic width and controls share a height owner', () => {
     assert.match(rule('.doctor-prescription-overview'), /grid-template-columns: max-content max-content minmax\(0, 1fr\)/);
     assert.match(rule('.doctor-prescription-summary-field'), /grid-template-columns: max-content minmax\(0, 1fr\)/);

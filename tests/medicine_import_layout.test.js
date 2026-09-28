@@ -8,16 +8,20 @@ const vm = require('node:vm');
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
 const actions = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/button-actions.css'), 'utf8');
-test('missing-price action keeps edit semantics and uses neutral shared presentation', () => {
+test('missing-price action keeps edit semantics with approved red tokens and standard font size', () => {
     const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
     assert.match(source, /supplement\.dataset\.qlpkButton = 'edit'/);
     assert.match(source, /supplement\.dataset\.qlpkButtonVariant = 'solid'/);
-    assert.match(actions, /\[data-qlpk-button\]\s*\{[^}]*--qlpk-action-color: var\(--qlpk-action-secondary-bg\)/);
+    const badge = css.match(/\.mm-missing-price-badge:is\(:hover, :focus-visible, :active\)\s*\{([^}]+)\}/)?.[1];
+    assert.ok(badge);
+    assert.match(badge, /--qlpk-action-color: var\(--qlpk-button-danger-bg\)/);
+    assert.match(badge, /font-size: var\(--qlpk-font-size-md\)/);
+    assert.match(badge, /--qlpk-action-hover: var\(--qlpk-button-danger-hover\)/);
 });
 test('import column headings are centered without changing value alignment', () => {
-    assert.match(css, /#batchImportTable thead th\s*\{[^}]*text-align: center/);
-    assert.doesNotMatch(css, /#batchImportTable :is\(th, td\):nth-child\(7\)/);
-    assert.match(css, /#batchImportTable td:nth-child\(7\),[\s\S]*?text-align: right/);
+    assert.match(css, /\.qlpk-batch-import-table thead th\s*\{[^}]*text-align: center/);
+    assert.doesNotMatch(css, /\.qlpk-batch-import-table :is\(th, td\):nth-child\(7\)/);
+    assert.match(css, /\.qlpk-batch-import-table td:nth-child\(7\),[\s\S]*?text-align: right/);
 });
 test('import actions delegate interactive color to the shared semantic owner', () => {
     assert.match(actions, /transition-property: background-color/);
@@ -26,7 +30,7 @@ test('import actions delegate interactive color to the shared semantic owner', (
     assert.match(actions, /--bs-btn-disabled-color: var\(--qlpk-button-disabled-text\)/);
 });
 test('dispensing filters share control geometry without changing focus or global controls', () => {
-    const controls = css.match(/#receiptDispensingFilters :is\(\.form-control, \.form-select, \.btn\)\s*\{([^}]+)\}/)?.[1];
+    const controls = css.match(/\.qlpk-receipt-dispensing-filters :is\(\.form-control, \.form-select, \.btn\)\s*\{([^}]+)\}/)?.[1];
     assert.ok(controls);
     for (const rule of ['min-height: 36px', 'padding: 6px 10px', 'border-width: 1px',
         'border-radius: var(--clinic-control-radius)', 'font-size: var(--clinic-control-font-size)',
@@ -34,10 +38,10 @@ test('dispensing filters share control geometry without changing focus or global
         assert.ok(controls.includes(rule), rule);
     }
     assert.doesNotMatch(controls, /outline:|box-shadow:|(?:^|;)\s*height:/);
-    assert.match(css, /#receiptDispensingFilters \.form-select\s*\{\s*padding-right: 2.25rem/);
+    assert.match(css, /\.qlpk-receipt-dispensing-filters \.form-select\s*\{\s*padding-right: 2.25rem/);
 });
 const importMarkup = template.slice(template.indexOf('id="importBatchModal"'), template.indexOf('<!-- Modal Quản lý Nhà cung cấp -->'));
-const importStyles = css.slice(css.indexOf('.medicine-management-page #importBatchModal .modal-dialog'), css.indexOf('.medicine-management-page .mm-scroll-100vh-400'));
+const importStyles = css.slice(css.indexOf('.medicine-management-page .modal.qlpk-import-batch-modal .modal-dialog'), css.indexOf('.medicine-management-page .mm-scroll-100vh-400'));
 
 test('receipt metadata shares readable regular text and left alignment without changing field ownership', () => {
     assert.match(css, /\.mm-import-fields\s*\{[^}]*--clinic-control-font-size:\s*var\(--qlpk-font-size-md\);[^}]*--qlpk-control-font-weight:\s*var\(--qlpk-font-weight-regular\)/);
@@ -49,7 +53,7 @@ test('receipt metadata shares readable regular text and left alignment without c
 });
 
 test('the inventory palette reuses shared brand tokens within the import modal', () => {
-    const palette = css.match(/\.medicine-management-page #importBatchModal\s*\{([^}]+)\}/)?.[1];
+    const palette = css.match(/\.medicine-management-page \.modal\.qlpk-import-batch-modal\s*\{([^}]+)\}/)?.[1];
     assert.ok(palette);
     const colors = {
         '--qlpk-color-page-bg': 'var(--qlpk-color-surface-warm)',
@@ -79,8 +83,8 @@ test('import colors distinguish active tabs, neutral actions, focus and monetary
     assert.match(importStyles, /\.mm-import-footer\s*\{[^}]*background:\s*var\(--qlpk-color-surface-muted\)/);
     assert.match(importStyles, /\.mm-import-tab\.is-active\s*\{[^}]*color:\s*var\(--qlpk-color-primary\);[^}]*border-top-color:\s*var\(--qlpk-color-primary\)/);
     assert.match(actions, /--qlpk-action-secondary-bg: var\(--qlpk-button-secondary-bg\)/);
-    assert.match(css, /#importBatchModal :is\(\.form-control, \.form-select\):focus[^{}]*\{[^}]*border-color:\s*var\(--qlpk-color-primary\);[^}]*box-shadow:\s*var\(--mm-import-focus-shadow\)/);
-    for (const selector of ['.batch-row-total', '.lot-value', '#batchTotalValue']) {
+    assert.match(css, /\.modal\.qlpk-import-batch-modal :is\(\.form-control, \.form-select\):focus[^{}]*\{[^}]*border-color:\s*var\(--qlpk-color-primary\);[^}]*box-shadow:\s*var\(--mm-import-focus-shadow\)/);
+    for (const selector of ['.batch-row-total', '.lot-value', '.qlpk-batch-total-value']) {
         const rule = importStyles.slice(importStyles.indexOf(selector));
         assert.match(rule.slice(0, rule.indexOf('}')), /color:\s*var\(--mm-import-amount\)/);
     }
@@ -100,17 +104,17 @@ test('import modal allocates viewport height through dialog, content, body and t
 });
 
 test('desktop order pane gives the table remaining height without stretching header or footer', () => {
-    assert.match(importStyles, /#importBatchModal \.modal-body\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden/);
-    assert.match(importStyles, /#importOrderPane > :not\(\.mm-import-list\)\s*\{[^}]*flex-shrink:\s*0/);
+    assert.match(importStyles, /\.modal\.qlpk-import-batch-modal \.modal-body\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden/);
+    assert.match(importStyles, /\.qlpk-import-order-pane > :not\(\.mm-import-list\)\s*\{[^}]*flex-shrink:\s*0/);
     for (const selector of ['mm-import-list', 'mm-import-table-scroll']) {
         assert.match(importStyles, new RegExp(`\\.${selector}\\s*\\{[^}]*flex:\\s*1 1 auto`));
     }
-    assert.match(importStyles, /:is\(#batchNote, #batchLotBreakdown\)\s*\{[^}]*height:\s*3.5rem;[^}]*overflow-y:\s*auto/);
+    assert.match(importStyles, /:is\(\.qlpk-batch-note, \.qlpk-batch-lot-breakdown\)\s*\{[^}]*height:\s*3.5rem;[^}]*overflow-y:\s*auto/);
 });
 
 test('note and lot columns share one label-above-box pattern that stays aligned', () => {
     assert.match(importMarkup, /mm-import-lots">\s*<h6 class="form-label">/);
-    assert.match(importMarkup, /id="batchLotBreakdown" class="mm-import-lot-list"/);
+    assert.match(importMarkup, /id="batchLotBreakdown" class="mm-import-lot-list[^"]*"/);
     assert.match(importStyles, /\.mm-import-support > \*\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column/);
     assert.match(importStyles, /\.mm-import-support\s*\{[^}]*align-items:\s*end/);
     assert.match(importStyles, /\.mm-import-support \.form-label\s*\{\s*margin:\s*0 0 .375rem;\s*line-height:\s*var\(--qlpk-line-height-normal\)/);
@@ -120,7 +124,7 @@ test('note and lot columns share one label-above-box pattern that stays aligned'
 });
 
 test('note and lot boxes share height, padding and scrolling without independent resize limits', () => {
-    const controls = importStyles.match(/\.mm-import-support :is\(#batchNote, #batchLotBreakdown\)\s*\{([^}]+)\}/)?.[1];
+    const controls = importStyles.match(/\.mm-import-support :is\(\.qlpk-batch-note, \.qlpk-batch-lot-breakdown\)\s*\{([^}]+)\}/)?.[1];
     assert.ok(controls);
     assert.match(controls, /box-sizing:\s*border-box/);
     assert.match(controls, /flex:\s*0 0 auto/);
@@ -128,7 +132,7 @@ test('note and lot boxes share height, padding and scrolling without independent
     assert.match(controls, /padding:\s*.375rem .625rem/);
     assert.match(controls, /overflow-y:\s*auto/);
     assert.match(controls, /line-height:\s*var\(--qlpk-line-height-normal\)/);
-    assert.match(importStyles, /#batchNote\s*\{\s*resize:\s*none/);
+    assert.match(importStyles, /\.qlpk-batch-note\s*\{\s*resize:\s*none/);
     assert.doesNotMatch(importStyles, /#(?:batchNote|batchLotBreakdown)\s*\{[^}]*max-height:/);
 });
 
@@ -137,28 +141,28 @@ test('quantity unit stays inline with its input and rows align on one middle axi
     const renderer = source.slice(source.indexOf('function addBatchImportRow('), source.indexOf('function validateBatchNumber('));
     assert.match(renderer, /mm-import-qty">\s*<input[^>]*batch-quantity[^>]*>\s*<small class="batch-unit">/);
     assert.match(importStyles, /\.mm-import-qty\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center/);
-    assert.match(importStyles, /#batchImportTable :is\(th, td\)\s*\{[^}]*vertical-align:\s*middle/);
-    assert.doesNotMatch(importStyles, /#batchImportTable :is\(th, td\)\s*\{[^}]*vertical-align:\s*top/);
+    assert.match(importStyles, /\.qlpk-batch-import-table :is\(th, td\)\s*\{[^}]*vertical-align:\s*middle/);
+    assert.doesNotMatch(importStyles, /\.qlpk-batch-import-table :is\(th, td\)\s*\{[^}]*vertical-align:\s*top/);
     assert.doesNotMatch(importStyles, /\.batch-unit\s*\{[^}]*display:\s*block/);
     assert.match(importStyles, /\.mm-import-total\s*\{[^}]*align-items:\s*baseline/);
 });
 
 test('narrow and short layouts scroll the body without hiding input rows or footer actions', () => {
-    assert.match(importStyles, /#importBatchModal \.modal-body\s*\{[^}]*padding:\s*0/);
+    assert.match(importStyles, /\.modal\.qlpk-import-batch-modal \.modal-body\s*\{[^}]*padding:\s*0/);
     assert.match(importStyles, /\.mm-import-pane\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden/);
     assert.match(importStyles, /\.mm-import-table-scroll\s*\{[^}]*overflow:\s*auto/);
-    assert.match(css, /#batchImportTable\s*\{[^}]*min-width:\s*1100px/);
+    assert.match(css, /\.qlpk-batch-import-table\s*\{[^}]*min-width:\s*1100px/);
     assert.match(importStyles, /\.mm-import-toolbar\s*\{[^}]*flex-wrap:\s*wrap/);
     assert.match(importStyles, /\.mm-import-toolbar\s*\{[^}]*flex-shrink:\s*0/);
     const compactStyles = importStyles.slice(importStyles.indexOf('@media (max-width: 47.99rem), (max-height: 44.99rem)'));
-    assert.match(compactStyles, /#importBatchModal \.modal-body\s*\{\s*overflow-y:\s*auto/);
-    assert.match(compactStyles, /#importBatchModal \.mm-import-pane\s*\{\s*flex:\s*1 0 auto;\s*overflow:\s*visible/);
+    assert.match(compactStyles, /\.modal\.qlpk-import-batch-modal \.modal-body\s*\{\s*overflow-y:\s*auto/);
+    assert.match(compactStyles, /\.modal\.qlpk-import-batch-modal \.mm-import-pane\s*\{\s*flex:\s*1 0 auto;\s*overflow:\s*visible/);
     assert.match(compactStyles, /:is\(\.mm-import-list, \.mm-import-table-scroll, \.mm-import-ledger-scroll\)\s*\{\s*flex:\s*0 0 auto/);
 });
 
 test('import workspace has a bounded white table surface, balanced columns and one total in the action footer', () => {
     assert.match(importStyles, /\.mm-import-list\s*\{[^}]*border:[^}]*background:\s*var\(--qlpk-color-surface\)/);
-    assert.match(importStyles, /#batchImportTable\s*\{[^}]*table-layout:\s*fixed/);
+    assert.match(importStyles, /\.qlpk-batch-import-table\s*\{[^}]*table-layout:\s*fixed/);
     assert.match(importStyles, /th:nth-child\(1\)\s*\{\s*width:\s*26%/);
     assert.doesNotMatch(importMarkup, /alert-info|justify-content-center|mm-w-180/);
     const footer = importMarkup.slice(importMarkup.indexOf('class="modal-footer'));
@@ -225,8 +229,8 @@ test('Nhập kho modal has two tabs and no longer has the old Chi tiết tồn k
     assert.match(importMarkup, /class="mm-import-tabs" role="tablist"/);
     assert.match(importMarkup, /id="importTabOrder" role="tab"[^]*aria-selected="true" aria-controls="importOrderPane"/);
     assert.match(importMarkup, /id="importTabLedger" role="tab"[^]*aria-selected="false" aria-controls="importLedgerPane"/);
-    assert.match(importMarkup, /id="importOrderPane" class="mm-import-pane" role="tabpanel"/);
-    assert.match(importMarkup, /id="importLedgerPane" class="mm-import-pane" role="tabpanel"[^]*hidden/);
+    assert.match(importMarkup, /id="importOrderPane" class="mm-import-pane[^"]*" role="tabpanel"/);
+    assert.match(importMarkup, /id="importLedgerPane" class="mm-import-pane[^"]*" role="tabpanel"[^]*hidden/);
     assert.match(importMarkup, /id="importLedgerSearch"/);
     assert.match(importMarkup, /id="importLedgerStatus"/);
     assert.match(importMarkup, /id="importLedgerTableBody"/);
@@ -239,7 +243,7 @@ test('both tabs share the same viewport-height dialog and each pane fills the re
     assert.match(importStyles, /\.mm-import-tab\.is-active\s*\{[^}]*background:\s*var\(--qlpk-color-surface\)/);
     assert.match(importStyles, /\.mm-import-pane\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden/);
     assert.match(importStyles, /\.mm-import-pane\[hidden\]\s*\{[^}]*display:\s*none/);
-    assert.match(importStyles, /#importLedgerPane \.mm-import-ledger-toolbar,\s*\n\.medicine-management-page #importLedgerPane \.mm-import-ledger-pager\s*\{[^}]*flex-shrink:\s*0/);
+    assert.match(importStyles, /\.qlpk-import-ledger-pane \.mm-import-ledger-toolbar,\s*\n\.medicine-management-page \.qlpk-import-ledger-pane \.mm-import-ledger-pager\s*\{[^}]*flex-shrink:\s*0/);
     assert.match(importStyles, /\.mm-import-ledger-scroll\s*\{[^}]*flex:\s*1 1 auto;[^}]*overflow:\s*auto/);
     assert.doesNotMatch(importStyles, /mm-import-ledger-toggle|mm-import-ledger-body/);
 });

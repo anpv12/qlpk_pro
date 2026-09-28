@@ -58,7 +58,13 @@ test('secondary buttons stay neutral on hover and no decorative borders return',
 
 test('medicine buttons keep non-action badges and navigation outside action colors', () => {
     const source = read('app/static/js/medicine-management.js');
-    assert.match(source, /<button data-qlpk-button="view"[^>]*showStockDetail/);
+    const stockBadge = source.match(/<button\b[^>]*onclick="showStockDetail\([^>]*>/)?.[0];
+    assert.ok(stockBadge);
+    assert.match(stockBadge, /type="button"/);
+    assert.match(stockBadge, /class="badge stock-detail-badge"/);
+    assert.match(stockBadge, /aria-label="[^"]+"/);
+    assert.doesNotMatch(stockBadge, /data-qlpk-button/);
+    assert.match(read('references/ui/button-system.md'), /badge số lần nhập[\s\S]*không gắn data-qlpk-button/);
     assert.match(source, /<button data-qlpk-button="edit"[^>]*editMedicine/);
     assert.match(source, /supplement\.dataset\.qlpkButton = 'edit'/);
     assert.doesNotMatch(source, /<button data-qlpk-button=[^>]*mm-reference-button/);

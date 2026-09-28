@@ -40,7 +40,6 @@ CLASSIC_SHARED_ASSETS = {
     "/static/js/app-version-check.js",
     "/static/js/flatpickr-vn.js",
     "/static/js/datepicker-init.js",
-    "/static/js/permission-check.js",
     "/static/js/shared/icon-system.js",
     "/static/js/shared/confirmation-dialog.js",
     "/static/js/sidebar-dry-loader.js",
@@ -73,6 +72,8 @@ REGISTRY_OWNERS = {
     "workspaceSaveController": "app/static/js/doctor-examination/workspace-save-controller.js",
     "clinicalWorkspace": "app/static/js/doctor-examination/clinical-workspace-ui.js",
     "draftRecovery": "app/static/js/doctor-examination/draft-recovery.js",
+    "draftRecoveryPolicy": "app/static/js/doctor-examination/draft-recovery-policy.js",
+    "draftRecoveryStore": "app/static/js/doctor-examination/draft-recovery-store.js",
     "documentAttachments": "app/static/js/doctor-examination/document-attachments-bridge.js",
     "medicalHistoryBridge": "app/static/js/doctor-examination/medical-history-bridge.js",
     "workspaceLeaveGuard": "app/static/js/doctor-examination/workspace-leave-guard.js",
@@ -360,7 +361,10 @@ def main() -> int:
         "setSurveySelection(doc, item)",
         "STATE.surveyIndex = buildSurveyIndex(STATE.surveyTemplates);",
         "const hasSelectedSurvey = Boolean(selectedSurveyId && selectedSurveyName && typedName === selectedSurveyName);",
-        "const source = hasSelectedSurvey ? 'survey' : 'custom';",
+        "source: hasSelectedSurvey ? 'survey' : 'custom'",
+        "surveyTemplateId: hasSelectedSurvey ? selectedSurveyId : null",
+        "survey_template_id: survey.surveyTemplateId",
+        "source: survey.source",
     ):
         if marker not in indications_runtime:
             failures.append(f"Doctor indication source/autocomplete thiếu runtime contract: {marker}")
@@ -447,13 +451,21 @@ def main() -> int:
     draft_recovery = (ROOT / "app/static/js/doctor-examination/draft-recovery.js").read_text(
         encoding="utf-8", errors="ignore"
     )
-    required_draft_contracts = (
+    draft_policy = (ROOT / "app/static/js/doctor-examination/draft-recovery-policy.js").read_text(
+        encoding="utf-8", errors="ignore"
+    )
+    required_draft_policy_contracts = (
         "function classifyDraftRecord",
         "function mergeFailedSaveDraft",
         "function resolveDraftRecord",
         "if (sameValue(baseline, record.snapshot)) return 'redundant';",
         "if (!sameValue(baseline, record.baseSnapshot)) return 'superseded';",
         "if (disposition === 'superseded' && record.recoveryMode !== 'failed-save')",
+    )
+    for marker in required_draft_policy_contracts:
+        if marker not in draft_policy:
+            failures.append(f"Doctor draft recovery policy thiếu contract: {marker}")
+    required_draft_contracts = (
         "await deleteRecordIfMatches(record);",
         "if (options.recoveryMode === 'failed-save') STATE.recoveryMode = 'failed-save';",
         "recoveryMode: STATE.recoveryMode",
@@ -489,7 +501,7 @@ def main() -> int:
     ):
         if marker not in prescription_ui:
             failures.append(f"Doctor prescription thiếu bảo toàn general_usage legacy: {marker}")
-    if "delete candidate.usageInstructions;" not in draft_recovery:
+    if "delete candidate.usageInstructions;" not in draft_policy:
         failures.append("Doctor draft comparison chưa loại key general-usage đã nghỉ")
     for marker in (
         "const days = parseMedicineDays(medicineDays, 1);",
@@ -521,8 +533,6 @@ def main() -> int:
     for marker in (
         ".doctor-prescription-summary-field__input-line input:focus",
         ".doctor-prescription-summary-field--days .doctor-prescription-summary-field__input-line input:focus-visible",
-        "flex: 1 1 0;",
-        "inline-size: 0;",
         "-moz-appearance: textfield;",
         'input[type="number"]::-webkit-inner-spin-button',
         "-webkit-appearance: none;",
@@ -530,10 +540,35 @@ def main() -> int:
         if marker not in prescription_css:
             failures.append(f"Doctor prescription medicine-days input thiếu control contract: {marker}")
 
+    days_rules = {
+        ".doctor-prescription-summary-field__input-line": (
+            "display: flex;", "justify-content: center;", "gap: 0.35rem;",
+        ),
+        ".doctor-prescription-summary-field__input-line input": (
+            "flex: 0 1 3ch;", "inline-size: 3ch;", "text-align: center;",
+            "min-inline-size: 0;", "min-block-size: 0;", "padding-inline: 0;",
+        ),
+        ".doctor-prescription-summary-field__input-line small": (
+            "padding-inline-end: 0;", "white-space: nowrap;",
+        ),
+    }
+    for selector, markers in days_rules.items():
+        matched_rule = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", prescription_css)
+        declarations = matched_rule.group(1) if matched_rule else ""
+        for marker in markers:
+            if marker not in declarations:
+                failures.append(f"Doctor prescription centered medicine-days thiếu {selector}: {marker}")
+
     save_controller = (ROOT / "app/static/js/doctor-examination/workspace-save-controller.js").read_text(
         encoding="utf-8", errors="ignore"
     )
-    if save_controller.count("if (typeof afterSave === 'function') await afterSave();") != 2:
+    after_save_call = "if (typeof afterSave === 'function') await afterSave();"
+    success_return = "return noChanges ? { status: 'success', noChanges: true, ...results } : { status: 'success', ...results };"
+    if (
+        after_save_call not in save_controller
+        or success_return not in save_controller
+        or save_controller.index(after_save_call) > save_controller.index(success_return)
+    ):
         failures.append("Doctor save owner phải rebase/xóa nháp sau cả save có thay đổi và save sạch")
     if "captureNow({ silent: true, recoveryMode: 'failed-save' })" not in save_controller:
         failures.append("Doctor save failure phải đánh dấu nháp để rebase an toàn sau partial save")

@@ -26,7 +26,9 @@ async function main() {
   const packet = {event_id:'shared-room-event', type:'appointment.changed', payload:{appointment_id:1}};
   callbacks['qlpk:event'](packet); callbacks['qlpk:event'](packet);
   assert.equal(received.filter(e => e.type === 'appointment.changed').length, 1);
-  token = 'renewed-token'; ioOptions.auth(auth => assert.equal(auth.token, token));
+  token = 'renewed-token'; ioOptions.auth(auth => assert.equal(auth.token, undefined));
+  window.QLPKRealtimeClient.stop(); window.QLPKRealtimeClient.start();
+  ioOptions.auth(auth => assert.equal(auth.token, token));
   callbacks.connect(); callbacks['qlpk:subscribed']();
   assert.equal(received.filter(e => e.type === 'realtime.resynced').length, 2);
   assert.equal(sent.length, 2);

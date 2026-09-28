@@ -34,7 +34,8 @@ function setup() {
         updatePackagingInfo: () => {window.packagingUpdated = true;},
         jQuery: () => ({modal: () => {window.closed = true;}, on: (event, fn) => {modal[event] = fn;}}),
         editMedicine: id => {window.edited = id;},
-        QLPKRealtimePageHooks: {register: options => {realtime = options.handler;}}
+        QLPKRealtimePageHooks: {register: options => {realtime = options.handler;}},
+        QLPKApiTransport: {hasSession: () => Boolean(token), sessionRevision: () => `legacy:${token}`}
     });
     Object.assign(context, {Date:{now:()=>now}, localStorage:{getItem:()=>token},
         fetch:(url, options)=>new Promise(resolve=>requests.push({url, options, resolve}))});
@@ -182,7 +183,7 @@ test('editing waits for the latest medicine load and ignores stale responses', (
     const requests = [], calls = [];
     const context = vm.createContext({localStorage:{getItem:()=> 'test'}, resetForm(){}, showCustomToast(){},
         $:{ajax: request=>requests.push(request)}, populateMedicineForm:(data,id)=>calls.push(['populate',id]),
-        window:{}});
+        window:{QLPKApiTransport:{hasSession:()=>true}}});
     vm.runInContext(code, context);
     context.editMedicine(1);
     assert.deepEqual(calls, []);

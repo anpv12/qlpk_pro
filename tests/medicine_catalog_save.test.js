@@ -16,8 +16,10 @@ function setup() {
     $.ajax = request => requests.push(request);
     const context = vm.createContext({$, FormData:class {entries(){return Object.entries({name:'Thuốc', unit:'viên', unit_price:'1000', stock_quantity:'999', import_price:'12', expiry_date:'2028-01-01'});}},
         localStorage:{getItem:()=> 'test'}, showCustomToast:(type,text)=>messages.push(text),
-        loadMedicines:()=>changes.push(['reload']), window:{ClinicMedicineCatalog:{payload:()=>null}}});
-    vm.runInContext('let medicineSaving = false; let medicineEditRevision = 1;\n' + source.slice(source.indexOf('function saveMedicine()'),source.indexOf('// Confirm delete')),context);
+        loadMedicines:()=>changes.push(['reload']), window:{ClinicMedicineCatalog:{payload:()=>null},
+            QLPKApiTransport:{hasSession:()=>true}}});
+    const helper = source.slice(source.indexOf('function getUserFacingResponseMessage('), source.indexOf('function debounce('));
+    vm.runInContext('let medicineSaving = false; let medicineEditRevision = 1;\n' + helper + source.slice(source.indexOf('function saveMedicine()'),source.indexOf('// Confirm delete')),context);
     return {context, requests, messages, changes, values};
 }
 

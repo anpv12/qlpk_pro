@@ -144,5 +144,5 @@ def test_save_api_preserves_specific_lot_error(case, monkeypatch, code):
     response = client.post('/api/prescription/save', headers={'Authorization': 'Bearer QA'},
                            json={'appointment_id': appointment, 'medicines': []})
     assert response.status_code == 400
-    assert response.get_json() == {'code': code, 'detail': detail, 'errors': [detail]}
+    assert response.get_json() == {'code': code, 'detail': detail, 'errors': [detail], 'shortage': None}
     assert medicine.stock_quantity == 1460

@@ -48,7 +48,7 @@ test('receptionist headers size naturally with shared text and spacing metrics',
     assert.match(queue, /block-size: auto/);
     assert.match(queue, /padding-block: var\(--receptionist-header-padding-block\)/);
     assert.match(css, /\.receptionist-workspace \.qlpk-queue-panel__header-inner\s*\{\s*row-gap: var\(--receptionist-header-row-gap\)/);
-    assert.match(css, /\.receptionist-workspace #saveInfoBtn\s*\{\s*block-size: auto;\s*min-block-size: 2\.2em;\s*font-size: var\(--receptionist-font-text\);\s*line-height: 1\.25;/);
+    assert.match(css, /\.receptionist-workspace \.qlpk-save-info-btn\s*\{\s*block-size: auto;\s*min-block-size: 2\.2em;\s*font-size: var\(--receptionist-font-text\);\s*line-height: 1\.25;/);
 });
 
 test('paired intake cards share content-driven alignment only in two-column layout', () => {

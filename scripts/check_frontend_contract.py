@@ -29,6 +29,7 @@ class Metric:
     max_count: int
     flags: int = 0
     description: str = ""
+    exclude: tuple[str, ...] = ()
 
 
 METRICS = [
@@ -111,8 +112,41 @@ METRICS = [
 		pattern=r"!important",
 		roots=("app/static/css",),
 		suffixes=(".css",),
-		max_count=1543,
-		description="Legacy !important debt is locked; do not stack new overrides.",
+		max_count=438,
+		description="Legacy !important debt is locked (1543 -> 438 on 27/09/2026); do not stack new overrides.",
+	),
+	Metric(
+		name="css_id_selector",
+		pattern=r"#[A-Za-z_][\w-]*(?=[^{}]*\{)",
+		roots=("app/static/css",),
+		suffixes=(".css",),
+		max_count=4,
+		description="Only the 4 data-color attribute values remain; styling targets classes/data attributes, never ids.",
+	),
+	Metric(
+		name="css_hard_color",
+		pattern=r":\s*[^;{}]*?(?:#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d|hsla?\()",
+		roots=("app/static/css",),
+		suffixes=(".css",),
+		max_count=12,
+		exclude=("shared/color-tokens.css", "shared/feedback-tokens.css", "print/vat_invoice.css"),
+		description="Colours come from shared tokens; only 8-digit alpha hex legacy remains (12).",
+	),
+	Metric(
+		name="html_inline_event_handlers",
+		pattern=r"\bon(?:click|change|submit|input|keyup|keydown|load|blur|focus)\s*=",
+		roots=("app/templates", "app/static/templates"),
+		suffixes=(".html",),
+		max_count=6,
+		description="Inline event handlers block a script-src CSP; only medicine-management.html (edited in parallel) remains, migrate to data-qlpk-call.",
+	),
+	Metric(
+		name="js_inline_event_handlers",
+		pattern=r"\bon(?:click|change|submit|input|keyup|keydown|load|blur|focus)=[\"']",
+		roots=("app/static/js",),
+		suffixes=(".js",),
+		max_count=30,
+		description="Inline handlers in JS-built markup are locked; use data-action delegation.",
 	),
 	Metric(
 		name="css_px",
@@ -135,6 +169,8 @@ def iter_files(metric: Metric):
                 continue
             if set(path.parts) & SKIP_PARTS:
                 continue
+            if any(fragment in rel(path) for fragment in metric.exclude):
+                continue
             yield path
 
 
@@ -149,6 +185,8 @@ def collect_metric(metric: Metric):
     examples: list[str] = []
     for path in iter_files(metric):
         text = path.read_text(encoding="utf-8", errors="ignore")
+        if path.suffix == ".css":
+            text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
         matches = list(regex.finditer(text))
         if not matches:
             continue

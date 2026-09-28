@@ -65,6 +65,242 @@ def ledger(case, visit=0):
     return visit_ledger_payload(case[0], case[1][visit].id)
 
 
+def medicine_report(case, **filters):
+    return build_ledger_report(case[0], {'view': 'medicines', 'medicine_id': case[2].id, **filters})
+
+
+def test_medicine_totals_count_operations_not_receipts_or_retries(case):
+    save(case, 120)
+    save(case, 120)
+    report = medicine_report(case, per_page=1)
+    row = report['medicines'][0]
+    assert row['dispensing_count'] == row['visit_count'] == 1
+    assert row['exported_quantity'] == row['net_quantity'] == 120
+    assert row['returned_quantity'] == row['untracked_export_rows'] == 0
+    assert row['recorded_revenue'] == 240000
+    assert row['recorded_cost'] == 124000
+    assert row['gross_margin_complete_rows'] == 116000
+    assert report['basis'] == 'movement_created_at'
+    assert report['is_cash_collected'] is False
+
+
+def test_medicine_totals_increase_return_reprice_and_full_return(case):
+    save(case, 120)
+    save(case, 130, 3000)
+    save(case, 90, 4000)
+    row = medicine_report(case)['medicines'][0]
+    assert row['dispensing_count'] == 2
+    assert row['visit_count'] == 1
+    assert (row['exported_quantity'], row['returned_quantity'], row['net_quantity']) == (130, 40, 90)
+    assert (row['recorded_revenue'], row['recorded_cost'], row['gross_margin_complete_rows']) == (360000, 90000, 270000)
+    save(case, 0)
+    row = medicine_report(case)['medicines'][0]
+    assert row['dispensing_count'] == 2
+    assert row['net_quantity'] == row['recorded_revenue'] == row['recorded_cost'] == row['gross_margin_complete_rows'] == 0
+
+
+def test_monthly_totals_preserve_catalog_prices_and_adjustment_month(case):
+    db, visits, medicine, _, _ = case
+    save(case, 10, 4000)
+    original = db.query(MedicineTransaction).filter_by(medicine_id=medicine.id).one()
+    original.created_at = datetime(2026, 8, 31, 23, 59, 59)
+    medicine.unit_price = 5000
+    save(case, 10, 5000, visit=1)
+    second = db.query(MedicineTransaction).filter_by(appointment_id=visits[1].id).one()
+    second.created_at = datetime(2026, 9, 1)
+    db.flush()
+    row = medicine_report(case)['medicines'][0]
+    assert row['dispensing_count'] == row['visit_count'] == 2
+    assert row['recorded_revenue'] == 90000
+    save(case, 10, 4500)
+    adjustment = db.query(MedicineTransaction).filter_by(medicine_id=medicine.id, type='price_adjustment').one()
+    adjustment.created_at = datetime(2026, 9, 30, 23, 59, 59, 999999)
+    db.flush()
+    august = medicine_report(case, from_date='2026-08-01', to_date='2026-08-31')['medicines'][0]
+    september = medicine_report(case, from_date='2026-09-01', to_date='2026-09-30')['medicines'][0]
+    assert august['recorded_revenue'] == 40000
+    assert september['recorded_revenue'] == 55000
+    assert september['dispensing_count'] == 1
+    assert september['net_quantity'] == 10
+
+
+def test_return_only_month_has_zero_dispensing_and_negative_net(case):
+    db, _, medicine, _, _ = case
+    save(case, 10)
+    db.query(MedicineTransaction).filter_by(medicine_id=medicine.id).one().created_at = datetime(2026, 8, 31)
+    save(case, 0)
+    db.query(MedicineTransaction).filter_by(medicine_id=medicine.id, type='return').one().created_at = datetime(2026, 9, 1)
+    db.flush()
+    row = medicine_report(case, from_date='2026-09-01', to_date='2026-09-30')['medicines'][0]
+    assert row['dispensing_count'] == row['exported_quantity'] == 0
+    assert row['returned_quantity'] == 10 and row['net_quantity'] == -10
+    assert row['recorded_revenue'] == -20000 and row['recorded_cost'] == -10000
+
+
+def test_missing_cost_later_supplied_never_backfills_snapshot(case):
+    db, _, _, batches, _ = case
+    batches[0].import_price = None
+    db.flush()
+    save(case, 10)
+    batches[0].import_price = 1234
+    db.flush()
+    row = medicine_report(case)['medicines'][0]
+    assert row['recorded_revenue'] == 20000
+    assert row['recorded_cost'] is None
+    assert row['gross_margin_complete_rows'] is None
+    assert row['incomplete_rows'] == 1
+
+
+def test_zero_price_and_cost_are_known_not_missing(case):
+    case[3][0].import_price = 0
+    case[0].flush()
+    save(case, 10, 0)
+    row = medicine_report(case)['medicines'][0]
+    assert row['recorded_revenue'] == row['recorded_cost'] == row['gross_margin_complete_rows'] == 0
+    assert row['incomplete_rows'] == 0
+
+
+def test_old_export_without_operation_is_not_invented_as_one_dispensing(case):
+    db, _, medicine, _, _ = case
+    save(case, 10)
+    movement = db.query(MedicineTransaction).filter_by(medicine_id=medicine.id).one()
+    movement.operation_id = movement.appointment_id = movement.sale_amount_delta = None
+    db.flush()
+    row = medicine_report(case)['medicines'][0]
+    assert row['dispensing_count'] == row['visit_count'] == 0
+    assert row['untracked_export_rows'] == row['incomplete_rows'] == 1
+    assert row['exported_quantity'] == 10
+    assert row['recorded_revenue'] is None
+
+
+def test_duplicate_medicine_rows_same_price_are_one_dispensing(case):
+    medicine = case[2]
+    save(case, 10, extra=dict(medicine_id=medicine.id, name=medicine.name, quantity=5,
+                            unit_price=2000, unit='viên', is_external=False))
+    row = medicine_report(case)['medicines'][0]
+    assert row['dispensing_count'] == 1 and row['net_quantity'] == 15
+
+
+def test_external_medicine_does_not_enter_stock_report(case):
+    save(case, 0, extra=dict(name='Thuốc mua ngoài QA', quantity=10,
+                            unit_price=2000, unit='viên', is_external=True))
+    assert medicine_report(case)['medicines'] == []
+    assert case[2].stock_quantity == 200
+
+
+def test_fefo_skips_expired_and_uses_earliest_valid_expiry(case):
+    db, _, _, batches, _ = case
+    batches[0].expiry_date = date.today() - timedelta(days=1)
+    batches[1].expiry_date = date.today()
+    db.flush()
+    save(case, 10)
+    assert ledger(case)[0]['batch_id'] == batches[1].id
+    assert batches[0].remaining_quantity == 100
+
+
+def test_medicine_group_filters_and_page_totals(case):
+    save(case, 120)
+    for batch in case[3]:
+        row = medicine_report(case, batch_id=batch.id)['medicines'][0]
+        assert row['dispensing_count'] == 1
+        assert row['exported_quantity'] == (100 if batch == case[3][0] else 20)
+    assert medicine_report(case, search='no-match-' + uuid4().hex)['total'] == 0
+    assert medicine_report(case, doctor_id=case[4])['total'] == 1
+    assert medicine_report(case, medicine_type='H')['total'] == 0
+    report = medicine_report(case, page=2, per_page=1)
+    assert report['total'] == report['total_pages'] == 1
+    assert report['medicines'] == []
+    with pytest.raises(ValueError):
+        medicine_report(case, from_date='2026-09-30', to_date='2026-09-01')
+
+
+def test_two_medicines_same_operation_paginate_by_identity(case):
+    db, visits, medicine, batches, actor = case
+    other = Medicine(name=medicine.name, unit='ống', unit_price=9000, stock_quantity=0)
+    db.add(other)
+    db.flush()
+    save(case, 10)
+    origin = db.query(MedicineTransaction).filter_by(medicine_id=medicine.id).one()
+    db.add(MedicineTransaction(medicine_id=other.id, appointment_id=visits[0].id,
+        operation_id=origin.operation_id, type='export', quantity=-3,
+        price=None, sale_unit_price=9000, sale_amount_delta=27000, created_by=actor))
+    db.flush()
+    filters = {'view': 'medicines', 'search': medicine.name, 'per_page': 1}
+    first = build_ledger_report(db, filters)
+    second = build_ledger_report(db, {**filters, 'page': 2})
+    assert first['total'] == second['total'] == 2
+    assert first['medicines'][0]['medicine_id'] != second['medicines'][0]['medicine_id']
+    assert first['medicines'][0]['dispensing_count'] == second['medicines'][0]['dispensing_count'] == 1
+    assert first['medicines'][0]['net_quantity'] == 10
+    assert second['medicines'][0]['net_quantity'] == 3
+
+
+def test_fefo_earliest_expiry_precedes_receipt_id(case):
+    db, _, _, batches, _ = case
+    batches[1].expiry_date = date.today() + timedelta(days=2)
+    db.flush()
+    save(case, 120)
+    assert [(row['batch_id'], row['quantity']) for row in ledger(case)] == [
+        (batches[1].id, -100), (batches[0].id, -20)]
+
+
+def test_adjustment_only_period_has_no_new_dispensing(case):
+    db, _, medicine, _, _ = case
+    save(case, 10, 4000)
+    db.query(MedicineTransaction).filter_by(medicine_id=medicine.id).one().created_at = datetime(2026, 8, 31)
+    save(case, 10, 3000)
+    db.query(MedicineTransaction).filter_by(medicine_id=medicine.id, type='price_adjustment').one().created_at = datetime(2026, 9, 1)
+    db.flush()
+    row = medicine_report(case, from_date='2026-09-01', to_date='2026-09-30')['medicines'][0]
+    assert row['dispensing_count'] == row['net_quantity'] == row['recorded_cost'] == 0
+    assert row['recorded_revenue'] == row['gross_margin_complete_rows'] == -10000
+
+
+def test_shortage_on_second_medicine_rolls_back_first_medicine_and_report(case):
+    db, _, medicine, batches, _ = case
+    other = Medicine(name='QA-shortage-' + uuid4().hex, unit='viên', unit_price=2000,
+                     stock_quantity=0, prescription_type='BASIC')
+    db.add(other)
+    db.flush()
+    save(case, 10)
+    before = ledger(case)
+    with pytest.raises(PrescriptionStockValidationError):
+        with db.begin_nested():
+            save(case, 20, extra=dict(medicine_id=other.id, name=other.name,
+                quantity=1, unit_price=2000, is_external=False))
+    assert ledger(case) == before
+    assert medicine.stock_quantity == 190 and batches[0].remaining_quantity == 90
+    assert medicine_report(case)['medicines'][0]['dispensing_count'] == 1
+
+
+def test_fractional_request_uses_saved_whole_quantity_in_report(case):
+    save(case, '7.5', 4000)
+    row = medicine_report(case)['medicines'][0]
+    assert row['net_quantity'] == 8 and row['recorded_revenue'] == 32000
+
+
+def test_medicine_lock_blocks_competing_stock_writer():
+    from sqlalchemy import text
+    from sqlalchemy.exc import OperationalError
+    from app.modules.prescriptions.services.stock_service import _lock_inventory
+    with engine.connect() as first, engine.connect() as second:
+        first_transaction = first.begin()
+        second_transaction = second.begin()
+        first_session = Session(bind=first)
+        try:
+            medicine_id = first_session.query(Medicine.id).order_by(Medicine.id).first()[0]
+            _lock_inventory(first_session, medicine_id)
+            with pytest.raises(OperationalError) as error:
+                second.execute(text('SELECT id FROM medicines WHERE id=:id FOR UPDATE NOWAIT'), {'id': medicine_id})
+            assert error.value.orig.pgcode == '55P03'
+        finally:
+            first_session.close()
+            if first_transaction.is_active:
+                first_transaction.rollback()
+            if second_transaction.is_active:
+                second_transaction.rollback()
+
+
 def test_two_visits_receipts_price_snapshots_and_date_report(case):
     db, visits, medicine, batches, _ = case
     save(case, 100, 2000)
@@ -256,6 +492,11 @@ def test_report_http_auth_validation_and_filters(case, monkeypatch):
     assert response.status_code == 200
     assert response.json['summary']['recorded_revenue'] == 20000
     assert response.json['transactions'][0]['patient_id'] == visits[0].patient_id
+    response = client.get('/api/medicine/statistics/ledger', headers=headers,
+        query_string={'view': 'medicines', 'medicine_id': medicine.id})
+    assert response.status_code == 200
+    assert response.json['medicines'][0]['dispensing_count'] == 1
+    assert client.get('/api/medicine/statistics/ledger?view=medicines&from_date=2026-09-30&to_date=2026-09-01', headers=headers).status_code == 400
 
 
 def test_receipt_patient_and_type_filters_before_pagination(case):

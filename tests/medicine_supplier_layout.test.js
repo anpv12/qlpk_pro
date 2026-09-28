@@ -10,9 +10,9 @@ const script = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-m
 const supplierMarkup = template.slice(template.indexOf('id="supplierManagementModal"'), template.indexOf('<!-- Flatpickr JS -->'));
 
 test('supplier modal owns full available height and no longer uses a fixed table height deduction', () => {
-    assert.match(css, /#supplierManagementModal \.modal-dialog\s*\{[^}]*height:\s*calc\(100dvh - 1rem\)/);
-    assert.match(css, /#supplierManagementModal \.modal-content\s*\{[^}]*height:\s*100%/);
-    assert.match(css, /#supplierManagementModal \.modal-body\s*\{[^}]*min-height:\s*0/);
+    assert.match(css, /\.modal\.qlpk-supplier-management-modal \.modal-dialog\s*\{[^}]*height:\s*calc\(100dvh - 1rem\)/);
+    assert.match(css, /\.modal\.qlpk-supplier-management-modal \.modal-content\s*\{[^}]*height:\s*100%/);
+    assert.match(css, /\.modal\.qlpk-supplier-management-modal \.modal-body\s*\{[^}]*min-height:\s*0/);
     assert.match(supplierMarkup, /class="mm-supplier-list mb-2"/);
     assert.match(supplierMarkup, /class="table-responsive mm-supplier-table-scroll"/);
     assert.doesNotMatch(template + css, /mm-scroll-100vh-500/);
@@ -22,7 +22,7 @@ test('supplier table takes remaining desktop space while compact screens retain 
     const breakpoint = css.indexOf('@media (min-width: 48rem) and (min-height: 45rem)');
     assert.notEqual(breakpoint, -1);
     const desktop = css.slice(breakpoint, css.indexOf('.medicine-management-page .mm-scroll-100vh-400', breakpoint));
-    assert.match(desktop, /#supplierManagementModal \.modal-body\s*\{[^}]*display:\s*flex;[^}]*overflow:\s*hidden/);
+    assert.match(desktop, /\.modal\.qlpk-supplier-management-modal \.modal-body\s*\{[^}]*display:\s*flex;[^}]*overflow:\s*hidden/);
     for (const selector of ['mm-supplier-list', 'mm-supplier-table-scroll']) {
         assert.match(desktop, new RegExp(`\\.${selector}\\s*\\{[^}]*flex:\\s*1 1 0`));
     }

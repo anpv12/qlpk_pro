@@ -12,7 +12,6 @@ WORKSPACE = ROOT / "app/static/js/app-shell/workspace-tabs.js"
 REALTIME = ROOT / "app/static/js/realtime-client.js"
 LOGIN = ROOT / "app/static/js/login.js"
 HEADER = ROOT / "app/static/js/app-header-loader.js"
-PERMISSION_CHECK = ROOT / "app/static/js/permission-check.js"
 
 
 def read(path: Path) -> str:
@@ -26,7 +25,7 @@ def require(source: str, needle: str, message: str, failures: list[str]) -> None
 
 def main() -> int:
     failures: list[str] = []
-    required_files = (WORKSPACE, REALTIME, LOGIN, HEADER, PERMISSION_CHECK)
+    required_files = (WORKSPACE, REALTIME, LOGIN, HEADER)
     for path in required_files:
         if not path.exists():
             failures.append(f"Thiếu file bắt buộc: {path.relative_to(ROOT)}")
@@ -40,7 +39,6 @@ def main() -> int:
     realtime = read(REALTIME)
     login = read(LOGIN)
     header = read(HEADER)
-    permission_check = read(PERMISSION_CHECK)
 
     require(workspace, "const WORKSPACE_STORAGE_VERSION = 2;", "Storage workspace chưa có versioned owner contract", failures)
     require(workspace, "function workspaceOwnerId()", "Storage workspace chưa tách owner theo tài khoản", failures)
@@ -61,9 +59,8 @@ def main() -> int:
 
     for key in ("qlpk_workspace_tabs", "qlpk_workspace_active_tab"):
         require(header, f"localStorage.removeItem('{key}')", f"Header logout chưa xóa {key}", failures)
-        require(permission_check, f"localStorage.removeItem('{key}')", f"Legacy logout chưa xóa {key}", failures)
 
-    for path in (WORKSPACE, REALTIME, LOGIN, PERMISSION_CHECK):
+    for path in (WORKSPACE, REALTIME, LOGIN):
         result = subprocess.run(
             ["node", "--check", str(path)],
             cwd=ROOT,

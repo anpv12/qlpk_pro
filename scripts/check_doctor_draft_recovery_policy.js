@@ -6,51 +6,22 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
-const sourcePath = path.join(root, 'app/static/js/doctor-examination/draft-recovery.js');
-const registrationMarker = "window.QLPKDoctorModuleRegistry.register('draftRecovery', {";
-let source = fs.readFileSync(sourcePath, 'utf8');
+const sourcePath = path.join(root, 'app/static/js/doctor-examination/draft-recovery-policy.js');
+const source = fs.readFileSync(sourcePath, 'utf8');
 
-if (!source.includes(registrationMarker)) {
-	throw new Error('Không tìm thấy điểm đăng ký owner draftRecovery');
-}
-
-source = source.replace(
-	registrationMarker,
-	`window.__classifyDraftRecord = classifyDraftRecord;\n\twindow.__mergeFailedSaveDraft = mergeFailedSaveDraft;\n\twindow.__resolveDraftRecord = resolveDraftRecord;\n\t${registrationMarker}`
-);
-
-const registry = {
-	get(name) {
-		if (name === 'supportRuntime') {
-			return { normalizeId: value => {
-				const normalized = Number(value);
-				return Number.isFinite(normalized) && normalized > 0 ? normalized : null;
-			} };
-		}
-		return null;
-	},
-	register() {}
-};
+const modules = {};
 const windowStub = {
-	QLPKDoctorModuleRegistry: registry,
-	localStorage: { getItem: () => null },
-	setTimeout,
-	clearTimeout
+	QLPKDoctorModuleRegistry: { register(name, value) { modules[name] = value; }, get: name => modules[name] || null }
 };
-const documentStub = {};
+vm.runInNewContext(source, { window: windowStub, console }, { filename: sourcePath });
+const policy = modules.draftRecoveryPolicy;
+if (!policy) throw new Error('Không tìm thấy owner draftRecoveryPolicy');
 
-vm.runInNewContext(source, {
-	window: windowStub,
-	document: documentStub,
-	console,
-	IDBKeyRange: {}
-}, { filename: sourcePath });
-
-const classify = windowStub.__classifyDraftRecord;
+const classify = policy.classifyDraftRecord;
 if (typeof classify !== 'function') throw new Error('Không lấy được policy phân loại bản nháp');
-const mergeFailedSave = windowStub.__mergeFailedSaveDraft;
+const mergeFailedSave = policy.mergeFailedSaveDraft;
 if (typeof mergeFailedSave !== 'function') throw new Error('Không lấy được policy phục hồi save một phần');
-const resolveDraft = windowStub.__resolveDraftRecord;
+const resolveDraft = policy.resolveDraftRecord;
 if (typeof resolveDraft !== 'function') throw new Error('Không lấy được policy quyết định vòng đời bản nháp');
 
 const now = 1_000_000;

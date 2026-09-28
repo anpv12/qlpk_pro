@@ -25,16 +25,16 @@ function setup() {
         return nodes.get(selector);
     }
     const window = {
-        location: {},
+        location: { href: 'https://clinic.test/icd-management.html', origin: 'https://clinic.test' },
         QLPKSharedUtils: { escapeHtml: value => String(value).replace(/</g, '&lt;') },
         fetch(url, options) { return new Promise(resolve => requests.push({url, options, resolve})); }
     };
-    const context = vm.createContext({window, document: {}, $, Headers, URLSearchParams, setTimeout,
+    const context = vm.createContext({window, document: {}, $, Headers, URL, URLSearchParams, setTimeout,
         localStorage: {getItem: key => key === 'qlpk_token' ? 'active-qa-session' : 'stale-legacy-session'}
     });
     Object.defineProperty(context, 'fetch', {get: () => window.fetch});
-    const utils = fs.readFileSync(path.join(__dirname, '../app/static/js/utils.js'), 'utf8');
-    vm.runInContext(utils.slice(utils.indexOf('(function () {', utils.indexOf('// Global Ajax Auth Handling'))), context);
+    window.localStorage = context.localStorage;
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/shared/api-transport.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/icd-management.js'), 'utf8'), context);
     context.pager = {update(value) { this.value = value; }};
     vm.runInContext('listPagination = pager;', context);

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class AdminNavigationPermissionsTest(unittest.TestCase):
     def test_all_navigation_permissions_are_in_admin_payload(self):
-        tree = ast.parse((ROOT / 'app/api/auth.py').read_text())
+        tree = ast.parse((ROOT / 'app/services/session_identity.py').read_text())
         assignment = next(node for node in tree.body if isinstance(node, ast.Assign)
                           and any(isinstance(target, ast.Name) and target.id == 'ALL_PERMISSIONS'
                                   for target in node.targets))

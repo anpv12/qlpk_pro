@@ -36,10 +36,13 @@ function harness() {
       reject() {const error={status:500};options.error?.(error);reject(error);}});
     return promise;
   };
-  const window = {};
+  let credential = 'qa';
+  const window = {QLPKUserFeedback:{show:(...args)=>messages.push(args)}, QLPKApiTransport: {
+    installJQuery() {}, getAuthHeader: () => credential, session: null
+  }};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../app/static/js/transfer-modal-dry.js'),'utf8'),
-    {window,document,$,localStorage:{getItem:()=>''},showCustomToast:(...args)=>messages.push(args),console:{error() {},warn() {}},setTimeout});
-  return {modal:window.TransferModal,$,requests,messages};
+    {window,document,$,localStorage:{getItem:()=>''},console:{error() {},warn() {}},setTimeout});
+  return {modal:window.TransferModal,$,requests,messages, window, changeSession() { credential = 'changed'; }};
 }
 
 async function main() {
@@ -58,7 +61,7 @@ async function main() {
   finishSave(true);await new Promise(setImmediate);
   assert.equal(h.requests.length,1,'in-flight save keeps modal open');
   assert.deepEqual(JSON.parse(h.requests[0].options.data),{appointment_ids:[1149],to_role:'PSYCHOLOGIST',to_person_id:8});
-  h.requests[0].resolve({success:true});await first;
+  h.requests[0].resolve({success:true,updated_count:1});await first;
   assert.equal(callback,1,'callback survives synchronous hidden/reset');
 
   h=harness();let current=true;
@@ -80,7 +83,7 @@ async function main() {
   h=harness();h.modal.open([1],'receptionist',()=>callback++);
   const legacy=h.modal.transfer([1],'doctor',7);
   assert.equal(h.requests.length,1,'existing callers need no pre-transfer hook');
-  h.requests[0].resolve({success:true});await legacy;
+  h.requests[0].resolve({success:true,updated_count:1});await legacy;
   assert.equal(callback,2);
 
   h=harness();h.modal.open([1],'doctor',()=>assert.fail('failed transfer must not clear workspace'));
@@ -90,6 +93,36 @@ async function main() {
   assert.equal(h.$('#transferModal').attrs['aria-busy'],'false','failure releases controls for retry');
   const retry=h.modal.transfer([1],'psychologist',8);
   assert.equal(h.requests.length,2);h.requests[1].reject();await retry;
+
+  for (const change of ['patient', 'session']) {
+    h=harness();let current=true;
+    h.modal.open([1],'doctor',()=>assert.fail('stale transfer callback'),{isCurrent:()=>current});
+    const pending=h.modal.transfer([1],'psychologist',8);
+    if(change==='patient') current=false;else h.changeSession();
+    h.requests[0].resolve({success:true,updated_count:1});await pending;
+    assert.equal(h.messages.length,0,'stale result must not toast or reset new workspace');
+  }
+  h=harness();h.modal.open([1],'doctor');h.changeSession();
+  await h.modal.transfer([1],'doctor',7);
+  assert.equal(h.requests.length,0,'modal captured old credentials must not write with new session');
+
+  for(const result of [{success:false,updated_count:1},{success:true,updated_count:0},{success:true},null]) {
+    h=harness();h.modal.open([1],'doctor',()=>assert.fail('unconfirmed transfer callback'));
+    const pending=h.modal.transfer([1],'psychologist',8);
+    h.requests[0].resolve(result);await pending;
+    assert.equal(h.messages[0][0],result?.success===true && result.updated_count===0 ? 'warning':'error');
+  }
+  h=harness();let revision=1;
+  h.window.QLPKApiTransport.session={owner:{snapshot:()=>({status:'authenticated',revision})}};
+  h.modal.open([1],'doctor');revision++;
+  h.modal.loadPersonList('doctor');
+  await h.modal.transfer([1],'doctor',7);
+  assert.equal(h.requests.length,0,'cookie revision switch blocks both recipient loads and writes');
+  h=harness();h.window.QLPKApiTransport.session={owner:{snapshot:()=>({status:'anonymous',revision:1})}};
+  h.modal.open([1],'doctor');
+  await h.modal.transfer([1],'doctor',7);
+  assert.equal(h.requests.length,0);
+  assert.equal(h.messages[0][0],'error');
   console.log('Doctor transfer: cancel/save failure, save-before-POST, duplicate/close guard, stale patient/recipients, success cleanup, legacy callers OK');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

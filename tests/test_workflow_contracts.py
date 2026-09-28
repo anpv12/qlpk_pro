@@ -54,6 +54,11 @@ def test_frontend_contract_passes() -> None:
     assert result.returncode == 0, result.stdout
 
 
+def test_doctor_examination_contract_passes() -> None:
+    result = run_script("scripts/check_doctor_examination_contract.py")
+    assert result.returncode == 0, result.stdout
+
+
 def test_psychologist_fields_have_one_config_owner() -> None:
     config = read("app/static/js/components/psychologist-component-config.js")
     template = read("app/templates/partials/psychologist-clinical-workspace.html")
@@ -109,7 +114,10 @@ def test_survey_order_performer_and_source_contract() -> None:
     assert 'doctorIndicationSource' not in indications_template
     assert "getSurveyTemplates: () => STATE.surveyTemplates" in indications
     assert "const hasSelectedSurvey = Boolean(selectedSurveyId && selectedSurveyName && typedName === selectedSurveyName);" in indications
-    assert "const source = hasSelectedSurvey ? 'survey' : 'custom';" in indications
+    assert "source: hasSelectedSurvey ? 'survey' : 'custom'" in indications
+    assert "surveyTemplateId: hasSelectedSurvey ? selectedSurveyId : null" in indications
+    assert "survey_template_id: survey.surveyTemplateId" in indications
+    assert "source: survey.source" in indications
     assert "renderSourceBadge" not in indications
     assert "getSourceConfig" not in indications
     assert "doctor-indications-source-badge" not in indications
@@ -132,8 +140,8 @@ def test_clinical_order_scope_and_validation_contract() -> None:
     assert "MAX_FILE_SIZE = 25 * 1024 * 1024" in result_files
     assert "def _safe_result_path" in result_files
     assert "_get_accessible_examination" in survey_sessions
-    assert "Mẫu khảo sát lấy từ chỉ định đã chọn." in order_management
-    assert "Chỉ định này nhập text, không gắn mẫu khảo sát." in order_management
+    assert "om-survey-helper-text\">Mẫu: ${escapeHtml(linkedTemplate.name" in order_management
+    assert "if (!indicationTemplateId) {\n\t\trenderCustomOrderNote(currentOrderDetail);" in order_management
     assert "/api/survey-templates/active/public" not in order_management
     assert "surveyTemplateSelectResults.addEventListener('change'" not in order_management
 

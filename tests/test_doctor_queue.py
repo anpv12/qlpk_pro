@@ -30,6 +30,9 @@ def queue(monkeypatch):
             doctors = db.query(User).filter(User.role == 'DOCTOR', User.is_active == True).order_by(User.id).limit(2).all()
             patient = Patient(patient_code='QA-Q-'+uuid4().hex[:12], full_name='QA Doctor queue')
             db.add(patient); db.flush()
+            admin = User(username='qa-transfer-'+uuid4().hex[:12], full_name='QA transfer admin',
+                         hashed_password='qa', role='admin', is_active=True)
+            db.add(admin); db.flush()
             appointments = []
             for _ in range(2):
                 apt = Appointment(appointment_code='QA-Q-'+uuid4().hex, patient_id=patient.id,
@@ -41,7 +44,7 @@ def queue(monkeypatch):
                 db.add(exam); db.flush()
                 appointments.append(apt)
             def transfer(apt, doctor):
-                result = transfer_appointments_between_roles(db, SimpleNamespace(id=-1, role='admin'), {
+                result = transfer_appointments_between_roles(db, admin, {
                     'appointment_ids':[apt.id, apt.id], 'to_role':'doctor', 'to_person_id':doctor.id,
                 })
                 db.flush()

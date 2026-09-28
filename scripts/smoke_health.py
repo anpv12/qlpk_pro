@@ -53,12 +53,9 @@ SMOKE_PAGES = [
     "/terms-of-service",
 ]
 DYNAMIC_STATIC_REFS = [
-    "/static/css/components/dry-sidebar.css",
     "/static/js/app-header-loader.js",
     "/static/js/app-shell/navigation.config.js",
-    "/static/js/app-shell/sidebar-renderer.js",
     "/static/templates/app-header/header.html",
-    "/static/templates/dry-sidebar/sidebar.html",
 ]
 
 
@@ -219,6 +216,20 @@ def check_frontend_contract() -> list[str]:
     return result.stdout.strip().splitlines()[:80]
 
 
+def check_js_globals() -> list[str]:
+    """Every page must resolve the globals its classic scripts reference (skips without ESLint)."""
+    result = subprocess.run(
+        [sys.executable, "scripts/check_js_globals.py"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    if result.returncode == 0:
+        return []
+    return [line for line in result.stdout.strip().splitlines() if line.startswith("[FAIL]")][:40] or ["check_js_globals failed"]
+
+
 def check_http(base_url: str) -> list[str]:
     errors: list[str] = []
     for path in SMOKE_PAGES:
@@ -253,6 +264,7 @@ def main() -> int:
 		("duplicate_html_attrs", check_duplicate_html_attrs),
 		("duplicate_html_ids", check_duplicate_html_ids),
 		("frontend_contract", check_frontend_contract),
+		("js_globals", check_js_globals),
 	]
     if args.http:
         checks.append(("http_pages", lambda: check_http(args.base_url)))

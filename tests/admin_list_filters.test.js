@@ -25,7 +25,8 @@ function setup(page) {
   $.get = (url, params, callback) => requests.push({url, params, resolve: callback || params});
   $.ajax = () => {};
   const context = vm.createContext({$, document: {}, localStorage: {getItem: () => 'session'},
-    window: {QLPKPagination: {createClient: () => ({setItems: rows => pages.push(rows)})}}
+    window: {QLPKPagination: {createClient: () => ({setItems: rows => pages.push(rows)})},
+      QLPKApiTransport: {hasSession: () => true}}
   });
   vm.runInContext(fs.readFileSync('app/static/js/' + page + '.js', 'utf8'), context);
   return {$, requests, pages};

@@ -31,7 +31,8 @@ test('opens PDF in the existing tab without printing or closing it', async () =>
     const state = setup();
     await state.window.QLPKPdfPreview.render(state.tab, '<html>Preview</html>');
     assert.equal(state.calls[0][1], '/api/print/preview.pdf');
-    assert.equal(state.calls[0][2].headers.Authorization, 'Bearer test-token');
+    assert.equal(state.calls[0][2].headers.Authorization, undefined);
+    assert.equal(state.calls[0][2].headers['Content-Type'], 'text/html; charset=utf-8');
     assert.deepEqual(state.calls[1], ['navigate', 'blob:pdf']);
     assert.equal(state.tab.closed, false);
     state.tab.closed = true;

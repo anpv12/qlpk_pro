@@ -163,6 +163,45 @@ async function main() {
   assert.equal(await pending, false);
   assert.equal(state.rows.length, 0);
   console.log('doctor indications realtime: preserves input/dirty/editing state and rejects stale patient response: ok');
+
+  const form = createHarness();
+  await form.instance.load({ appointmentId: 1, patientId: 2, appointment: { appointment_date: '2026-09-01T08:30:00+07:00' } });
+  const field = id => form.document.getElementById(id);
+  let result = form.instance.readForm(form.document);
+  assert.equal(result.valid, false); assert.equal(result.message, 'Nhập tên chỉ định hoặc chọn một mẫu khảo sát.'); assert.equal(result.focus, field('doctorIndicationName'));
+  field('doctorIndicationName').value = 'x'.repeat(300);
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, false); assert.match(result.message, /tối đa/);
+  field('doctorIndicationName').value = 'Xét nghiệm máu';
+  field('doctorIndicationDate').value = '';
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, false); assert.equal(result.message, 'Chọn ngày chỉ định.'); assert.equal(result.focus, field('doctorIndicationDate'));
+  field('doctorIndicationDate').value = '2026-09-02';
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, false); assert.equal(result.message, 'Chọn người thực hiện trong cơ sở.'); assert.equal(result.focus, field('doctorIndicationPerformer'));
+  const performer = field('doctorIndicationPerformer'); performer.value = '7'; performer.selectedOptions = [{ dataset: { userName: 'BS. An' }, textContent: 'BS. An' }];
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.data)), { survey_template_id: null, order_name: 'Xét nghiệm máu', location_type: 'in', in_house_unit_id: 7, in_house_unit: 'BS. An', out_facility: '', scheduled_for: '2026-09-02', source: 'custom', status: 'sent', is_completed: false });
+  form.instance.getState().selectedSurvey = { id: 5, name: 'Xét nghiệm máu' };
+  result = form.instance.readForm(form.document);
+  assert.equal(result.data.source, 'survey'); assert.equal(result.data.survey_template_id, 5);
+  field('doctorIndicationName').value = 'Tên đã sửa';
+  result = form.instance.readForm(form.document);
+  assert.equal(result.data.source, 'custom');
+  assert.equal(result.data.survey_template_id, null);
+  field('doctorIndicationLocationIn').value = 'out';
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, false);
+  assert.equal(result.focus, field('doctorIndicationOutFacility'));
+  field('doctorIndicationOutFacility').value = 'Cơ sở ngoài';
+  result = form.instance.readForm(form.document);
+  assert.equal(result.valid, true);
+  assert.equal(result.data.location_type, 'out');
+  assert.equal(result.data.in_house_unit_id, null);
+  assert.equal(result.data.in_house_unit, '');
+  assert.equal(result.data.out_facility, 'Cơ sở ngoài');
+  console.log('doctor indications readForm validation + payload: ok');
 }
 
 main().catch(error => {

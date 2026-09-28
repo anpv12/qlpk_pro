@@ -29,6 +29,7 @@ function setup() {
         location: {}, addEventListener() {},
         URL: {createObjectURL:() => 'blob:qa', revokeObjectURL:url => revoked.push(url)},
         QLPKUserFeedback: {show() {}},
+        QLPKApiTransport: {hasSession: () => true},
         QLPKPagination: {create(options) { pager = {options, update(state) {this.state = state;}}; return pager; }},
         setTimeout(fn, delay) {timers.set(++timerId, {fn, delay}); return timerId;},
         clearTimeout(id) {timers.delete(id);}

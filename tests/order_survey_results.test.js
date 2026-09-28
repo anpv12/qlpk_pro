@@ -5,8 +5,10 @@ const vm = require('node:vm');
 const source = fs.readFileSync('app/static/js/order-management.js', 'utf8');
 const start = source.indexOf('function resolveSurveyAnswerText(');
 const end = source.indexOf('// Render single survey result card', start);
-const context = vm.createContext({ escapeHtml: value => String(value).replaceAll('<', '&lt;') });
-vm.runInContext(source.slice(start, end), context);
+const helperStart = source.indexOf('function attrJson(');
+const helperEnd = source.indexOf('\n}\n', helperStart) + 3;
+const context = vm.createContext({ escapeHtml: value => String(value).replaceAll('<', '&lt;'), JSON });
+vm.runInContext(source.slice(helperStart, helperEnd) + source.slice(start, end), context);
 const template = { questions_by_criteria: {
     A: [{ id: 'q0', text: 'Câu có điểm 0', answers: [{ id: 'a0', text: 'Không', score: 0 }] },
         { id: 'q1', text: 'Câu điểm khác 0', answers: [{ id: 'a2', text: 'Có', score: 2 }] }],

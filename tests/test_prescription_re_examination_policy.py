@@ -94,6 +94,11 @@ def test_calendar_read_defaults_and_existing_identity_without_writes(case):
     assert result.json['doctor_name'] == child.doctor.full_name
     assert result.json['schedule']['appointment_id'] == child.id
     assert any(event['id'] == child.id for event in result.json['events'])
+    event = next(event for event in result.json['events'] if event['id'] == child.id)
+    assert event['doctor_id'] == child.doctor_id
+    assert event['doctor_color'] == child.doctor.calendar_color
+    doctor_option = next(item for item in result.json['doctors'] if item['id'] == child.doctor_id)
+    assert doctor_option['calendar_color'] == child.doctor.calendar_color
 
 
 @pytest.mark.parametrize('status,deleted,visible', [
