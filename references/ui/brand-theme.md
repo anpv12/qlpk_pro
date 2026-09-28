@@ -47,6 +47,19 @@ Giới hạn QA ghi tập trung tại references/refactor-progress.md.
   tỷ lệ modal, độ rõ chữ và vai trò màu trên dữ liệu thật, không chỉ kiểm
   token đúng hoặc không chồng chữ. Không đổi palette các màn khác theo đó.
 
+## Palette mở rộng và thang z-index (27/09/2026)
+
+- Mọi màu literal của CSS dùng chung trên trang Bác sĩ/Lễ tân/TLG đã chuyển
+  thành token trong `shared/color-tokens.css`: `--qlpk-palette-<họ màu>-<L%>`
+  (thêm hậu tố `-a/-b` khi trùng bậc sáng) và `--qlpk-alpha-<họ>-<L%>-<alpha%>`;
+  màu trùng token có sẵn thì dùng token cũ. Giá trị giữ nguyên byte, không
+  đổi giao diện (computed style parity 0 khác biệt trên 3 trang). Đây là
+  bảng màu tham chiếu, không phải quyết định thương hiệu mới; khi thiết kế
+  vẫn dùng semantic/brand token trước.
+- Thang lớp `--qlpk-z-base … --qlpk-z-top` (16 mức) thay số cứng; dropdown
+  legacy người thân dùng `--qlpk-z-legacy-floating`, lịch/tooltip dùng
+  `--qlpk-z-top`. Thêm lớp mới phải chọn trong thang, không đặt số riêng.
+
 ## Một kiểu nền chủ đạo; Tủ thuốc dùng đúng mẫu header (2026-09-19)
 
 - User làm rõ: cùng mã nâu gốc nhưng nền phẳng không phải cùng kiểu màu
@@ -273,7 +286,7 @@ khảo sát chỉ dùng feedback runtime; CSS/DOM toast cũ đã được gỡ.
 ## Tủ thuốc: nền ảnh và chỉ số gọn trong toolbar (2026-09-12)
 
 - Đã triển khai sau user duyệt preview poster: title band có ảnh nội thất
-  `assets/images/medicine-clinic-interior.png`, mask từ trái và fade đáy;
+  `assets/images/medicine-clinic-interior.jpg` (JPEG 159 KB thay PNG 1,9 MB, 27/09), mask từ trái và fade đáy;
   photo absolute/pointer-events none không quyết định chiều cao. Copy giữ
   natural flow; dưới 56.25rem giảm photo opacity còn 0.22 để chữ đọc rõ.
   Primary page dùng brown-500, strong brown-700; semantic giữ nguyên.

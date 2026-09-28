@@ -1,5 +1,23 @@
 # Doctor Examination Context
 
+- Tiền sử auth (28/09/2026, lát55): ICD exact lookup/gợi ý không kiểm token
+  storage/Bearer riêng; page runtime/canonical transport sở hữu session.
+  Allergy JSON và safety-plan FormData dùng cùng transport; không đổi schema.
+  File chờ Blob xong phải kiểm lại patient/context trước mở. Upload trả muộn
+  không toast/reset input ca mới. Lỗi session ở ICD/family loader propagate,
+  không giả dữ liệu rỗng. Cookie templates chưa bind; QA mới dùng fixtures.
+
+- Logout nháp (28/09/2026): draft-recovery chỉ clearCurrentUserDrafts khi
+  document nhận qlpk:logout:confirmed từ shared header sau revoke200/401,
+  không còn xóa lúc click logout. Cleanup Promise thêm vào pendingCleanup
+  để header await trước clear user/token;503/network không xóa nháp.
+  Lát47: cookie identity lấy từ session owner RAM, không fallback qlpk_user.
+  Logout xác nhận truyền userId của phiên vừa đóng; cleanup hủy capture context,
+  chờ writes của đúng user rồi xóa. Write trả muộn sau đổi revision/identity
+  bị xóa có điều kiện captureId. Header giữ mutation lock tới cleanup xong,
+  cho retry cleanup mà không logout lại; lỗi cleanup không redirect. Chưa
+  chứng minh dọn tuyệt đối khi tab khác treo hoặc nhận invalidation trễ.
+
 ## Config-Driven Component Contract (2026-08-09)
 
 - `app/static/js/components/doctor-component-config.js` là cấu hình composition
@@ -122,10 +140,12 @@ except that every shared asset, including
 31. `components/clinical-examination-form.js`
 32. `doctor-examination/workspace-save-controller.js`
 33. `doctor-examination/clinical-workspace-ui.js`
-34. `doctor-examination/draft-recovery.js`
-35. `doctor-examination/document-attachments-bridge.js`
-36. `doctor-examination/workspace-leave-guard.js`
-37. `doctor-examination.js`
+34. `doctor-examination/draft-recovery-policy.js`
+35. `doctor-examination/draft-recovery-store.js`
+36. `doctor-examination/draft-recovery.js`
+37. `doctor-examination/document-attachments-bridge.js`
+38. `doctor-examination/workspace-leave-guard.js`
+39. `doctor-examination.js`
 
 `support-runtime.js` is imported right after the component context so that
 every later module, including the shared Tiền sử form and substance fields,
@@ -151,6 +171,30 @@ script tags or documentation references for retired
 files unless a separately approved runtime slice reintroduces them.
 
 ## Active Owners
+
+### Popup tái khám: tháng và bố cục không cuộn (2026-09-27)
+
+`re-examination-calendar.js` giữ một FullCalendar tháng, bỏ lịch nhỏ Flatpickr
+và nút tuần/tháng. CSS owner `components/re-examination-calendar.css` dùng
+token chữ 13px cho nội dung/control, 14px cho tiêu đề, 12px cho ghi chú.
+Dialog chia header/body/footer; body desktop gồm form gọn và lịch co giãn,
+màn hẹp/thấp chuyển form lên trên. ResizeObserver cập nhật lịch khi thông
+báo tải/khóa thay đổi chiều cao, disconnect khi đóng. Không giấu overflow
+của lưới để che hàng ngày bị cắt. Ngày nhiều lịch mở danh sách 4 mục/trang;
+chỉ mở danh sách lịch trong ngày, không cho bấm từng lịch mở chi tiết;
+Escape đóng danh sách, không đóng popup đặt lịch. Draft, patient
+guard và lưu ở màn khám giữ nguyên. Sau QA đối chiếu hai màn, phần lịch
+đã chuyển về `components/appointment-calendar.js` và CSS cùng tên dùng
+chung với lịch hẹn; form/modal vẫn thuộc Doctor. Shared owner quản lý
+toolbar, Thứ Hai đầu tuần, typography, màu trạng thái và chấm màu bác sĩ.
+API đọc tái khám bổ sung `doctor_id`, `doctor_color`, `doctors[].calendar_color`
+từ User, không đổi scope dữ liệu, endpoint hoặc save payload.
+
+QA: 5 viewport 1440×900, 1366×768, 1024×600, 768×1024, 390×844 không
+cuộn/tràn khung với dữ liệu thật; chọn/xác nhận/mở lại draft trên ca435,
+xem lịch khóa của ca1101; mọi request ghi bị chặn. Tháng4/5/6 tuần và
+18 lịch/ngày có phân trang kiểm bằng dữ liệu mô phỏng, không ghi DB.
+Chưa pass visual/interactive QA với ngày dày dữ liệu thật; chưa kiểm lưu DB.
 
 | Concern | Canonical owner | Responsibility |
 | --- | --- | --- |
@@ -371,7 +415,10 @@ and tab/window close may still use native `beforeunload`.
 
 ## Local Draft Recovery
 
-`draft-recovery.js` is the only recovery-copy owner. It stores a 24-hour,
+`draft-recovery.js` is the only recovery-copy owner (since 27/09 it composes
+`draft-recovery-policy.js` — pure compare/merge/classify/resolve, no DOM — and
+`draft-recovery-store.js` — the IndexedDB records; both register in the Doctor
+registry and are imported right before the orchestrator). It stores a 24-hour,
 user/appointment/patient-scoped record in IndexedDB
 `qlpk_doctor_draft_recovery/clinical_drafts`; it never writes clinical data to
 `localStorage` and never replaces DB data automatically.
@@ -398,7 +445,12 @@ matches the fully loaded DB/API surface is recoverable. If the current DB/API
 surface already equals the draft, or has changed since that baseline, the
 record is obsolete and is deleted silently; canonical DB data stays on screen.
 
-## Known Debt, Not Yet Approved For Cleanup
+## Known Debt From The Earlier Cleanup
+
+The 26/09 health follow-up now explicitly includes all eleven reported debt
+categories, including shared owners used by Doctor. Track current status in
+`references/refactor-progress.md` under Doctor health; the historical scope
+exclusions below are not exemptions from that approved follow-up.
 
 - The Doctor orders surface is intentionally removed. The backend orders module
   and its shared screens remain outside this Doctor cleanup scope.
@@ -460,6 +512,89 @@ compatibility-sensitive, or out of scope for the current Khám cleanup.
 
 ## Cleanup Record 2026-09-26
 
+- Health follow-up: relative-table/joint-exam deletion delegates to the shared
+  confirmation owner; missing owner or SweetAlert cancels without mutation.
+  Transfer feedback delegates to `QLPKUserFeedback`, with no native alert.
+  Accessible names are explicit for history inputs/checkboxes, search/address
+  controls, joint-modal close and dynamic relative/joint create/edit inputs.
+  Flatpickr altInput inherits aria-labelledby/aria-label/associated labels,
+  without changing the original date value or input/change forwarding.
+  242 Node tests and targeted contracts pass. Live Doctor1440/700 inspection
+  covers dense/sparse API data, relative delete-cancel/edit-cancel and substance
+  toggle. This is not completion of the whole eleven-item health scope.
+- Health follow-up (DRY/complexity/cache): `components/patient-search-dropdown.js`
+  owns the relative/joint-exam patient-name dropdown lifecycle (tokens, floating
+  position, keyboard, outside-click bound after the opening click, result
+  rendering); `relative-table.js`/`joint-exam-manager.js` keep only fetch,
+  fill and link state. `components/history-tab-core.js` owns the shared
+  context/history-state/prologue of the three history tabs.
+  `QLPKComponentDomScope.mergeScopedConfig/createScopedComponent` back the
+  patient info/visit forms; `initDatepickerWithValue` (datepicker owner)
+  replaces the copied "set value then init Flatpickr" blocks. In Doctor-private
+  code: one `applyIcdSelection` for ICD hydrate/restore, one
+  `medicalHistoryToggleIcdById`, one `getChangedPrescriptionControls` in draft
+  recovery, and the history payload normaliser lives only in
+  `medical-history-bridge.js`. `workspace-save-controller.js` splits
+  `saveNow` (`buildSavePlan`/`saveMainSection`), `saveWorkspace`
+  (`runWorkspaceSave`/`failWorkspaceSave`/`saveSupportModules`) and
+  `completeNow` (`reportIncompleteSave`/`transferToPayment`); the contract
+  checks the after-save rebase by position and
+  `tests/workspace_save_controller.test.js` proves clean/dirty/failed/complete
+  paths. `prescription-ui.js` splits save/load helpers; `doctor-examination.js`
+  shares `markPatientLoadFailed`/`activateMainPane`/`startPatientSurfaceLoads`.
+  Module graph caching: `/static/js/<file>?v=` stamps relative ES imports with
+  the same version and versioned static responses are immutable
+  (`app/core/static_modules.py`, `app/core/http_cache.py`).
+- Health follow-up (CSS/builders, 27/09): shared CSS on the Doctor page has no
+  literal colours outside the token files (except the stock-contract fallbacks
+  in `doctor-prescription.css`); z-index uses `--qlpk-z-*`; Doctor-page CSS
+  targets classes only (`.doctor-clinical-section--decision`,
+  `.doctor-clinical-detail-panel`, `.doctor-history-workspace`,
+  `.medical-history-panel`, `.qlpk-patient-info__re-exam-check`,
+  `.qlpk-workspace-pane--native`; the Doctor/Psychologist workspaces carry
+  `doctor-clinical-workspace--doctor|--psychologist` so role-specific overrides
+  stay scoped). Shared builders are split into per-section helpers with
+  byte-identical output: MOH/screen prescription forms, the medical-record
+  document, the queue card, and the modal patient-selection flow. The last
+  id selectors moved to classes: `inline-tien-su.css` uses
+  `.medical-history-tabs`/`.medical-history-suggestion-box` for the advanced
+  workbench hide rule, `.medical-history-table-wrap` (substance/suicide/risk
+  wraps) and `.prev-risk-panel` (previous risk panel) from
+  `_inline_medical_history.html`; `clinical-workflow.css` targets
+  `.qlpk-shell-sidebar.col-md-2`. Computed-style parity against the HEAD
+  stylesheets (55,119 nodes, workbench targets included) is 0 diff.
+- Health follow-up (draft recovery, 27/09): `draft-recovery.js` 806→661 lines
+  after moving policy and store into their own owners; `collectRestoreTargets`
+  and `applyDraft` are split by owner (clinical/history/support) with the
+  original target order and stale-token checks. `scripts/check_doctor_draft_recovery_policy.js`
+  now loads the policy owner through the registry instead of patching source;
+  `tests/draft_recovery.test.js` drives the orchestrator with an in-memory
+  store (capture only when dirty, banner/restore/discard, cross-user/patient
+  purge, redundant vs failed-save rebase, debounce + context switch, logout).
+  Live check: edit Lý do khám → IndexedDB record → reload → banner → Khôi phục
+  (marker, focus, dirty) → Bỏ bản nháp → store empty, no banner on 435.
+- Health follow-up (patient modal data owner, 27/09): the shared
+  `components/modal-patient-search-data.js` owns search/appointment URLs,
+  fetches and payload adapters (`window.ModalPatientSearchData`, registry
+  `modalPatientSearchData`, no DOM); `modal-patient-search-ui.js` throws when
+  it is missing, so the entry module and `psychologist-examination.html` load
+  it first and `tests/modal_patient_search_flow.test.js` evaluates both files
+  in one context. 273 Node tests, the contract scripts and the four-page
+  browser smoke (Doctor/Psychologist/Receptionist/Index, 0 console errors)
+  pass after the split.
+- Health follow-up (last Doctor-private complexity, 27/09): `saveNow` keeps
+  its check order (skip reason → `assertSaveReady` → `buildSavePlan` →
+  `assertDetailsSaveable` → clean check) and delegates the in-flight detail
+  wait and the main/detail requests to `waitForDetailsLoad`/`saveSections`;
+  `runWorkspaceSave` reads readiness through `getSupportReadinessFailures`
+  and the clean/blocked skip states through `isSkippedFor`. The populate
+  verifier is five read-only checks returning warning lists, printed in the
+  original order. `handlePrescriptionInput` dispatches through a field
+  handler map (`PRESCRIPTION_FIELD_HANDLERS`) plus the time-slot branch;
+  `applyPrescriptionFieldInput` returning false still skips dirty/footer
+  updates. No Doctor-private function has ESLint complexity ≥20 (JSON
+  report). Evidence: live Save clean/dirty, draft flow, prescription-input
+  A/B against HEAD (7 steps identical), populate verifier parity (10 cases).
 - Dose math has one owner (`PrescriptionDoseUtils`). The duplicate helpers in
   `prescription-model.js`, the template and `psychologist-examination/core-utils.js`
   were removed or turned into delegates; parity over 980 stored usages × 3

@@ -2,6 +2,10 @@
 
 ### PDF preview (2026-09-21)
 
+- Transport update28/09 lát52: shared/pdf-preview.js dùng canonical fetch,
+  không lấy token riêng từ local/sessionStorage. Cookie CSRF/identity và
+  legacy Bearer do API transport giữ; HTML payload/QR/Blob lifecycle không đổi.
+
 - Caller `PrescriptionPrintDocument.render()` phải await: HTML mẫu in hiện
   hữu gửi tới `POST /api/print/preview.pdf`, mở Blob PDF trong tab đã tạo khi
   click. Không print/afterprint/auto-close; Ctrl+P/Cmd+P do người dùng chọn.
@@ -123,7 +127,9 @@ Tài liệu này là context ngắn cho workflow đơn thuốc. Đọc khi sửa
 - TOXIC bị chặn tại nguồn ghi: API tạo/sửa thuốc và import Excel chỉ nhận
   `BASIC/H/N`; template Excel bỏ lựa chọn "Thuốc độc". Lý do: vòng lặp lưu đơn
   `save_service.build_prescriptions_by_type` chỉ duyệt `['BASIC','H','N']`, nên
-  thuốc TOXIC sẽ bị bỏ im lặng khi kê. Các `type_map` xuất Excel/PDF vẫn giữ
+  thuốc TOXIC từng có nguy cơ bị bỏ im lặng khi kê. Từ 26/09, save service
+  còn chặn loại chưa hỗ trợ trước xóa dòng/trừ kho, trả 400
+  `prescription.invalid_input`, không tự chuyển TOXIC thành BASIC. Các `type_map` xuất Excel/PDF vẫn giữ
   nhãn TOXIC để hiển thị dữ liệu cũ. Muốn dùng thuốc độc thật thì phải bổ sung
   loại đơn thứ tư đầy đủ (mã đơn, mẫu in, vòng lặp lưu), không nới riêng validate.
 - QA 2026-09-11: 15 case đối chiếu contract khớp 100% hành vi cũ của cả hai bản
@@ -276,7 +282,7 @@ gồm nhiều lần nhập của cùng lô, giữ giá vốn từng lần nhập
 - `app/modules/prescriptions/view_models/public_prescription.py`: view model public prescription verify.
 - `app/modules/prescriptions/view_models/print_prescription.py`: internal view model cho print/preview đơn thuốc theo appointment, gom patient/history/examinationDetail/examinationDetailsBySection/prescriptionData/relatives bằng contract backend, trong đó diagnosis/benh_kem_theo là display text và `*_ids` giữ raw ICD IDs.
 - `app/modules/prescriptions/public_api.py` và `app/modules/prescriptions/view_model.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
-- `app/api/prescription.py`: wrapper tương thích cho internal prescription API path cũ; `main.py` dùng module path mới.
+- Shim `app/api/prescription.py` đã xóa ngày26/09/2026 vì không còn importer; `main.py` đăng ký internal API trực tiếp từ module path mới.
 - `app/templates/verify-prescription.html`: template verify hiện còn ở thư mục Jinja hiện tại để giữ path ổn định.
 - `app/static/css/prescriptions/pages/verify-prescription.css`: CSS riêng của page QR verify, tách khỏi inline template.
 - `app/static/js/prescriptions/pages/verify-prescription.js`: page bootstrap cho QR verify, chỉ fetch public API và gọi renderer dùng chung.
@@ -481,7 +487,7 @@ Khi sửa workflow này, chạy checklist `Prescription Print And Verify` trong 
 
 Tối thiểu:
 
-- `python3 -m py_compile main.py app/modules/prescriptions/api/public.py app/modules/prescriptions/api/internal.py app/modules/prescriptions/services/read_service.py app/modules/prescriptions/services/save_service.py app/modules/prescriptions/services/stock_service.py app/modules/prescriptions/services/re_examination_service.py app/modules/prescriptions/view_models/public_prescription.py app/modules/prescriptions/view_models/print_prescription.py app/modules/prescriptions/public_api.py app/modules/prescriptions/view_model.py app/api/prescription.py`
+- `python3 -m py_compile main.py app/modules/prescriptions/api/public.py app/modules/prescriptions/api/internal.py app/modules/prescriptions/services/read_service.py app/modules/prescriptions/services/save_service.py app/modules/prescriptions/services/stock_service.py app/modules/prescriptions/services/re_examination_service.py app/modules/prescriptions/view_models/public_prescription.py app/modules/prescriptions/view_models/print_prescription.py app/modules/prescriptions/public_api.py app/modules/prescriptions/view_model.py`
 - `python3 scripts/check_prescription_stock_contract.py`
 - `python3 scripts/qa_prescription_stock_concurrency.py --run` trên DB QA/local: script tạo dữ liệu tạm, dùng session PostgreSQL độc lập cho race condition và luôn cleanup trong `finally`.
 - `node --check app/static/js/doctor-examination/prescription-row-renderer.js app/static/js/doctor-examination/prescription-ui.js app/static/js/doctor-examination/support-modules-ui.js app/static/js/doctor-examination/workspace-save-controller.js`

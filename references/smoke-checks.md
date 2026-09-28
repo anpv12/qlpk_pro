@@ -1,5 +1,475 @@
 # QLPK Smoke Checks
 
+## Dữ liệu thật local, chỉ đọc (2026-09-28)
+
+- [x] Luồng ghi trên BẢN SAO DB local (pg_dump → cụm PostgreSQL tạm /tmp, Google/
+  email giả lập, đã xóa sau test): Doctor Lưu (loi_dan vào DB), Hoàn thành
+  (WAITING_PAYMENT), Chuyển khám sang bác sĩ khác (doctor_id đổi, job hoàn tất
+  ngay), Lễ tân sửa + Lưu (notes vào DB). 0 lỗi JS, 0 API lỗi.
+- [x] Lỗi thật phát hiện và đã sửa: (1) modal Chuyển khám gọi `/users/` bị 403
+  với bác sĩ (API quản trị) → danh sách người nhận trống; thêm
+  `/users/transfer-recipients` chỉ trả id/tên/role người đang hoạt động.
+  (2) job lịch treo mãi khi bác sĩ cũ/mới chưa nối Google → nay hoàn tất và
+  ghi chú `old_calendar_disconnected`/`target_calendar_disconnected`, vẫn giữ
+  liên kết lịch cũ để đối soát. 911 Python + 738 Node đạt.
+
+- [x] Server QA riêng (cổng ngẫu nhiên) nối DB local ở chế độ READ ONLY cấp
+  PostgreSQL; trình duyệt chặn mọi POST/PUT/DELETE. Phiên cookie cấp trong
+  tiến trình QA cho doctor 24, TLG 26, staff, admin; đã dừng và xóa sau test.
+- [x] Doctor: 197 thẻ chờ, đổi 2 ca đổi đúng bệnh nhân, đơn thuốc 8 dòng, modal
+  lịch sử 4 lượt + 4 tab dữ liệu; TLG 26: 6 thẻ, mở ca đúng tên; Lễ tân: 20 thẻ,
+  sửa 2 ca đổi đúng bệnh nhân/bác sĩ/dịch vụ; Calendar: lịch + modal đồng bộ
+  hiện 1 lịch. 0 lỗi JS ngoài WebSocket (server QA không chạy Socket.IO), 0 API lỗi.
+- [x] Realtime cookie: server cô lập có Socket.IO, đăng nhập form → socket kết nối
+  bằng cookie + CSRF, không token storage; logout → socket ngắt.
+- [ ] Chưa gọi Google Calendar thật (sẽ đổi lịch thật); chưa đăng nhập bằng mật
+  khẩu thật trên 8000 (cần người dùng).
+
+## Cookie session cutover (2026-09-28, lát65)
+
+- [x] Gate token ownership; 909 Python + 738 Node; feedback/diff đạt.
+- [x] Chrome 19 trang legacy qua transport; E2E cookie login/logout/redirect/
+  CSRF/không Authorization/public page với Flask auth thật, DB mock.
+- [ ] Đăng nhập tài khoản thật trên HTTPS production và dữ liệu thật; chưa pass
+  visual/interactive QA thật.
+
+## Calendar scope đóng (2026-09-28, lát64)
+
+- [x] OAuth state/PKCE: thiếu/giả/khác trình duyệt/hết hạn/replay bị từ chối,
+  logout/khóa tài khoản trước hoặc trong lúc đổi code không lưu kết nối;
+  store phiên lỗi fail-closed; không phản chiếu lỗi. Real library S256 check.
+- [x] Migration adopt/refuse; route chỉ drain job đã commit;189 Python +733 Node.
+- [ ] Tài khoản Google thật, `alembic upgrade head` và worker trên môi trường
+  vận hành là bước deploy của owner; chưa pass visual/interactive QA thật.
+
+## Calendar API access (2026-09-28, lát63)
+
+- [x]30 tests mới;155 Python +733 Node; feedback/diff đạt. Actor spoof/disabled,
+  mixed forbidden/missing batch no Google calls, cancelled409, input/date400.
+- [x] Read view-all/historicpsych giữ, không write bypass. Clinical sync own
+  calendar only; staff broadcast; delete-all missing dates reject, own events
+  only; validate-connections clinical chỉ own user. Auth HTTP401/400/403/200.
+- [x] Isolated PG actual Lock: owner/status/active changes recheck; bulk delete
+  chờ transfer commit không xóa lịch của owner mới. PG fixture đóng finally.
+- [ ] UI bulk>100/error states/provider account thật chưa QA; full writer
+  outbox/OAuth security/rollout còn mở. Chưa pass visual/interactive QA thật.
+
+## Legacy Calendar mapping safety (2026-09-28, lát62)
+
+- [x]25 tests mới;125 Python +733 Node. Strict verify phân biệt404/410/
+  cancelled với network/auth/quota; giữ default boolean read-only contract.
+- [x] Flask route + isolated PG: manual sync unknown không create/drop mapping;
+  duplicate cùng ID không delete live provider event, khác ID chỉ remove
+  mapping khi delete success. Update/cancel không mất mapping khi Google lỗi.
+- [x] Delete-all disconnected/fake404 text giữ links; HTTP404/410 remove;
+  quota429/403 rateLimitExceeded tối đa3 attempts. Feedback/diff gates đạt.
+- [ ] Common writer outbox/locks, Calendar API access/status scope và Google
+  thật chưa QA; chưa pass visual/interactive QA clinical thật.
+
+## Calendar retry recovery (2026-09-28, lát61)
+
+- [x]100 Python +733 Node;18 cases mới, Calendar tổng36. Missing404/410/
+  cancelled khác network/auth/quota failures; default provider bool giữ nguyên.
+- [x] Stateful remote fixture + isolated PG: delete Google rồi rollback DB,
+  chuyển về owner cũ tự phục hồi; live target không tạo đôi; tombstone rotate
+  persist trước dùng, commit rotation fail vẫn dùng ID cũ ở lần kế tiếp.
+- [x] GET404 sau insert409 không tự suy đoán tombstone; lỗi không đổi ID.
+- [ ] Google thật/rollout chưa kiểm; writer chung và completed-job reconciliation
+  còn mở; chưa pass visual/interactive QA clinical thật.
+
+## Calendar transfer outbox (2026-09-28, lát60)
+
+- [x]18 tests mới, targeted82 Python +733 Node. Transaction rollback/commit
+  failure không để job hoặc external call; uncommitted job không visible.
+- [x] PostgreSQL thật cô lập: worker commit failure giữ durable job, retries
+  cùng provider ID, delete failure giữ mapping, giữ staff event, missing
+  connection/backoff/legacy NULL pending, chuyển tiếp/out-of-order/cancelled.
+- [x] pg_stat_activity quan sát lock:2 workers không create đôi; transfer
+  đang commit thì worker đợi và đọc owner mới. Migration upgrade/downgrade
+  fixture, Alembic head duy nhất, feedback/static workflow gates đạt.
+- [ ] Migration/consumer chưa rollout; Google network/account thật chưa QA;
+  manual-sync/cancel/update writers chưa chung lock/outbox. Chưa pass
+  visual/interactive QA clinical thật; không kết luận full Calendar pass.
+
+## Transfer backend scope/batch (2026-09-28, lát59)
+
+- [x]64 Python (27 transfer mới) +733 Node; malformed IDs/role/JSON, actor/target
+  activity/role, current ownership, view-all không cấp write, mixed batch rollback.
+- [x] PostgreSQL riêng: missing/deleted/not-confirmed/payment/duplicate exam
+  reject toàn batch, mapping/no-op, unexpected exception rollback; HTTP status
+  400/403/404/409, success count, chỉ committed changed IDs emit/notify.
+- [x] pg_stat_activity quan sát row-lock wait:2 transfers cùng ca, target disable,
+  examination PAID; đọc lại sau lock không overwrite state/ownership mới.
+- [ ] Lát60 bỏ external Calendar precommit ở transfer; vẫn chưa audit lock
+  order toàn workflows; chưa pass visual/interactive QA clinical thật.
+
+## Transfer modal session (2026-09-28, lát58)
+
+- [x]733 Node +17 Python workflow/globals; before-save/duplicate/close guards,
+  stale patient/legacy/cookie revision, anonymous, incomplete success/count.
+- [x] Chrome actual template/jQuery/Bootstrap + cookie: người nhận, POST CSRF/
+  no Bearer, callback đúng; invalidation trong POST không callback/toast/POST lại.
+  Browser/server đóng; feedback/diff-check đạt.
+- [ ] API/DB fixture, chưa pass visual/interactive QA clinical thật; backend
+  transfer actor/target permissions, atomic batch/concurrency chưa hoàn tất.
+
+## Receptionist catalog session (2026-09-28, lát57)
+
+- [x]733 Node +17 Python workflow/globals, feedback/diff-check đạt;15 tests
+  legacy/cookie, latest response wins, stale JSON,401/503/network/non-array.
+- [x] Chrome real cookie/source: doctor/service load, literal markup names,
+  refresh giữ doctor selection,1 bộ listeners, focus giữ ID/typing clear,
+  mouse+keyboard chọn dịch vụ, empty state. Browser/server QA đã đóng.
+- [ ] API/DOM fixtures, chưa pass visual/interactive QA clinical thật/dense/
+  sparse. Mounted cache invalidation và full cookie template cutover còn mở.
+
+## Shared patient transport (2026-09-28, lát56)
+
+- [x]718 Node +17 Python workflow/globals, feedback/diff-check đạt. Cookie/
+  legacy relatives/modal/uploads/preview/download; multipart không ép header.
+- [x] Upload stale JSON không success, modal session error không fallback;
+  patient switch trong Blob/422 fallback không mở/download tệp cũ.
+- [x] Chrome cookie thật/source: relatives có dòng, modal relatives read,
+  2 upload paths CSRF/multipart, click file rendered→đổi patient chặn Blob cũ.
+  Browser/server đã đóng; DB/API fixture, không dữ liệu vận hành.
+- [ ] Chưa pass visual/interactive QA clinical thật/dense/sparse; template
+  cookie binding và full workflow cutover vẫn mở.
+
+## Medical-history session transport (2026-09-28, lát55)
+
+- [x] Node cookie/legacy: ICD exact/suggestions, family, allergen read/create,
+  upload JSON/FormData headers/CSRF; session invalidation rejects loaders.
+- [x] Đổi bệnh nhân/session trong Blob không mở file cũ; upload lỗi trả muộn
+  không toast hoặc xóa input mới.710 Node toàn bộ đạt.
+- [x] Chrome actual ES module graph + real cookie/DB mock: ICD/gợi ý render,
+  chọn supporter, upload multipart boundary+CSRF; stale Blob không mở tệp.
+- [x]17 Python workflow/globals, feedback contract và diff-check đạt;
+  Chrome/server QA đã đóng.
+- [ ] Component/API fixture, không thay dense/sparse/interactive clinical
+  dữ liệu thật: chưa pass visual/interactive QA. Full cookie rollout còn mở.
+
+## Clinical session bootstrap (2026-09-28, lát54)
+
+- [x] Ba page runtime chờ cookie bootstrap; stale legacy token không vượt gate;
+  API POST có session/CSRF, không Bearer.401/503/changed không khởi tạo trang.
+- [x]702 Node tests; legacy raw/Bearer/JSON/alias, logout session-only revoke,
+  late response không xóa credential mới. Bootstrap order của TLG giữ nguyên.
+- [x] Chrome cookie thật/DB mock: delayed bootstrap cả3 runtime, POST API
+  fixture, same-origin iframe bootstrap, changed/503 fail closed.
+- [x]62 Python session/workflow/globals/static; feedback contract/diff-check;
+  Chrome header/password/realtime/logout và scoped IndexedDB cleanup hồi quy.
+- [ ] Chưa pass visual/interactive QA clinical dữ liệu thật/dense states.
+  Không đổi CSS/layout; không xác nhận mounted clinical UI clear khi invalidation,
+  không bật cookie templates và không kết luận full cutover đã hoàn tất.
+
+## Shortcut session lifecycle (2026-09-28, lát53)
+
+- [x] No private Bearer; cookie doctor không dùng stale admin storage.
+  Late response/logout/invalidation không kích hoạt cache phím tắt cũ.
+- [x] Chrome source/form: mine-only, Ctrl+K, POST CSRF save; invalidate clear
+  rows/inert form, programmatic submit và keyboard không tạo request/navigation.
+- [ ] Synthetic session/API fixture, chưa pass visual/interactive QA clinical
+  thật/dense/admin controls; cookie rollout còn mở. Rotation cần reload settings.
+
+## Shared text expansion / PDF transport (2026-09-28, lát52)
+
+- [x] Runtime + management không trùng loader; refresh cache đúng active API;
+  pending load không phục hồi cache sau invalidation; đọc isLoaded không hủy load.
+- [x] Chrome cookie thật/source+API fixtures: manager rows, refresh, Tab
+  expansion, Excel authenticated download, PDF POST CSRF→Blob, cache clear.
+- [x]681 Node +33 Python workflow/globals/PDF đạt; no DB writes, processes đóng.
+- [ ] PDF viewer dùng stub, không xác nhận bản in lâm sàng; chưa pass visual/
+  interactive QA clinical/dense state. Full cookie cutover vẫn còn mở.
+
+## Shared catalog transport (2026-09-28, lát51)
+
+- [x]5 loaders không tự đọc/gắn token; unit cả legacy/cookie giữ mapping,
+  read auth và POST CSRF/body. ICD không gọi legacy callback; session lỗi throw.
+- [x] Chrome cookie thật + components thật: nghề nghiệp/tỉnh/xã tải/chọn,
+  tạo nghề nghiệp qua POST CSRF, ICD trả rows; không Bearer. API fixtures.
+- [ ] Chưa pass visual/interactive QA clinical dữ liệu thật/dense states;
+  không đổi HTML/CSS/component layout, không hoàn tất cookie cutover.
+
+## Cookie login form (2026-09-28, lát50)
+
+- [x] Shared action single-submit, revision stale không redirect/clear storage;
+  error không fallback Bearer.401/429/503/lock-unavailable báo rõ, nút thử lại.
+- [x] Chrome actual form/source + Flask mock DB:429 delay35/retry rồi HttpOnly
+  cookie login thành công, chỉ1 auth request, không /check/me/Bearer/identity
+  storage, /auth/session200. Screenshot error desktop đã xem.
+- [ ] Chưa full cookie template cutover hoặc real clinical/iframe E2E; không
+  coi login fixture là pass visual/interactive QA toàn bộ workflow.
+
+## Workspace cookie access (2026-09-28, lát49)
+
+- [x] Stale admin storage không vượt cookie permissions; đọc đúng owner tabs.
+  openHref route bị cấm trả false; pending leave không ghi state dưới account mới.
+- [x] Chrome source/CSS thật: allowed iframe mở, rotation cùng user giữ pane,
+  invalidation ẩn/inert host, account mới không mở tab/ghi owner state cũ.
+- [x] Header/password/logout/IndexedDB Chrome fixture regression vẫn đạt.
+- [ ] Chưa pass visual/interactive QA clinical/dense workspace thật; iframe
+  background session binding, page guards và full cookie cutover vẫn còn mở.
+
+## Guarded response streams (2026-09-28, lát48)
+
+- [x] Legacy/cookie: body ổn định, reader/BYOB, tee, async iterator, pipeTo,
+  pipeThrough và new Response(body) không trả chunk đến muộn sau đổi phiên.
+- [x] Chrome14 ca HTTP stream chậm thật:7 consumer types x2 session modes;
+  no pageerror/late chunk. Identity giả lập, không dùng dữ liệu khám.
+- [ ] Không thay QA clinical thật; cookie cutover, suspended-tab draft cleanup
+  và kiểm thử hệ thống còn mở. Bytes đã giao không thể thu hồi.
+
+## Cookie logout / draft cleanup (2026-09-28, lát47)
+
+- [x] Shared mutation lock giữ tới callback cleanup xong; server lỗi không dọn.
+- [x] Header await main/iframe pendingCleanup; false/rejection không redirect;
+  retry không logout lần hai, anonymous revision guard giữ account mới an toàn.
+- [x] Draft lấy cookie identity RAM, cleanup userId xác nhận; pending write của
+  user cũ được chờ, user khác giữ nguyên. Write đổi revision kể cả cùng user
+  không trở thành nháp hiện hành và bị xóa theo captureId.
+- [x] Chrome header/cookie/IndexedDB thật, mock DB/clinical shell: logout→user7
+  records mất, user8 giữ, redirect login và /auth/session401. Processes đóng.
+- [ ] Suspended tabs/delayed invalidation, cookie cutover toàn bộ và clinical
+  data thật/dense states: chưa pass visual/interactive QA toàn workflow.
+
+## Header cookie integration (2026-09-28, lát46)
+
+- [x] Cookie header identity RAM, không stale storage/ghi qlpk_user; profile/
+  search/notification không Bearer, blocked session không fallback, JSON stale
+  propagate. Password actions không ghi token/restart old socket.
+- [x] Chrome real header/template/cookie/DB mocked: profile/search/notification
+  empty/form password rotation + realtime reconnect, không pageerror/storage
+  JWT; đủ CSS/token/icon QA, ảnh đã xem. QA processes đóng.
+- [x] Cookie logout actions + đúng-user draft cleanup nối ở lát47; xem các
+  giới hạn đa tab/cutover phía trên. Chưa bật templates cookie.
+- [ ] Clinical/full/dense UI và password button token còn mở; chưa pass
+  visual/interactive QA workflow thật. Legacy regression vẫn đạt.
+
+## Cookie API transport binding (2026-09-28, lát45)
+
+- [x] Singleton owner/actions dùng native fetch: không recursion/startup
+  request/Bearer bootstrap; stale storage không vượt anonymous cookie.
+- [x] Fetch+jQuery ID+CSRF, late body/clone revision guard, direct auth mutate
+  reject; locked login/password/logout hoạt động;401 expire/no replay.
+- [x] Chrome2 tabs/cookie thật/DB mocked: profile, global:false write,
+  multipart, blob; password rotation invalidate tab khác/chặn ghi phiên cũ,
+  logout propagation, no JWT storage. Legacy regression cũng đạt; QA đóng.
+- [ ] Coordinated template/caller/iframe/draft cutover và clinical real-data
+  QA còn mở; chưa pass visual/interactive QA. Raw stream chưa có guard.
+
+## jQuery canonical transport (2026-09-28, lát44)
+
+- [x] Same-origin jQuery qua fetch owner, global:false vẫn auth; external/
+  script/JSONP không auto-auth. Late response không success/responseText cũ.
+- [x] Chrome real jQuery: error HTTP, malformed JSON parsererror, abort,
+  timeout, multipart upload, blob download, no replay;4 catalog templates
+  với fixture API9 GET auth/3 downloads/0 pageerror. QA processes đã đóng.
+- [x] Unit responseType blob/arraybuffer/json/text, headers/status/body,
+  abort suppress late completion; sync fail trước request, duplicate install.
+- [ ] Cookie cutover/raw stream/clinical UI/draft lifecycle và dữ liệu thật
+  còn mở; chưa pass visual/interactive QA toàn workflow.
+
+## Canonical API transport (2026-09-28, lát43)
+
+- [x] Shared partial nạp transport trước utils/callers; duplicate load và
+  jQuery install không nhân wrapper. Bốn màn danh mục không tự gắn token.
+- [x] Same-origin only, external base/URL/Request không gắn credential;
+  headers/body/options giữ nguyên,401 không replay. Fetch/body parsing/clone
+  stale sau đổi account reject; native Response getters vẫn chạy đúng.
+- [x] Chrome4 templates/fixture API:9 GET authenticated,3 download,0 pageerror;
+  Chrome2 origins6 requests kiểm no credential leak. QA processes đóng.
+- [ ] Cookie frontend migration, jQuery stale response/raw stream và QA
+  dữ liệu thật còn mở; chưa pass visual/interactive QA toàn workflow.
+
+## Management examinations scope/filter (2026-09-28, lát42)
+
+- [x] Isolated PostgreSQL9 ca: doctor chỉ assignment, psychologist cả legacy,
+  admin/staff/full scope đầy đủ; role khác rỗng. Cùng patient không mở rộng scope.
+- [x] Detail/status ca ngoài quyền/inactive/appointment xóa404, không emit/mutate;
+  ca được phép đọc đúng, đổi trạng thái đúng; body/filter sai400 không500.
+- [x] Stats/list cùng ngày/bác sĩ/search không dấu; inactive/deleted không tính,
+  ngày cuối inclusive/ngày kế không lọt, PAID không badge, đủ key0 và status
+  selection không giới hạn badge khác. Pagination bounds và full scope đúng.
+- [x] Cookie stats dùng actor từ auth, không đòi Authorization header; DB lỗi
+  response JSON500; absent/inactive actor scoped SQL false. QA cluster đóng.
+- [ ] Browser workflow thật và reassignment/write concurrency toàn luồng:
+  chưa pass visual/interactive QA; không coi HTTP fixture là nghiệm thu UI.
+
+## Profile/session realtime binding (2026-09-28, lát41)
+
+- [x] /users/me giữ profile extras, đọc quyền mới từ owner chung, no-store;
+  account mất/khóa sau guard401; permission malformed fail closed.
+- [x] Cookie bind không fallback legacy storage; invalidation đóng socket,
+  old callbacks không subscribe/dispatch/reconnect hoặc làm bẩn event dedup.
+  Rebind gỡ listener cũ; explicit stop không tự khởi động khi identity đổi.
+- [x] Chrome cookie+WebSocket thật, DB mocked: login/subscribe/resync,
+  password rotate/socket replacement, profile read, logout/disconnect;
+  không token storage/page errors. QA processes đóng.
+- [ ] Template/callers cutover và dữ liệu khám thật: chưa pass
+  visual/interactive QA. Backend/frontend integration fixture không thay nghiệm thu.
+
+## Cookie identity/actions integration preparation (2026-09-28)
+
+- [x] Login/bootstrap/check/password rotate trả cùng quyền mới từ DB;
+  malformed permission lists fail closed, admin list giữ nguyên.
+- [x] Cookie login/password/logout actions dùng cùng Web Lock, duplicate
+  local reject; thiếu locks reject trước network. Cookie payload strict RAM-only.
+- [x] Logout chờ sau session switch không POST; outage503 không confirmed,
+  response200 thiếu success hoặc stale JSON không clear identity/cho phép cleanup.
+- [x] Password400 giữ phiên, ambiguous network/500 block tới reverify; không replay.
+- [x] Chrome2 tabs với cookie/Web Locks thật, Flask DB mocked: login/quyền/
+  password rotate/logout, queued logout account-switch reject, storage trống.
+- [ ] Nối vào login/header/templates/socket/callers và real clinical draft/
+  iframe QA. Chưa pass visual/interactive QA; không nới completion theo factories.
+
+## Browser session owner preparation (2026-09-28)
+
+- [x] Single-flight bootstrap; malformed payload fail closed, network failure
+  giữ identity RAM nhưng block writes;401 anonymous/expired không retry.
+- [x] Chặn late bootstrap/response/JSON parsing sau revision change; Request
+  headers/body giữ, không mutate init, same-origin only, không Bearer.
+- [x] GET có session ID, writes thêm CSRF, server reject ID lệch cookie;
+  BroadcastChannel chỉ invalidation, không sync credentials/identity qua message.
+- [x]2 Chrome tabs thật/Flask DB mocked: old ID403, invalidation block writes,
+  bootstrap mới hoạt động, logout lan sang tab khác; storage trống/cookie hidden.
+- [ ] Nối factory vào54 file callers, login/header/password/logout/socket/
+  download/iframe; chưa pass visual/interactive QA workspace thật.
+- Tests browser_session_client.test.js21 ca, test_browser_sessions.py32 ca;
+  evidence /tmp/qlpk-session-owner-browser.log.
+
+## Cookie/CSRF backend preparation (2026-09-28)
+
+- [x] Cookie login same-origin; prod HTTP reject, Secure/HttpOnly/__Host/
+  host-only/Path=/ đúng; JSON không JWT, Cache-Control no-store.
+- [x] User/admin write thiếu/sai/phiên-khác CSRF403 trước handler; Origin
+  null/external/khác scheme-port reject; cookie ưu tiên header, không bypass.
+- [x] Cookie token không dùng Bearer; /auth/session bootstrap đúng phiên,
+  password rotate đổi CSRF, logout revoke+clear, store lỗi503 giữ cookie.
+- [x] Socket.IO test transport cookie+CSRF subscribe đạt/logout disconnect;
+  sai Origin/CSRF reject. Chrome thật không đọc session qua document.cookie,
+  missingCSRF403, valid200, oldCSRF403, logout200 rồi session401.
+- [ ] Frontend54 file migration, hết phiên/multitab/iframe và browser workflow
+  thật. Backend test pass KHÔNG chứng minh đã bỏ token khỏi localStorage.
+- Tests test_browser_sessions.py (30 ca), /tmp/qlpk-cookie-browser.log.
+
+## Auth transport / không replay401 (2026-09-28)
+
+- [x] Shared fetch/jQuery chỉ tự thêm token cùng origin (khác port/protocol,
+  subdomain, protocol-relative external, Request/URL external không tự thêm).
+- [x] Fetch Request giữ headers/body; init không bị mutate, explicit auth giữ.
+  POST401 một request, không login/refresh/retry ngầm, late401 không đổi user mới.
+- [x] Không đọc plaintext credentials; dọn legacy keys khi load utils.
+  Lịch hẹn không còn autoLogin caller. Authenticated refresh cũ410 không token.
+- [x] Chrome +2 loopback HTTP servers thật:6 requests,2 external không auth,
+ 3 request401 không replay; dummy data/token, không server hay tài khoản thật.
+- [ ] Full appointment/Doctor workspace khi hết phiên với nháp/dữ liệu thật;
+  chưa pass visual/interactive QA. HttpOnly/CSRF/CSP vẫn cần làm.
+
+## Lịch bận cá nhân: chọn nhanh/an toàn nội dung (2026-09-28)
+
+- [x] Unit và browser fixture: click chữ/icon, Enter/Space chọn đúng nút;
+  giữ5 khung giờ hiện tại, reset/manual datetime clear active/aria-pressed.
+  Nút ngoài form không bị mất active. Datepicker và plain-input fallback đạt.
+- [x] Lý do chứa img/onerror, svg/onload, dấu nháy/& chỉ là text ở bảng/gợi ý/
+  modal xóa; chọn gợi ý giữ nguyên văn, không sinh DOM img/svg/chạy script.
+- [x] Chrome1440/390 fixture12 dòng/1 dòng không overflow,0 JS errors/0 writes.
+- [ ] Xác nhận lại bằng dữ liệu thực đầy/thưa và người dùng được phép;
+  chưa pass visual/interactive QA workflow thật. Không tạo lịch test trong DB thật.
+
+## Khóa/mở khóa tài khoản và phiên (2026-09-28)
+
+- [x] Isolated RAM/Redis: revoke mọi phiên user, user khác không ảnh hưởng;
+  mở khóa/new login không hồi sinh token cũ. Mất generation key fail closed.
+- [x] Stale registration/race register-revoke reject old generation; account
+  TTL không ngắn hơn phiên dài nhất; initialization concurrent một generation.
+- [x] PUT/DELETE security fields revoke trước commit; profile-only giữ phiên;
+  bool sai400, Redis lỗi503 không commit, DB lỗi không khôi phục phiên đã revoke.
+- [x] PostgreSQL QA riêng: login trước disable và ngược lại chờ row lock thật;
+  sau reenable token cũ vẫn bị từ chối. Chạy với RAM và Redis QA riêng.
+- [x] HTTP/socket loader reject generation cũ; self-password revalidate sau lock.
+- [ ] Browser quản trị khóa/mở khóa và phiên Doctor/iframe dữ liệu thật;
+  chưa pass visual/interactive QA cho chuỗi này.
+- Evidence: test_account_session_lifecycle.py; test_credential_token_revocation.py.
+
+## Đăng xuất server (2026-09-28)
+
+- [ ] Hai login cùng user có jti khác; logout1 chặn HTTP/socket token1,
+  token2 vẫn hoạt động. Token replay/không registry/registry mất không accept.
+- [ ] Redis unavailable503 trước handler, revoke lỗi không success; restart/
+  eviction chỉ yêu cầu login lại, không resurrect token. Production cần Redis.
+- [ ] Pending logout không gửi đôi;200/401 clear aliases/workspace,503 giữ
+  phiên và nháp; response cũ không xóa account mới. Native+iframe dọn nháp
+  chỉ sau confirmed event và hoàn tất trước xóa qlpk_user.
+- Isolated tests: test_access_sessions.py (gồm Redis thật),
+  logout_session_lifecycle.test.js. Cần bổ sung workspace/DB E2E thật.
+
+## Cấu hình production (2026-09-28)
+
+- [ ] `python3 scripts/check_security_config.py` đạt với cấu hình deploy,
+  không in secret. Production từ chối khóa rỗng/default/ngắn, expiry0/quá
+  1440, thuật toán ngoài HS256 trước DB imports/initialization.
+- [ ] Issuer cap lifetime; decoder production chặn JWT không-exp/sai kiểu,
+  HTTP/socket dùng cùng owner. DEBUG exception không tính production pass.
+- [ ] Không secret/password SMTP mặc định trong config; credential từng
+  xuất hiện trong source đã được owner thu hồi/rotate ngoài repo nếu dùng.
+- Unit/source tests: `tests/test_production_security_config.py`. Không
+  import main khi QA để tránh DB side effects; startup order kiểm bằng AST.
+
+## Giới hạn đăng nhập (2026-09-28)
+
+- [ ] Vượt account/IP budget trả429 trước DB/bcrypt, có Retry-After;
+  đổi username không vượt IP và đổi IP không vượt account. Body sai tính IP.
+- [ ] Requests song song không vượt reservation; blocked không gia hạn;
+  hết TTL được thử lại. Login đúng không reset budget.
+- [ ] Redis lỗi503, không fallback memory; kiểm Lua atomic/TTL thực trên
+  Redis QA riêng, không ghi counters thật. Restart/eviction cần rollout plan.
+- [ ] UI429 hiện thời gian chờ, giữ input, nút enabled; pending không gửi
+  đôi. Desktop1280/mobile390 không tràn; không tự retry mật khẩu.
+- Tests: `test_login_throttle.py`, `login_throttle_ui.test.js`. Browser
+  mock429 không thay E2E Redis/backend/proxy thật.
+- Isolated Redis thật: `test_login_throttle_redis.py`, binary chọn qua
+  QLPK_TEST_REDIS_SERVER, fixture luôn tự spawn Unix socket riêng/port0.
+  10 ca Redis7.4.6 đạt ở lát32; không xem đó là QA nginx/production config.
+
+## Token sau đổi mật khẩu (2026-09-28)
+
+- [ ] Login phát token có binding opaque, không password/hash; token cũ
+  thiếu binding yêu cầu login lại theo kế hoạch rollout.
+- [ ] Sau đổi/reset password, token trước đó bị401 ở HTTP và không mở/
+  nhận sự kiện socket; token mới hợp lệ. Lỗi commit không trả replacement.
+- [ ] Tự đổi password cập nhật token trước restart socket, không reload
+  hay xóa form khám đang nhập; double-submit chỉ một request.
+- [ ] Logout/đổi account khi request chờ: response cũ không ghi đè phiên
+  hiện tại; thiếu replacement sau commit báo cần login lại bằng password mới.
+- [ ] Kiểm đồng thời hai password changes trên DB QA riêng; không dùng DB
+  y tế/tài khoản thật. SELECT FOR UPDATE có trong source, mock chưa chứng
+  minh lock PostgreSQL thực. Isolated tests không thay E2E này.
+
+## Quản trị tài khoản và nhóm quyền (2026-09-27)
+
+- [ ] User thường gọi trực tiếp CRUD user/group/user-group phải403, không
+  đọc/ghi domain hoặc tệp; actor vừa bị khóa/mất quyền cũng bị chặn.
+- [ ] Admin tạo/khóa tài khoản; người có ql-taikhoan sửa hồ sơ thường nhưng
+  không đổi role/quyền xem bệnh nhân/password hoặc sửa tài khoản admin.
+- [ ] Quản lý nhóm/phân quyền không cấp quyền vượt quyền đang giữ; danh
+  sách users/groups vẫn tải được cho ql-phanquyen, picker khám vẫn dùng được.
+- [ ] Gán nhiều nhóm có một ID thiếu/sai không xóa phân quyền cũ; checkbox
+  gửi string ID vẫn được nhận, trùng được gom, [] xóa có chủ ý.
+- [ ] Upload avatar/license trái quyền hoặc user thiếu không ghi tệp;
+  GET users/patients không vượt patient scope.
+- Automated isolated HTTP coverage: `tests/test_account_access_safety.py`.
+  Chưa thay thế browser QA với tài khoản quản lý thật và DB transaction thật.
+
+## Bốc thuốc và thống kê theo thời gian (27/09/2026)
+
+- Bộ testcase, lệnh chạy và giới hạn: `references/medicine-dispensing-qa.md`.
+- [x] Đếm operation, nhiều lô, no-op, xuất thêm, hoàn, đổi giá, tháng chỉ hoàn/điều chỉnh.
+- [x] Tổng toàn bộ bộ lọc trước phân trang; thuốc trùng tên khác ID; thiếu giá không thành0.
+- [x] Browser dữ liệu thật41 thuốc/2735 giao dịch, chọn thuốc, tháng này, rỗng, phân trang.
+- [x] Desktop1440/1024 không tràn ngang; dữ liệu ít/nhiều và interaction đã kiểm.
+- [ ] Mobile390 toàn trang: footer chung tràn ngang, hai bảng mới cuộn trong vùng đúng.
+- [ ] E2E thao tác ghi qua màn bác sĩ chưa chạy lại; API/service kiểm trong rollback.
+
 ## Truy vết cấp/hoàn theo lượt khám (2026-09-20)
 
 - [x] Hai lượt cùng bệnh nhân giữ riêng receipt/cost/sale; đổi giá danh mục không đổi lịch sử.
@@ -522,6 +992,23 @@ Tài liệu này chứa các checklist kiểm chứng nhanh sau mỗi thay đổ
 ## Realtime Socket
 
 Áp dụng khi sửa `app/realtime/*`, `realtime-client.js`, `realtime-page-hooks.js`, hoặc các API/màn hình phát/nhận event socket.
+
+- [ ] User thường không join admin/finance/entity/user khác; rooms malformed
+  không crash; đóng tab/thu hồi permission thì phòng cũ được leave.
+- [ ] Notification cá nhân chỉ đúng user, không lộ qua operations/global
+  hoặc admin kế thừa role. Email reminder không tăng inbox toàn hệ thống.
+- [ ] Khóa user/đổi nhóm disconnect mọi socket user; đổi group disconnect
+  local sockets và reauth/resubscribe. Logout/stop không tự reconnect.
+- [ ] Kiểm riêng patient scope của clinical payload; pass room allowlist
+  không đủ kết luận mọi dữ liệu realtime đã được phân quyền đúng.
+- [ ] Bác sĩ khác chỉ nhận anonymous changed, không patient/visit IDs,
+  tên/chẩn đoán hoặc family data; người được phân công nhận ID điều phối.
+- [ ] Chuyển bác sĩ/xóa ca vẫn refresh hàng đợi cũ; attachment qua room kho
+  không lộ bệnh nhân; scope đổi áp dụng trước event kế tiếp không cần subscribe.
+- [ ] Nhiều tab/rooms không nhân event; lỗi DB/socket recipient lookup không
+  broadcast fallback hoặc làm request save đã commit báo lỗi giả.
+- Isolated tests: `test_realtime_access_safety.py`,
+  `realtime_session_lifecycle.test.js`; không thay E2E DB/browser thực.
 
 - [ ] `/static/vendor/socket.io/socket.io.min.js` trả Socket.IO client script khi server đang chạy; không dùng `/socket.io/socket.io.js` như static asset vì đó là Engine.IO endpoint.
 - [ ] Socket connect bằng JWT hợp lệ và server trả `qlpk:connected`.

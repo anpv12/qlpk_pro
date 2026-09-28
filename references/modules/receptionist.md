@@ -4,6 +4,126 @@ Tài liệu này là context ngắn cho workflow lễ tân/tiếp nhận. Đọc
 
 ## Ownership
 
+- Danh mục (28/09, lát57): catalog-loaders bỏ token riêng, dùng canonical
+  fetch với timeout10s/latest-load-wins; lỗi trả false/toast, không retry vô
+  hạn hoặc redirect riêng. Doctors dùng textContent, giữ selection còn hợp lệ.
+  Service autocomplete namespaced handlers không nhân sau realtime refresh;
+  tên/giá render text, typing clear hidden ID tránh lưu ID dịch vụ cũ, focus
+  chỉ lọc không xóa ID. Không thay API, save contract, CSS/layout.
+
+- Tệp/người thân auth (28/09, lát56): relative table và upload/preview/download
+  dùng transport chung, không getAuthHeader riêng. List giữ context guard lúc
+  click và truyền tới helper qua page adapters; response/Blob về sau đổi ca
+  không mở/download/toast cũ. Upload JSON thất bại vì session đổi không báo
+  thành công. Giữ API/schema, cookie templates chưa được bật.
+
+- Page save revision (27/09, lát25): `savePatientDataInternal` snapshot
+  `collectFormData()` lúc bắt đầu; sau patient/upload/appointment/pending
+  companions, so lại form và nháp file trước reset. Có thay đổi mới trả
+  `dirty`, cảnh báo phần mới chưa lưu, giữ form cùng patient/appointment ID
+  đã được xác nhận; lần sau PUT thay vì POST lại. Không tự lưu liên tục hoặc
+  rollback những bước đã ghi. Appointment response phải là ID dương hợp lệ
+  và khớp ID đang sửa trước khi lưu người đi cùng. Nháp file xuất hiện sau
+  upload không bị reset mất; snapshot DOM không bao phủ dữ liệu ngoài
+  collector hay đồng bộ thay đổi từ tab/người dùng khác.
+- Duplicate-check có khóa riêng cho cả lượt kiểm tra/lưu, kiểm HTTP và
+  boolean `is_duplicate`; lỗi/response không xác nhận chặn create thay vì
+  suy là không trùng. Nhập khác trong khi check trả `dirty`, yêu cầu bấm
+  lưu lại; context cũ không mở modal hoặc toast. Không phải ràng buộc unique
+  hay idempotency server, race giữa hai máy vẫn cần backend bảo vệ.
+
+- Người thân liên kết (27/09, lát24): `relative-table.js` giữ contextToken
+  theo instance/patient, tăng lúc setPatientId/clear; cache data và dòng nhập
+  cũ clear trước GET. Reload trả Promise, revision mới nhất thắng trên cả
+  success/error; cùng ca đang nhập/đang ghi không refresh mất nội dung.
+  `mutate` là đường ghi chung create/update/link/delete, khóa bấm đôi,
+  chỉ đọc và row context; kiểm success/data xác nhận trước toast/render.
+  Link cần danh sách ID, update cần ID khớp, không tự dựng fallback dữ liệu
+  như thể backend đã lưu. Lỗi giữ dòng, mở lại disabled từng input; retry
+  không phải idempotency backend. Realtime cập nhật cache nhưng không vẽ
+  đè row đang sửa; cancel trả cache mới. Clear dispose dropdown cũ. API và
+  nghiệp vụ link hai chiều/create/update/delete không đổi.
+
+- Người đi cùng CRUD trực tiếp (27/09, lát23): `JointExamManager` giữ owner
+  duy nhất POST/PUT/DELETE qua `mutateRelative`; khóa ghi kép/ghi song song
+  với pending save. Response HTTP ok phải có `success:true`, POST/PUT có
+  `data.id`; lỗi giữ dòng và mở lại trạng thái disabled cũ để retry. Snapshot
+  appointment/page token + row identity chặn write từ row cũ và feedback/
+  reload ca mới. Page truyền `receptionistLoadState.token` qua orchestration.
+  Load list clear trước GET, revision mới nhất thắng; refresh không xóa dòng
+  đang sửa cùng ca. Đổi ca vẫn được đọc khi write ca cũ đang chờ. API/schema
+  không đổi; request đã gửi không rollback, mất response vẫn cần idempotency.
+
+- Tệp dùng chung (27/09, lát22): `document-attachment-controls.createContextGuard`
+  snapshot patient/token cho hành động; chuỗi upload dừng khi đổi context.
+  List giữ options mới nhất theo lần render (kể cả rỗng), một listener,
+  khóa xóa kép theo action/ID; kiểm lại sau confirmation/response trước
+  request, toast hoặc reload. Nháp xóa theo identity object, không lấy ID
+  cũ để xóa nháp mới; callback page chuyển guard xuyên suốt. Guard không
+  thu hồi DELETE/POST đã gửi hoặc rollback server; endpoint giữ nguyên.
+
+- Shared intake lifecycle (27/09): `patient-intake-form.create` giữ token
+  riêng cho mỗi instance; populate mới hoặc clear vô hiệu hóa callback cũ.
+  Patient populate false không được tiếp tục điền hỏi bệnh. Guard đi qua
+  `patient-info-form` → `patient-address-populate` → các setter province/ward
+  trong `address-main-form`; kiểm lại sau await trước khi gán field/code.
+  Kết quả stale trả false; lỗi hiện tại truyền cho caller, lỗi địa chỉ được
+  log và trả false. Đường sync vẫn trả payload, không đổi contract Doctor.
+  Guard component này không thay thế page lifecycle bên dưới.
+
+- Page load lifecycle (27/09): `receptionistLoadState` giữ token/loading/
+  failed cho edit/copy; chặn response cũ trước populate và sau await. Copy
+  xóa currentAppointmentId để không cập nhật lượt cũ; reset tăng token,
+  xóa trạng thái tải và appointment. `populateSharedForms` truyền guard và
+  giữ false; lỗi prefill/địa chỉ khóa save tới khi retry hoặc reset. Lưu
+  hành chính/tự lưu địa chỉ bị chặn lúc loading/failed. Medical data nền
+  kiểm token và patient trước populate. Relative loader và dropdown vẫn
+  cần audit tiếp; attachment/vitals read đã có guard riêng bên dưới.
+
+- Patient read lifecycle (27/09): `document-attachment-controls` là owner
+  tải danh sách tệp cho Lễ tân/TLG; `document-section-ui-utils` delegate,
+  không giữ hai loader. WeakMap theo list DOM, token page và patient chặn
+  response cũ/same-patient refresh cũ trên cả success/error/rejection.
+  Clear attachments ngay khi bắt đầu load; giữ File binary nháp trong RAM,
+  chỉ restore metadata cache khi chưa có nháp. Hai page truyền contextToken.
+  `patient-vitals-history` giữ token theo document, reset vô hiệu hóa request;
+  Lễ tân reset hint khi set patient và truyền patient/context getter lúc đọc.
+  Không thay endpoint hoặc suy state từ nhãn UI. Upload trực tiếp/xóa tệp
+  bổ sung guard ở lát22; CRUD relative độc lập vẫn cần audit.
+
+- Page save safety (27/09): `savePatientDataInternal` snapshot token/patient/
+  appointment, khóa isSubmitting, kiểm context sau mỗi bước chính; bỏ GET
+  verify không dùng kết quả. Patient response cần ID hợp lệ/khớp. Patient
+  mới đã tạo giữ ID để retry appointment không tạo thêm patient. Validation
+  appointment trước patient write. `saveReceptionistAppointment` dùng ID
+  snapshot, không reset/toast ca mới khi response stale. Đây không phải
+  transaction DB: patient/upload đã ghi không được rollback khi bước sau lỗi.
+- Draft upload dùng chung `ClinicalDocumentSectionUiUtils` với TLG; chỉ xóa
+  file được xác nhận thành công, giữ metadata/File lỗi, không bỏ thiếu File.
+  Adapter Lễ tân chuẩn hóa success object `{id}` sang true. Guard xuống
+  uploader ngăn callback/toast stale. Template nạp helper trước page, không
+  thêm owner upload thứ hai. Retry không upload lại file đã được xác nhận;
+  response mất sau server ghi vẫn cần backend idempotency; lát25 thêm so
+  snapshot form/nháp trước reset để giữ nội dung nhập trong lúc đang lưu.
+
+- Pending người đi cùng (27/09): manager trả saved/error/stale/skipped;
+  HTTP ok cần `success:true` và `data.id` trước khi loại từng draft. Lỗi
+  giữ phần chưa lưu, caller không reset/báo thành công; thử lại trên ID
+  appointment đã tạo bằng PUT và tiếp tục queue, không POST lại dòng đã
+  xác nhận. Page truyền isCurrentContext qua wrapper/orchestration xuống
+  manager. Clear/reset/copy vô hiệu hóa token, xóa pending row đang nhập.
+  Khóa lưu kép và sửa/xóa/thêm trong pending save; dòng chưa xác nhận hoặc
+  mới xuất hiện chặn completion. Reload kiểm token/appointment trước render.
+  CRUD trực tiếp bổ sung guard ở lát23; pending save và CRUD dùng cùng khóa
+  chống ghi song song. Response mất sau commit chưa có idempotency backend.
+
+- Người thân/người đi cùng (26/09/2026): dropdown tìm bệnh nhân dùng owner chung
+  `components/patient-search-dropdown.js` (nạp trước `relative-table.js` ở Lễ tân,
+  TLG và entry Bác sĩ). Xóa dòng xác nhận qua `QLPKConfirmationDialog`; thông báo
+  chuyển khám qua `QLPKUserFeedback`. Backend `/api/family-members/search` từng
+  trả 500 vì đọc `Appointment.diagnosis` không tồn tại; nay lấy chẩn đoán từ
+  `examinations`. Datepicker dòng động dùng `initDatepickerWithValue`.
+
 - Giờ hẹn header (21/09/2026): input native `appointmentTime` giữ tối thiểu
   9.25em theo font để đủ HH:mm và picker; cột giờ desktop dùng max-content. Container
   Từ36rem header tách hai hàng: title/actions rồi schedule full-width;

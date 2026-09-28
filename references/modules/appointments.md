@@ -1,5 +1,111 @@
 # Appointment Module Context
 
+## Calendar dashboard access (2026-09-28, lát63)
+
+- Owner `services/calendar_access.py`: actor reload từ DB, active role hợp lệ,
+  User share lock. Không tin role/can_view_all từ detached actor truyền vào.
+- sync-status/verify-events theo quyền đọc clinical (view-all/historical
+  psychologist được đọc). sync chỉ admin/staff hoặc current doctor_id; view-all
+  và psychologist_id lịch sử không cấp write. Toàn batch validate trước Google.
+- sync/verify nhận1..100 IDs int hoặc ASCII digits, int32 dương, dedup/sort;
+  malformed400, missing/deleted404, forbidden403, cancelled sync409. Lock
+  appointments ordered, read SHARE/ write UPDATE, reload owner/status sau lock.
+- doctor/psychologist sync chỉ lịch cá nhân; admin/staff vẫn broadcast bác sĩ
+  và staff kết nối. validate-connections clinical chỉ sửa connection của mình.
+- delete-all bắt buộc from_date/to_date ISO hợp lệ, inclusive <=366 ngày,
+  end-exclusive ngày kế tiếp. Actor clinical chỉ current-owned appointments
+  và events.user_id chính mình; admin/staff giữ scope toàn hệ thống. Lock
+  appointments trước đọc events/provider; thiếu dates không xóa toàn DB.
+- sync-status cũng dùng date bound. Response shape giữ nguyên; clinician sync
+  có thể partial vì không ghi lịch staff. UI chunk >100/error/status messaging
+  và real clinical browser acceptance chưa QA; không coi backend pass là UI pass.
+- Chưa gom hết legacy writers vào outbox; callback OAuth/state và connection
+  account identity, provider deadlines/monitoring/rollout vẫn cần kiểm riêng.
+
+## Transfer session (2026-09-28, lát58)
+
+Shared TransferModal dùng canonical jQuery transport, giữ cookie revision hoặc
+legacy credential lúc mở. Đổi phiên/ca chặn recipient load/POST mới và callback
+sau POST cũ; request đã gửi không rollback. Chỉ server success+count đủ batch
+mới hide/toast/reload; no-op/partial count cảnh báo kiểm tra danh sách. Giữ
+beforeTransfer save và khóa bấm đôi/close. Không đổi backend transfer contract.
+Lát59 backend: đọc lại actor/recipient đang active từ DB, shared lock users
+theo ID; admin/staff chuyển trong toàn hệ thống, doctor/psychologist chỉ ca
+đang sở hữu qua appointment.doctor_id. can_view_all_patients chỉ quyền đọc,
+psychologist_id lịch sử không cấp quyền chuyển sau khi đã bàn giao.
+Recipient phải đúng doctor/PSYCHOLOGIST/staff. Batch tối đa100 IDs, chuẩn hóa
+ID nguyên dương, khóa appointments rồi active examinations theo ID và kiểm
+toàn bộ trước mutation. Missing/deleted404, ngoài quyền403, chưa confirmed/
+thiếu hoặc nhiều active examination/trạng thái thanh toán hoặc kết thúc409;
+payload/target400. Validation rollback cả batch; no-op0 không emit/notify.
+Lát60 thay Google Calendar precommit bằng durable job cùng transaction khi
+doctor_id đổi (cả doctor và psychologist). Không gọi Google trong transfer;
+worker riêng đọc job đã commit. Xem rollout bắt buộc trong ops-and-validation.
+Đây là eventual consistency, không phải atomic transaction xuyên Google/DB.
+
+## Calendar transfer jobs (2026-09-28, lát60)
+
+Lát62 mở rộng safety cho legacy writers (chưa chuyển toàn bộ sang outbox):
+manual-sync verify strict phân biệt absent với network/auth/quota error;
+error giữ mapping và không create. Duplicate cùng provider ID chỉ dedup DB;
+khác provider ID phải delete Google thành công mới bỏ mapping. Update helper
+chỉ recreate confirmed-missing, giữ mapping nếu create thất bại. Cancel helper
+chỉ xóa mapping khi delete=True, unknown owner/disconnected giữ để đối soát.
+Delete-all không coi thiếu token là thành công; chỉ HttpError.status404/410
+được coi đã xóa, không parse mã trong arbitrary exception text;429 và
+403 rateLimitExceeded retry tối đa3. Response count phản ánh số xóa xác nhận.
+Đây chưa phải durable/idempotent tạo lịch cho manual-sync hoặc cancel outbox.
+
+- Owner `services/calendar_transfer.py`; helper cũ chỉ enqueue, không tự commit.
+  Job lưu appointment/old user/target user/event ID ngẫu nhiên cố định, không
+  snapshot tên bệnh nhân hoặc nội dung khám. No-op không tạo job.
+- Worker khóa appointment rồi job, kiểm current owner/status sau lock. Job cũ
+  không tạo lịch cho người đã bàn giao; xóa cả deterministic event có thể đã
+  được Google nhận nhưng response hoặc DB commit trước đó thất bại.
+- Chỉ xóa mappings đúng old_user_id khi Google xác nhận delete; giữ lịch staff.
+  user_id=NULL legacy không đoán owner, giữ pending để đối soát. Target chưa
+  nối Google, delete/update/create lỗi đều giữ job và backoff30s..3600s.
+- Create dùng event ID của job, insert409 kiểm private marker appointment/job
+  trước patch; lỗi mạng không đổi ID. Lát61: existing target update opt-in
+  report_missing=True trả None chỉ khi GET404/410 hoặc cancelled; False là
+  lỗi chưa xác định, giữ mapping và không tạo mới. Bỏ mappings đã xác nhận
+  mất; chỉ tạo khi không còn target event sống. Tránh retry kẹt khi delete
+  Google đã thành công nhưng DB rollback rồi chuyển trở lại bác sĩ cũ.
+  Nếu insert409 rồi GET410/cancelled, identity đã retired: rollback savepoint,
+  lưu ID thay thế cùng retry state, lần chạy sau mới dùng. GET404 sau409 còn
+  mơ hồ nên không đổi ID. Lỗi commit rotation không gửi ID chưa lưu lên Google.
+  Google404/410 delete là idempotent success. Provider errors không lưu payload
+  hoặc credential trong job.last_error.
+- `scripts/process_calendar_transfers.py --run --watch` là consumer riêng,
+  không tự khởi chạy trong web request. Schema + consumer phải rollout cùng
+  source. Chưa chạy consumer/migration trên DB vận hành trong lát60.
+- Phạm vi còn mở: manual sync/cancel/update/re-examination dùng writer cũ,
+  chưa chia sẻ lock/outbox; orphan NULL owner, xóa thủ công sau job completed,
+  reconnect Google account khác, job retention/monitoring và provider E2E thật.
+  Không coi 18 tests mới là bằng chứng mọi calendar workflow đã đồng bộ đúng.
+
+## Lịch bận cá nhân: preset và nội dung (2026-09-28)
+
+doctor-busy-schedule.js/template truyền $this qua inline-actions cho5 nút
+chọn nhanh, không phụ thuộc window.event. Active/aria-pressed chỉ trong form;
+manual datetime change và form reset clear lựa chọn, không đổi giờ/payload.
+Reason render ở gợi ý, bảng và modal xóa dùng QLPKSharedUtils.escapeHtml từ
+utils.js; nội dung lưu vẫn nguyên văn, gợi ý chọn bằng text(), không HTML.
+Tests busy_schedule_quick_time.test.js và busy_schedule_content_safety.test.js;
+Chrome1440/390 API fixture đạt, chưa pass visual/interactive QA dữ liệu thật.
+
+## Shared calendar owner (2026-09-27)
+
+`components/appointment-calendar.js` thay `appointment-management/calendar-event-content-utils.js`:
+hai màn lịch hẹn và tái khám gọi `QLPKAppointmentCalendar.create`, dùng CSS
+`components/appointment-calendar.css`. Chung toolbar, Thứ Hai đầu tuần,
+font, grid, thẻ trạng thái, doctor dot và status counts. Lịch hẹn truyền
+callbacks CRUD/filter/drag riêng và giữ tuần/tháng; Doctor monthOnly với
+callback chọn draft. Doctor legend dùng cùng resolver màu theo ID/DB;
+thiếu màu dùng neutral, không gán theo thứ tự danh sách. CSS tháng/event
+cũ đã bỏ khỏi appointment-management.css; CSS tuần/ngày lễ giữ riêng.
+QA đối chiếu và giới hạn: `references/ui/re-examination-month-layout-qa.md`.
+
 Tài liệu này là context ngắn cho workflow lịch hẹn/tiếp nhận. Đọc khi sửa appointment list, appointment response shape, trạng thái lịch hẹn, hoặc khi chuẩn hóa tiếp `app/api/appointment.py`.
 
 ## Ownership

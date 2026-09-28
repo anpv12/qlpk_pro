@@ -1,5 +1,54 @@
 # QLPK Operations And Validation
 
+## Cookie session cutover (2026-09-28, lát65)
+
+- Frontend bật cookie HttpOnly trên mọi trang qua partial user-feedback-runtime.
+  Deploy cùng backend hiện tại; người dùng đăng nhập lại một lần (token cũ bị
+  xóa). Yêu cầu HTTPS (ProxyFix + X-Forwarded-Proto đã có) hoặc localhost;
+  truy cập http qua IP LAN sẽ bị chặn đăng nhập vì thiếu Web Locks/cookie Secure.
+- Production cần SESSION_REDIS_URL/REALTIME_REDIS_URL dùng chung mọi worker.
+- Trang public khai báo `{% set qlpk_public_page = true %}` trước include partial.
+
+## Calendar transfer consumer (2026-09-28, lát60)
+
+- 28/09 user duyệt giữ bảng: DB local `qlpk_db` đã `alembic upgrade head` →
+  `20260928_calendar_transfer_jobs` (adopt bảng do DEBUG create_all tạo, đúng
+  schema, 0 dòng). Worker `--run` chạy thử: selected=0, completed=0, exit 0.
+  Không để worker `--watch` chạy nền trên máy local; production cần supervisor.
+
+- Lát64: migration adopt bảng đã tạo bởi DEBUG create_all nếu đúng cột và
+  unique event_id, bổ sung index thiếu; bảng lệch schema thì dừng. Transfer
+  drain ngay sau commit; worker vẫn bắt buộc cho retry. OAuth cần Flask
+  SECRET_KEY ổn định giữa init và callback (cùng mọi worker).
+
+- Lát63 Calendar API giới hạn100 IDs/request và date range tối đa366 ngày,
+  delete-all thiếu dates400. Không truncate. Doctor chỉ mutate own calendar;
+  bulk UI >100 cần QA/chunk có kiểm soát trước rollout. Backend locks giữ
+  qua provider calls nên còn cần timeout/worker consolidation; chưa SLA.
+
+- Lát62 legacy API không còn xóa link vì mất kết nối. Giữ pending mappings
+  đồng nghĩa cần retry/đối soát, không có automatic retry mới cho cancel/manual
+  sync. Không gọi việc sửa safety này là rollout đầy đủ transactional outbox.
+
+- Deployment prerequisite mới: migration `20260928_calendar_transfer_jobs`
+  và supervised consumer `python scripts/process_calendar_transfers.py --run --watch`.
+  Chỉ owner vận hành được rollout sau chốt; CHƯA apply/restart/deploy hoặc chạy
+  consumer bằng operational DB trong lượt này. Không sửa .env/main/bootstrap.
+- CLI không `--run` từ chối ghi; `--run` chạy1 batch tối đa100 due jobs, exit1
+  nếu batch còn failed; `--watch` poll30s. Không import main. Supervisor phải
+  restart process khi lỗi DB. Pending jobs giữ qua process restart.
+- Backoff30s tăng tối đa3600s; inactive/missing Google connection hoặc legacy
+  event owner NULL không báo success. Cần monitoring pending/last_error và
+  quy trình đối soát trước rollout; chưa có admin UI/retention trong lát này.
+- Lát61 bổ sung last_error `event_identity_retired`: ID mới đã lưu nhưng chưa
+  gửi; attempt sau dùng ID đó. Không cần migration bổ sung. Các job completed
+  không tự dò Google sau này; xóa thủ công sau completion cần reconcile riêng.
+- Google upsert mới có HTTP timeout15s; delete/update/credential refresh còn
+  dùng service chung hiện hữu. Không gọi đây là bounded end-to-end SLA.
+- Test fixtures PostgreSQL initdb/socket riêng, provider mocked; migration
+  upgrade/downgrade chỉ chạy trong fixture. Tests không import main hoặc ghi
+  DB thật, pg processes đóng cuối test. Chưa Google account/network E2E thật.
+
 ## PDF preview runtime (2026-09-21)
 
 - `POST /api/print/preview.pdf`: Bearer auth, HTML tối đa8MB, PDF inline/
@@ -15,7 +64,124 @@
   text/pages), `node --test tests/pdf_preview.test.js`,
   `node tests/prescription_followup_print.test.js`.
 
+## Static cache policy (2026-09-26)
+
+- HTML stays `no-cache, no-store`. Static responses requested with `?v=<app_version>`
+  get `Cache-Control: public, max-age=31536000, immutable`; without `v` Flask keeps
+  `no-cache` + ETag. `app_version` is the process start time in production and the
+  newest static/template mtime in DEBUG, so every deploy or local edit changes the URLs.
+- `/static/js/<file>.js?v=` is served by `versioned_static_js` in `main.py`: relative
+  `import`/`export` specifiers get the same `?v=` so ES module graphs are cacheable.
+  Unsafe or missing versions fall back to the normal static handler; traversal returns 404.
+- Tests: `python3 -m pytest -q tests/test_static_cache_policy.py tests/test_static_module_stamping.py`.
+  Browser check: revisit `doctor-examination.html`; only HTML/API and unversioned
+  assets should hit the server.
+
 ## Local Runtime Notes
+
+- Lát40 factories mới cần Web Locks (navigator.locks) để tuần tự hóa response
+  Set-Cookie giữa các tab cùng origin; không có thì fail closed trước mutation,
+  không memory lock fallback. HTTPS/localhost secure context là prerequisite.
+  Cookie mutation còn phải đi qua cùng owner khi cutover; direct fetch cũ không
+  được coi là được Web Locks bảo vệ. Không timeout rồi nhả lock sớm trong khi
+  response cookie có thể còn tới. Browser QA2 tabs dùng Flask/mock DB, không
+  data thật: /tmp/qlpk-session-actions-browser.log. Chưa template cutover.
+
+- Lát39 chỉ thêm factory browser-session, chưa nạp template hoặc chuyển
+  login/header sang cookie. Không tự thêm shim qlpk_token, không đổi .env/DB/
+  restart/deploy. /tmp/qlpk-session-owner-browser.cjs dùng2 tab Chrome chung
+  cookie jar, Flask loopback với account/DB mocked; xác minh tab cũ ID403,
+  invalidation block write, rebootstrap/new cookie hoạt động, logout lan sang
+  tab khác, localStorage/sessionStorage trống. Channels/browser/server đóng.
+
+- Lát38 CHƯA rollout HttpOnly frontend. Backend opt-in cookie đã có nhưng
+  login.js/header/utils/realtime và54 JS files liên quan token vẫn luồng Bearer.
+  Không bật riêng login.js trước các caller/guards/storage/logout cùng đổi;
+  không lưu dummy token trong localStorage để giả tương thích. Production
+  cookie yêu cầu HTTPS/Secure/__Host; DEBUG cookie tên khác, không dùng DEBUG
+  để né production. Cần kiểm proxy host/scheme và iframe same-origin trước
+  cutover. Không sửa .env/schema/restart/deploy trong lát38.
+  Browser evidence /tmp/qlpk-cookie-browser.cjs + server.py chạy Flask thật
+  loopback port ngẫu nhiên với DB/account mocked, RAM registry riêng; cookie
+  thật được Chrome kiểm HttpOnly, CSRF, password rotate/logout. Không account
+  hoặc database vận hành; processes đóng finally. Không thay clinical E2E.
+
+- Lát37 auth transport rollout: deploy utils.js và appointment-management.js
+  cùng backend retire /api/token/refresh (410). Không còn refresh/auto-login
+  từ mật khẩu localStorage;401 caller báo đăng nhập lại, wrapper không retry
+  thao tác ghi. Người còn legacy keys sẽ được remove khi nạp utils. Không
+  migrate cookies/.env/schema, không restart/deploy trong QA. Browser test
+  /tmp/qlpk-auth-transport-browser.cjs dùng2 HTTP server loopback random port,
+  dummy token, jQuery thật/Chrome; kiểm same/external origin, Request POST body,
+ 401 không replay và dọn password; cả server/browser đóng finally.
+
+- Account generation rollout (28/09/2026, lát35): backend đồng bộ, token cũ
+  thiếu session_generation/session_user_id yêu cầu login lại. Không rolling
+  mix verifier cũ/mới. Redis standalone dùng chung mọi worker; không Redis
+  Cluster (Lua register dùng hai key). Không sửa .env/schema/restart/deploy.
+  Đổi active/role/quyền xem hoặc reset password logout mọi phiên tài khoản;
+  thất bại DB sau revoke cũng có thể cần login lại. Profile-only không logout.
+  Redis failure phải503+rollback, không báo lưu tài khoản thành công.
+  Test `tests/test_account_session_lifecycle.py` tự init PostgreSQL riêng
+  dưới /tmp, Unix socket/listen_addresses rỗng, chỉ tạo bảng users QA, không
+  dùng DATABASE_URL thật; cuối test stop riêng cluster và xóa temp. Cần initdb/
+  pg_ctl trong PATH, thiếu thì skip rõ. Redis fixture tự spawn độc lập như lát32.
+  Đã kiểm row-lock wait thật qua pg_stat_activity ở cả hai thứ tự login/disable;
+  không đồng nghĩa pass clinical-save concurrency hoặc toàn bộ browser workflow.
+
+- Session registry rollout (28/09/2026): backend/frontend cùng bản, mọi
+  user cần login lại vì token cũ chưa đăng ký jti. Production cần
+  SESSION_REDIS_URL hoặc REALTIME_REDIS_URL và Redis sẵn sàng; gate không
+  cho memory ở production. DEBUG memory restart sẽ logout tất cả local
+  sessions; Redis mất/evict keys cũng logout, không mở cửa token cũ.
+  Registry chỉ jti+SHA256 token+TTL, không lưu raw token/password. Theo dõi
+  Redis availability vì lookup failure503 cho protected API; không dùng
+  workaround bật DEBUG/fallback JWT. Không sửa .env/restart/deploy ở lát34.
+  Trước deploy lưu nháp và báo người dùng login lại. Header logout fail
+  thì chưa rời phiên, phải retry; mất response sau revoke retry401 sẽ clear.
+
+- Production gate rollout (28/09/2026): chạy
+  `python3 scripts/check_security_config.py` trước deploy. Bắt buộc khóa
+  riêng ngẫu nhiên ít nhất32 bytes, HS256, ACCESS_TOKEN_EXPIRE_MINUTES từ1
+  đến1440 (default480). DEBUG=False sẽ dừng trước DB/API nếu sai; không
+  bật DEBUG để né gate. Decoder production yêu cầu exp integer, token dev
+  không-exp không chuyển sang production được. Issuer cap lifetime.
+  SECRET_KEY/SENDER_PASSWORD mặc định rỗng, cấp qua secret manager/env;
+  không in vào log hoặc commit. SMTP credential đã từng gắn trong source
+  cần chủ vận hành thu hồi/rotate ở provider nếu từng dùng, xóa default
+  không xóa Git history/không vô hiệu credential. Lát33 không sửa .env,
+  không rotate secret thực hoặc restart/deploy. JWT rotation làm hết mọi
+  phiên; phối hợp thời điểm login lại và giữ nháp trước deploy.
+
+- Login throttle rollout (28/09/2026): LOGIN_REDIS_URL tùy chọn ưu tiên,
+  fallback cấu hình REALTIME_REDIS_URL hiện có; không có cả hai dùng RAM
+  một process. LOGIN_ACCOUNT_ATTEMPTS=10, LOGIN_IP_ATTEMPTS=60,
+  LOGIN_WINDOW_SECONDS=300 mặc định, đều bắt buộc dương. Tune theo NAT và
+  số nhân viên; không dùng memory khi nhiều workers. Redis lỗi trả503
+  login, không mở cửa auth; theo dõi availability/latency store.
+  Compose Redis hiện allkeys-lru có thể evict counters: production nên
+  dùng store riêng noeviction; chưa đổi Docker/Redis runtime ở lát này.
+  Port app không được expose trực tiếp khi ProxyFix tin forwarded headers;
+  kiểm chuỗi nginx/proxy đáng tin trước rollout. Lua Redis thật đã kiểm
+  trong lát32 bằng Redis7.4.6 QA tự build ở /tmp, checksum SHA256 đối chiếu
+  redis/redis-hashes; không cài global hoặc sửa service hiện hành.
+  Chạy lại: `QLPK_TEST_REDIS_SERVER=/absolute/path/redis-server python3 -m
+  pytest -q tests/test_login_throttle_redis.py`. Fixture tự spawn Redis
+  Unix socket riêng, TCP port0, không persistence, noeviction, finally
+  terminate/wait/kill riêng PID nếu cần, không nhận URL Redis bên ngoài.
+  Không có binary thì skip rõ, không gọi mock là integration pass.
+  Đã kiểm Lua concurrency/multi-client/TTL/429/outage/corrupt counter;
+  chưa kiểm chuỗi nginx/proxy hay Redis production eviction. Không deploy.
+
+- Credential-bound JWT rollout (28/09/2026): triển khai services/auth,
+  API auth/user, socket và app-header-loader đồng bộ. Token cũ không có
+  credential_version sẽ401, cần đăng nhập lại bằng mật khẩu hiện có;
+  không thay password/secret/schema và không backfill. Tất cả worker phải
+  dùng cùng phiên bản, không rolling mix issuer/verifier cũ/mới. Token mới
+  bị vô hiệu sau reset mật khẩu; self change trả token thay thế. Kiểm user
+  thật chỉ khi có phạm vi QA cho phép, không reset password để thử nghiệm.
+  Tests isolated: test_credential_token_revocation.py và
+  password_session_rotation.test.js. Công việc này chưa deploy/restart.
 
 - Visit ledger 2026-09-20: local migration `20260920_medicine_visit_ledger`
   applied after backup `reports/medicine-visit-ledger-2026-09-20/before-migration.dump`

@@ -1,5 +1,10 @@
 # Giao diện đăng nhập Sơn Tâm
 
+- HTTP429: `login.js` đọc Retry-After giây hợp lệ1–3600 để báo thời gian
+  chờ bằng text, sai header dùng câu chung. Không tự retry/countdown,
+  giữ credentials đã nhập, trả nút enabled; pending submit không gửi đôi.
+  Không đổi layout/CSS, response error không đưa raw backend detail lên UI.
+
 - Owner: `app/templates/login.html`, `app/static/css/pages/login.css`,
   `app/static/js/login.js`. Trạng thái/QA hiện hành ghi tập trung trong
   `references/refactor-progress.md`, mục context chung22/09.
@@ -21,7 +26,7 @@
   Nhãn là danh sách tĩnh dạng pill, tự xuống dòng ở màn hẹp.
 - Bỏ toàn bộ overlay phủ ảnh (radial và linear gradient). Giữ khối chuyên môn ở
   chân ảnh, chỉ dùng text-shadow sát chữ để đọc được trên ảnh sáng.
-  `login-clinic-interior.png` là ảnh nội thất minh họa, không phải ảnh chụp
+  `login-clinic-interior.jpg` (JPEG 243 KB thay PNG 2,3 MB, 27/09) là ảnh nội thất minh họa, không phải ảnh chụp
   cơ sở Sơn Tâm; không chứa chữ/logo. Footer chỉ policy/hỗ trợ.
 - Màu/font dùng shared `color-tokens.css` và `typography.css`, Roboto và
   brown/chocolate/page-bg. Heading marketing dùng token display; form 16px.

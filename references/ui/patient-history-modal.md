@@ -1,5 +1,11 @@
 # Patient History Modal Base
 
+- Auth data (28/09/2026, lát56): modal appointment relatives dùng canonical
+  fetch, không đọc token storage/getToken hoặc gắn Bearer riêng. Retire
+  resolveAuthToken/buildAuthHeaders exports. Khi load patient gặp session.*,
+  propagate lỗi thay dựng fallback patient từ appointment; ordinary fallback
+  hiện hữu giữ nguyên. Không đổi modal layout/lifecycle hoặc API payload.
+
 `Tìm kiếm bệnh nhân` là shared, page-lifetime component. Mọi màn hình dùng modal
 này phải reuse cùng markup và lifecycle; không dựng lại một modal có HTML/ID
 tương tự.
@@ -15,6 +21,9 @@ Lượt hiện tại giữ nhãn/nền hiện có, không sở hữu border-left
 
 - Markup duy nhất: `app/templates/partials/patient-search-modal.html`.
 - Layout duy nhất: `app/static/css/patient-search-modal.css`.
+- Search/appointment data adapters (URLs, fetch, payload shapes; no DOM):
+  `app/static/js/components/modal-patient-search-data.js`, global
+  `window.ModalPatientSearchData`, loaded before the UI owner.
 - Low-level search/history primitives: `app/static/js/components/modal-patient-search-ui.js`.
 - History row renderer: `app/static/js/components/modal-medical-history-list-ui.js`.
 - Public lifecycle base: `app/static/js/components/patient-history-modal.js`, global

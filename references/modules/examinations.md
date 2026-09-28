@@ -1,5 +1,31 @@
 # Examinations Module Context
 
+## Management API access/filter contract — 28/09/2026
+
+- Thay behavior legacy trong ghi chú tháng05: list/detail/stats/direct status
+  bắt buộc truyền actor đã xác thực từ route, không decode Bearer lại trong
+  service. Cookie và Bearer dùng cùng contract, không fallback đếm toàn bộ.
+- management_examination_query là owner scope: examination active và
+  appointment không xóa. Admin/staff hoặc can_view_all_patients xem toàn bộ;
+  doctor theo appointment.doctor_id; psychologist theo psychologist_id hoặc
+  legacy doctor_id. Role khác không có full scope, actor thiếu/inactive: rỗng.
+  Dùng appointment hiện tại, không suy quyền từ doctor_id snapshot của exam.
+- Detail/status ngoài scope hoặc không active trả404 như không tồn tại;
+  direct status lấy row exam FOR UPDATE từ scoped query rồi mới mutate/commit.
+  Body không phải object/status sai trả400 và không emit. Transition khác,
+  payment authorization và concurrent reassignment chưa được nghiệm thu ở lát này.
+- List/stats cùng filter from_date/to_date (ngày cuối inclusive), doctor_id,
+  search không dấu. List thêm status/phân trang; stats cố ý không lọc status
+  để trả mọi badge và giữ loại PAID; trả đủ status key kể cả count0. Group count
+  bằng một query, loại ca inactive/lịch đã xóa, không còn đếm tổng toàn DB.
+- page/per_page/doctor_id phải số nguyên dương, per_page tối đa100. Sai ngày,
+  ngày đầu>sau, ngày cuối tràn, status list sai trả400 thay500/zero division.
+  List sort ngày desc + ID desc để page ổn định khi trùng ngày.
+- QA: tests/test_examination_management_scope.py20 ca; PostgreSQL riêng thật
+  tạo/lọc9 ca, role scope, patient cùng tên khác bác sĩ, psychologist legacy,
+  stats/list đồng nhất, không sửa ca ngoài quyền, HTTP cookie auth integration; không
+  ghi DB ứng dụng. Chưa pass visual/interactive QA workflow thật.
+
 Current contract note (2026-08-05): the older validation notes in this file
 describe the pre-cleanup compatibility layer. Doctor runtime now uses only
 canonical role-prefixed sections; legacy section aliases and Doctor mental
@@ -19,6 +45,42 @@ Tài liệu này là context ngắn cho workflow khám bệnh/examinations. Đ�
 Không dùng `appointment.notes` thay cho `examinations.loi_dan`. Không lưu diagnosis/lời dặn/sinh hiệu chính vào `examination_details` nếu field đã có owner trong `examinations`.
 
 ## Runtime Hiện Tại
+
+- Người thân liên kết chung Doctor/TLG (27/09, lát24): instance RelativeTable
+  tự invalidation khi setPatientId/clear, snapshot row khi thêm/sửa; không
+  phụ thuộc page đoán nhãn bệnh nhân. Đổi patient vẫn load được khi write
+  cũ chờ, nhưng stale response không toast hoặc xóa row mới. Reload nền/
+  realtime không thay DOM đang nhập. Ghi qua `mutate` khóa kép/readOnly và
+  xác nhận payload response; bảo toàn field bị khóa của bệnh nhân liên kết.
+  Không sửa API hoặc tự thay đổi ý nghĩa link hai chiều. Chứng cứ/giới hạn
+  kiểm chứng xem lát24, chưa coi browser fixture là nghiệm thu dữ liệu thật.
+
+- Người đi cùng trực tiếp (27/09, lát23): bootstrap truyền token page Doctor
+  `getState().loadToken` hoặc TLG `contextToken` cho manager chung. GET edit
+  scoped vào tbody của instance, chỉ response thuộc appointment hiện tại
+  mới mở form; row lưu guard của context tạo nó. Clear/load mới vô hiệu hóa
+  GET cũ, không toast/reload người thân của ca mới sau POST/PUT/DELETE cũ.
+  Input/nút dòng đang ghi bị khóa, lỗi khôi phục disabled ban đầu; hủy hoặc
+  load nền không được xóa phần đang lưu/đang sửa. Xác nhận xóa vẫn dùng owner
+  chung; kiểm lại context sau xác nhận. Chi tiết QA/giới hạn ghi ở lát23.
+
+- Tệp dùng chung (27/09, lát22): TLG adapter truyền patient/contextToken
+  xuống list, upload và xóa nháp; khóa hồ sơ chặn xóa cả sau confirmation,
+  không chặn preview. Uploader kiểm guard trước/sau fetch và khi lỗi;
+  gọi fetch bằng function riêng, không gắn `this` vào object options.
+  Doctor document bridge tăng token khi clear, truyền token cho load/list/
+  upload/draft-delete, bỏ callback/toast stale kể cả A→B→A. List dùng owner
+  chung `ReceptionistDocumentAttachmentList`, không tạo đường xóa khác.
+  Browser kiểm adapter trên trang thật với write giả; TLG/Doctor hiện không
+  có `documentFileInput`, vì vậy chưa nghiệm thu thao tác chọn file ở hai màn.
+
+- Tâm lý gia load gate (27/09): workspace chờ cả hành chính, lâm sàng,
+  tiền sử, dịch vụ và chỉ định bằng `allSettled`. Loader trả `false` hoặc
+  throw là tải thất bại; giữ `loadFailed` và chặn save/complete, base-save
+  hành chính và auto-save ở page. Tải lại bắt đầu context mới; chỉ sau khi
+  tất cả hoàn thành mới bỏ loading. Lỗi context cũ trả stale, không toast
+  hoặc mở khóa ca đang tải. Không thay payload/endpoint hay ghi DB để QA.
+  Gate này không thay thế token chống hydrate stale ở từng component con.
 
 - `app/modules/examinations/view_models/detail.py`: owner response shape cho `GET /api/examination-detail/<id>`.
 - `app/modules/examinations/view_models/management.py`: owner status text và response shape cho list/detail quản lý lượt khám.
@@ -66,6 +128,30 @@ Không dùng `appointment.notes` thay cho `examinations.loi_dan`. Không lưu di
 - Section mapping phải dùng `get_section_name()` và giữ backward compatibility với `form_kham`, `examination_form`, `general_exam`, `mental_exam`, `histories`, `lab_tests`.
 - Save/load modal phải phân biệt `bac_si_kham_*` và `tam_ly_gia_kham_*` theo context examination.
 - Auto-save từ màn bác sĩ/tâm lý gia không được ghi trong lúc `isLoadingExaminationData === true`.
+- Tâm lý gia: `autoSavePatientField` trong page giữ appointment/patient và
+  `workspace-runtime.contextToken` tại thời điểm nhập; kiểm lại sau khi chờ
+  resolve lịch hẹn. Chưa chọn ca, đang load hoặc token thay đổi thì bỏ ghi;
+  response/lỗi ca cũ không cập nhật indicator trên ca mới, kể cả A→B→A.
+  `tests/clinical_shell_utils.test.js` kiểm wrapper thật cùng helper.
+- Lưu/Hoàn thành Tâm lý gia (27/09): lưu hành chính phải kiểm kết quả cả
+  patient lẫn appointment; appointment thất bại trả `appointmentError`,
+  không chạy callback thành công. Page snapshot patient/appointment/token,
+  helper kiểm context sau các await trước bước tiếp theo. Đây là nhiều
+  request độc lập, không phải transaction: dữ liệu patient đã lưu không
+  tự rollback khi appointment lỗi, thông báo phải nói rõ phần chưa lưu.
+- Workspace chỉ cho Hoàn thành sau `saved` rõ ràng từ toàn bộ chuỗi lưu.
+  Thiếu owner/kết quả không rõ, dirty section chưa lưu, support skipped hoặc
+  có thay đổi mới đều chặn. Giữ khóa save đến khi mọi request con kết thúc;
+  khóa complete riêng tránh double-click trong lúc tra examination. Snapshot
+  appointment/token bảo vệ các bước tra ID/transition/feedback khi đổi ca.
+  Không thể thu hồi request đã gửi server; stale guard chỉ ngăn các bước sau.
+- Tài liệu nháp Tâm lý gia (27/09): uploader phải trả `true` cho từng file
+  mới loại file đó khỏi queue/cache metadata. Lỗi HTTP/mạng, thiếu file gốc
+  hoặc có file mới thêm trong khi upload đều chặn lưu tiếp/Hoàn thành;
+  giữ file chưa upload để thử lại, không upload lại file đã xác nhận thành
+  công. Context guard được truyền từ page qua document adapter trước/sau
+  mỗi upload, tránh xóa queue của ca mới. Cache chỉ chứa metadata, không
+  phải backup nội dung File; sau reload có thể cần người dùng chọn lại file.
 - Empty/null từ backend phải clear UI, không giữ data bệnh nhân trước.
 - Doctor medical history nhận đúng một `medical_history` response object; không đọc các top-level history alias đã retired.
 - Chuyển trạng thái khám không được suy luận từ label frontend; backend enum `ExaminationStatus` là source of truth.

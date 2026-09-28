@@ -1,5 +1,1742 @@
 # QLPK Refactor Progress
 
+## Thống kê bốc thuốc theo thời gian — 27/09/2026
+
+- Giữ lưu đơn=cấp thuốc. `ledger_report.py` thêm `view=medicines`, nhóm theo
+  medicine ID, đếm distinct export operation, xuất/hoàn/ròng và tiền snapshot.
+  Lô tách không nhân số lần; dữ liệu cũ thiếu operation/giá báo riêng, không backfill.
+- `medicine-statistics.html/js`: tab bốc thuốc, Tháng này, bảng20 thuốc/trang,
+  chọn tên lọc chi tiết theo ID, reset/late-response guard, phân biệt thiếu và0.
+  Overview đơn hiện tại đổi nhãn “Lượt bốc” thành “Dòng thuốc trong đơn”.
+- Test hiện hữu cập nhật fixture mock emit đã retire và payload shortage=None;
+  không thay runtime lưu đơn/kho/giá, không migration, không commit.
+- QA, bộ ca và giới hạn mobile/E2E: `references/medicine-dispensing-qa.md`.
+- Kết quả cuối:133 Python rollback/unit +26 JS đạt; JS/Jinja syntax và diff-check
+  các file chạm đạt. Desktop dữ liệu thật pass; mobile footer tràn ngoài phạm vi.
+
+## Transfer modal surface — 27/09/2026
+
+Sửa selector nền/bóng/bo góc từ `.transfer-modal` sang
+`.modal-content.transfer-modal`, tránh tô trắng wrapper toàn màn hình.
+Không đổi transfer API/state. Browser ca435: shell trong suốt, nội dung
+giữ nền, backdrop đen opacity0.5, thấy màn khám phía sau; Hủy gỡ backdrop
+và body modal-open sau animation.2 Node tests đạt; không request ghi.
+
+## Doctor lịch tái khám tháng — 27/09/2026
+
+Dịch vụ/Bác sĩ đã đổi sang autocompleteField chung (macro + core), single,
+tìm không dấu; đổi chữ clear selection, chỉ xác nhận ID đã chọn; close/reset
+clear dropdown, khóa khi loading/lịch khóa. QA chuột/phím/rỗng/mở lại draft,
+desktop/mobile không cắt popup, không ghi DB. Chi tiết cùng QA doc bên dưới.
+
+Popup chỉ còn lịch tháng, bỏ mini-calendar trùng chức năng; form gọn,
+token chữ thống nhất, ResizeObserver giữ lưới vừa khung. Ngày nhiều lịch
+dùng dialog4 mục/trang, không mở popover dài bị cắt. Sau phản hồi user,
+đã hợp nhất presentation lịch hẹn/Doctor vào components/appointment-calendar
+(JS+CSS): toolbar, Thứ Hai đầu tuần, thẻ lịch, status và màu bác sĩ.
+API đọc bổ sung doctor_id/doctor_color và doctors[].calendar_color; giữ
+scope quyền, save/draft.21 Node tests và Doctor contract
+đạt;5 viewport với dữ liệu thật không cuộn/tràn; chọn/xác nhận/mở lại draft
+đạt, không ghi DB. Computed styles8 nhóm trên cùng sự kiện thật ở hai
+màn trùng nhau; lễ tân vẫn chuyển tuần/tháng và lọc bác sĩ.
+Ngày dày18 lịch chỉ kiểm mô phỏng: chưa pass
+visual/interactive QA với dữ liệu thật dày. Evidence và giới hạn:
+`references/ui/re-examination-month-layout-qa.md`.
+
+## Project health — đo toàn dự án (27/09/2026)
+
+Phạm vi: 230 file Python, 219 JS (76.4k dòng), 78 CSS (38.8k dòng), 55 template
+(33 trang), 417 route/57 blueprint, 30 alembic version. Script đo tại
+`/tmp/qlpk-project-health/` (ESLint JSON, pyflakes, dup.py, css.py,
+`pages-sweep.cjs` 33 trang, `psy-modal.cjs`). Kết quả chính:
+
+- Runtime 33 trang (session admin, chặn ghi): 0 lỗi JS/console, 0 request fail.
+  Bug xác nhận: TLG → modal Lịch sử → tab Dịch vụ ném
+  `ReferenceError: prescriptionTabCache is not defined`
+  (`patient-search-modal-dry.js`, file 2.393 dòng chỉ TLG nạp, còn 10 định
+  danh chưa định nghĩa ở đâu: `toNumber`, `parseMedicineUsagePayload`,
+  `parseFractionalQuantity`, `formatDoseAsFraction`,
+  `buildUsageTimeSlotDescription`, `parseGlobalUsagePayload`,
+  `prescriptionTabCache`, `servicesTabCache`, `syncMedicalHistoryToHiddenFields`).
+- ESLint toàn JS: 199 error (197 `no-undef`: 47 global chéo file không khai
+  báo, 16 không định nghĩa ở đâu; 1 `eval` `chi-tieu.js:111`; 1
+  `no-func-assign` `chi-tieu.js:511`), 842 warning (unused-vars 324,
+  complexity ≥15: 154 / ≥20: 61, max 158 `buildMedicalRecordHTML` bản dry;
+  30 file >600 dòng, lớn nhất 2.393; `no-alert` 29). Dup 0.9% (54 đoạn/708
+  dòng). Mã chết không được nạp: `app-shell/sidebar-renderer.js`,
+  `components/dry-sidebar.css` (531 dòng, 180 `!important`).
+- CSS toàn bộ: `!important` 651, id-selector 894 (appointment-management 272,
+  medicine-management 149, prescription 100, personal-detail-modal 93), 1.199
+  literal màu ngoài token ở 48 file, 64 z-index literal, 499 class không có
+  trong DOM/JS. Trang Doctor (22 file) đã sạch từ lát trước.
+- Python: pyflakes 163 ghi chú trong `app/` (119 import thừa, 20 biến không
+  dùng, 18 key dict lặp cùng giá trị ở `app/api/patient.py:346-385`), 61
+  `except … pass/continue`, 3 bare `except`, 12 `print(`; 0 f-string SQL, 0
+  `debug=True`, 0 secret cứng. File >800 dòng: `medicine.py` 1.996,
+  `dashboard.py` 1.481, `patient.py` 1.147, `service.py` 969, `calendar.py` 944.
+- Bảo mật: 0 security header (CSP/X-Frame-Options/HSTS/X-Content-Type-Options/
+  Referrer-Policy); JWT trong `localStorage` (120 chỗ đọc); 175/204 GET API
+  trả 401 khi không token, 9 JSON public có chủ đích (survey public, địa chỉ
+  VN, health); upload nhạy cảm không public, avatars public. CDN ngoài 185
+  tag, 0 SRI, lệch phiên bản (bootstrap 5.3.2/5.3.0, jquery 3.7.1/3.6.0).
+- A11y: 47 control không tên ở 4 trang (service-management 20,
+  holiday-management 20, service-category 6, document-management 1); 15/33
+  trang không có `h1`.
+- Hiệu năng: trung bình 2,07 MB/55 request mỗi trang; index tải 2 avatar chưa
+  resize (722 KB + 454 KB), login PNG 2,3 MB, `medicine-clinic-interior.png`
+  1,9 MB; 4 asset không `?v=` (`flatpickr-vn.js` trên 9 trang, 3 CSS đơn thuốc/
+  autocomplete).
+- Test: Node 273 pass; pytest 337 pass / 3 fail sẵn ở HEAD
+  (`test_workflow_contracts`: 4 `font-weight` + 3 `font-size` cứng, 2 chuỗi
+  kỹ thuật ra UI ở `medicine-management.js`) / 288 skip cần PostgreSQL
+  opt-in. Ước lượng theo tên file: 60% file api/modules và 34% file JS có test
+  tham chiếu; 19 file JS >600 dòng chưa có test.
+
+### Đã xử lý (lát 1, 27/09/2026) — working tree, chưa commit
+
+Nguyên tắc: mỗi lát có gate đo lại (ESLint JSON, pyflakes, css.py, sweep 33
+trang, parity computed-style so với snapshot CSS). Script tại
+`/tmp/qlpk-project-health/`.
+
+- Bug TLG: `psychologist-examination.html` nạp `modal-history-data-runtime.js`
+  + `modal-history-print-controller.js` như Doctor; bridge TLG bỏ
+  `dataRuntime:false/print:false` và các adapter dry; `showConfirmationDialog`
+  dùng `QLPKConfirmationDialog.confirm`. Xóa `patient-search-modal-dry.js`
+  (2.393 dòng) và `prescriptions/components/prescription-modal-print.js`
+  (chỉ dry dùng). QA thật: modal TLG 5 tab render, bảng sinh hiệu 9 dòng,
+  4 nút in, popup in mở "In toa thuốc"; 0 lỗi console (lỗi `Failed to fetch`
+  chỉ do probe chặn POST preview PDF).
+- Bảo mật: `app/core/security_headers.py` + `after_request` trong `main.py`
+  (X-Content-Type-Options, X-Frame-Options SAMEORIGIN — shell dùng iframe cùng
+  origin, Referrer-Policy, Permissions-Policy, CSP `frame-ancestors/base-uri/
+  object-src`, HSTS khi HTTPS); cảnh báo critical khi SECRET_KEY còn giá trị
+  mặc định; SRI `sha384` + `crossorigin` cho 167/167 tag CDN có thể hash
+  (18 còn lại là Google Fonts/link ngoài); bootstrap 5.3.0→5.3.2, jquery
+  3.6.0→3.7.1. Chưa làm: `script-src` (cần bỏ 117 `onclick` inline), JWT trong
+  localStorage (đổi sang cookie HttpOnly là thay đổi kiến trúc, cần duyệt).
+- Ảnh: `app/utils/image_optimizer.py` (Pillow, cạnh dài ≤512, EXIF, JPEG q85;
+  từ chối tệp không phải ảnh) dùng trong `POST /users/<id>/avatar`;
+  `scripts/optimize_uploaded_avatars.py` đã chạy: 30 avatar 9.137 KB → 815 KB,
+  bản gốc ở `_archive/uploads-avatars-original-20260927/`; 2 PNG lớn → JPEG
+  (login 2.312→243 KB, header 1.917→159 KB). Trang trung bình 2,07 MB → 0,99 MB.
+- Mã chết: xóa `app-shell/sidebar-renderer.js`, `components/dry-sidebar.css`
+  (531 dòng, 180 `!important`), `static/templates/dry-sidebar/`; `flatpickr-vn.js`
+  có `?v=`; route `/static/css/<path>` stamp `?v=` vào `@import` tương đối
+  (`stamp_css_imports`), 0 asset không version trên 33 trang.
+- Test: 3 pytest fail sẵn đã xanh (font cứng → token `--qlpk-font-*`,
+  `getUserFacingResponseMessage()` thay chuỗi kỹ thuật ở medicine-management,
+  contract chỉ định cập nhật theo `renderCustomOrderNote`/`linkedTemplate`);
+  thêm `test_security_headers.py`, `test_image_optimizer.py`, stamp CSS,
+  `chi_tieu_formula.test.js`. Node 278 pass, pytest 332 pass/0 fail
+  (`test_pdf_preview` cần Chromium ngoài sandbox), 14/14 contract + smoke.
+- JS: `chi-tieu.js` bỏ `eval` (bộ tính số học riêng: + - * / % ngoặc, chia 0 → 0,
+  mã lạ → 0) và bỏ gán đè `renderThuChiChart`. A11y: 47 nút icon-only có
+  `aria-label` (service/holiday/category/document) → 0 control thiếu tên.
+- CSS toàn dự án: 1.199 literal màu → token `--qlpk-palette-*`/`--qlpk-alpha-*`
+  (268 token mới, byte-identical), bỏ qua `print/vat_invoice.css` (in không nạp
+  token); parity 33 trang 52.959 node/0 diff. Còn 12 hex 8 ký tự (alpha) và
+  giá trị `data-color` trong selector.
+
+### Đã xử lý (lát 2, 27/09/2026) — ratchet + id-selector toàn dự án
+
+- Ratchet trong `scripts/check_frontend_contract.py` (chạy bởi
+  `smoke_health.py`/pytest): `css_important` ≤438, `css_id_selector` ≤4,
+  `css_hard_color` ≤12, `html_inline_event_handlers` ≤71,
+  `js_inline_event_handlers` ≤93 (`Metric.exclude` cho file token/in; CSS bỏ
+  comment trước khi đếm). Mọi lát sau chỉ được hạ ngân sách.
+- Id-selector 884 → 4: 95 id → class `qlpk-<kebab>` (mapping
+  `/tmp/qlpk-project-health/id-class-mapping.json`; `sidebar-container` →
+  `qlpk-shell-sidebar`, `qlpkWorkspaceNativePane` → class có sẵn
+  `qlpk-workspace-pane--native`); 124 phần tử trong template/JS nhận thêm
+  class, id giữ nguyên cho JS. 17 id không có phần tử nào → xóa rule chết
+  (`prescription.css` 100 selector, `custom-animations.css`,
+  `examination-workflow.css`, `admin-management-ui.css`). Chỗ mất specificity
+  được bù bằng class thật của phần tử: `.modal.<cls>` cho 18 modal,
+  `.form-control.qlpk-avatar-file`, `.card-wrap.qlpk-order-files-details`,
+  `:is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native)`,
+  `.appointment-fullscreen .appt-main .qlpk-calendar-view-container`,
+  `.patient-search-modal__tab-content-area.qlpk-modal-content-area`. 4 còn lại
+  là giá trị `[data-color="#…"]`, không phải id.
+- Bỏ override legacy `#genderEditBtn/#occupationEditBtn/#idCardEditBtn` trong
+  `examination-workflow.css` (chỉ TLG nạp): nút sửa giờ nằm trong ô nhập như
+  Doctor/Lễ tân theo owner `patient-info-form.css` (ảnh
+  `/tmp/qlpk-project-health/tlg-after.png`). Có chủ đích, không phải parity.
+- Parity computed-style: baseline = CSS id-based trên cùng DOM
+  (`/tmp/qlpk-css-before-ids`), 33 trang × (mặc định + hover + mở tới 20
+  modal/trang), so multiset (tag+class+style): 245.063 mục, 0 diff
+  (`/tmp/qlpk-project-health/css-parity-all.cjs`). Sweep 33 trang: 0 lỗi,
+  0 request fail, 0 control thiếu tên, ~0,99 MB/trang.
+- Sửa selector treo `.appointment-fullscreen #calendar,` (do thay đổi song
+  song của người khác xóa rule `.fc` phía sau, khiến `overflow:auto !important`
+  áp lên `#calendar`). Test Node cập nhật selector class (`medicine_import/
+  supplier/reference_review`, `receptionist_appointment_time`); còn 1 fail
+  `button_actions.test.js:59` do `stock-detail-badge` mất
+  `data-qlpk-button="view"` trong thay đổi song song lúc 16:48 (không thuộc
+  lát này).
+
+### Đã xử lý (lát 3, 27/09/2026) — backend lint
+
+- pyflakes `app/` + `main.py` 163 → 86: bỏ 66 import thừa trong 26 file
+  `app/api/*` (chỉ import một dòng, không đụng file đang sửa song song:
+  `medicine.py`, `medicine_batch.py`, `family_member.py`, prescriptions
+  services), xóa 9 key dict lặp cùng giá trị ở `app/api/patient.py`
+  (`GET /api/patients/<id>` vẫn trả đủ 39 khóa). 51/51 module `app.api` import
+  được, pytest 332 pass. Còn lại: import model trong `main.py` (đăng ký ORM),
+  `app/models`, `app/modules`, biến cục bộ không dùng.
+
+### Đã xử lý (lát 4, 27/09/2026) — handler inline → listener ủy quyền
+
+- Owner mới `app/static/js/shared/inline-actions.js` (nạp qua
+  `partials/user-feedback-runtime.html` cho mọi trang): `data-qlpk-call="fn"`
+  + `data-qlpk-args='[...]'` (JSON; `$this`/`$event`/`$value`),
+  `data-qlpk-on="change"`, `data-qlpk-on-<event>="fn"` + `-args` cho nhiều
+  sự kiện trên cùng phần tử (focus/blur → `focusin`/`focusout`),
+  `data-qlpk-prevent`, `data-qlpk-stop` (dừng cả listener document sau nó),
+  `data-qlpk-self` (thay `if (event.target === this)`); đường dẫn có dấu chấm
+  giữ `this` là owner (`CustomModal.closeModal`). Test
+  `tests/inline_actions.test.js` (3 ca).
+- Chuyển 102 handler tự động + 10 sửa tay (document-management đóng modal,
+  chi-tieu: `triggerImportFile`, `appendFormulaToken`, `scheduleCloseAc`,
+  `showRawNumberCell`/`formatNumberCell`, `attrJson` an toàn cho JSON trong
+  thuộc tính, `selectAc`/`updatePresetBtns` không đọc `onfocus`/`onclick`
+  nữa mà dùng `data-ri`/`data-col`/`data-qlpk-args`); order-management truyền
+  `criteriaName` qua JSON thay chuỗi nội suy. HTML inline 71 → 6, JS 93 → 16
+  (ratchet ≤6/≤30; còn `medicine-management.*` và
+  `re-examination-calendar.js` đang được sửa song song).
+- QA: 19 trang, 214 ràng buộc resolve 100% hàm, 0 args lỗi, click smoke 0
+  lỗi; chi-tieu sâu: tab, preset dropdown, overlay tự đóng, formula picker,
+  ô số focus/blur/change (raw ↔ định dạng, cập nhật `rows`), autocomplete
+  mở/đóng, multi-select giữ mở khi chọn/đóng khi click ngoài, sort, `selectAc`.
+  Sweep 33 trang 0 lỗi. 70 hàm gọi qua dispatcher không hàm nào dùng `this`.
+- Thay đổi song song của người khác lúc 17:04 làm
+  `check_doctor_examination_contract` fail (`doctor-prescription.css` bỏ
+  `flex: 1 1 0` của ô Số ngày) và `button_actions.test.js` fail — không thuộc
+  các lát này.
+
+### Đã xử lý (lát 5, 27/09/2026) — CSP report-only
+
+- `security_headers.py` gửi thêm `Content-Security-Policy-Report-Only` với
+  chính sách ứng viên (`script-src 'self'` + 4 CDN, `style-src` cho phép
+  inline vì thư viện chèn style, `img-src data: blob:`, `connect-src ws:`,
+  `frame-src blob:` cho preview PDF). Sweep 33 trang với listener
+  `securitypolicyviolation` (probe chèn script inline → 1 vi phạm, chứng minh
+  harness hoạt động): 0 vi phạm khi tải trang, chọn bệnh nhân Doctor và mở
+  modal Lịch sử. Chưa bật cưỡng chế: còn 6 `onclick` ở
+  `medicine-management.html` + 16 handler JS (`medicine-management.js`,
+  `re-examination-calendar.js`) đang được sửa song song; khi 2 ratchet
+  `*_inline_event_handlers` về 0 và sweep tương tác vẫn 0 vi phạm thì đổi
+  header sang `Content-Security-Policy` (quyết định của user).
+
+### Đã xử lý (lát 6–7, 27/09/2026) — backend lint, gate globals, mã chết, complexity
+
+- Backend: 10 chỗ `except Exception: pass`/bare `except` rộng → log có ngữ
+  cảnh (`google_calendar_service`, `models/medicine`, `vietnam_address`,
+  `user` ×2, `doctor_busy_schedule`, `auth`, examinations/appointments
+  services); 51 `except (ValueError|TypeError|StopIteration…): pass` còn lại
+  là parse-or-ignore có chủ đích. pyflakes `app/`+`main.py` 163 → 54 (bỏ
+  import stdlib/sqlalchemy thừa, biến cục bộ không dùng, giữ lời gọi
+  validate `get_examination_by_id`/`get_create_examination_doctor`, f-string
+  không placeholder). 109/109 module `app.*` import được. Còn lại: import
+  model trong `main.py`/`__init__.py` (đăng ký ORM/re-export), file đang sửa
+  song song.
+- Gate mới `scripts/check_js_globals.py` (+ `scripts/eslint.health.config.mjs`,
+  nối vào `smoke_health` mục `js_globals`, tự bỏ qua khi thiếu ESLint): mọi
+  global mà script classic của một trang tham chiếu phải được script trên
+  trang đó định nghĩa → 31 trang, 0 thiếu. `survey-template-create.js` dùng
+  `window.surveyTemplateManager` thay `typeof` guard.
+- Mã chết: xóa `permission-check.js` (221 dòng, complexity 22) + 29 thẻ
+  script; đo trên 33 trang: 0 phần tử `a.nav-link[data-permission]`,
+  `#logoutBtn`, `.sidebar-user`, `#submenu-*`; caller `window.checkPermissions`
+  đều có guard; contract workspace-tabs/doctor cập nhật.
+- Complexity ≥20: 57 → 48. `renderAppointmentCard` 23 → model + 2 variant
+  (72 ca byte-identical), `buildMedicalRecordModel` 20 → tách trường theo vai
+  (288 ca byte-identical), `buildHistoryRowHtml` 23 → flags/actions/classes
+  (harness mới `/tmp/qlpk-project-health/mhl-fixtures.cjs`, 60 ca
+  byte-identical), `loadCombinedAppointments` 31 → fetch/collect/publish
+  (test mới `tests/examination_waiting_list_load.test.js`, 3 ca),
+  `patient-history-modal.create` 29 → `resolveModalDependencies`/
+  `createPrintController`/`unbindTriggers`/`bindConfiguredTriggers` (modal
+  Doctor+TLG 5 tab + in vẫn đúng), `workspace-tabs.closeTab` 22 →
+  `pickNextTab`/`confirmCloseTab`/`removeClosedPane`, `autocomplete-field`
+  `position` 22 / `handleKeydown` 21 → `viewportBox`/`isClippedByScrollParent`/
+  `moveActiveOption` (QA ICD: mũi tên, Enter chọn id, Escape đóng).
+- Server 8000 của user đã tắt (không còn tiến trình lắng nghe); đã chạy lại
+  `python3.11 main.py` trong phiên QA để kiểm tra; cần tắt sau khi xong.
+
+### Tiếp tục lát 8–9 (27/09/2026) — chỉ định và shell Tâm lý gia
+
+- Lát 8: `doctor-indications-form.readForm` tách đọc input, kiểm tra và chọn
+  survey; test bao phủ tên/ngày/người thực hiện, survey đúng tên, sửa tên
+  thành custom, cơ sở ngoài và payload không giữ người thực hiện nội bộ.
+  Cập nhật hai kiểm tra source-string trong Doctor contract và workflow
+  test theo helper mới, vẫn kiểm cả source và survey ID trong payload.
+- Lát 9: bỏ các nhánh không còn caller trong `form-dom-utils.js` và
+  `page-core-utils.js`, gồm populate/hydrate, Doctor reset/alias, save shell
+  cũ và interaction shell. Tách bootstrap/loaders/adapters/auto-save nhưng
+  giữ thứ tự thực thi và API còn dùng của trang Tâm lý gia. Dòng vật lý:
+  939→651 và 1.035→674; cả hai dưới ngưỡng 600 dòng ESLint sau khi loại
+  blank/comment, không phải dưới 600 dòng vật lý.
+- Test mới `clinical_shell_utils.test.js`: 8/8 đạt; sửa so sánh object khác
+  VM bằng shallow-copy, không nới assert. Có ca thiếu timer thật, guard khi
+  đang chờ lấy lịch hẹn và response ca cũ trả sau khi đổi ca.
+  Parity baseline 20/20 tại `/tmp/qlpk-project-health/shell-parity.cjs`.
+- Đo sau lát 9: complexity ≥20 toàn JS 47→37; file >600 dòng theo ESLint
+  29→27; hai file shell không có lint error nhưng còn sáu hàm complexity
+  16–19. Toàn JS còn 107 `no-undef`; kiểm global trên 31 trang không thiếu.
+- QA: Node toàn bộ 309 đạt/1 lỗi `button_actions` (stock badge); workflow
+  pytest 14/14; toàn pytest (loại `test_pdf_preview.py`) 332 đạt/305 bỏ qua;
+  smoke_health 10/10 nhóm đạt; `git diff --check` sạch.
+  Doctor contract còn lỗi `flex: 1 1 0` ở ô ngày thuốc thuộc thay đổi khác;
+  không sửa layout hay xóa kiểm tra đó trong lát này.
+- Browser desktop: nạp ca thật từ GET vào queue kiểm thử, mở lịch sử có
+  dữ liệu và xem ảnh; lần kiểm riêng shell không lỗi JS/console, không
+  request ghi. Chứng cứ `/tmp/qlpk-project-health/shell-browser-latest.json`,
+  `shell-tlg-populated.png`, `shell-tlg-history.png`. Chưa pass visual/
+  interactive QA đầy đủ (mobile, queue dày, ghi/lưu thật chưa kiểm).
+  Harness modal cũ thử in bị chặn POST PDF và báo fetch lỗi; không coi là
+  pass in. Browser kiểm thử đã đóng; không dừng listener chưa rõ owner.
+
+### Lát 10 (27/09/2026) — auto-save Tâm lý gia khi đổi ca
+
+- Khi trace caller địa chỉ/form phát hiện page chỉ truyền `shouldSkip`
+  lần đầu, chưa bật `recheckSkipBeforeSave`/`isCurrentAppointment` dù helper
+  có sẵn. Test tái hiện: đổi ca trong lúc chờ có thể gửi giá trị cũ vào URL
+  ca mới; response cũ báo trạng thái trên ca mới; chưa chọn ca không được
+  chặn tại page. Đây là lỗi hành vi, ưu tiên trước cleanup complexity.
+- `autoSavePatientField` giữ snapshot appointment/patient/contextToken,
+  chặn khi chưa chọn ca/loading/context đổi và bật kiểm tra lại sau await.
+  Response thành công hoặc lỗi của context cũ đều trả `stale`, không cập
+  nhật indicator của ca mới. Token phân biệt cả A→B→A. Không đổi API/payload,
+  không gọi fallback tìm lịch hẹn khi page chưa có ca. Địa chỉ chưa sửa.
+- 5 test page-wrapper mới: 4 lỗi trước sửa, cả 5 đạt sau sửa; nhóm shell +
+  workspace 14/14 đạt. Node toàn bộ 314 đạt/1 lỗi stock badge như trước;
+  smoke_health 10/10 nhóm đạt, JS syntax/diff sạch. Không thêm lint error
+  trong core; `no-undef` chéo file ở page vẫn được global gate kiểm.
+- Browser với ca lấy từ GET: cùng ca lưu đúng URL/body bằng PUT được
+  intercept/fulfill, đổi ca/loading/token đổi đều `skipped` không gửi PUT;
+  0 pageerror, 0 ghi DB thật. Chứng cứ
+  `/tmp/qlpk-project-health/autosave-browser.json`. Browser đã đóng.
+  Không dùng kiểm tra này để khẳng định lưu DB end-to-end hoặc toàn bộ UI đạt.
+
+### Lát 11 (27/09/2026) — thống nhất fallback địa chỉ legacy
+
+- `address-hierarchy-utils.js` có ba bản fallback: modal bỏ qua quận query
+  200 khi wards query 404, trong khi form chính xử lý được. Test mới tái hiện
+  1 lỗi/12 trước sửa. Gom district/ward fetch vào
+  `fetchDistrictsByProvinceCode`/`fetchWardsByDistrictCode`; form chính và
+  modal đều gọi `callVietnamAddressAPI`. Giữ exact district name, NFC tên
+  tỉnh, code/id từ backend; không đoán mã, không đổi endpoint ghi hay DOM.
+- `tests/address_hierarchy_fallback.test.js`: 16/16, gồm direct success,
+  một/hai tầng 404, 500 không fallback, mạng lỗi, không khớp tỉnh/quận,
+  payload array/data và adapter. Node toàn bộ 330 đạt/1 lỗi stock badge;
+  smoke_health 10/10, diff sạch, file địa chỉ không lint error.
+- Browser chặn wards query bằng 404, dùng danh mục backend thật và endpoint
+  code: status200/10 phường, 0 pageerror/0 ghi. Chứng cứ
+  `/tmp/qlpk-project-health/address-browser.json`. Probe đầu cố đọc options
+  thất bại vì `ward` hiện là INPUT, `modalWard` không tồn tại; probe sau chỉ
+  xác nhận helper/API. Không pass visual/interactive QA dropdown legacy;
+  cần trace caller để loại tiếp các nhánh select đã không còn dùng, không
+  xem kiểm thử fixture như bằng chứng UI đang sống. Browser đã đóng.
+- Complexity ≥20 giảm 37→35. File dài đo hiện tại 28, không phải 27:
+  `page-core-utils.js` vượt ngưỡng sau guard stale-error ở lát 10. Không hạ
+  chuẩn hoặc bỏ guard an toàn để làm đẹp số đo; cần tách theo owner tiếp.
+
+### Lát 12 (27/09/2026) — chuỗi Lưu → Hoàn thành Tâm lý gia
+
+- Tái hiện bằng test: save hành chính bỏ qua kết quả cập nhật appointment;
+  complete chỉ chặn `error`, nên `patientError`/`skipped` vẫn gọi transition.
+  Save workspace còn chấp nhận clinical error/support skipped và kết quả
+  success có thay đổi mới. Không phải chỉ cảnh báo lint.
+- Kiểm kết quả appointment, trả `appointmentError` và thông báo rõ patient
+  đã lưu nhưng lịch hẹn chưa lưu. Page giữ snapshot ca/bệnh nhân/token và
+  helper chặn bước tiếp theo/callback khi context đổi. Không tuyên bố giao
+  dịch nguyên tử hoặc rollback request đã gửi; upload draft lỗi vẫn là nợ
+  cần kiểm riêng, không coi toàn bộ luồng lưu là đã giải quyết.
+- Workspace fail-closed: owner lưu bắt buộc, kết quả thành công rõ ràng;
+  clinical/support phải lưu đầy đủ. `Promise.allSettled` giữ khóa cho đến
+  mọi nhánh hoàn tất. Complete chỉ nhận `saved`, giữ khóa riêng, kiểm
+  HTTP/ID trước transition và token trước/sau await. History không markSaved
+  khi context/revision đổi. Không sửa backend/DB hoặc trạng thái thật.
+- Nhóm shell/workspace39/39 đạt; toàn JS355 đạt/1 lỗi stock badge.
+  Workflow pytest14/14, user-feedback contract và smoke_health10/10 đạt.
+  Có ca dirty không section phải chặn và dirty lưu sạch vẫn hoàn thành được.
+- Browser dùng helper/base-save thật với PUT intercept/fulfill: patient200,
+  appointment500 → `appointmentError`; base skipped → `skipped`; không có
+  transition request, 0 pageerror. JSON/ảnh:
+  `/tmp/qlpk-project-health/save-failure-browser.json`,
+  `save-failure-browser.png`. Ảnh bắt đầu animation toast, không dùng để
+  kết luận visual QA đầy đủ. Browser đóng; chưa pass lưu DB end-to-end.
+- Đo ESLint hiện tại: 36 hàm ≥20 (guard mới làm
+  `runPatientDataInternalSave` lên26), 28 file dài. Ưu tiên chặn sai dữ liệu
+  trước; cần tách save flow có test bảo vệ ở lượt tiếp, không bỏ guard để
+  giảm số đo. Lỗi stock badge/Doctor flex contract vẫn chưa sửa.
+
+### Lát 13 (27/09/2026) — giữ tài liệu nháp khi upload thất bại
+
+- Phát hiện uploader trả false nhưng caller vẫn xóa toàn bộ queue/cache,
+  rồi save core còn nuốt exception. Test tái hiện7 lỗi trước sửa (upload
+  false/network, thành công một phần, thiếu File/uploader, file thêm trong
+  lúc chờ, đổi context và save vẫn đi tiếp).
+- `document-section-ui-utils`: upload snapshot queue; chỉ loại từng file
+  sau `true`, lưu metadata phần còn lại. Dừng và throw khi không upload
+  đủ; retry không lặp file đã thành công. Guard context đi xuyên
+  page→adapter→uploader; không xóa queue ca mới sau request cũ. Không đổi
+  endpoint/storage key, không lưu File binary vào sessionStorage.
+- `runPatientDataInternalSave` không nuốt lỗi upload; dừng trước cập nhật
+  appointment/callback. Tách `savePatientAppointmentStep` và
+  `reportPatientSaveFailure` giữ payload/thứ tự/guard. Hàm chính26→≤15;
+  toàn JS ≥20 từ36→35, file dài vẫn28. Không có lint error mới ở hai helper.
+- Nhóm upload+shell+workspace47/47; toàn Node363 đạt/1 lỗi stock badge như
+  trước; smoke_health10/10, user-feedback contract và diff sạch. Test browser
+  dùng File thật trong bộ nhớ và adapter thật với fetch giả500→200:
+  thất bại giữ1 draft, retry xóa đúng draft/cache, 0 pageerror/0 request ghi
+  thật. `/tmp/qlpk-project-health/upload-browser.json`; browser đã đóng.
+  Đây là kiểm adapter, chưa pass visual/interactive QA luồng chọn file/
+  danh sách thật hoặc upload DB end-to-end. Request mất response sau server
+  đã ghi vẫn có nguy cơ retry trùng; chưa có idempotency backend ở lát này.
+
+### Lát 14 (27/09/2026) — gỡ personal-detail modal không còn caller
+
+- Trace xác nhận file chỉ còn nạp ở Tâm lý gia; Doctor/Lễ tân không nạp.
+  Trang TLG truyền `personalDetailOptions: { bindings: {} }`, không có DOM
+  modal; ba nút giới tính/CCCD/nghề nghiệp do patient-info-form mở inline
+  panels. Nháp địa chỉ ở page dùng address-draft adapter riêng. File chưa
+  có thay đổi trước lát này; gỡ1.751 dòng và include/comment template cũ,
+  không xóa CSS hay autocomplete class dùng chung.
+- A/B browser cùng dữ liệu GET thật, có/không tải script: desktop1440 và
+  mobile390, 46 field value/disabled và trạng thái panel giống nhau; ba nút
+  mở/đóng hoạt động, không modal cũ/overflow/pageerror/request ghi. Ảnh và
+  JSON `/tmp/qlpk-project-health/personal-retire-{with,without}-{1440,390}.png`,
+  `personal-retire-parity.json`. Đã xem ảnh mobile không-module cũ.
+- Test guard trong psychologist_workspace_runtime kiểm không nạp lại file,
+  patient-info-form vẫn có và binding inline còn đúng. Node364 đạt/1 lỗi
+  stock badge; smoke_health10/10 và diff sạch. ESLint ≥20 từ35→30,
+  file dài28→27, errors107→91 (bỏ16 global reference từ mã chết).
+- QA sau sửa lần đầu thiếu queue đang rỗng nên nav ẩn và timeout; không
+  tính là pass. Chạy lại cùng queue-response từ GET thật:0 lỗi/0 ghi,
+  không request/global modal cũ, ba nút inline hoạt động; chứng cứ
+  `personal-retire-after.json`. Không kiểm ghi DB thật, không suy rộng QA hai viewport thành
+  nghiệm thu toàn dự án. Các phiên browser đều đóng.
+
+### Lát 15 (27/09/2026) — chặn lưu hồ sơ tải thiếu
+
+- Tái hiện8 test lỗi: chưa chờ hành chính, loader trả false bị coi thành
+  công, throw mở khóa sớm, lỗi ca cũ hiện trên ca mới và auto-save sau lỗi
+  tải. Workspace dùng allSettled cho cả5 owner; false/rejection giữ
+  loadFailed. Runtime save/complete và page base-save/auto-save cùng chặn.
+  Thêm test hydrate ca cũ kết thúc lỗi khi ca mới còn tải; không đổi trạng
+  thái/loading hoặc hiện toast của ca cũ. Không đổi schema/API/payload.
+- Nhóm shell/workspace50/50; toàn Node373 đạt/1 lỗi stock badge tồn đọng;
+  workflow pytest14/14; smoke_health10/10, feedback contract đạt. Doctor
+  contract vẫn đỏ `medicine-days flex: 1 1 0`. ESLint29 hàm≥20,27 file dài,
+  91 errors. Không sửa file thuốc/CSS đang có thay đổi khác trong lát này.
+- Browser Chrome với dữ liệu appointment GET thật và queue intercept:
+  giữ GET clinical pending → save/complete skipped; GET500 → loadFailed,
+  save/complete/auto-save/base-save đều skipped; retry GET thật → loaded,
+  loadFailed=false.0 pageerror,0 request ghi. Chứng cứ
+  `/tmp/qlpk-project-health/load-gate-browser.json`; browser đã đóng.
+  Đây là QA logic tải/lưu với lỗi mạng giả lập, chưa pass visual/interactive
+  QA toàn quy trình hoặc ghi DB end-to-end; không khẳng định đã loại hết
+  hydrate race trong component con. Mục tiêu tổng thể vẫn active.
+
+### Lát 16 (27/09/2026) — không điền nhầm ca sau tải địa chỉ
+
+- Trace shared intake: promise hành chính xong luôn gọi populate hỏi bệnh,
+  kể cả đã clear/đổi ca hoặc trả false. Setter địa chỉ còn ghi code/hidden/
+  ward sau await mà không kiểm context. Tái hiện5 lỗi trước sửa.
+- Token riêng mỗi intake instance, clear/populate vô hiệu hóa callback cũ;
+  giữ return payload đồng bộ cho caller Doctor, false cho stale/failure.
+  Guard truyền qua patient-info xuống hierarchy và setter province/ward.
+  Tách hierarchy theo3 bước để không tăng complexity lên27 sau thêm guard.
+  Không sửa bố cục/schema/endpoint; không đảo thay đổi patient-info có sẵn.
+-8 test mới đạt: A→B→A, clear, false, sync parity, rejection cũ/mới,
+  instance độc lập và tỉnh/phường tải chậm. Toàn Node381 đạt/1 lỗi stock
+  badge như trước; smoke10/10, feedback/diff sạch. Lint hai owner intake/
+  hierarchy0 error; còn cảnh báo create83 dòng. Chưa đo lại toàn bộ số đo
+  sau lần tách cuối, không dùng kết quả trung gian làm baseline mới.
+- Browser dùng component thật trên trang Lễ tân, chèn await khi hydrate
+  địa chỉ và dữ liệu giả chỉ trong DOM: đổi ca/xóa form → response cũ false,
+  fullName/province/hidden/ward/mainReason đều còn giá trị mới.0 pageerror,
+  0 request ghi; `/tmp/qlpk-project-health/intake-browser.json`. Kiểm lại
+  browser load gate TLG vẫn đạt. Các phiên browser đều đã đóng.
+- Giới hạn: chưa pass visual/interactive QA toàn workflow; ca browser là
+  fixture trong DOM, không nghiệm thu dữ liệu DB. Còn audit caller Lễ tân
+  sau populateSharedForms (hiện không dùng return false), dropdown loaders
+  và ghi/đọc độc lập; không tuyên bố đã loại hết race trên cả3 trang.
+
+### Lát 17 (27/09/2026) — page Lễ tân bỏ response tải cũ
+
+- Tái hiện5 lỗi trước sửa: edit A trả sau B đổi ngược ID/form; copy cũ
+  ghi đè edit mới; populate false vẫn gán appointment; lỗi tải không chặn
+  save; lỗi request cũ hiện toast ca mới. Thêm token/loading/failed cấp
+  page dùng chung edit/copy/reset, kiểm cả trước và sau populate.
+- Chặn save và tự lưu địa chỉ khi tải chưa đủ; duplicate check bỏ kết quả
+  nếu đã đổi context. Copy thành tạo lượt mới xóa currentAppointmentId.
+  Medical data nền kiểm patient/token. Prefill lịch/dịch vụ ở helper riêng
+  trong try: lỗi phải giữ failed, không mở lưu; reset vô hiệu hóa GET cũ.
+-9 test lifecycle đạt (thêm reset/hydrate pending/medical nền/prefill retry),
+  toàn Node390 đạt/1 lỗi stock badge; smoke10/10, feedback và diff sạch.
+  ESLint toàn cây29 hàm≥20,27 file dài,91 errors. Không sửa hai gate thuốc/
+  CSS còn tồn đọng hoặc DB; không commit.
+- Browser trang Lễ tân thật, patient response fixture cùng ID với hai
+  request về ngược thứ tự: giữ tên mới, old=false, copy mới appointment
+  null; pending chặn save/address PUT.0 pageerror/0 request ghi, phiên
+  browser đóng. Chứng cứ `receptionist-load-browser.json` trong
+  `/tmp/qlpk-project-health/`. Đây là test lifecycle với API giả, chưa
+  pass visual/interactive QA toàn workflow hoặc ghi DB end-to-end.
+- Findings để tiếp tục: savePatientDataInternal Lễ tân vẫn đọc current ID
+  sau await và uploader cũ xóa tất cả draft/nuốt lỗi (cùng loại đã sửa TLG).
+  Cần snapshot context, chặn bước sau khi đổi ca, giữ file lỗi; vitals,
+  attachments, relatives, dropdown còn async riêng. Không coi gate tải là
+  đã khắc phục transaction lưu hoặc mọi race.
+
+### Lát 18 (27/09/2026) — bảo vệ save Lễ tân và draft upload
+
+- Test trước sửa tái hiện stale save và lời gọi lưu kép treo (1 fail/4
+  cancelled do implementation cũ chờ thêm request). Sau sửa8 test mới đạt:
+  stale patient/appointment/upload, bấm đôi, file thiếu, response thiếu ID,
+  upload một phần/retry, tạo patient thành công nhưng appointment lỗi.
+- Snapshot token/patient/appointment; khóa isSubmitting; bỏ verify GET
+  không dùng. Validation trước patient write, kiểm ID response, giữ ID
+  patient mới khi bước sau lỗi tránh tạo trùng lúc retry. Appointment save
+  helper dùng snapshot, stale không toast/reset form mới. Không rollback
+  patient/upload đã ghi; không thay backend hay schema.
+- Gỡ loop upload nuốt lỗi/xóa toàn queue; dùng helper chung TLG và chuẩn
+  hóa result attachment object thành bool. File lỗi/thiếu giữ lại, cache
+  cập nhật từng thành công. Guard xuống uploader thật; nạp helper ở Lễ tân.
+- Toàn Node398 đạt/1 stock badge fail; workflow14/14; smoke10/10,
+  feedback/diff đạt. ESLint30 hàm≥20,27 file dài,91 errors; không tuyên bố
+  metric giảm vì guard uploader làm tăng complexity. Browser page Lễ tân
+  với File thật và mọi write fulfill giả: upload500 giữ1 draft/cache và
+  không gửi appointment; retry upload200 xóa đúng draft rồi appointment500
+  trả appointmentError, giữ ID.0 pageerror/0 write thật, browser đóng;
+  `/tmp/qlpk-project-health/receptionist-save-browser.json`.
+- Chưa pass visual/interactive QA toàn workflow hoặc DB end-to-end.
+  Findings tiếp: `joint-exam-manager.savePendingList` nuốt lỗi từng row,
+  xóa cả queue sau lỗi và reload khi context có thể đã đổi; page chỉ gọi
+  với appointment mới nên retry bước này cũng cần sửa cùng owner. Còn
+  attachment/vitals loaders stale, same-case edits giữa save, response mất
+  sau commit/idempotency; hai gate thuốc/CSS và bảo mật chưa hoàn tất.
+
+### Lát 19 (27/09/2026) — giữ pending người đi cùng và retry đúng lượt
+
+- Trước sửa4 test fail/2 cancelled (lưu kép cũ giữ promise chờ). Manager
+  nay xác nhận response success/data.id rồi loại từng draft; lỗi/network/
+  response không xác nhận giữ phần còn lại. Token + appointment + guard
+  page chặn stale; save lock chống bấm đôi. Dòng nhập chưa xác nhận chặn
+  completion; không sửa/xóa/thêm pending khi đang lưu, kiểm cả sau reload.
+- Page/orchestration trả result xuyên suốt, gọi pending save cả khi đã có
+  appointment để retry; chỉ saved mới toast/reset. Copy/reset clear token/
+  pending row, reload không render response ca cũ. Không sửa phần thay đổi
+  confirmation/autocomplete có sẵn trong joint-exam-manager.
+-8 test manager mới +1 test tích hợp page; toàn Node407 đạt/1 stock badge
+  fail như trước, workflow14/14, smoke10/10, feedback/diff đạt. ESLint30
+  hàm≥20,27 file dài,91 errors. Không đổi API/schema hoặc ghi dữ liệu thật.
+- Browser trang Lễ tân thật, queue fixture và toàn bộ7 write được fulfill
+  giả: A200/B500 → jointExamError, còn B, giữ appointment ID; retry PUT
+  appointment và POST chỉ B → saved/reset. Chỉ1 POST tạo appointment,
+  người đi cùng theo thứ tự A/B/B,0 pageerror/0 write thật. Browser đóng;
+  `/tmp/qlpk-project-health/joint-save-browser.json`. Chưa pass visual/
+  interactive QA với dữ liệu thật hoặc DB end-to-end.
+- Còn CRUD trực tiếp người đi cùng (saveNew/update/delete), attachment/
+  vitals loaders, same-case edits giữa save; lỗi mất response sau commit
+  cần idempotency. Các gate thuốc/CSS, bảo mật và full QA vẫn chưa xong.
+
+### Lát 20 (27/09/2026) — một owner tải tệp, bỏ sinh hiệu stale
+
+-9 test tái hiện đều đỏ: attachments giữ dữ liệu cũ khi pending, response
+  cũ cùng patient/same-patient refresh hoặc lỗi mạng ghi đè UI mới, restore
+  cache làm mất File nháp; vitals cũ vẫn render sau request mới/reset.
+- Gom loader documents TLG về owner controls đang dùng ở Lễ tân; WeakMap
+  theo list + page token/patient kiểm sau mọi await/error. Clear dữ liệu
+  cũ trước GET; restore metadata chỉ khi RAM chưa có nháp. Adapter truyền
+  getter token/nháp đầy đủ. Vitals token theo document, reset vô hiệu hóa
+  GET; page reset hints khi set patient. Không đổi layout/API/DB.
+- Toàn Node416 đạt/1 stock badge fail, workflow14/14, smoke10/10,
+  feedback/diff đạt. ESLint30 hàm≥20,26 file dài (giảm1 nhờ bỏ loader
+  trùng),91 errors. Loader owner còn complexity17, không bỏ guard để né lint.
+- Browser Lễ tân/TLG: danh sách clear trước load, newest success rồi old500
+  không đổi rows/HTML; reset vitals khi pending không render response cũ.
+ 0 pageerror/0 write, `/tmp/qlpk-project-health/patient-read-browser.json`;
+  kiểm lại TLG load-gate browser đạt. Hai lần script QA đầu hook sai adapter
+  TLG gây TypeError trong evaluate, không tính pass; sửa hook pageCoreAdapter
+  rồi chạy đủ hai màn đạt, browser đều đóng. Fixture/response giả chỉ chứng
+  minh lifecycle, chưa pass visual/interactive QA toàn workflow/DB E2E.
+- Còn upload trực tiếp/xóa tệp/CRUD người đi cùng, relative loader và
+  dropdown async; same-case edits giữa save và idempotency; gate thuốc/CSS,
+  bảo mật/full QA vẫn chưa hoàn tất.
+
+### Lát 21 (27/09/2026) — đối chiếu hai gate đỏ với chuẩn hiện hành
+
+- Không phải hai bug sản phẩm đã chứng minh: button-system có ngoại lệ
+  user duyệt27/09 cho badge Lần nhập nâu/không data-qlpk-button; test cũ
+  vẫn đòi view trung tính, mâu thuẫn medicine_toolbar_style. Ô ngày thuốc
+  dùng3ch căn giữa (prescription_context_typography kiểm đúng), script
+  Doctor cũ còn đòi flex1 và tìm inline-size0 bất kỳ trong cả CSS.
+- Chỉ sửa kiểm tra, không sửa ngược JS/CSS người khác: badge phải giữ button,
+  handler, accessible label và ngoại lệ đúng tài liệu; Doctor kiểm declaration
+  theo đúng selector line/input/unit, có flex0/3ch/center/padding/height.
+  Thêm Doctor contract vào pytest workflow để không bỏ sót gate độc lập.
+- Toàn Node417/417 đạt, workflow15/15 (bao gồm Doctor gate), diff sạch.
+  Mutation test trong bộ nhớ cố đổi flex, width hoặc justify đều bị gate
+  mới bắt; không nới assertion để che lỗi. Số code-health không đổi.
+- Browser dữ liệu GET thật, không intercept response nghiệp vụ: badge đầu
+  có2 lần nhập, gradient nâu/chữ trắng, Enter mở lịch sử nhập đúng thuốc.
+  Doctor chọn ca1101, input7/30/365 ở1440/390px giữ giá trị và nhóm số+ngày
+  nằm trong khung96px, lệch tâm0.008px.0 pageerror/0 write; browser đóng.
+  Chứng cứ `/tmp/qlpk-project-health/gate-reconcile-browser.json`,
+  `gate-days-control-{1440,390}.png`, `gate-stock.png`. Đã xem ảnh crop mobile
+  và modal sau animation. Ảnh full mobile đầu cuộn qua input không dùng
+  làm bằng chứng control; đã chụp crop đúng vùng. Không lưu đơn/DB, chưa
+  nghiệm thu mọi trạng thái dense/empty/khóa hoặc toàn workflow.
+- Đính chính dashboard: hai gate thuốc/CSS đã giải quyết bằng đồng bộ
+  chuẩn kiểm tra; còn race CRUD/upload/delete, same-case edits, bảo mật,
+  idempotency và QA xuyên suốt. Mục tiêu tổng thể vẫn active.
+
+### Lát 22 (27/09/2026) — bảo vệ upload/xóa tệp xuyên ba màn
+
+-16 test đầu tái hiện15 lỗi: xóa sau đổi ca trong confirmation, response/error
+  cũ toast/reload ca mới, listener giữ options render đầu, bấm đôi gửi lặp,
+  nháp mới trùng ID bị xóa hoặc ID chuỗi không xóa được, upload thiếu guard.
+- Owner controls cung cấp context guard patient/token; list options theo
+  render kể cả rỗng, khóa action/ID và kiểm sau confirmation/response. Nháp
+  xóa đúng object snapshot; adapter/page truyền guard. Batch nhiều file dừng
+  sau đổi ca; uploader stale không callback/toast. Doctor bridge tăng token
+  lúc clear. Không đổi layout/API/backend và không ghi dữ liệu thật.
+- Browser phát hiện TLG gọi `options.fetch()` với receiver không hợp lệ,
+  upload trả false trước request. Thêm test đỏ rồi gọi function fetch độc
+  lập; giữ contract auth/payload. Không che lỗi bằng mock fetch luôn thành công.
+-24 test mới, toàn Node441/441 đạt; workflow15/15, smoke10/10, feedback/diff
+  được chạy lại. Browser ba trang: đổi ca trong xác nhận không DELETE;
+  bấm đôi một request giả; response sau đổi ca không toast/reload; upload
+  trả sau đổi ca không thêm tệp. Lễ tân dùng file input thật với hai File,
+  chỉ POST file đầu (fulfill giả), file thứ hai dừng.0 pageerror/0 write thật;
+  `/tmp/qlpk-project-health/document-actions-browser.json`, browser đóng.
+- Script QA đầu chưa chờ route upload chính xác, rồi gọi TLG đang khóa;
+  sửa đồng bộ harness/unlock riêng fixture, không tính các lượt lỗi là pass.
+  TLG/Doctor không có file input ở DOM hiện hành: gọi adapter với File thật
+  chỉ chứng minh lifecycle, không phải QA thao tác chọn file. List fixture
+  và response giả chưa pass visual/interactive QA đầy đủ/dense/DB E2E.
+- Đo ESLint:29 hàm complexity≥20,27 file dài (helper chung vượt600 khi thêm
+  guards),91 errors. Không tuyên bố giảm nợ tổng vì test xanh. Còn CRUD
+  người đi cùng/relative/dropdown, same-case edits, idempotency backend,
+  bảo mật và QA xuyên suốt; mục tiêu tổng thể vẫn active.
+
+### Lát 23 (27/09/2026) — an toàn CRUD người đi cùng
+
+-19 test đầu đều đỏ: create/update/delete còn toast/reset/reload ca mới,
+  bấm đôi gửi lặp, HTTP200 success:false vẫn báo thành công; sửa row không
+  khóa input, GET list chồng và GET edit cũ vẫn tác động màn mới.
+- Gom ghi trực tiếp về `mutateRelative`, snapshot appointment/page token/
+  row; khóa ghi kép và pending-save đồng thời. Kiểm xác nhận, response và
+  JSON; POST/PUT cần ID được xác nhận. Lỗi giữ dòng để retry, khôi phục đúng
+  disabled từng input. Không đổi API/payload/backend hoặc layout.
+- List clear trước GET và revision mới nhất thắng, không refresh mất dòng
+  đang sửa cùng ca; ca mới vẫn load được trong lúc write cũ chờ. Edit scoped
+  tbody, kiểm appointment từ payload, row mang guard để không PUT vào ca mới;
+  GET edit không mở form trong lúc DELETE pending. Hai bootstrap truyền page
+  token Doctor/TLG/Lễ tân, bao phủ A→B→A không chỉ so ID hiện tại.
+-25 test mới; toàn Node466/466 đạt. Test load cũ sửa setup: dữ liệu ca mới
+  phải đặt sau khi clear, vẫn kiểm response cũ không ghi đè; fixture confirm
+  dùng JSON success đúng backend, không hạ assertion. Browser trên ba trang
+  dùng manager thật/DOM row thật và response giả: khóa khi PUT, bấm đôi chỉ1
+  request, lỗi giữ row, retry reload đúng1 lần; đổi ca trong confirm không
+  DELETE; POST cũ không feedback/reload mới. Pending-save browser cũ cũng
+  đạt: A thành công/B lỗi rồi retry chỉB, không POST lại appointment.
+-0 pageerror/0 write thật, browser đóng. Artifact
+  `/tmp/qlpk-project-health/joint-crud-browser.json`. Lượt QA đầu thử gán vào
+  confirmation object frozen nên harness lỗi; đã thay object trong context
+  QA rồi restore, không sửa owner production để phục vụ test.
+- Workflow15/15, smoke10/10, feedback/diff đạt sau sửa cuối. ESLint32 hàm
+  complexity≥20 (tăng3 do thêm guard),27 file dài,91 errors; không gọi là
+  đã trả hết nợ code. Hạ complexity phải giữ đủ contract an toàn vừa thêm.
+- Fixture/hidden modal không phải nghiệm thu UI thực tế: chưa pass visual/
+  interactive QA dense/sparse, end-to-end DB/concurrency. Còn relative-table
+  loader/CRUD riêng, dropdown, same-case edits của page save, idempotency,
+  bảo mật và nợ code. Mục tiêu tổng thể chưa hoàn tất.
+
+### Lát 24 (27/09/2026) — lifecycle người thân liên kết
+
+-15 test ban đầu đều đỏ: reload không trả promise, response A cũ ghi đè
+  sau A→B→A; clear giữ cache/pending row; create/link/delete stale còn
+  toast/reset, bấm đôi gửi lặp, success:false vẫn báo xóa thành công;
+  readOnly không chặn method gọi trực tiếp, realtime/refresh mất nội dung.
+- `relative-table` giữ context/revision instance; clear data trước đọc,
+  newest-only cả lỗi. `mutate` chung cho ghi, snapshot row/patient, khóa
+  thao tác và controls; lỗi giữ row/disabled gốc, retry xác nhận mới clear.
+  Update không dựng dữ liệu fallback khi response thiếu; link phải có IDs.
+  Đang nhập thì không refresh DOM, realtime chỉ update cache để cancel dùng
+  bản mới. Clear dispose dropdown; chọn autocomplete khi đang ghi bị chặn.
+  Không đổi API/schema/layout; không ghi dữ liệu y tế thật.
+-22 test mới, Node488/488 đạt. Browser ba trang mounted instance thật với
+  DOM edit và response giả: PUT bấm đôi1 request/khóa input, lỗi giữ row,
+  retry cập nhật đúng ID; create trả sau switch không thay list ca mới;
+  switch trong confirmation không DELETE.0 pageerror/0 write, browser đóng;
+  `/tmp/qlpk-project-health/relative-crud-browser.json`.
+- Workflow15/15, smoke10/10, feedback/diff đạt sau sửa cuối. ESLint33 hàm
+  complexity≥20,27 file dài,91 errors; tăng1 hàm vượt ngưỡng khi bổ sung
+  guard, không coi kiểm thử xanh là đã hết nợ kỹ thuật.
+- Fixture/DOM thao tác qua evaluate chưa thay visual/interactive QA thực tế
+  dense/sparse, liên kết hai chiều trên DB, đọc-ghi xuyên workflow. Response
+  mất sau commit vẫn cần idempotency. Same-case edits khi page save và các
+  dropdown khác/bảo mật/nợ code/full QA vẫn còn; mục tiêu tổng thể active.
+
+### Lát 25 (27/09/2026) — giữ nội dung nhập trong lúc lưu trang
+
+- Test tái hiện: sửa form giữa patient/appointment/pending-companion save
+  bị reset; file thêm sau upload bị bỏ; response appointment ID sai vẫn
+  dùng để lưu người đi cùng. Duplicate-check HTTP lỗi/mạng lỗi/body thiếu
+  boolean bị coi là không trùng, bấm đôi check lặp, modal dùng snapshot cũ.
+- So `collectFormData` trước/sau và kiểm nháp file trước reset: còn thay
+  đổi trả dirty, giữ form/ID đã xác nhận, cảnh báo bấm lưu lại. Retry PUT
+  đúng patient/appointment, không POST tạo lần nữa. Appointment ID cần
+  số nguyên dương và khớp ID đang sửa. Không đổi API/payload/schema/layout.
+- Duplicate-check khóa riêng toàn lượt, kiểm HTTP/body; thiếu xác nhận
+  chặn tạo. Sửa form lúc check không mở modal cũ/lưu snapshot cũ, context
+  đổi thì bỏ feedback. Không tuyên bố uniqueness/idempotency backend.
+-11 test mới, Node499/499 đạt. Browser Lễ tân với nhập input thật: chờ
+  appointment POST giả, đổi tên rồi trả200 → dirty/giữ tên và IDs; lưu
+  tiếp PUT với tên mới → saved/reset; chỉ1 POST patient và1 POST appointment.
+  Re-run browser upload lỗi/retry và pending-companion lỗi/retry đều đạt.
+ 0 pageerror/0 write thật, browser đóng; artifact
+  `/tmp/qlpk-project-health/receptionist-revision-browser.json`.
+- Workflow15/15, smoke10/10, feedback/diff đạt. ESLint33 hàm≥20,27 file
+  dài,91 errors, không đổi so lát24; chưa trả hết nợ code.
+- Chưa pass visual/interactive QA toàn workflow hoặc DB E2E: response ghi
+  giả, không kiểm mất mạng sau commit thật/concurrency nhiều tab. Collector
+  guard không thay revision backend, không bảo vệ field ngoài collector.
+  Còn dropdown async/bảo mật/idempotency/nợ code và full QA; goal active.
+
+### Lát 26 (27/09/2026) — tài khoản khóa và xác minh token
+
+- Audit thực tế: login/password auth, HTTP get_current_user/guards và
+  socket lookup đều thiếu is_active; user soft-delete vẫn có thể dùng
+  credential/token cũ. Decoder realtime bỏ verify_exp nếu config0, khác
+  HTTP. Last-login DB exception không đảm bảo close. Login body sai kiểu
+  có thể500 thay vì400.25 test đầu17 đỏ/8 đạt trên source cũ.
+- Giữ Bearer contract, gom HTTP decode về owner services đang dùng cho
+  realtime; luôn verify exp nếu có, subject chuỗi không rỗng. Chặn user
+  inactive/NULL ở service/HTTP guards/socket connect, login không cấp token.
+  Input JSON kiểm kiểu trước authenticate. Activity session rollback/close
+  khi lỗi. Không sửa account/secret/env/DB, không restart hay migrate.
+-43 auth tests isolated DB mocks +3 header tests +15 workflow =61 Python;
+  Node499/499, smoke10/10, feedback/diff đạt. Flask client kiểm login active
+  giữ token/permissions, admin boundary, malformed body, expired/signature,
+  inactive và DB cleanup. Socket handler giả lập kiểm active join đúng
+  rooms, inactive không presence/join. Không nhập main hoặc ghi DB thật.
+  HTTP runtime read-only `/health`200, `/check/me` thiếu token401.
+- Strict auth audit còn2 finding route public static JS/CSS stamped trong
+  main chưa có allowlist; không phải2 endpoint hồ sơ mở được chứng minh.
+  Giữ báo cáo `/tmp/qlpk-auth-contract.log`, chưa nới gate để báo xanh.
+- Chưa thu hồi socket đã kết nối trước khi khóa, chưa HttpOnly/CSRF/CSP
+  script enforce, secret/expiry rollout/rate limit và session revocation
+  còn phải thiết kế/kiểm chứng. Token legacy không-exp vẫn tương thích.
+  Không tuyên bố hệ thống đã an toàn toàn diện; goal tổng thể active.
+
+### Lát 27 (27/09/2026) — ranh giới quản trị tài khoản/nhóm quyền
+
+- Trace phát hiện user/group/user-group chỉ require_auth; user thường có
+  thể gọi CRUD quản trị. Caller hiện tại gồm quản lý tài khoản, nhóm,
+  phân quyền và shortcut admin; picker bác sĩ dùng route riêng.
+- Owner chung `account_access.py`: actor active/quyền nhóm đọc DB; route
+  quản trị map ql-taikhoan/ql-nhomquyen/ql-phanquyen, admin bypass. Quản lý
+  được giao không sửa admin/tài khoản mạnh hơn hoặc cấp nhóm vượt quyền
+  mình. Tạo/khóa, đổi role/phạm vi bệnh nhân/reset password chỉ admin,
+  tránh chiếm tài khoản và role staff có full patient scope. Hồ sơ thường
+  vẫn sửa được; self password/picker giữ nguyên. Avatar kiểm user/quyền
+  trước ghi file; debug patient route dùng clinical scope chung.
+- Replace nhóm kiểm toàn bộ ID/quyền trước delete, nhận string checkbox,
+  gom trùng, thiếu key không ngầm clear; [] clear rõ ràng, lỗi rollback.
+  Group PUT thiếu permissions giữ quyền hiện hành.
+-126 tests mới HTTP Flask + DB mocks, chạy cùng auth43/header3/workflow15
+  đạt187; Node499/499. Diff check đạt. Không import main, không ghi DB y tế
+  hoặc tệp upload thật. Log `/tmp/qlpk-account-regression.log`,
+  `/tmp/qlpk-account-node.log`. Dependency warnings9 chưa xử lý.
+- Strict auth vẫn2 cảnh báo public static JS/CSS stamping; không nới gate.
+  Chưa browser/interactive QA với nhóm quyền thật; chưa chứng minh transaction
+  trên PostgreSQL hay giải quyết race thu hồi quyền. Realtime/revoke,
+  token/CSRF/rate limit, backend idempotency và nợ code còn tiếp tục;
+  không tuyên bố hoàn tất5 nhóm vấn đề hoặc goal tổng thể.
+
+### Lát 28 (27/09/2026) — phòng realtime và thông báo đúng người nhận
+
+- Trace socket cho join tùy ý page/workflow/entity; notification có dữ
+  liệu bệnh nhân còn phát workflow operations, admin tự join mọi role.
+  Owner `realtime/access.py` map permission từ navigation hiện hành;
+  test đối chiếu menu. Subscribe kiểm token/active/role/quyền DB, không
+  nhận phòng tự đặt/user/role/entity, replace rooms và leave phòng cũ.
+- Notification có recipient chỉ gửi user đó; role notification không
+  truyền sang admin. Không recipient không phát (reminder email không
+  phải thông báo inbox cho mọi người). Giữ envelope/event_id/payload cho
+  đúng recipient, không sửa clinical payload hoặc làm mất trigger reload.
+- Catalog user/assignment đổi thì disconnect sockets user trước broadcast;
+  group sửa/xóa thì disconnect mọi socket local để làm mới quyền. Self
+  password cũng disconnect. Client reconnect một lần khi server disconnect,
+  đọc token hiện hành và resync sau ack; stop/logout không reconnect.
+-44 Python mới dùng Socket.IO test transport thật trong Flask app độc lập,
+  DB/auth giả;4 Node lifecycle mới. Tổng231 Python và503 Node đạt; Chrome
+  headless isolated kiểm reconnect→subscribe→resync→stop đạt. Không import
+  main, không ghi DB/tệp y tế hoặc restart server chung. Feedback/diff đạt.
+  Log `/tmp/qlpk-realtime-regression.log`, `/tmp/qlpk-realtime-node.log`.
+- Chưa pass visual/interactive QA trên workspace/tài khoản thật. Revoke
+  local phù hợp deployment một worker hiện hành, chưa Redis multiworker.
+  Chưa hết hạn socket đang idle, token cũ vẫn có thể reconnect sau đổi
+  password (cần token revocation). Clinical/catalog broad rooms vẫn còn
+  payload vượt patient scope; cần xử lý owner delivery, không chỉ room
+  allowlist. Goal tổng thể active; các mục lưu dữ liệu/nợ code vẫn còn.
+
+### Lát 29 (27/09/2026) — realtime delivery theo scope bệnh nhân
+
+- Room allowlist không đủ: clinical payload full_name/extra/data đi tất cả
+  người trong workflow. Thêm owner delivery.py: kiểm current appointment,
+  examination→appointment, batch tất cả ca hoặc patient_access chung.
+  Assignment deleted/thiếu/conflict không cấp payload; ca đổi bác sĩ không
+  dùng doctor_id từ event để quyết quyền. Staff/admin/full-scope giữ policy
+  hiện hành, không tự thay nghiệp vụ patient access.
+- Socket fanout riêng theo sid, dedupe nhiều rooms; reauth/quyền DB mỗi
+  event, cache decision chỉ trong event theo token. Invalid/expired/locked
+  disconnect trước nhận data. Token chỉ RAM map sid, dọn khi disconnect.
+  Thiếu quyền bệnh nhân chỉ action changed cho refresh API; không ID/name/
+  diagnosis. Quyền hợp lệ giữ ID điều phối, data family_member_updated để
+  bảo toàn replaceMember. Other catalog/inventory events bỏ extra nhạy cảm.
+-30 test Python mới (realtime suite74), tổng261 Python +503 Node đạt.
+  Test transport Socket.IO Flask thật, DB/auth giả: bác sĩ đúng/khác,
+  TLG legacy, chuyển ca, batch mixed, deleted/missing/conflict, attachments
+  qua inventory room, scope revoke không subscribe, duplicate tabs, DB
+  exception không broadcast hoặc biến save đã commit thành lỗi. Logs:
+  `/tmp/qlpk-delivery-regression.log`, `/tmp/qlpk-delivery-node.log`.
+- Không đổi JS/UI, không ghi DB/tệp y tế, không restart server chung.
+  Chưa browser/E2E DB thực; chưa pass visual/interactive QA tổng. Fanout
+  local phù hợp một worker hiện hành, chưa hỗ trợ Redis multiworker; mỗi
+  token/event có DB lookup cần load-test. Token cũ sau đổi password,
+  HttpOnly/CSRF/rate limit, write idempotency/concurrency, complexity/lint
+  và nghiệm thu các workflow vẫn chưa hoàn tất; goal giữ active.
+
+### Lát 30 (28/09/2026) — token mất hiệu lực sau đổi/reset mật khẩu
+
+- Root cause: JWT chỉ sub/exp, đổi hash không ảnh hưởng token; disconnect
+  không ngăn reconnect token cũ. Thêm credential_version HMAC-SHA256 opaque
+  theo secret/domain/user.id/username/hash, issuer yêu cầu user; HTTP và
+  socket compare với DB. Không lộ hash/plain password trong claims. Token
+  legacy thiếu binding fail closed, cần login lại khi deploy; không migration.
+- Self password input kiểm kiểu; row lock trước verify, token mới tạo trước
+  commit và trả sau commit. Admin reset hash tự vô hiệu token cũ. Header
+  nhận token mới trước stop/start socket, không reload workspace; guard
+  double-submit và token snapshot tránh response cũ tái đăng nhập sau logout/
+  ghi đè account khác. Commit success mà mất replacement báo đăng nhập lại
+  đúng sự thật; network/mất response không tự retry mutation.
+-32 Python mới +6 Node mới. Tổng293 Python +509 Node đạt;9 warnings dependency.
+  HTTP test có token thật ký/verify, đổi hash DB giả, request token cũ401;
+  socket test transport thật kiểm connection đã mở và reconnect token cũ
+  đều bị chặn, replacement nhận được. Chrome isolated dùng template modal/
+  owner JS thật + response giả kiểm nhập/submit/token/socket/form reset đạt.
+  Không ghi DB/tài khoản/tệp y tế, không deploy/restart. Logs
+  `/tmp/qlpk-token-regression.log`, `/tmp/qlpk-token-node.log`.
+- Chưa pass visual/interactive QA tổng workspace thật; chưa chứng minh
+  SELECT FOR UPDATE concurrent DB thực. Token expiry config0 vẫn giữ,
+  chưa per-session revoke/logout server, HttpOnly/CSRF/rate limit, idempotency/
+  write concurrency và nợ code. Rollout bắt buộc backend/frontend cùng bản,
+  người dùng login lại một lần; docs ops/contracts/smoke đã ghi. Goal active.
+
+### Lát 31 (28/09/2026) — giới hạn thử đăng nhập
+
+- Login trước đây không giới hạn và mở DB trước validate. Thêm decorator
+  login_throttle reserve account/IP trước handler:10 account/60 IP/300s
+  mặc định, cả attempts đúng/sai, body sai tính IP. Casefold/strip chỉ cho
+  bucket, không đổi username auth; không oracle account tồn tại. Blocked
+  trả429/Retry-After, không kéo dài TTL hoặc consume budget khác.
+- Redis Lua atomic check+reserve, URL riêng ưu tiên rồi REALTIME_REDIS_URL;
+  lỗi store503 fail-closed không fallback. Không URL dùng RAM lock/monotonic
+  tối đa10000 keys, không evict counter sống. Keys HMAC không raw identity.
+  Pydantic giới hạn config hợp lệ. UI429 hiện thời gian chờ có kiểm giá trị,
+  giữ input/nút enabled; pending submit không gửi đôi. Không sửa layout.
+-18 Python mới +10 Node mới; tổng311 Python +519 Node đạt,9 warnings cũ.
+  Concurrent30 attempts chỉ3 reservation theo config test; TTL/reset,
+  capacity, Redis contract/outage, header spoof, pre-DB denial kiểm đạt.
+  Chrome trang login thật, request auth bị intercept429 (0 login thật):
+  hiện42 giây, enabled, không overflow desktop1280/mobile390. Không ghi
+  DB/tài khoản/password/counters thật; browser đóng. Logs
+  `/tmp/qlpk-throttle-regression.log`, `/tmp/qlpk-throttle-node.log`.
+- Chưa Redis Lua E2E thật (không redis-server/docker CLI), chưa proxy-chain/
+  NAT load-test. Compose Redis allkeys-lru có eviction caveat; docs yêu cầu
+  dedicated noeviction cho hardening, chưa thay hạ tầng. Memory reset khi
+  restart, không multiworker. Account budget có temporary lockout tradeoff.
+  Chưa hoàn tất secret defaults/expiry/HttpOnly/CSRF, per-session logout,
+  save idempotency/concurrency, nợ code và full QA; goal active.
+
+### Lát 32 (28/09/2026) — kiểm chứng throttle trên Redis thật
+
+- Khép khoảng trống Lua chưa chạy thật: tải Redis7.4.6 từ download.redis.io,
+  đối chiếu SHA256 với redis/redis-hashes, build riêng `/tmp/qlpk-redis-build.*`.
+  Không install global, không Docker/Redis đang vận hành, không đổi env/DB.
+- Thêm test_login_throttle_redis.py: chọn binary qua QLPK_TEST_REDIS_SERVER
+  hoặc PATH, không có thì skip rõ; fixture tự spawn process với Unix socket
+  riêng, TCP0, persistence off, noeviction; close clients, terminate/wait
+  và kill fallback đúng PID trong finally, xóa thư mục fixture riêng.
+-10 tests Redis thật đạt:50 requests đồng thời chỉ3 reservations,24 clients
+  cùng budget, IP/account denial không consume bucket khác/không gia hạn,
+  TTL thực hết hạn, counter thiếuTTL được sửa, HTTP429 trước DB, process
+  stopped/counter corrupt503 không memory fallback, xác minh TCP0/no disk.
+  Log `/tmp/qlpk-real-redis-qa.log`; hồi quy tổng ở
+  `/tmp/qlpk-redis-regression.log`:321 Python đạt,9 warnings dependency cũ;
+  pgrep sau test không còn Redis QA. Code runtime không đổi trong lát này.
+- Giới hạn còn: proxy-chain/NAT và Redis production eviction/restart chưa
+  nghiệm thu. Các mục secret/expiry/HttpOnly/CSRF/session logout, write
+  idempotency/concurrency, nợ code và full workflow QA vẫn mở; goal active.
+
+### Lát 33 (28/09/2026) — cấu hình production fail-closed
+
+- Trace: main chỉ warning secret mặc định sau init_database; config có
+  SMTP password gắn sẵn, token default0 không hết hạn. Thêm owner
+  security_config.py, main gọi trước import DB/routes; production phải
+  secret riêng>=32 bytes/HS256/expiry1–1440. Issuer/decoder kiểm cùng gate;
+  production JWT bắt buộc exp integer, expires_delta cap configured limit.
+- Default SECRET_KEY và SENDER_PASSWORD rỗng, expiry480; không in credential
+  cũ khi patch. Không sửa .env, rotate credentials thực, DB hay deploy.
+  Có script check_security_config.py read-only không import main, không in
+  secret, readiness độc lập DEBUG. Cuối lượt script PASS và DEBUG=True;
+  default expiry đã đổi0→480 trong source, không sửa env và không kết luận
+  production đã deploy.
+-28 tests mới config/issuer/decoder/startup AST; targeted121 Python đạt.
+  Hồi quy349 Python đạt/log `/tmp/qlpk-production-regression.log`;519 Node
+  đạt/log `/tmp/qlpk-production-node.log`,9 warnings dependency cũ.
+  Guard startup xác minh thứ tự AST, không
+  import main để tránh init DB. Không đổi UI nên không browser QA mới.
+- SMTP credential từng ở source cần owner thu hồi/rotate ngoài provider
+  nếu đã dùng; xóa default không vô hiệu credential hay xóa Git history.
+  DEBUG exception vẫn có token0 nếu cấu hình vậy; không tính production pass.
+  HttpOnly/CSRF/session logout, write idempotency/concurrency, nợ code và
+  toàn bộ workflow QA vẫn chưa hoàn tất; goal active.
+
+### Nghiệm thu tổng 4 scope (28/09/2026) — đã đóng phần code
+
+- Calendar (lát64), phiên cookie (lát65), Doctor 11 mục (lát66) đã đóng code.
+- Test: 909 Python/324 skip opt-in DB-Redis + 738 Node; Doctor/frontend
+  contract, smoke, JS globals, feedback, diff đạt; pyflakes app+main 0; Alembic
+  một head `20260928_calendar_transfer_jobs`.
+- Chrome quét 32 trang ở chế độ cookie (session/API giả lập, chặn ghi): 0 lỗi JS,
+  0 Authorization, mọi request có session header, 0 ghi. Script /tmp/qlpk-final-sweep.cjs.
+- ESLint toàn dự án (221 file): 86 error (chủ yếu no-undef global chéo file như
+  CustomModal/XLSX; gate theo trang báo 0 thiếu), 29 hàm ≥20, 25 file >600 dòng.
+  Đây là số đo tham chiếu, không phải tiêu chí 4 scope.
+- Việc owner phải làm khi triển khai (chưa làm vì ghi DB/.env/deploy):
+  `alembic upgrade head`; chạy `scripts/process_calendar_transfers.py --run --watch`;
+  đặt SESSION_REDIS_URL/REALTIME_REDIS_URL (check_security_config đang FAIL
+  mục này); HTTPS; mọi người đăng nhập lại. Chưa pass visual/interactive QA với
+  tài khoản và dữ liệu thật.
+
+### Lát 65 (28/09/2026) — ĐÓNG scope phiên đăng nhập: cutover cookie HttpOnly
+
+- Đo lại: 31 file JS còn đọc token/tự gắn Authorization (≈165 chỗ); partial
+  chưa nạp browser-session. Đã gỡ toàn bộ khỏi 27 file trang/tiện ích; chỉ còn
+  owner phiên (api-transport, browser-session, session-bootstrap, login,
+  header, realtime, workspace, listener storage, version-check). Gate mới
+  `tests/session_token_ownership.test.js` chặn tái phát.
+- api-transport: tự gắn jQuery transport khi jQuery nạp sau (setter một lần),
+  thêm hasSession/sessionRevision/userSnapshot/currentUser; trang không đọc
+  qlpk_user/token trực tiếp (dashboard, tài liệu, thuốc, lịch hẹn). Sửa lỗi
+  reference-review gửi `Bearer null` (đọc key `token`).
+- Cutover: partial nạp browser-session + actions + session-bootstrap; mọi trang
+  dùng cookie HttpOnly + CSRF, xóa token cũ trong storage. Trang cần đăng nhập
+  bị anonymous/expired → /login (top window); login/verify/patient-survey khai
+  báo public. Trạng thái `changed` (tab khác đổi phiên) giữ khóa tới reload.
+- Calendar sync UI chia lô 50 lịch/yêu cầu (backend giới hạn 100 từ lát63).
+- QA: 909 Python/324 skip opt-in DB-Redis + 738 Node; feedback/diff đạt; sửa
+  test ALL_PERMISSIONS stale sau khi chuyển owner. Chrome 19 trang legacy: mọi
+  request có xác thực qua transport, 0 lỗi JS, 0 ghi. Chrome E2E Flask auth
+  thật + DB mock: token cũ bị xóa, chưa đăng nhập → /login, đăng nhập form →
+  cookie HttpOnly, không token storage; 26 request 0 Authorization, đủ cookie/
+  session-id, POST fetch/jQuery có CSRF; logout xóa cookie; trang public ở lại.
+  Scripts /tmp/qlpk-session-owner-pages.cjs, /tmp/qlpk-cookie-cutover-browser.cjs.
+- Rollout: mọi người đăng nhập lại một lần; cần HTTPS hoặc localhost (Web
+  Locks, cookie Secure) và Redis dùng chung. Dev server 8000 đang phục vụ
+  working tree nên cũng yêu cầu đăng nhập lại. Chưa pass visual/interactive QA
+  với tài khoản/dữ liệu thật. Giới hạn đã biết, không mở thêm: iframe ẩn vẫn
+  chạy JS nền tới khi reload; phím tắt cần reload khi đổi phiên.
+
+### Lát 64 (28/09/2026) — ĐÓNG scope Calendar
+
+- OAuth: init tạo state ngẫu nhiên + PKCE S256, lưu trong Flask session
+  (HttpOnly, ký) cùng user/jti/token digest/generation, hạn600s. Callback pop
+  state trước mọi xử lý (dùng một lần), từ chối thiếu/giả/khác trình duyệt/
+  hết hạn; kiểm user active + đúng phiên login còn hiệu lực trước và sau đổi
+  code. Không phản chiếu error/exception vào URL, chỉ mã lỗi cố định.
+- DB local (đọc-only): alembic_version=20260920_stock_balance_snapshot nhưng
+  bảng transfer_jobs ĐÃ CÓ (DEBUG create_all), đúng schema,0 dòng. Migration
+  sửa để adopt bảng đúng schema, từ chối bảng lệch; tránh lỗi "already exists".
+- Transfer sau commit gọi drain ngay cho job vừa tạo (thread nền, lỗi không
+  ảnh hưởng response); worker CLI vẫn là owner retry. Không cần chạy worker để
+  đồng bộ lần đầu khi Google sẵn sàng.
+- QA:189 Python/1 skip Redis binary +733 Node, feedback/diff đạt. Logs
+  /tmp/qlpk-calendar-close-{python,node}.log. OAuth dùng thư viện thật kiểm
+  state/code_challenge S256/code_verifier gửi đi (chặn trước network).
+- Giới hạn đã biết, KHÔNG mở thêm: writer thủ công chưa gộp outbox; chưa kết
+  nối tài khoản Google thật; chưa pass visual/interactive QA thật. Việc cần
+  owner làm khi deploy: `alembic upgrade head` (chỉ ghi version, bảng/index đã
+  có ở DB local) và chạy worker `scripts/process_calendar_transfers.py --run --watch`.
+
+### Lát 63 (28/09/2026) — Calendar API quyền/batch/date và row locks
+
+- Evidence: dashboard routes chỉ require_auth, lấy toàn bộ appointments/
+  connections; sync cancelled vẫn create; delete-all thiếu dates quét toàn bộ.
+  Thêm owner calendar_access.py và nối sync-status/verify/sync/delete-all/
+  validate-connections. Actor reload DB active/role, User SHARE lock; input
+  batch1..100 positive int32/dedup/sort và bounded ISO date range<=366 ngày.
+- Read scope giữ clinical contract; writes chỉ admin/staff hoặc current
+  doctor_id, không view-all/historicalpsych. Full batch validate trước Google;
+  ordered appointments SHARE/UPDATE+reload. Cancelled409, forbidden403,
+  missing/deleted404, malformed400. Clinical sync chỉ own Google; staff
+  broadcast giữ nguyên. Delete-all bắt buộc dates, clinical chỉ own events
+  trên current-owned appointments; connection validation chỉ own connection.
+-30 tests mới; targeted155 Python +733 Node đạt,55 warnings legacy/dependency.
+  Logs /tmp/qlpk-calendar-access-regression.log và /tmp/qlpk-calendar-access-node.log.
+  Flask decorated HTTP401/400/403/200; mixed batch no provider calls; spoof
+  role, view-all read-not-write, historicpsych, cancelled, oversized/malformed,
+  own-vs-staff/calendar delete data scope. Four real PG Lock observations:
+  reassignment, cancellation, actor disable và bulk-delete đợi transfer commit.
+- Không schema/env/DB thật/restart/deploy. Chưa pass visual/interactive QA
+  thật; UI bulk>100/error/partial messages cần theo contract mới. Chưa full
+  writer outbox, OAuth callback/state/account identity, deadlines, rollout.
+  Goal toàn5 nhóm vẫn mở, không gộp thành chỉCalendar/auth.
+
+### Lát 62 (28/09/2026) — legacy Calendar không mất mapping vì lỗi mạng
+
+- Rà toàn callers verify/update/delete: manual sync verify False đã xóa link
+  rồi create, duplicate chỉ xóa DB gây orphan Google; update/cancel helper
+  xóa link bất kể provider; delete-all thiếu token hoặc exception text chứa404
+  cũng coi success. Đây là evidence mới ngoài transfer outbox.
+- Thêm verify strict opt-in raise unknown; manual sync không xóa/tạo vì
+  lỗi xác minh. Duplicate cùng eventID chỉ dedup DB, khác ID delete Google
+  phải thành công. Helper update dùng confirmed-missing và chỉ bỏ mapping
+  khi replacement create thành công; cancel delete=True mới xóa link.
+- Delete-all giữ disconnected mapping, typed HttpError404/410 mới success;
+  rate limit429/403 rateLimitExceeded retry tối đa3, lỗi khác không retry mù.
+  Không đổi schema/response shape; failed_count/deleted_count phản ánh thật.
+-25 tests mới, targeted125 Python +733 Node đạt,55 dependency/legacy warnings.
+  Logs /tmp/qlpk-calendar-mapping-regression.log và /tmp/qlpk-calendar-mapping-node.log.
+  Flask route trực tiếp + real isolated PG + provider mock kiểm mapping sau
+  commit, duplicate same/different ID, missing/create fail, unknown owner,
+  disconnected, fake404 text, HTTP404/410/503 và quota retry. Feedback/diff đạt.
+- Chưa consolidated writer/outbox chung, chưa manual-create durable ID,
+  chưa audit quyền/batch scope Calendar API, cancelled manual sync vẫn cần
+  gate; kết nối lại Google account/monitoring và real UI/provider QA còn mở.
+  Không DB thật/env/restart/deploy; chưa pass visual/interactive QA thật.
+  Goal toàn5 nhóm tiếp tục, không coi green tests hẹp là completion tổng.
+
+### Lát 61 (28/09/2026) — phục hồi Calendar mapping/tombstone khi thử lại
+
+- Lượt60 có tiến bộ source/tests, nhưng audit tiếp phát hiện update False
+  gộp missing với network: Google delete xong rồi DB rollback, chuyển về
+  owner cũ thì mapping mất ở Google cứ pending mãi. Test mới dùng remote
+  event set có trạng thái qua nhiều transactions, không chỉ assert call count.
+- update_event opt-in report_missing None cho GET404/410/cancelled, False
+  cho failure; callers mặc định giữ bool. Worker chỉ xóa confirmed-missing
+  mapping; có target còn sống thì không tạo thêm. Upsert409+GET410/cancelled
+  raise CalendarEventRetired; worker lưu replacement ID sau rollback savepoint
+  và trước lần gọi kế tiếp. Timeout/403/503 hoặc409→404 không đổi ID.
+-18 tests thêm (Calendar tổng36); targeted100 Python +733 Node đạt,55 warnings
+  dependency/legacy. Logs /tmp/qlpk-calendar-recovery-regression.log và
+  /tmp/qlpk-calendar-recovery-node.log. Có real isolated PG tests cho return
+  owner sau remote-delete/DB-rollback, stale/live duplicate mappings, durable
+  ID rotation và commit failure không dùng ID chưa lưu. Provider tests phân
+  biệt404/410/cancelled với403/429/503/timeout; feedback/diff gate đạt.
+- Không schema mới, không DB thật/env/restart/deploy; migration/consumer lát60
+  vẫn chưa rollout. Provider mocked, chưa pass visual/interactive QA thật.
+  Còn manual-sync/cancel/update/re-examination writer consolidation, reconnect
+  account và completed-job reconcile/monitoring; goal toàn5 nhóm vẫn active.
+
+### Lát 60 (28/09/2026) — durable Calendar transfer jobs, chưa rollout
+
+- Đã xác minh lỗi: transfer gọi Google trước clinical commit; helper xóa
+  mapping dù provider trảFalse, lấy first event nên có thể nhầm lịch staff.
+  Không có outbox/consumer sẵn trong snapshot. Thay helper bằng enqueue cùng
+  transaction, bao phủ doctor_id đổi sang cả bác sĩ và tâm lý gia.
+- Model GoogleCalendarTransferJob + migration20260928_calendar_transfer_jobs;
+  worker calendar_transfer.py khóa appointment→job, đọc current owner/status,
+  stale job chỉ cleanup, giữ staff mapping, NULL owner giữ pending. Backoff
+  persisted30s..3600s; lỗi không mất dấu retry. Provider insert409 chỉ patch
+  khi private marker đúng, deterministic ID giữ qua mất response/DB commit.
+- Consumer scripts/process_calendar_transfers.py đòi --run, --watch poll30s;
+  không tự chạy request thread, không import main. Chưa migration/worker trên
+  DB vận hành, không env/restart/deploy. Rollout prerequisite ghi ops doc.
+-18 tests mới;82 Python +733 Node đạt,55 warnings dependency/legacy cũ. Logs
+  /tmp/qlpk-calendar-transfer-regression.log và /tmp/qlpk-calendar-transfer-node.log.
+  Real isolated PostgreSQL kiểm commit failure, invisible uncommitted job,
+  delete failure/missing connection/backoff/unknown owner, out-of-order,
+  cancelled/no prior mapping. Hai concurrency tests quan sát actual Lock,
+  không chỉ sleep. Migration upgrade/downgrade trong fixture; Alembic unique
+  head20260928_calendar_transfer_jobs. Feedback gate đạt; QA PG đã dừng.
+- Chưa hoàn tất nhómCalendar: manual sync/cancel/update/re-examination writers
+  vẫn legacy, không lock/outbox chung; reconnect account, manually removed
+  events và monitoring/retention còn mở. Provider mocked, chưa pass
+  visual/interactive QA clinical thật. Mục tiêu5 nhóm sức khỏe vẫn active;
+  không thu hẹp thành auth hoặc coi lát60 là hoàn thành toàn dự án.
+
+### Lát 59 (28/09/2026) — quyền backend và atomic validation chuyển khám
+
+- transfer_service kiểm payload/ID/role, target active đúng role và actor DB
+  hiện hành. User share-lock theo ID; chỉ admin/staff hoặc current doctor_id
+  được chuyển. View-all và psychologist_id lịch sử không bypass write scope.
+- Lock toàn batch appointments rồi active examinations theo ID; validate
+  exists/not-deleted/CONFIRMED/đúng1 active exam/trạng thái trước mọi mutation.
+  Thiếu một lượt hoặc ngoài quyền từ chối cả batch;400/403/404/409 rollback.
+  JSON malformed400; no-op0 không emit/notify. Mapping/queue/no-op giữ nguyên.
+- Isolated PostgreSQL tests chứng minh actor/target, malformed, mixed-batch,
+  lifecycle/duplicate exam, role mapping, no-op, route HTTP và rollback khi
+  lỗi giữa batch; observed pg_stat_activity lock wait cho2 chuyển cùng ca,
+  target disable và exam sang PAID. Fixture DB riêng /tmp, không DATABASE_URL
+  vận hành. Test queue legacy dùng QA actor tồn tại thay ID giả-1; không chạy
+  bộ opt-in trên DB thật. Node toàn733 đạt; evidence /tmp/qlpk-transfer-access-*.
+-64 Python transfer/access/workflow/globals đạt (55 warnings dependency cũ),
+  trong đó27 transfer tests mới; feedback contract/diff-check đạt. PostgreSQL
+  isolated processes đã stop trong fixture finally. Không browser QA mới vì
+  thay backend, HTTP QA qua Flask với auth decorator và DB cô lập.
+- Không UI changes mới hoặc browser clinical QA; chưa pass visual/interactive
+  QA thật. Calendar sync helper vẫn external trước commit, DB atomic không
+  chứng minh external atomicity/idempotency. Cross-workflow lock order chưa
+  audit hết. Full auth cutover/clinical invalidation/production/code debt và
+  toàn dự án vẫn chưa hoàn tất; không .env/restart/deploy/schema.
+
+### Lát 58 (28/09/2026) — shared chuyển khám gắn phiên lúc mở
+
+- TransferModal explicit installJQuery, bỏ3 Bearer headers. Gate capture cookie
+  revision/legacy credential lúc open; check patient/phiên trước load/POST và
+  sau response, không callback/toast/clear ca mới. Giữ save-before-transfer,
+  duplicate/close guard. Response success/count phải xác nhận đủ batch; partial/
+  no-op cảnh báo kiểm tra, không báo chuyển đủ hoặc tự replay.
+-733 Node đạt (mở rộng doctor_transfer assertions cho stale patient/session,
+  cookie/anonymous và incomplete response). Logs /tmp/qlpk-transfer-session-*
+  và browser harness /tmp/qlpk-transfer-session-browser.cjs. Không DB thật/env/
+  restart/deploy, không đổi CSS/template/API/backend.
+-17 Python workflow/globals, feedback contract và diff-check đạt. Chrome modal/
+  template/jQuery/Bootstrap thật + cookie/DB mock: recipients, POST exact payload
+  CSRF/no Bearer, confirmed callback; invalidation giữa POST không callback/toast
+  cũ, không gửi lại. Browser/server đã đóng. Fixtures không thay clinical QA.
+- Phát hiện backend cần tiếp tục: transfer_service.py có row lock appointment
+  nhưng chưa kiểm quyền actor/target trong service; route chỉ require_auth;
+  loop skip missing/no-op, examination chưa lock rõ. Cần isolated tests quyền,
+  target role/activity, all-or-nothing batch và concurrency trước sửa contract.
+- Full cookie cutover/mounted invalidation/drafts, production, permissions và
+  nợ code toàn dự án còn mở. Chưa pass visual/interactive QA clinical thật.
+
+### Lát 57 (28/09/2026) — danh mục Lễ tân và autocomplete an toàn
+
+- Catalog loaders dùng canonical fetch, bỏ token/Bearer gate và jQuery ajax.
+  Timeout10s/latest-load-wins theo document/kind; array validation, lỗi false+
+  toast không retry vô hạn. Doctor option.textContent chống HTML injection,
+  refresh giữ ID còn hợp lệ. Wrapper page trả Promise cho callers/test.
+- Service autocomplete chỉ1 bộ namespaced listeners, tải lại clear dropdown;
+  tên/giá qua text nodes, typing clear hidden ID, focus chỉ lọc giữ ID. Không
+  đổi endpoint/body/DB hoặc layout. Cookie templates chưa được bật.
+-733 Node đạt (15 ca mới),17 Python workflow/globals đạt. Evidence logs
+  /tmp/qlpk-receptionist-catalog-{node,python,browser}.log; browser harness
+  cùng prefix .cjs. Không .env/DB thật/restart/deploy.
+- Chrome cookie thật/source/DOM+API fixture: load bác sĩ/dịch vụ không Bearer,
+  tên có markup không tạo element; doctor refresh giữ selection; service
+  refresh chỉ1 handler, focus giữ ID/typing clear, chuột+keyboard chọn, empty
+  state đúng. Browser/server đã đóng; feedback/diff-check đạt.
+- Mounted page invalidation/cache, full cookie cutover, production gates,
+  quyền/concurrency và nợ code toàn dự án còn mở. Chưa pass visual/interactive
+  QA clinical thật/dense/sparse; không thu hẹp hoặc đánh dấu goal hoàn tất.
+
+### Lát 56 (28/09/2026) — tệp/người thân/modal dùng transport chung
+
+- Bỏ Bearer riêng ở relative-table, modal relatives data, receptionist và
+  clinical upload/preview/download. Retire modal token/header exports và UI
+  re-exports. Modal patient load session errors không fallback patient; upload
+  JSON đổi phiên không bị nuốt thành success. API/schema không đổi.
+- Document list truyền context guard lúc click qua receptionist/doctor/clinical
+  adapters tới preview/download; check trước/sau headers/Blob và giữ guard qua
+  doc/422 fallback. Late result không mở file/download/toast ca cũ.
+-718 Node đạt (8 ca mới);17 Python workflow/globals đạt; feedback contract và
+  diff-check đạt. Logs /tmp/qlpk-patient-transport-{node,python,browser}.log;
+  browser script cùng prefix .cjs. Không DB thật/.env/restart/deploy.
+- Chrome actual source/cookie thật: relative rows, modal relatives read,
+  2 multipart uploads CSRF/no Bearer, click file rendered→patient switch chặn
+  delayed Blob. API/DB fixtures, không thay clinical visual acceptance;
+  browser/server QA đã đóng.
+- Cookie full cutover, mounted page invalidation/drafts, production gates,
+  permission/concurrency và code health toàn dự án vẫn mở; chưa hoàn tất goal.
+  Chưa pass visual/interactive QA clinical thật/dense/sparse.
+
+### Lát 55 (28/09/2026) — tiền sử và kế hoạch an toàn dùng transport chung
+
+- Bỏ Bearer gate khiến cookie không tải ICD exact/gợi ý; context kiểm apiCall
+  thay getAuthHeader, JSON headers chỉ Content-Type. Allergy/read/create và
+  safety-plan family/file/upload/clear giữ endpoint/body; không auth riêng.
+  Session errors ICD/family propagate thay empty-success. File kiểm lại
+  patient/context sau Blob; upload return/error/finally không chạm input ca mới.
+-710 Node đạt (8 ca mới cả legacy/cookie). Gate globals bắt import allergy
+  còn gọi tên helper cũ trong lúc đổi; đã sửa đủ2 call sites và thêm coverage
+  allergen read/create. Chrome ES module thật+cookie/DB mock: ICD exact, gợi ý
+  render, supporter select, upload multipart/CSRF, stale patient Blob blocked.
+  Logs /tmp/qlpk-history-session-{node,python,browser}.log; browser script cùng
+  prefix .cjs. Không .env/DB thật/restart/deploy, không CSS/layout.
+-17 Python workflow/globals đạt sau sửa import; feedback contract/diff-check
+  đạt. Browser/server QA đã đóng. Không còn private Authorization/token gate
+  trong4 owners history context/core/suggestions/safety-plan vừa chạm.
+- Chưa pass visual/interactive QA clinical thật/dense/sparse; component/API
+  browser fixture không thay nghiệm thu workflow. Cache/invalidation mounted
+  clinical UI, auth callers còn lại/full cutover, production gates, quyền/
+  concurrency và code health toàn dự án vẫn mở; goal chưa hoàn tất.
+
+### Lát 54 (28/09/2026) — đồng bộ gate khởi tạo ba trang lâm sàng
+
+- api-transport là owner ensureSession async + parser legacy raw/Bearer/JSON/
+  aliases; cookie header helper trả null. Bỏ parser/Bearer riêng ở clinical,
+  receptionist, doctor page runtimes; await tại Doctor startup/queue, Lễ tân
+  startup và TLG shared bootstrap.401/expired redirect,503/changed dừng và báo
+  reload, không dùng token storage để vượt cookie gate. Không đổi API/DB/UI layout.
+- Header logout dùng canonical credential và dọn session aliases sau server
+  confirmation/nháp; login success cũng dọn aliases. Test session-only revoke,
+  failed logout giữ credential, stale logout không xóa credential mới.
+-702 Node tests đạt;17 ca mới + cập nhật bootstrap order async. Chrome cookie
+  thật/DB mock: bootstrap chậm cả3 runtime, POST CSRF/no Bearer, same-origin
+  iframe bootstrap, changed/503 fail closed. Logs /tmp/qlpk-clinical-session-*
+  và browser harness /tmp/qlpk-clinical-session-browser.cjs.
+-62 Python session/workflow/globals/static tests đạt (9 warnings dependency);
+  feedback contract và diff-check đạt. Chrome header regression xác nhận login/
+  password/realtime/logout cookie và IndexedDB chỉ xóa nháp user đã logout.
+  Browser/server QA đã đóng; không DB thật/.env/restart/deploy.
+- Chưa pass visual/interactive QA clinical thật/sparse/dense; chưa chứng minh
+  mounted forms clear/cancel khi invalidation. Templates vẫn chưa bind cookie,
+  callers/iframe background/drafts và full cutover còn mở. Production gates,
+  permissions/concurrency, nợ code và full project QA vẫn thuộc goal chưa xong.
+
+### Lát 53 (28/09/2026) — phím tắt theo phiên hiện tại
+
+- Bỏ shortcut token parser/Bearer riêng, giữ JSON apiCall qua transport chung.
+  Cookie user/admin từ authenticated RAM, không stale admin localStorage.
+  Refresh cache có sequence+identity guard, keyboard kiểm current revision.
+  Logout/invalidation/storage credential events clear cache/rows; settings
+  mount gắn revision, form inert và báo reload khi đổi; submit/delete/load
+  kiểm trước/sau async để không dùng quyền/row của phiên cũ.
+-685 Node +17 Python workflow/globals đạt;4 tests shortcut mới. Chrome thật
+  source/form/CSS với synthetic session/API: stale admin→mine-only, Ctrl+K,
+  POST CSRF save, invalidation clear/inert và programmatic submit/key không
+  tạo side effect. Logs /tmp/qlpk-shortcut-session-{node,python,browser}.log.
+  QA processes đóng; không DB/.env/restart/deploy, không thay CSS/layout.
+- Chưa pass visual/interactive QA clinical/dense/admin controls thật. Cookie
+  rotation cùng user cũng yêu cầu reload settings (fail closed), legacy identity
+  vẫn storage tới full cutover. Page guards/iframe/callers còn lại và production/
+  permission/concurrency/code debt vẫn mở; goal toàn dự án chưa hoàn tất.
+
+### Lát 52 (28/09/2026) — gõ tắt/management/PDF chung transport
+
+- Bỏ token riêng ở3 owners text-expansion, management và PDF preview.
+  Management explicit installJQuery vì template không có utils; export GET
+  qua guarded fetch/Blob download, không URL navigation thiếu auth.
+- Runtime gõ tắt scope IIFE tránh management cùng tên loadTextExpansions
+  ghi đè refresh. Load revision chặn response cũ; cookie revision/cache guard,
+  logout/credential storage events clear. Chốt isLoaded không tăng revision
+  khi đang load (browser polling đã phát hiện và regression bổ sung).
+-681 Node +33 Python workflow/globals/PDF đạt, diff check đạt. Chrome real
+  cookie/source với API fixtures: table rows, refresh, Tab expansion, Excel
+  download và PDF POST CSRF/Blob, invalidation clear đạt. Fixture pagination
+  ban đầu thiếu include đã sửa QA harness; không nới production contract.
+  Logs /tmp/qlpk-shared-utilities-{node,python,browser}.log. QA processes đóng.
+- Không đổi layout/schema/.env/restart/deploy/clinical DB. PDF viewer stub
+  không chứng minh clinical print; chưa pass visual/interactive QA thật/dense.
+  Cache same-tab legacy rotation còn giới hạn; cookie callers/guards/iframe
+  cutover, nợ code/permission/concurrency/production vẫn thuộc goal active.
+
+### Lát 51 (28/09/2026) — shared catalog loaders bỏ token riêng
+
+-5 loaders base autocomplete/occupation/province/ward/ICD dùng canonical
+  fetch, bỏ Authorization/storage token. ICD bỏ getAuthHeader/missing-token
+  gate; session errors propagate. Read URLs/pagination/IDs/mapping, write
+  JSON{name}/Content-Type giữ; không đổi patient data hoặc layout/component.
+-676 Node +23 Python workflow/globals/ICD đạt,8 dependency warnings.4 tests
+  mới kiểm7 calls ở cả legacy/cookie, POST CSRF, no auth callback, stale error.
+  Chrome cookie thật/components thật+API fixtures: tải/chọn nghề/tỉnh/xã,
+  POST nghề nghiệp và ICD read đạt; không Bearer, không ghi medical DB.
+  Logs /tmp/qlpk-catalog-{node,python,browser}.log; QA processes đóng.
+- Chưa pass visual/interactive QA clinical/dense data. Caller options
+  getAuthHeader còn cần dọn ở adapters cũ, loader không gọi nữa. Các module
+  khác/page guards/iframe và coordinated cookie cutover chưa hoàn tất;
+  không bật templates cookie, không .env/restart/deploy. Goal tổng thể active.
+
+### Lát 50 (28/09/2026) — form login nối shared cookie actions
+
+- Login form cookie dùng actions.login, không AJAX auth song song; revision
+  guard trước redirect/dọn legacy identity. User/permissions RAM quyết landing,
+  không /check/me lần hai/token storage; error không fallback Bearer. Legacy
+  đang sống giữ tới coordinated cutover. Renderer error chung, Retry-After
+  safe1..3600 đi từ shared action tới UI; duplicate submit vẫn bị chặn.
+-672 Node +56 Python auth/workflow/globals đạt,9 dependency warnings; diff
+  check đạt.10 tests mới cookie login/throttle. Chrome source/form thật với
+  Flask cookie/account mocked:429 retry delay→success redirect, HttpOnly,
+  no Bearer/token storage/check-me, /auth/session200. Logs /tmp/qlpk-cookie-login-
+  {node,python,browser}.log. Screenshot /tmp/qlpk-cookie-login-error.png đã xem;
+  desktop error layout không overflow, không đổi CSS. QA server/browser đóng.
+- Screenshot fixture không nạp icon stylesheet nên không xác nhận icon;
+  không thay đổi icon/layout trong lát này. Chưa pass visual/interactive QA
+  clinical E2E. Chưa bật cookie runtime partial: cần migrate remaining callers,
+  page guards/iframe trước; không shim token, không DB/.env/restart/deploy.
+
+### Lát 49 (28/09/2026) — workspace quyền/identity theo cookie owner
+
+- Cookie shell đọc user/permissions từ authenticated RAM owner, không stale
+  admin storage. openTab/openHref kiểm configured route permissions (đóng
+  bypass fallback item). Async open/activate/close guard revision/legacy
+  identity sau leave prompt, không ghi tab state dưới account mới.
+- Init subscribe/bootstrap owner; terminal invalidation/account change khóa
+  host hidden+inert và báo reload. Same-user rotation giữ active pane. Không
+  đổi CSS/layout: frame host flex min-height0, pane absolute active display,
+  native scroll/iframe100% giữ nguyên; chỉ khóa container owner, không patch child.
+- Chrome source/CSS thật fixture shell: allowed iframe, deny admin storage,
+  rotation, changed/account switch locking đạt. Existing real cookie/header/
+  logout/IndexedDB fixture regression đạt. Logs /tmp/qlpk-workspace-session-
+  {node,python,browser}.log và /tmp/qlpk-workspace-cookie-browser.log.
+-662 Node tests +17 Python workflow/global checks đạt;4 workspace unit cases
+  mới. Static smoke gồm syntax/frontend/global contracts đạt, diff check đạt.
+- Chưa pass visual/interactive QA clinical/dense state; hidden/inert không
+  dừng background iframe JS. Không bật cookie live templates trước coordinated
+  iframe/page-guard/login/caller cutover. Không DB/.env/restart/deploy.
+
+### Lát 48 (28/09/2026) — chặn response stream sau đổi phiên
+
+- Shared API transport guard response.body ở native ReadableStream pull,
+  kiểm trước/sau read; reader/BYOB/tee/iterator/pipeThrough giữ chốt. HWM0
+  không wrapper prefetch; cancel xuống source, không buffer toàn file.
+- Chrome phát hiện proxy stream bị new Response nhận sai dạng body, dù Node
+  tests đạt. Đã chuyển sang native stream, overrides method trên instance;
+  Chrome14 HTTP delayed-stream cases đạt (legacy/cookie x7 consumers), no
+  pageerror/late payload. Chrome có thể chuyển source error thành TypeError
+  khi .text() của new Response(body); đây là failure, không payload success.
+-658 Node tests +17 Python workflow/global tests đạt; JS syntax/static/frontend
+  contracts chạy qua smoke đạt, git diff --check đạt. Tests stream21 ca gồm
+  EOF BYOB/cancel và normal consumption. Regression logs
+  /tmp/qlpk-stream-{node,python,browser}.log. Không clinical
+  data/.env/server restart/deploy; QA server random loopback và browser đóng.
+  Chưa pass visual/interactive QA clinical; cookie cutover, đa tab nháp,
+  quyền/concurrency, nợ code và production configuration vẫn còn trong goal.
+- Không coi bytes đã giao trước đổi phiên là có thể thu hồi; pending network
+  read chưa abort chủ động khi không có chunk tiếp theo. Không đổi API payload.
+
+### Lát 47 (28/09/2026) — cookie logout và nháp đúng người dùng
+
+- Bỏ cookie logout placeholder; actions.logout callback chạy dưới shared
+  mutation Web Lock tới cleanup xong. Header gửi confirmation.userId cho
+  main document/iframe, chờ mọi cleanup; false/rejection không redirect.
+  Cleanup retry dưới lock không revoke lần hai; anonymous revision guard
+  không cho cleanup cũ clear storage/redirect sau account switch.
+- Doctor cookie identity chỉ từ owner RAM, không storage/context user cũ.
+  Cleanup hủy context/timer, chờ pending writes đúng user rồi xóa records;
+  không xóa user khác. Write hoàn tất sau đổi revision/identity (kể cả cùng
+  user đăng nhập lại) bị loại và xóa có điều kiện captureId.
+-637 Node +62 Python auth/workflow/static/cache đạt;9 dependency warnings.
+  Hai workflow contracts ban đầu fail vì đổi removeItem sang loop; giữ xóa
+  workspace keys tường minh, không nới validator. Targeted37 tests đạt.
+  Chrome header/template/cookie/IndexedDB thật với mock account/DB/shell:
+  password rotate/realtime, logout xóa nháp user7/giữ user8, redirect login,
+  session401; không JWT storage/Bearer/pageerror. Processes đóng. Logs
+  /tmp/qlpk-cookie-logout-{node,python,browser}.log; git diff --check đạt.
+- Chưa chứng minh cleanup toàn cục với tab treo/invalidation trễ; pendingWrites
+  chỉ trong runtime hiện tại, không hàng đợi đa tab. Không bật cookie live
+  templates: login/guards/callers/iframe coordinated cutover còn mở. Không
+  DB thật/.env/restart/deploy. Chưa pass visual/interactive QA clinical thật,
+  không coi fixture shell là nghiệm thu. Goal toàn bộ vẫn active.
+
+### Lát 46 (28/09/2026) — header reads/password qua phiên chung
+
+- API transport expose session getter không tự bind; header cookie mode đọc
+  identity RAM, không restore/persist qlpk_user/permissions. Profile/search/
+  notifications bỏ Bearer riêng, qua transport; unknown/loading cho bootstrap,
+  changed/unavailable/expired không fallback storage. Search/notifications
+  không nuốt JSON/stale error thành empty success.
+- Password form cookie dùng locked actions, không store JWT/restart socket cũ;
+  header init bind realtime vào cùng owner để rotation tự thay socket. Legacy
+  password/logout vẫn giữ hoạt động trong templates hiện tại chưa cutover.
+- Cookie logout UI tạm fail closed với thông báo rõ, không clear nháp/local
+  session mà chưa revoke cookie. Đây là việc CHƯA HOÀN TẤT, không release trạng
+  thái này: next nối logout actions confirmation + draft cleanup đúng user
+  (Doctor draft hiện lấy qlpk_user storage), sau đó mới bật cookie templates.
+-628 Node +62 Python auth/workflow/static/cache đạt,9 dependency warnings;
+  syntax/feedback/diff đạt. Chrome header source/template thật + cookie/backend
+  DB mocked: tên tài khoản, search, notification empty, form đổi mật khẩu→
+  rotation/realtime reconnect đạt; no Bearer/JWT/user storage/pageerror. Ảnh
+  /tmp/qlpk-header-cookie-password.png đã xem; script QA thêm đủ token CSS/icon
+  sau phát hiện fixture thiếu CSS gây transparent modal. QA processes đóng.
+  Logs /tmp/qlpk-header-session-{node,python}.log và header-cookie-browser.log.
+- Chưa pass visual/interactive QA clinical workspace thật/dense notifications;
+  UI layout không đổi. Nút password header vẫn màu nâu có sẵn, cần về action
+  token trong health scope sau; không tuyên bố visual QA hệ thống đạt. Không
+  DB thật/.env/restart/deploy. Login/guards/callers/iframe/draft cutover còn mở.
+
+### Lát 45 (28/09/2026) — nối cookie owner vào API transport
+
+- useCookieSession tạo đúng một owner/actions bằng native fetch đã capture
+  trước wrapper; không recursion hoặc Bearer cũ lọt bootstrap/login. Bind
+  không tự gửi network, không token shim/storage migration. Cookie request
+  đi owner.request cho cả fetch+jQuery, session ID+CSRF/no-store/same-origin.
+- Guard response/body/clone theo revision owner thay storage token; anonymous/
+  changed/expired không fallback Bearer. Direct login/logout/password mutate
+  qua wrapper reject action_required; dùng locked actions. Static GET/HEAD
+  không bootstrap session; external vẫn native không thêm credentials. Đây
+  chưa phải policy block tuyệt đối direct native fetch/custom transport.
+-621 Node+62 Python auth/workflow/static/cache đạt,9 warnings dependency;
+  syntax/feedback/diff đạt. Chrome2 tab real cookie+CSRF/Flask DB mocked:
+  fetch profile, jQuery global:false write, multipart, blob download, password
+  rotation invalidate tab khác/chặn stale write, logout propagation đạt;
+  không JWT storage/Authorization. Legacy real jQuery regression cũng đạt.
+  Logs /tmp/qlpk-cookie-api-transport-{browser,python}.log,
+  /tmp/qlpk-cookie-transport-node.log; QA processes đã đóng.
+- Chưa gọi useCookieSession từ templates/login: coordinated cookie cutover
+  còn login/header/page guards/callers/iframe/drafts. Không bật nửa chừng hoặc
+  coi integration fixture là production. Không DB thật/.env/restart/deploy.
+  Raw stream guard/clinical real data/CSP/idempotency/concurrency/code health
+  vẫn mở; chưa pass visual/interactive QA workflow thật.
+
+### Lát 44 (28/09/2026) — jQuery đi chung fetch transport
+
+- Thay ajaxSend chỉ thêm token bằng jQuery ajaxTransport cùng origin, gọi
+  fetch owner hiện hữu. Global:false vẫn auth+stale guard; chặn response cũ
+  trước complete/converter/success. HTTP status/headers giữ để jQuery tự
+  convert JSON và chạy error/complete/statusCode; không retry401.
+- AbortController nối jqXHR.abort/timeout, bỏ late completion sau cancel;
+  giữ method/body/form serialization/FormData, X-Requested-With, explicit
+  headers, blob/arraybuffer/json/text xhr responseType và mimeType. External
+  hoặc script/JSONP không dùng custom transport/không auto-auth. Không tìm
+  caller async:false/custom xhr trong source; sync request fail closed rõ
+  session.sync_unsupported, không lặng lẽ chuyển async.
+-612 Node+23 Python workflow/static/cache gates đạt, syntax/feedback/diff đạt.
+  Chrome jQuery thật: stale/global:false, invalid JSON parsererror, timeout,
+  abort, blob download, multipart upload,2 origins/no leak/no replay đạt.
+  Chrome4 templates/fixture API:9 GET auth+3 downloads,0 pageerror. QA đóng.
+  Logs /tmp/qlpk-jquery-transport-{node,python,browser}.log và
+  /tmp/qlpk-jquery-catalog-browser.log. Không DB thật/.env/restart/deploy.
+- Vẫn Bearer/localStorage, cookie cutover chưa hoàn tất; next: nối session
+  owner vào canonical transport và coordinated login/header/guards/callers.
+  Raw readable stream và clinical UI clear/draft lifecycle chưa nghiệm thu.
+  Chưa pass visual/interactive QA dữ liệu thật; không dùng fixture thay thế.
+
+### Lát 43 (28/09/2026) — gom transport đang dùng thật, giảm caller token
+
+- Tách wrapper khỏi utils sang shared/api-transport.js, nạp sớm qua partial
+  chung của31 template. utils chỉ installJQuery idempotent; duplicate script
+  không double-wrap. Không startup request/auto-login/retry401, giữ same-origin
+  guard, Request/options/body/explicit headers, dọn plaintext login keys.
+- Document/hoạt chất/dị nguyên/tương tác thuốc bỏ header/token riêng, dùng
+  owner transport thật; document cũ chụp token lúc load nay lấy lúc gửi. JSON/
+  blob/text/arrayBuffer/formData/bytes/clone qua Proxy giữ Response branding,
+  chặn phản hồi đến muộn sau đổi token. External fetch không bọc/gắn credentials.
+-604 Node +23 Python static/workflow/cache gates đạt; syntax/feedback/diff đạt.
+  Chrome2 origins xác nhận6 requests/no leak external/no replay/body giữ.
+  Chrome4 template thật, API fixture:9 GET có auth,3 file tải được,0 page errors;
+  ảnh /tmp/qlpk-catalog-transport-*.png. QA server/browser đóng. Logs:
+  /tmp/qlpk-canonical-transport-{node,python,browser}.log và
+  /tmp/qlpk-catalog-transport-browser.log. Không DB thật/.env/restart/deploy.
+- Chưa pass visual/interactive QA dữ liệu thật: browser fixture không nghiệm thu
+  clinical/dense states. Transport vẫn Bearer/localStorage tới coordinated
+  cookie cutover; chưa nối session owner vào fetch/jQuery/init/login/header/
+  drafts/iframes. jQuery late response và raw readable stream chưa được guard
+  như fetch body methods; không tuyên bố hết stale response toàn ứng dụng.
+
+### Lát 42 (28/09/2026) — scope quản lý lượt khám và thống kê
+
+- Rà cutover xác nhận250 token/header matches trong frontend; không bật login
+  cookie nửa chừng. Phát hiện management query không dùng actor cho cả list/
+  detail/status và stats bỏ date/is_active dù parse. Khép chung4 route trước.
+- management_examination_query scope assignment từ Appointment không xóa,
+  exam active, admin/staff/full scope; doctor/psychologist chỉ được phân công,
+  role lạ/actor thiếu-inactive fail closed. Detail/write ngoài scope404; direct
+  status khóa scoped row trước mutate. Không đổi enum/clinical transition khác.
+- Stats bỏ auth-header decoder, nhận authenticated actor cả cookie/Bearer;
+  chung date/doctor/search với list, grouped query, đủ key0 và loại PAID như cũ.
+  List sort date+ID; invalid filter/body400, page/per_page dương/max100.
+  DB acquisition lỗi trả JSON500, không che lỗi bằng unbound db finally.
+-20 ca mới gồm PostgreSQL thật riêng9 ca và HTTP các role, ngày đầu/cuối,
+  ca inactive/lịch xóa, search không dấu, same patient khác bác sĩ, psychologist
+  legacy, pagination/status, không đọc/sửa ngoài scope, cookie actor; QA cluster
+  tự đóng.463 Python+597 Node đạt;55 warnings (dependency/Query.get legacy),
+  feedback/diff sạch. Logs /tmp/qlpk-management-scope-{regression,node}.log.
+- Không DB thật/.env/restart/deploy, không sửa UI. Chưa pass visual/interactive
+  QA workflow thật. Full frontend cookie cutover vẫn mở (login/header/page
+  guards/jQuery/fetch/iframe/drafts/downloads); không tạo shim token. Clinical
+  reassignment concurrency, idempotency/CSP/code health/production gate còn mở.
+
+### Lát 41 (28/09/2026) — hồ sơ dùng chung quyền và socket gắn phiên
+
+- /users/me requery active account trong DB session mở, dùng session_identity
+  thay parser Group/UserGroup riêng; giữ avatar/phone/is_active/license_number,
+  thêm no-store. Tài khoản mất/khóa sau auth bị401, malformed quyền fail closed.
+- Realtime client hiện hữu thêm bindSession(owner): cookie auth chỉ CSRF,
+  chưa authenticated không fallback token storage. Invalidation đóng socket;
+  phiên mới mở socket mới, mọi callback cũ bị chặn trước dispatch/subscribe/
+  reconnect. stop tường minh không tự bật lại khi owner đổi. Rebind bỏ listener
+  owner trước. Legacy vẫn chạy tới cutover nhưng không nhận event sau đổi token;
+  caller phải stop/start khi xoay token (header hiện đã làm).
+-443 Python +597 Node đạt,9 dependency warnings; syntax/diff/feedback đạt.
+  Chrome cookie+WebSocket thật với Flask/DB mocked: login→subscribe/resync,
+  password rotate→socket cũ ngắt/socket mới resync, đọc profile, logout confirmed
+  ngắt socket; storage trống, cookie hidden, không page errors. Server/browser
+  QA đã đóng. Logs /tmp/qlpk-session-integration-{regression,all-node}.log và
+  /tmp/qlpk-realtime-cookie-browser.log; scripts cùng prefix ở /tmp.
+- bindSession đã kiểm với owner/actions thật nhưng template CHƯA gọi; không
+  coi cookie frontend cutover xong. Tiếp tục login/header/template/54 callers,
+  iframe/request/draft cleanup; examination stats auth/scope còn mở. Không
+  ghi DB thật/.env/restart/deploy. Chưa pass visual/interactive QA workflow thật;
+  CSP/concurrent clinical writes/idempotency/code health/production gate còn mở.
+
+### Lát 40 (28/09/2026) — identity DTO và actions phiên xuyên tab
+
+- session_identity.py canonical ALL_PERMISSIONS+session_user_payload tái dùng
+  account_access parser; login/check/session/password cookie dùng chung. Bỏ2
+  khối parse JSON permissions/log full permissions trùng trong auth.py. Query
+  session/check active user khi DB mở; payload có tên/email/role/permissions.
+  Frontend owner strict permissions, clone/freeze; không giữ raw access_token.
+- browser-session-actions.js factory nối3 action vào owner, chưa template.
+  Web Locks cùng tên across tabs; thiếu khóa fail closed. Rebootstrap trong
+  lock rồi compare expected ID cho password/logout, queued old action không
+  revoke account mới. Password400 giữ phiên, network/500 invalidate để xác minh;
+  login error không tự retry. Logout success=true hoặc verified401 mới trả
+  cleanup confirmation,503/malformed/stale không; consumer còn chịu dọn nháp.
+-14 Node actions +4 Python permissions mới; toàn592 Node+440 Python đạt,
+ 9 dependency warnings. ESLint2 factories0 error/2 length warnings, bỏ complexity
+  mới bằng tách validation thuần; không suppression. Feedback/diff-check đạt.
+  Chrome2 tab+Web Locks thật/Flask DB mocked đạt login/quyền/password rotate,
+  stale queued logout block rồi logout confirmed, cookie hidden/storage trống.
+  Logs /tmp/qlpk-session-actions-{node,regression,browser}.log. QA processes đóng.
+- Chưa cutover54 frontend callers/templates; không .env/DB/restart/deploy.
+  Còn /users/me legacy permission serialization và examination stats direct
+  auth header; init/load ordering/jQuery/request cancellation và draft cleanup
+  phải nối đúng owner. Full HttpOnly/CSRF/CSP, clinical save concurrency,
+  idempotency, code health/real workflow/production readiness vẫn mở.
+
+### Lát 39 (28/09/2026) — owner phiên browser và chặn tab cũ
+
+- Cookie chung tab làm cần ràng buộc identity ngoài CSRF. Thêm backend
+  X-QLPK-Session-Id nếu có phải khớp JWT jti, GET cũng bị chặn khi lệch.
+  Header chưa bắt buộc trong phase chuẩn bị; new owner luôn gửi. Không sửa
+  cookie/store/schema, chưa làm full API mandatory-header contract.
+- shared/browser-session.js factory chưa nạp template: RAM-only id/CSRF/user,
+  single-flight bootstrap, strict payload, revision guard cả sau JSON parse,
+  fail closed khi unknown/changed/unavailable. request không external/Bearer,
+  copy init/preserve Request body, same-origin credentials/no-store/no replay.
+  Network lỗi giữ identity nhưng block writes,401 expire; dispose dọn listeners.
+  BroadcastChannel inject invalidation-only; không nhận identity/token từ tab.
+-21 Node mới +2 Python cross-tab identity; toàn578 Node+436 Python đạt,
+ 9 dependency warnings. ESLint owner0 errors/1 warning factory>80lines, không
+  thêm suppression. Feedback/diff-check đạt. Chrome2 tab+Flask DB giả thật:
+  oldID403, cross-tab invalidate block, explicit bootstrap khôi phục đúng phiên,
+  logout thông báo tab còn lại; storage trống, cookie hidden. Server/browser
+  đã đóng, không ghi dữ liệu thật. Logs /tmp/qlpk-session-owner-{node,python}.log
+  và /tmp/qlpk-session-owner-browser.log.
+- Chưa cutover: factory chưa dùng bởi54 JS callers, login/header/rotation/
+  logout/realtime vẫn cũ. Lần tới nối init/bootstrap và permissions DTO; phải
+  giữ stale-session/iframe/nháp, không token giả và không chuyển từng page rồi
+  báo đã bỏ localStorage. Backend non-guard stats auth_header vẫn cần loại.
+  Full HttpOnly/CSRF/CSP, clinical concurrency/idempotency, real workflow QA
+  và production config vẫn chưa hoàn tất; goal active.
+
+### Lát 38 (28/09/2026) — nền cookie/CSRF server, chưa cutover frontend
+
+- Inventory472 matches/258 lines/54 JS files có token/Authorization; source
+  /tmp/qlpk-cookie-callers.txt. Không thể bật cookie riêng login rồi coi xong.
+  HTTP auth guards, password/logout, socket đọc token trực tiếp cần owner chung.
+- Thêm services/browser_sessions cookie extraction/CSRF HMAC/origin/lifecycle.
+  Login opt-in X-QLPK-Session:cookie ký transport=cookie, JSON chỉ user/jti/
+  CSRF, không JWT. Cookie HttpOnly/host-only/Lax/Path=/, prod Secure/__Host,
+  dev riêng tên. require_auth/admin cookie priority + origin/CSRF trước writes;
+  cookie JWT không replay qua Bearer. /auth/session no-store bootstrap.
+- Password mode cookie rotate token+CSRF, logout revoke rồi clear; socket
+  connect cookie cần Origin+auth.csrf_token. Bearer hiện hữu vẫn hoạt động tạm
+  để không phá caller trước cutover; không có token giả trong localStorage.
+-30 tests mới, hồi quy434 Python+557 Node đạt,9 dependency warnings cũ;
+  feedback contract/diff-check đạt. Chrome thật với Flask local DB mocked:
+  cookie invisible, no JWT JSON, missingCSRF403/valid200, rotate/oldCSRF403,
+  logout200/session401. Socket.IO cookie transport subscribe/logout đạt.
+  Logs /tmp/qlpk-cookie-regression.log, /tmp/qlpk-cookie-node.log,
+  /tmp/qlpk-cookie-browser.log. Không DB thật/schema/.env/restart/deploy.
+- Tiếp theo bắt buộc: frontend session owner non-secret id/CSRF+fetch/ajax;
+  migrate login/header/password/logout/realtime và54 file callers (bao gồm
+  page guard/download/print). Xóa token storage/aliases, session bootstrap
+  trước load; cross-tab generation phải tránh late response và cleanup nhầm.
+  Không rollout mixed backend/frontend hoặc legacy cookie-token shim.
+- Backend direct-header ngoài guards còn examination_management stats chỉ
+  dùng để log nhưng đang re-auth và catch lỗi; chuyển sang actor đã xác thực.
+  Stats/list clinical scope/date hiện legacy global cần audit nghiệp vụ riêng,
+  không vô tình đổi khi transport migration. HttpOnly chưa hoàn tất; clinical
+  save idempotency/concurrency, CSP, full health/real QA và production config
+  vẫn trong goal, chưa pass visual/interactive QA workspace thật.
+
+### Lát 37 (28/09/2026) — auth transport không rò/chạy lại ngầm
+
+- Trace utils.js thấy global fetch/ajaxSend tự gắn token cả external URL,
+  bỏ Request.headers khi wrap, mutate init;401 replay cả POST và có thể dùng
+  token tài khoản mới. autoLogin đọc plaintext legacy password; startup gọi
+  refresh nhưng endpoint còn sai signature create_access_token thiếu user.
+- Sửa owner utils: URL same-origin HTTP(S) guard theo baseURI/location, giữ
+  explicit auth/Request headers/body, clone init; bỏ global retry/startup refresh
+  và autoLogin. Remove legacy username/password storage keys, không đọc/gửi lại.
+ 4 callers lịch hẹn bỏ autoLogin, báo login lại; list reject unauthorized.
+  Refresh endpoint vẫn require_auth nhưng410 login_required, không mint token.
+-19 Node mới, toàn557 Node đạt; AST-isolated test refresh không import main,
+  gate/workflow16 Python đạt; hồi quy bảo mật404 Python đạt,9 warnings cũ.
+  Browser Chrome2 loopback servers random port
+  xác nhận6 requests,2 external không auto-auth,3 unauthorized không replay,
+  Request body nguyên, password key removed,0 page errors. Dùng dummy token,
+  server/browser đóng finally; không DB/schema/.env/restart/deploy.
+  Logs /tmp/qlpk-auth-transport-all.log, /tmp/qlpk-auth-transport-browser.log,
+  /tmp/qlpk-auth-transport-python.log; full security regression ghi riêng
+  /tmp/qlpk-transport-regression.log. Không layout change.
+- Token còn localStorage; explicit header callers, HttpOnly/CSRF/CSP,
+  clinical concurrency/idempotency/full workflow QA vẫn trong goal. Chưa pass
+  visual/interactive QA phiên hết hạn trên workspace thực, không gọi hoàn tất.
+
+### Lát 36 (28/09/2026) — đo lại và sửa lịch bận
+
+- Đo mới ESLint ban đầu91 errors/747 warnings, tất cả error là no-undef;
+  page gate31 trang báo0 unresolved nhưng có false negative: whitelist event
+  che lỗi setQuickTime dùng event ngầm, click icon có thể active sai element.
+  Không diễn giải91 là91 lỗi runtime. Sau sửa90 errors,747 warnings,
+  JS34 hàm complexity>=20,27 file vượt600 dòng theo ESLint; chưa đo lại Python
+  complexity/full project runtime. Logs /tmp/qlpk-health-fresh-eslint.json,
+  /tmp/qlpk-health-fresh-globals.log và /tmp/qlpk-health-fresh-smoke.log.
+- doctor-busy-schedule truyền $this cho5 preset, highlight chỉ đúng nhóm trong
+  form, aria-pressed đồng bộ, manual change/reset bỏ selection cũ. Không đổi
+  khung thời gian/layout/API. check_js_globals không miễn event và không để
+  declaration khác scope vô tình hợp thức hóa implicit event;2 tests gate mới.
+- Xác nhận3 HTML sinks dùng reason raw: gợi ý, bảng, modal xóa. Chuyển sang
+  QLPKSharedUtils.escapeHtml có sẵn; giữ dữ liệu gốc/selection text. Gợi ý API
+  lấy lý do từ nhiều bác sĩ nên đây không chỉ là rủi ro tự nhập của riêng user.
+  Không sửa backend/model/DB, không render HTML từ lý do.
+- QA12 Node mới (9 preset+3 content safety), toàn538 Node đạt;17 Python
+  gate/workflow đạt, static smoke và diff-check đạt. Chrome1440/390 dùng
+  page/assets thật, API fixture12 dòng rồi1 dòng payload HTML, click icon,
+  Enter/Space, reset/manual change, suggestion và modal đều đạt;0 JS error,
+  0 ghi mạng, không overflow. Browser process đã đóng, server chung giữ nguyên.
+  /tmp/qlpk-busy-quick-browser.log; screenshots /tmp/qlpk-busy-quick-{1440,390}.png.
+- Fixture không thay dữ liệu thật: chưa pass visual/interactive QA workflow
+  đầy/thưa thật. API auth audit419 routes:354 protected,63 public approved,
+  2 static JS/CSS stamped chưa allowlist; giữ warning, không nới gate.
+  HttpOnly/CSRF/CSP, clinical concurrency/idempotency và full QA vẫn mở.
+
+### Lát 35 (28/09/2026) — không hồi sinh phiên sau mở khóa
+
+- Lát34 còn lỗi: active=False chỉ chặn tạm; True trở lại thì jti cũ còn hợp lệ.
+  Sửa access_sessions bằng random account generation ký trong JWT và allowlist
+  Redis/RAM; revoke account xóa generation. Key mất/evict/expired không accept,
+  tạo generation mới không khôi phục cũ; orphan jti tự hết hạn, không raw token.
+- Register compare generation + write jti + extend TTL atomic (Redis Lua/RAM
+  lock), validate hai key atomic. Generation bounded24h/extend tới longest token.
+  Login authenticate, user PUT/DELETE, self-password dùng row lock chung; revoke
+  trước account mutation/commit. Nếu Redis lỗi503 rollback; DB lỗi sau revoke
+  giữ thu hồi an toàn. Profile-only không revoke. Group permissions vẫn fresh DB.
+- Self-password recheck token sau lock; boolean account API validate rõ. Login
+  issuance store error503. Không đổi database schema/.env/UI, không restart/deploy.
+- QA401 Python +526 Node đạt,9 dependency warnings cũ; feedback contract và
+  diff-check đạt.32 ca mới lifecycle +1 password-lock recheck. Có Redis thật,
+  PostgreSQL14 QA riêng, pg_stat_activity xác minh row-lock wait cả login-trước
+  và disable-trước, RAM/Redis đều đạt. Không ghi DB/Redis đang vận hành.
+  Logs /tmp/qlpk-generation-regression.log và /tmp/qlpk-generation-node.log.
+- Rollout login lại tất cả token cũ; Redis standalone shared, không Cluster.
+  Chưa pass visual/interactive QA khóa/mở khóa với Doctor/workspace thật.
+  HttpOnly/CSRF/CSP, clinical-save idempotency/concurrency, fresh full code-health,
+  browser workflow đầy/thưa và production Redis/SMTP rotation còn trong goal.
+
+### Lát 34 (28/09/2026) — registry phiên và logout server
+
+- Logout trước đây chỉ clear localStorage, token sao chép vẫn dùng được.
+  Thêm access_sessions owner allowlist jti UUID→SHA256 token/TTL, đăng ký
+  trước trả JWT; token_matches_user check registry sau credential binding.
+  Redis SESSION_REDIS_URL ưu tiên REALTIME_REDIS_URL, production bắt buộc;
+  DEBUG local memory bounded10000/lock. Mất/evict registry fail closed,
+  không dùng denylist dễ resurrect sau restart. Store outage503 HTTP.
+- POST /auth/logout revoke đúng session, disconnect đúng token sockets,
+  khác login cùng user không ảnh hưởng. Old token thiếu jti/registry cần
+  login lại. Registry lỗi không fallback JWT/memory, raw token không lưu Redis.
+- Header async logout snapshot token/pending/timeout10s;200/401 mới clear
+  và navigate,503/network giữ phiên+feedback, response cũ không clear user
+  khác.6 legacy callers delegate owner header. Draft recovery bỏ click
+  cleanup, chỉ confirmed event; header await cleanup native/iframe trước
+  clear identity. Không đổi layout hoặc DB/schema, không .env/restart/deploy.
+-19 Python mới (HTTP/sockets thật transport, DB giả, Redis riêng thật),
+  7 Node mới; tổng368 Python +526 Node đạt,9 dependency warnings cũ.
+  Hồi quy logs `/tmp/qlpk-session-regression.log`,
+  `/tmp/qlpk-session-node.log`. Chrome isolated kiểm503 giữ session/không
+  cleanup rồi200 clear/navigate đạt; không dùng account/Redis thật vận hành.
+- Chưa pass visual/interactive QA workspace đầy/iframe thật và DB E2E.
+  Redis URL/config deploy cần kiểm trước phát hành; gate phải FAIL nếu
+  thiếu: check_security_config hiện FAIL do thiếu shared Redis URL ở local
+  DEBUG. Không tự thêm URL hay bật DEBUG workaround. Session TTL dev0
+  vẫn8h; HttpOnly/CSRF, write idempotency/concurrency/nợ code/full QA còn
+  mở. Mục tiêu tổng thể active, không tuyên bố hệ thống production-ready.
+
+Còn lại đo sau lát27 (lát28–34 chưa đo lại complexity): 33 hàm complexity ≥20, 27 file JS dài, CSS `!important`
+438 theo contract, lint backend/global còn tồn đọng; hai gate thuốc/CSS đã đạt. JWT
+HttpOnly/CSP enforce chưa triển khai; mục tiêu tổng thể vẫn active, chưa
+commit. Lát tiếp phải xử lý theo caller/workflow và test, không chỉ hạ số đo.
+
+Số liệu lịch sử sau lát 1 (không phải hiện tại): ESLint `no-undef`
+109 (global chéo file của script classic: `CustomModal` 28, `XLSX` 24,
+`apiCall` 12…, không thiếu thật trên trang nào), complexity ≥20: 57 hàm,
+29 file >600 dòng, id-selector 891, `!important` 471, dup 0,9%, 117 `onclick`
+inline, `personal-detail-modal-dry.js` (1.202 dòng, TLG), 61 `except…pass`,
+pyflakes 163.
+
+## Doctor health — xử lý 11 mục, ĐÓNG 28/09/2026 (lát66)
+
+Đo lại 28/09 trên 100 file JS mà Doctor nạp (template + ES module graph):
+hàm complexity ≥20 từ 11 → 3; cả 3 là shared nằm ngoài scope từ đầu
+(`medical-history-form.populate` 21, `modal-history-print-controller.printTarget`
+20, `order-selection-state-utils.loadSelectedOrdersFromServer` 22, đều đã có ở
+bản đo 27/09). Đã sửa 8 hàm vượt ngưỡng, gồm các hàm tăng do chính các lát
+phiên/an toàn gần đây: `captureDraft` 28, joint-exam `load`/`edit` 30 và
+`mutateRelative` 23, `uploadFile` 25, `relative-table.mutate` 20,
+`setMainAddressWardValue` 22, `loadCopiedPatientWithAppointmentContext` 23.
+`modal-patient-search-ui.js` 1.598 dòng tách thành `-dom.js` (DOM/render/bind),
+`-state.js` (state/copy/flow) và `-ui.js` (adapter + public API); API giữ nguyên,
+thứ tự nạp Doctor entry/TLG template/test được cập nhật.
+QA: 909 Python/324 skip opt-in + 738 Node; Doctor contract, frontend contract,
+smoke, JS globals, feedback, diff đạt. Chrome (8000, `/auth/session` + API giả
+lập, chặn ghi): Doctor chọn ca → người đi cùng hiện dòng → sửa hiện đúng tên →
+hủy trả dòng; modal lịch sử mở, tìm 2 bệnh nhân, chọn dòng 2; TLG nạp đủ API;
+0 lỗi JS, 0 ghi (`/tmp/qlpk-doctor-close-browser.cjs`). Chưa pass
+visual/interactive QA với dữ liệu thật.
+Giới hạn ghi nhận, không làm tiếp: `prescription-ui.js` 1.296 và
+`doctor-examination.js` 831 dòng vẫn vượt cảnh báo 600 dòng (một closure lớn,
+không còn hàm ≥20); tách thêm là refactor rủi ro cao cho luồng kê đơn, không
+thuộc tiêu chí mục 1.
+
+Scope user đã duyệt là cả 11 mục của lần đo sau `1cd7147`, không phải chỉ
+9 mục cleanup trước đó. Không đụng V2/cổng8001, không ghi dữ liệu QA.
+
+| Mục | Trạng thái hiện tại (đo lại 27/09 trên working tree) |
+| --- | --- |
+| 1. Complexity Doctor-private | Tách save controller (`saveWorkspace` 55→<15 + `runWorkspaceSave` 24, `saveNow` 50→21, `completeNow` 26→<15), prescription UI (`savePrescription` 29→<15, `normalizePrescriptionRow` 25→18, `loadPrescription` 24→16), page (`renderPatientSurface` 28→18, `selectPatientCard` 28→23). 27/09 tiếp: `draft-recovery.js` 806→661 dòng (tách `draft-recovery-policy.js` 126 + `draft-recovery-store.js` 141), `applyDraft` 22→<15, `collectRestoreTargets` 21→<15, realtime `handler` 25→<15, `selectPatientCard` 23→18, prescription `create()` 22→<15 (ESLint bắt `registry` thiếu khi tách — đã sửa). Đo lại 27/09 bằng ESLint JSON còn 4 hàm ≥20 (báo cáo trước ghi 0 là sai): `runWorkspaceSave` 24→<15 (`getSupportReadinessFailures`/`isSkippedFor`/`getWorkspaceSuccessMessage`), `saveNow` 21→<15 (`assertSaveReady`/`assertDetailsSaveable`/`waitForDetailsLoad`/`saveSections`, giữ thứ tự loadFailed → buildSavePlan), `_verifyMedicalHistoryPopulate` 24→<15 (5 check trả về danh sách cảnh báo, parity 10 kịch bản), `handlePrescriptionInput` 20→<15 (bảng handler theo field, A/B browser 7 bước giống HEAD). Còn ≥20 trong Doctor-private: 0 (ESLint JSON 27/09); shared còn 14 hàm ≥20 ngoài scope |
+| 2. Shared builders lớn | Tách theo phần tài liệu, HTML byte-identical qua fixture: `buildPrescriptionPreviewHTML` 68→19 và `buildPrescriptionScreenHTML` 34→<15 (259 ca), `buildMedicalRecordHTML` 65→<15 (`buildMedicalRecordModel` 20; 288 ca), `renderAppointmentCard` 57→23 (72 ca), `selectAppointmentPatientFlow` 41→<15 (4 test hành vi đạt trên cả bản cũ và mới). `modal-patient-search-ui.js` 1.641→1.605 dòng sau khi tách `components/modal-patient-search-data.js` (261 dòng: URL/fetch/payload adapters, registry `modalPatientSearchData`, không DOM); UI `throw` nếu thiếu data owner, nạp trước UI ở `doctor-examination-entry.js` và `psychologist-examination.html` |
+| 3. Dialog/toast ngoài owner | Xong: relative/joint-exam dùng `QLPKConfirmationDialog.confirm`, TransferModal dùng `QLPKUserFeedback`; thiếu owner/library thì hủy thao tác |
+| 4. HTML chưa escape | Commit `f6fb49d`: suggestions/allergy dùng escape helper chung; chưa phải kiểm toán XSS toàn trang |
+| 5. Mã chết | Commit `ab829b0` + 27/09: bỏ 26 rule `card-header/modal-tabs/upload-area/document-item/search-result-item` không có DOM ở 3 trang khỏi `clinical-workflow.css`, bỏ 9 rule `#jointExamEditBtn:not(.receptionist-icon-action)` (nút luôn có class đó) |
+| 6. DRY trùng lặp | Xong các cặp đã đo; đo lại: 7 cặp ≤10 dòng, 0.2% dòng trùng (trước 0.5%) |
+| 7. CSS shared | Màu: 0 literal ngoài `color-tokens`/`feedback-tokens` trên 21/22 file trang Doctor (còn 4 fallback `doctor-prescription.css` do stock contract yêu cầu); 310 token `--qlpk-palette-*`/`--qlpk-alpha-*` + 5 `-rgb` sinh tự động, byte-identical với literal cũ. `!important`: 56→10 (còn: flatpickr trên modal, disabled-surface có ghi lý do, `vital-hidden/display-flex/block` là utility JS toggle, `.mb-4` override Bootstrap, 3 ở clinical-workflow sidebar cols). Id-selector `doctor-examination.css` 49→0, `patient-info-form.css` 18→0, `joint-exam-table.css` 21→0 (dùng class/`data-patient-field`); 27/09 tiếp: `inline-tien-su.css` 6→0 (`.medical-history-tabs`/`.medical-history-suggestion-box` có sẵn, thêm class `medical-history-table-wrap` cho 3 wrap bảng và `prev-risk-panel` cho panel nguy cơ lần trước trong `_inline_medical_history.html`), `clinical-workflow.css` `#sidebar-container.col-md-2` → `.qlpk-shell-sidebar.col-md-2` (class thêm vào 3 template Doctor/TLG/Lễ tân; loader vẫn bỏ `col-md-2` sau khi nạp) → 0 id-selector trên 22 file CSS trang Doctor; parity computed-style 55.119 node/0 diff gồm 7 trạng thái workbench Tiền sử; z-index 62 giá trị → 16 token `--qlpk-z-*` giữ nguyên thứ tự lớp |
+| 8. Thiếu test module | 273 Node tests (+ `draft_recovery.test.js` 6 ca máy trạng thái nháp với store trong bộ nhớ) (+ save controller, patient-search-dropdown, component-dom-scope, history-tab-core, datepicker, relative confirmation, modal patient-search flow, clinical-workspace-ui: header/clear/section/dirty/Lưu) + 5 pytest cache/stamping. `re-examination-calendar.js` gắn FullCalendar CDN + `<dialog>` nên chỉ kiểm bằng browser (đã có trong QA 26/09: mở, chọn ngày, xác nhận); `draft-recovery.js` có 15 policy case + 6 test đơn vị |
+| 9. Tải trang/cache | Xong phần cache: static `?v=` immutable, module ES được stamp version; quay lại Doctor chỉ HTML + API + 4 asset không version. Không bundle (cần build step, chưa duyệt) |
+| 10. Backend lint/lỗi bị nuốt | Commit `3cf87ce`; 27/09: sửa 500 `/api/family-members/search` (đọc `Appointment.diagnosis` không tồn tại), bỏ import thừa. pyflakes 0 trên file đã sửa; `main.py` còn 10 ghi chú import model (giữ vì đăng ký ORM khi import) và `app/api/medicine.py` có thay đổi song song của người khác, không đụng |
+| 11. Accessible names | Xong: probe 0 control thiếu tên ở các state đã đo |
+
+QA 27/09 (working tree, chưa commit): 273 Node tests, pytest 321 đạt (3 fail
+sẵn ở HEAD: `test_workflow_contracts`; `test_pdf_preview` cần Chromium ngoài
+sandbox); Doctor/print/history-modal/receptionist/brand/stock/ICD/tabs
+contracts đạt; smoke_health `--http` 30 route đạt. CSS parity: computed style
+58 thuộc tính trên 36.869 node (Doctor 5 panel + modal lịch sử + tab sinh hiệu
+bảng + tab dịch vụ + thêm người thân; Lễ tân danh sách + modal người đi cùng;
+TLG) trước/sau = 0 khác biệt. Browser thật: queue card Doctor/Lễ tân (20 thẻ,
+3 action, trạng thái, #index), tab đơn thuốc/bệnh án/bệnh án TLG render đúng
+tiêu đề/mục/chữ ký, bản in MOH dựng được với QR. Phát hiện & sửa khi QA: bỏ
+`!important` ở disabled-surface làm mất nền ô readonly (hoàn lại, ghi lý do);
+đổi `#age`/`#doctorDecisionTreatmentTask` sang class làm lệch specificity (đã
+neo theo owner `.doctor-clinical-workspace--doctor` và `[data-patient-field]`).
+27/09: parity computed-style thêm `/verify/rx/<code>` (screen + media print) và
+modal Toa thuốc/Bệnh án ở media print: 8.566 node/0 diff (`/tmp/qlpk-verify-print-parity.cjs`).
+Chưa pass visual QA cho bản in thật ra PDF/máy in và các màn ngoài 3 trang trên. Evidence tạm: `/tmp/qlpk-css-parity.cjs`, `/tmp/qlpk-rx-fixtures.cjs`,
+`/tmp/qlpk-mr-fixtures.cjs`, `/tmp/qlpk-card-fixtures.cjs`, `/tmp/qlpk-builders-qa.cjs`.
+Còn lại của scope 11 mục: `modal-patient-search-ui.js` 1.605 dòng sau khi tách data owner (shared; `createPatientSearchModalFlowAdapter` 312 dòng, `loadCopiedPatientWithAppointmentContext` complexity 23 có sẵn từ HEAD, chưa tách);
+`doctor-examination.js` 759 và `prescription-ui.js` 1.155 dòng vẫn trên ngưỡng 600 của ESLint
+nhưng không còn hàm ≥20. Browser draft-flow thật đạt (`/tmp/qlpk-draft-qa.cjs`).
+
 ## Context chung đang tiếp tục — 22/09/2026
 
 ### Quy chuẩn nút đã duyệt và áp dụng — 23/09/2026

@@ -1,5 +1,14 @@
 # Quy chuẩn nút QLPK — bắt buộc
 
+Ngoại lệ user duyệt27/09/2026: badge “Bổ sung giá” trong lịch sử nhập dùng
+token nút đỏ/chữ trắng và cỡ chữ control chung, không dùng cỡ badge nhỏ.
+Giữ role edit và handler bổ sung giá, không đổi thành hành động xóa.
+
+Ngoại lệ user duyệt 27/09/2026: badge số lần nhập tại cột Lần nhập của
+Tủ thuốc dùng nâu chủ đạo `--qlpk-workflow-context-header-bg`, chữ trắng,
+không gắn data-qlpk-button trung tính. Giữ button/keyboard và showStockDetail;
+chỉ ngoại lệ `.stock-detail-badge`, không đổi nút thao tác hoặc badge DAV.
+
 Quyết định đã duyệt ngày 23/09/2026. Áp dụng khi thiết kế, tạo mới hoặc sửa
 nút trong ứng dụng. Thay thế palette phân màu theo từng loại hành động và
 mọi hướng dẫn cũ dùng gradient nâu cho nút. Không thay đổi màu thương hiệu,

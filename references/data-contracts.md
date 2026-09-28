@@ -1,5 +1,309 @@
 # QLPK Data Contracts
 
+## Browser session owner (2026-09-28, lát65)
+
+- `GET /users/transfer-recipients?role=doctor|psychologist|staff`: actor active
+  admin/staff/doctor/psychologist; trả `[{id, full_name, role}]` người active
+  đúng role, trừ chính mình; role khác 400. `/users/` giữ quyền quản trị tài khoản.
+- Calendar transfer job: Google chưa kết nối ở người cũ/người mới không giữ job
+  pending; job completed với `last_error` ghi chú, mapping người cũ được giữ.
+
+- Trang không đọc qlpk_token/qlpk_user hoặc gắn Authorization; dùng
+  QLPKApiTransport.fetch/jQuery, hasSession(), sessionRevision() cho cache,
+  userSnapshot()/currentUser() cho danh tính. Cookie mode từ chối Authorization.
+- `/api/calendar/sync` gọi theo lô ≤50 ID từ UI; backend vẫn giới hạn 100.
+
+## Calendar access/batch boundary (2026-09-28, lát63)
+
+- `/api/calendar/sync` và `/verify-events`: JSON appointment_ids1..100,
+  int32 positive int/ASCII digit string, sorted unique. Actor reload/share-lock;
+  ordered Appointment locks+reload trước provider. Verify read scope clinical;
+  sync write admin/staff hoặc current doctor_id, không view-all/historicpsych.
+-400 input,403 scope/inactive,404 missing/deleted,409 cancelled sync. Reject
+  toàn batch trước external calls. Doctor sync không broadcast staff calendars.
+- `/delete-all`: from_date/to_date bắt buộc YYYY-MM-DD, inclusive <=366 ngày;
+  current owned appointments + own event user for clinical actor. Admin/staff
+  full scope. `/sync-status` same date validation, read-scope filtered.
+- `/validate-connections` clinical actor chỉ connection user_id mình; staff/
+  admin vẫn toàn hệ thống. Không schema/payload response shape mới; UI bulk
+  >100 và error presentation cần QA, không tự truncate hoặc replay writes.
+
+## Calendar transfer outbox (2026-09-28, lát60)
+
+- Lát62 legacy Calendar writers: verify_event strict=True raise
+  CalendarVerificationUnavailable khi không chứng minh absence; default bool
+  giữ cho read-only caller. Manual sync không delete/create vì verify lỗi.
+  Duplicate DB rows cùng event_id không delete provider event; khác event_id
+  delete phải thành công mới xóa mapping. Delete-all thiếu credentials giữ
+  record và tăng failed_count; typed HTTP404/410 mới idempotent delete success.
+  update helper consume report_missing, chỉ replace record sau create success;
+  cancel helper giữ records unknown-owner/disconnected/delete failure.
+
+- `google_calendar_transfer_jobs`: appointment_id FK CASCADE, old_user_id nullable,
+  target_user_id required, event_id unique, attempts, next_attempt_at, completed_at,
+  last_error code và created_at. Không clinical snapshot/credential. Migration
+  `20260928_calendar_transfer_jobs` sau `20260920_stock_balance_snapshot` chưa apply thật.
+- Transfer đổi doctor_id enqueue cùng clinical commit; không gọi Google trước
+  commit. Role psychologist cũng enqueue vì đổi doctor_id. Payload/HTTP/count
+  giữ nguyên: transfer success chỉ xác nhận chuyển khám, không xác nhận Google.
+- Worker riêng đọc current appointment dưới row lock, không tạo lịch cho stale
+  target, retry cùng event ID; delete false giữ mapping. Chỉ completed khi toàn
+  job reconcile thành công; ambiguous legacy owner NULL giữ pending, không đoán.
+- Lát61: update_event mặc định giữ bool contract; worker opt-in report_missing
+  nhận None cho GET404/410/cancelled, False cho network/auth/quota/error.
+  Chỉ confirmed missing mới xóa mapping rồi recreate. Insert409+GET410/cancelled
+  phát CalendarEventRetired; worker persist ID mới trước lần thử tiếp theo.
+  GET404 sau409 không đủ chứng cứ retirement; vẫn retry ID cũ, không tạo đôi.
+- Rollout cần consumer và migration; manual Calendar writers chưa thuộc outbox,
+  chưa đảm bảo end-to-end consistency với các luồng khác hoặc đổi Google account.
+
+## Browser API transport consolidation (2026-09-28)
+
+- Lát59 backend transfer: payload dict,1..100 input IDs integer/string digits
+  trong int32 dương, dedup/sort; role whitelist doctor/psychologist/staff hoặc
+  receptionist. User actor/target reload+share-lock, target active đúng role;
+  actor admin/staff hoặc current appointment.doctor_id (doctor/psychologist).
+  Không dùng can_view_all_patients/psychologist_id lịch sử cấp quyền ghi.
+  Toàn batch phải tồn tại/không deleted, appointment CONFIRMED và đúng1 active
+  examination ở WAITING_TRANSFER/DOCTOR_EXAM/PSYCHOLOGIST_EXAM/CONCLUSION.
+  Lock appointments→examinations theo ID trước sửa; validation rollback400/
+  403/404/409. Missing JSON400 không500. No-op giữ updated_count0, không notify;
+  thành công shape cũ. Lát60 Calendar enqueue transactional trong DB; external
+  calls ở worker, không có distributed transaction với Google.
+
+- Lát58: chuyển khám vẫn GET /api/appointments/id, GET /users?role và POST
+  /api/appointments/transfer với appointment_ids/to_role/to_person_id; role
+  mapping doctor/PSYCHOLOGIST/staff không đổi. jQuery transport chung cấp session/
+  CSRF, không Authorization riêng. Kết quả phải success=true và integer count;
+  chỉ count bằng số ID phân biệt mới xác nhận đủ batch. Backend hiện trả0 cho
+  no-op hoặc skip missing; count thiếu yêu cầu kiểm tra lại, không tự replay.
+  Đổi patient/cookie revision/legacy credential không chạy callback cũ.
+
+- Lát57: Lễ tân /users/doctors và /services GET vẫn nhận array, ghi cache qua
+  setDoctors/setServices sau response current; payload không-array là lỗi.
+  Fetch chung giữ auth/CSRF/body revision; timeout10s không tự retry/redirect.
+  Service hidden ID chỉ từ chọn item, sửa text phải clear ID; focus không đổi
+  selection. Tải lại danh mục chỉ bind1 bộ autocomplete listeners/field.
+
+- Lát56: relative-table CRUD, modal appointment relatives, attachments preview/
+  download và uploads giữ URL/body/JSON mapping; bỏ token headers riêng. Upload
+  FormData không tự đặt Content-Type. Cookie stale body reject không được nuốt
+  thành successful upload; modal patient load session errors không dựng patient
+  fallback từ appointment. Preview/download nhận context guard từ list/page,
+  không mở tệp hoặc toast ca cũ sau đổi patient/context;422/doc download giữ guard.
+
+- Lát55: Tiền sử ICD exact codes/suggestions, allergen GET/POST, safety-plan
+  family/file/upload/PUT giữ endpoint/body. Auth thuộc canonical fetch/runtime,
+  không yêu cầu Bearer để tải ICD; JSON header không chứa Authorization;
+  upload FormData để browser tự đặt multipart boundary. Session failure không
+  trả ICD/family rỗng thành công. File Blob và upload response/input cleanup
+  recheck patient ID+context token để không tác động ca mới;404 file vẫn giữ
+  nghiệp vụ explicit uploaded_file=null hiện hữu, không đổi save contract.
+
+- Lát54: clinical/receptionist/doctor page helpers dùng transport auth chung;
+  endpoint/body và JSON defaults không đổi. ensureSession chờ owner.ready,
+  kiểm revision/status; anonymous/expired redirect login, unavailable/changed
+  dừng khởi tạo và báo reload, không fallback Bearer. Legacy chuẩn hóa token
+  theo thứ tự local qlpk_token/token rồi session qlpk_token/token; malformed
+  credential không dùng. Cookie getAuthHeader luôn null. Header logout dùng
+  cùng credential parser, chỉ dọn aliases local/session sau server confirmation
+  và draft cleanup còn đúng identity. Login success dọn session aliases.
+
+- Lát53: shortcut-manager dùng canonical transport và cookie RAM identity,
+  không quyền admin từ stale storage. Endpoint mine/global/all-users/user/id
+  và JSON combo_key/target_url/is_active/scope/user_id giữ nguyên. Cache
+  response đến muộn không được khôi phục sau invalidation; keyboard kiểm
+  revision trước navigate. Settings form chỉ ghi trong revision lúc mount,
+  đổi revision yêu cầu reload kể cả rotation cùng user; không tự replay.
+
+- Lát52: text expansions active/management và PDF preview bỏ Authorization
+  riêng; management explicit installJQuery vì template không nạp utils.js.
+  Export Excel dùng authenticated GET/Blob thay window.open URL không auth.
+  CRUD/import/FormData và PDF HTML Content-Type/payload/QR giữ nguyên.
+  Runtime gõ tắt private loader tránh management global ghi đè; loadRevision
+  chặn late load, cookie revision kiểm trước cache use; logout/credential
+  storage events clear. Same-tab legacy rotation chưa có revision cache owner.
+
+- Lát51:5 shared catalog loaders (autocomplete base, occupation, province,
+  ward, ICD) dùng canonical fetch, không tự đọc/gắn token. POST nghề nghiệp
+  vẫn JSON{name}, Content-Type giữ; regions/units và ICD skip/limit/search/ids
+  giữ nguyên. ICD bỏ yêu cầu token storage/getAuthHeader, transport quyết định
+  phiên; session.* errors không đổi thành emptyPage. Injected options.fetch
+  vẫn phục vụ test/caller, phải là transport đã cấu hình khi chạy thật.
+
+- Lát50: cookie login form gọi shared actions, không $.ajax auth riêng;
+  chỉ redirect khi result.revision vẫn là authenticated revision hiện tại.
+  Success dọn legacy token/user/permissions và landing theo server RAM user,
+  không gọi /check/me hoặc ghi identity storage. Failure không downgrade
+  sang Bearer. actions HTTP429 expose retryAfter khi số nguyên1..3600 từ
+  Retry-After; UI dùng safe copy cho401/429/503/lock-unavailable/session-changed.
+  Chưa bật cookie trong runtime partial: caller/page guard/iframe còn phải migrate.
+
+- Lát49: workspace cookie identity/permissions chỉ từ authenticated owner RAM;
+  unknown/anonymous/changed không fallback admin trong localStorage. Storage
+  workspace version2/owner keys giữ nguyên, không API/DB change. openHref/openTab
+  kiểm quyền route đã cấu hình; open/activate/close sau await kiểm lại phiên.
+  Terminal invalidation/account switch giữ workspace khóa tới reload, không
+  ghi tab dưới owner mới. Hidden/inert không dừng background iframe scripts;
+  iframe cookie binding và coordinated cutover vẫn phải hoàn tất trước rollout.
+
+- Lát48: response.body giữ một guarded native stream; đổi cookie revision
+  hoặc legacy token chặn chunk đọc sau đó. Default/BYOB readers, tee, iterator,
+  pipeThrough và native pipeTo/new Response được kiểm tra; cancel truyền xuống
+  source. Chrome new Response(body).text() có thể trả TypeError thay code của
+  source error, nhưng không trả payload. Không thu hồi bytes đã giao trước
+  đổi phiên; không hứa abort ngay nếu network không trả thêm chunk. Không
+  thay HTTP/API payload hoặc tự replay request. Không sửa external/static bypass.
+
+- Lát47: actions.logout(onConfirmed) await callback dưới mutation Web Lock,
+  confirmation={confirmed:true, previousSessionId, userId} sau server xác nhận.
+  Header chờ pendingCleanup từ main document/iframe; rejection hoặc false
+  không clear storage/redirect. Retry cleanup giữ lock, kiểm anonymous revision,
+  không gửi logout lần hai. Cookie draft identity chỉ từ owner RAM; cleanup
+  lấy userId đã xác nhận, hủy timer/context, chờ writes của user đó rồi xóa.
+  Write hoàn tất sau đổi revision/identity bị xóa có điều kiện captureId,
+  không xóa bản mới hoặc user khác. Chưa bảo đảm tab treo/invalidation trễ.
+
+- Lát46: transport.session getter cho header đọc mode/owner/actions. Cookie
+  header không đọc/ghi identity storage; profile/search/notification không
+  gắn Bearer, không nuốt stale JSON. Password form dùng actions.changePassword,
+  realtime bind cùng owner. Logout UI cookie được nối ở lát47, không
+  xóa nháp/điều hướng mà chưa có xác nhận server và cleanup thành công.
+
+- Lát45: useCookieSession() tạo singleton {owner,actions}, không network lúc
+  bind. Native fetch được truyền thẳng vào cả hai để bootstrap/action không
+  bị wrapper thêm Bearer hoặc đệ quy. Cookie mode không chấp nhận Authorization;
+  fetch+jQuery same-origin đi owner.request, response/body/clone guard revision.
+  Anonymous/changed/expired fail closed;401 expire/no replay. Static GET/HEAD
+  dùng native không bootstrap. Auth mutation gọi trực tiếp wrapper bị reject
+  action_required; phải dùng actions giữ Web Lock. Chưa opt-in templates.
+
+- Lát44 thay jQuery hook bằng ajaxTransport: cùng-origin async requests đi
+  qua fetch owner kể cả global:false, stale response fail trước complete
+  không lộ responseText cũ. Giữ HTTP status/headers/converters/error/complete,
+  abort/timeout, FormData và blob/arraybuffer/json/text. Script/JSONP/external
+  giữ jQuery transport không auto-auth; async:false không gửi, fail rõ.
+  Raw response.body readable stream vẫn chưa có revision guard.
+
+- shared/api-transport.js nạp từ runtime partial là fetch owner; utils chỉ
+  đăng ký jQuery hook idempotent. Hiện vẫn same-origin Bearer, chưa cookie
+  cutover; explicit Authorization không overwrite, external không tự thêm.
+- Fetch response và body methods/clone reject session.changed nếu token đổi
+  trước hoàn tất; không retry401/ghi lại dưới account mới. Không thay payload API.
+
+## Management examinations scope and counts (2026-09-28)
+
+- /examinations list/detail/stats/status dùng actor từ require_auth, chung
+  management_examination_query: active exam + non-deleted appointment và
+  assignment doctor/psychologist; admin/staff/can_view_all_patients full scope.
+  Role khác không được mặc định full scope. Detail/write ngoài scope404.
+- Stats cùng date/doctor/search scope với list, group count mỗi status;
+  vẫn bỏ PAID và không lọc selected status. Ngày cuối inclusive; inactive/deleted
+  không được tính. Không còn helper giải mã Authorization ở query service.
+- List page/per_page nguyên dương, per_page<=100; filter sai400. Scoped
+  status mutation khóa exam row, body không object/status sai400 trước commit.
+  Chi tiết và giới hạn concurrency/QA tại references/modules/examinations.md.
+
+## Browser cookie session backend, pending frontend migration (2026-09-28)
+
+- Lát41: /users/me dùng cùng session_identity từ active account vừa query;
+  giữ avatar, phone, is_active và license_number khi có; no-store. Account
+  không tồn tại/khóa sau auth trả401. Không serialize quyền từ detached actor.
+  Realtime bindSession(owner) ràng buộc socket theo revision; cookie mode chỉ
+  auth.csrf_token, không fallback storage. Invalidation disconnect trước mở
+  phiên mới; callback cũ không dispatch/reconnect. stop giữ stopped qua các
+  lần owner thay đổi tới explicit start. Template chưa bind, migration còn mở.
+
+- Lát40: user của login/session/password cookie có id, username, full_name,
+  email, role và permissions theo cùng session_identity owner. /check/me dùng
+  cùng payload, no-store. /auth/session requery active user+membership khi
+  DB session mở, không phục hồi quyền cũ từ localStorage/JWT. Malformed list
+  (kể cả phần tử không phải string) không cấp quyền; admin ALL_PERMISSIONS giữ.
+  Frontend strict validate permissions và chỉ giữ whitelist user fields trong RAM.
+
+- Cookie request có X-QLPK-Session-Id phải trùng jti của cookie, kể cả GET;
+  mismatch403 trước handler. Owner frontend mới luôn gửi; đây là ràng buộc
+  chống tab cũ dùng cookie account mới, không phải credential thay JWT.
+  Bootstrap /auth/session không gửi ID vì cần đọc phiên hiện có sau reload.
+  Trong giai đoạn chuẩn bị, thiếu header vẫn được backend nhận theo rule cũ;
+  full frontend cutover còn phải đánh giá yêu cầu bắt buộc cho API đọc/ghi.
+
+- POST /auth/login với X-QLPK-Session:cookie yêu cầu same-origin và HTTPS
+  production; trả user/session_id/csrf_token/token_type=cookie, không JWT.
+  Không header opt-in vẫn Bearer tạm thời cho caller cũ; nếu đã có cookie thì
+  không cho downgrade login sang Bearer. Không đổi schema hoặc password.
+- Cookie HttpOnly host-only, Path=/, SameSite=Lax; production tên __Host-
+  qlpk_session, Secure bắt buộc, local DEBUG qlpk_session_dev. TTL không vượt
+  JWT exp; dev no-exp8h. Token ký transport=cookie không chấp nhận như Bearer.
+- Cookie protected HTTP cần exact origin từ Origin (ưu tiên), Referer hoặc
+  Sec-Fetch-Site=same-origin khi hai header trước vắng. Writes thêm X-CSRF-Token
+  HMAC bound token; admin guard giống user. Cookie có mặt luôn ưu tiên header,
+  không cho header hợp lệ né CSRF. CSRF failure403 trước mutation.
+- GET /auth/session same-origin/no-store trả session_id/csrf_token/user tối
+  thiểu, không mint/refresh. Password change cookie mode xoay JWT+CSRF, không
+  access_token trong JSON; logout chỉ clear cookie sau revoke thành công.
+  Registry unavailable503 không clear/ghi dữ liệu; raw JWT không log.
+- Socket cookie mode cần Origin và auth.csrf_token bound cookie; missing/wrong
+  bị reject, logout disconnect đúng token. Client vẫn cần migrate toàn bộ.
+
+## Legacy refresh retirement / auth transport (2026-09-28)
+
+- GET /api/token/refresh đã retire: vẫn require_auth, user hợp lệ nhận410
+  code auth.login_required và hướng dẫn login lại; không có token/access_token.
+  Token không hợp lệ vẫn401, registry lỗi503 qua guard. Không kéo dài session
+  bằng GET và không bỏ qua generation/account-lock issuer contract.
+- Browser shared utils không background login, không tự refresh/replay401;
+  giữ original response để caller xử lý. Không tự clear nháp/chuyển trang tại
+  wrapper. Legacy plaintext password/username keys bị remove, không gửi lên API.
+  Tự thêm Bearer chỉ same origin; explicit caller Authorization giữ nguyên.
+  Không đổi payload lưu khám/lịch hẹn hoặc database, HttpOnly còn chưa triển khai.
+
+## Account session lifecycle (2026-09-28)
+
+- JWT mới có session_user_id và session_generation random32hex, verifier
+  đối chiếu user ID và registry generation còn sống cùng jti. Token cũ cần
+  login lại; không chấp nhận fallback thiếu generation. Không đổi schema DB.
+- PUT /users/<id> đổi is_active/role/can_view_all_patients hoặc reset password,
+  DELETE soft-disable đều revoke toàn bộ generation trước commit dưới row lock.
+  Mở khóa không hồi sinh phiên cũ. is_active/can_view_all_patients phải boolean,
+  sai kiểu400 trước mutation. Profile-only không revoke; group permissions
+  vẫn owner DB đọc mới mỗi request/event, không snapshot từ JWT.
+- Redis lỗi503 và rollback trước thay tài khoản; DB commit lỗi sau revoke
+  không undo revocation, user có thể cần login lại dù cập nhật thất bại.
+  Login issuance và self-password cũng giữ lock; self-password recheck token
+  sau lock để request chờ không vượt revocation vừa xảy ra. Login store lỗi503.
+- Account generation TTL tối thiểu24h khi tạo, extend tới phiên dài nhất khi
+  register; mất/evict/expiry key reject mọi token cũ kể cả key jti còn tồn tại.
+  Orphan jti tự hết TTL. Không lưu raw token/password/hash trong Redis.
+
+## Shared calendar presentation (2026-09-27)
+
+GET `/api/prescription/appointment/<id>/re-examination-calendar` bổ sung
+`events[].doctor_id`, `events[].doctor_color` và `doctors[].calendar_color`
+từ User.calendar_color. Chỉ bổ sung dữ liệu đọc; actor scope, thời gian,
+schedule lock, selection, endpoint và payload lưu giữ nguyên. Frontend
+không suy màu từ tên bác sĩ hoặc vị trí trong danh sách. Khi chưa cấu hình
+màu dùng neutral chung; không ghi giá trị mặc định xuống database.
+
+## Prescription and inventory report safety (2026-09-26)
+
+- Prescription saves reject unsupported document types, including legacy TOXIC,
+  before deleting items or changing stock. They do not silently map TOXIC to BASIC.
+- Invalid, missing, negative, non-finite or out-of-range quantities return 400
+  `prescription.invalid_input`; they never become zero implicitly. Explicit zero
+  and an empty medicine list remain valid. Positive fractions still round up to
+  whole dispensing units; the maximum is 9999999 to fit prescription item storage.
+- Prescription code allocation takes PostgreSQL transaction advisory lock
+  `(79836, 1)` before counting/checking codes, retained until commit/rollback.
+  All application code allocation must use this owner; direct SQL writers are
+  outside that lock contract. Collision search no longer returns NULL after 100 tries.
+- Inventory JSON and its Excel sheet retain fractional quantities and totals.
+  Latest receipt is ordered by import_date, created_at (NULL last), then id,
+  not expiry_date. Its zero price is valid; missing price remains NULL/blank,
+  without falling back to older receipts or the legacy medicine import price.
+- Validation: isolated service/API/Excel tests; no live data writes or migration.
+  Real PostgreSQL concurrent-save and browser visual/interactive QA remain pending.
+
 ## Missing receipt import price (2026-09-22)
 
 - GET `/api/medicines/?missing_import_price=true` selects distinct medicines
@@ -32,6 +336,23 @@
   all database data are unchanged.
 
 ## Visit medication ledger (2026-09-20)
+
+### Per-medicine period report (2026-09-27)
+
+GET `/api/medicine/statistics/ledger?view=medicines` reuses all ledger filters,
+returns paged `medicines`, `total`, `page`, `per_page`, `total_pages`.
+Each row groups exact `medicine_id` and exposes `dispensing_count` (distinct
+export `operation_id` only), `untracked_export_rows`, `visit_count` (distinct
+linked visits with any movement), exported/returned/net quantities,
+`recorded_revenue`, `recorded_cost`, `gross_margin_complete_rows`, `incomplete_rows`.
+Split receipts count once; no-op saves/repricing/returns do not add a dispensing.
+Unknown export operations are counted separately, not synthesized from rows.
+All totals use the full filter before pagination and movement dates, not visit
+dates. Returns in a later month may make its net quantity/revenue negative.
+UI suppresses a full margin when any financial row is incomplete. Existing
+current-prescription overview keeps its semantics, labeled as item rows instead
+of dispensing occurrences. Save=dispense remains unchanged; no schema/backfill.
+QA cases and limitations: `references/medicine-dispensing-qa.md`.
 
 - Follow-up stock snapshot migration `20260920_stock_balance_snapshot` adds
   exactly one nullable `Numeric(10,2)` column: `stock_balance_after`. No table,
@@ -155,6 +476,40 @@
 - Socket envelopes add stable `event_id` shared across all destination
   rooms for one emit. `realtime.resynced` is a client lifecycle event after
   subscribe acknowledgement, including initial connection/reconnection.
+- Realtime access (27/09, lát28): subscribe body phải object với rooms array
+  tối đa128 strings; sai trả qlpk:subscription_error/INVALID_SUBSCRIPTION.
+  Known page/workflow rooms lọc theo quyền DB, unknown/entity/user/role
+  room không được subscribe; admin chỉ bypass permission ở known rooms.
+  Ack trả tập room thực nhận, thay tập cũ và leave phòng không còn cần.
+  Token/active/identity/role kiểm lại mỗi subscribe; không hợp lệ disconnect.
+- `notification.changed` có user_id chỉ tới user room đó, bỏ mọi rooms/role
+  rộng hơn; không user_id nhưng có role hợp lệ thì chỉ tới role đó. Không
+  recipient thì không phát; reminder gửi email không tăng inbox của tất cả
+  người đang online. Full notification payload chỉ giữ ở đường addressed.
+- Sửa/xóa user hoặc assignment thu hồi mọi socket local của user; group
+  update/delete thu hồi tất cả local sockets; đổi password cá nhân cũng
+  disconnect. Client nối lại một lần, auth mới và subscribe trước resync.
+  Không thay persisted JWT, nên đây chưa phải thu hồi token sau đổi password.
+  Payload clinical/catalog khác vẫn cần giảm dữ liệu/phân vùng theo bệnh
+  nhân; workflow room được phép không tự chứng minh patient scope.
+- Lát29 thay delivery broad nêu trên: candidate rooms chỉ chọn kết nối,
+  không cấp quyền dữ liệu. Mỗi event revalidate JWT/active/room permissions,
+  emit riêng từng sid một lần; invalid token disconnect trước gửi. Scope
+  appointment lấy DB hiện hành (bỏ ca deleted), examination resolve về ca,
+  batch cần toàn bộ ca được phép; patient-only dùng patient_in_user_scope.
+  Thiếu/sai/conflict scope nhận `{action:'changed'}` không chứa ID; lỗi DB
+  không gửi. Bác sĩ cũ vẫn nhận tín hiệu refresh hàng đợi sau chuyển ca.
+- Clinical projection giữ action, patient/appointment/examination/order/
+  session/response IDs, entity/folder/attachment IDs và batch IDs cho đúng
+  người. Không gửi tên/mã bệnh nhân, chẩn đoán/trạng thái hay extra tùy ý.
+  Ngoại lệ `patient.changed/family_member_updated.data` giữ nguyên chỉ khi
+  scope hợp lệ vì RelativeTable dùng replaceMember thay DOM đang sửa.
+  Notification giữ addressed payload; event catalog/inventory/finance/
+  document chung/busy chỉ action/entity/entity_id/folder_id. Presence thêm
+  user_id/role. Frontend tiếp tục GET owner API để lấy dữ liệu mới.
+  Không cache quyền qua events; không định kỳ truy DB khi idle. Token hết
+  hạn bị chặn trước event kế tiếp, không có timer disconnect đúng giây exp.
+  Fanout này chỉ local worker, chưa hỗ trợ deployment nhiều workers.
 
 Use this file before changing models, endpoint payloads, serializers, save/load code, or frontend field mapping.
 
@@ -829,6 +1184,118 @@ Rules:
 - When dropping clinical, patient, appointment, prescription, or examination fields, archive non-empty values here first so production rollback/audit remains possible.
 
 ## Endpoint Contracts
+
+- Session lifecycle (28/09, lát34): JWT có jti UUIDhex32 mới mỗi issuance,
+  register allowlist `qlpk:access-session:<jti>` với SHA256 token (không raw)
+  và TTL tới exp; dev token không-exp có registry TTL8h. HTTP/socket phải
+  qua credential binding và registry active; token không jti/không entry
+  bị401/reject dù chữ ký đúng. Session mất do restart/eviction làm logout,
+  không fallback accept JWT. Redis mất kết nối là503 trước protected handler,
+  không dùng401 hay memory fallback; socket connect reject/delivery không gửi.
+- POST /auth/logout Bearer hiện hành, không body: xóa đúng registry entry,
+  ngắt token sockets rồi200 success. Lặp lại token thu hồi trả401; client
+  coi401 là đã vô hiệu. Lỗi revoke503 không claim success, user có thể retry.
+  Phiên login khác độc lập; credential reset vẫn chặn toàn bộ token hash cũ.
+- SESSION_REDIS_URL ưu tiên REALTIME_REDIS_URL, production bắt buộc URL
+  shared store; local DEBUG không URL dùng memory max10000, không evict
+  live sessions khi đầy. Redis eviction/reset chỉ làm đăng nhập lại, không
+  resurrect token. No persistence/schema mutation trong patch.
+- Frontend logout lấy snapshot token, chỉ clear/navigate sau200 hoặc401;
+  response cũ không xóa account mới. Pending chỉ1 request, timeout10s,
+  store/network lỗi giữ session và báo chưa xác nhận. Alias token cũng
+  được xóa. Nháp khám xóa sau confirmed event, chờ cleanup async trước xóa
+  qlpk_user; iframe cùng nguồn nhận cùng event. Chưa E2E workspace/DB thật.
+
+- Production security gate (28/09, lát33): DEBUG=False yêu cầu SECRET_KEY
+  không rỗng/default, ít nhất32 bytes; ALGORITHM=HS256, token expiry1–1440
+  phút. Guard chạy trước import DB/API của main; lỗi nêu tên config và yêu
+  cầu, không in value. Token issuer/decoder áp dụng cùng policy; production
+  decoder không nhận JWT thiếu exp hoặc exp không integer. Explicit
+  expires_delta không được vượt configured lifetime; claim exp client
+  truyền vào issuer bị ghi đè. Default lifetime480 phút; DEBUG có thể dùng0
+  theo nhu cầu dev, không được xem DEBUG pass là production-ready.
+- SECRET_KEY và SENDER_PASSWORD không còn credential gắn sẵn; chỉ đọc env.
+  Công cụ read-only `scripts/check_security_config.py` kiểm readiness kể cả
+  DEBUG và trả exit1 nếu sai, không import main/ghi DB/in secret. Xóa SMTP
+  default không rotate credential trong lịch sử; chủ vận hành cần thu hồi
+  và cấp credential mới nếu credential cũ từng được dùng. Không tự sửa env.
+
+- Login throttle (28/09, lát31): POST /auth/login reserve trước handler,
+  tối đa10 lần/tài khoản và60 lần/IP trong300 giây mặc định. Tính cả thành
+  công/thất bại; không reset khi đúng password để tránh account spraying.
+  Username bucket strip/casefold nhưng không đổi username thực dùng auth;
+  body sai vẫn tính IP. Bộ đếm không dựa vào account tồn tại. Request bị
+  chặn không kéo dài hạn hoặc tiêu budget khác. HTTP429 có code
+  request.rate_limited, retry_after số giây và header Retry-After; frontend
+  hiện chờ, giữ input và mở lại nút, không tự gửi lại hoặc chạy countdown.
+- Redis Lua check/reserve toàn bộ buckets atomic, TTL fixed window;
+  LOGIN_REDIS_URL ưu tiên, nếu không có dùng REALTIME_REDIS_URL. Store lỗi
+  trả503 system.unavailable/Retry-After5 trước DB/auth. Không Redis dùng
+  RAM tối đa10000 keys, hết hạn dọn, đầy không evict budget đang sống.
+  Memory chỉ một process và reset khi restart. IP dùng request.remote_addr,
+  không đọc X-Forwarded-For trực tiếp; deployment ProxyFix phải ở sau proxy
+  tin cậy. Ngưỡng Field >0, không có cấu hình0 để tắt bảo vệ.
+- Giới hạn chống brute force: account bucket có thể gây từ chối tạm thời
+  nếu bị nhắm mục tiêu; NAT dùng chung IP cần theo dõi/tune60/300. Redis
+  eviction/restart có thể reset budget; cần noeviction/dedicated store
+  khi hardening production. Lua Redis7.4.6 thật đã qua isolated tests lát32:
+  atomic50 calls, shared multi-client budget, TTL thật, TTL repair, HTTP429
+  trước DB và Redis stopped/corrupt trả503 không fallback. Chưa proxy-chain
+  QA hoặc acceptance Redis production; kiểm thử không chạm DB y tế.
+
+- Credential revocation (28/09, lát30): mọi access token do login/self
+  password phát có credential_version là HMAC opaque gắn user.id/username/
+  hashed_password. Không gửi hash mật khẩu trong token. HTTP lookup và
+  socket connect/subscribe/delivery đều xác minh chữ ký/expiry và so binding
+  DB constant-time; đổi hash qua self/admin làm token cũ mất hiệu lực.
+  Token legacy không binding không được tiếp tục tương thích: rollout cần
+  đăng nhập lại một lần. Không sửa schema/secret/env/password thật khi dev.
+- PUT `/users/me/password`: body object, current/new password chuỗi;
+  khóa user row bằng SELECT FOR UPDATE trước verify để tránh hai lần đổi
+  dùng cùng mật khẩu cũ. Hash/token mới tạo trước commit, commit lỗi không
+  trả token hay revoke socket. Thành công trả success/detail và thêm
+  access_token/token_type=bearer cho phiên hiện hành, disconnect socket cũ.
+  Header cập nhật qlpk_token, bỏ token alias cũ, restart socket, giữ workspace.
+  Response về sau logout/đổi phiên không phục hồi phiên cũ; thiếu replacement
+  sau success báo mật khẩu đã đổi và cần đăng nhập lại, không báo đổi thất bại.
+  Mất response sau commit vẫn là kết quả chưa xác định, không tự retry.
+- Giới hạn: chưa per-session revoke/logout server, HttpOnly/CSRF/rate limit;
+  token không-exp vẫn theo config. Client ngoài header phải nhận replacement
+  hoặc đăng nhập lại. Deploy backend/frontend cùng phiên bản, tránh lẫn
+  worker issuer/verifier cũ/mới. Chưa kiểm transaction cạnh tranh PostgreSQL thật.
+
+- Quản trị tài khoản (27/09, lát27): `account_access` đọc actor active/quyền
+  nhóm từ DB cho từng request. Admin được quản trị; `ql-taikhoan` cho phép
+  đọc/sửa hồ sơ và upload, `ql-nhomquyen` quản lý nhóm, `ql-phanquyen` quản
+  lý gán nhóm. GET users/groups cũng mở cho ql-phanquyen để giữ màn phân quyền.
+  Người không-admin không sửa admin hoặc tài khoản có quyền nhóm vượt mình;
+  không sửa/xóa/cấp nhóm chứa quyền vượt mình. Tạo/xóa tài khoản, thay đổi
+  role/is_active/can_view_all_patients và reset password chỉ admin; PUT của
+  quản lý hồ sơ được gửi lại giá trị bảo mật không đổi. Role staff vốn có
+  full patient scope nên không cho quản lý hồ sơ tự tạo/đổi role tài khoản.
+  `/users/me`, `/users/me/password`, doctors/psychologists giữ auth riêng,
+  không bị chặn bởi menu quản trị. `/users/patients/<id>` dùng patient_access_error.
+  Avatar/license kiểm target/quyền trước xử lý tệp; avatar không ghi tệp
+  cho ID không tồn tại. Không migration hoặc thay token transport.
+- Replace `/user-groups/<id>` bắt buộc group_ids array, nhận integer dương
+  hoặc chuỗi số ASCII từ checkbox hiện hành, loại trùng. Kiểm toàn bộ nhóm
+  tồn tại/quyền trước xóa assignment cũ; body sai400, nhóm thiếu404, vượt
+  quyền403; exception rollback. Array rỗng là yêu cầu xóa assignment rõ ràng.
+  Group PUT không có permissions giữ nguyên quyền, không ngầm xóa sạch.
+  Permission payload mới phải list string; membership JSON lỗi không cấp
+  quyền. Chưa giải quyết race giữa thu hồi quyền và transaction đang chạy,
+  socket đang mở hay refresh menu client tức thì.
+
+- Auth (27/09, lát26): `services/auth.decode_access_token` là owner giải
+  mã JWT dùng cho HTTP và Socket.IO; luôn xác minh chữ ký và `exp` nếu token
+  có claim này, kể cả cấu hình phát token mới không hết hạn. `sub` phải là
+  username chuỗi không rỗng. `authenticate_user`, HTTP user lookup, guards
+  auth/admin và socket connect yêu cầu `users.is_active is True`; tài khoản
+  khóa/NULL không được cấp token hoặc mở request/kết nối mới. Login body
+  phải object với username/password chuỗi, sai trả400 trước xác thực.
+  Token legacy không `exp` vẫn được nhận, response Bearer/permissions giữ
+  nguyên. Không có migration/cookie/CSRF/revocation mới ở lát này; socket
+  đã mở trước khi khóa chưa được thu hồi tức thì.
 
 - Mọi JSON response có HTTP status từ `400` trở lên nhận thêm field `code` ổn định từ `app/utils/api_error_contract.py`. Field cũ (`detail`, `error`, `message`, dữ liệu kiểm tra nghiệp vụ) vẫn được giữ để tương thích và chẩn đoán; frontend không được đưa trực tiếp các field này vào toast.
 - Frontend dùng `code` hoặc HTTP status để chọn câu báo theo workflow. `code` là contract máy đọc, không phải nội dung hiển thị; câu báo cho người dùng phải ngắn, nêu thao tác thất bại và việc cần làm. Trường hợp không có mapping riêng phải dùng fallback an toàn từ `QLPKUserFeedback`, không dùng raw body/exception.
