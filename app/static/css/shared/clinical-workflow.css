@@ -1,16 +1,16 @@
 /* Shared clinical workflow shell used by doctor, psychologist, and receptionist pages. */
 :root {
-	--qlpk-page-bg: #fbf8f2;
+	--qlpk-page-bg: var(--qlpk-color-page-bg);
 	--qlpk-clinical: var(--qlpk-color-primary);
 	--qlpk-clinical-dark: var(--qlpk-color-primary-strong);
-	--qlpk-clinical-soft: rgba(185, 137, 94, 0.14);
-	--qlpk-warm-border: #e4d4c1;
-	--qlpk-surface: #fffdf9;
-	--qlpk-surface-soft: #fffaf3;
-	--qlpk-text: #352821;
-	--qlpk-muted: #67584f;
-	--qlpk-olive: #747b5b;
-	--qlpk-accent: #b9895e;
+	--qlpk-clinical-soft: var(--qlpk-alpha-brown-55-14);
+	--qlpk-warm-border: var(--qlpk-palette-brown-83);
+	--qlpk-surface: var(--qlpk-color-surface-warm);
+	--qlpk-surface-soft: var(--qlpk-color-surface-subtle);
+	--qlpk-text: var(--qlpk-color-text);
+	--qlpk-muted: var(--qlpk-palette-gray-36);
+	--qlpk-olive: var(--qlpk-palette-gray-42);
+	--qlpk-accent: var(--qlpk-palette-brown-55);
 	--qlpk-control-font-size: var(--qlpk-font-size-base, 13px);
 	--qlpk-control-font-size-sm: var(--qlpk-font-size-sm, 12px);
 	--qlpk-control-font-weight: var(--qlpk-font-weight-medium, 500);
@@ -53,48 +53,10 @@ textarea.form-control {
 .mb-4 {
 	margin-bottom: 0.5rem !important;
 }
-
-.card-header .row.align-items-center {
-	justify-content: left;
-}
-
-.card-header .row.align-items-center .col-md-2:first-child {
-	margin-right: auto;
-}
-
-.card-header .col-md-2 .form-label,
-.card-header .col-md-3 .form-label {
-	align-self: flex-start !important;
-	text-align: left !important;
-}
-
-.card-header div[style*="width: 140px"] .form-label {
-	align-self: flex-start !important;
-	text-align: left !important;
-}
-
-.card-header div[style] .form-label {
-	align-self: flex-start !important;
-	text-align: left !important;
-	justify-self: flex-start !important;
-}
-
-.card-header .col-md-2 .form-control,
-.card-header .col-md-2 .form-select,
-.card-header .col-md-3 .form-control,
-.card-header .col-md-3 .form-select {
-	align-self: flex-end !important;
-}
-
-.card-header .form-label,
-.card-header .form-label.required-field,
-.card-header label {
-	color: var(--qlpk-text) !important;
-}
 .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select:focus {
 	border-color: var(--qlpk-clinical);
-	box-shadow: 0 0 0 0.2rem rgba(185, 137, 94, 0.18);
+	box-shadow: 0 0 0 0.2rem var(--qlpk-alpha-brown-55-18);
 }
 
 .form-control[readonly],
@@ -107,78 +69,22 @@ textarea.form-control {
 .form-control:disabled:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select[readonly],
 .form-select:disabled {
-	background-color: #f6efe6 !important;
+	/* !important: the shared form owners set a transparent background on the same
+	 * controls; disabled/readonly fields must keep the muted surface on every page. */
+	background-color: var(--qlpk-palette-brown-93) !important;
 	color: var(--qlpk-muted);
 }
 
 .required-field::after {
 	content: " *";
-	color: #dc3545;
+	color: var(--qlpk-palette-red-54);
 }
 
 .card {
 	border: 1px solid var(--qlpk-warm-border);
 	border-radius: 10px;
-	box-shadow: 0 8px 20px rgba(74, 51, 40, 0.045);
+	box-shadow: 0 8px 20px var(--qlpk-alpha-brown-22-04);
 	background: var(--qlpk-surface);
-}
-
-.card-header {
-	background: var(--qlpk-surface);
-	border-bottom: 1px solid var(--qlpk-warm-border);
-	border-radius: 12px 12px 0 0 !important;
-}
-
-.modal-tabs .nav-link:hover {
-	border-color: transparent;
-	color: var(--qlpk-clinical);
-	background: var(--qlpk-clinical-soft);
-}
-
-.modal-tabs .nav-link.active {
-	color: var(--qlpk-clinical);
-	background: var(--qlpk-surface);
-	border-bottom: 2px solid var(--qlpk-clinical);
-}
-
-.upload-area {
-	transition: all 0.3s ease;
-}
-
-.upload-area:hover {
-	background: rgba(185, 137, 94, 0.1);
-}
-
-.upload-area.dragover {
-	background: var(--qlpk-clinical-soft);
-	border-color: var(--qlpk-clinical) !important;
-}
-
-.document-item .document-icon {
-	width: 40px;
-	height: 40px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: var(--qlpk-surface-soft);
-	border-radius: 6px;
-	color: var(--qlpk-clinical);
-}
-
-.document-item .document-name {
-	font-weight: var(--qlpk-font-weight-medium, 500);
-	margin-bottom: 2px;
-}
-
-.document-item .document-actions {
-	display: flex;
-	gap: 8px;
-}
-
-.card-header h5 {
-	margin: 0;
-	font-weight: var(--qlpk-font-weight-semibold, 600);
-	color: var(--qlpk-text);
 }
 
 .btn {
@@ -193,8 +99,8 @@ textarea.form-control {
 	border-color: var(--qlpk-olive);
 }
 .btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: #5f6649;
-	border-color: #5f6649;
+	background-color: var(--qlpk-palette-green-34);
+	border-color: var(--qlpk-palette-green-34);
 }
 
 .autocomplete-dropdown {
@@ -208,8 +114,8 @@ textarea.form-control {
 	border-radius: 0 0 0.375rem 0.375rem;
 	max-height: 200px;
 	overflow-y: auto;
-	z-index: 1000;
-	box-shadow: 0 8px 18px rgba(74, 51, 40, 0.12);
+	z-index: var(--qlpk-z-dropdown);
+	box-shadow: 0 8px 18px var(--qlpk-alpha-brown-22-12);
 }
 
 .table {
@@ -268,53 +174,14 @@ textarea.form-control {
 	--qlpk-status-color: var(--qlpk-feedback-success);
 }
 
-.search-result-item.py-2 {
-	padding-left: 0.5rem !important;
-}
-
-.search-result-item.bg-primary {
-	background-color: #fff3dc !important;
-}
-
-.search-result-item.bg-primary.text-white {
-	background-color: #fff3dc !important;
-	color: var(--qlpk-clinical-dark) !important;
-}
-
-.search-result-item .btn-outline-primary {
-	font-size: var(--qlpk-font-size-base, 13px);
-	padding: 0.25rem 0.5rem;
-}
-.search-result-item .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--qlpk-clinical);
-	color: var(--qlpk-clinical);
-}
-.search-result-item .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-workflow-context-header-bg);
-	color: white;
-}
-
-#sidebar-container.col-md-2 {
-	flex: 0 0 16.66667% !important;
-	max-width: 16.66667% !important;
+.qlpk-shell-sidebar.col-md-2 {
+	flex: 0 0 16.66667%;
+	max-width: 16.66667%;
 }
 
 .main-content.col-md-10 {
-	flex: 0 0 83.33333% !important;
-	max-width: 83.33333% !important;
-}
-
-.card-header .btn-outline-primary:hover {
-	transform: translateY(-1px);
-}
-.card-header .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-surface-soft);
-	color: var(--qlpk-text);
-	box-shadow: 0 2px 4px rgba(74, 51, 40, 0.08);
-}
-
-.card-header h5 i {
-	color: currentColor;
+	flex: 0 0 83.33333%;
+	max-width: 83.33333%;
 }
 
 @keyframes vital-blink {
@@ -338,7 +205,7 @@ textarea.form-control {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	color: #ef4444 !important;
+	color: var(--qlpk-palette-red-60);
 	margin-left: 0.375rem;
 	cursor: pointer;
 	font-size: var(--qlpk-font-size-base, 13px);
@@ -350,14 +217,14 @@ textarea.form-control {
 	position: absolute;
 	top: var(--vital-tooltip-top, 0);
 	left: var(--vital-tooltip-left, 0);
-	z-index: 99999;
+	z-index: var(--qlpk-z-top);
 	max-width: 15.625rem;
 	padding: 0.375rem 0.625rem;
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(var(--qlpk-color-white-rgb), 0.1);
 	border-radius: 6px;
-	background: rgba(15, 23, 42, 0.95);
-	box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
-	color: #ffffff;
+	background: var(--qlpk-alpha-blue-11-95);
+	box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.15);
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-sm, 12px);
 	font-weight: var(--qlpk-font-weight-medium, 500);
 	line-height: 1.4;
@@ -379,6 +246,6 @@ textarea.form-control {
 	width: 0;
 	border-width: 5px 5px 0;
 	border-style: solid;
-	border-color: rgba(15, 23, 42, 0.95) transparent;
+	border-color: var(--qlpk-alpha-blue-11-95) transparent;
 	transform: translateX(-50%);
 }

@@ -29,7 +29,7 @@
   color: var(--qlpk-color-primary);
 }
 .user-management-page .table .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *) {
-  color: #e53935;
+  color: var(--qlpk-palette-red-55-a);
 }
 
 .user-management-page .um-modal-content-lg {
@@ -46,8 +46,8 @@
   letter-spacing: 1px;
 }
 
-.user-management-page #userModal .form-label,
-.user-management-page #userModal .form-check-label,
+.user-management-page .modal.qlpk-user-modal .form-label,
+.user-management-page .modal.qlpk-user-modal .form-check-label,
 .user-management-page .um-text-primary {
   color: var(--qlpk-color-primary);
 }
@@ -65,11 +65,11 @@
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--qlpk-palette-gray-91);
 }
 
-.user-management-page #avatarFile,
-.user-management-page #licenseCertificateFile {
+.user-management-page .form-control.qlpk-avatar-file,
+.user-management-page .form-control.qlpk-license-certificate-file {
   font-size: 0;
   border: none;
   padding: 0;
@@ -78,25 +78,25 @@
   max-width: 260px;
 }
 
-.user-management-page #avatarFile:focus,
-.user-management-page #licenseCertificateFile:focus {
+.user-management-page .form-control.qlpk-avatar-file:focus,
+.user-management-page .form-control.qlpk-license-certificate-file:focus {
   outline: none;
   box-shadow: none;
 }
 
-.user-management-page #avatarFile::file-selector-button,
-.user-management-page #licenseCertificateFile::file-selector-button,
+.user-management-page .form-control.qlpk-avatar-file::file-selector-button,
+.user-management-page .form-control.qlpk-license-certificate-file::file-selector-button,
 .user-management-page input[type="file"]::-webkit-file-upload-button {
   font-size: var(--clinic-control-font-size, var(--qlpk-font-size-md, 14px));
   padding: 6px 14px;
   border-radius: var(--clinic-control-radius, 24px);
   border: 1px solid var(--qlpk-color-primary);
   background: var(--qlpk-workflow-context-header-bg);
-  color: #fff;
+  color: var(--qlpk-color-white);
   cursor: pointer;
 }
 
-.user-management-page #licenseCertificateFileName {
+.user-management-page .qlpk-license-certificate-file-name {
   display: none;
   color: var(--qlpk-color-primary);
   text-decoration: underline;
@@ -104,7 +104,7 @@
   font-size: var(--qlpk-font-size-md, 14px);
 }
 
-.user-management-page #colorSwatches {
+.user-management-page .qlpk-color-swatches {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -126,51 +126,51 @@
 
 .user-management-page .color-swatch:hover {
   transform: scale(1.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 .user-management-page .color-swatch.selected {
-  border-color: #333;
+  border-color: var(--qlpk-palette-gray-20-a);
   box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px #333;
+    0 0 0 2px var(--qlpk-color-white),
+    0 0 0 4px var(--qlpk-palette-gray-20-a);
 }
 
 .user-management-page .color-swatch[data-color="#2196f3"] {
-  background: #2196f3;
+  background: var(--qlpk-palette-blue-54);
 }
 .user-management-page .color-swatch[data-color="#4caf50"] {
-  background: #4caf50;
+  background: var(--qlpk-palette-green-49);
 }
 .user-management-page .color-swatch[data-color="#f44336"] {
-  background: #f44336;
+  background: var(--qlpk-palette-red-58);
 }
 .user-management-page .color-swatch[data-color="#ff9800"] {
-  background: #ff9800;
+  background: var(--qlpk-palette-orange-50-b);
 }
 .user-management-page .color-swatch[data-color="#9c27b0"] {
-  background: #9c27b0;
+  background: var(--qlpk-palette-rose-42);
 }
 .user-management-page .color-swatch[data-color="#e91e63"] {
-  background: #e91e63;
+  background: var(--qlpk-palette-rose-52-b);
 }
 .user-management-page .color-swatch[data-color="#00bcd4"] {
-  background: #00bcd4;
+  background: var(--qlpk-palette-teal-42);
 }
 .user-management-page .color-swatch[data-color="#795548"] {
-  background: #795548;
+  background: var(--qlpk-palette-brown-38);
 }
 .user-management-page .color-swatch[data-color="#607d8b"] {
-  background: #607d8b;
+  background: var(--qlpk-palette-teal-46);
 }
 .user-management-page .color-swatch[data-color="#ff5722"] {
-  background: #ff5722;
+  background: var(--qlpk-palette-orange-57-a);
 }
 .user-management-page .color-swatch[data-color="#3f51b5"] {
-  background: #3f51b5;
+  background: var(--qlpk-palette-blue-48);
 }
 .user-management-page .color-swatch[data-color="#009688"] {
-  background: #009688;
+  background: var(--qlpk-palette-teal-29);
 }
 
 .user-management-page .um-clear-color-btn {
@@ -190,7 +190,7 @@
 .user-management-page .um-btn-primary-pill-lg:not([data-qlpk-button], [data-qlpk-button] *),
 .user-management-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *) {
   background: var(--qlpk-workflow-context-header-bg);
-  color: #fff;
+  color: var(--qlpk-color-white);
 }
 
 .user-management-page .um-btn-primary-pill-lg,

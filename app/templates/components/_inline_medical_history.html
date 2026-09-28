@@ -79,7 +79,7 @@
 																			list_class='medical-history-icd-list'
 																		) }}
 																	<div class="medical-history-micro-row">
-																		<input type="text" class="form-control form-control-sm" id="physHistoryTextInput"
+																		<input type="text" class="form-control form-control-sm" id="physHistoryTextInput" aria-label="Mô tả chi tiết tiền sử bản thân"
 																			placeholder="Mô tả chi tiết / Tiền sử bản thân khác..."
 																			autocomplete="off">
 																	</div>
@@ -122,7 +122,7 @@
 														</div>
 													</div>
 													<!-- ── BẢNG SỬ DỤNG CHẤT (ngoài suggestion-box để không bị bóp) ── -->
-															<div id="substanceTableWrap" class="medical-history-hidden">
+															<div id="substanceTableWrap" class="medical-history-table-wrap medical-history-hidden">
 																<table class="medical-history-substance-table">
 															<thead>
 																<tr>
@@ -136,30 +136,30 @@
 															</thead>
 															<tbody>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="tobacco_check" data-medical-history-action="substance-toggle" data-icd="F17" data-name="Thuốc lá"><span></span></label></td><td>Thuốc lá</td><td><input type="text" class="medical-history-sub-input" id="tobacco_time" placeholder="Ghi chú..." disabled></td>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="inhalants_check" data-medical-history-action="substance-toggle" data-icd="F18" data-name="Chất hít"><span></span></label></td><td>Chất hít (keo, xăng, dung môi, khí cười...)</td><td><input type="text" class="medical-history-sub-input" id="inhalants_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Thuốc lá" id="tobacco_check" data-medical-history-action="substance-toggle" data-icd="F17" data-name="Thuốc lá"><span></span></label></td><td>Thuốc lá</td><td><input type="text" class="medical-history-sub-input" id="tobacco_time" aria-label="Ghi chú: Thuốc lá" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Chất hít" id="inhalants_check" data-medical-history-action="substance-toggle" data-icd="F18" data-name="Chất hít"><span></span></label></td><td>Chất hít (keo, xăng, dung môi, khí cười...)</td><td><input type="text" class="medical-history-sub-input" id="inhalants_time" aria-label="Ghi chú: Chất hít" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="alcohol_check" data-medical-history-action="substance-toggle" data-icd="F10" data-name="Rượu, bia, đồ uống có cồn"><span></span></label></td><td>Rượu, bia, đồ uống có cồn</td><td><input type="text" class="medical-history-sub-input" id="alcohol_time" placeholder="Ghi chú..." disabled></td>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="sedatives_check" data-medical-history-action="substance-toggle" data-icd="F13" data-name="Thuốc an thần"><span></span></label></td><td>Thuốc an thần / Thuốc ngủ</td><td><input type="text" class="medical-history-sub-input" id="sedatives_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Rượu, bia, đồ uống có cồn" id="alcohol_check" data-medical-history-action="substance-toggle" data-icd="F10" data-name="Rượu, bia, đồ uống có cồn"><span></span></label></td><td>Rượu, bia, đồ uống có cồn</td><td><input type="text" class="medical-history-sub-input" id="alcohol_time" aria-label="Ghi chú: Rượu, bia, đồ uống có cồn" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Thuốc an thần" id="sedatives_check" data-medical-history-action="substance-toggle" data-icd="F13" data-name="Thuốc an thần"><span></span></label></td><td>Thuốc an thần / Thuốc ngủ</td><td><input type="text" class="medical-history-sub-input" id="sedatives_time" aria-label="Ghi chú: Thuốc an thần" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="cannabis_check" data-medical-history-action="substance-toggle" data-icd="F12" data-name="Cần sa"><span></span></label></td><td>Cần sa</td><td><input type="text" class="medical-history-sub-input" id="cannabis_time" placeholder="Ghi chú..." disabled></td>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="hallucinogens_check" data-medical-history-action="substance-toggle" data-icd="F16" data-name="Chất gây ảo giác"><span></span></label></td><td>Chất gây ảo giác</td><td><input type="text" class="medical-history-sub-input" id="hallucinogens_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Cần sa" id="cannabis_check" data-medical-history-action="substance-toggle" data-icd="F12" data-name="Cần sa"><span></span></label></td><td>Cần sa</td><td><input type="text" class="medical-history-sub-input" id="cannabis_time" aria-label="Ghi chú: Cần sa" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Chất gây ảo giác" id="hallucinogens_check" data-medical-history-action="substance-toggle" data-icd="F16" data-name="Chất gây ảo giác"><span></span></label></td><td>Chất gây ảo giác</td><td><input type="text" class="medical-history-sub-input" id="hallucinogens_time" aria-label="Ghi chú: Chất gây ảo giác" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="cocaine_check" data-medical-history-action="substance-toggle" data-icd="F14" data-name="Cocain"><span></span></label></td><td>Cocain</td><td><input type="text" class="medical-history-sub-input" id="cocaine_time" placeholder="Ghi chú..." disabled></td>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="opioids_check" data-medical-history-action="substance-toggle" data-icd="F11" data-name="Thuốc phiện"><span></span></label></td><td>Chất dạng thuốc phiện (Heroin, Morphin, Codein...)</td><td><input type="text" class="medical-history-sub-input" id="opioids_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Cocain" id="cocaine_check" data-medical-history-action="substance-toggle" data-icd="F14" data-name="Cocain"><span></span></label></td><td>Cocain</td><td><input type="text" class="medical-history-sub-input" id="cocaine_time" aria-label="Ghi chú: Cocain" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Thuốc phiện" id="opioids_check" data-medical-history-action="substance-toggle" data-icd="F11" data-name="Thuốc phiện"><span></span></label></td><td>Chất dạng thuốc phiện (Heroin, Morphin, Codein...)</td><td><input type="text" class="medical-history-sub-input" id="opioids_time" aria-label="Ghi chú: Thuốc phiện" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="stimulants_check" data-medical-history-action="substance-toggle" data-icd="F15" data-name="Chất kích thích"><span></span></label></td><td>Chất kích thích (ma túy đá, thuốc lắc...)</td><td><input type="text" class="medical-history-sub-input" id="stimulants_time" placeholder="Ghi chú..." disabled></td>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="other_substance_check" data-medical-history-action="substance-toggle" data-icd="F19" data-name="Chất khác"><span></span></label></td><td>Chất khác</td><td><input type="text" class="medical-history-sub-input" id="other_substance_time" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Chất kích thích" id="stimulants_check" data-medical-history-action="substance-toggle" data-icd="F15" data-name="Chất kích thích"><span></span></label></td><td>Chất kích thích (ma túy đá, thuốc lắc...)</td><td><input type="text" class="medical-history-sub-input" id="stimulants_time" aria-label="Ghi chú: Chất kích thích" placeholder="Ghi chú..." disabled></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Chất khác" id="other_substance_check" data-medical-history-action="substance-toggle" data-icd="F19" data-name="Chất khác"><span></span></label></td><td>Chất khác</td><td><input type="text" class="medical-history-sub-input" id="other_substance_time" aria-label="Ghi chú: Chất khác" placeholder="Ghi chú..." disabled></td>
 																</tr>
 															</tbody>
 														</table>
 													</div>
 													<!-- ── BẢNG TỰ SÁT / TỰ HẠI ── -->
-															<div id="suicideTableWrap" class="medical-history-hidden">
+															<div id="suicideTableWrap" class="medical-history-table-wrap medical-history-hidden">
 																<table class="medical-history-substance-table">
 															<thead>
 																<tr>
@@ -171,54 +171,54 @@
 															</thead>
 															<tbody>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_ideation_check" data-medical-history-action="suicide-toggle" data-icd="Z91.5" data-name="Ý tưởng / Tiền sử tự gây thương tích"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Ý tưởng / Tiền sử tự gây thương tích" id="suicide_ideation_check" data-medical-history-action="suicide-toggle" data-icd="Z91.5" data-name="Ý tưởng / Tiền sử tự gây thương tích"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z91.5</span></td>
 																	<td>Ý tưởng / Tiền sử tự gây thương tích</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_ideation_note" placeholder="Ý nghĩ tự sát hoặc tiền sử tự gây thương tích..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_ideation_note" aria-label="Ghi chú: Ý tưởng / Tiền sử tự gây thương tích" placeholder="Ý nghĩ tự sát hoặc tiền sử tự gây thương tích..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_poison_check" data-medical-history-action="suicide-toggle" data-icd="X60" data-name="Cố ý tự gây nhiễm độc bằng thuốc"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Cố ý tự gây nhiễm độc bằng thuốc" id="suicide_poison_check" data-medical-history-action="suicide-toggle" data-icd="X60" data-name="Cố ý tự gây nhiễm độc bằng thuốc"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X60</span></td>
 																	<td>Cố ý tự gây nhiễm độc bằng thuốc</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_poison_note" placeholder="Cần mã cụ thể theo loại thuốc (VD: X61 cho thuốc an thần)..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_poison_note" aria-label="Ghi chú: Cố ý tự gây nhiễm độc bằng thuốc" placeholder="Cần mã cụ thể theo loại thuốc (VD: X61 cho thuốc an thần)..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_hang_check" data-medical-history-action="suicide-toggle" data-icd="X70" data-name="Cố ý tự gây hại bằng treo cổ/ngạt"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Cố ý tự gây hại bằng treo cổ/ngạt" id="suicide_hang_check" data-medical-history-action="suicide-toggle" data-icd="X70" data-name="Cố ý tự gây hại bằng treo cổ/ngạt"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X70</span></td>
 																	<td>Cố ý tự gây hại bằng treo cổ/ngạt</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_hang_note" placeholder="Ghi chú..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_hang_note" aria-label="Ghi chú: Cố ý tự gây hại bằng treo cổ/ngạt" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_sharp_check" data-medical-history-action="suicide-toggle" data-icd="X78" data-name="Cố ý tự gây hại bằng vật sắc nhọn"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Cố ý tự gây hại bằng vật sắc nhọn" id="suicide_sharp_check" data-medical-history-action="suicide-toggle" data-icd="X78" data-name="Cố ý tự gây hại bằng vật sắc nhọn"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X78</span></td>
 																	<td>Cố ý tự gây hại bằng vật sắc nhọn</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_sharp_note" placeholder="Ví dụ: Rạch tay..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_sharp_note" aria-label="Ghi chú: Cố ý tự gây hại bằng vật sắc nhọn" placeholder="Ví dụ: Rạch tay..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_jump_check" data-medical-history-action="suicide-toggle" data-icd="X80" data-name="Tự nhảy từ trên cao"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Tự nhảy từ trên cao" id="suicide_jump_check" data-medical-history-action="suicide-toggle" data-icd="X80" data-name="Tự nhảy từ trên cao"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">X80</span></td>
 																	<td>Tự nhảy từ trên cao</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_jump_note" placeholder="Ghi chú..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_jump_note" aria-label="Ghi chú: Tự nhảy từ trên cao" placeholder="Ghi chú..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_trauma_check" data-medical-history-action="suicide-toggle" data-icd="Z65.5" data-name="Sự kiện gây sang chấn tâm lý"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Sự kiện gây sang chấn tâm lý" id="suicide_trauma_check" data-medical-history-action="suicide-toggle" data-icd="Z65.5" data-name="Sự kiện gây sang chấn tâm lý"><span></span></label></td>
 																	<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z65.5</span></td>
 																	<td>Sự kiện gây sang chấn tâm lý</td>
-																	<td><input type="text" class="medical-history-sub-input" id="suicide_trauma_note" placeholder="Liên quan đến thiên tai, bạo lực hoặc thảm họa..." disabled></td>
+																	<td><input type="text" class="medical-history-sub-input" id="suicide_trauma_note" aria-label="Ghi chú: Sự kiện gây sang chấn tâm lý" placeholder="Liên quan đến thiên tai, bạo lực hoặc thảm họa..." disabled></td>
 																</tr>
 																<tr>
-																	<td><label class="medical-history-sub-check"><input type="checkbox" id="suicide_violence_check" data-medical-history-action="suicide-toggle" data-icd="Z61" data-name="Vấn đề liên quan đến bạo lực (nạn nhân)"><span></span></label></td>
+																	<td><label class="medical-history-sub-check"><input type="checkbox" aria-label="Vấn đề liên quan đến bạo lực (nạn nhân)" id="suicide_violence_check" data-medical-history-action="suicide-toggle" data-icd="Z61" data-name="Vấn đề liên quan đến bạo lực (nạn nhân)"><span></span></label></td>
 																			<td><span class="medical-history-icd-badge medical-history-icd-suicide">Z61</span></td>
 																			<td>Vấn đề liên quan đến bạo lực (nạn nhân)</td>
-																			<td><input type="text" class="medical-history-sub-input" id="suicide_violence_note" placeholder="Bao gồm lạm dụng tình dục hoặc thể chất trong tuổi thơ..." disabled></td>
+																			<td><input type="text" class="medical-history-sub-input" id="suicide_violence_note" aria-label="Ghi chú: Vấn đề liên quan đến bạo lực (nạn nhân)" placeholder="Bao gồm lạm dụng tình dục hoặc thể chất trong tuổi thơ..." disabled></td>
 																		</tr>
 															</tbody>
 														</table>
 													</div>
 													<!-- ── ĐÁNH GIÁ NGUY CƠ TỰ SÁT ── -->
-															<div id="riskAssessWrap" class="medical-history-hidden">
+															<div id="riskAssessWrap" class="medical-history-table-wrap medical-history-hidden">
 														<!-- Panel lần trước — JS populate từ medical_history.previous_examination -->
-																<div id="prevRiskBadgeWrap" class="medical-history-hidden mb-2">
+																<div id="prevRiskBadgeWrap" class="prev-risk-panel medical-history-hidden mb-2">
 															<div class="prev-risk-header">
 																<span class="prev-risk-label">📋 Đánh giá nguy cơ lần trước</span>
 																<span id="prevRiskBadge" class="prev-risk-badge"></span>
@@ -240,7 +240,7 @@
 																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_ideation" id="risk_ideation_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_ideation_note" data-risk-enable-note="false"><span></span>Không</label>
 																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_ideation" id="risk_ideation_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_ideation_note" data-risk-enable-note="true"><span></span>Có</label>
 																	</td>
-																	<td><input type="text" class="medical-history-sub-input" id="risk_ideation_note" placeholder="Tần suất/Nội dung..." disabled data-medical-history-action="risk-sync"></td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_ideation_note" aria-label="Ghi chú: Ý tưởng tự sát" placeholder="Tần suất/Nội dung..." disabled data-medical-history-action="risk-sync"></td>
 																</tr>
 																<tr>
 																						<td class="medical-history-nowrap">2. Kế hoạch tự sát</td>
@@ -248,7 +248,7 @@
 																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_plan" id="risk_plan_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_plan_note" data-risk-enable-note="false"><span></span>Không</label>
 																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_plan" id="risk_plan_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_plan_note" data-risk-enable-note="true"><span></span>Có</label>
 																	</td>
-																	<td><input type="text" class="medical-history-sub-input" id="risk_plan_note" placeholder="Phương pháp..." disabled data-medical-history-action="risk-sync"></td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_plan_note" aria-label="Ghi chú: Kế hoạch tự sát" placeholder="Phương pháp..." disabled data-medical-history-action="risk-sync"></td>
 																</tr>
 																<tr>
 																						<td class="medical-history-nowrap">3. Toàn tính tự sát</td>
@@ -256,7 +256,7 @@
 																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_intent" id="risk_intent_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_intent_note" data-risk-enable-note="false"><span></span>Không</label>
 																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_intent" id="risk_intent_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_intent_note" data-risk-enable-note="true"><span></span>Có</label>
 																	</td>
-																	<td><input type="text" class="medical-history-sub-input" id="risk_intent_note" placeholder="Thời điểm gần nhất..." disabled data-medical-history-action="risk-sync"></td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_intent_note" aria-label="Ghi chú: Toàn tính tự sát" placeholder="Thời điểm gần nhất..." disabled data-medical-history-action="risk-sync"></td>
 																</tr>
 																<tr>
 																						<td class="medical-history-nowrap">4. Hành vi tự hại khác</td>
@@ -264,7 +264,7 @@
 																	<label class="medical-history-risk-inline-check w-80"><input type="radio" name="risk_sh" id="risk_sh_no" value="khong" data-medical-history-action="risk-toggle" data-risk-note="risk_sh_note" data-risk-enable-note="false"><span></span>Không</label>
 																	<label class="medical-history-risk-inline-check"><input type="radio" name="risk_sh" id="risk_sh_yes" value="co" data-medical-history-action="risk-toggle" data-risk-note="risk_sh_note" data-risk-enable-note="true"><span></span>Có</label>
 																	</td>
-																	<td><input type="text" class="medical-history-sub-input" id="risk_sh_note" placeholder="Rạch tay / Nhịn ăn / Khác..." disabled data-medical-history-action="risk-sync"></td>
+																	<td><input type="text" class="medical-history-sub-input" id="risk_sh_note" aria-label="Ghi chú: Hành vi tự hại khác" placeholder="Rạch tay / Nhịn ăn / Khác..." disabled data-medical-history-action="risk-sync"></td>
 																</tr>
 																<tr>
 																						<td class="medical-history-nowrap">5. Mức độ nguy cơ</td>
@@ -385,7 +385,7 @@
 																			list_class='medical-history-icd-list'
 																		) }}
 																	<div class="medical-history-micro-row">
-																		<input type="text" class="form-control form-control-sm" id="famHistoryTextInput"
+																		<input type="text" class="form-control form-control-sm" id="famHistoryTextInput" aria-label="Mô tả chi tiết tiền sử gia đình"
 																			placeholder="Mô tả chi tiết / Tiền sử gia đình khác..."
 																			autocomplete="off">
 													</div>
@@ -426,7 +426,7 @@
 															<button type="button" class="medical-history-tab-btn" data-medical-history-action="switch-allergy-tab" data-allergy-tab="chac_chan">Chắc chắn</button>
 													</div>
 															<div class="medical-history-chip-area medical-history-chip-area--allergy" id="drugAllergyChips" data-medical-history-action="focus-allergy-input">
-																<input class="medical-history-chip-input" id="drugAllergyInput" placeholder="Gõ tên thuốc dị ứng rồi Enter..." data-medical-history-action="allergy-keydown">
+																<input class="medical-history-chip-input" id="drugAllergyInput" aria-label="Thêm thuốc dị ứng" placeholder="Gõ tên thuốc dị ứng rồi Enter..." data-medical-history-action="allergy-keydown">
 													</div>
 													<table class="medical-history-allergy-table" id="drugAllergyTable">
 														<thead>

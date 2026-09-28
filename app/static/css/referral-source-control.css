@@ -23,9 +23,9 @@
 	align-items: center;
 	justify-content: flex-start;
 	gap: 6px;
-	border: 1px solid var(--referral-source-border, #e4d4c1);
+	border: 1px solid var(--referral-source-border, var(--qlpk-palette-brown-83));
 	border-radius: 8px;
-	background: var(--referral-source-bg, #fffaf3);
+	background: var(--referral-source-bg, var(--qlpk-color-surface-subtle));
 	color: var(--referral-source-color, var(--qlpk-color-primary));
 	font-size: var(--qlpk-font-size-base, 13px);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
@@ -36,7 +36,7 @@
 	text-align: left;
 	white-space: normal;
 	opacity: 1;
-	box-shadow: 0 1px 2px rgba(74, 51, 40, 0.08);
+	box-shadow: 0 1px 2px var(--qlpk-alpha-brown-22-08);
 	transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
@@ -50,14 +50,14 @@
 	right: -5px;
 	width: 16px;
 	height: 16px;
-	border: 2px solid #fffdf9;
+	border: 2px solid var(--qlpk-color-surface-warm);
 	border-radius: 50%;
 	background: var(--referral-source-color, var(--qlpk-color-primary));
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-2xs, 10px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	line-height: 1;
-	box-shadow: 0 2px 4px rgba(74, 51, 40, 0.18);
+	box-shadow: 0 2px 4px var(--qlpk-alpha-brown-22-18);
 }
 
 .referral-source-icon {
@@ -68,24 +68,24 @@
 	height: 17px;
 	border-radius: 50%;
 	background: var(--referral-source-color, var(--qlpk-color-primary));
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	font-size: var(--qlpk-font-size-sm, 12px);
 	line-height: 1;
 }
 
 .referral-source-option:hover,
 .referral-source-option:focus {
-	background: var(--referral-source-hover, #fff3dc);
+	background: var(--referral-source-hover, var(--qlpk-palette-orange-93));
 	border-color: var(--referral-source-color, var(--qlpk-color-primary));
-	box-shadow: 0 3px 8px rgba(74, 51, 40, 0.12);
+	box-shadow: 0 3px 8px var(--qlpk-alpha-brown-22-12);
 	color: var(--referral-source-color, var(--qlpk-color-primary));
 }
 
 .referral-source-option.is-active {
 	background: var(--referral-source-color, var(--qlpk-color-primary));
 	border-color: var(--referral-source-color, var(--qlpk-color-primary));
-	color: #ffffff;
-	box-shadow: 0 0 0 2px #fffdf9, 0 0 0 5px var(--referral-source-ring, rgba(185, 137, 94, 0.28)), 0 5px 11px rgba(74, 51, 40, 0.2);
+	color: var(--qlpk-color-white);
+	box-shadow: 0 0 0 2px var(--qlpk-color-surface-warm), 0 0 0 5px var(--referral-source-ring, var(--qlpk-alpha-brown-55-28)), 0 5px 11px var(--qlpk-alpha-brown-22-20);
 	transform: translateY(-1px);
 }
 
@@ -95,56 +95,56 @@
 }
 
 .referral-source-option.is-active .referral-source-icon {
-	background: #fffdf9;
+	background: var(--qlpk-color-surface-warm);
 	color: var(--referral-source-color, var(--qlpk-color-primary));
 }
 
 .referral-source-facebook {
-	--referral-source-color: #6b422c;
-	--referral-source-bg: #fffaf3;
-	--referral-source-hover: #fff3dc;
-	--referral-source-border: #e4d4c1;
-	--referral-source-ring: rgba(107, 66, 44, 0.24);
+	--referral-source-color: var(--qlpk-palette-brown-30-a);
+	--referral-source-bg: var(--qlpk-color-surface-subtle);
+	--referral-source-hover: var(--qlpk-palette-orange-93);
+	--referral-source-border: var(--qlpk-palette-brown-83);
+	--referral-source-ring: var(--qlpk-alpha-brown-30-24);
 }
 
 .referral-source-website {
-	--referral-source-color: #747b5b;
-	--referral-source-bg: #f4f3ea;
-	--referral-source-hover: #ecebdc;
-	--referral-source-border: #d8dcc5;
-	--referral-source-ring: rgba(116, 123, 91, 0.24);
+	--referral-source-color: var(--qlpk-palette-gray-42);
+	--referral-source-bg: var(--qlpk-palette-amber-94);
+	--referral-source-hover: var(--qlpk-palette-amber-89);
+	--referral-source-border: var(--qlpk-palette-green-82-a);
+	--referral-source-ring: var(--qlpk-alpha-gray-42-24);
 }
 
 .referral-source-referral {
-	--referral-source-color: #b9895e;
-	--referral-source-bg: #fff3dc;
-	--referral-source-hover: #f8e5c7;
-	--referral-source-border: #e8c99f;
-	--referral-source-ring: rgba(185, 137, 94, 0.26);
+	--referral-source-color: var(--qlpk-palette-brown-55);
+	--referral-source-bg: var(--qlpk-palette-orange-93);
+	--referral-source-hover: var(--qlpk-palette-orange-88);
+	--referral-source-border: var(--qlpk-palette-orange-77);
+	--referral-source-ring: var(--qlpk-alpha-brown-55-26);
 }
 
 .referral-source-medpro {
-	--referral-source-color: #9b5f47;
-	--referral-source-bg: #f9e9df;
-	--referral-source-hover: #f1dacd;
-	--referral-source-border: #e6c6b5;
-	--referral-source-ring: rgba(155, 95, 71, 0.24);
+	--referral-source-color: var(--qlpk-palette-brown-44);
+	--referral-source-bg: var(--qlpk-palette-orange-93-a);
+	--referral-source-hover: var(--qlpk-palette-brown-87-a);
+	--referral-source-border: var(--qlpk-palette-brown-81);
+	--referral-source-ring: var(--qlpk-alpha-brown-44-24);
 }
 
 .referral-source-walk-in {
-	--referral-source-color: #7a6b57;
-	--referral-source-bg: #f4ede3;
-	--referral-source-hover: #eadfce;
-	--referral-source-border: #ddcdb8;
-	--referral-source-ring: rgba(122, 107, 87, 0.24);
+	--referral-source-color: var(--qlpk-palette-brown-41-a);
+	--referral-source-bg: var(--qlpk-palette-brown-92);
+	--referral-source-hover: var(--qlpk-palette-brown-86);
+	--referral-source-border: var(--qlpk-palette-brown-79-a);
+	--referral-source-ring: var(--qlpk-alpha-brown-41-24);
 }
 
 .referral-source-other {
-	--referral-source-color: #5f5844;
-	--referral-source-bg: #f1efe7;
-	--referral-source-hover: #e6e1d4;
-	--referral-source-border: #d7cfbd;
-	--referral-source-ring: rgba(95, 88, 68, 0.24);
+	--referral-source-color: var(--qlpk-palette-brown-32);
+	--referral-source-bg: var(--qlpk-palette-amber-93-a);
+	--referral-source-hover: var(--qlpk-palette-brown-87-b);
+	--referral-source-border: var(--qlpk-palette-brown-79-b);
+	--referral-source-ring: var(--qlpk-alpha-brown-32-24);
 }
 
 .referral-source-input {
@@ -154,8 +154,8 @@
 }
 
 .referral-source-input:disabled {
-	background-color: #f6efe6;
-	color: #67584f;
+	background-color: var(--qlpk-palette-brown-93);
+	color: var(--qlpk-palette-gray-36);
 	opacity: 1;
 }
 

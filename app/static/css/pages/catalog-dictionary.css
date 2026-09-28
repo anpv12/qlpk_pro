@@ -14,13 +14,13 @@
 /* Add/Import buttons */
 		.btn-action:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg);
-			color: #fff;
+			color: var(--qlpk-color-white);
 }
 .btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg);
-			color: #fff;
+			color: var(--qlpk-color-white);
 }
-		
+
 		/* Modal compact */
 		.modal-header {
 			padding: 8px 10px;
@@ -33,7 +33,7 @@
 		.info-section {
 			margin-bottom: 10px;
 		}
-		
+
 		.section-title {
 			font-size: var(--qlpk-font-size-base, 13px);
 			font-weight: var(--qlpk-font-weight-bold, 700);
@@ -47,7 +47,7 @@
 		.section-title i {
 			color: var(--qlpk-color-primary);
 		}
-		
+
 		/* Switch toggle for status */
 		.form-switch .form-check-input {
 			width: 2.5em;
@@ -85,7 +85,7 @@
 
 .catalog-dict-modal-header {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 	border-radius: 8px 8px 0 0;
 }
 
@@ -94,7 +94,7 @@
 }
 .catalog-dict-primary-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 
 .catalog-dict-name-cell {

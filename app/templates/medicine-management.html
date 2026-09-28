@@ -9,20 +9,19 @@
 	<title>Quản lý tủ thuốc</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
 	<script id="qlpk-icon-system" src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/option-autocomplete.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/medicine-management.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
@@ -31,7 +30,7 @@
 <body class="medicine-management-page qlpk-data-tables qlpk-clinic-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content mm-main-content-shell">
 				<!-- Tiêu đề chính -->
 				<div class="mm-page-header qlpk-clinic-header">
@@ -50,7 +49,7 @@
 							mới</button>
 						<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn btn-primary" id="importWarehouseBtn"><i class="bi bi-box-arrow-in-down"></i>
 							Nhập kho</button>
-						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-primary" id="exportDataBtn"><i class="bi bi-download"></i> Xuất dữ
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-primary qlpk-export-data-btn" id="exportDataBtn"><i class="bi bi-download"></i> Xuất dữ
 							liệu</button>
 					</div>
 					<div class="mm-toolbar-summary qlpk-clinic-summary" id="dashboardSection" role="group" aria-label="Tổng quan tồn kho">
@@ -92,7 +91,7 @@
 							</select>
 						</div>
 						<div class="mm-filter-field">
-							<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-primary w-100" id="searchBtn">Xem</button>
+							<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-primary w-100 qlpk-search-btn" id="searchBtn">Xem</button>
 						</div>
 					</div>
 				</div>
@@ -122,7 +121,7 @@
 
 					<!-- Nút xóa thuốc đã chọn -->
 					<div class="mt-3">
-						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-danger mm-hidden" id="deleteSelectedBtn">
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-danger mm-hidden qlpk-delete-selected-btn" id="deleteSelectedBtn">
 							<i class="bi bi-trash"></i> Xoá thuốc đã chọn
 						</button>
 					</div>
@@ -132,7 +131,7 @@
 					<div class="mm-pagination-row">
 						<div class="mm-pagination-details">
 							<label for="medicinePageSize">Số dòng/trang</label>
-							<select class="form-select form-select-sm" id="medicinePageSize">
+							<select class="form-select form-select-sm qlpk-medicine-page-size" id="medicinePageSize">
 								<option value="10" selected>10</option>
 								<option value="20">20</option>
 								<option value="50">50</option>
@@ -160,7 +159,7 @@
 	</div>
 
 	<!-- Modal Thêm/Sửa Thuốc -->
-	<div class="modal fade" id="medicineReferenceReviewModal" tabindex="-1" aria-labelledby="medicineReferenceReviewTitle" aria-hidden="true">
+	<div class="modal fade qlpk-medicine-reference-review-modal" id="medicineReferenceReviewModal" tabindex="-1" aria-labelledby="medicineReferenceReviewTitle" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered modal-xl">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -182,8 +181,8 @@
 							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-action-secondary mm-review-change" id="medicineReviewCancelChange" hidden>Giữ liên kết hiện tại</button>
 						</section>
 					</div>
-					<div id="medicineReviewStatus" role="status" aria-live="polite"></div>
-					<section id="medicineReviewCompareSection" aria-labelledby="medicineReviewCompareTitle" hidden>
+					<div id="medicineReviewStatus" class="qlpk-medicine-review-status" role="status" aria-live="polite"></div>
+					<section id="medicineReviewCompareSection" class="qlpk-medicine-review-compare-section" aria-labelledby="medicineReviewCompareTitle" hidden>
 					<h5 id="medicineReviewCompareTitle" class="mm-review-step">Kiểm tra trước khi liên kết</h5>
 					<p id="medicineReviewChanges" class="mm-review-hint" aria-live="polite" hidden></p>
 					<div class="mm-review-compare">
@@ -207,10 +206,10 @@
 		</div>
 	</div>
 
-	<div class="modal fade" id="medicineModal" tabindex="-1" aria-labelledby="medicineModalLabel" aria-hidden="true">
+	<div class="modal fade qlpk-medicine-modal" id="medicineModal" tabindex="-1" aria-labelledby="medicineModalLabel" aria-hidden="true">
 		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-modal-content-full">
-				<form id="medicineForm">
+				<form id="medicineForm" class="qlpk-medicine-form">
 				 <div class="modal-header mm-medicine-header">
 				  <span aria-hidden="true" class="mm-medicine-hero-icon" data-medicine-icon="medicine">
 				  </span>
@@ -218,7 +217,7 @@
 				   <h4 class="modal-title mm-modal-title-main" id="medicineModalLabel">
 				    THÊM THUỐC MỚI
 				   </h4>
-				   <p id="medicineFlowGuide">
+				   <p id="medicineFlowGuide" class="qlpk-medicine-flow-guide">
 				    Chọn thuốc trong danh mục DAV, sau đó kiểm tra thông tin phòng khám.
 				   </p>
 				  </div>
@@ -254,7 +253,7 @@
                     ) }}
 				   </div>
 				   <div class="mm-dav-selected" hidden="" id="davSelectedRow">
-				    <div id="davSelection">
+				    <div id="davSelection" class="qlpk-dav-selection">
 				    </div>
 				    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-secondary btn-sm text-nowrap" id="davChangeButton" type="button">
 				     Đổi thuốc
@@ -263,7 +262,7 @@
 				   <p class="small mt-2 mb-0" hidden="" id="davContext">
 				   </p>
 				  </section>
-				  <fieldset class="mm-medicine-fields" disabled="" id="medicineEditFields">
+				  <fieldset class="mm-medicine-fields qlpk-medicine-edit-fields" disabled="" id="medicineEditFields">
 				   <section aria-labelledby="medicineSection-basic" class="mm-medicine-section mm-medicine-section--basic">
 				    <header class="mm-medicine-section-header">
 				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="basic">
@@ -302,7 +301,7 @@
 				       </label>
 				       <div class="position-relative">
 				        <input autocomplete="off" class="form-control" id="administrationMethod" placeholder="Chọn đường dùng" type="text"/>
-				        <div class="occupation-dropdown mm-hidden" id="administrationMethodDropdown">
+				        <div class="occupation-dropdown mm-hidden qlpk-administration-method-dropdown" id="administrationMethodDropdown">
 				        </div>
 				        <input id="administrationMethodValue" name="administration_method" type="hidden"/>
 				       </div>
@@ -456,7 +455,7 @@
 				       </label>
 				       <div class="position-relative">
 				        <input autocomplete="off" class="form-control" id="importedType" placeholder="Chọn Nội/Ngoại" type="text"/>
-				        <div class="occupation-dropdown mm-hidden" id="importedTypeDropdown">
+				        <div class="occupation-dropdown mm-hidden qlpk-imported-type-dropdown" id="importedTypeDropdown">
 				        </div>
 				        <input id="importedTypeValue" name="is_imported" type="hidden"/>
 				       </div>
@@ -526,9 +525,9 @@
 				  <div class="alert alert-danger mt-3 d-none" id="medicineFormError">
 				  </div>
 				 </div>
-				 <div class="modal-footer mm-medicine-footer" id="medicineEditActions">
+				 <div class="modal-footer mm-medicine-footer qlpk-medicine-edit-actions" id="medicineEditActions">
 				  <div class="mm-medicine-footer-actions">
-				   <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary qlpk-icon-text-button" disabled="" id="medicineSaveButton" type="submit">
+				   <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary qlpk-icon-text-button qlpk-medicine-save-button" disabled="" id="medicineSaveButton" type="submit">
 				    <span aria-hidden="true" class="qlpk-button-icon" data-medicine-action-icon="save">
 				    </span>
 				    <span>
@@ -597,7 +596,7 @@
 	</div>
 
 	<!-- Modal Nhập kho theo đơn hàng -->
-	<div class="modal fade" id="importBatchModal" tabindex="-1" aria-labelledby="importBatchModalLabel"
+	<div class="modal fade qlpk-import-batch-modal" id="importBatchModal" tabindex="-1" aria-labelledby="importBatchModalLabel"
 		aria-hidden="true">
 		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-radius-20">
@@ -615,7 +614,7 @@
 						aria-selected="false" aria-controls="importLedgerPane">Lịch sử nhập</button>
 				</div>
 				<div class="modal-body">
-					<div id="importOrderPane" class="mm-import-pane" role="tabpanel" aria-labelledby="importTabOrder">
+					<div id="importOrderPane" class="mm-import-pane qlpk-import-order-pane" role="tabpanel" aria-labelledby="importTabOrder">
 					<!-- Thông tin chung đơn hàng -->
 					<div class="mm-import-fields">
 						<div>
@@ -662,7 +661,7 @@
 							</button>
 						</div>
 						<div class="table-responsive mm-import-table-scroll">
-							<table class="table" id="batchImportTable" aria-label="Thuốc nhập kho theo lô">
+							<table class="table qlpk-batch-import-table" id="batchImportTable" aria-label="Thuốc nhập kho theo lô">
 								<thead class="mm-sticky-head">
 									<tr>
 										<th scope="col">Tên thuốc <span class="text-danger">*</span></th>
@@ -685,20 +684,20 @@
 					<div class="mm-import-support">
 						<div>
 							<label class="form-label" for="batchNote">Ghi chú đơn hàng <span class="mm-import-optional">(không bắt buộc)</span></label>
-							<textarea class="form-control" id="batchNote" rows="2"
+							<textarea class="form-control qlpk-batch-note" id="batchNote" rows="2"
 								placeholder="Thông tin bổ sung về đơn hàng"></textarea>
 						</div>
 						<div id="batchTotalByLot" class="mm-import-lots">
 							<h6 class="form-label">Chi tiết giá trị theo lô</h6>
-							<div id="batchLotBreakdown" class="mm-import-lot-list" tabindex="0" role="region" aria-label="Giá trị theo lô">Chưa có dữ liệu lô</div>
+							<div id="batchLotBreakdown" class="mm-import-lot-list qlpk-batch-lot-breakdown" tabindex="0" role="region" aria-label="Giá trị theo lô">Chưa có dữ liệu lô</div>
 						</div>
 					</div>
 					</div>
-					<div id="importLedgerPane" class="mm-import-pane" role="tabpanel" aria-labelledby="importTabLedger" hidden>
+					<div id="importLedgerPane" class="mm-import-pane qlpk-import-ledger-pane" role="tabpanel" aria-labelledby="importTabLedger" hidden>
 						<div class="mm-import-ledger-toolbar">
-							<input type="text" class="form-control form-control-sm" id="importLedgerSearch"
+							<input type="text" class="form-control form-control-sm qlpk-import-ledger-search" id="importLedgerSearch"
 								placeholder="Tìm theo tên thuốc hoặc số lô…" aria-label="Tìm trong lịch sử nhập và lô">
-							<select class="form-select form-select-sm" id="importLedgerStatus" aria-label="Lọc theo trạng thái tồn">
+							<select class="form-select form-select-sm qlpk-import-ledger-status" id="importLedgerStatus" aria-label="Lọc theo trạng thái tồn">
 								<option value="">Tất cả trạng thái</option>
 								<option value="Bình thường">Bình thường</option>
 								<option value="Sắp hết">Sắp hết</option>
@@ -736,7 +735,7 @@
 				<div class="modal-footer mm-import-footer">
 					<div class="mm-import-total">
 						<span>Tổng giá trị đơn hàng</span>
-						<strong id="batchTotalValue" aria-live="polite">0 ₫</strong>
+						<strong id="batchTotalValue" class="qlpk-batch-total-value" aria-live="polite">0 ₫</strong>
 					</div>
 					<div class="mm-import-actions">
 						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Hủy</button>
@@ -749,7 +748,7 @@
 		</div>
 	</div>
 
-	<div class="modal fade" id="receiptDispensingModal" tabindex="-1" aria-labelledby="receiptDispensingTitle" aria-hidden="true">
+	<div class="modal fade qlpk-receipt-dispensing-modal" id="receiptDispensingModal" tabindex="-1" aria-labelledby="receiptDispensingTitle" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered mm-dialog-wide">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -757,7 +756,7 @@
 					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng lịch sử kê đơn"></button>
 				</div>
 				<div class="modal-body">
-					<form id="receiptDispensingFilters" class="mm-dispensing-filters" role="search" aria-label="Tìm lịch sử kê đơn">
+					<form id="receiptDispensingFilters" class="mm-dispensing-filters qlpk-receipt-dispensing-filters" role="search" aria-label="Tìm lịch sử kê đơn">
 						<div class="mm-dispensing-search"><label for="receiptDispensingSearch">Bệnh nhân</label><input id="receiptDispensingSearch" type="search" class="form-control form-control-sm" placeholder="Tìm theo tên bệnh nhân" autocomplete="off"></div>
 						<div><label for="receiptDispensingType">Loại giao dịch</label><select id="receiptDispensingType" class="form-select form-select-sm"><option value="">Tất cả</option><option value="export">Cấp thuốc</option><option value="return">Hoàn thuốc</option><option value="price_adjustment">Điều chỉnh giá</option></select></div>
 						<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="submit" class="btn btn-sm btn-primary">Tìm kiếm</button>
@@ -770,7 +769,7 @@
 					<p class="mm-dispensing-note">Tồn sau thao tác là số đã lưu tại thời điểm đó, không phải tồn hiện tại. “Chưa ghi nhận” không có nghĩa là 0. Giao dịch chưa liên kết lượt khám không thể tìm theo tên bệnh nhân.</p>
 				</div>
 				<div class="modal-footer">
-						<span id="receiptDispensingPage" aria-live="polite"></span>
+						<span id="receiptDispensingPage" class="qlpk-receipt-dispensing-page" aria-live="polite"></span>
 						<div id="receiptDispensingPagination" hidden><button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingPrev">Trước</button> <button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingNext">Sau</button></div>
 						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal">Đóng</button>
 				</div>
@@ -779,7 +778,7 @@
 	</div>
 
 	<!-- Modal Quản lý Nhà cung cấp -->
-	<div class="modal fade" id="supplierManagementModal" tabindex="-1" aria-labelledby="supplierManagementModalLabel"
+	<div class="modal fade qlpk-supplier-management-modal" id="supplierManagementModal" tabindex="-1" aria-labelledby="supplierManagementModalLabel"
 		aria-hidden="true">
 		<div class="modal-dialog mm-dialog-wide">
 			<div class="modal-content mm-radius-20">
@@ -866,9 +865,9 @@
 								<i class="bi bi-list-ul"></i> Danh sách nhà cung cấp
 							</h6>
 							<div class="mm-supplier-filters d-flex flex-wrap gap-2">
-								<input type="text" class="form-control form-control-sm" id="supplierSearchInput"
+								<input type="text" class="form-control form-control-sm qlpk-supplier-search-input" id="supplierSearchInput"
 									placeholder="Tìm kiếm nhà cung cấp...">
-								<select class="form-select form-select-sm" id="supplierStatusFilter">
+								<select class="form-select form-select-sm qlpk-supplier-status-filter" id="supplierStatusFilter">
 									<option value="">Tất cả</option>
 									<option value="1">Đang hoạt động</option>
 									<option value="0">Ngừng hoạt động</option>
@@ -909,8 +908,8 @@
 	</div>
 
 	<!-- Flatpickr JS -->
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
-	<script src="/static/js/flatpickr-vn.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+	<script src="/static/js/flatpickr-vn.js?v={{ app_version }}"></script>
 
 	<!-- Utils and Datepicker Init -->
 	<script src="/static/js/utils.js?v={{ app_version }}"></script>

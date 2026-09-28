@@ -1,6 +1,6 @@
 	{% from 'components/_icd_autocomplete.html' import render_icd_autocomplete %}
 	<!-- Modal Thêm lịch hẹn -->
-	<div class="modal fade" id="addAppointmentModal" tabindex="-1" aria-labelledby="addAppointmentModalLabel" aria-hidden="true">
+	<div class="modal fade qlpk-add-appointment-modal" id="addAppointmentModal" tabindex="-1" aria-labelledby="addAppointmentModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable appointment-editor-dialog">
 			<div class="modal-content appointment-modal-content-rounded appointment-editor-shell">
 				<div class="modal-header appointment-editor-header">
@@ -330,7 +330,7 @@
 	</div>
 
 	<!-- Modal Chỉnh sửa lịch hẹn -->
-	<div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+	<div class="modal fade qlpk-edit-appointment-modal" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable appointment-editor-dialog">
 			<div class="modal-content appointment-modal-content-rounded appointment-modal-content-tall appointment-editor-shell">
 				<div class="modal-header appointment-editor-header">
@@ -687,7 +687,7 @@
 	</div>
 
 	<!-- Modal Đồng bộ lịch hẹn Google Calendar -->
-	<div class="modal fade" id="syncCalendarModal" tabindex="-1" aria-labelledby="syncCalendarModalLabel"
+	<div class="modal fade qlpk-sync-calendar-modal" id="syncCalendarModal" tabindex="-1" aria-labelledby="syncCalendarModalLabel"
 		aria-hidden="true">
 		<div class="modal-dialog modal-xl modal-dialog-scrollable">
 			<div class="modal-content">
@@ -706,7 +706,7 @@
 							<label class="form-label">
 								<i class="bi bi-search"></i> Tìm kiếm
 							</label>
-							<input type="text" class="form-control form-control-sm" id="syncSearchInput"
+							<input type="text" class="form-control form-control-sm qlpk-sync-search-input" id="syncSearchInput"
 								aria-label="Tìm kiếm lịch đồng bộ" placeholder="Nhập nội dung...">
 						</div>
 						<!-- Từ ngày -->

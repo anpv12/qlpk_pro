@@ -1,13 +1,13 @@
 /* welcome-intro.css - Giao diện giới thiệu phòng khám Sơn Tâm dành cho user thường */
 
 .welcome-container {
-    background-color: #FAF9F6;
+    background-color: var(--qlpk-palette-amber-97);
     border-radius: 12px;
     padding: 10px;
     margin: 10px 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.05);
     font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-    color: #374151;
+    color: var(--qlpk-color-neutral-700);
     overflow: hidden;
 }
 
@@ -21,7 +21,7 @@
 .welcome-title {
     font-size: var(--qlpk-font-size-2xl, 20px);
     font-weight: var(--qlpk-font-weight-bold, 700);
-    color: #B88E52;
+    color: var(--qlpk-palette-brown-52);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
@@ -30,7 +30,7 @@
 .welcome-intro-text {
     font-size: var(--qlpk-font-size-base, 13px);
     line-height: 1.5;
-    color: #4B5563;
+    color: var(--qlpk-color-neutral-600);
     margin-top: 5px;
     margin-bottom: 10px;
 }
@@ -57,8 +57,8 @@
 /* Hộp tiêu đề màu vàng đất bên trái */
 .welcome-task-title-box {
     width: 220px;
-    background: linear-gradient(135deg, #C29B63 0%, #B88E52 100%);
-    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--qlpk-palette-brown-57) 0%, var(--qlpk-palette-brown-52) 100%);
+    color: var(--qlpk-color-white);
     border-radius: 8px;
     padding: 10px;
     display: flex;
@@ -68,12 +68,12 @@
     text-align: center;
     gap: 6px;
     flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(184, 142, 82, 0.15);
+    box-shadow: 0 2px 4px var(--qlpk-alpha-brown-52-15);
 }
 
 .welcome-task-icon {
     font-size: var(--qlpk-font-size-3xl, 24px);
-    color: #FFFFFF;
+    color: var(--qlpk-color-white);
     line-height: 1;
 }
 
@@ -87,14 +87,14 @@
 /* Hộp danh sách nội dung bên phải */
 .welcome-task-content-box {
     flex: 1;
-    background-color: #FFFFFF;
+    background-color: var(--qlpk-color-white);
     border-radius: 8px;
     padding: 10px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--qlpk-palette-gray-91);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 2px rgba(var(--qlpk-color-black-rgb), 0.02);
 }
 
 .welcome-task-points {
@@ -109,7 +109,7 @@
 .welcome-task-points li {
     font-size: var(--qlpk-font-size-base, 13px);
     line-height: 1.4;
-    color: #4B5563;
+    color: var(--qlpk-color-neutral-600);
     position: relative;
     padding-left: 14px;
 }
@@ -122,7 +122,7 @@
     top: 6px;
     width: 5px;
     height: 5px;
-    background-color: #B88E52;
+    background-color: var(--qlpk-palette-brown-52);
     border-radius: 50%;
 }
 
@@ -132,7 +132,7 @@
         flex-direction: column;
         gap: 6px;
     }
-    
+
     .welcome-task-title-box {
         width: 100%;
         flex-direction: row;
@@ -140,16 +140,16 @@
         justify-content: flex-start;
         gap: 10px;
     }
-    
+
     .welcome-task-icon {
         font-size: var(--qlpk-font-size-2xl, 20px);
     }
-    
+
     .welcome-task-title-text {
         text-align: left;
         font-size: var(--qlpk-font-size-base, 13px);
     }
-    
+
     .welcome-task-content-box {
         padding: 8px 10px;
     }

@@ -10,7 +10,7 @@ body {
 	overflow-x: hidden;
 }
 
-#sidebar-container.col-md-2 {
+.qlpk-shell-sidebar.col-md-2 {
 	flex: 0 0 16.66667% !important;
 	max-width: 16.66667% !important;
 }
@@ -21,11 +21,11 @@ body {
 }
 
 .card-wrap {
-	background: #fff;
+	background: var(--qlpk-color-white);
 	border-radius: 12px;
 	border: 1px solid var(--qlpk-color-border);
 	padding: 16px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+	box-shadow: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.04);
 }
 
 .toolbar {

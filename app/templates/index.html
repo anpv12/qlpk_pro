@@ -8,19 +8,18 @@
 	<title>HỆ THỐNG QUẢN LÝ PHÒNG KHÁM</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/dashboard.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/welcome-intro.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" integrity="sha384-pPi0zxBAoDu6+JXW/C68UZLvBUUtU+7zonhif43rqj7pxsGyqyqzcian2Rj37Rss" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<script src="/static/js/dashboard.js?v={{ app_version }}"></script>
 </head>
@@ -28,7 +27,7 @@
 <body class="dashboard-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 
 			<main class="col-md-10 main-content">
 				<!-- Page Title -->
@@ -80,7 +79,7 @@
 									<input type="text" id="icdFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
 									<span class="dashboard-date-label">đến</span>
 									<input type="text" id="icdToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportICD" class="dashboard-export-btn" onclick="window.dashboardManager.exportICDExcel()"
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportICD" class="dashboard-export-btn" data-qlpk-call="dashboardManager.exportICDExcel"
 										title="Xuất Excel ICD">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
@@ -114,7 +113,7 @@
 									<input type="text" id="referralSourceFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
 									<span class="dashboard-date-label">đến</span>
 									<input type="text" id="referralSourceToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportReferralSource" class="dashboard-export-btn" onclick="window.dashboardManager.exportReferralSourceExcel()"
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportReferralSource" class="dashboard-export-btn" data-qlpk-call="dashboardManager.exportReferralSourceExcel"
 										title="Xuất Excel nguồn giới thiệu">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>

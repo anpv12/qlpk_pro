@@ -7,14 +7,13 @@
 	<title>Quản lý Tài liệu</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/document-management.css?v={{ app_version }}">
@@ -23,7 +22,7 @@
 <body class="qlpk-clinic-page document-management-page">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content">
 				<header class="page-header qlpk-clinic-header">
 					<h1 class="qlpk-clinic-title "><i class="bi bi-folder-symlink"></i> Tài liệu phòng khám</h1>
@@ -52,7 +51,7 @@
 							<div class="d-flex gap-2">
 								<div class="input-group doc-search-group">
 									<input type="text" class="form-control doc-search-input" id="searchDocument" placeholder="Tìm file...">
-									<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-outline-secondary doc-search-button"><i class="bi bi-search"></i></button>
+									<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-outline-secondary doc-search-button" aria-label="Tìm kiếm tài liệu" title="Tìm kiếm tài liệu"><i class="bi bi-search" aria-hidden="true"></i></button>
 								</div>
 							</div>
 						</div>
@@ -103,7 +102,7 @@
 		<div class="config-modal doc-folder-modal">
 			<div class="config-modal-header">
 				<h3 id="folderModalTitle"><i class="bi bi-folder-plus me-2"></i>Thêm Thư Mục</h3>
-				<i class="bi bi-x-lg doc-modal-close" onclick="$('#folderModal').removeClass('doc-modal-open')"></i>
+				<i class="bi bi-x-lg doc-modal-close" data-qlpk-call="closeDocModal" data-qlpk-args='["#folderModal"]'></i>
 			</div>
 			<div class="config-modal-body">
 				<form id="folderForm">
@@ -116,7 +115,7 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" onclick="$('#folderModal').removeClass('doc-modal-open')">Hủy</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-qlpk-call="closeDocModal" data-qlpk-args='["#folderModal"]'>Hủy</button>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveFolder">Lưu thư mục</button>
 			</div>
 		</div>
@@ -127,7 +126,7 @@
 		<div class="config-modal doc-link-modal">
 			<div class="config-modal-header">
 				<h3 id="linkModalTitle"><i class="bi bi-link-45deg me-2"></i>Thêm Liên Kết (Link)</h3>
-				<i class="bi bi-x-lg doc-modal-close" onclick="$('#linkModal').removeClass('doc-modal-open')"></i>
+				<i class="bi bi-x-lg doc-modal-close" data-qlpk-call="closeDocModal" data-qlpk-args='["#linkModal"]'></i>
 			</div>
 			<div class="config-modal-body">
 				<form id="linkForm">
@@ -143,7 +142,7 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" onclick="$('#linkModal').removeClass('doc-modal-open')">Hủy</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-qlpk-call="closeDocModal" data-qlpk-args='["#linkModal"]'>Hủy</button>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveLink">Lưu liên kết</button>
 			</div>
 		</div>

@@ -30,7 +30,7 @@
 }
 
 .medicine-management-page .medicine-stock-empty {
-  color: #dc3545;
+  color: var(--qlpk-palette-red-54);
 }
 
 .medicine-management-page .pagination {
@@ -38,7 +38,7 @@
 }
 
 .medicine-management-page .footer-bar {
-  background: #fff;
+  background: var(--qlpk-color-white);
   border-top: 1px solid var(--qlpk-color-border);
   color: var(--qlpk-color-text-muted);
   font-size: var(--qlpk-font-size-sm, 12px);
@@ -87,8 +87,8 @@
 .medicine-management-page .modal[data-inventory-modal-layer="2"] { z-index: 1095; }
 .medicine-management-page .modal-backdrop[data-inventory-modal-layer="2"] { z-index: 1090; }
 
-.medicine-management-page #medicineModal,
-.medicine-management-page #medicinePricePanel {
+.medicine-management-page .modal.qlpk-medicine-modal,
+.medicine-management-page .modal.qlpk-medicine-price-panel {
   --clinic-control-font-size: var(--qlpk-font-size-md);
   --qlpk-control-font-size: var(--clinic-control-font-size);
   --qlpk-control-font-size-sm: var(--clinic-control-font-size);
@@ -99,7 +99,7 @@
   --mm-medicine-green: color-mix(in srgb, var(--qlpk-feedback-success) 85%, var(--qlpk-brown-900));
 }
 
-.medicine-management-page #medicineModal .modal-dialog {
+.medicine-management-page .modal.qlpk-medicine-modal .modal-dialog {
   width: calc(100% - 1rem);
   max-width: 88rem;
   min-height: calc(100dvh - 1rem);
@@ -116,7 +116,7 @@
 
 .medicine-management-page .modal-header {
   flex-shrink: 0;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--qlpk-palette-gray-89);
 }
 
 .medicine-management-page .modal-body {
@@ -129,7 +129,7 @@
 
 .medicine-management-page .modal-footer {
   flex-shrink: 0;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--qlpk-palette-gray-89);
 }
 
 .medicine-management-page .mm-reference-button {
@@ -141,30 +141,30 @@
   --mm-badge-active-border-color: var(--qlpk-feedback-success);
 }
 
-.medicine-management-page #medicineReferenceReviewModal .modal-body {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .modal-body {
   min-height: 0;
   overflow-y: auto;
   background: var(--qlpk-color-surface);
 }
 
-.medicine-management-page #medicineReferenceReviewModal .modal-header {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .modal-header {
   padding: .5rem 1rem;
   background: var(--qlpk-brown-100);
   color: var(--qlpk-brown-800);
 }
-.medicine-management-page #medicineReferenceReviewModal .modal-footer {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .modal-footer {
   padding: .375rem 1rem;
 }
-.medicine-management-page #medicineReferenceReviewModal .modal-dialog {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .modal-dialog {
   width: calc(100% - 2rem);
   max-width: 76rem;
   max-height: calc(100dvh - 1rem);
   justify-content: center;
 }
-.medicine-management-page #medicineReferenceReviewModal .modal-content {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .modal-content {
   max-height: calc(100dvh - 1rem);
 }
-.medicine-management-page #medicineReviewStatus {
+.medicine-management-page .qlpk-medicine-review-status {
   margin: .625rem 0;
   font-size: var(--qlpk-font-size-sm);
   color: var(--qlpk-color-text-muted);
@@ -178,7 +178,7 @@
 .medicine-management-page .mm-review-start--single {
   grid-template-columns: minmax(0, 1fr);
 }
-.medicine-management-page #medicineReviewCompareSection {
+.medicine-management-page .qlpk-medicine-review-compare-section {
   margin-top: .75rem;
 }
 .medicine-management-page .mm-review-target,
@@ -253,7 +253,7 @@
   background: var(--qlpk-color-surface-subtle);
   box-shadow: inset .1875rem 0 var(--qlpk-brown-400);
 }
-.medicine-management-page #medicineReferenceReviewModal .mm-review-missing {
+.medicine-management-page .modal.qlpk-medicine-reference-review-modal .mm-review-missing {
   color: var(--qlpk-color-text-muted);
   font-weight: var(--qlpk-font-weight-regular);
 }
@@ -275,22 +275,22 @@
 }
 
 .medicine-management-page .modal-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--qlpk-palette-gray-95);
   border-radius: 4px;
 }
 
 .medicine-management-page .modal-body::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--qlpk-palette-gray-53);
   border-radius: 4px;
 }
 
 .medicine-management-page .modal-body::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--qlpk-palette-gray-33-a);
 }
 
 .medicine-management-page .occupation-dropdown {
   --option-dropdown-z-index: 1060;
-  --option-dropdown-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --option-dropdown-shadow: 0 4px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
   margin-top: 0;
 }
 
@@ -312,7 +312,7 @@
   font-size: var(--qlpk-font-size-xl, 18px);
 }
 .medicine-management-page .mm-card-title-danger {
-  color: #dc3545;
+  color: var(--qlpk-palette-red-54);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   font-size: var(--qlpk-font-size-xl, 18px);
 }
@@ -324,7 +324,7 @@
 }
 .medicine-management-page .mm-packaging-info-display {
   background-color: var(--qlpk-color-page-bg);
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--qlpk-palette-gray-89);
   min-height: 31px;
   display: flex;
   flex-wrap: wrap;
@@ -360,13 +360,13 @@
   font-weight: var(--qlpk-font-weight-bold);
   letter-spacing: -.025em;
 }
-.medicine-management-page #medicineForm {
+.medicine-management-page .qlpk-medicine-form {
   display: flex;
   flex-direction: column;
   max-height: calc(100dvh - 1rem);
   min-height: 0;
 }
-.medicine-management-page #medicineEditFields {
+.medicine-management-page .qlpk-medicine-edit-fields {
   border: 0;
   padding: 0;
   min-inline-size: 0;
@@ -385,7 +385,7 @@
   box-shadow: 0 .125rem .75rem color-mix(in srgb, var(--qlpk-brown-900) 4%, transparent);
   overflow-wrap: anywhere;
 }
-.medicine-management-page :is(#medicineEditFields, #medicineEditActions)[hidden] {
+.medicine-management-page :is(.qlpk-medicine-edit-fields, .qlpk-medicine-edit-actions)[hidden] {
   display: none;
 }
 .medicine-management-page .mm-dav-name {
@@ -406,20 +406,20 @@
   gap: .75rem;
   align-items: flex-start;
 }
-.medicine-management-page #davSelection {
+.medicine-management-page .qlpk-dav-selection {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: .125rem .875rem;
   flex: 1;
   min-width: 0;
 }
-.medicine-management-page #davSelection .mm-dav-name {
+.medicine-management-page .qlpk-dav-selection .mm-dav-name {
   grid-column: 1 / -1;
 }
-.medicine-management-page #davSelection > div:empty { display: none; }
+.medicine-management-page .qlpk-dav-selection > div:empty { display: none; }
 
 /* Compact content fits desktop; the body retains overflow access on small viewports. */
-.medicine-management-page #medicineModal .mm-medicine-header {
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-header {
   display: flex;
   align-items: center;
   gap: .75rem;
@@ -438,17 +438,17 @@
   font-size: var(--qlpk-font-size-3xl);
 }
 .medicine-management-page .mm-medicine-heading { min-inline-size: 0; }
-.medicine-management-page #medicineFlowGuide {
+.medicine-management-page .qlpk-medicine-flow-guide {
   margin: .125rem 0 0;
   color: var(--qlpk-color-text-muted);
   font-size: var(--qlpk-font-size-md);
 }
-.medicine-management-page #medicineModal .btn-close {
+.medicine-management-page .modal.qlpk-medicine-modal .btn-close {
   align-self: flex-start;
   flex-shrink: 0;
   margin: 0 0 0 auto;
 }
-.medicine-management-page #medicineModal .mm-medicine-body {
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-body {
   min-block-size: 0;
   padding: 0 1rem .625rem;
   background: var(--qlpk-color-white);
@@ -526,15 +526,15 @@
 .medicine-management-page .mm-field { min-inline-size: 0; }
 .medicine-management-page .mm-field--half,
 .medicine-management-page .mm-field--full { grid-column: 1 / -1; }
-.medicine-management-page #medicineModal .form-label {
+.medicine-management-page .modal.qlpk-medicine-modal .form-label {
   display: block;
   margin-block-end: .1875rem;
   line-height: var(--qlpk-line-height-tight);
   color: var(--qlpk-brown-900);
   overflow-wrap: anywhere;
 }
-.medicine-management-page #medicineModal .mm-prescription-type-label { color: var(--qlpk-feedback-critical); }
-.medicine-management-page #medicineEditFields :is(.form-control, .form-select) {
+.medicine-management-page .modal.qlpk-medicine-modal .mm-prescription-type-label { color: var(--qlpk-feedback-critical); }
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select) {
   min-block-size: 2.125rem;
   padding: .3125rem .625rem;
   min-inline-size: 0;
@@ -542,35 +542,35 @@
   font-weight: var(--qlpk-font-weight-regular);
   line-height: var(--qlpk-line-height-normal);
 }
-.medicine-management-page #medicineEditFields .form-select { padding-inline-end: 2rem; }
-.medicine-management-page #medicineEditFields :is(input, select, textarea):not(:disabled):not([readonly]) {
+.medicine-management-page .qlpk-medicine-edit-fields .form-select { padding-inline-end: 2rem; }
+.medicine-management-page .qlpk-medicine-edit-fields :is(input, select, textarea):not(:disabled):not([readonly]) {
   background-color: var(--qlpk-color-white);
   border-color: var(--qlpk-color-neutral-400);
   color: var(--qlpk-color-neutral-700);
 }
-.medicine-management-page #medicineEditFields :is(.form-control, .form-select):is(:disabled, [readonly]),
-.medicine-management-page #medicineEditFields .mm-packaging-info-display {
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select):is(:disabled, [readonly]),
+.medicine-management-page .qlpk-medicine-edit-fields .mm-packaging-info-display {
   border-style: solid;
 }
-.medicine-management-page #medicineEditFields :is(.form-control, .form-select):is(:disabled, [readonly]):not([data-qlpk-button], [data-qlpk-button] *),
-.medicine-management-page #medicineEditFields .mm-packaging-info-display {
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select):is(:disabled, [readonly]):not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .qlpk-medicine-edit-fields .mm-packaging-info-display {
   background-color: color-mix(in srgb, var(--qlpk-color-neutral-400) 20%, var(--qlpk-color-white));
   border-color: color-mix(in srgb, var(--qlpk-color-neutral-400) 45%, var(--qlpk-color-white));
   color: var(--qlpk-color-neutral-600);
   opacity: 1;
 }
-.medicine-management-page #medicineEditFields :is(input, select, textarea):not(:disabled):not([readonly]):focus {
+.medicine-management-page .qlpk-medicine-edit-fields :is(input, select, textarea):not(:disabled):not([readonly]):focus {
   border-color: var(--qlpk-color-neutral-500);
   box-shadow: 0 0 0 .1875rem color-mix(in srgb, var(--qlpk-color-neutral-400) 18%, transparent);
 }
-.medicine-management-page #medicineEditFields input::placeholder {
+.medicine-management-page .qlpk-medicine-edit-fields input::placeholder {
   color: var(--qlpk-color-text-muted);
   font-style: italic;
   font-weight: var(--qlpk-font-weight-regular);
   opacity: 1;
 }
 
-.medicine-management-page #medicineEditFields .mm-field-action {
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action {
   display: flex;
   align-items: center;
   gap: .375rem;
@@ -578,15 +578,15 @@
   white-space: nowrap;
 }
 
-.medicine-management-page #medicineEditFields .mm-field-action:not(:disabled) {
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled) {
   cursor: pointer;
 }
-.medicine-management-page #medicineEditFields .mm-field-action:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *) {
   background: var(--qlpk-color-white);
   border-color: var(--qlpk-brown-400);
   color: var(--qlpk-brown-700);
 }
-.medicine-management-page #medicineEditFields .mm-field-action:not(:disabled):is(:hover, :focus-visible):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled):is(:hover, :focus-visible):not([data-qlpk-button], [data-qlpk-button] *) {
   background: var(--qlpk-brown-50);
   border-color: var(--qlpk-color-primary);
 }
@@ -594,15 +594,15 @@
 .medicine-management-page .mm-price-control { display: flex; flex-wrap: wrap; gap: .375rem; }
 .medicine-management-page .mm-price-control input { flex: 1 1 5rem; width: 0; }
 .medicine-management-page .mm-price-control button { flex: 0 0 auto; }
-.medicine-management-page #medicinePricePanel { --clinic-modal-title-size: var(--qlpk-font-size-xl); }
-.medicine-management-page #medicinePricePanel .modal-dialog {
+.medicine-management-page .modal.qlpk-medicine-price-panel { --clinic-modal-title-size: var(--qlpk-font-size-xl); }
+.medicine-management-page .modal.qlpk-medicine-price-panel .modal-dialog {
   width: calc(100% - 1rem);
   max-width: 42rem;
   min-height: calc(100dvh - 1rem);
   height: auto;
   justify-content: center;
 }
-.medicine-management-page #medicinePricePanel .modal-body { min-height: 0; }
+.medicine-management-page .modal.qlpk-medicine-price-panel .modal-body { min-height: 0; }
 .medicine-management-page .mm-price-heading { min-width: 0; }
 .medicine-management-page .mm-price-medicine {
   margin-top: .375rem;
@@ -742,7 +742,7 @@
   white-space: nowrap;
 }
 .medicine-management-page .mm-price-history-more { justify-self: start; }
-.medicine-management-page #medicineModal .mm-medicine-footer {
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
@@ -761,15 +761,15 @@
   padding: .375rem clamp(1rem, 2.5vw, 2.75rem);
   white-space: nowrap;
 }
-.medicine-management-page #medicineSaveButton {
+.medicine-management-page .qlpk-medicine-save-button {
   gap: .625rem;
 }
-.medicine-management-page #medicineSaveButton:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .qlpk-medicine-save-button:not([data-qlpk-button], [data-qlpk-button] *) {
   border-color: var(--qlpk-color-primary);
   color: var(--qlpk-color-white);
   box-shadow: 0 .1875rem .5rem color-mix(in srgb, var(--qlpk-brown-700) 12%, transparent);
 }
-.medicine-management-page #medicineSaveButton:not(:disabled):hover:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .qlpk-medicine-save-button:not(:disabled):hover:not([data-qlpk-button], [data-qlpk-button] *) {
   border-color: var(--qlpk-color-primary);
 }
 .medicine-management-page .mm-medicine-motto,
@@ -807,26 +807,26 @@
   .medicine-management-page .mm-package-quantities { grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)) auto; }
 }
 @media (min-width: 64rem) {
-  .medicine-management-page #medicineModal .modal-dialog { width: 96%; }
-  .medicine-management-page #medicineEditFields {
+  .medicine-management-page .modal.qlpk-medicine-modal .modal-dialog { width: 96%; }
+  .medicine-management-page .qlpk-medicine-edit-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas: "basic pricing" "packaging warnings";
   }
-  .medicine-management-page #davSelection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .medicine-management-page .qlpk-dav-selection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 72rem) {
   .medicine-management-page .mm-medicine-motto,
   .medicine-management-page .mm-medicine-footer-motto { display: flex; }
 }
 @media (max-width: 36rem) {
-  .medicine-management-page #medicineModal { --clinic-modal-title-size: var(--qlpk-font-size-3xl); }
-  .medicine-management-page #medicineModal .mm-medicine-header { gap: .75rem; padding-inline: .75rem; }
+  .medicine-management-page .modal.qlpk-medicine-modal { --clinic-modal-title-size: var(--qlpk-font-size-3xl); }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-header { gap: .75rem; padding-inline: .75rem; }
   .medicine-management-page .mm-medicine-hero-icon { flex-basis: 2.75rem; block-size: 2.75rem; border-radius: .875rem; font-size: var(--qlpk-font-size-3xl); }
-  .medicine-management-page #medicineFlowGuide { font-size: var(--qlpk-font-size-md); }
-  .medicine-management-page #medicineModal .mm-medicine-body { padding-inline: .75rem; }
+  .medicine-management-page .qlpk-medicine-flow-guide { font-size: var(--qlpk-font-size-md); }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-body { padding-inline: .75rem; }
   .medicine-management-page .mm-medicine-section-header { gap: .75rem; padding-inline: .75rem; }
   .medicine-management-page .mm-medicine-section-body { padding: .75rem; }
-  .medicine-management-page #medicineModal .mm-medicine-footer { display: flex; justify-content: center; padding-inline: .75rem; }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-footer { display: flex; justify-content: center; padding-inline: .75rem; }
   .medicine-management-page .mm-dav-selected:not([hidden]) { flex-wrap: wrap; }
 }
 .medicine-management-page .mm-btn-pill-lg {
@@ -859,7 +859,7 @@
   width: calc(100% - 2rem);
   max-height: 95vh;
 }
-.medicine-management-page #batchImportTable {
+.medicine-management-page .qlpk-batch-import-table {
   min-width: 1100px;
 }
 .medicine-management-page .mm-modal-content-95 {
@@ -897,7 +897,7 @@
 }
 .medicine-management-page .mm-stock-summary-label {
   display: block;
-  color: #666;
+  color: var(--qlpk-palette-gray-40-b);
   font-size: var(--qlpk-font-size-md, 14px);
   margin-bottom: 0.25rem;
 }
@@ -970,15 +970,15 @@
   border-radius: var(--clinic-control-radius, 20px);
   font-size: var(--clinic-control-font-size, var(--qlpk-font-size-lg, 16px));
 }
-.medicine-management-page #supplierManagementModal .modal-dialog {
+.medicine-management-page .modal.qlpk-supplier-management-modal .modal-dialog {
   height: calc(100dvh - 1rem);
   max-height: calc(100dvh - 1rem);
 }
-.medicine-management-page #supplierManagementModal .modal-content {
+.medicine-management-page .modal.qlpk-supplier-management-modal .modal-content {
   height: 100%;
   max-height: 100%;
 }
-.medicine-management-page #supplierManagementModal .modal-body {
+.medicine-management-page .modal.qlpk-supplier-management-modal .modal-body {
   min-height: 0;
 }
 .medicine-management-page .mm-supplier-list {
@@ -989,12 +989,12 @@
   flex: 0 1 26rem;
   min-width: 0;
 }
-.medicine-management-page #supplierSearchInput {
+.medicine-management-page .qlpk-supplier-search-input {
   flex: 1 1 12rem;
   min-width: 0;
   width: auto;
 }
-.medicine-management-page #supplierStatusFilter {
+.medicine-management-page .qlpk-supplier-status-filter {
   flex: 1 1 9rem;
   min-width: 0;
   width: auto;
@@ -1015,12 +1015,12 @@
   white-space: nowrap;
 }
 @media (min-width: 48rem) and (min-height: 45rem) {
-  .medicine-management-page #supplierManagementModal .modal-body {
+  .medicine-management-page .modal.qlpk-supplier-management-modal .modal-body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
-  .medicine-management-page #supplierManagementModal .modal-body > .card,
+  .medicine-management-page .modal.qlpk-supplier-management-modal .modal-body > .card,
   .medicine-management-page .mm-supplier-toolbar {
     flex-shrink: 0;
   }
@@ -1033,7 +1033,7 @@
     flex: 1 1 0;
   }
 }
-.medicine-management-page #importBatchModal {
+.medicine-management-page .modal.qlpk-import-batch-modal {
   --qlpk-color-page-bg: var(--qlpk-color-surface-warm);
   --qlpk-color-surface-muted: var(--qlpk-brown-100);
   --mm-import-control-text: var(--qlpk-brown-700);
@@ -1050,26 +1050,26 @@
   --bs-secondary-color: var(--qlpk-color-text-muted);
   color: var(--qlpk-color-text);
 }
-.medicine-management-page #importBatchModal :is(.form-control, .form-select):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.form-control, .form-select):not([data-qlpk-button], [data-qlpk-button] *) {
   background-color: var(--qlpk-color-surface);
   border-color: var(--qlpk-color-border);
   color: var(--qlpk-color-text);
 }
-.medicine-management-page #importBatchModal :is(.form-control, .form-select):is([readonly], :disabled):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.form-control, .form-select):is([readonly], :disabled):not([data-qlpk-button], [data-qlpk-button] *) {
   background-color: var(--qlpk-color-surface-muted);
 }
-.medicine-management-page #importBatchModal :is(.form-control, .form-select):focus:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.form-control, .form-select):focus:not([data-qlpk-button], [data-qlpk-button] *) {
   border-color: var(--qlpk-color-primary);
   box-shadow: var(--mm-import-focus-shadow);
 }
-.medicine-management-page #importBatchModal :is(.form-control, .form-select).is-invalid:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.form-control, .form-select).is-invalid:not([data-qlpk-button], [data-qlpk-button] *) {
   border-color: var(--mm-import-danger);
 }
-.medicine-management-page #importBatchModal .btn:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .btn:not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-focus-box-shadow: var(--mm-import-focus-shadow);
   box-shadow: none;
 }
-.medicine-management-page #importBatchModal :is(.btn-outline-primary, .btn-outline-secondary):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.btn-outline-primary, .btn-outline-secondary):not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-color: var(--mm-import-control-text);
   --bs-btn-bg: var(--qlpk-color-surface);
   --bs-btn-border-color: var(--qlpk-color-border);
@@ -1083,12 +1083,12 @@
   --bs-btn-disabled-bg: var(--qlpk-color-surface);
   --bs-btn-disabled-border-color: var(--qlpk-color-border);
 }
-.medicine-management-page #importBatchModal :is(.btn, .mm-import-tab, .btn-close):focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.btn, .mm-import-tab, .btn-close):focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
   outline: .125rem solid var(--qlpk-color-primary);
   outline-offset: .125rem;
   box-shadow: var(--mm-import-focus-shadow);
 }
-.medicine-management-page #importBatchModal .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
   transition-property: border-color, box-shadow;
   --bs-btn-hover-color: var(--qlpk-color-white);
   --bs-btn-hover-bg: var(--qlpk-color-primary);
@@ -1097,29 +1097,35 @@
   --bs-btn-active-bg: var(--qlpk-color-primary);
   --bs-btn-active-border-color: var(--qlpk-color-primary);
 }
-.medicine-management-page #importBatchModal .btn-outline-primary:not(:disabled):not(.disabled):is(:hover, :focus-visible, :active, .active):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-primary:not(:disabled):not(.disabled):is(:hover, :focus-visible, :active, .active):not([data-qlpk-button], [data-qlpk-button] *) {
   color: var(--qlpk-color-white);
   background: var(--qlpk-workflow-context-header-bg);
   border-color: var(--qlpk-color-primary);
 }
-.medicine-management-page #importBatchModal .mm-receipt-history-button:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-receipt-history-button:not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-color: var(--qlpk-color-primary);
 }
-.medicine-management-page #importBatchModal .mm-missing-price-badge,
-.medicine-management-page #importBatchModal .mm-missing-price-badge:is(:hover, :focus-visible, :active) {
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge,
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge:is(:hover, :focus-visible, :active) {
+  --qlpk-action-color: var(--qlpk-button-danger-bg);
+  --qlpk-action-hover: var(--qlpk-button-danger-hover);
+  --qlpk-action-active: var(--qlpk-button-danger-active);
+  --qlpk-action-text: var(--qlpk-button-danger-text);
+  font-size: var(--qlpk-font-size-md);
+  line-height: var(--qlpk-control-line-height);
   border: 0;
   cursor: pointer;
 }
-.medicine-management-page #importBatchModal .mm-missing-price-badge:not([data-qlpk-button], [data-qlpk-button] *),
-.medicine-management-page #importBatchModal .mm-missing-price-badge:is(:hover, :focus-visible, :active):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge:is(:hover, :focus-visible, :active):not([data-qlpk-button], [data-qlpk-button] *) {
   color: var(--qlpk-color-white);
   background: var(--mm-import-danger);
 }
-.medicine-management-page #importBatchModal .mm-missing-price-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
   outline: 2px solid var(--mm-import-danger);
   outline-offset: 2px;
 }
-.medicine-management-page #importBatchModal .btn-outline-danger:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-danger:not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-color: var(--mm-import-danger);
   --bs-btn-border-color: var(--mm-import-danger);
   --bs-btn-hover-color: var(--qlpk-color-surface);
@@ -1129,11 +1135,11 @@
   --bs-btn-active-bg: var(--mm-import-danger);
   --bs-btn-active-border-color: var(--mm-import-danger);
 }
-.medicine-management-page #importBatchModal .batch-price-diff {
+.medicine-management-page .modal.qlpk-import-batch-modal .batch-price-diff {
   --bs-danger-rgb: var(--qlpk-feedback-neutral-rgb);
   --bs-success-rgb: var(--qlpk-feedback-neutral-rgb);
 }
-.medicine-management-page #importBatchModal .table {
+.medicine-management-page .modal.qlpk-import-batch-modal .table {
   --bs-table-color: var(--qlpk-color-text);
   --bs-table-bg: var(--qlpk-color-surface);
   --bs-table-border-color: var(--qlpk-color-border);
@@ -1181,13 +1187,13 @@
 .medicine-management-page .mm-missing-price-form .d-flex {
   flex-wrap: wrap;
 }
-.medicine-management-page #importBatchModal .modal-dialog {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-dialog {
   width: calc(100% - 2rem);
   max-width: 100rem;
   height: calc(100dvh - 1rem);
   max-height: calc(100dvh - 1rem);
 }
-.medicine-management-page #importBatchModal .modal-content {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-content {
   height: 100%;
   min-height: 0;
   max-height: 100%;
@@ -1196,19 +1202,19 @@
   border-radius: .875rem;
   box-shadow: none;
 }
-.medicine-management-page #importBatchModal .modal-header {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-header {
   padding: .5rem 1rem;
   border-bottom: 1px solid var(--qlpk-color-primary);
   background: var(--mm-import-header-bg);
 }
-.medicine-management-page #importBatchModal .modal-header .btn-close {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-header .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%);
   opacity: .85;
 }
-.medicine-management-page #importBatchModal .modal-header .btn-close:focus-visible {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-header .btn-close:focus-visible {
   outline-color: var(--qlpk-color-black);
 }
-.medicine-management-page #importBatchModal .modal-title {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-title {
   font-size: var(--qlpk-font-size-2xl);
   font-weight: var(--qlpk-font-weight-bold);
   color: var(--mm-import-header-text);
@@ -1218,7 +1224,7 @@
   font-size: var(--qlpk-font-size-md);
   color: var(--mm-import-header-muted);
 }
-.medicine-management-page #importBatchModal .modal-body {
+.medicine-management-page .modal.qlpk-import-batch-modal .modal-body {
   min-height: 0;
   padding: 0;
   display: flex;
@@ -1262,7 +1268,7 @@
 .medicine-management-page .mm-import-pane[hidden] {
   display: none;
 }
-.medicine-management-page #importOrderPane > :not(.mm-import-list) {
+.medicine-management-page .qlpk-import-order-pane > :not(.mm-import-list) {
   flex-shrink: 0;
 }
 .medicine-management-page .mm-import-list {
@@ -1273,14 +1279,14 @@
 .medicine-management-page .mm-import-table-scroll {
   flex: 1 1 auto;
 }
-.medicine-management-page #batchNote {
+.medicine-management-page .qlpk-batch-note {
   resize: none;
 }
-.medicine-management-page #importLedgerPane .mm-import-ledger-toolbar,
-.medicine-management-page #importLedgerPane .mm-import-ledger-pager {
+.medicine-management-page .qlpk-import-ledger-pane .mm-import-ledger-toolbar,
+.medicine-management-page .qlpk-import-ledger-pane .mm-import-ledger-pager {
   flex-shrink: 0;
 }
-.medicine-management-page #importBatchModal .form-label,
+.medicine-management-page .modal.qlpk-import-batch-modal .form-label,
 .medicine-management-page .mm-import-lots h6 {
   margin-bottom: .375rem;
   font-size: var(--qlpk-font-size-md);
@@ -1322,7 +1328,7 @@
   font-weight: var(--qlpk-font-weight-regular);
   color: var(--qlpk-color-text-muted);
 }
-.medicine-management-page .mm-import-support :is(#batchNote, #batchLotBreakdown) {
+.medicine-management-page .mm-import-support :is(.qlpk-batch-note, .qlpk-batch-lot-breakdown) {
   box-sizing: border-box;
   flex: 0 0 auto;
   height: 3.5rem;
@@ -1361,51 +1367,51 @@
   min-height: 0;
   overflow: auto;
 }
-.medicine-management-page #batchImportTable {
+.medicine-management-page .qlpk-batch-import-table {
   table-layout: fixed;
   margin-bottom: 0;
 }
-.medicine-management-page #batchImportTable :is(th, td) {
+.medicine-management-page .qlpk-batch-import-table :is(th, td) {
   padding: .625rem .5rem;
   vertical-align: middle;
   border-color: var(--qlpk-color-border);
   font-size: var(--qlpk-font-size-md);
 }
-.medicine-management-page #batchImportTable thead th {
+.medicine-management-page .qlpk-batch-import-table thead th {
   text-align: center;
   background: var(--mm-import-table-header);
   color: var(--qlpk-brown-700);
   box-shadow: none;
   white-space: nowrap;
 }
-.medicine-management-page #batchImportTable th:nth-child(1) { width: 26%; }
-.medicine-management-page #batchImportTable th:nth-child(2) { width: 12%; }
-.medicine-management-page #batchImportTable th:nth-child(3) { width: 11%; }
-.medicine-management-page #batchImportTable th:nth-child(4) { width: 10%; }
-.medicine-management-page #batchImportTable th:nth-child(5) { width: 12%; }
-.medicine-management-page #batchImportTable th:nth-child(6) { width: 13%; }
-.medicine-management-page #batchImportTable th:nth-child(7) { width: 10%; }
-.medicine-management-page #batchImportTable th:nth-child(8) { width: 6%; }
-.medicine-management-page #batchImportTable td:nth-child(7),
-.medicine-management-page #batchImportTable .batch-price,
-.medicine-management-page #batchImportTable .batch-quantity {
+.medicine-management-page .qlpk-batch-import-table th:nth-child(1) { width: 26%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(2) { width: 12%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(3) { width: 11%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(4) { width: 10%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(5) { width: 12%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(6) { width: 13%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(7) { width: 10%; }
+.medicine-management-page .qlpk-batch-import-table th:nth-child(8) { width: 6%; }
+.medicine-management-page .qlpk-batch-import-table td:nth-child(7),
+.medicine-management-page .qlpk-batch-import-table .batch-price,
+.medicine-management-page .qlpk-batch-import-table .batch-quantity {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.medicine-management-page #batchImportTable :is(th, td):last-child {
+.medicine-management-page .qlpk-batch-import-table :is(th, td):last-child {
   text-align: center;
 }
-.medicine-management-page #batchImportTable .form-control {
+.medicine-management-page .qlpk-batch-import-table .form-control {
   min-height: 2.5rem;
   font-size: var(--qlpk-font-size-md);
   border-radius: .5rem;
 }
-.medicine-management-page #batchImportTable input[type="number"] {
+.medicine-management-page .qlpk-batch-import-table input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
 }
-.medicine-management-page #batchImportTable input::-webkit-inner-spin-button,
-.medicine-management-page #batchImportTable input::-webkit-outer-spin-button {
+.medicine-management-page .qlpk-batch-import-table input::-webkit-inner-spin-button,
+.medicine-management-page .qlpk-batch-import-table input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -1418,25 +1424,25 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-.medicine-management-page #batchImportTable .batch-unit {
+.medicine-management-page .qlpk-batch-import-table .batch-unit {
   flex: 0 0 auto;
   white-space: nowrap;
   color: var(--qlpk-color-text-muted);
 }
-.medicine-management-page #batchImportTable .batch-price-comparison {
+.medicine-management-page .qlpk-batch-import-table .batch-price-comparison {
   font-size: var(--qlpk-font-size-sm);
   overflow-wrap: anywhere;
 }
-.medicine-management-page #batchImportTable .batch-row-total {
+.medicine-management-page .qlpk-batch-import-table .batch-row-total {
   display: block;
   overflow-wrap: anywhere;
   color: var(--mm-import-amount);
 }
-.medicine-management-page #batchImportTable .mm-import-remove {
+.medicine-management-page .qlpk-batch-import-table .mm-import-remove {
   min-height: 2.5rem;
   min-width: 2.5rem;
 }
-.medicine-management-page #batchImportTable .mm-import-remove:not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .qlpk-batch-import-table .mm-import-remove:not([data-qlpk-button], [data-qlpk-button] *) {
   border-color: transparent;
 }
 .medicine-management-page .mm-import-lot-list {
@@ -1444,24 +1450,24 @@
   border: 1px solid var(--qlpk-color-border);
   border-radius: .5rem;
 }
-.medicine-management-page #batchLotBreakdown {
+.medicine-management-page .qlpk-batch-lot-breakdown {
   color: var(--qlpk-color-text-muted);
 }
-.medicine-management-page #batchLotBreakdown .lot-item {
+.medicine-management-page .qlpk-batch-lot-breakdown .lot-item {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
 }
-.medicine-management-page #batchLotBreakdown .lot-name {
+.medicine-management-page .qlpk-batch-lot-breakdown .lot-name {
   overflow-wrap: anywhere;
   min-width: 0;
 }
-.medicine-management-page #batchLotBreakdown .lot-value {
+.medicine-management-page .qlpk-batch-lot-breakdown .lot-value {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--mm-import-amount);
 }
-.medicine-management-page #importBatchModal .mm-import-footer {
+.medicine-management-page .modal.qlpk-import-batch-modal .mm-import-footer {
   justify-content: space-between;
   gap: .75rem;
   padding: .375rem 1rem;
@@ -1476,7 +1482,7 @@
   color: var(--qlpk-color-text-muted);
   font-size: var(--qlpk-font-size-md);
 }
-.medicine-management-page #batchTotalValue {
+.medicine-management-page .qlpk-batch-total-value {
   color: var(--mm-import-amount);
   font-size: var(--qlpk-font-size-2xl);
   font-variant-numeric: tabular-nums;
@@ -1496,10 +1502,10 @@
   gap: .5rem;
   margin-bottom: .625rem;
 }
-.medicine-management-page .mm-import-ledger-toolbar #importLedgerSearch {
+.medicine-management-page .mm-import-ledger-toolbar .qlpk-import-ledger-search {
   flex: 1 1 16rem;
 }
-.medicine-management-page .mm-import-ledger-toolbar #importLedgerStatus {
+.medicine-management-page .mm-import-ledger-toolbar .qlpk-import-ledger-status {
   flex: 0 1 12rem;
 }
 .medicine-management-page .mm-import-ledger-scroll {
@@ -1527,7 +1533,7 @@
 }
 .medicine-management-page .mm-import-ledger-table th:nth-child(2) { width: 20%; }
 .medicine-management-page .mm-import-ledger-table th:nth-child(9) { width: 12%; }
-.medicine-management-page #receiptDispensingModal .modal-dialog {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-dialog {
   width: calc(100% - 2rem);
   max-width: 76rem;
   min-height: calc(100dvh - 3rem);
@@ -1535,25 +1541,25 @@
   margin: 1.5rem auto;
   justify-content: center;
 }
-.medicine-management-page #receiptDispensingModal .modal-content {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-content {
   max-height: calc(100dvh - 3rem);
   min-height: 0;
   background: var(--qlpk-color-surface);
   border: 0;
   border-radius: .875rem;
 }
-.medicine-management-page #receiptDispensingModal .modal-header {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-header {
   padding: 1rem 1.25rem;
   background: var(--qlpk-workflow-context-header-bg);
   color: var(--qlpk-color-white);
   border: 0;
 }
-.medicine-management-page #receiptDispensingModal .modal-title {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-title {
   color: inherit;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: var(--qlpk-font-size-xl, 1.125rem);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
 }
-.medicine-management-page #receiptDispensingModal .modal-body {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-body {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1562,7 +1568,7 @@
   gap: 1rem;
   background: var(--qlpk-color-surface);
 }
-.medicine-management-page #receiptDispensingModal .modal-body > :not(.mm-dispensing-scroll) {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-body > :not(.mm-dispensing-scroll) {
   flex-shrink: 0;
 }
 .medicine-management-page .mm-dispensing-scroll {
@@ -1576,7 +1582,7 @@
   margin: 0;
   --bs-table-bg: var(--qlpk-color-surface);
 }
-.medicine-management-page #receiptDispensingModal .mm-dispensing-scroll :is(th, td) {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .mm-dispensing-scroll :is(th, td) {
   padding: .75rem;
   vertical-align: top;
   overflow-wrap: anywhere;
@@ -1586,13 +1592,13 @@
   color: var(--qlpk-color-neutral-700);
   box-shadow: none;
 }
-.medicine-management-page #receiptDispensingModal .mm-dispensing-scroll th {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .mm-dispensing-scroll th {
   position: sticky;
   top: 0;
   z-index: 1;
   background: color-mix(in srgb, var(--qlpk-color-neutral-700) 5%, var(--qlpk-color-surface));
   color: var(--qlpk-color-neutral-700);
-  font-weight: 600;
+  font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 .medicine-management-page .mm-dispensing-scroll th:nth-child(1) { width: 15%; }
 .medicine-management-page .mm-dispensing-scroll th:nth-child(2) { width: 12%; }
@@ -1608,7 +1614,7 @@
 .medicine-management-page .mm-dispensing-scroll th span {
   display: block;
   font-size: .75rem;
-  font-weight: 400;
+  font-weight: var(--qlpk-font-weight-regular, 400);
 }
 .medicine-management-page .mm-dispensing-note {
   margin: 0;
@@ -1618,7 +1624,7 @@
 }
 .medicine-management-page .mm-dispensing-value { display: block; }
 .medicine-management-page .mm-dispensing-scroll td:nth-child(3) .mm-dispensing-value,
-.medicine-management-page .mm-dispensing-scroll td:nth-child(4) .mm-dispensing-value { font-weight: 600; }
+.medicine-management-page .mm-dispensing-scroll td:nth-child(4) .mm-dispensing-value { font-weight: var(--qlpk-font-weight-semibold, 600); }
 .medicine-management-page .mm-dispensing-secondary {
   display: block;
   margin-top: .25rem;
@@ -1639,13 +1645,13 @@
   color: var(--bs-success);
   background: rgba(var(--bs-success-rgb), .08);
 }
-.medicine-management-page #receiptDispensingModal .modal-footer {
+.medicine-management-page .modal.qlpk-receipt-dispensing-modal .modal-footer {
   padding: .625rem 1.25rem;
   gap: .5rem;
   background: var(--qlpk-color-surface);
   border-top: 1px solid var(--qlpk-color-border-light);
 }
-.medicine-management-page #receiptDispensingPage {
+.medicine-management-page .qlpk-receipt-dispensing-page {
   margin-right: auto;
   font-size: .8125rem;
   color: var(--qlpk-color-neutral-600);
@@ -1657,7 +1663,7 @@
   align-items: end;
 }
 .medicine-management-page .mm-dispensing-search { flex: 1 1 16rem; }
-.medicine-management-page #receiptDispensingFilters :is(.form-control, .form-select, .btn) {
+.medicine-management-page .qlpk-receipt-dispensing-filters :is(.form-control, .form-select, .btn) {
   box-sizing: border-box;
   min-height: 36px;
   padding: 6px 10px;
@@ -1667,10 +1673,10 @@
   font-weight: var(--qlpk-font-weight-medium);
   line-height: var(--qlpk-line-height-normal);
 }
-.medicine-management-page #receiptDispensingFilters .form-select {
+.medicine-management-page .qlpk-receipt-dispensing-filters .form-select {
   padding-right: 2.25rem;
 }
-.medicine-management-page #receiptDispensingFilters .btn {
+.medicine-management-page .qlpk-receipt-dispensing-filters .btn {
   white-space: nowrap;
 }
 .medicine-management-page .mm-dispensing-filters label {
@@ -1718,24 +1724,24 @@
   }
 }
 @media (max-width: 47.99rem), (max-height: 44.99rem) {
-  .medicine-management-page #importBatchModal .modal-body {
+  .medicine-management-page .modal.qlpk-import-batch-modal .modal-body {
     overflow-y: auto;
   }
-  .medicine-management-page #importBatchModal .mm-import-pane {
+  .medicine-management-page .modal.qlpk-import-batch-modal .mm-import-pane {
     flex: 1 0 auto;
     overflow: visible;
   }
-  .medicine-management-page #importBatchModal :is(.mm-import-list, .mm-import-table-scroll, .mm-import-ledger-scroll) {
+  .medicine-management-page .modal.qlpk-import-batch-modal :is(.mm-import-list, .mm-import-table-scroll, .mm-import-ledger-scroll) {
     flex: 0 0 auto;
   }
 }
 @media (max-width: 47.99rem) {
-  .medicine-management-page #importBatchModal .modal-dialog {
+  .medicine-management-page .modal.qlpk-import-batch-modal .modal-dialog {
     width: calc(100% - 1rem);
   }
-  .medicine-management-page #importBatchModal .modal-header,
-  .medicine-management-page #importBatchModal .modal-body,
-  .medicine-management-page #importBatchModal .mm-import-footer {
+  .medicine-management-page .modal.qlpk-import-batch-modal .modal-header,
+  .medicine-management-page .modal.qlpk-import-batch-modal .modal-body,
+  .medicine-management-page .modal.qlpk-import-batch-modal .mm-import-footer {
     padding: .75rem;
   }
   .medicine-management-page .mm-import-actions {
@@ -1754,7 +1760,7 @@
   position: sticky;
   top: 0;
   background: var(--qlpk-color-page-bg);
-  box-shadow: inset 0 -1px 0 #dce5ef;
+  box-shadow: inset 0 -1px 0 var(--qlpk-palette-blue-90-b);
   z-index: 100;
   transform: translateZ(0);
   isolation: isolate;
@@ -1842,7 +1848,7 @@
   padding: 14px;
   border: 1px solid var(--qlpk-color-border);
   border-radius: var(--clinic-surface-radius);
-  background: #FFFFFF;
+  background: var(--qlpk-color-white);
   box-shadow: var(--clinic-surface-shadow);
 }
 .medicine-management-page .btn.mm-action-secondary:not([data-qlpk-button], [data-qlpk-button] *),
@@ -1870,7 +1876,7 @@
 }
 
 .medicine-management-page .qlpk-clinic-summary__item--warning .qlpk-clinic-summary__value {
-  color: var(--qlpk-feedback-warning, #b45309);
+  color: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
 }
 
 .medicine-management-page .mm-toolbar-surface {
@@ -1884,7 +1890,7 @@
 }
 
 .medicine-management-page .mm-action-row .btn,
-.medicine-management-page #searchBtn {
+.medicine-management-page .qlpk-search-btn {
   border-radius: var(--clinic-control-radius, 9px);
   font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
   font-weight: var(--qlpk-font-weight-semibold, 600);
@@ -1931,7 +1937,7 @@
 
 /* Nút Xem đứng cùng hàng với input/select 40px nên phải cao bằng chúng,
  * không dùng chiều cao 36px của toolbar. */
-.medicine-management-page #searchBtn {
+.medicine-management-page .qlpk-search-btn {
   min-height: 40px;
 }
 
@@ -2016,7 +2022,7 @@
   color: var(--qlpk-color-primary);
 }
 .medicine-management-page .mm-inventory-table .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *) {
-  color: #DC2626;
+  color: var(--qlpk-feedback-error);
 }
 
 .medicine-management-page .stock-detail-badge {
@@ -2053,7 +2059,7 @@
   outline-offset: .125rem;
 }
 
-.medicine-management-page #deleteSelectedBtn {
+.medicine-management-page .qlpk-delete-selected-btn {
   border-radius: 6px;
 }
 
@@ -2079,7 +2085,7 @@
   gap: 0.625rem;
 }
 
-.medicine-management-page #medicinePageSize {
+.medicine-management-page .qlpk-medicine-page-size {
   inline-size: auto;
   color: var(--qlpk-color-text);
   background-color: var(--qlpk-color-surface);

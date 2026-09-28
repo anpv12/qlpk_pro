@@ -32,7 +32,7 @@
 }
 
 /* Ẩn thanh cuộn trang chính khi modal Khám chi tiết mở */
-#examinationDetailModal {
+.modal.qlpk-examination-detail-modal {
 	overflow: hidden !important;
 }
 
@@ -50,16 +50,16 @@ body.examination-detail-modal-open .modal-backdrop {
 	-webkit-appearance: none;
 	width: 18px;
 	height: 18px;
-	border: 2px solid #333;
+	border: 2px solid var(--qlpk-palette-gray-20-a);
 	border-radius: 4px;
-	background: #fff;
+	background: var(--qlpk-color-white);
 	cursor: pointer;
 	position: relative;
 	transition: all 0.15s ease-in-out;
 }
 
 .examination-detail-modal input[type="checkbox"]:hover {
-	box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+	box-shadow: 0 0 0 3px var(--qlpk-alpha-blue-52-15);
 }
 
 .examination-detail-modal input[type="checkbox"]:checked {
@@ -74,7 +74,7 @@ body.examination-detail-modal-open .modal-backdrop {
 	top: 1px;
 	width: 5px;
 	height: 10px;
-	border: 2px solid #fff;
+	border: 2px solid var(--qlpk-color-white);
 	border-top: 0;
 	border-left: 0;
 	transform: rotate(45deg);

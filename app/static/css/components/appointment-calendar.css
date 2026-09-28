@@ -1,0 +1,44 @@
+.qlpk-appointment-calendar {
+	--fc-border-color: var(--qlpk-color-border);
+	--fc-today-bg-color: var(--qlpk-color-page-bg);
+	font-family: var(--qlpk-font-family); font-size: var(--qlpk-font-size-base);
+	color: var(--qlpk-color-text);
+}
+.qlpk-appointment-calendar.fc .fc-toolbar { gap: .5rem; margin: 0 0 .5rem; }
+.qlpk-appointment-calendar.fc .fc-toolbar-chunk { display: flex; align-items: center; gap: .5rem; }
+.qlpk-appointment-calendar.fc .fc-toolbar-title { margin: 0; font-size: var(--qlpk-font-size-md); font-weight: var(--qlpk-font-weight-semibold); color: var(--qlpk-color-text); }
+.qlpk-appointment-calendar.fc .fc-button { padding: .375rem .625rem; font: inherit; line-height: var(--qlpk-line-height-normal); border-radius: .25rem; }
+.qlpk-appointment-calendar.fc .fc-button[data-qlpk-button] { background: var(--qlpk-action-color); color: var(--qlpk-action-text); border-color: transparent; box-shadow: none; }
+.qlpk-appointment-calendar.fc .fc-button[data-qlpk-button]:hover:not(:disabled) { background: var(--qlpk-action-hover); }
+.qlpk-appointment-calendar.fc .fc-button[data-qlpk-button]:active:not(:disabled),
+.qlpk-appointment-calendar.fc .fc-button[data-qlpk-button].fc-button-active { background: var(--qlpk-action-active); color: var(--qlpk-action-text); }
+.qlpk-appointment-calendar.fc .fc-button[data-qlpk-button]:disabled { background: var(--qlpk-button-disabled-bg); color: var(--qlpk-button-disabled-text); opacity: 1; }
+.qlpk-appointment-calendar.fc .fc-col-header-cell { background: var(--qlpk-color-page-bg); font-weight: var(--qlpk-font-weight-semibold); text-transform: uppercase; }
+.qlpk-appointment-calendar.fc .fc-col-header-cell-cushion,
+.qlpk-appointment-calendar.fc .fc-daygrid-day-number,
+.qlpk-appointment-calendar.fc .fc-more-link { color: var(--qlpk-color-text); text-decoration: none; }
+.qlpk-appointment-calendar.fc .fc-daygrid-day-number { padding: .25rem .375rem; font-weight: var(--qlpk-font-weight-semibold); }
+.qlpk-appointment-calendar.fc .fc-daygrid-day.fc-day-today { background: var(--qlpk-color-page-bg); box-shadow: inset 0 0 0 .0625rem var(--qlpk-color-border-strong); }
+.qlpk-appointment-calendar.fc .fc-day-today .fc-daygrid-day-number { background: var(--qlpk-workflow-context-header-bg); color: var(--qlpk-color-white); border-radius: 50%; }
+.qlpk-appointment-calendar.fc .reexam-selected { background: var(--qlpk-color-page-bg); box-shadow: inset 0 0 0 .125rem var(--qlpk-color-primary); }
+.qlpk-appointment-calendar .appointment-event,
+.qlpk-appointment-status { --calendar-status-color: var(--qlpk-feedback-neutral); --calendar-status-surface: var(--qlpk-palette-blue-88-b); --calendar-status-text: var(--qlpk-palette-blue-17-a); }
+.qlpk-appointment-calendar .status-scheduled,
+.qlpk-appointment-status.status-scheduled { --calendar-status-color: var(--qlpk-feedback-warning); --calendar-status-surface: var(--qlpk-palette-amber-87); --calendar-status-text: var(--qlpk-palette-orange-27); }
+.qlpk-appointment-calendar .status-confirmed,
+.qlpk-appointment-status.status-confirmed { --calendar-status-color: var(--qlpk-feedback-success); --calendar-status-surface: var(--qlpk-palette-green-86); --calendar-status-text: var(--qlpk-palette-green-24-a); }
+.qlpk-appointment-calendar .status-cancelled,
+.qlpk-appointment-status.status-cancelled { --calendar-status-color: var(--qlpk-feedback-error); --calendar-status-surface: var(--qlpk-palette-red-94); --calendar-status-text: var(--qlpk-palette-red-42-a); }
+.qlpk-appointment-calendar.fc .fc-event.appointment-event { margin: .125rem .1875rem; border: .0625rem solid color-mix(in srgb, var(--calendar-status-color) 30%, var(--qlpk-color-white)); border-radius: .25rem; background: var(--calendar-status-surface); color: var(--calendar-status-text); overflow: hidden; box-shadow: none; }
+.qlpk-appointment-calendar .appointment-event .fc-event-main { color: inherit; }
+.qlpk-appointment-calendar .fc-event-compact { display: flex; align-items: center; gap: .25rem; min-width: 0; padding: .0625rem .25rem; font-size: var(--qlpk-font-size-base); font-weight: var(--qlpk-font-weight-semibold); line-height: var(--qlpk-line-height-normal); }
+.qlpk-appointment-calendar .fc-doc-dot { flex: none; width: .5rem; height: .5rem; border-radius: 50%; }
+.qlpk-appointment-calendar .fc-event-compact-time { flex: none; }
+.qlpk-appointment-calendar .fc-event-compact-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qlpk-calendar-statuses { display: grid; gap: .375rem; }
+.qlpk-calendar-statuses .qlpk-appointment-status { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .375rem .5rem; border-radius: .25rem; background: var(--calendar-status-surface); color: var(--calendar-status-text); font-size: var(--qlpk-font-size-base); white-space: normal; }
+@media (max-width: 35rem) {
+	.qlpk-appointment-calendar.fc .fc-toolbar,
+	.qlpk-appointment-calendar.fc .fc-toolbar-chunk { flex-wrap: wrap; }
+	.qlpk-appointment-status { flex-direction: column; text-align: center; gap: .125rem; }
+}

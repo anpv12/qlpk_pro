@@ -1,5 +1,5 @@
 <!-- Modal Thông tin đầy đủ - DRY Template -->
-<div class="modal fade" id="personalDetailModal" tabindex="-1" aria-labelledby="personalDetailModalLabel"
+<div class="modal fade qlpk-personal-detail-modal" id="personalDetailModal" tabindex="-1" aria-labelledby="personalDetailModalLabel"
 	aria-hidden="true">
 	<div class="modal-dialog modal-lg personal-detail-dialog">
 		<div class="modal-content">
@@ -52,7 +52,7 @@
 							<div class="position-relative">
 								<input type="text" class="form-control" id="modalNationality"
 									placeholder="Nhập hoặc chọn quốc tịch">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalNationalityDropdown">
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-nationality-dropdown" id="modalNationalityDropdown">
 								</div>
 							</div>
 						</div>
@@ -64,7 +64,7 @@
 							<div class="position-relative">
 								<input type="text" class="form-control" id="modalReligion"
 									placeholder="Nhập hoặc chọn tôn giáo">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalReligionDropdown">
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-religion-dropdown" id="modalReligionDropdown">
 								</div>
 							</div>
 						</div>
@@ -72,7 +72,7 @@
 							<label class="form-label">DÂN TỘC:</label>
 							<div class="position-relative">
 								<input type="text" class="form-control" id="modalEthnicity" placeholder="Nhập dân tộc">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalEthnicityDropdown">
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-ethnicity-dropdown" id="modalEthnicityDropdown">
 								</div>
 							</div>
 						</div>
@@ -87,7 +87,7 @@
 							<div class="position-relative personal-detail-autocomplete-field">
 								<input type="text" class="form-control personal-detail-autocomplete-input" id="modalOccupation"
 									placeholder="Nhập nghề nghiệp">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalOccupationDropdown">
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-occupation-dropdown" id="modalOccupationDropdown">
 								</div>
 							</div>
 						</div>
@@ -108,7 +108,7 @@
 							<div class="position-relative personal-detail-autocomplete-field">
 								<input type="text" class="form-control personal-detail-autocomplete-input" id="modalEducationLevel"
 									placeholder="Nhập học vấn">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalEducationLevelDropdown"></div>
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-education-level-dropdown" id="modalEducationLevelDropdown"></div>
 							</div>
 						</div>
 					</div>
@@ -125,7 +125,7 @@
 								<option value="other">Khác</option>
 							</select>
 						</div>
-						<div class="col-md-2 personal-detail-pregnancy-section" id="pregnancySection">
+						<div class="col-md-2 personal-detail-pregnancy-section qlpk-pregnancy-section" id="pregnancySection">
 							<label class="form-label">MANG THAI:</label>
 							<div class="form-check d-flex align-items-center personal-detail-check-row">
 								<input class="form-check-input" type="checkbox" id="modalMangThai" value="1">
@@ -151,7 +151,7 @@
 							<div class="position-relative">
 								<input type="text" class="form-control" id="modalSexualOrientation"
 									placeholder="Nhập xu hướng tính dục">
-								<div class="autocomplete-dropdown personal-detail-hidden" id="modalSexualOrientationDropdown"></div>
+								<div class="autocomplete-dropdown personal-detail-hidden qlpk-modal-sexual-orientation-dropdown" id="modalSexualOrientationDropdown"></div>
 							</div>
 						</div>
 					</div>

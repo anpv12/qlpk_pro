@@ -1,61 +1,61 @@
-#duplicatePatientModal {
+.modal.qlpk-duplicate-patient-modal {
 	--duplicate-modal-brand: var(--qlpk-color-primary);
 	--duplicate-modal-brand-soft: var(--qlpk-color-primary-strong);
-	--duplicate-modal-text: #352821;
-	--duplicate-modal-muted: #725d51;
-	--duplicate-modal-line: #eadccf;
-	--duplicate-modal-surface: #fffdf9;
-	--duplicate-modal-surface-soft: #fbf8f2;
-	--duplicate-modal-warning: var(--qlpk-feedback-warning, #b45309);
-	--duplicate-modal-warning-bg: var(--qlpk-feedback-warning-bg, #fff7ed);
-	--duplicate-modal-success: var(--qlpk-feedback-success, #15803d);
+	--duplicate-modal-text: var(--qlpk-color-text);
+	--duplicate-modal-muted: var(--qlpk-toast-muted);
+	--duplicate-modal-line: var(--qlpk-toast-border);
+	--duplicate-modal-surface: var(--qlpk-color-surface-warm);
+	--duplicate-modal-surface-soft: var(--qlpk-color-page-bg);
+	--duplicate-modal-warning: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+	--duplicate-modal-warning-bg: var(--qlpk-feedback-warning-bg, var(--qlpk-color-surface-muted));
+	--duplicate-modal-success: var(--qlpk-feedback-success, var(--qlpk-palette-green-29-a));
 }
 
-#duplicatePatientModal .duplicate-patient-modal,
-#duplicatePatientModal .modal-content {
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal,
+.modal.qlpk-duplicate-patient-modal .modal-content {
 	overflow: hidden;
 	border: 0;
 	border-radius: 0.85rem;
 	background: var(--duplicate-modal-surface);
-	box-shadow: 0 0.8rem 2.5rem rgba(53, 40, 33, 0.18);
+	box-shadow: 0 0.8rem 2.5rem rgba(var(--qlpk-color-text-rgb), 0.18);
 	color: var(--duplicate-modal-text);
 }
 
-#duplicatePatientModal .duplicate-patient-modal__header,
-#duplicatePatientModal .modal-header {
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__header,
+.modal.qlpk-duplicate-patient-modal .modal-header {
 	align-items: center;
 	border: 0;
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fffaf3;
+	color: var(--qlpk-color-surface-subtle);
 	padding: 0.75rem 0.95rem;
 }
 
-#duplicatePatientModal .duplicate-patient-modal__title,
-#duplicatePatientModal .modal-title {
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__title,
+.modal.qlpk-duplicate-patient-modal .modal-title {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
 	margin: 0;
-	color: #fffaf3;
+	color: var(--qlpk-color-surface-subtle);
 	font-size: var(--qlpk-font-size-lg);
 	font-weight: var(--qlpk-font-weight-semibold);
 	line-height: 1.25;
 }
 
-#duplicatePatientModal .duplicate-patient-modal__title i,
-#duplicatePatientModal .modal-title i {
-	color: #f8d7a5;
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__title i,
+.modal.qlpk-duplicate-patient-modal .modal-title i {
+	color: var(--qlpk-palette-orange-81);
 }
 
-#duplicatePatientModal .duplicate-patient-modal__body,
-#duplicatePatientModal .modal-body {
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__body,
+.modal.qlpk-duplicate-patient-modal .modal-body {
 	max-block-size: min(62vh, 28rem);
 	overflow-y: auto;
 	padding: 0.85rem;
 }
 
 .duplicate-patient-modal__list,
-#duplicateList {
+.qlpk-duplicate-list {
 	display: grid;
 	gap: 0.55rem;
 }
@@ -67,7 +67,7 @@
 	gap: 0.65rem;
 	border: 0.0625rem solid var(--duplicate-modal-line);
 	border-radius: 0.7rem;
-	background: #ffffff;
+	background: var(--qlpk-color-white);
 	color: var(--duplicate-modal-text);
 	cursor: pointer;
 	padding: 0.65rem 0.75rem;
@@ -86,7 +86,7 @@
 .duplicate-patient-card.is-selected {
 	border-color: var(--duplicate-modal-warning);
 	background: var(--duplicate-modal-warning-bg);
-	box-shadow: inset 0 0 0 0.12rem rgba(180, 83, 9, 0.16);
+	box-shadow: inset 0 0 0 0.12rem rgba(var(--qlpk-feedback-warning-rgb), 0.16);
 }
 
 .duplicate-patient-card__icon {
@@ -124,7 +124,7 @@
 .duplicate-patient-card__title-row span {
 	flex: 0 0 auto;
 	border-radius: 999rem;
-	background: #ffffff;
+	background: var(--qlpk-color-white);
 	color: var(--duplicate-modal-muted);
 	font-size: var(--qlpk-font-size-sm);
 	font-weight: var(--qlpk-font-weight-medium);
@@ -151,8 +151,8 @@
 	display: none;
 }
 
-#duplicatePatientModal .duplicate-patient-modal__footer,
-#duplicatePatientModal .modal-footer {
+.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__footer,
+.modal.qlpk-duplicate-patient-modal .modal-footer {
 	gap: 0.55rem;
 	border-top: 0.0625rem solid var(--duplicate-modal-line);
 	background: var(--duplicate-modal-surface-soft);
@@ -180,7 +180,7 @@
 }
 .duplicate-patient-modal__button--ghost:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--duplicate-modal-line);
-	background: #ffffff;
+	background: var(--qlpk-color-white);
 	color: var(--duplicate-modal-text);
 }
 .duplicate-patient-modal__button--secondary:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -190,7 +190,7 @@
 }
 .duplicate-patient-modal__button--primary:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 }
 
 .duplicate-patient-modal__button:hover:not(:disabled),
@@ -207,13 +207,13 @@
 	cursor: not-allowed;
 }
 .duplicate-patient-modal__button:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: #d8d2cc;
-	color: #61564f;
+	background: var(--qlpk-palette-gray-82-a);
+	color: var(--qlpk-palette-gray-35);
 }
 
 @media (max-width: 36rem) {
-	#duplicatePatientModal .duplicate-patient-modal__footer,
-	#duplicatePatientModal .modal-footer {
+	.modal.qlpk-duplicate-patient-modal .duplicate-patient-modal__footer,
+	.modal.qlpk-duplicate-patient-modal .modal-footer {
 		align-items: stretch;
 		flex-direction: column;
 	}

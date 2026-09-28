@@ -1,12 +1,12 @@
 :root {
 	--om-brand: var(--qlpk-color-primary);
 	--om-brand-hover: var(--qlpk-color-primary-strong);
-	--om-brand-soft: var(--qlpk-color-brown-soft, #f8f1e9);
-	--om-page-bg: var(--qlpk-color-page-bg, #fbf8f2);
-	--om-border: var(--qlpk-color-border, #e8dfd6);
-	--om-border-strong: var(--qlpk-color-border-strong, #d8ccbb);
-	--om-text: var(--qlpk-color-text, #352821);
-	--om-muted: var(--qlpk-color-text-muted, #566366);
+	--om-brand-soft: var(--qlpk-color-brown-soft, var(--qlpk-color-brown-soft));
+	--om-page-bg: var(--qlpk-color-page-bg, var(--qlpk-color-page-bg));
+	--om-border: var(--qlpk-color-border, var(--qlpk-color-border));
+	--om-border-strong: var(--qlpk-color-border-strong, var(--qlpk-color-border-strong));
+	--om-text: var(--qlpk-color-text, var(--qlpk-color-text));
+	--om-muted: var(--qlpk-color-text-muted, var(--qlpk-palette-gray-37));
 	--om-focus-ring: color-mix(in srgb, var(--om-brand) 16%, transparent);
 }
 
@@ -24,7 +24,7 @@
 		}
 
 		/* Sidebar grid */
-		#sidebar-container.col-md-2 {
+		.qlpk-shell-sidebar.col-md-2 {
 			flex: 0 0 16.66667%;
 			max-width: 16.66667%;
 		}
@@ -36,11 +36,11 @@
 
 		/* Card */
 		.card-wrap {
-			background: #fff;
+			background: var(--qlpk-color-white);
 			border-radius: 12px;
 			border: 1px solid var(--om-border);
 			padding: 10px;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+			box-shadow: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.04);
 		}
 
 		/* Toolbar */
@@ -92,7 +92,7 @@
 			padding: 5px 10px;
 			font-size: var(--qlpk-font-size-base);
 			outline: none;
-			background: #fff;
+			background: var(--qlpk-color-white);
 			appearance: none;
 			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 			background-repeat: no-repeat;
@@ -132,19 +132,19 @@
 
 		/* Delete selected button */
 		.btn-del-selected {
-			background: #fff;
-			border: 1px solid #FECACA;
+			background: var(--qlpk-color-white);
+			border: 1px solid var(--qlpk-palette-red-89);
 			border-radius: 8px;
 			padding: 5px 10px;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			font-size: var(--qlpk-font-size-base);
 			cursor: pointer;
-			color: #DC2626;
+			color: var(--qlpk-feedback-error);
 			white-space: nowrap;
 		}
 
 		.btn-del-selected:hover {
-			background: #FEF2F2;
+			background: var(--qlpk-feedback-error-bg);
 		}
 
 		/* Table */
@@ -160,7 +160,7 @@
 			background: var(--qlpk-workflow-context-header-bg);
 			padding: 8px 10px;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			color: #fff;
+			color: var(--qlpk-color-white);
 			text-align: left;
 			border-bottom: none;
 			font-size: var(--qlpk-font-size-base);
@@ -242,7 +242,7 @@
 }
 .nav-tabs.om-status-tabs .nav-link.active {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: var(--qlpk-color-cream, #fffaf3);
+	color: var(--qlpk-color-cream, var(--qlpk-color-surface-subtle));
 }
 .om-tab-count {
 	border-radius: 1rem;
@@ -286,7 +286,7 @@
 			font-size: var(--qlpk-font-size-base);
 		}
 
-		#orderDetailModal .modal-title-label {
+		.modal.qlpk-order-detail-modal .modal-title-label {
 			font-size: var(--qlpk-font-size-base);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--om-brand);
@@ -320,7 +320,7 @@
 		}
 
 		/* Patient info card in modal */
-		#orderDetailModal .bg-info {
+		.modal.qlpk-order-detail-modal .bg-info {
 			background: var(--om-page-bg) !important;
 			color: var(--om-text) !important;
 			border: 1px solid var(--om-border);
@@ -344,9 +344,9 @@
 .om-detail-layout { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(0, 3fr); align-items: stretch; gap: .75rem; }
 .om-detail-sidebar, .om-detail-workspace { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
 .om-detail-sidebar > .card-wrap { flex-shrink: 0; }
-#orderFilesDetails, #orderSurveySection { flex: 1; }
-#orderFilesDetails { display: flex; flex-direction: column; }
-#orderFilesDetails .om-dropzone { flex: 1; }
+.card-wrap.qlpk-order-files-details, .qlpk-order-survey-section { flex: 1; }
+.card-wrap.qlpk-order-files-details { display: flex; flex-direction: column; }
+.card-wrap.qlpk-order-files-details .om-dropzone { flex: 1; }
 .om-detail-layout .card-wrap { padding: .75rem; }
 .om-order-overview { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1rem; border-bottom: 1px solid var(--om-border); padding-bottom: .75rem; margin-bottom: 1rem; }
 .om-order-title { font-size: var(--qlpk-font-size-lg); font-weight: var(--qlpk-font-weight-semibold); margin: 0; flex: 1; overflow-wrap: anywhere; }
@@ -422,7 +422,7 @@
 .level-input.number-aligned { text-align: right; }
 
 		/* Upload area */
-		#resultFilesUploadArea {
+		.qlpk-result-files-upload-area {
 			border: 2px dashed var(--om-border-strong);
 			border-radius: 8px;
 			padding: 10px;
@@ -431,17 +431,17 @@
 		}
 
 		/* File list - left align */
-		#resultFilesUploadArea .d-flex[data-file-id] {
+		.qlpk-result-files-upload-area .d-flex[data-file-id] {
 			text-align: left;
 		}
 
-		#resultFilesUploadArea .d-flex[data-file-id]>div:first-child {
+		.qlpk-result-files-upload-area .d-flex[data-file-id]>div:first-child {
 			text-align: left;
 			justify-content: flex-start;
 		}
 
-		#resultFilesUploadArea .d-flex[data-file-id] span,
-		#resultFilesUploadArea .d-flex[data-file-id] small {
+		.qlpk-result-files-upload-area .d-flex[data-file-id] span,
+		.qlpk-result-files-upload-area .d-flex[data-file-id] small {
 			text-align: left;
 		}
 
@@ -475,7 +475,7 @@
 
 .om-modal-header {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 	border-radius: 10px 10px 0 0;
 }
 

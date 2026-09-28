@@ -9,15 +9,14 @@
 	<meta name="description" content="Trang thống kê thuốc - Phòng khám Sơn Tâm">
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/pages/medicine-statistics.css?v={{ app_version }}">
 </head>
@@ -25,7 +24,7 @@
 <body class="qlpk-data-tables">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content">
 				<!-- Bộ lọc -->
 				<div class="filter-card">
@@ -106,7 +105,7 @@
 								</div>
 								<div>
 									<div class="stat-value" id="totalDispensed">0</div>
-									<div class="stat-label">Lượt bốc thuốc · <span id="totalDispensedQty" class="stat-label-qty">0</span> viên</div>
+									<div class="stat-label">Dòng thuốc trong đơn · SL: <span id="totalDispensedQty" class="stat-label-qty">0</span></div>
 								</div>
 							</div>
 						</div>
@@ -129,31 +128,47 @@
 				<!-- Tabs -->
 				<ul class="nav nav-tabs-custom mb-2" role="tablist">
 					<li class="nav-item" role="presentation">
+						<a class="nav-link" data-tab="ledger" data-bs-toggle="tab" href="#tab-ledger" data-qlpk-call="switchTab" data-qlpk-args='["ledger"]' role="tab" aria-selected="false">Bốc thuốc theo thời gian</a>
+					</li>
+					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="prescriptions" data-bs-toggle="tab" href="#tab-prescription"
-							onclick="switchTab('prescriptions')" role="tab" aria-selected="false">
+						 data-qlpk-call="switchTab" data-qlpk-args='["prescriptions"]' role="tab" aria-selected="false">
 							<i class="bi bi-list-ul me-1"></i> Bác sĩ, Tâm lý gia khám
 						</a>
 					</li>
 					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="inventory" data-bs-toggle="tab" href="#tab-medicine"
-							onclick="switchTab('inventory')" role="tab" aria-selected="false">
+						 data-qlpk-call="switchTab" data-qlpk-args='["inventory"]' role="tab" aria-selected="false">
 							<i class="bi bi-capsule me-1"></i> Thống kê thuốc
 						</a>
 					</li>
 					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="prescription-history" data-bs-toggle="tab"
-							href="#tab-prescription-history" onclick="switchTab('prescription-history')" role="tab"
+							href="#tab-prescription-history" data-qlpk-call="switchTab" data-qlpk-args='["prescription-history"]' role="tab"
 							aria-selected="false">
 							<i class="bi bi-clock-history me-1"></i> Lịch sử kê thuốc
 						</a>
 					</li>
 				</ul>
 
-				<p class="small text-muted">Các tổng quan/đơn thuốc bên trên phản ánh đơn hiện tại, không phải sổ doanh thu. Đối soát tiền thuốc theo thời điểm cấp/hoàn tại <button type="button" class="btn btn-link btn-sm" data-tab="ledger" onclick="switchTab('ledger')">Giao dịch cấp/hoàn</button>.</p>
+				<p class="small text-muted">Các tổng quan/đơn thuốc bên trên phản ánh đơn hiện tại, không phải sổ doanh thu. Đối soát tiền thuốc theo thời điểm cấp/hoàn tại <button type="button" class="btn btn-link btn-sm" data-tab="ledger" data-qlpk-call="switchTab" data-qlpk-args='["ledger"]'>Giao dịch cấp/hoàn</button>.</p>
 				<!-- Tab Content -->
 				<div class="tab-content">
 					<div class="tab-pane fade" id="tab-ledger" role="tabpanel" aria-label="Giao dịch cấp hoàn thuốc">
 						<div class="data-card p-3">
+							<div class="d-flex flex-wrap align-items-center gap-2 mb-2" data-qlpk-button-surface="light">
+								<h5 class="mb-0">Thống kê bốc thuốc</h5>
+								<button type="button" class="btn btn-sm" id="ledgerThisMonth" data-qlpk-button="filter">Tháng này</button>
+								<button type="button" class="btn btn-sm" id="ledgerAllMedicines" data-qlpk-button="back" hidden>Tất cả thuốc</button>
+							</div>
+							<p>Một lần lưu có xuất thêm thuốc = một lần bốc, dù lấy nhiều lô. Lưu không đổi, hoàn thuốc hoặc chỉ sửa giá không tăng số lần bốc. Đơn vị số lượng theo từng thuốc.</p>
+							<div id="ledgerMedicineStatus" aria-live="polite"></div>
+							<div class="table-responsive" tabindex="0" role="region" aria-label="Thống kê bốc thuốc theo thuốc">
+								<table class="table table-sm"><thead><tr><th>Thuốc / đơn vị</th><th>Số lần bốc</th><th>Lượt khám</th><th>Xuất</th><th>Hoàn</th><th>Thực cấp</th><th>Tiền thuốc</th><th>Giá vốn</th><th>Lãi gộp</th><th>Thiếu dữ liệu</th></tr></thead><tbody id="ledgerMedicineRows"></tbody></table>
+							</div>
+							<div class="d-flex align-items-center gap-2 my-2" data-qlpk-button-surface="light">
+								<button type="button" class="btn btn-sm" id="ledgerMedicinePrevious" data-qlpk-button="back">Trước</button><span id="ledgerMedicinePage"></span><button type="button" class="btn btn-sm" id="ledgerMedicineNext" data-qlpk-button="view">Sau</button>
+							</div>
 							<h5>Giao dịch cấp/hoàn thuốc</h5>
 							<p>Lọc theo ngày ghi nhận giao dịch, không phải ngày hẹn. Tiền thuốc ghi nhận ≠ tiền thực thu; lãi gộp chưa trừ chi phí vận hành.</p>
 							<div id="ledgerSummary" aria-live="polite"></div>
@@ -321,8 +336,8 @@
 	</div>
 
 	<!-- Load Flatpickr -->
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js" integrity="sha384-WfMJmNkW9rHcGx0bjgYsPhG+fdSYOS6y8wx5TEWGSb711dkFsZGfO7dD92dUDwux" crossorigin="anonymous"></script>
 	<!-- Load medicine statistics JS -->
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<script src="/static/js/medicine-statistics.js?v={{ app_version }}"></script>

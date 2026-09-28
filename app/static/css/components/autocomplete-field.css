@@ -14,7 +14,7 @@
 	padding: 0.25rem 0.45rem;
 	border: 0.0625rem solid var(--qlpk-color-border);
 	border-radius: 0.45rem;
-	background: var(--qlpk-color-surface, #ffffff);
+	background: var(--qlpk-color-surface, var(--qlpk-color-white));
 	cursor: text;
 }
 
@@ -64,7 +64,7 @@
 	max-inline-size: 100%;
 	padding: 0.18rem 0.35rem;
 	border-radius: 0.3rem;
-	background: var(--qlpk-color-primary-soft, #faf6e6);
+	background: var(--qlpk-color-primary-soft, var(--qlpk-color-surface-chip));
 	color: var(--qlpk-color-text);
 	font-size: var(--autocomplete-font-size);
 	font-weight: var(--qlpk-font-weight-medium);
@@ -103,9 +103,9 @@
 	padding: 0;
 	border: 0.0625rem solid var(--qlpk-color-border);
 	border-radius: 0.45rem;
-	background: var(--qlpk-color-surface, #ffffff);
+	background: var(--qlpk-color-surface, var(--qlpk-color-white));
 	color: var(--qlpk-color-text);
-	box-shadow: 0 0.5rem 1rem rgb(53 40 33 / 16%);
+	box-shadow: 0 0.5rem 1rem rgba(var(--qlpk-color-text-rgb), 0.16);
 	overflow: hidden;
 }
 

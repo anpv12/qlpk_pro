@@ -1,4 +1,4 @@
-.table th { background-color: var(--qlpk-color-page-bg); font-weight: var(--qlpk-font-weight-semibold, 600); color: #495057; border-top: none; }
+.table th { background-color: var(--qlpk-color-page-bg); font-weight: var(--qlpk-font-weight-semibold, 600); color: var(--qlpk-palette-gray-31); border-top: none; }
     .table td { vertical-align: middle; }
 
     .category-badge {
@@ -7,10 +7,10 @@
       font-size: inherit;
       font-weight: var(--qlpk-font-weight-medium, 500);
     }
-    .category-medical { background-color: var(--qlpk-color-primary-soft); color: #1565c0; }
-    .category-psychological { background-color: #f3e5f5; color: #7b1fa2; }
-    .category-general { background-color: #e8f5e8; color: #2e7d32; }
-    
+    .category-medical { background-color: var(--qlpk-color-primary-soft); color: var(--qlpk-palette-blue-42); }
+    .category-psychological { background-color: var(--qlpk-palette-rose-93); color: var(--qlpk-palette-violet-38); }
+    .category-general { background-color: var(--qlpk-palette-green-94-b); color: var(--qlpk-palette-green-34-a); }
+
     .search-container {
       position: relative;
     }
@@ -22,35 +22,35 @@
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      color: #6c757d;
+      color: var(--qlpk-palette-gray-46);
     }
-    
+
     .action-buttons .btn {
       margin-right: 5px;
     }
-    
+
     .modal-header {
       background-color: var(--qlpk-color-page-bg);
-      border-bottom: 1px solid #dee2e6;
+      border-bottom: 1px solid var(--qlpk-palette-gray-89);
     }
-    
+
     .form-label {
       font-weight: var(--qlpk-font-weight-semibold, 600);
-      color: #495057;
+      color: var(--qlpk-palette-gray-31);
       margin-bottom: 5px;
     }
-    
+
     .required {
-      color: #dc3545;
+      color: var(--qlpk-palette-red-54);
     }
-    
+
     .import-export-section {
       background: var(--qlpk-color-page-bg);
       border-radius: 8px;
       padding: 15px;
       margin-bottom: 20px;
     }
-    
+
 .text-expansion-empty-icon {
   font-size: var(--qlpk-font-size-5xl, 32px);
 }
@@ -62,8 +62,8 @@
   z-index: 9999;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #28a745;
-  color: #ffffff;
+  background: var(--qlpk-palette-green-41);
+  color: var(--qlpk-color-white);
   font-size: var(--qlpk-font-size-sm, 12px);
   opacity: 0;
   pointer-events: none;

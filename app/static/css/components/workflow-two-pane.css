@@ -1,14 +1,14 @@
 /* Shared two-pane workflow layout for receptionist and doctor workspaces. */
-body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) .main-content,
-body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) .main-content.col-md-10,
-body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) .qlpk-workspace-main {
+body.qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .main-content,
+body.qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .main-content.col-md-10,
+body.qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .qlpk-workspace-main {
 	block-size: 100dvh;
 	min-height: 0;
 	overflow: hidden;
 }
 
-body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) .qlpk-workspace-frame-host,
-body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) #qlpkWorkspaceNativePane.is-active {
+body.qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .qlpk-workspace-frame-host,
+body.qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .qlpk-workspace-pane--native.is-active {
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
@@ -18,7 +18,7 @@ body.qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-
 	block-size: 100%;
 	min-block-size: 0;
 	overflow: hidden;
-	background: var(--qlpk-color-page-bg, #fbf8f2);
+	background: var(--qlpk-color-page-bg, var(--qlpk-color-page-bg));
 }
 
 body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) {
@@ -41,12 +41,12 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 }
 
 .qlpk-workflow-two-pane {
-	--qlpk-workflow-bg: var(--qlpk-color-page-bg, #fbf8f2);
-	--qlpk-workflow-surface: var(--qlpk-color-surface, #ffffff);
+	--qlpk-workflow-bg: var(--qlpk-color-page-bg, var(--qlpk-color-page-bg));
+	--qlpk-workflow-surface: var(--qlpk-color-surface, var(--qlpk-color-white));
 	--qlpk-workflow-line: var(--qlpk-color-line, rgba(var(--qlpk-brown-800-rgb), 0.16));
-	--qlpk-workflow-text: var(--qlpk-color-text, #352821);
+	--qlpk-workflow-text: var(--qlpk-color-text, var(--qlpk-color-text));
 	--qlpk-workflow-switch-active-bg: var(--qlpk-color-primary);
-	--qlpk-workflow-switch-active-text: var(--qlpk-color-surface-subtle, #fffaf3);
+	--qlpk-workflow-switch-active-text: var(--qlpk-color-surface-subtle, var(--qlpk-color-surface-subtle));
 	--qlpk-workflow-gap: 0.5rem;
 	box-sizing: border-box;
 	display: grid;
@@ -98,7 +98,7 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 .qlpk-workflow-two-pane__switch-btn.is-active {
 	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--qlpk-workflow-switch-active-text);
-	box-shadow: 0 0.375rem 0.875rem rgba(92, 48, 27, 0.12);
+	box-shadow: 0 0.375rem 0.875rem var(--qlpk-alpha-brown-23-12);
 }
 
 .qlpk-workflow-two-pane__queue,
@@ -149,7 +149,7 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 	.qlpk-workflow-two-pane__switch {
 		position: sticky;
 		inset-block-start: 0;
-		z-index: 5;
+		z-index: var(--qlpk-z-sticky);
 		grid-column: 1;
 		grid-row: 1;
 		display: grid;
@@ -159,7 +159,7 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 		border: 0.0625rem solid var(--qlpk-workflow-line);
 		border-radius: 0.625rem;
 		background: color-mix(in srgb, var(--qlpk-workflow-surface) 94%, transparent);
-		box-shadow: 0 0.375rem 0.875rem rgba(92, 48, 27, 0.06);
+		box-shadow: 0 0.375rem 0.875rem var(--qlpk-alpha-brown-23-06-a);
 	}
 
 	.qlpk-workflow-two-pane__queue,
@@ -174,7 +174,7 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 		display: flex;
 	}
 
-	.qlpk-workflow-two-pane__queue #waitingListTableBody {
+	.qlpk-workflow-two-pane__queue .qlpk-queue-panel__list {
 		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
 	}
 }
@@ -191,7 +191,7 @@ body.qlpk-embedded-page:has(.qlpk-workflow-two-pane) .qlpk-workspace-main {
 		padding-inline: var(--qlpk-workflow-gap);
 	}
 
-	.qlpk-workflow-two-pane__queue #waitingListTableBody {
+	.qlpk-workflow-two-pane__queue .qlpk-queue-panel__list {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }

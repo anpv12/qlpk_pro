@@ -7,16 +7,15 @@
   <title>Quản lý từ viết tắt</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/text-expansion-management.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
   <script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
   <script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
@@ -25,7 +24,7 @@
 <body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
   <div class="container-fluid p-0">
     <div class="row g-0">
-      <div id="sidebar-container" class="col-md-2"></div>
+      <div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
       
       <!-- Main Content -->
       <div class="col-md-10 main-content">
@@ -41,10 +40,10 @@
         <div class="import-export-section">
           <div class="qlpk-admin-toolbar-top">
             <div class="qlpk-admin-actions">
-              <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" onclick="showAddModal()"><i class="bi bi-plus-circle me-2"></i>Thêm từ viết tắt</button>
-              <button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" onclick="showImportModal()"><i class="bi bi-upload me-1"></i>Import Excel</button>
-              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" onclick="exportToExcel()"><i class="bi bi-download me-1"></i>Export Excel</button>
-              <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-danger" onclick="resetAll()"><i class="bi bi-arrow-clockwise me-1"></i>Reset toàn bộ</button>
+              <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="showAddModal"><i class="bi bi-plus-circle me-2"></i>Thêm từ viết tắt</button>
+              <button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-qlpk-call="showImportModal"><i class="bi bi-upload me-1"></i>Import Excel</button>
+              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-qlpk-call="exportToExcel"><i class="bi bi-download me-1"></i>Export Excel</button>
+              <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-danger" data-qlpk-call="resetAll"><i class="bi bi-arrow-clockwise me-1"></i>Reset toàn bộ</button>
             </div>
             <div class="qlpk-clinic-summary" role="group" aria-label="Tổng quan từ viết tắt"><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Tổng từ viết tắt</span><span class="qlpk-clinic-summary__value" id="totalCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Đang hoạt động</span><span class="qlpk-clinic-summary__value" id="activeCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Không hoạt động</span><span class="qlpk-clinic-summary__value" id="inactiveCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Phân loại</span><span class="qlpk-clinic-summary__value" id="categoryCount">0</span></div></div>
           </div>
@@ -53,7 +52,7 @@
         <!-- Filters -->
         <div class="row mb-3">
           <div class="col-md-3">
-            <select class="form-select" id="categoryFilter" onchange="loadTextExpansions()">
+            <select class="form-select" id="categoryFilter" data-qlpk-call="loadTextExpansions" data-qlpk-on="change">
               <option value="all">Tất cả phân loại</option>
               <option value="medical">Y tế</option>
               <option value="psychological">Tâm lý</option>
@@ -61,7 +60,7 @@
             </select>
           </div>
           <div class="col-md-3">
-            <select class="form-select" id="statusFilter" onchange="loadTextExpansions()">
+            <select class="form-select" id="statusFilter" data-qlpk-call="loadTextExpansions" data-qlpk-on="change">
               <option value="">Tất cả trạng thái</option>
               <option value="true">Đang hoạt động</option>
               <option value="false">Không hoạt động</option>
@@ -70,7 +69,7 @@
           <div class="col-md-6">
             <div class="search-container">
               <i class="bi bi-search search-icon"></i>
-              <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm từ viết tắt hoặc từ đầy đủ..." onkeyup="handleSearch()">
+              <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm từ viết tắt hoặc từ đầy đủ..." data-qlpk-call="handleSearch" data-qlpk-on="keyup">
             </div>
           </div>
         </div>
@@ -90,7 +89,7 @@
                     <th width="10%">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody id="textExpansionsTableBody">
+                <tbody id="textExpansionsTableBody" class="qlpk-text-expansions-table-body">
                   <!-- Data will be loaded here -->
                 </tbody>
               </table>
@@ -147,7 +146,7 @@
         </div>
         <div class="modal-footer">
           <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-          <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" onclick="saveTextExpansion()">Lưu</button>
+          <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="saveTextExpansion">Lưu</button>
         </div>
       </div>
     </div>
@@ -170,14 +169,14 @@
             <strong>Lưu ý:</strong> File Excel phải có các cột: abbreviation, full_text, category (tùy chọn), description (tùy chọn), is_active (tùy chọn)
           </div>
           <div class="mb-3">
-            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary btn-sm" onclick="downloadTemplate()">
+            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary btn-sm" data-qlpk-call="downloadTemplate">
               <i class="bi bi-download me-1"></i>Tải file mẫu
             </button>
           </div>
         </div>
         <div class="modal-footer">
           <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-          <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" onclick="importFromExcel()">Import</button>
+          <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="importFromExcel">Import</button>
         </div>
       </div>
     </div>

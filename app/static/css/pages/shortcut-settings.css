@@ -8,7 +8,7 @@
 	}
 
 	/* Tuân thủ layout sidebar dùng chung như service-management */
-	#sidebar-container.col-md-2 {
+	.qlpk-shell-sidebar.col-md-2 {
 		flex: 0 0 16.66667% !important;
 		max-width: 16.66667% !important;
 	}
@@ -25,7 +25,7 @@
 	.shortcut-card {
 		border: 1px solid var(--qlpk-color-border);
 		border-radius: var(--clinic-surface-radius);
-		background: #ffffff;
+		background: var(--qlpk-color-white);
 		box-shadow: var(--clinic-surface-shadow);
 		margin: 0.75rem 1.25rem;
 	}
@@ -77,5 +77,5 @@
 
 @media (max-width: 36rem) {
   .shortcut-card { margin-inline: 0.75rem; }
-  #shortcutForm > .d-flex { flex-wrap: wrap; gap: 0.75rem; }
+  .qlpk-shortcut-form > .d-flex { flex-wrap: wrap; gap: 0.75rem; }
 }

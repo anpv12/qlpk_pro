@@ -416,7 +416,7 @@ including text-dark/opacity. */
 	background: transparent;
 	color: var(--qlpk-color-text);
 	font: inherit;
-	font-size: 1.25rem;
+	font-size: var(--qlpk-font-size-2xl, 1.25rem);
 	line-height: 1;
 	padding: 0.125rem 0.25rem;
 	cursor: pointer;

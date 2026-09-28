@@ -2,32 +2,6 @@
 
 /* Custom animations for save buttons */
 
-/* Special animation for doctor examination save button */
-#saveExaminationForm {
-	transition: all 0.3s ease;
-	position: relative;
-	overflow: hidden;
-}
-
-#saveExaminationForm:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 6px 20px rgba(210, 255, 176, 0.4);
-	background-color: #b8ff8a !important;
-}
-
-/* Animation for saveExaminationForm in examination section */
-#saveExaminationFormExamination {
-	transition: all 0.3s ease;
-	position: relative;
-	overflow: hidden;
-}
-
-#saveExaminationFormExamination:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 6px 20px rgba(210, 255, 176, 0.4);
-	background-color: #b8ff8a !important;
-}
-
 /* Pulse animation for loading state */
 .btn-pulse {
 	animation: pulse 1.5s infinite;
@@ -42,24 +16,24 @@
 	left: -100%;
 	width: 100%;
 	height: 100%;
-	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+	background: linear-gradient(90deg, transparent, rgba(var(--qlpk-color-white-rgb), 0.2), transparent);
 	animation: shimmer 2s infinite;
 }
 
 @keyframes pulse {
 	0% {
 		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+		box-shadow: 0 0 0 0 var(--qlpk-alpha-blue-52-70);
 	}
 
 	50% {
 		transform: scale(1.02);
-		box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+		box-shadow: 0 0 0 10px var(--qlpk-alpha-blue-52-00);
 	}
 
 	100% {
 		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+		box-shadow: 0 0 0 0 var(--qlpk-alpha-blue-52-00);
 	}
 }
 
@@ -76,7 +50,7 @@
 /* Success animation */
 .btn-success-animation {
 	animation: successPulse 0.6s ease-out;
-	background: linear-gradient(45deg, #28a745, #20c997);
+	background: linear-gradient(45deg, var(--qlpk-palette-green-41), var(--qlpk-palette-green-46));
 	border: none;
 	color: white;
 }
@@ -147,21 +121,17 @@
 	z-index: 1070;
 }
 
-/* Medicine autocomplete dropdowns */
-#categoryTypeDropdown,
-#storageUnitDropdown,
-#doseUnitDropdown,
-#administrationMethodDropdown,
-#importedTypeDropdown {
+.qlpk-administration-method-dropdown,
+.qlpk-imported-type-dropdown {
 	position: absolute;
 	top: 100%;
 	left: 0;
 	right: 0;
 	background: white;
-	border: 1px solid #ddd;
+	border: 1px solid var(--qlpk-palette-gray-87);
 	border-top: none;
 	border-radius: 0 0 4px 4px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 4px 8px rgba(var(--qlpk-color-black-rgb), 0.1);
 	max-height: 200px;
 	overflow-y: auto;
 	z-index: 1000;
@@ -185,7 +155,7 @@
 }
 /* Button hover effects */
 .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+	box-shadow: 0 4px 12px var(--qlpk-alpha-blue-52-30);
 	transition: all 0.3s ease;
 }
 
@@ -236,61 +206,38 @@
 	}
 }
 
-/* Special animation for main save button in doctor examination */
-#saveReExaminationBtn {
-	transition: all 0.3s ease;
-	position: relative;
-	overflow: hidden;
-}
-
-#saveReExaminationBtn:hover {
-	transform: translateY(-3px);
-	box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
-	background: var(--qlpk-workflow-context-header-bg);
-}
-
-#saveReExaminationBtn:active {
-	transform: translateY(-1px);
-	box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
-}
-
-/* Enhanced pulse for main save button */
-#saveReExaminationBtn.btn-pulse {
-	animation: mainButtonPulse 2s infinite;
-}
-
 @keyframes mainButtonPulse {
 	0% {
 		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.8);
+		box-shadow: 0 0 0 0 var(--qlpk-alpha-blue-52-80);
 	}
 
 	50% {
 		transform: scale(1.03);
-		box-shadow: 0 0 0 15px rgba(13, 110, 253, 0);
+		box-shadow: 0 0 0 15px var(--qlpk-alpha-blue-52-00);
 	}
 
 	100% {
 		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+		box-shadow: 0 0 0 0 var(--qlpk-alpha-blue-52-00);
 	}
 }
 
 /* Readonly fields styling */
 .readonly-field {
-	background-color: #f5f5f5 !important;
-	color: #6c757d !important;
+	background-color: var(--qlpk-button-secondary-bg) !important;
+	color: var(--qlpk-palette-gray-46) !important;
 	cursor: not-allowed !important;
 	opacity: 0.8 !important;
 }
 
 .readonly-field:focus {
 	box-shadow: none !important;
-	border-color: #ced4da !important;
+	border-color: var(--qlpk-palette-gray-83) !important;
 }
 
 .readonly-field::placeholder {
-	color: #adb5bd !important;
+	color: var(--qlpk-palette-gray-71) !important;
 }
 
 /* Disable all interactions for readonly fields */
@@ -330,13 +277,13 @@
 
 .sidebar .nav-link[href="doctor-examination.html"]:hover {
 	transform: translateX(8px) scale(1.02);
-	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, #f0f8ff 100%) !important;
+	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, var(--qlpk-palette-blue-97-c) 100%) !important;
 	color: var(--qlpk-color-primary) !important;
 	box-shadow: 0 4px 12px rgba(var(--qlpk-color-primary-rgb), 0.3);
 }
 
 .sidebar .nav-link[href="doctor-examination.html"].active {
-	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, #f0f8ff 100%) !important;
+	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, var(--qlpk-palette-blue-97-c) 100%) !important;
 	color: var(--qlpk-color-primary) !important;
 	font-weight: var(--qlpk-font-weight-bold, 700) !important;
 	transform: translateX(5px) scale(1.01);
@@ -361,30 +308,30 @@
 /* Animation for other sidebar menu items */
 .sidebar .nav-link[href="receptionist-new.html"]:hover {
 	transform: translateX(6px) scale(1.01);
-	background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%) !important;
-	color: #28a745 !important;
-	box-shadow: 0 3px 10px rgba(40, 167, 69, 0.25);
+	background: linear-gradient(135deg, var(--qlpk-palette-green-94-b) 0%, var(--qlpk-palette-green-97) 100%) !important;
+	color: var(--qlpk-palette-green-41) !important;
+	box-shadow: 0 3px 10px rgba(var(--qlpk-palette-green-41-rgb), 0.25);
 }
 
 .sidebar .nav-link[href="psychologist-examination.html"]:hover {
 	transform: translateX(6px) scale(1.01);
-	background: linear-gradient(135deg, #fff3e0 0%, #fff8f0 100%) !important;
-	color: #fd7e14 !important;
-	box-shadow: 0 3px 10px rgba(253, 126, 20, 0.25);
+	background: linear-gradient(135deg, var(--qlpk-palette-orange-94-a) 0%, var(--qlpk-palette-orange-97-b) 100%) !important;
+	color: var(--qlpk-palette-orange-54) !important;
+	box-shadow: 0 3px 10px var(--qlpk-alpha-orange-54-25);
 }
 
 .sidebar .nav-link[href="appointment-management.html"]:hover {
 	transform: translateX(6px) scale(1.01);
-	background: linear-gradient(135deg, #f3e5f5 0%, #faf0ff 100%) !important;
-	color: #6f42c1 !important;
-	box-shadow: 0 3px 10px rgba(111, 66, 193, 0.25);
+	background: linear-gradient(135deg, var(--qlpk-palette-rose-93) 0%, var(--qlpk-palette-violet-97-b) 100%) !important;
+	color: var(--qlpk-palette-violet-51) !important;
+	box-shadow: 0 3px 10px var(--qlpk-alpha-violet-51-25);
 }
 
 .sidebar .nav-link[href="payment-waiting.html"]:hover {
 	transform: translateX(6px) scale(1.01);
-	background: linear-gradient(135deg, #e0f2f1 0%, #f0fffe 100%) !important;
-	color: #20c997 !important;
-	box-shadow: 0 3px 10px rgba(32, 201, 151, 0.25);
+	background: linear-gradient(135deg, var(--qlpk-palette-teal-91-a) 0%, var(--qlpk-palette-teal-97-a) 100%) !important;
+	color: var(--qlpk-palette-green-46) !important;
+	box-shadow: 0 3px 10px var(--qlpk-alpha-green-46-25);
 }
 
 /* Animation for left sidebar buttons in examination modal */
@@ -396,17 +343,17 @@
 
 .btn-sidebar:hover {
 	transform: translateX(8px) scale(1.02);
-	background: rgba(255, 255, 255, 0.15) !important;
-	color: #ffffff !important;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	background: rgba(var(--qlpk-color-white-rgb), 0.15) !important;
+	color: var(--qlpk-color-white) !important;
+	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 .btn-sidebar.active {
-	background: #ffffff !important;
-	color: #2c3e50 !important;
+	background: var(--qlpk-color-white) !important;
+	color: var(--qlpk-palette-blue-24) !important;
 	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
 	transform: translateX(5px) scale(1.01);
-	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 3px 10px rgba(var(--qlpk-color-black-rgb), 0.15);
 }
 
 /* Special animation for "Khám bệnh" button in left sidebar */
@@ -417,17 +364,17 @@
 
 .btn-sidebar[data-left-tab="examination"]:hover {
 	transform: translateX(10px) scale(1.03);
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%) !important;
-	color: #ffffff !important;
-	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	background: linear-gradient(135deg, rgba(var(--qlpk-color-white-rgb), 0.2) 0%, rgba(var(--qlpk-color-white-rgb), 0.1) 100%) !important;
+	color: var(--qlpk-color-white) !important;
+	box-shadow: 0 5px 15px rgba(var(--qlpk-color-black-rgb), 0.3);
 }
 
 .btn-sidebar[data-left-tab="examination"].active {
-	background: linear-gradient(135deg, #ffffff 0%, var(--qlpk-color-page-bg) 100%) !important;
-	color: #2c3e50 !important;
+	background: linear-gradient(135deg, var(--qlpk-color-white) 0%, var(--qlpk-color-page-bg) 100%) !important;
+	color: var(--qlpk-palette-blue-24) !important;
 	font-weight: var(--qlpk-font-weight-bold, 700) !important;
 	transform: translateX(6px) scale(1.02);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 /* Icon animation for left sidebar buttons */

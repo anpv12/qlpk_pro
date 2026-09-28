@@ -5,7 +5,7 @@
 		}
 
 		/* Ensure Bootstrap grid works correctly with DRY sidebar */
-		#sidebar-container.col-md-2 {
+		.qlpk-shell-sidebar.col-md-2 {
 			flex: 0 0 16.66667% !important;
 			max-width: 16.66667% !important;
 		}
@@ -22,8 +22,8 @@
 
 		/* Header and other styles */
 		.header-bar {
-			background: #ffffff !important;
-			border-bottom: 1px solid #e0e0e0;
+			background: var(--qlpk-color-white) !important;
+			border-bottom: 1px solid var(--qlpk-palette-gray-88);
 			padding: 8px 0 4px 0;
 			margin-bottom: 8px;
 		}
@@ -49,25 +49,25 @@
 .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg) !important;
 			border-color: var(--qlpk-color-primary) !important;
-			color: #fff !important;
+			color: var(--qlpk-color-white) !important;
 }
 .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: #10aa36 !important;
-			border-color: #10aa36 !important;
-			color: #fff !important;
+			background: var(--qlpk-palette-green-36-a) !important;
+			border-color: var(--qlpk-palette-green-36-a) !important;
+			color: var(--qlpk-color-white) !important;
 }
 
 		.btn-warning {
 			border: none;
 }
 .btn-warning:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: #ffe082 !important;
-			color: #333 !important;
+			background: var(--qlpk-palette-amber-75) !important;
+			color: var(--qlpk-palette-gray-20-a) !important;
 }
 .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 			color: var(--qlpk-color-primary) !important;
-			border-color: #b0bec5 !important;
-			background: #fff !important;
+			border-color: var(--qlpk-palette-gray-73) !important;
+			background: var(--qlpk-color-white) !important;
 }
 
 		.btn-outline-primary:hover {
@@ -78,12 +78,6 @@
 			color: var(--qlpk-color-primary) !important;
 			box-shadow: 0 2px 4px rgba(var(--qlpk-color-primary-rgb), 0.18);
 }
-
-
-
-
-
-
 
 		.reason-badge {
 			padding: 2px 6px;
@@ -137,7 +131,7 @@
 
 		/* Card shadows */
 		.shadow-sm {
-			box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+			box-shadow: 0 0.125rem 0.25rem rgba(var(--qlpk-color-black-rgb), 0.075) !important;
 		}
 
 		/* Icon styling */
@@ -158,32 +152,32 @@
 
 		.reason-meeting {
 			background-color: var(--qlpk-color-primary-soft);
-			color: #1565c0;
+			color: var(--qlpk-palette-blue-42);
 		}
 
 		.reason-leave {
-			background-color: #fff3e0;
-			color: #ef6c00;
+			background-color: var(--qlpk-palette-orange-94-a);
+			color: var(--qlpk-palette-orange-47);
 		}
 
 		.reason-external {
-			background-color: #f3e5f5;
-			color: #7b1fa2;
+			background-color: var(--qlpk-palette-rose-93);
+			color: var(--qlpk-palette-violet-38);
 		}
 
 		.reason-training {
-			background-color: #e8f5e8;
-			color: #2e7d32;
+			background-color: var(--qlpk-palette-green-94-b);
+			color: var(--qlpk-palette-green-34-a);
 		}
 
 		.reason-other {
-			background-color: #fce4ec;
-			color: #c2185b;
+			background-color: var(--qlpk-palette-red-94-a);
+			color: var(--qlpk-palette-rose-43);
 		}
 
 		.card {
 			border: none;
-			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			box-shadow: 0 2px 10px rgba(var(--qlpk-color-black-rgb), 0.1);
 			border-radius: 12px;
 		}
 
@@ -195,7 +189,7 @@
 }
 .form-control:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select {
-			border: 1px solid #e0e0e0;
+			border: 1px solid var(--qlpk-palette-gray-88);
 }
 .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select:focus {
@@ -246,7 +240,7 @@
 .busy-reason-suggestions .suggestion-badge.is-selected {
 	background: var(--qlpk-workflow-context-header-bg);
 	border-color: var(--qlpk-color-primary);
-	color: var(--qlpk-color-text-inverse, #fff);
+	color: var(--qlpk-color-text-inverse, var(--qlpk-color-white));
 }
 
 .busy-list-toolbar {

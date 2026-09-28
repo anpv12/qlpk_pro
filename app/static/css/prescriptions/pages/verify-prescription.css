@@ -1,5 +1,5 @@
 body {
-	background: #f0f2f5;
+	background: var(--qlpk-palette-blue-95-b);
 	min-height: 100vh;
 	padding: 20px;
 }
@@ -11,9 +11,9 @@ body {
 	text-align: center;
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 	border-radius: 8px;
-	background: linear-gradient(135deg, #059669, #10b981);
+	background: linear-gradient(135deg, var(--qlpk-palette-green-30), var(--qlpk-palette-green-39));
 	color: white;
-	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 12px rgba(var(--qlpk-color-black-rgb), 0.1);
 }
 
 .verify-banner .icon {
@@ -33,10 +33,10 @@ body {
 }
 
 .verify-banner.invalid {
-	background: linear-gradient(135deg, #dc2626, #ef4444);
+	background: linear-gradient(135deg, var(--qlpk-feedback-error), var(--qlpk-palette-red-60));
 }
 
-#prescriptionPreviewArea {
+.qlpk-prescription-preview-area {
 	--verify-document-width: 800;
 	--verify-document-scale: 1;
 	max-width: 800px;
@@ -45,11 +45,11 @@ body {
 	-webkit-overflow-scrolling: touch;
 }
 
-#prescriptionPreviewArea.verify-document-scaled {
+.qlpk-prescription-preview-area.verify-document-scaled {
 	overflow: hidden;
 }
 
-.verify-prescription-page #prescriptionPreviewArea .prescription-preview--verify {
+.verify-prescription-page .qlpk-prescription-preview-area .prescription-preview--verify {
 	width: calc(var(--verify-document-width) * 1px);
 	max-width: none;
 	overflow: visible;
@@ -62,27 +62,27 @@ body {
 		padding: 10px;
 	}
 
-	#prescriptionPreviewArea {
+	.qlpk-prescription-preview-area {
 		max-width: 100%;
 		overflow-x: auto;
 	}
 
-	#prescriptionPreviewArea img,
-	#prescriptionPreviewArea svg {
+	.qlpk-prescription-preview-area img,
+	.qlpk-prescription-preview-area svg {
 		max-width: 100% !important;
 		height: auto !important;
 	}
 }
 
-#prescriptionPreviewArea .barcode-svg,
-#prescriptionPreviewArea .patient-code {
+.qlpk-prescription-preview-area .barcode-svg,
+.qlpk-prescription-preview-area .patient-code {
 	display: none !important;
 }
 
 .verify-prescription-loading {
 	text-align: center;
 	padding: 40px;
-	color: #666;
+	color: var(--qlpk-palette-gray-40-b);
 }
 
 .verify-prescription-invalid-state {
@@ -96,20 +96,20 @@ body {
 }
 
 .verify-prescription-invalid-title {
-	color: #dc2626;
+	color: var(--qlpk-feedback-error);
 	margin-bottom: 8px;
 }
 
 .verify-prescription-invalid-copy {
-	color: #666;
+	color: var(--qlpk-palette-gray-40-b);
 }
 
 .verify-prescription-badge {
 	margin-top: 30px;
 	padding: 12px;
 	text-align: center;
-	color: #333;
-	border-top: 1px solid #ddd;
+	color: var(--qlpk-palette-gray-20-a);
+	border-top: 1px solid var(--qlpk-palette-gray-87);
 	font-family: var(--qlpk-font-family, Roboto, Arial, sans-serif);
 	font-style: italic;
 }

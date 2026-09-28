@@ -4,15 +4,15 @@
 		--accent-light: var(--qlpk-color-primary);
 		--accent-pale: var(--qlpk-color-primary-soft);
 		--accent-pale2: var(--qlpk-color-primary-soft);
-		--danger: #DC2626;
-		--surface: #FFFFFF;
+		--danger: var(--qlpk-feedback-error);
+		--surface: var(--qlpk-color-white);
 		--page-bg: var(--qlpk-workspace-bg);
 		--border: var(--qlpk-color-border);
 		--text-primary: var(--qlpk-color-text);
 		--text-secondary: var(--qlpk-color-text-muted);
 		--text-muted: var(--qlpk-color-text-muted);
 		--shadow-sm: var(--clinic-surface-shadow);
-		--shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+		--shadow-md: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.08);
 		--radius: var(--clinic-surface-radius);
 		--radius-sm: var(--clinic-control-radius, 6px);
 		--transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
@@ -35,13 +35,13 @@
 	}
 
 	/* ── ANTI-FOUC: Pre-set sidebar bg ── */
-	#sidebar-container { background: var(--qlpk-workflow-context-header-bg); }
+	.qlpk-shell-sidebar { background: var(--qlpk-workflow-context-header-bg); }
 
 	/* ── LAYOUT CHAIN ── */
 	.sc-page .container-fluid { height: 100%; }
 	.sc-page .container-fluid > .row { height: 100%; }
 
-	#sidebar-container.col-lg-2 {
+	.qlpk-shell-sidebar.col-lg-2 {
 		flex: 0 0 16.66667% !important;
 		max-width: 16.66667% !important;
 	}
@@ -138,7 +138,7 @@
 }
 .sc-btn-save:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--qlpk-workflow-context-header-bg);
-		color: #fff;
+		color: var(--qlpk-color-white);
 		transition: var(--transition);
 }
 .sc-btn-save:hover:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -191,7 +191,6 @@
 
 	.sc-tab-pane { display: none; }
 	.sc-tab-pane.active { display: block; }
-
 
 	/* Center content */
 	.sc-inner {
@@ -397,7 +396,7 @@
 
 	.sc-q-group-input:focus {
 		border-color: var(--accent);
-		background: #fff;
+		background: var(--qlpk-color-white);
 	}
 
 	/* Question body */
@@ -443,7 +442,7 @@
 		left: 0;
 		right: 0;
 		z-index: 100;
-		background: #fff;
+		background: var(--qlpk-color-white);
 		border: 1px solid var(--border);
 		border-top: none;
 		border-radius: 0 0 var(--radius-sm) var(--radius-sm);
@@ -593,7 +592,7 @@
 		color: var(--text-muted);
 		transition: var(--transition);
 }
-.sc-answer-remove:hover:not([data-qlpk-button], [data-qlpk-button] *) { color: var(--danger); background: #FEF2F2;
+.sc-answer-remove:hover:not([data-qlpk-button], [data-qlpk-button] *) { color: var(--danger); background: var(--qlpk-feedback-error-bg);
 }
 
 	/* Add answer button */
@@ -710,7 +709,7 @@
 		background: var(--page-bg);
 	}
 
-	.sc-grid-group-input:focus { border-color: var(--accent); background: #fff; }
+	.sc-grid-group-input:focus { border-color: var(--accent); background: var(--qlpk-color-white); }
 
 	.sc-add-col-btn, .sc-add-row-btn {
 		border: none;
@@ -776,7 +775,7 @@
 		position: absolute;
 		width: 14px;
 		height: 14px;
-		background: #fff;
+		background: var(--qlpk-color-white);
 		border-radius: 50%;
 		top: 3px;
 		left: 3px;
@@ -814,7 +813,7 @@
 }
 .sc-q-action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) { background: var(--qlpk-color-brown-soft); color: var(--qlpk-color-primary);
 }
-.sc-q-delete-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) { background: #FEF2F2; color: var(--danger);
+.sc-q-delete-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) { background: var(--qlpk-feedback-error-bg); color: var(--danger);
 }
 
 	/* ── ADD QUESTION BUTTON ── */

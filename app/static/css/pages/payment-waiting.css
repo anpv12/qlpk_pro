@@ -10,7 +10,7 @@
 		--accent-light: var(--qlpk-color-primary-soft);
 		--accent-pale: var(--qlpk-color-primary-soft);
 
-		--surface: #FFFFFF;
+		--surface: var(--qlpk-color-white);
 		--surface-dim: var(--qlpk-color-page-bg);
 		--page-bg: var(--qlpk-color-primary-soft);
 
@@ -23,16 +23,16 @@
 
 		--success: var(--qlpk-feedback-success);
 		--success-bg: var(--qlpk-feedback-success-bg);
-		--danger: #DC2626;
-		--danger-bg: #FEF2F2;
+		--danger: var(--qlpk-feedback-error);
+		--danger-bg: var(--qlpk-feedback-error-bg);
 
 		--radius: 10px;
 		--radius-sm: 6px;
 		--radius-pill: 100px;
 
-		--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-		--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-		--shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+		--shadow-sm: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.04);
+		--shadow-md: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.06);
+		--shadow-lg: 0 12px 32px rgba(var(--qlpk-color-black-rgb), 0.1);
 
 		--transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
@@ -63,12 +63,12 @@
 	}
 
 	/* ── SIDEBAR GRID ── */
-	#sidebar-container.col-md-3 {
+	.qlpk-shell-sidebar.col-md-3 {
 		flex: 0 0 25% !important;
 		max-width: 25% !important;
 	}
 
-	#sidebar-container.col-lg-2 {
+	.qlpk-shell-sidebar.col-lg-2 {
 		flex: 0 0 16.66667% !important;
 		max-width: 16.66667% !important;
 	}
@@ -258,7 +258,7 @@
 	}
 
 	.pw-table-wrap table thead .form-check-input {
-		border-color: rgba(255, 255, 255, 0.6);
+		border-color: rgba(var(--qlpk-color-white-rgb), 0.6);
 	}
 
 	.pw-table-wrap table .form-check-input:checked {
@@ -302,12 +302,12 @@
 	}
 
 	/* ── MODAL — Invoice Detail ── */
-	#examinationDetailModal .modal-dialog {
+	.modal.qlpk-examination-detail-modal .modal-dialog {
 		max-width: 95%;
 		margin: 1vh auto;
 	}
 
-	#examinationDetailModal .modal-content {
+	.modal.qlpk-examination-detail-modal .modal-content {
 		height: 96vh;
 		border: none;
 		border-radius: var(--radius);
@@ -315,13 +315,13 @@
 		overflow: hidden;
 	}
 
-	#examinationDetailModal .modal-header {
+	.modal.qlpk-examination-detail-modal .modal-header {
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
 		padding: 10px 16px;
 	}
 
-	#examinationDetailModal .modal-title {
+	.modal.qlpk-examination-detail-modal .modal-title {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-md, 14px);
 		font-weight: var(--qlpk-font-weight-bold, 700);
@@ -332,14 +332,14 @@
 		text-align: center;
 	}
 
-	#examinationDetailModal .modal-body {
+	.modal.qlpk-examination-detail-modal .modal-body {
 		padding: 16px 20px;
 		background: var(--surface);
 		overflow-y: auto;
 		overflow-x: auto;
 	}
 
-	#examinationDetailModal .modal-footer {
+	.modal.qlpk-examination-detail-modal .modal-footer {
 		border-top: 1px solid var(--border);
 		padding: 10px 16px;
 		display: flex;
@@ -347,7 +347,7 @@
 		gap: 8px;
 	}
 
-	#examinationDetailModal .section-title {
+	.modal.qlpk-examination-detail-modal .section-title {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		color: var(--accent);
 		font-weight: var(--qlpk-font-weight-bold, 700);
@@ -356,7 +356,7 @@
 		margin-bottom: 8px;
 	}
 
-	#examinationDetailModal .form-label {
+	.modal.qlpk-examination-detail-modal .form-label {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		color: var(--accent);
 		font-weight: var(--qlpk-font-weight-medium, 500);
@@ -364,13 +364,13 @@
 		margin-bottom: 4px;
 	}
 
-	#examinationDetailModal .required-field::after {
+	.modal.qlpk-examination-detail-modal .required-field::after {
 		content: " *";
 		color: var(--danger);
 	}
 
-	#examinationDetailModal .form-control,
-	#examinationDetailModal .form-select {
+	.modal.qlpk-examination-detail-modal .form-control,
+	.modal.qlpk-examination-detail-modal .form-select {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 	border-width: 1px;
 	border-style: solid;
@@ -378,19 +378,19 @@
 		font-size: var(--qlpk-font-size-base, 13px);
 		height: 32px;
 }
-#examinationDetailModal .form-control:not([data-qlpk-button], [data-qlpk-button] *),
-#examinationDetailModal .form-select {
+.modal.qlpk-examination-detail-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-examination-detail-modal .form-select {
 		background: var(--qlpk-color-brown-soft);
 		border: 1px solid var(--border);
 }
-#examinationDetailModal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
-#examinationDetailModal .form-select:focus {
+.modal.qlpk-examination-detail-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-examination-detail-modal .form-select:focus {
 		background: var(--surface);
 		border-color: var(--accent);
 		box-shadow: 0 0 0 3px rgba(var(--qlpk-color-primary-rgb), 0.1);
 }
 
-	#examinationDetailModal .table th {
+	.modal.qlpk-examination-detail-modal .table th {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		background: var(--surface-dim);
 		color: var(--text-secondary);
@@ -400,7 +400,7 @@
 		white-space: nowrap;
 	}
 
-	#examinationDetailModal .table td {
+	.modal.qlpk-examination-detail-modal .table td {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		color: var(--text-primary);
 		font-size: var(--qlpk-font-size-base, 13px);
@@ -409,41 +409,41 @@
 	}
 
 	/* Modal Buttons */
-	#printInvoiceBtn {
+	.qlpk-print-invoice-btn {
 	border-width: 1px;
 	border-style: solid;
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 }
 /* Modal Buttons */
-	#printInvoiceBtn:not([data-qlpk-button], [data-qlpk-button] *) {
+	.qlpk-print-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--surface-dim);
 		border: 1px solid var(--border);
 		color: var(--text-primary);
 }
-#printInvoiceBtn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+.qlpk-print-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--border);
 }
 
-	#exportInvoiceBtn {
+	.qlpk-export-invoice-btn {
 	border-width: 1px;
 	border-style: solid;
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 }
-#exportInvoiceBtn:not([data-qlpk-button], [data-qlpk-button] *) {
+.qlpk-export-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--qlpk-workflow-context-header-bg);
 		border: 1px solid var(--accent);
-		color: #fff;
+		color: var(--qlpk-color-white);
 }
-#exportInvoiceBtn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+.qlpk-export-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--qlpk-workflow-context-header-bg);
 }
 
-	#examinationDetailModal .modal-footer .btn[data-bs-dismiss="modal"] {
+	.modal.qlpk-examination-detail-modal .modal-footer .btn[data-bs-dismiss="modal"] {
 	border-width: 1px;
 	border-style: solid;
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 }
-#examinationDetailModal .modal-footer .btn[data-bs-dismiss="modal"]:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-examination-detail-modal .modal-footer .btn[data-bs-dismiss="modal"]:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--surface);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
@@ -507,72 +507,72 @@
 	}
 
 	/* ── MODAL — Add Service ── */
-	#addServiceModal .modal-content {
+	.modal.qlpk-add-service-modal .modal-content {
 		border: none;
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-lg);
 	}
 
-	#addServiceModal .modal-header {
+	.modal.qlpk-add-service-modal .modal-header {
 		border-bottom: 1px solid var(--border);
 		padding: 12px 16px;
 	}
 
-	#addServiceModal .modal-title {
+	.modal.qlpk-add-service-modal .modal-title {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-md, 14px);
 		font-weight: var(--qlpk-font-weight-bold, 700);
 		color: var(--text-primary);
 	}
 
-	#addServiceModal .form-label {
+	.modal.qlpk-add-service-modal .form-label {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-sm, 12px);
 		font-weight: var(--qlpk-font-weight-semibold, 600);
 		color: var(--text-secondary);
 	}
 
-	#addServiceModal .form-control,
-	#addServiceModal .form-select {
+	.modal.qlpk-add-service-modal .form-control,
+	.modal.qlpk-add-service-modal .form-select {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		border-radius: var(--radius-sm);
 		font-size: var(--qlpk-font-size-base, 13px);
 	}
 
-	#addServiceModal .modal-footer {
+	.modal.qlpk-add-service-modal .modal-footer {
 		border-top: 1px solid var(--border);
 		padding: 10px 16px;
 	}
 
 	/* ── MODAL — Edit Service (dynamic) ── */
-	#editServiceModal .modal-content {
+	.modal.qlpk-edit-service-modal .modal-content {
 		border: none;
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-lg);
 	}
 
-	#editServiceModal .modal-header {
+	.modal.qlpk-edit-service-modal .modal-header {
 		background: var(--qlpk-workflow-context-header-bg);
 		border-bottom: none;
 		padding: 12px 16px;
 	}
 
-	#editServiceModal .modal-title {
+	.modal.qlpk-edit-service-modal .modal-title {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-md, 14px);
 		font-weight: var(--qlpk-font-weight-bold, 700);
-		color: #fff;
+		color: var(--qlpk-color-white);
 	}
 
-	#editServiceModal .modal-header .btn-close {
+	.modal.qlpk-edit-service-modal .modal-header .btn-close {
 		filter: brightness(0) invert(1);
 	}
 
-	#editServiceModal .modal-body {
+	.modal.qlpk-edit-service-modal .modal-body {
 		padding: 20px;
 	}
 
-	#editServiceModal .form-label {
+	.modal.qlpk-edit-service-modal .form-label {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-xs, 11px);
 		font-weight: var(--qlpk-font-weight-bold, 700);
@@ -581,7 +581,7 @@
 		letter-spacing: 0.5px;
 	}
 
-	#editServiceModal .form-control {
+	.modal.qlpk-edit-service-modal .form-control {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 	border-width: 1px;
 	border-style: solid;
@@ -589,78 +589,78 @@
 		font-size: var(--qlpk-font-size-base, 13px);
 		height: 36px;
 }
-#editServiceModal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
 		border: 1px solid var(--border);
 		transition: var(--transition);
 }
-#editServiceModal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 		border-color: var(--accent);
 		box-shadow: 0 0 0 3px rgba(var(--qlpk-color-primary-rgb), 0.1);
 }
-#editServiceModal .form-control[readonly]:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .form-control[readonly]:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--accent-pale);
 		color: var(--text-primary);
 }
 
-	#editServiceModal .modal-footer {
+	.modal.qlpk-edit-service-modal .modal-footer {
 		border-top: 1px solid var(--border);
 		padding: 12px 16px;
 	}
 
-	#editServiceModal .modal-footer .btn-secondary {
+	.modal.qlpk-edit-service-modal .modal-footer .btn-secondary {
 	border-width: 1px;
 	border-style: solid;
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-weight: var(--qlpk-font-weight-semibold, 600);
 		font-size: var(--qlpk-font-size-base, 13px);
 }
-#editServiceModal .modal-footer .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .modal-footer .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--surface);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
 }
 
-	#editServiceModal .modal-footer .btn-primary {
+	.modal.qlpk-edit-service-modal .modal-footer .btn-primary {
 	border-width: 1px;
 	border-style: solid;
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-weight: var(--qlpk-font-weight-semibold, 600);
 		font-size: var(--qlpk-font-size-base, 13px);
 }
-#editServiceModal .modal-footer .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .modal-footer .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--qlpk-workflow-context-header-bg);
 		border: 1px solid var(--accent);
-		color: #fff;
+		color: var(--qlpk-color-white);
 }
-#editServiceModal .modal-footer .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-edit-service-modal .modal-footer .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 		background: var(--qlpk-workflow-context-header-bg);
 }
 
 	/* ── MODAL — Action Selection (dynamic) ── */
-	#actionSelectionModal .modal-content {
+	.modal.qlpk-action-selection-modal .modal-content {
 		border: none;
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-lg);
 	}
 
-	#actionSelectionModal .modal-header {
+	.modal.qlpk-action-selection-modal .modal-header {
 		background: var(--qlpk-workflow-context-header-bg);
 		border-bottom: none;
 		padding: 12px 16px;
 	}
 
-	#actionSelectionModal .modal-title {
+	.modal.qlpk-action-selection-modal .modal-title {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-size: var(--qlpk-font-size-md, 14px);
 		font-weight: var(--qlpk-font-weight-bold, 700);
-		color: #fff;
+		color: var(--qlpk-color-white);
 	}
 
-	#actionSelectionModal .modal-header .btn-close {
+	.modal.qlpk-action-selection-modal .modal-header .btn-close {
 		filter: brightness(0) invert(1);
 	}
 
-	#actionSelectionModal .modal-body .btn {
+	.modal.qlpk-action-selection-modal .modal-body .btn {
 		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 		font-weight: var(--qlpk-font-weight-semibold, 600);
 		font-size: var(--qlpk-font-size-base, 13px);
@@ -740,12 +740,12 @@
 			align-items: center;
 		}
 
-		#examinationDetailModal .modal-dialog {
+		.modal.qlpk-examination-detail-modal .modal-dialog {
 			max-width: 100%;
 			margin: 4px;
 		}
 
-		#examinationDetailModal .modal-content {
+		.modal.qlpk-examination-detail-modal .modal-content {
 			height: calc(100vh - 8px);
 		}
 	}

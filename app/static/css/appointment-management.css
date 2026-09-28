@@ -43,118 +43,118 @@ body {
 	--appointment-calendar-text-secondary: var(--qlpk-color-text-muted);
 	--appointment-calendar-text-muted: var(--qlpk-color-text-muted);
 	--appointment-calendar-text-soft: var(--qlpk-color-text-muted);
-	--appointment-calendar-event-text-pending: #8a5a00;
-	--appointment-calendar-event-text-confirmed: #0d6b52;
-	--appointment-calendar-event-text-no-show: #1f2937;
-	--appointment-calendar-event-text-cancelled: #b4233a;
-	--appointment-color-focus-border: var(--qlpk-color-focus, #5bb3aa);
+	--appointment-calendar-event-text-pending: var(--qlpk-palette-orange-27);
+	--appointment-calendar-event-text-confirmed: var(--qlpk-palette-green-24-a);
+	--appointment-calendar-event-text-no-show: var(--qlpk-palette-blue-17-a);
+	--appointment-calendar-event-text-cancelled: var(--qlpk-palette-red-42-a);
+	--appointment-color-focus-border: var(--qlpk-color-focus, var(--qlpk-palette-teal-53));
 	/* Feedback */
 	--appointment-color-info: var(--qlpk-feedback-info, var(--qlpk-color-primary));
-	--appointment-color-info-soft: var(--qlpk-feedback-info-bg, #eff6ff);
-	--appointment-color-success: var(--qlpk-feedback-success, #15803d);
-	--appointment-color-success-text: var(--qlpk-feedback-success, #15803d);
-	--appointment-color-success-soft: var(--qlpk-feedback-success-bg, #ecfdf3);
-	--appointment-color-warning: var(--qlpk-feedback-warning, #b45309);
-	--appointment-color-warning-text: var(--qlpk-feedback-warning, #b45309);
-	--appointment-color-warning-soft: #fff7d6;
-	--appointment-color-amber: var(--qlpk-color-gold, #d6a069);
-	--appointment-color-error: var(--qlpk-feedback-error, #dc2626);
-	--appointment-color-error-strong: var(--qlpk-feedback-critical, #991b1b);
-	--appointment-color-error-soft: var(--qlpk-feedback-error-bg, #fef2f2);
+	--appointment-color-info-soft: var(--qlpk-feedback-info-bg, var(--qlpk-feedback-info-bg));
+	--appointment-color-success: var(--qlpk-feedback-success, var(--qlpk-palette-green-29-a));
+	--appointment-color-success-text: var(--qlpk-feedback-success, var(--qlpk-palette-green-29-a));
+	--appointment-color-success-soft: var(--qlpk-feedback-success-bg, var(--qlpk-feedback-success-bg));
+	--appointment-color-warning: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+	--appointment-color-warning-text: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+	--appointment-color-warning-soft: var(--qlpk-palette-amber-92);
+	--appointment-color-amber: var(--qlpk-color-gold, var(--qlpk-color-gold));
+	--appointment-color-error: var(--qlpk-feedback-error, var(--qlpk-feedback-error));
+	--appointment-color-error-strong: var(--qlpk-feedback-critical, var(--qlpk-feedback-critical));
+	--appointment-color-error-soft: var(--qlpk-feedback-error-bg, var(--qlpk-feedback-error-bg));
 	/* Status colors: calendar event background stays status-owned. */
 	--appointment-color-status-pending: var(--qlpk-feedback-warning);
 	--appointment-color-status-confirmed: var(--qlpk-feedback-success);
 	--appointment-color-status-no-show: var(--qlpk-feedback-neutral);
 	--appointment-color-status-cancelled: var(--qlpk-feedback-error);
 	--appointment-color-status-text: var(--appointment-color-text);
-	--appointment-color-status-pending-soft: #fff3bd;
-	--appointment-color-status-confirmed-soft: #c6f3da;
-	--appointment-color-status-no-show-soft: #d8e0ea;
-	--appointment-color-status-cancelled-soft: #fbe4e7;
+	--appointment-color-status-pending-soft: var(--qlpk-palette-amber-87);
+	--appointment-color-status-confirmed-soft: var(--qlpk-palette-green-86);
+	--appointment-color-status-no-show-soft: var(--qlpk-palette-blue-88-b);
+	--appointment-color-status-cancelled-soft: var(--qlpk-palette-red-94);
 	/* Surface */
-	--appointment-color-page-bg: #ffffff;
-	--appointment-color-surface: var(--qlpk-color-surface, #ffffff);
+	--appointment-color-page-bg: var(--qlpk-color-white);
+	--appointment-color-surface: var(--qlpk-color-surface, var(--qlpk-color-white));
 	--appointment-color-surface-muted: var(--qlpk-color-page-bg);
-	--appointment-color-white: var(--qlpk-color-white, #ffffff);
-	--appointment-color-black: var(--qlpk-color-black, #000000);
+	--appointment-color-white: var(--qlpk-color-white, var(--qlpk-color-white));
+	--appointment-color-black: var(--qlpk-color-black, var(--qlpk-color-black));
 	/* Border */
-	--appointment-color-border: #e5e7eb;
-	--appointment-color-border-strong: #d1d5db;
-	--appointment-color-border-light: rgba(15, 23, 42, 0.08);
+	--appointment-color-border: var(--qlpk-palette-gray-91);
+	--appointment-color-border-strong: var(--qlpk-palette-gray-84);
+	--appointment-color-border-light: var(--qlpk-alpha-blue-11-08);
 	/* Text / neutral */
-	--appointment-color-text: var(--qlpk-color-text, #352821);
-	--appointment-color-neutral-700: var(--qlpk-color-text, #352821);
+	--appointment-color-text: var(--qlpk-color-text, var(--qlpk-color-text));
+	--appointment-color-neutral-700: var(--qlpk-color-text, var(--qlpk-color-text));
 	--appointment-color-neutral: var(--qlpk-color-slate-600, var(--qlpk-color-text-muted));
-	--appointment-color-muted: var(--qlpk-color-text-muted, #566366);
-	--appointment-color-muted-light: var(--qlpk-color-neutral-400, #9ca3af);
-	--appointment-color-text-strong: #1f2937;
+	--appointment-color-muted: var(--qlpk-color-text-muted, var(--qlpk-palette-gray-37));
+	--appointment-color-muted-light: var(--qlpk-color-neutral-400, var(--qlpk-color-neutral-400));
+	--appointment-color-text-strong: var(--qlpk-palette-blue-17-a);
 	--appointment-color-ui-text: var(--qlpk-color-text-muted);
 	--appointment-color-ui-muted: var(--qlpk-color-text-muted);
 	--appointment-color-ui-soft: var(--qlpk-color-text-muted);
 	--appointment-color-ui-border: var(--qlpk-color-border);
-	--appointment-color-ui-border-muted: #e3e8ef;
-	--appointment-color-ui-border-card: #e1e8f0;
+	--appointment-color-ui-border-muted: var(--qlpk-palette-blue-91-c);
+	--appointment-color-ui-border-card: var(--qlpk-palette-blue-91-d);
 	--appointment-color-ui-border-hover: var(--qlpk-color-border);
-	--appointment-color-input-border: #d7e0ea;
-	--appointment-color-radio-border: #b8c4d4;
+	--appointment-color-input-border: var(--qlpk-palette-blue-88-c);
+	--appointment-color-radio-border: var(--qlpk-palette-blue-78-a);
 	--appointment-color-editor-bg: var(--appointment-color-surface-muted);
-	--appointment-color-editor-section-divider: #eadfd2;
-	--appointment-color-editor-reminder-border: #cceee2;
-	--appointment-color-editor-reminder-bg-end: #f8fffc;
-	--appointment-editor-title-icon-end: #10b981;
-	--appointment-editor-title-icon-shadow: rgba(0, 0, 0, 0.08);
-	--appointment-editor-body-gradient-start: rgba(236, 253, 245, 0.36);
-	--appointment-editor-body-gradient-end: rgba(248, 250, 252, 0);
-	--appointment-editor-profile-glow: rgba(245, 158, 11, 0.2);
-	--appointment-editor-profile-bg-start: #fff4de;
-	--appointment-editor-profile-bg-end: #fffaf3;
-	--appointment-editor-translucent-white-strong: rgba(255, 255, 255, 0.85);
-	--appointment-editor-translucent-white: rgba(255, 255, 255, 0.72);
-	--appointment-editor-footer-bg: rgba(255, 255, 255, 0.92);
-	--appointment-editor-avatar-start: #f9c76f;
-	--appointment-editor-avatar-end: #f4a734;
-	--appointment-editor-schedule-bg-end: #f8fffe;
+	--appointment-color-editor-section-divider: var(--qlpk-palette-brown-87-c);
+	--appointment-color-editor-reminder-border: var(--qlpk-palette-green-87);
+	--appointment-color-editor-reminder-bg-end: var(--qlpk-palette-white-c);
+	--appointment-editor-title-icon-end: var(--qlpk-palette-green-39);
+	--appointment-editor-title-icon-shadow: rgba(var(--qlpk-color-black-rgb), 0.08);
+	--appointment-editor-body-gradient-start: rgba(var(--qlpk-palette-green-96-b-rgb), 0.36);
+	--appointment-editor-body-gradient-end: rgba(var(--qlpk-feedback-neutral-bg-rgb), 0);
+	--appointment-editor-profile-glow: var(--qlpk-alpha-orange-50-20);
+	--appointment-editor-profile-bg-start: var(--qlpk-palette-orange-94);
+	--appointment-editor-profile-bg-end: var(--qlpk-color-surface-subtle);
+	--appointment-editor-translucent-white-strong: rgba(var(--qlpk-color-white-rgb), 0.85);
+	--appointment-editor-translucent-white: rgba(var(--qlpk-color-white-rgb), 0.72);
+	--appointment-editor-footer-bg: rgba(var(--qlpk-color-white-rgb), 0.92);
+	--appointment-editor-avatar-start: var(--qlpk-palette-orange-71);
+	--appointment-editor-avatar-end: var(--qlpk-palette-orange-58);
+	--appointment-editor-schedule-bg-end: var(--qlpk-palette-white-d);
 	--appointment-editor-schedule-icon-end: var(--qlpk-color-primary);
-	--appointment-editor-clinical-bg: #ecfeff;
-	--appointment-editor-clinical-bg-end: #f8fdff;
-	--appointment-editor-clinical-text: #0891b2;
-	--appointment-editor-clinical-icon-end: #22d3ee;
-	--appointment-editor-doctor-bg: #efe4ff;
-	--appointment-editor-doctor-text: #7c3aed;
-	--appointment-editor-patient-bg: #fff7ed;
-	--appointment-editor-patient-bg-end: #fffdf7;
-	--appointment-editor-service-bg-end: #fffdf8;
-	--appointment-editor-service-text: #c2410c;
-	--appointment-editor-service-icon-start: #f97316;
-	--appointment-shadow-ui-xs: rgba(15, 23, 42, 0.04);
-	--appointment-shadow-ui-sm: rgba(15, 23, 42, 0.06);
-	--appointment-shadow-ui-card: rgba(15, 23, 42, 0.07);
-	--appointment-shadow-ui-md: rgba(15, 23, 42, 0.08);
-	--appointment-shadow-ui-icon: rgba(15, 23, 42, 0.12);
-	--appointment-shadow-ui-footer: rgba(15, 23, 42, 0.05);
-	--appointment-shadow-ui-lg: rgba(15, 23, 42, 0.18);
-	--appointment-shadow-calendar-surface: rgba(15, 23, 42, 0.06);
-	--appointment-shadow-calendar-soft: rgba(15, 23, 42, 0.045);
-	--appointment-shadow-calendar-event: rgba(15, 23, 42, 0.12);
-	--appointment-shadow-calendar-event-hover: rgba(15, 23, 42, 0.18);
+	--appointment-editor-clinical-bg: var(--qlpk-palette-teal-96);
+	--appointment-editor-clinical-bg-end: var(--qlpk-palette-white-e);
+	--appointment-editor-clinical-text: var(--qlpk-palette-teal-36);
+	--appointment-editor-clinical-icon-end: var(--qlpk-palette-teal-53-a);
+	--appointment-editor-doctor-bg: var(--qlpk-palette-violet-95);
+	--appointment-editor-doctor-text: var(--qlpk-palette-violet-58);
+	--appointment-editor-patient-bg: var(--qlpk-color-surface-muted);
+	--appointment-editor-patient-bg-end: var(--qlpk-palette-amber-98);
+	--appointment-editor-service-bg-end: var(--qlpk-palette-white-f);
+	--appointment-editor-service-text: var(--qlpk-palette-orange-40);
+	--appointment-editor-service-icon-start: var(--qlpk-palette-orange-53-a);
+	--appointment-shadow-ui-xs: var(--qlpk-alpha-blue-11-04-b);
+	--appointment-shadow-ui-sm: var(--qlpk-alpha-blue-11-06);
+	--appointment-shadow-ui-card: var(--qlpk-alpha-blue-11-07-a);
+	--appointment-shadow-ui-md: var(--qlpk-alpha-blue-11-08);
+	--appointment-shadow-ui-icon: var(--qlpk-alpha-blue-11-12);
+	--appointment-shadow-ui-footer: var(--qlpk-alpha-blue-11-05);
+	--appointment-shadow-ui-lg: var(--qlpk-alpha-blue-11-18);
+	--appointment-shadow-calendar-surface: var(--qlpk-alpha-blue-11-06);
+	--appointment-shadow-calendar-soft: var(--qlpk-alpha-blue-11-04-a);
+	--appointment-shadow-calendar-event: var(--qlpk-alpha-blue-11-12);
+	--appointment-shadow-calendar-event-hover: var(--qlpk-alpha-blue-11-18);
 	--appointment-calendar-event-radius: 0.3125rem;
 	--appointment-calendar-event-min-height: 1.0625rem;
 	--appointment-calendar-event-dot-size: 0.4375rem;
 	--appointment-calendar-cell-radius: 0.625rem;
-	--appointment-shadow-warm: rgba(180, 83, 9, 0.18);
+	--appointment-shadow-warm: rgba(var(--qlpk-feedback-warning-rgb), 0.18);
 	/* Warm / domain (giữ riêng) */
-	--appointment-color-brown: var(--qlpk-color-brown, #5a301f);
+	--appointment-color-brown: var(--qlpk-color-brown, var(--qlpk-color-brown));
 	--appointment-color-chocolate: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
-	--appointment-color-brown-soft: var(--qlpk-color-brown-soft, #f8f1e9);
-	--appointment-color-toast-text: var(--qlpk-toast-text, var(--qlpk-color-text, #352821));
-	--appointment-color-toast-muted: var(--qlpk-toast-muted, #725d51);
-	--appointment-color-gold: var(--qlpk-color-gold, #d6a069);
-	--appointment-color-schedule-soft: #eaf7f0;
-	--appointment-color-schedule-text: #155d38;
-	--appointment-color-google-connected-start: #81ffb2;
-	--appointment-color-google-connected-end: #e6fff0;
-	--appointment-color-google-connected-text: #14532d;
-	--appointment-color-tooltip-bg: #2c3e50;
+	--appointment-color-brown-soft: var(--qlpk-color-brown-soft, var(--qlpk-color-brown-soft));
+	--appointment-color-toast-text: var(--qlpk-toast-text, var(--qlpk-color-text, var(--qlpk-color-text)));
+	--appointment-color-toast-muted: var(--qlpk-toast-muted, var(--qlpk-toast-muted));
+	--appointment-color-gold: var(--qlpk-color-gold, var(--qlpk-color-gold));
+	--appointment-color-schedule-soft: var(--qlpk-palette-green-94-a);
+	--appointment-color-schedule-text: var(--qlpk-palette-green-22);
+	--appointment-color-google-connected-start: var(--qlpk-palette-green-75);
+	--appointment-color-google-connected-end: var(--qlpk-palette-green-95-b);
+	--appointment-color-google-connected-text: var(--qlpk-palette-green-20-a);
+	--appointment-color-tooltip-bg: var(--qlpk-palette-blue-24);
 	--appointment-border-width: 0.0625rem;
 	--appointment-border-width-md: 0.125rem;
 	--appointment-border-width-accent: 0.25rem;
@@ -514,19 +514,17 @@ body {
 }
 .appointment-button--header:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--appointment-color-white);
-	border-color: rgba(255, 255, 255, 0.82);
+	border-color: rgba(var(--qlpk-color-white-rgb), 0.82);
 	color: var(--appointment-color-brown);
-	box-shadow: 0 0.0625rem 0.1875rem rgba(44, 24, 15, 0.12);
+	box-shadow: 0 0.0625rem 0.1875rem var(--qlpk-alpha-brown-12-12);
 }
 .appointment-button--header:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .appointment-button--header:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--appointment-color-white);
 	border-color: color-mix(in srgb, var(--appointment-color-gold) 34%, var(--appointment-color-white));
 	color: var(--appointment-color-chocolate);
-	box-shadow: 0 0.125rem 0.375rem rgba(44, 24, 15, 0.16);
+	box-shadow: 0 0.125rem 0.375rem var(--qlpk-alpha-brown-12-16);
 }
-
-
 
 .appointment-status-scheduled {
 	--qlpk-status-color: var(--qlpk-feedback-warning);
@@ -591,7 +589,7 @@ body {
 	cursor: pointer;
 }
 
-#editAppointmentModal .appointment-modal-body-scroll {
+.modal.qlpk-edit-appointment-modal .appointment-modal-body-scroll {
 	max-height: 70vh;
 	overflow-y: auto;
 }
@@ -652,7 +650,7 @@ body {
 }
 
 .appointment-busy-schedule-card {
-	background: linear-gradient(135deg, rgba(212, 255, 3, 0.1) 0%, rgba(227, 247, 172, 0.1) 100%);
+	background: linear-gradient(135deg, var(--qlpk-alpha-green-51-10) 0%, var(--qlpk-alpha-green-82-10) 100%);
 }
 
 :where(.busy-schedule-overlay, .doctor-busy-overlay) {
@@ -663,7 +661,7 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(53, 40, 33, 0.5);
+	background: rgba(var(--qlpk-color-text-rgb), 0.5);
 	opacity: 0;
 	visibility: hidden;
 	transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -686,7 +684,7 @@ body {
 	overflow-y: auto;
 	border-radius: 0.5rem;
 	background: var(--appointment-color-surface);
-	box-shadow: 0 1rem 2rem rgba(53, 40, 33, 0.25);
+	box-shadow: 0 1rem 2rem rgba(var(--qlpk-color-text-rgb), 0.25);
 	transform: scale(0.96);
 	transition: transform 0.2s ease;
 }
@@ -748,14 +746,14 @@ body {
 	box-shadow: 0 0.25rem 0.875rem color-mix(in srgb, var(--appointment-color-chocolate) 8%, transparent);
 }
 
-#syncCalendarModal .modal-dialog {
+.modal.qlpk-sync-calendar-modal .modal-dialog {
 	inline-size: min(96vw, 88rem);
 	max-inline-size: 96vw;
 	block-size: calc(100dvh - 1rem);
 	margin: 0.5rem auto;
 }
 
-#syncCalendarModal .modal-content {
+.modal.qlpk-sync-calendar-modal .modal-content {
 	display: flex;
 	flex-direction: column;
 	block-size: 100%;
@@ -766,7 +764,7 @@ body {
 	color: var(--appointment-color-text);
 }
 
-#syncCalendarModal .sync-modal-header {
+.modal.qlpk-sync-calendar-modal .sync-modal-header {
 	flex: 0 0 auto;
 	padding: 0.625rem 1rem;
 	border-bottom: var(--appointment-border-width) solid color-mix(in srgb, var(--appointment-color-white) 16%, transparent);
@@ -774,7 +772,7 @@ body {
 	color: var(--appointment-color-white);
 }
 
-#syncCalendarModal .sync-modal-header .modal-title {
+.modal.qlpk-sync-calendar-modal .sync-modal-header .modal-title {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
@@ -785,13 +783,13 @@ body {
 	line-height: 1.3;
 }
 
-#syncCalendarModal .sync-modal-header .modal-title i {
+.modal.qlpk-sync-calendar-modal .sync-modal-header .modal-title i {
 	color: var(--appointment-color-gold);
 	font-size: var(--appointment-font-size);
 	line-height: 1;
 }
 
-#syncCalendarModal .sync-modal-body {
+.modal.qlpk-sync-calendar-modal .sync-modal-body {
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
@@ -801,14 +799,14 @@ body {
 	background: var(--appointment-color-page-bg);
 }
 
-#syncCalendarModal .filter-group {
+.modal.qlpk-sync-calendar-modal .filter-group {
 	display: flex;
 	flex: 0 0 auto;
 	flex-direction: column;
 	gap: 0.25rem;
 }
 
-#syncCalendarModal .filter-group .form-label {
+.modal.qlpk-sync-calendar-modal .filter-group .form-label {
 	display: flex;
 	align-items: center;
 	gap: 0.25rem;
@@ -819,13 +817,13 @@ body {
 	line-height: 1.3;
 }
 
-#syncCalendarModal .filter-group .form-label i {
+.modal.qlpk-sync-calendar-modal .filter-group .form-label i {
 	color: var(--appointment-color-primary);
 	font-size: var(--appointment-font-size);
 	line-height: 1;
 }
 
-#syncCalendarModal .filter-group .form-control {
+.modal.qlpk-sync-calendar-modal .filter-group .form-control {
 	min-block-size: 1.875rem;
 	border-width: var(--appointment-border-width);
 	border-style: solid;
@@ -835,21 +833,21 @@ body {
 	font-weight: var(--appointment-font-weight-regular);
 	line-height: 1.35;
 }
-#syncCalendarModal .filter-group .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-sync-calendar-modal .filter-group .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: var(--appointment-border-width) solid var(--appointment-color-border);
 	background: var(--appointment-color-surface);
 	color: var(--appointment-color-text);
 }
 
-#syncCalendarModal .filter-bar #syncSearchInput {
+.modal.qlpk-sync-calendar-modal .filter-bar .qlpk-sync-search-input {
 	inline-size: clamp(12rem, 22vw, 20rem);
 }
 
-#syncCalendarModal .filter-group .sync-datepicker {
+.modal.qlpk-sync-calendar-modal .filter-group .sync-datepicker {
 	inline-size: 7.5rem;
 }
 
-#syncCalendarModal .sync-stats {
+.modal.qlpk-sync-calendar-modal .sync-stats {
 	display: flex;
 	flex: 1 1 auto;
 	flex-wrap: wrap;
@@ -859,7 +857,7 @@ body {
 	margin-inline-start: auto;
 }
 
-#syncCalendarModal .table-responsive {
+.modal.qlpk-sync-calendar-modal .table-responsive {
 	flex: 1 1 auto;
 	min-block-size: 0;
 	overflow: auto;
@@ -868,13 +866,13 @@ body {
 	background: var(--appointment-color-surface);
 }
 
-#syncCalendarModal .table {
+.modal.qlpk-sync-calendar-modal .table {
 	margin: 0;
 	color: var(--appointment-color-text);
 	font-size: var(--appointment-font-size);
 }
 
-#syncCalendarModal .table thead th {
+.modal.qlpk-sync-calendar-modal .table thead th {
 	padding: 0.375rem 0.5rem;
 	background: var(--appointment-color-brown-soft);
 	color: var(--appointment-color-chocolate);
@@ -884,7 +882,7 @@ body {
 	white-space: nowrap;
 }
 
-#syncCalendarModal .table tbody td {
+.modal.qlpk-sync-calendar-modal .table tbody td {
 	padding: 0.375rem 0.5rem;
 	color: var(--appointment-color-text);
 	font-size: var(--appointment-font-size);
@@ -892,7 +890,7 @@ body {
 	vertical-align: middle;
 }
 
-#syncCalendarModal .sync-date-header td {
+.modal.qlpk-sync-calendar-modal .sync-date-header td {
 	background: var(--appointment-color-primary-soft);
 	color: var(--appointment-color-primary-strong);
 	text-align: left;
@@ -906,25 +904,25 @@ body {
 	margin-inline-start: 0.5rem;
 }
 
-#syncCalendarModal .sync-status-cell {
+.modal.qlpk-sync-calendar-modal .sync-status-cell {
 	text-align: center;
 }
 
-#syncCalendarModal .verify-icons {
+.modal.qlpk-sync-calendar-modal .verify-icons {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
 	gap: 0.25rem;
 }
 
-#syncCalendarModal .table tbody td .btn,
-#syncCalendarModal .table tbody td .action-btn {
+.modal.qlpk-sync-calendar-modal .table tbody td .btn,
+.modal.qlpk-sync-calendar-modal .table tbody td .action-btn {
 	padding: 0.25rem 0.625rem;
 	font-size: var(--appointment-font-size);
 	white-space: nowrap;
 }
 
-#syncCalendarModal .modal-footer {
+.modal.qlpk-sync-calendar-modal .modal-footer {
 	flex: 0 0 auto;
 	gap: 0.5rem;
 	padding: 0.5rem 0.875rem;
@@ -1009,7 +1007,7 @@ body {
 	font-weight: var(--appointment-font-weight-medium);
 	padding: var(--appointment-space-xl) var(--appointment-space-3xl);
 	border-radius: var(--appointment-space-lg);
-	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-3xl) rgba(0, 0, 0, 0.15);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-3xl) rgba(var(--qlpk-color-black-rgb), 0.15);
 	max-width: 15.625rem;
 	text-align: center;
 	line-height: 1.4;
@@ -1030,7 +1028,7 @@ body {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: rgba(0, 0, 0, 0.5);
+	background: rgba(var(--qlpk-color-black-rgb), 0.5);
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -1040,7 +1038,7 @@ body {
 .conflict-popup {
 	background: var(--appointment-color-white);
 	border-radius: var(--appointment-space-xl);
-	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-6xl) rgba(0, 0, 0, 0.15);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-6xl) rgba(var(--qlpk-color-black-rgb), 0.15);
 	max-width: 25rem;
 	width: 90%;
 	animation: popupSlideIn 0.3s ease-out;
@@ -1209,17 +1207,6 @@ body {
 	background: var(--appointment-color-white);
 }
 
-.appointment-fullscreen #calendar a,
-.appointment-fullscreen #calendar a:hover,
-.appointment-fullscreen .fc .fc-col-header-cell-cushion,
-.appointment-fullscreen .fc .fc-col-header-cell-cushion:hover,
-.appointment-fullscreen .fc .fc-daygrid-day-number,
-.appointment-fullscreen .fc .fc-daygrid-day-number:hover,
-.appointment-fullscreen .fc .fc-daygrid-more-link,
-.appointment-fullscreen .fc .fc-daygrid-more-link:hover {
-	text-decoration: none;
-}
-
 .appointment-fullscreen .fc-timegrid-slot {
 	height: 2.75rem;
 }
@@ -1270,243 +1257,43 @@ body {
 }
 
 /* FullCalendar event content styles */
-.appointment-fullscreen .fc-event-main-content {
-	padding: var(--appointment-space-2xs) var(--appointment-space-sm);
-}
-
-.appointment-fullscreen .fc-event-time {
-	color: inherit;
-	font-size: var(--appointment-font-size-compact);
-	font-weight: var(--appointment-font-weight-semibold);
-	margin-bottom: var(--appointment-space-2xs);
-}
-
-.appointment-fullscreen .fc-event-title {
-	color: inherit;
-	font-size: var(--appointment-font-size-compact);
-	line-height: 1.35;
-}
 
 /* FullCalendar buttons */
-.appointment-fullscreen .fc-button,
-.appointment-fullscreen .fc-button-primary,
-.appointment-fullscreen .fc-button-group .fc-button {
-	background: var(--appointment-color-white);
-	border-color: var(--appointment-calendar-grid-border);
-	color: var(--appointment-calendar-text-secondary);
-	min-block-size: 1.625rem;
-	padding: 0.125rem 0.5625rem;
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-semibold);
-	line-height: 1.2;
-	border-radius: var(--appointment-radius-md);
-	box-shadow: 0 0.0625rem 0.125rem var(--appointment-shadow-calendar-soft);
-	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.appointment-fullscreen .fc-button:hover,
-.appointment-fullscreen .fc-button-primary:hover,
-.appointment-fullscreen .fc-button-group .fc-button:hover {
-	background: var(--appointment-calendar-accent-soft);
-	border-color: color-mix(in srgb, var(--appointment-calendar-accent) 38%, var(--appointment-calendar-grid-border));
-	color: var(--appointment-calendar-accent-strong);
-}
-
-.appointment-fullscreen .fc-button-active,
-.appointment-fullscreen .fc-button-primary.fc-button-active {
-	background: var(--qlpk-workflow-context-header-bg);
-	border-color: var(--appointment-calendar-accent);
-	color: var(--appointment-color-white);
-	box-shadow: 0 0.125rem 0.375rem color-mix(in srgb, var(--appointment-calendar-accent) 24%, transparent);
-}
-
-.appointment-fullscreen .fc-button:active,
-.appointment-fullscreen .fc-button-primary:active,
-.appointment-fullscreen .fc-button-group .fc-button:active,
-.appointment-fullscreen .fc-button:focus,
-.appointment-fullscreen .fc-button-primary:focus,
-.appointment-fullscreen .fc-button-group .fc-button:focus {
-	background: var(--qlpk-workflow-context-header-bg);
-	border-color: var(--appointment-calendar-accent);
-	color: var(--appointment-color-white);
-	box-shadow: 0 0 0 0.1875rem color-mix(in srgb, var(--appointment-calendar-accent) 18%, transparent);
-}
 
 /* Nút "Hôm nay" */
-.appointment-fullscreen .fc .fc-today-button {
-	background: var(--qlpk-workflow-context-header-bg);
-	border-color: var(--appointment-calendar-accent);
-	color: var(--appointment-color-white);
-	font-weight: var(--appointment-font-weight-bold);
-	font-size: var(--appointment-font-size);
-	padding: 0.125rem 0.6875rem;
-	line-height: 1.2;
-	border-radius: var(--appointment-radius-md);
-}
 
 /* Nút điều hướng */
-.appointment-fullscreen .fc .fc-prev-button,
-.appointment-fullscreen .fc .fc-next-button {
-	background: var(--appointment-color-white);
-	border-color: var(--appointment-calendar-grid-border);
-	color: var(--appointment-calendar-text-secondary);
-	border-radius: var(--appointment-radius-md);
-	min-inline-size: 1.625rem;
-	padding: 0.125rem 0.5rem;
-	line-height: 1.2;
-	margin: 0 0.25rem;
-}
 
 /* Title hiển thị phạm vi ngày */
-.appointment-fullscreen .fc .fc-toolbar-title {
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-semibold);
-	color: var(--appointment-color-text);
-	margin-inline: 0.625rem;
-	display: inline-block;
-	vertical-align: middle;
-}
 
 /* Đảm bảo center section nằm cùng hàng */
-.appointment-fullscreen .fc .fc-toolbar-chunk.fc-toolbar-chunk-center {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
 
 /* Nút view mode (Ngày, Tuần, Tháng) */
-.appointment-fullscreen .fc .fc-dayGridDay-button,
-.appointment-fullscreen .fc .fc-timeGridWeek-button,
-.appointment-fullscreen .fc .fc-dayGridMonth-button {
-	background: var(--appointment-color-white);
-	border-color: var(--appointment-calendar-grid-border);
-	color: var(--appointment-calendar-text-secondary);
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-semibold);
-	padding: 0.125rem 0.5625rem;
-	line-height: 1.2;
-	border-radius: var(--appointment-radius-md);
-	margin-left: 0;
-}
-
-.appointment-fullscreen .fc .fc-button-group {
-	display: inline-flex;
-	gap: var(--appointment-space-3xs);
-	padding: var(--appointment-space-3xs);
-	border: var(--appointment-border-width) solid var(--appointment-calendar-grid-border-soft);
-	border-radius: var(--appointment-radius-md);
-	background: color-mix(in srgb, var(--appointment-calendar-header-bg) 82%, var(--appointment-color-white));
-}
 
 /* Nút view mode đang active */
-.appointment-fullscreen .fc .fc-dayGridDay-button.fc-button-active,
-.appointment-fullscreen .fc .fc-timeGridWeek-button.fc-button-active,
-.appointment-fullscreen .fc .fc-dayGridMonth-button.fc-button-active {
-	background: var(--qlpk-workflow-context-header-bg);
-	border-color: var(--appointment-calendar-accent);
-	color: var(--appointment-color-white);
-}
 
 /* Header cột trong chế độ tháng - hiện thứ trong tuần */
-.appointment-fullscreen .fc-dayGridMonth-view .fc-col-header-cell {
-	background: var(--appointment-calendar-header-bg);
-	color: var(--appointment-calendar-text-primary);
-	font-weight: var(--appointment-font-weight-medium);
-	padding: 0.1875rem 0;
-}
-
-.appointment-fullscreen .fc-dayGridMonth-view .fc-col-header-cell-cushion {
-	color: var(--appointment-calendar-text-primary);
-	font-weight: var(--appointment-font-weight-medium);
-}
 
 /* Ẩn header cột trong chế độ ngày */
-.appointment-fullscreen .fc-dayGridDay-view .fc-col-header-cell {
-	display: none;
-}
 
 /* Chỉ hiển thị header cột trong chế độ tuần */
 .appointment-fullscreen .fc-timeGridWeek-view .fc-col-header-cell {
 	display: table-cell;
 }
 
-.appointment-fullscreen .fc-event.appointment-event {
-	--appointment-event-status-bg: var(--appointment-color-status-pending);
-	--appointment-event-status-surface: var(--appointment-color-status-pending-soft);
-	--appointment-event-status-text: var(--appointment-calendar-event-text-pending);
-	--appointment-event-status-border: color-mix(in srgb, var(--appointment-event-status-bg) 30%, var(--appointment-color-white));
-	background:
-		linear-gradient(180deg,
-			color-mix(in srgb, var(--appointment-event-status-surface) 92%, var(--appointment-color-white)) 0%,
-			var(--appointment-event-status-surface) 100%) !important;
-	border: var(--appointment-border-width) solid var(--appointment-event-status-border) !important;
-	border-radius: var(--appointment-calendar-event-radius);
-	color: var(--appointment-event-status-text) !important;
-	box-shadow:
-		inset 0 var(--appointment-border-width) 0 rgba(255, 255, 255, 0.76),
-		0 var(--appointment-space-3xs) var(--appointment-space-sm) var(--appointment-shadow-calendar-event);
-	overflow: hidden;
-	transition:
-		border-color 0.16s ease,
-		filter 0.16s ease,
-		box-shadow 0.16s ease,
-		transform 0.16s ease;
-}
-
-.appointment-fullscreen .fc-event.appointment-event.status-scheduled {
-	--appointment-event-status-bg: var(--appointment-color-status-pending);
-	--appointment-event-status-surface: var(--appointment-color-status-pending-soft);
-	--appointment-event-status-text: var(--appointment-calendar-event-text-pending);
-}
-
-.appointment-fullscreen .fc-event.appointment-event.status-confirmed {
-	--appointment-event-status-bg: var(--appointment-color-status-confirmed);
-	--appointment-event-status-surface: var(--appointment-color-status-confirmed-soft);
-	--appointment-event-status-text: var(--appointment-calendar-event-text-confirmed);
-}
-
-.appointment-fullscreen .fc-event.appointment-event.status-cancelled {
-	--appointment-event-status-bg: var(--appointment-color-status-cancelled);
-	--appointment-event-status-surface: var(--appointment-color-status-cancelled-soft);
-	--appointment-event-status-text: var(--appointment-calendar-event-text-cancelled);
-}
-
-.appointment-fullscreen .fc-event.appointment-event.status-no_show {
-	--appointment-event-status-bg: var(--appointment-color-status-no-show);
-	--appointment-event-status-surface: var(--appointment-color-status-no-show-soft);
-	--appointment-event-status-text: var(--appointment-calendar-event-text-no-show);
-}
-
-.appointment-fullscreen .fc-event.appointment-event .fc-event-main,
-.appointment-fullscreen .fc-event.appointment-event .fc-event-main-content,
-.appointment-fullscreen .fc-event.appointment-event .fc-event-compact {
-	background: transparent !important;
-	color: var(--appointment-event-status-text) !important;
-}
-
-.appointment-fullscreen .fc-event.appointment-event:hover,
-.appointment-fullscreen .fc-event.appointment-event:focus {
-	filter: saturate(1.03) brightness(1.01);
-	border-color: color-mix(in srgb, var(--appointment-event-status-bg) 42%, var(--appointment-color-white)) !important;
-	box-shadow:
-		inset 0 var(--appointment-border-width) 0 rgba(255, 255, 255, 0.84),
-		0 var(--appointment-space-2xs) var(--appointment-space-md) var(--appointment-shadow-calendar-event-hover);
-	transform: translateY(calc(-1 * var(--appointment-space-3xs)));
-}
-
 /* Modal styles */
-#editAppointmentModal {
+.modal.qlpk-edit-appointment-modal {
 	--appointment-modal-body-padding: 0 1rem 1rem;
 }
 
-#editAppointmentModal .modal-body {
+.modal.qlpk-edit-appointment-modal .modal-body {
 	max-height: 70vh;
 	overflow-y: auto;
 	padding: var(--appointment-modal-body-padding);
 }
 
-#editAppointmentModal .form-control-sm:not([data-icd-autocomplete-input]),
-#editAppointmentModal .form-select-sm {
+.modal.qlpk-edit-appointment-modal .form-control-sm:not([data-icd-autocomplete-input]),
+.modal.qlpk-edit-appointment-modal .form-select-sm {
 	padding: 0.25rem 0.5rem;
 	font-size: var(--appointment-font-size);
 }
@@ -1540,7 +1327,7 @@ body {
 }
 /* Status Flag styles */
 .status-flag-dropdown .btn:not([data-qlpk-button], [data-qlpk-button] *) {
-	box-shadow: 0 var(--appointment-space-2xs) var(--appointment-space-xl) rgba(0, 0, 0, 0.15);
+	box-shadow: 0 var(--appointment-space-2xs) var(--appointment-space-xl) rgba(var(--qlpk-color-black-rgb), 0.15);
 	transition: all 0.2s ease;
 }
 
@@ -1548,13 +1335,13 @@ body {
 	transform: translateY(-0.0625rem);
 }
 .status-flag-dropdown .btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-3xl) rgba(0, 0, 0, 0.2);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-3xl) rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 .status-flag-dropdown .dropdown-menu {
 	border-radius: var(--appointment-space-3xl);
 	border: none;
-	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-6xl) rgba(0, 0, 0, 0.15);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-6xl) rgba(var(--qlpk-color-black-rgb), 0.15);
 	padding: var(--appointment-space-xl) 0;
 	min-width: 12.5rem;
 }
@@ -1598,7 +1385,7 @@ body {
 	border-radius: 0 0 0.375rem 0.375rem;
 	z-index: var(--appointment-z-dropdown);
 	display: none;
-	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-xl) rgba(0, 0, 0, 0.1);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-xl) rgba(var(--qlpk-color-black-rgb), 0.1);
 }
 
 .autocomplete-dropdown.show {
@@ -1674,18 +1461,18 @@ body {
 	background: var(--appointment-color-page-bg);
 }
 
-body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-active {
+body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.is-active {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
 	overflow: hidden;
 }
 
-body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-active>.appt-header-bar {
+body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.is-active>.appt-header-bar {
 	flex: 0 0 auto;
 }
 
-body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-active>.appt-body {
+body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.is-active>.appt-body {
 	flex: 1 1 auto;
 	height: auto;
 	min-height: 0;
@@ -1715,7 +1502,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	flex-shrink: 0;
 	gap: 0.625rem;
 	z-index: var(--appointment-z-sticky);
-	box-shadow: inset 0 -0.0625rem 0 rgba(255, 250, 243, 0.12);
+	box-shadow: inset 0 -0.0625rem 0 rgba(var(--qlpk-color-surface-subtle-rgb), 0.12);
 }
 
 .appt-header-left {
@@ -1743,7 +1530,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 .calendar-integration-section,
-#calendarStatus {
+.qlpk-calendar-status {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.25rem;
@@ -1751,7 +1538,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	white-space: nowrap;
 }
 
-#calendarStatus:empty {
+.qlpk-calendar-status:empty {
 	display: none;
 }
 
@@ -1792,7 +1579,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	border-radius: var(--appointment-radius-lg);
 	background: var(--appointment-color-white);
 	transition: all 0.2s;
-	box-shadow: inset 0 0.0625rem 0.125rem rgba(44, 24, 15, 0.07);
+	box-shadow: inset 0 0.0625rem 0.125rem var(--qlpk-alpha-brown-12-07);
 }
 
 .appt-search-wrapper .appt-calendar-search::placeholder {
@@ -1805,7 +1592,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 .appt-search-wrapper .appt-calendar-search:focus {
 	outline: none;
 	border-color: var(--appointment-color-gold);
-	box-shadow: 0 0 0 var(--appointment-space-2xs) rgba(214, 160, 105, 0.22);
+	box-shadow: 0 0 0 var(--appointment-space-2xs) rgba(var(--qlpk-color-gold-rgb), 0.22);
 }
 
 .appt-search-wrapper .search-clear-btn {
@@ -1863,12 +1650,12 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	font-weight: var(--appointment-font-weight-medium);
 	line-height: 1.2;
 	text-overflow: ellipsis;
-	box-shadow: inset 0 0.0625rem 0.125rem rgba(44, 24, 15, 0.07);
+	box-shadow: inset 0 0.0625rem 0.125rem var(--qlpk-alpha-brown-12-07);
 }
 
 .appointment-fullscreen .appt-header-doctor-select:focus {
 	border-color: var(--appointment-color-gold);
-	box-shadow: 0 0 0 var(--appointment-space-2xs) rgba(214, 160, 105, 0.22);
+	box-shadow: 0 0 0 var(--appointment-space-2xs) rgba(var(--qlpk-color-gold-rgb), 0.22);
 }
 
 .appt-header-bar .btn {
@@ -1878,20 +1665,20 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	line-height: 1.2;
 	white-space: nowrap;
 }
-.appt-header-actions > button[data-bs-target="#addAppointmentModal"]:not([data-qlpk-button], [data-qlpk-button] *) {
+.appt-header-actions > button[data-bs-target=".modal.qlpk-add-appointment-modal"]:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--appointment-color-white);
-	border-color: rgba(255, 255, 255, 0.82);
+	border-color: rgba(var(--qlpk-color-white-rgb), 0.82);
 	color: var(--appointment-color-brown);
-	box-shadow: 0 0.0625rem 0.1875rem rgba(44, 24, 15, 0.12);
+	box-shadow: 0 0.0625rem 0.1875rem var(--qlpk-alpha-brown-12-12);
 }
-.appt-header-actions > button[data-bs-target="#addAppointmentModal"]:hover:not([data-qlpk-button], [data-qlpk-button] *),
-.appt-header-actions > button[data-bs-target="#addAppointmentModal"]:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+.appt-header-actions > button[data-bs-target=".modal.qlpk-add-appointment-modal"]:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.appt-header-actions > button[data-bs-target=".modal.qlpk-add-appointment-modal"]:focus:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--appointment-color-white);
 	border-color: color-mix(in srgb, var(--appointment-color-gold) 34%, var(--appointment-color-white));
 	color: var(--appointment-color-chocolate);
 }
-.appt-header-actions #exportDataBtn:not([data-qlpk-button], [data-qlpk-button] *),
-.appt-header-actions #syncCalendarBtn:not([data-qlpk-button], [data-qlpk-button] *) {
+.appt-header-actions .qlpk-export-data-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.appt-header-actions .qlpk-sync-calendar-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	color: var(--appointment-color-brown);
 }
 
@@ -1991,7 +1778,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* === MINI CALENDAR === */
-#miniCalendar {
+.appointment-fullscreen .qlpk-mini-calendar {
 	display: var(--appointment-mini-calendar-display);
 	justify-content: center;
 	align-items: flex-start;
@@ -2003,13 +1790,13 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 
 /* flatpickr render lịch thành ANH EM -> div neo #miniCalendar rỗng tạo khoảng trống dư đầu panel.
    Ẩn nó CHỈ khi lịch đã là anh em kế bên (an toàn: không ẩn nhầm khi lịch render bên trong). */
-#miniCalendar:has(+ .flatpickr-calendar) {
+.appointment-fullscreen .qlpk-mini-calendar:has(+ .flatpickr-calendar) {
 	display: none;
 }
 
 .appt-panel-section .flatpickr-calendar.inline,
-#miniCalendar+.flatpickr-calendar,
-#miniCalendar .flatpickr-calendar {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar {
 	box-shadow: none;
 	border: none;
 	transform: none;
@@ -2023,21 +1810,21 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	margin: 0;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-innerContainer,
-#miniCalendar .flatpickr-innerContainer,
-#miniCalendar+.flatpickr-calendar .flatpickr-rContainer,
-#miniCalendar .flatpickr-rContainer,
-#miniCalendar+.flatpickr-calendar .flatpickr-days,
-#miniCalendar .flatpickr-days,
-#miniCalendar+.flatpickr-calendar .flatpickr-weekdays,
-#miniCalendar .flatpickr-weekdays {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-innerContainer,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-innerContainer,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-rContainer,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-rContainer,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-days,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-days,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdays,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekdays {
 	inline-size: 100%;
 	min-inline-size: 0;
 	max-inline-size: none;
 }
 
-#miniCalendar+.flatpickr-calendar .dayContainer,
-#miniCalendar .dayContainer {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .dayContainer,
+.appointment-fullscreen .qlpk-mini-calendar .dayContainer {
 	inline-size: 100%;
 	min-inline-size: 0;
 	max-inline-size: none;
@@ -2046,8 +1833,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	gap: 0.0625rem 0;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-weekdaycontainer,
-#miniCalendar .flatpickr-weekdaycontainer {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdaycontainer,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekdaycontainer {
 	inline-size: 100%;
 	min-inline-size: 0;
 	max-inline-size: none;
@@ -2056,10 +1843,10 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* Kích thước ô (ngày + thứ) — layout chung */
-#miniCalendar+.flatpickr-calendar .flatpickr-day,
-#miniCalendar .flatpickr-day,
-#miniCalendar+.flatpickr-calendar .flatpickr-weekday,
-#miniCalendar .flatpickr-weekday {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekday {
 	inline-size: 1.5rem;
 	block-size: 1.5rem;
 	max-inline-size: 1.5rem;
@@ -2072,32 +1859,32 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* font-size: thứ nhỏ, ngày to (tách riêng, không đặt chồng) */
-#miniCalendar+.flatpickr-calendar .flatpickr-weekday,
-#miniCalendar .flatpickr-weekday {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekday {
 	font-size: var(--appointment-font-size-compact);
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-day,
-#miniCalendar .flatpickr-day {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day {
 	font-size: var(--appointment-font-size);
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-day.prevMonthDay,
-#miniCalendar .flatpickr-day.prevMonthDay {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.prevMonthDay,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.prevMonthDay {
 	pointer-events: none;
 	visibility: hidden;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-day.nextMonthDay,
-#miniCalendar .flatpickr-day.nextMonthDay {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.nextMonthDay,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.nextMonthDay {
 	display: none;
 	pointer-events: none;
 }
 
 /* Đảm bảo nút prev/next month luôn visible */
 /* Header lịch nhỏ: hàng flex [‹] [tháng/năm] [›] — mũi tên là flex item (KHÔNG định vị tuyệt đối) nên không chồng lên chữ */
-#miniCalendar+.flatpickr-calendar .flatpickr-months,
-#miniCalendar .flatpickr-months {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-months {
 	display: flex;
 	align-items: center;
 	block-size: 2rem;
@@ -2105,10 +1892,10 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	position: relative;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-prev-month,
-#miniCalendar .flatpickr-prev-month,
-#miniCalendar+.flatpickr-calendar .flatpickr-next-month,
-#miniCalendar .flatpickr-next-month {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month {
 	position: static;
 	inset: auto;
 	flex: 0 0 auto;
@@ -2120,8 +1907,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	padding: 0;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-months .flatpickr-month,
-#miniCalendar .flatpickr-months .flatpickr-month {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months .flatpickr-month,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-months .flatpickr-month {
 	flex: 1 1 auto;
 	block-size: 2rem;
 	inline-size: auto;
@@ -2129,8 +1916,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	position: relative;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-current-month,
-#miniCalendar .flatpickr-current-month {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-current-month,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-current-month {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2149,8 +1936,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	overflow: hidden;
 }
 
-#miniCalendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
-#miniCalendar .flatpickr-calendar .flatpickr-monthDropdown-months {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar .flatpickr-monthDropdown-months {
 	flex: 0 0 6rem;
 	inline-size: 6rem;
 	min-inline-size: 0;
@@ -2171,8 +1958,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* Year dropdown — style giống month dropdown */
-#miniCalendar+.flatpickr-calendar .flatpickr-yearDropdown,
-#miniCalendar .flatpickr-calendar .flatpickr-yearDropdown,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-yearDropdown,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar .flatpickr-yearDropdown,
 .flatpickr-calendar .flatpickr-yearDropdown {
 	appearance: auto;
 	-webkit-appearance: auto;
@@ -2199,48 +1986,48 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* Màu today/selected — selector nhất quán (#miniCalendar + sibling); kích thước đã do rule chung lo */
-#miniCalendar .flatpickr-day.today,
-#miniCalendar+.flatpickr-calendar .flatpickr-day.today {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.today,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.today {
 	background: var(--appointment-calendar-accent-soft);
 	color: var(--appointment-calendar-accent-strong);
 	border-color: var(--appointment-calendar-accent);
 }
 
-#miniCalendar .flatpickr-day.selected,
-#miniCalendar+.flatpickr-calendar .flatpickr-day.selected {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.selected,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.selected {
 	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--appointment-color-white);
 	border-color: var(--appointment-calendar-accent);
 }
 
 /* flatpickr lịch nhỏ: hover/dropdown/mũi tên dùng token chung. */
-#miniCalendar .flatpickr-day:hover,
-#miniCalendar .flatpickr-day:focus,
-#miniCalendar+.flatpickr-calendar .flatpickr-day:hover,
-#miniCalendar+.flatpickr-calendar .flatpickr-day:focus {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day:hover,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day:focus,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:hover,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:focus {
 	background: var(--appointment-calendar-accent-soft);
 	border-color: var(--appointment-calendar-accent-soft);
 	color: var(--appointment-calendar-accent-strong);
 }
 
-#miniCalendar .flatpickr-monthDropdown-months,
-#miniCalendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
-#miniCalendar .flatpickr-yearDropdown,
-#miniCalendar+.flatpickr-calendar .flatpickr-yearDropdown {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-monthDropdown-months,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-yearDropdown,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-yearDropdown {
 	color: var(--appointment-color-text);
 }
 
-#miniCalendar .flatpickr-prev-month svg,
-#miniCalendar .flatpickr-next-month svg,
-#miniCalendar+.flatpickr-calendar .flatpickr-prev-month svg,
-#miniCalendar+.flatpickr-calendar .flatpickr-next-month svg {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month svg,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month svg,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month svg,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month svg {
 	fill: var(--appointment-color-text);
 }
 
-#miniCalendar .flatpickr-prev-month:hover svg,
-#miniCalendar .flatpickr-next-month:hover svg,
-#miniCalendar+.flatpickr-calendar .flatpickr-prev-month:hover svg,
-#miniCalendar+.flatpickr-calendar .flatpickr-next-month:hover svg {
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month:hover svg,
+.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month:hover svg,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month:hover svg,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month:hover svg {
 	fill: var(--appointment-calendar-accent);
 }
 
@@ -2339,7 +2126,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	min-height: 1rem;
 	padding-inline: var(--appointment-space-sm);
 	border-radius: var(--appointment-radius-pill);
-	background: rgba(255, 255, 255, 0.68);
+	background: rgba(var(--qlpk-color-white-rgb), 0.68);
 	text-align: right;
 	margin-left: auto;
 	white-space: nowrap;
@@ -2376,8 +2163,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	height: 0.625rem;
 	border-radius: 50%;
 	flex-shrink: 0;
-	border: var(--appointment-border-width) solid rgba(255, 255, 255, 0.9);
-	box-shadow: 0 0 0 var(--appointment-border-width) rgba(15, 23, 42, 0.12);
+	border: var(--appointment-border-width) solid rgba(var(--qlpk-color-white-rgb), 0.9);
+	box-shadow: 0 0 0 var(--appointment-border-width) var(--qlpk-alpha-blue-11-12);
 }
 
 .appt-doctor-legend-name {
@@ -2411,7 +2198,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	overflow: hidden;
 }
 
-.appointment-fullscreen #calendar {
+.appointment-fullscreen .qlpk-calendar {
 	min-height: 0;
 	flex: 1 1 auto;
 	padding: 0;
@@ -2421,7 +2208,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	overflow: hidden;
 }
 
-.appointment-fullscreen #calendarViewContainer {
+.appointment-fullscreen .appt-main .qlpk-calendar-view-container {
 	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
@@ -2429,271 +2216,67 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	min-height: 0;
 }
 
-.appointment-fullscreen #calendar,
-.appointment-fullscreen .fc {
-	--fc-border-color: var(--appointment-calendar-grid-border-soft);
-	height: 100% !important;
-	display: flex !important;
-	flex-direction: column !important;
-}
-
 /* Force FullCalendar grid to stretch rows evenly */
-.appointment-fullscreen .fc-view-harness {
-	flex: 1 1 auto !important;
-	min-height: 0 !important;
-	height: 100% !important;
-	background: var(--appointment-color-white);
-}
-
-.appointment-fullscreen .fc-daygrid-body,
-.appointment-fullscreen .fc-scrollgrid {
-	height: 100% !important;
-	overflow: hidden !important;
-}
-
-.appointment-fullscreen .fc-scrollgrid {
-	border: var(--appointment-border-width) solid color-mix(in srgb, var(--appointment-calendar-border) 78%, var(--appointment-color-white)) !important;
-	border-radius: 0 0 var(--appointment-radius-lg) var(--appointment-radius-lg);
-	box-shadow: inset 0 var(--appointment-border-width) 0 rgba(255, 255, 255, 0.85);
-}
-
-.appointment-fullscreen .fc-scroller {
-	height: 100% !important;
-}
-
-.appointment-fullscreen .fc-daygrid .fc-scroller {
-	overflow: hidden !important;
-}
 
 .appointment-fullscreen .fc-timegrid .fc-scroller {
 	overflow: auto !important;
 }
 
-.appointment-fullscreen .fc-scrollgrid-section-body>td {
-	height: 100%;
-}
-
-.appointment-fullscreen .fc-daygrid-body table {
-	height: 100% !important;
-}
-
 /* FullCalendar toolbar compact */
-.appointment-fullscreen .fc-toolbar {
-	display: flex;
-	align-items: center;
-	padding: 0.25rem 0.4375rem;
-	margin-bottom: 0;
-	background:
-		linear-gradient(180deg, var(--appointment-color-white) 0%, var(--appointment-calendar-header-bg) 100%);
-	border: var(--appointment-border-width) solid color-mix(in srgb, var(--appointment-calendar-border) 78%, var(--appointment-color-white));
-	border-bottom: 0;
-	border-radius: var(--appointment-radius-lg) var(--appointment-radius-lg) 0 0;
-	box-shadow: 0 0.125rem 0.5rem rgba(15, 23, 42, 0.04);
-	font-size: var(--appointment-font-size);
-}
-
-.appointment-fullscreen .fc-toolbar.fc-header-toolbar {
-	margin-bottom: 0;
-}
-
-.appointment-fullscreen .fc-toolbar-title {
-	font-weight: var(--appointment-font-weight-bold);
-	color: var(--appointment-calendar-text-primary);
-	margin-inline: 0.625rem;
-}
 
 /* +N more link styling */
-.appointment-fullscreen .fc-daygrid-more-link {
-	font-size: var(--appointment-font-size-mini);
-	font-weight: var(--appointment-font-weight-semibold);
-	color: var(--appointment-calendar-text-primary);
-	padding: 0 var(--appointment-space-md);
-	border-radius: var(--appointment-radius-pill);
-	background: color-mix(in srgb, var(--appointment-calendar-header-bg) 70%, var(--appointment-color-white));
-}
 
 /* Compact event — shared appointment calendar treatment */
-.appointment-fullscreen .fc-daygrid-event,
-.appointment-fullscreen .fc-event,
-.appointment-fullscreen .fc-h-event {
-	margin: var(--appointment-space-3xs) var(--appointment-space-xs) var(--appointment-space-3xs);
-	border-radius: var(--appointment-calendar-event-radius);
-	border: none;
-}
-
-.appointment-fullscreen .fc-daygrid-event-harness {
-	margin-block: 0;
-}
-
-.appointment-fullscreen .fc-daygrid-event::before,
-.appointment-fullscreen .fc-h-event::before {
-	display: none;
-}
-
-.appointment-fullscreen .fc-event-compact {
-	font-size: var(--appointment-font-size-mini);
-	font-weight: var(--appointment-font-weight-semibold);
-	min-block-size: var(--appointment-calendar-event-min-height);
-	line-height: 1.1;
-	padding: 0 var(--appointment-space-lg);
-	letter-spacing: 0;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: flex;
-	align-items: center;
-	gap: var(--appointment-space-sm);
-	inline-size: 100%;
-	min-inline-size: 0;
-}
-
-.appointment-fullscreen .fc-doc-dot {
-	display: inline-flex;
-	inline-size: var(--appointment-calendar-event-dot-size);
-	block-size: var(--appointment-calendar-event-dot-size);
-	border-radius: 50%;
-	flex-shrink: 0;
-	box-shadow:
-		0 0 0 var(--appointment-border-width) rgba(255, 255, 255, 0.98),
-		0 0 0 var(--appointment-border-width-md) rgba(15, 23, 42, 0.14);
-}
-
-.appointment-fullscreen .fc-event-compact-time {
-	flex: 0 0 auto;
-	color: inherit;
-	font-weight: var(--appointment-font-weight-bold);
-	font-variant-numeric: tabular-nums;
-	opacity: 0.98;
-}
-
-.appointment-fullscreen .fc-event-compact-title {
-	display: block;
-	min-inline-size: 0;
-	overflow: hidden;
-	color: inherit;
-	font-weight: var(--appointment-font-weight-semibold);
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
 
 /* Day header — match reexam uppercase style */
-.appointment-fullscreen .fc-col-header-cell {
-	padding: var(--appointment-space-2xs) 0;
-	font-size: var(--appointment-font-size-compact);
-	font-weight: var(--appointment-font-weight-bold);
-	color: var(--appointment-calendar-text-primary);
-	text-transform: uppercase;
-	background: var(--appointment-calendar-header-bg);
-	border-color: var(--appointment-calendar-grid-border-soft);
-}
-
-.appointment-fullscreen .fc-daygrid-day-number {
-	font-size: var(--appointment-font-size-compact);
-	font-weight: var(--appointment-font-weight-semibold);
-	color: var(--appointment-calendar-text-secondary);
-	line-height: 1.25;
-	min-inline-size: var(--appointment-size-today-marker);
-	min-block-size: var(--appointment-size-today-marker);
-	padding: var(--appointment-space-3xs) var(--appointment-space-sm);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: var(--appointment-radius-pill);
-}
 
 /* Day cell padding — match reexam spacing */
-.appointment-fullscreen .fc-daygrid-day-frame {
-	padding: var(--appointment-space-3xs);
-	border-radius: var(--appointment-calendar-cell-radius);
-	transition: background-color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.appointment-fullscreen .fc .fc-daygrid-day:not(.fc-day-today):hover .fc-daygrid-day-frame {
-	background: var(--appointment-calendar-cell-hover);
-	box-shadow: inset 0 0 0 var(--appointment-border-width) color-mix(in srgb, var(--appointment-calendar-accent) 16%, transparent);
-}
 
 /* Today highlight */
-.appointment-fullscreen .fc-day-today .fc-daygrid-day-number {
-	background: var(--qlpk-workflow-context-header-bg);
-	color: var(--appointment-color-white);
-	font-size: var(--appointment-font-size-compact);
-	border-radius: 50%;
-	width: var(--appointment-size-today-marker);
-	height: var(--appointment-size-today-marker);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: var(--appointment-font-weight-semibold);
-	border: var(--appointment-border-width-md) solid var(--appointment-calendar-accent);
-	box-shadow:
-		0 0 0 var(--appointment-border-width) var(--appointment-color-white),
-		0 0.125rem 0.375rem color-mix(in srgb, var(--appointment-calendar-accent) 26%, transparent);
-}
-
-.appointment-fullscreen .fc .fc-daygrid-day.fc-day-today,
-.appointment-fullscreen .fc .fc-timegrid-col.fc-day-today {
-	background:
-		linear-gradient(180deg,
-			color-mix(in srgb, var(--appointment-calendar-today-bg) 34%, var(--appointment-color-white)) 0%,
-			var(--appointment-color-white) 48%);
-	outline: var(--appointment-border-width-md) solid color-mix(in srgb, var(--appointment-calendar-today-border) 74%, var(--appointment-color-white));
-	outline-offset: calc(-1 * var(--appointment-border-width));
-	position: relative;
-	z-index: var(--appointment-z-base);
-}
-
-.appointment-fullscreen .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
-	background: transparent;
-}
-
-.appointment-fullscreen .fc-daygrid-more-link:hover {
-	color: var(--appointment-calendar-accent);
-}
 
 /* Hide sidebar */
-#sidebar-container {
+.qlpk-shell-sidebar {
 	display: none !important;
 }
 
 /* List view */
 
 /* === CHROME -> tông lễ tân (modal + focus ring) === */
-#addAppointmentModal,
-#editAppointmentModal,
-#syncCalendarModal {
+.modal.qlpk-add-appointment-modal,
+.modal.qlpk-edit-appointment-modal,
+.modal.qlpk-sync-calendar-modal {
 	--appointment-color-neutral-700: var(--appointment-color-chocolate);
 }
 
 /* Header modal: nền nâu đậm + chữ trắng (như thanh trên) */
-#addAppointmentModal .modal-header,
-#editAppointmentModal .modal-header {
+.modal.qlpk-add-appointment-modal .modal-header,
+.modal.qlpk-edit-appointment-modal .modal-header {
 	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--appointment-color-white);
-	border-bottom: var(--appointment-border-width) solid rgba(255, 255, 255, 0.12);
+	border-bottom: var(--appointment-border-width) solid rgba(var(--qlpk-color-white-rgb), 0.12);
 }
 
-#addAppointmentModal .modal-header :is(.appointment-modal-title-edit, .appointment-modal-title-primary, .modal-title, h5),
-#editAppointmentModal .modal-header :is(.appointment-modal-title-edit, .appointment-modal-title-primary, .modal-title, h5) {
+.modal.qlpk-add-appointment-modal .modal-header :is(.appointment-modal-title-edit, .appointment-modal-title-primary, .modal-title, h5),
+.modal.qlpk-edit-appointment-modal .modal-header :is(.appointment-modal-title-edit, .appointment-modal-title-primary, .modal-title, h5) {
 	color: var(--appointment-color-white);
 }
 
-#addAppointmentModal .modal-header .btn-close,
-#editAppointmentModal .modal-header .btn-close {
+.modal.qlpk-add-appointment-modal .modal-header .btn-close,
+.modal.qlpk-edit-appointment-modal .modal-header .btn-close {
 	filter: invert(1) grayscale(1) brightness(1.8);
 }
 /* Focus ring xanh hard-code trong modal -> teal (cả 4 modal) */
-#addAppointmentModal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
-#editAppointmentModal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
-#syncCalendarModal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+.modal.qlpk-add-appointment-modal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-edit-appointment-modal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-sync-calendar-modal .appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--appointment-color-primary) 22%, transparent);
 }
-#addAppointmentModal .form-control:not([data-icd-autocomplete-input]):focus:not([data-qlpk-button], [data-qlpk-button] *),
-#addAppointmentModal .form-select:focus,
-#editAppointmentModal .form-control:not([data-icd-autocomplete-input]):focus:not([data-qlpk-button], [data-qlpk-button] *),
-#editAppointmentModal .form-select:focus,
-#syncCalendarModal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
-#syncCalendarModal .form-select:focus {
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]):focus:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-add-appointment-modal .form-select:focus,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]):focus:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-edit-appointment-modal .form-select:focus,
+.modal.qlpk-sync-calendar-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-sync-calendar-modal .form-select:focus {
 	border-color: var(--appointment-color-focus-border);
 	box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--appointment-color-primary) 20%, transparent);
 }
@@ -2780,8 +2363,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		justify-content: flex-end;
 	}
 
-	#miniCalendar+.flatpickr-calendar,
-	#miniCalendar .flatpickr-calendar {
+	.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar,
+	.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar {
 		display: none;
 	}
 
@@ -2802,8 +2385,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 /* === RESPONSIVE MODAL — Appointment Add/Edit === */
-#addAppointmentModal .modal-dialog,
-#editAppointmentModal .modal-dialog {
+.modal.qlpk-add-appointment-modal .modal-dialog,
+.modal.qlpk-edit-appointment-modal .modal-dialog {
 	inline-size: min(95vw, clamp(32rem, 75vw, 78rem));
 	max-inline-size: 95vw;
 }
@@ -2811,54 +2394,54 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 /* === COMPACT MODE cho màn hình thấp — fit content không scroll === */
 @media (max-height: 50rem) {
 
-	#addAppointmentModal,
-	#editAppointmentModal {
+	.modal.qlpk-add-appointment-modal,
+	.modal.qlpk-edit-appointment-modal {
 		--appointment-modal-body-padding: var(--appointment-space-sm) var(--appointment-space-3xl);
 		--appointment-modal-section-header-padding: var(--appointment-space-2xs) var(--appointment-space-xl);
 		--appointment-modal-section-body-padding: var(--appointment-space-sm) var(--appointment-space-xl);
 		--appointment-modal-row-margin: var(--appointment-space-2xs);
 	}
 
-	#addAppointmentModal .modal-header,
-	#editAppointmentModal .modal-header {
+	.modal.qlpk-add-appointment-modal .modal-header,
+	.modal.qlpk-edit-appointment-modal .modal-header {
 		padding: var(--appointment-space-lg) var(--appointment-space-2xl);
 	}
 
-	#addAppointmentModal .modal-header h5,
-	#editAppointmentModal .modal-header h5 {
+	.modal.qlpk-add-appointment-modal .modal-header h5,
+	.modal.qlpk-edit-appointment-modal .modal-header h5 {
 		font-size: var(--appointment-font-size);
 	}
 
-	#addAppointmentModal .form-label,
-	#editAppointmentModal .form-label {
+	.modal.qlpk-add-appointment-modal .form-label,
+	.modal.qlpk-edit-appointment-modal .form-label {
 		font-size: var(--appointment-font-size);
 		margin-bottom: 0;
 	}
 
-	#addAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-	#addAppointmentModal .form-select,
-	#editAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-	#editAppointmentModal .form-select {
+	.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-add-appointment-modal .form-select,
+	.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-edit-appointment-modal .form-select {
 		padding: var(--appointment-space-2xs) var(--appointment-space-lg);
 		font-size: var(--appointment-font-size);
 		height: 1.625rem;
 	}
 
-	#addAppointmentModal .modal-footer,
-	#editAppointmentModal .modal-footer {
+	.modal.qlpk-add-appointment-modal .modal-footer,
+	.modal.qlpk-edit-appointment-modal .modal-footer {
 		padding: var(--appointment-space-sm) var(--appointment-space-3xl);
 	}
 
-	#addAppointmentModal .modal-footer .btn,
-	#editAppointmentModal .modal-footer .btn {
+	.modal.qlpk-add-appointment-modal .modal-footer .btn,
+	.modal.qlpk-edit-appointment-modal .modal-footer .btn {
 		padding: var(--appointment-space-sm) var(--appointment-space-5xl);
 		font-size: var(--appointment-font-size);
 	}
 }
 
 /* === Appointment Editor Modal === */
-#addAppointmentModal .appointment-editor-dialog,
-#editAppointmentModal .appointment-editor-dialog {
+.modal.qlpk-add-appointment-modal .appointment-editor-dialog,
+.modal.qlpk-edit-appointment-modal .appointment-editor-dialog {
 	--appointment-editor-dialog-inline: min(98vw, clamp(72rem, 90vw, 84rem));
 	--appointment-editor-margin-block: clamp(0.65rem, 1.8dvh, 1.25rem);
 	--appointment-editor-dialog-block: calc(100dvh - (var(--appointment-editor-margin-block) * 2));
@@ -2888,8 +2471,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	margin: var(--appointment-editor-margin-block) auto;
 }
 
-#addAppointmentModal .appointment-editor-shell,
-#editAppointmentModal .appointment-editor-shell {
+.modal.qlpk-add-appointment-modal .appointment-editor-shell,
+.modal.qlpk-edit-appointment-modal .appointment-editor-shell {
 	display: flex;
 	flex-direction: column;
 	height: auto;
@@ -2904,8 +2487,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	box-shadow: 0 1.25rem 3rem var(--appointment-shadow-ui-lg);
 }
 
-#addAppointmentModal .appointment-editor-header,
-#editAppointmentModal .appointment-editor-header {
+.modal.qlpk-add-appointment-modal .appointment-editor-header,
+.modal.qlpk-edit-appointment-modal .appointment-editor-header {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
@@ -2916,8 +2499,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	color: var(--appointment-color-text);
 }
 
-#addAppointmentModal .appointment-editor-title,
-#editAppointmentModal .appointment-editor-title {
+.modal.qlpk-add-appointment-modal .appointment-editor-title,
+.modal.qlpk-edit-appointment-modal .appointment-editor-title {
 	display: flex;
 	align-items: center;
 	min-inline-size: 0;
@@ -2939,8 +2522,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	background: var(--qlpk-workflow-context-header-bg);
 }
 
-#addAppointmentModal .appointment-editor-header .appointment-editor-title h5,
-#editAppointmentModal .appointment-editor-header .appointment-editor-title h5 {
+.modal.qlpk-add-appointment-modal .appointment-editor-header .appointment-editor-title h5,
+.modal.qlpk-edit-appointment-modal .appointment-editor-header .appointment-editor-title h5 {
 	margin: 0;
 	color: var(--appointment-color-text-strong);
 	font-size: var(--qlpk-font-size-lg, var(--appointment-font-size));
@@ -2948,8 +2531,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	line-height: 1.2;
 }
 
-#addAppointmentModal .appointment-editor-title p,
-#editAppointmentModal .appointment-editor-title p {
+.modal.qlpk-add-appointment-modal .appointment-editor-title p,
+.modal.qlpk-edit-appointment-modal .appointment-editor-title p {
 	margin: 0.125rem 0 0;
 	color: var(--appointment-color-ui-muted);
 	font-size: var(--appointment-font-size-compact);
@@ -3037,7 +2620,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		var(--appointment-color-editor-bg);
 }
 
-#editAppointmentModal .appointment-editor-body {
+.modal.qlpk-edit-appointment-modal .appointment-editor-body {
 	max-height: none;
 	padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
 }
@@ -3234,19 +2817,19 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	min-inline-size: 0;
 }
 
-#addAppointmentModal .appointment-modal-grid-row,
-#editAppointmentModal .appointment-modal-grid-row {
+.modal.qlpk-add-appointment-modal .appointment-modal-grid-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row {
 	--bs-gutter-x: var(--appointment-editor-row-gap);
 	--bs-gutter-y: var(--appointment-editor-row-gap);
 }
 
-#addAppointmentModal .appointment-modal-grid-row--stacked,
-#editAppointmentModal .appointment-modal-grid-row--stacked {
+.modal.qlpk-add-appointment-modal .appointment-modal-grid-row--stacked,
+.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row--stacked {
 	margin-top: var(--appointment-editor-row-gap);
 }
 
-#addAppointmentModal .appointment-modal-section-card,
-#editAppointmentModal .appointment-modal-section-card {
+.modal.qlpk-add-appointment-modal .appointment-modal-section-card,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-card {
 	block-size: 100%;
 	overflow: hidden;
 	border: var(--appointment-border-width) solid var(--appointment-color-ui-border-muted);
@@ -3255,15 +2838,15 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	box-shadow: 0 0.75rem 1.75rem var(--appointment-shadow-ui-card);
 }
 
-#addAppointmentModal .appointment-form-section-header,
-#editAppointmentModal .appointment-form-section-header {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header {
 	position: relative;
 	padding: var(--appointment-editor-section-header-pad-y) var(--appointment-editor-section-header-pad-x);
 	border-bottom: var(--appointment-border-width) solid var(--appointment-color-border-light);
 }
 
-#addAppointmentModal .appointment-form-section-header h6,
-#editAppointmentModal .appointment-form-section-header h6 {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header h6,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 {
 	display: flex;
 	align-items: center;
 	gap: 0.55rem;
@@ -3273,8 +2856,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	letter-spacing: 0;
 }
 
-#addAppointmentModal .appointment-form-section-header h6 i,
-#editAppointmentModal .appointment-form-section-header h6 i {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 i {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -3286,69 +2869,69 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	box-shadow: 0 0.5rem 1rem var(--appointment-shadow-ui-icon);
 }
 
-#addAppointmentModal .appointment-form-section-header--schedule,
-#editAppointmentModal .appointment-form-section-header--schedule {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--schedule,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--schedule {
 	background: linear-gradient(90deg, var(--appointment-color-primary-subtle) 0%, var(--appointment-editor-schedule-bg-end) 100%);
 	color: var(--appointment-color-primary);
 }
 
-#addAppointmentModal .appointment-form-section-header--schedule h6 i,
-#editAppointmentModal .appointment-form-section-header--schedule h6 i {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--schedule h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--schedule h6 i {
 	background: var(--qlpk-workflow-context-header-bg);
 }
 
-#addAppointmentModal .appointment-form-section-header--clinical,
-#editAppointmentModal .appointment-form-section-header--clinical {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--clinical,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--clinical {
 	background: linear-gradient(90deg, var(--appointment-editor-clinical-bg) 0%, var(--appointment-editor-clinical-bg-end) 100%);
 	color: var(--appointment-editor-clinical-text);
 }
 
-#addAppointmentModal .appointment-form-section-header--clinical h6 i,
-#editAppointmentModal .appointment-form-section-header--clinical h6 i {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--clinical h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--clinical h6 i {
 	background: linear-gradient(135deg, var(--appointment-editor-clinical-text) 0%, var(--appointment-editor-clinical-icon-end) 100%);
 }
 
-#addAppointmentModal .appointment-form-section-header--patient,
-#editAppointmentModal .appointment-form-section-header--patient {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--patient,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--patient {
 	background: linear-gradient(90deg, var(--appointment-editor-patient-bg) 0%, var(--appointment-editor-patient-bg-end) 100%);
 	color: var(--appointment-color-warning);
 }
 
-#addAppointmentModal .appointment-form-section-header--patient h6 i,
-#editAppointmentModal .appointment-form-section-header--patient h6 i {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--patient h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--patient h6 i {
 	background: linear-gradient(135deg, var(--appointment-color-warning) 0%, var(--appointment-color-amber) 100%);
 }
 
-#addAppointmentModal .appointment-form-section-header--service,
-#editAppointmentModal .appointment-form-section-header--service {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--service,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--service {
 	background: linear-gradient(90deg, var(--appointment-editor-patient-bg) 0%, var(--appointment-editor-service-bg-end) 100%);
 	color: var(--appointment-editor-service-text);
 }
 
-#addAppointmentModal .appointment-form-section-header--service h6 i,
-#editAppointmentModal .appointment-form-section-header--service h6 i {
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--service h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--service h6 i {
 	background: linear-gradient(135deg, var(--appointment-editor-service-icon-start) 0%, var(--appointment-color-warning) 100%);
 }
 
-#addAppointmentModal .appointment-modal-section-body,
-#editAppointmentModal .appointment-modal-section-body {
+.modal.qlpk-add-appointment-modal .appointment-modal-section-body,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-body {
 	padding: var(--appointment-editor-section-body-pad-y) var(--appointment-editor-section-body-pad-x);
 }
 
-#addAppointmentModal .appointment-modal-row,
-#addAppointmentModal .appointment-modal-field-row,
-#editAppointmentModal .appointment-modal-row,
-#editAppointmentModal .appointment-modal-field-row {
+.modal.qlpk-add-appointment-modal .appointment-modal-row,
+.modal.qlpk-add-appointment-modal .appointment-modal-field-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-field-row {
 	margin-bottom: var(--appointment-editor-row-gap);
 }
 
-#addAppointmentModal .appointment-modal-section-body > :last-child,
-#editAppointmentModal .appointment-modal-section-body > :last-child {
+.modal.qlpk-add-appointment-modal .appointment-modal-section-body > :last-child,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-body > :last-child {
 	margin-bottom: 0;
 }
 
-#addAppointmentModal .form-label,
-#editAppointmentModal .form-label {
+.modal.qlpk-add-appointment-modal .form-label,
+.modal.qlpk-edit-appointment-modal .form-label {
 	margin-bottom: 0.25rem;
 	color: var(--appointment-color-text-strong);
 	font-size: var(--appointment-font-size-compact);
@@ -3356,10 +2939,10 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	line-height: 1.3;
 }
 
-#addAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-#addAppointmentModal .form-select,
-#editAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-#editAppointmentModal .form-select {
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+.modal.qlpk-add-appointment-modal .form-select,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+.modal.qlpk-edit-appointment-modal .form-select {
 	block-size: auto;
 	height: auto;
 	padding: var(--appointment-editor-control-pad-y) var(--appointment-editor-control-pad-x);
@@ -3368,32 +2951,32 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	font-weight: var(--appointment-font-weight-semibold);
 	line-height: 1.35;
 }
-#addAppointmentModal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
-#addAppointmentModal .form-select,
-#editAppointmentModal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
-#editAppointmentModal .form-select {
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-add-appointment-modal .form-select,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-edit-appointment-modal .form-select {
 	border-color: var(--appointment-color-input-border);
 	background-color: var(--appointment-color-white);
 	color: var(--appointment-color-ui-text);
 	box-shadow: inset 0 0.0625rem 0.15rem var(--appointment-shadow-ui-xs);
 }
 
-#addAppointmentModal .form-control:not([data-icd-autocomplete-input])::placeholder,
-#editAppointmentModal .form-control:not([data-icd-autocomplete-input])::placeholder {
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input])::placeholder,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input])::placeholder {
 	font-weight: var(--appointment-font-weight-medium);
 }
-#addAppointmentModal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder,
-#editAppointmentModal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
 	color: var(--appointment-color-ui-soft);
 }
 
-#addAppointmentModal .appointment-modal-choice-group,
-#editAppointmentModal .appointment-modal-choice-group {
+.modal.qlpk-add-appointment-modal .appointment-modal-choice-group,
+.modal.qlpk-edit-appointment-modal .appointment-modal-choice-group {
 	gap: 0.7rem;
 }
 
-#addAppointmentModal .form-check,
-#editAppointmentModal .form-check {
+.modal.qlpk-add-appointment-modal .form-check,
+.modal.qlpk-edit-appointment-modal .form-check {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.28rem;
@@ -3401,21 +2984,21 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	padding-left: 0;
 }
 
-#addAppointmentModal .form-check-input,
-#editAppointmentModal .form-check-input {
+.modal.qlpk-add-appointment-modal .form-check-input,
+.modal.qlpk-edit-appointment-modal .form-check-input {
 	float: none;
 	margin: 0;
 	border-color: var(--appointment-color-radio-border);
 }
 
-#addAppointmentModal .form-check-input:checked,
-#editAppointmentModal .form-check-input:checked {
+.modal.qlpk-add-appointment-modal .form-check-input:checked,
+.modal.qlpk-edit-appointment-modal .form-check-input:checked {
 	background-image: var(--bs-form-check-bg-image), var(--qlpk-workflow-context-header-bg);
 	border-color: var(--appointment-color-primary);
 }
 
-#addAppointmentModal .form-check-label,
-#editAppointmentModal .form-check-label {
+.modal.qlpk-add-appointment-modal .form-check-label,
+.modal.qlpk-edit-appointment-modal .form-check-label {
 	color: var(--appointment-color-ui-text);
 	font-size: var(--appointment-font-size-compact);
 	font-weight: var(--appointment-font-weight-bold);
@@ -3454,12 +3037,12 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 @media (max-width: 74rem) {
-	#addAppointmentModal .appointment-editor-header,
-	#editAppointmentModal .appointment-editor-header {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
 		grid-template-columns: auto minmax(0, 1fr);
 	}
 
-	#addAppointmentModal .appointment-editor-header {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header {
 		grid-template-columns: auto minmax(0, 1fr) auto;
 	}
 
@@ -3468,7 +3051,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		justify-content: flex-end;
 	}
 
-	#addAppointmentModal .appointment-editor-header-actions {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header-actions {
 		grid-column: auto;
 	}
 
@@ -3483,8 +3066,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 @media (max-width: 48rem) {
-	#addAppointmentModal .appointment-editor-dialog,
-	#editAppointmentModal .appointment-editor-dialog {
+	.modal.qlpk-add-appointment-modal .appointment-editor-dialog,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-dialog {
 		--appointment-editor-margin-block: 0rem;
 		--appointment-editor-dialog-block: 100dvh;
 		--appointment-editor-shell-max-block: 100dvh;
@@ -3494,21 +3077,21 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		margin: 0;
 	}
 
-	#addAppointmentModal .appointment-editor-shell,
-	#editAppointmentModal .appointment-editor-shell {
+	.modal.qlpk-add-appointment-modal .appointment-editor-shell,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-shell {
 		height: 100dvh;
 		block-size: 100dvh;
 		max-block-size: 100dvh;
 		border-radius: 0;
 	}
 
-	#addAppointmentModal .appointment-editor-header,
-	#editAppointmentModal .appointment-editor-header {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
 		gap: 0.75rem;
 		padding: 0.75rem;
 	}
 
-	#addAppointmentModal .appointment-editor-header {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header {
 		grid-template-columns: auto minmax(0, 1fr) auto;
 	}
 
@@ -3517,7 +3100,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		justify-content: stretch;
 	}
 
-	#addAppointmentModal .appointment-editor-header-actions {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header-actions {
 		grid-column: auto;
 		justify-content: flex-end;
 	}
@@ -3553,8 +3136,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 }
 
 @media (min-width: 74rem) and (max-height: 52rem) {
-	#addAppointmentModal .appointment-editor-dialog,
-	#editAppointmentModal .appointment-editor-dialog {
+	.modal.qlpk-add-appointment-modal .appointment-editor-dialog,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-dialog {
 		--appointment-editor-margin-block: 0.5rem;
 		--appointment-editor-dialog-block: calc(100dvh - (var(--appointment-editor-margin-block) * 2));
 		--appointment-editor-shell-max-block: var(--appointment-editor-dialog-block);
@@ -3578,8 +3161,8 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		min-block-size: 0;
 	}
 
-	#addAppointmentModal .appointment-editor-shell,
-	#editAppointmentModal .appointment-editor-shell {
+	.modal.qlpk-add-appointment-modal .appointment-editor-shell,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-shell {
 		height: auto;
 		block-size: auto;
 		min-height: 0;
@@ -3587,14 +3170,14 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		max-block-size: var(--appointment-editor-shell-max-block);
 	}
 
-	#addAppointmentModal .appointment-editor-header,
-	#editAppointmentModal .appointment-editor-header {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
 		gap: var(--appointment-editor-gap);
 		padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
 	}
 
-	#addAppointmentModal .appointment-editor-title,
-	#editAppointmentModal .appointment-editor-title {
+	.modal.qlpk-add-appointment-modal .appointment-editor-title,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-title {
 		gap: 0.6rem;
 	}
 
@@ -3603,14 +3186,14 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		block-size: var(--appointment-editor-title-icon-size);
 	}
 
-	#addAppointmentModal .appointment-editor-header .appointment-editor-title h5,
-	#editAppointmentModal .appointment-editor-header .appointment-editor-title h5 {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header .appointment-editor-title h5,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header .appointment-editor-title h5 {
 		font-size: var(--qlpk-font-size-lg, var(--appointment-font-size));
 		line-height: 1.15;
 	}
 
-	#addAppointmentModal .appointment-editor-title p,
-	#editAppointmentModal .appointment-editor-title p {
+	.modal.qlpk-add-appointment-modal .appointment-editor-title p,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-title p {
 		margin-top: 0;
 		line-height: 1.2;
 	}
@@ -3631,7 +3214,7 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 	}
 
 	.appointment-editor-body,
-	#editAppointmentModal .appointment-editor-body {
+	.modal.qlpk-edit-appointment-modal .appointment-editor-body {
 		padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
 	}
 
@@ -3710,73 +3293,73 @@ body.qlpk-workspace-shell .appointment-fullscreen #qlpkWorkspaceNativePane.is-ac
 		line-height: 1.2;
 	}
 
-	#addAppointmentModal .appointment-modal-grid-row,
-	#editAppointmentModal .appointment-modal-grid-row {
+	.modal.qlpk-add-appointment-modal .appointment-modal-grid-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row {
 		--bs-gutter-x: var(--appointment-editor-row-gap);
 		--bs-gutter-y: var(--appointment-editor-row-gap);
 	}
 
-	#addAppointmentModal .appointment-modal-grid-row--stacked,
-	#editAppointmentModal .appointment-modal-grid-row--stacked {
+	.modal.qlpk-add-appointment-modal .appointment-modal-grid-row--stacked,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row--stacked {
 		margin-top: var(--appointment-editor-row-gap);
 	}
 
-	#addAppointmentModal .appointment-modal-section-card,
-	#editAppointmentModal .appointment-modal-section-card {
+	.modal.qlpk-add-appointment-modal .appointment-modal-section-card,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-section-card {
 		border-radius: 0.7rem;
 	}
 
-	#addAppointmentModal .appointment-form-section-header,
-	#editAppointmentModal .appointment-form-section-header {
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header {
 		padding: var(--appointment-editor-section-header-pad-y) var(--appointment-editor-section-header-pad-x);
 	}
 
-	#addAppointmentModal .appointment-form-section-header h6,
-	#editAppointmentModal .appointment-form-section-header h6 {
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header h6,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 {
 		gap: 0.55rem;
 		font-size: var(--appointment-font-size);
 		line-height: 1.15;
 	}
 
-	#addAppointmentModal .appointment-form-section-header h6 i,
-	#editAppointmentModal .appointment-form-section-header h6 i {
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header h6 i,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 i {
 		inline-size: var(--appointment-editor-section-icon-size);
 		block-size: var(--appointment-editor-section-icon-size);
 	}
 
-	#addAppointmentModal .appointment-modal-section-body,
-	#editAppointmentModal .appointment-modal-section-body {
+	.modal.qlpk-add-appointment-modal .appointment-modal-section-body,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-section-body {
 		padding: var(--appointment-editor-section-body-pad-y) var(--appointment-editor-section-body-pad-x);
 	}
 
-	#addAppointmentModal .appointment-modal-row,
-	#addAppointmentModal .appointment-modal-field-row,
-	#editAppointmentModal .appointment-modal-row,
-	#editAppointmentModal .appointment-modal-field-row {
+	.modal.qlpk-add-appointment-modal .appointment-modal-row,
+	.modal.qlpk-add-appointment-modal .appointment-modal-field-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-field-row {
 		margin-bottom: var(--appointment-editor-row-gap);
 	}
 
-	#addAppointmentModal .form-label,
-	#editAppointmentModal .form-label {
+	.modal.qlpk-add-appointment-modal .form-label,
+	.modal.qlpk-edit-appointment-modal .form-label {
 		margin-bottom: 0.22rem;
 		line-height: 1.15;
 	}
 
-	#addAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-	#addAppointmentModal .form-select,
-	#editAppointmentModal .form-control:not([data-icd-autocomplete-input]),
-	#editAppointmentModal .form-select {
+	.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-add-appointment-modal .form-select,
+	.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-edit-appointment-modal .form-select {
 		padding: var(--appointment-editor-control-pad-y) var(--appointment-editor-control-pad-x);
 		line-height: 1.25;
 	}
 
-	#addAppointmentModal .appointment-modal-choice-group,
-	#editAppointmentModal .appointment-modal-choice-group {
+	.modal.qlpk-add-appointment-modal .appointment-modal-choice-group,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-choice-group {
 		gap: 0.65rem;
 	}
 
-	#addAppointmentModal .form-check,
-	#editAppointmentModal .form-check {
+	.modal.qlpk-add-appointment-modal .form-check,
+	.modal.qlpk-edit-appointment-modal .form-check {
 		gap: 0.25rem;
 	}
 

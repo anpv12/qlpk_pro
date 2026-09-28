@@ -1,110 +1,44 @@
 /* CSS cho Joint Exam Table (Người đi khám cùng) - DRY */
 
-/* Button edit icon styles */
-#jointExamEditBtn:not(.receptionist-icon-action) {
-    border: none !important;
-    padding: 0 !important;
-    z-index: 10;
-    position: relative;
-}
-/* CSS cho Joint Exam Table (Người đi khám cùng) - DRY */
-
-/* Button edit icon styles */
-#jointExamEditBtn:not(.receptionist-icon-action):not([data-qlpk-button], [data-qlpk-button] *) {
-    border: none !important;
-    background: none !important;
-}
-#jointExamEditBtn:not(.receptionist-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: none !important;
-}
-
-#jointExamEditBtn:not(.receptionist-icon-action) i {
-    color: #6c757d;
-    transition: color 0.2s ease;
-}
-
-#jointExamEditBtn:not(.receptionist-icon-action):hover i {
-    color: var(--qlpk-color-primary);
-}
-
-/* Badge indicator cho joint exam edit button */
-#jointExamEditBtn:not(.receptionist-icon-action)::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-	border-width: 2px;
-	border-style: solid;
-    animation: pulse-badge 2s infinite;
-}
-/* Badge indicator cho joint exam edit button */
-#jointExamEditBtn:not(.receptionist-icon-action):not([data-qlpk-button], [data-qlpk-button] *)::after {
-    background: #28a745;
-    border: 2px solid white;
-    box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.3);
-}
-
-@keyframes pulse-badge {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-#jointExamEditBtn:not(.receptionist-icon-action):hover {
-    border-radius: 4px;
-    padding: 2px 4px !important;
-}
-#jointExamEditBtn:not(.receptionist-icon-action):hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: rgba(0, 123, 255, 0.1) !important;
-}
-
-#jointExamModal .modal-content {
+.joint-exam-modal .modal-content {
     border: 0;
     border-radius: 0.625rem;
     overflow: hidden;
-    background: #fffdf9;
-    box-shadow: 0 1.25rem 3rem rgba(53, 40, 33, 0.22);
+    background: var(--qlpk-color-surface-warm);
+    box-shadow: 0 1.25rem 3rem rgba(var(--qlpk-color-text-rgb), 0.22);
 }
 
-#jointExamModal .modal-header {
+.joint-exam-modal .modal-header {
     padding: 0.5rem 0.875rem;
-    border-bottom: 0.0625rem solid rgba(214, 160, 105, 0.34);
+    border-bottom: 0.0625rem solid rgba(var(--qlpk-color-gold-rgb), 0.34);
     background: var(--qlpk-workflow-context-header-bg);
-    color: #fffaf3;
+    color: var(--qlpk-color-surface-subtle);
 }
 
-#jointExamModal .modal-title {
-    color: #fffaf3;
+.joint-exam-modal .modal-title {
+    color: var(--qlpk-color-surface-subtle);
     font-size: var(--qlpk-font-size-lg, 1rem);
     font-weight: var(--qlpk-font-weight-bold, 700);
 }
 
-#jointExamModal .btn-close {
+.joint-exam-modal .btn-close {
     filter: invert(1) grayscale(1) brightness(2.2);
     opacity: 0.85;
     margin: 0;
 }
 
-#jointExamModal .modal-body {
+.joint-exam-modal .modal-body {
     padding: 0.625rem 0.875rem 0.75rem;
-    background: #fffdf9;
+    background: var(--qlpk-color-surface-warm);
 }
 
-#jointExamModal .modal-footer {
+.joint-exam-modal .modal-footer {
     padding: 0.5rem 0.875rem;
-    border-top: 0.0625rem solid #eadccf;
-    background: #fbf8f2;
+    border-top: 0.0625rem solid var(--qlpk-toast-border);
+    background: var(--qlpk-color-page-bg);
 }
 
-#jointExamModal .modal-footer .joint-exam-close-btn {
+.joint-exam-modal .modal-footer .joint-exam-close-btn {
 	border-width: 0.0625rem;
 	border-style: solid;
     border-radius: 0.4375rem;
@@ -113,15 +47,15 @@
     line-height: 1.2;
     padding: 0.4rem 0.75rem;
 }
-#jointExamModal .modal-footer .joint-exam-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
-    border: 0.0625rem solid rgba(107, 66, 44, 0.3);
-    background: #fffdf9;
-    color: #5a301f;
+.joint-exam-modal .modal-footer .joint-exam-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+    border: 0.0625rem solid var(--qlpk-alpha-brown-30-30);
+    background: var(--qlpk-color-surface-warm);
+    color: var(--qlpk-color-brown);
 }
-#jointExamModal .modal-footer .joint-exam-close-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
-#jointExamModal .modal-footer .joint-exam-close-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+.joint-exam-modal .modal-footer .joint-exam-close-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.joint-exam-modal .modal-footer .joint-exam-close-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: var(--qlpk-color-primary);
-    background: #fff7ed;
+    background: var(--qlpk-color-surface-muted);
     color: var(--qlpk-brown-800);
 }
 
@@ -145,23 +79,23 @@
     padding: 0.375rem 0.75rem;
 }
 .joint-exam-add-btn:not([data-qlpk-button], [data-qlpk-button] *) {
-    border: 0.0625rem solid rgba(107, 66, 44, 0.28);
-    background: #fffdf9;
-    color: #5a301f;
+    border: 0.0625rem solid var(--qlpk-alpha-brown-30-28);
+    background: var(--qlpk-color-surface-warm);
+    color: var(--qlpk-color-brown);
 }
 .joint-exam-add-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .joint-exam-add-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: var(--qlpk-color-primary);
-    background: #fff7ed;
+    background: var(--qlpk-color-surface-muted);
     color: var(--qlpk-brown-800);
 }
 
 .joint-exam-table-body {
     position: relative;
     overflow: visible;
-    border: 0.0625rem solid #eadccf;
+    border: 0.0625rem solid var(--qlpk-toast-border);
     border-radius: 0.5rem;
-    background: #ffffff;
+    background: var(--qlpk-color-white);
 }
 
 .joint-exam-table-body .joint-exam-table-scroll {
@@ -178,18 +112,18 @@
 }
 
 .joint-exam-table thead th {
-    background: #fbf8f2;
+    background: var(--qlpk-color-page-bg);
     font-size: var(--qlpk-font-size-sm, 12px);
     letter-spacing: 0;
     text-transform: uppercase;
-    color: #5a301f;
-    border-bottom: 0.0625rem solid #eadccf;
+    color: var(--qlpk-color-brown);
+    border-bottom: 0.0625rem solid var(--qlpk-toast-border);
     padding: 0.5rem 0.5rem;
     text-align: left;
 }
 
 .joint-exam-table tbody td {
-    border-bottom: 0.0625rem solid #f0e5da;
+    border-bottom: 0.0625rem solid var(--qlpk-palette-brown-90);
     padding: 0.4rem 0.5rem;
     vertical-align: middle;
     font-size: var(--qlpk-font-size-md, 14px);
@@ -245,12 +179,12 @@
 
 .relative-cell-overlay {
     position: relative;
-    z-index: 1000;
+    z-index: var(--qlpk-z-dropdown);
 }
 
 .relative-input-wrap {
     position: relative;
-    z-index: 1001;
+    z-index: var(--qlpk-z-dropdown-inner);
 }
 
 .relative-emergency-contact-checkbox {
@@ -266,7 +200,7 @@
 .joint-exam-empty-state {
     padding: 1.375rem 1rem;
     text-align: center;
-    color: #5f4c41;
+    color: var(--qlpk-palette-brown-31);
     font-size: var(--qlpk-font-size-md, 14px);
     display: none;
 }
@@ -277,12 +211,12 @@
 
 /* CSS cho editing row */
 .joint-exam-table .editing-row {
-    background: linear-gradient(90deg, #fffbf4 0%, #ffffff 100%);
-    box-shadow: inset 0.1875rem 0 0 #d6a069;
+    background: linear-gradient(90deg, var(--qlpk-palette-orange-98) 0%, var(--qlpk-color-white) 100%);
+    box-shadow: inset 0.1875rem 0 0 var(--qlpk-color-gold);
 }
 
 .joint-exam-table .editing-row input {
-    border-color: #d8c6b6;
+    border-color: var(--qlpk-palette-brown-78);
     box-shadow: none;
 }
 
@@ -291,10 +225,10 @@
     width: 100%;
     min-width: 0;
     padding: 0.4rem 0.625rem;
-    border: 0.0625rem solid #d8c6b6;
+    border: 0.0625rem solid var(--qlpk-palette-brown-78);
     border-radius: 0.375rem;
-    background: #ffffff;
-    color: #352821;
+    background: var(--qlpk-color-white);
+    color: var(--qlpk-color-text);
     font-size: var(--qlpk-font-size-md, 14px);
     font-weight: var(--qlpk-font-weight-semibold, 600);
     line-height: 1.25;
@@ -304,20 +238,20 @@
 }
 
 .joint-exam-table .relative-row-input::placeholder {
-    color: #7a6a60;
+    color: var(--qlpk-palette-gray-43);
     font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 
 .joint-exam-table .relative-row-input:focus {
     outline: none;
-    border-color: #b9895e;
-    box-shadow: 0 0 0 0.125rem rgba(185, 137, 94, 0.16);
+    border-color: var(--qlpk-palette-brown-55);
+    box-shadow: 0 0 0 0.125rem var(--qlpk-alpha-brown-55-16);
 }
 
 .joint-exam-table .relative-row-input:disabled {
-    border-color: #d9cec4;
-    background: #f4f0eb;
-    color: #5f5047;
+    border-color: var(--qlpk-palette-brown-81-a);
+    background: var(--qlpk-palette-brown-94);
+    color: var(--qlpk-palette-gray-33);
     cursor: not-allowed;
 }
 
@@ -372,13 +306,13 @@
 }
 .joint-exam-table .relative-row-actions button:not([data-qlpk-button], [data-qlpk-button] *) {
     border: 0.0625rem solid transparent;
-    background: #fffdf9;
+    background: var(--qlpk-color-surface-warm);
     transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .joint-exam-title-icon {
 	margin-inline-end: 0.5rem;
-	color: #fffaf3;
+	color: var(--qlpk-color-surface-subtle);
 }
 
 .joint-exam-add-btn {
@@ -404,58 +338,58 @@
 	gap: 0.25rem 0.75rem;
 	font-size: var(--qlpk-font-size-base, 13px);
 	line-height: 1.5;
-	color: #6b7280;
+	color: var(--qlpk-color-neutral-500);
 }
 
 .joint-exam-search-name {
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	color: #1f2937;
+	color: var(--qlpk-palette-blue-17-a);
 	margin-bottom: 0.2rem;
 }
 .joint-exam-table .relative-row-actions button.edit:not([data-qlpk-button], [data-qlpk-button] *) {
-    border-color: rgba(14, 116, 144, 0.2);
-    color: #075e75;
+    border-color: var(--qlpk-alpha-teal-31-20);
+    color: var(--qlpk-palette-teal-24);
 }
 .joint-exam-table .relative-row-actions button.edit:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #e6f7fb;
-    border-color: rgba(14, 116, 144, 0.34);
+    background: var(--qlpk-palette-teal-94);
+    border-color: var(--qlpk-alpha-teal-31-34);
 }
 .joint-exam-table .relative-row-actions button.remove:not([data-qlpk-button], [data-qlpk-button] *) {
-    border-color: rgba(185, 28, 28, 0.18);
-    color: #b91c1c;
+    border-color: var(--qlpk-alpha-red-42-18);
+    color: var(--qlpk-palette-red-42);
 }
 .joint-exam-table .relative-row-actions button.remove:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #fef2f2;
-    border-color: rgba(185, 28, 28, 0.3);
+    background: var(--qlpk-feedback-error-bg);
+    border-color: var(--qlpk-alpha-red-42-30);
 }
 .joint-exam-table .relative-row-actions button.btn-save:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: rgba(var(--qlpk-color-primary-rgb), 0.22);
     color: var(--qlpk-color-primary);
 }
 .joint-exam-table .relative-row-actions button.btn-save:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #e2f8f1;
+    background: var(--qlpk-palette-green-93-b);
     border-color: rgba(var(--qlpk-color-primary-rgb), 0.36);
 }
 .joint-exam-table .relative-row-actions button.btn-cancel:not([data-qlpk-button], [data-qlpk-button] *) {
-    border-color: rgba(107, 66, 44, 0.18);
-    color: #6b422c;
+    border-color: var(--qlpk-alpha-brown-30-18);
+    color: var(--qlpk-palette-brown-30-a);
 }
 .joint-exam-table .relative-row-actions button.btn-cancel:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #fff7ed;
-    border-color: rgba(107, 66, 44, 0.3);
+    background: var(--qlpk-color-surface-muted);
+    border-color: var(--qlpk-alpha-brown-30-30);
 }
 
 /* Search dropdown styles */
 .joint-exam-search-dropdown {
     display: none;
     position: absolute;
-    z-index: 10000;
+    z-index: var(--qlpk-z-legacy-floating);
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--qlpk-palette-gray-87);
     border-radius: 4px;
     max-height: 300px;
     overflow-y: auto;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
     width: 100%;
     margin-top: 2px;
 }
@@ -466,19 +400,19 @@
 
 .joint-exam-search-dropdown--floating {
     position: fixed;
-    z-index: 10000;
+    z-index: var(--qlpk-z-legacy-floating);
 }
 
 .relative-search-dropdown {
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--qlpk-palette-gray-87);
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
     display: none;
     max-height: 300px;
     overflow-y: auto;
     position: absolute;
-    z-index: 10000;
+    z-index: var(--qlpk-z-legacy-floating);
 }
 
 .relative-search-dropdown.is-open {
@@ -487,25 +421,25 @@
 
 .relative-search-dropdown--floating {
     position: fixed;
-    z-index: 10000;
+    z-index: var(--qlpk-z-legacy-floating);
 }
 
 .relative-search-item {
     padding: 8px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--qlpk-palette-gray-94);
 }
 
 .relative-search-item:hover {
-    background-color: #f5f5f5;
+    background-color: var(--qlpk-button-secondary-bg);
 }
 
 .relative-search-item.active {
-    background-color: #f5f5f5;
+    background-color: var(--qlpk-button-secondary-bg);
 }
 
 .relative-search-item.no-results {
-    color: #6c757d;
+    color: var(--qlpk-palette-gray-46);
     font-style: italic;
     cursor: default;
 }
@@ -515,11 +449,11 @@
 }
 
 @media (max-width: 48rem) {
-    #jointExamModal .modal-dialog {
+    .joint-exam-modal .modal-dialog {
         margin: 0.5rem;
     }
 
-    #jointExamModal .modal-body {
+    .joint-exam-modal .modal-body {
         padding: 0.625rem;
     }
 
@@ -556,14 +490,14 @@
         display: grid;
         gap: 0.4rem;
         padding: 0.5rem 0.625rem;
-        border: 0.0625rem solid #eadccf;
+        border: 0.0625rem solid var(--qlpk-toast-border);
         border-left: 0.1875rem solid var(--qlpk-color-primary);
         border-radius: 0.5rem;
-        background: #ffffff;
+        background: var(--qlpk-color-white);
     }
 
     .joint-exam-table tbody tr.editing-row {
-        background: #fffaf3;
+        background: var(--qlpk-color-surface-subtle);
     }
 
     .joint-exam-table tbody td {
@@ -578,7 +512,7 @@
     }
 
     .joint-exam-table tbody td::before {
-        color: #5a301f;
+        color: var(--qlpk-color-brown);
         font-size: var(--qlpk-font-size-base, 13px);
         font-weight: var(--qlpk-font-weight-bold, 700);
         line-height: 1.25;

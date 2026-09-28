@@ -711,8 +711,7 @@ body[data-doctor-ui] .main-content {
 	min-width: 0;
 }
 
-#doctorDecisionTreatmentTask,
-#doctorClinicalDetailPanel {
+.doctor-clinical-workspace--doctor :is(.doctor-clinical-section--decision, .doctor-clinical-detail-panel) {
 	--doctor-clinical-heading: var(--doctor-interactive);
 	--doctor-clinical-content: var(--qlpk-patient-visit-text);
 	--doctor-clinical-label: var(--doctor-clinical-content);
@@ -1306,7 +1305,7 @@ body[data-doctor-ui] .main-content {
 	position: absolute;
 	inset-inline: 0;
 	inset-block-start: calc(100% + 0.25rem);
-	z-index: 4;
+	z-index: var(--qlpk-z-local-dropdown);
 	max-height: 14rem;
 	overflow: auto;
 	padding: 0.25rem;
@@ -1320,7 +1319,7 @@ body[data-doctor-ui] .main-content {
 .doctor-support-dropdown--floating {
 	position: fixed;
 	inset: auto;
-	z-index: 1200;
+	z-index: var(--qlpk-z-floating);
 	max-width: calc(100vw - 1rem);
 	overscroll-behavior: contain;
 }
@@ -1591,7 +1590,7 @@ body[data-doctor-ui] .main-content {
 compact warning without adding label chrome. */
 	.doctor-clinical-workspace :is(input:not([type="hidden"]), textarea, select).is-draft-restored,
 	.doctor-service-selection__row.is-draft-restored,
-	#doctorHistoryPanel.is-draft-restored #medicalHistoryMedicalHistoryPanel {
+	.doctor-history-workspace.is-draft-restored .medical-history-panel {
 	border-color: var(--qlpk-feedback-error);
 	outline: 0.125rem solid var(--qlpk-feedback-error);
 	outline-offset: 0.1rem;
@@ -1618,7 +1617,7 @@ compact warning without adding label chrome. */
 @media (prefers-reduced-motion: reduce) {
 	.doctor-clinical-workspace :is(input:not([type="hidden"]), textarea, select).is-draft-restored,
 	.doctor-service-selection__row.is-draft-restored,
-	#doctorHistoryPanel.is-draft-restored #medicalHistoryMedicalHistoryPanel {
+	.doctor-history-workspace.is-draft-restored .medical-history-panel {
 		animation: none;
 	}
 
@@ -1628,8 +1627,8 @@ compact warning without adding label chrome. */
 }
 
 /* The numbered clinical decisions use the same dark text hierarchy as their detail fields. */
-#doctorDecisionTreatmentTask .doctor-field > span,
-#doctorDecisionTreatmentTask .doctor-field > .doctor-field__label {
+.doctor-clinical-workspace--doctor .doctor-clinical-section--decision .doctor-field > span,
+.doctor-clinical-workspace--doctor .doctor-clinical-section--decision .doctor-field > .doctor-field__label {
 	color: var(--doctor-clinical-heading);
 }
 
@@ -1660,20 +1659,20 @@ compact warning without adding label chrome. */
 /* Tâm lý gia dùng cùng workspace với Bác sĩ nhưng có presentation riêng cho
  * hai nhóm Khám.  Grid giữ card trong vùng viewport; textarea tự cuộn khi nội
  * dung dài thay vì đẩy parent hoặc tạo scroll cho toàn form. */
-#psychologistClinicalDecisionPanel .doctor-workbench-panel__body--clinical {
+.psychologist-clinical-decision-panel .doctor-workbench-panel__body--clinical {
 	grid-template-rows: minmax(0, 1fr);
 	align-content: stretch;
 	overflow: hidden;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-flow {
+.psychologist-clinical-decision-panel .doctor-clinical-flow {
 	grid-template-rows: minmax(0, 1fr);
 	gap: 0;
 	block-size: 100%;
 	min-block-size: 0;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid {
+.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid {
 	grid-template-columns: minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);
 	align-content: stretch;
@@ -1683,14 +1682,14 @@ compact warning without adding label chrome. */
 	min-block-size: 0;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion {
 	min-inline-size: 0;
 	min-block-size: 0;
 	margin: 0;
 	overflow: hidden;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion[open] {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion[open] {
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr);
 	align-content: stretch;
@@ -1698,13 +1697,13 @@ compact warning without adding label chrome. */
 	block-size: 100%;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion:not([open]) {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion:not([open]) {
 	align-self: start;
 	block-size: auto;
 	padding-block-end: 0;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion > summary {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion > summary {
 	display: flex;
 	align-items: center;
 	min-inline-size: 0;
@@ -1712,24 +1711,24 @@ compact warning without adding label chrome. */
 	list-style: none;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion > summary::-webkit-details-marker {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion > summary::-webkit-details-marker {
 	display: none;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion > summary:focus-visible {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion > summary:focus-visible {
 	position: relative;
-	z-index: 1;
+	z-index: var(--qlpk-z-base);
 	outline: 0.125rem solid var(--doctor-interactive);
 	outline-offset: -0.125rem;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion > summary .qlpk-patient-visit-card__title {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion > summary .qlpk-patient-visit-card__title {
 	flex: 1 1 auto;
 	min-inline-size: 0;
 	margin-inline: 0;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion__indicator {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion__indicator {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -1739,24 +1738,24 @@ compact warning without adding label chrome. */
 	font-size: var(--qlpk-font-size-sm);
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion__indicator i {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion__indicator i {
 	display: inline-block;
 	transition: transform 160ms ease;
 }
 
-#psychologistClinicalDecisionPanel .psychologist-clinical-accordion:not([open]) .psychologist-clinical-accordion__indicator i {
+.psychologist-clinical-decision-panel .psychologist-clinical-accordion:not([open]) .psychologist-clinical-accordion__indicator i {
 	transform: rotate(-90deg);
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-form-card__fields,
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__body,
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__fields,
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-field,
-#psychologistClinicalDecisionPanel .doctor-field {
+.psychologist-clinical-decision-panel .doctor-clinical-form-card__fields,
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__body,
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__fields,
+.psychologist-clinical-decision-panel .doctor-clinical-detail-field,
+.psychologist-clinical-decision-panel .doctor-field {
 	min-block-size: 0;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-form-card__fields {
+.psychologist-clinical-decision-panel .doctor-clinical-form-card__fields {
 	grid-template-columns: minmax(0, 1fr);
 	grid-template-rows: repeat(7, minmax(0, 1fr));
 	align-content: stretch;
@@ -1766,12 +1765,12 @@ compact warning without adding label chrome. */
 	overflow: hidden;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-form-card .doctor-field.receptionist-paper-field {
+.psychologist-clinical-decision-panel .doctor-clinical-form-card .doctor-field.receptionist-paper-field {
 	grid-template-rows: minmax(0, 1fr);
 	align-items: stretch;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__body {
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__body {
 	grid-template-rows: minmax(0, 1fr);
 	align-content: stretch;
 	align-self: stretch;
@@ -1780,7 +1779,7 @@ compact warning without adding label chrome. */
 	overflow: hidden;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__fields {
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__fields {
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 	grid-auto-rows: minmax(0, 1fr);
 	align-content: stretch;
@@ -1792,13 +1791,13 @@ compact warning without adding label chrome. */
 	overflow: hidden;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field {
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field {
 	grid-template-rows: auto minmax(0, 1fr);
 	align-items: stretch;
 }
 
-#psychologistClinicalDecisionPanel .doctor-clinical-form-card .receptionist-paper-field textarea.form-control,
-#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field textarea.form-control {
+.psychologist-clinical-decision-panel .doctor-clinical-form-card .receptionist-paper-field textarea.form-control,
+.psychologist-clinical-decision-panel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field textarea.form-control {
 	block-size: 100%;
 	min-block-size: 0;
 	max-block-size: 100%;
@@ -1807,56 +1806,56 @@ compact warning without adding label chrome. */
 }
 
 @media (min-width: 64rem) {
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		grid-template-rows: minmax(0, 1fr);
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__fields {
+	.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__fields {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 63.99875rem) {
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid {
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr) auto;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid[data-psychologist-clinical-open="mental"] {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid[data-psychologist-clinical-open="mental"] {
 		grid-template-rows: auto minmax(0, 1fr);
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion {
 		grid-column: 1;
 		align-self: start;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[data-psychologist-clinical-accordion="assessment"] {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[data-psychologist-clinical-accordion="assessment"] {
 		grid-row: 1;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[data-psychologist-clinical-accordion="mental"] {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[data-psychologist-clinical-accordion="mental"] {
 		grid-row: 2;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[open] {
+	.psychologist-clinical-decision-panel .doctor-clinical-flow__clinical-grid > .psychologist-clinical-accordion[open] {
 		align-self: stretch;
 	}
 }
 
 @media (max-width: 47.99875rem) {
-	#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel__fields {
+	.psychologist-clinical-decision-panel .doctor-clinical-detail-panel__fields {
 		gap: 0.25rem;
 		padding-block-start: 0;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field .form-label {
+	.psychologist-clinical-decision-panel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field .form-label {
 		font-size: var(--qlpk-font-size-xs);
 		line-height: 1.15;
 	}
 
-	#psychologistClinicalDecisionPanel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field textarea.form-control {
+	.psychologist-clinical-decision-panel .doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field textarea.form-control {
 		padding-block: 0.12rem;
 		line-height: 1.2;
 	}
@@ -1911,11 +1910,11 @@ compact warning without adding label chrome. */
 }
 
 /* Doctor composes shared history and intake components within its own workspace. */
-.doctor-workspace .qlpk-patient-info-card #reExaminationCheck {
+.doctor-workspace .qlpk-patient-info-card .qlpk-patient-info__re-exam-check {
 	border-color: var(--doctor-interactive);
 }
 
-.doctor-workspace .qlpk-patient-info-card #reExaminationCheck:checked {
+.doctor-workspace .qlpk-patient-info-card .qlpk-patient-info__re-exam-check:checked {
 	background: var(--qlpk-workflow-context-header-bg);
 }
 .doctor-workspace :is(.qlpk-patient-info-card, .qlpk-patient-visit-card) .form-control:not([data-qlpk-button], [data-qlpk-button] *)::placeholder,
@@ -2249,7 +2248,7 @@ compact warning without adding label chrome. */
 	.doctor-workspace .qlpk-workflow-two-pane__switch {
 		position: sticky;
 		inset-block-start: 0;
-		z-index: 5;
+		z-index: var(--qlpk-z-sticky);
 		grid-column: 1;
 		grid-row: 1;
 		display: grid;
@@ -2300,7 +2299,7 @@ compact warning without adding label chrome. */
 	body[data-doctor-ui].qlpk-workspace-shell .main-content.col-md-10,
 	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-main,
 	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-frame-host,
-	body[data-doctor-ui].qlpk-workspace-shell #qlpkWorkspaceNativePane.is-active {
+	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-pane--native.is-active {
 		block-size: 100%;
 		background: var(--qlpk-doctor-surface);
 		height: 100%;
@@ -2308,7 +2307,7 @@ compact warning without adding label chrome. */
 		overflow: hidden;
 	}
 
-	body[data-doctor-ui].qlpk-workspace-shell:has(#qlpkWorkspaceNativePane.is-active .qlpk-workflow-two-pane) #qlpkWorkspaceNativePane.is-active {
+	body[data-doctor-ui].qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .qlpk-workspace-pane--native.is-active {
 		overflow-x: hidden;
 		overflow-y: hidden;
 	}

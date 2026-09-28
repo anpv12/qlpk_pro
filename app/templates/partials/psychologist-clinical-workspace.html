@@ -66,7 +66,7 @@
 				<p class="doctor-exam-empty-state__text">Chưa chọn lịch hẹn</p>
 			</div>
 
-			<section class="doctor-clinical-workspace" id="psychologistClinicalWorkspace"
+			<section class="doctor-clinical-workspace doctor-clinical-workspace--psychologist" id="psychologistClinicalWorkspace"
 				data-psychologist-component="clinical-workspace"
 				aria-labelledby="psychologistClinicalHeading" hidden>
 				<form class="doctor-clinical-form" id="patientForm" autocomplete="off">
@@ -83,13 +83,13 @@
 							</div>
 							<div class="doctor-patient-hero__actions">
 								<div class="doctor-patient-hero__action-buttons">
-									<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="historyBtn">
+									<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden qlpk-history-btn" id="historyBtn">
 										<i class="bi bi-clock-history" aria-hidden="true"></i><span>Lịch sử</span>
 									</button>
-									<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden" id="saveInfoBtn">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-workspace-button--secondary exam-initially-hidden qlpk-save-info-btn" id="saveInfoBtn">
 										<i class="bi bi-floppy" aria-hidden="true"></i><span>Lưu</span>
 									</button>
-									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary" id="completeExaminationBtn">
+									<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="doctor-workspace-button doctor-workspace-button--primary qlpk-complete-examination-btn" id="completeExaminationBtn">
 										<i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Hoàn thành</span>
 									</button>
 								</div>
@@ -132,7 +132,7 @@
 											{% include 'components/_inline_medical_history.html' %}
 										</section>
 
-									<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--clinical"
+									<section class="doctor-workspace-section doctor-workbench-panel doctor-workbench-panel--clinical psychologist-clinical-decision-panel"
 										id="psychologistClinicalDecisionPanel" data-psychologist-workspace-section
 										data-doctor-component="clinical-examination" aria-label="Khám tâm lý" hidden>
 										<div class="doctor-workbench-panel__body doctor-workbench-panel__body--clinical">

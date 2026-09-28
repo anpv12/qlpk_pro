@@ -53,7 +53,7 @@
 }
 .pw-btn--primary:not([data-qlpk-button], [data-qlpk-button] *),
 .stm-btn--primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	color: #fff;
+	color: var(--qlpk-color-white);
 	background: var(--qlpk-workflow-context-header-bg);
 	border-color: var(--accent);
 }
@@ -94,7 +94,7 @@
 	padding: 7px 14px;
 	font-size: var(--qlpk-font-size-xs, 11px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	color: #FFFFFF;
+	color: var(--qlpk-color-white);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 	background: var(--qlpk-workflow-context-header-bg);
@@ -174,7 +174,7 @@
 .pw-pagination .page-item.active .page-link,
 .stm-pagination-bar .page-item.active .page-link {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 
 .pw-pagination .page-item:not(.active) .page-link:hover,

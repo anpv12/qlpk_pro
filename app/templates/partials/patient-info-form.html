@@ -15,7 +15,7 @@
 		</div>
 		{% if patient_info_show_reexam %}
 		<label class="receptionist-reexam-toggle qlpk-patient-info-card__reexam-toggle" for="reExaminationCheck">
-			<input class="form-check-input" type="checkbox" id="reExaminationCheck">
+			<input class="form-check-input qlpk-patient-info__re-exam-check" type="checkbox" id="reExaminationCheck">
 			<span>Bệnh nhân tái khám</span>
 		</label>
 		{% endif %}
@@ -35,7 +35,7 @@
 				</div>
 			</div>
 			<div class="receptionist-patient-column receptionist-patient-column--left">
-				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--gender-parent">
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--gender-parent" data-patient-field="gender">
 					<label class="form-label required-field" for="gender">Giới tính</label>
 					<div class="receptionist-input-with-action receptionist-smart-input-control">
 						<select class="form-select" id="gender">
@@ -44,7 +44,7 @@
 							<option value="other">Khác</option>
 						</select>
 						{% if patient_info_show_detail_actions %}
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="genderEditBtn" data-receptionist-inline-toggle="genderInlineDetailPanel" aria-controls="genderInlineDetailPanel" aria-expanded="false" title="Mở thông tin giới tính mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action qlpk-gender-edit-btn" type="button" id="genderEditBtn" data-receptionist-inline-toggle="genderInlineDetailPanel" aria-controls="genderInlineDetailPanel" aria-expanded="false" title="Mở thông tin giới tính mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}
@@ -53,7 +53,7 @@
 				<div class="receptionist-field receptionist-field--full receptionist-inline-detail-panel receptionist-inline-detail-panel--gender" id="genderInlineDetailPanel" hidden>
 					<div class="receptionist-inline-detail-caption">Thông tin kèm theo giới tính</div>
 					<div class="receptionist-inline-detail-grid" aria-label="Thông tin giới tính mở rộng">
-						<div class="receptionist-field">
+						<div class="receptionist-field" data-patient-field="sexualOrientation">
 							<label class="form-label" for="sexualOrientation">Xu hướng tính dục</label>
 							<div class="receptionist-smart-input-control">
 								<input type="text" class="form-control" id="sexualOrientation" placeholder="Nhập xu hướng tính dục" autocomplete="off">
@@ -64,7 +64,7 @@
 						<div class="receptionist-field receptionist-field--checkbox-inline">
 							<label class="form-label" for="mangThai">Mang thai</label>
 							<label class="receptionist-inline-checkbox">
-								<input class="form-check-input" type="checkbox" id="mangThai">
+								<input class="form-check-input qlpk-patient-info__pregnancy-check" type="checkbox" id="mangThai">
 								<span>Có</span>
 							</label>
 						</div>
@@ -78,19 +78,19 @@
 						</div>
 					</div>
 				</div>
-				<div class="receptionist-field">
+				<div class="receptionist-field" data-patient-field="dateOfBirth">
 					<label class="form-label" for="dateOfBirth">Ngày sinh</label>
 					<input class="form-control js-datepicker" id="dateOfBirth" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">
 				</div>
-				<div class="receptionist-field">
+				<div class="receptionist-field" data-patient-field="phoneNumber">
 					<label class="form-label" for="phoneNumber">Điện thoại</label>
 					<input type="text" class="form-control" id="phoneNumber" placeholder="Nhập SĐT">
 				</div>
-				<div class="receptionist-field">
+				<div class="receptionist-field" data-patient-field="nickname">
 					<label class="form-label" for="nickname">Tên thường gọi</label>
 					<input type="text" class="form-control" id="nickname" placeholder="">
 				</div>
-				<div class="receptionist-field">
+				<div class="receptionist-field" data-patient-field="maritalStatus">
 					<label class="form-label" for="maritalStatus">Hôn nhân</label>
 					<select class="form-select" id="maritalStatus">
 						<option value="">Chọn</option>
@@ -104,16 +104,16 @@
 				</div>
 			</div>
 			<div class="receptionist-patient-column receptionist-patient-column--right">
-				<div class="receptionist-field">
+				<div class="receptionist-field" data-patient-field="age">
 					<label class="form-label" for="age">Tuổi</label>
-					<input type="text" class="form-control" id="age" placeholder="Số tuổi" autocomplete="off">
+					<input type="text" class="form-control qlpk-patient-info__age-input" id="age" placeholder="Số tuổi" autocomplete="off">
 				</div>
-				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--identity-parent">
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--identity-parent" data-patient-field="idCard">
 					<label class="form-label" for="idCard">CMT/CCCD</label>
 					<div class="receptionist-input-with-action receptionist-smart-input-control">
 						<input type="text" class="form-control" id="idCard" placeholder="Nhập CMT/CCCD">
 						{% if patient_info_show_detail_actions %}
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="idCardEditBtn" data-receptionist-inline-toggle="identityInlineDetailPanel" aria-controls="identityInlineDetailPanel" aria-expanded="false" title="Mở thông tin CMT/CCCD mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action qlpk-id-card-edit-btn" type="button" id="idCardEditBtn" data-receptionist-inline-toggle="identityInlineDetailPanel" aria-controls="identityInlineDetailPanel" aria-expanded="false" title="Mở thông tin CMT/CCCD mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}
@@ -148,13 +148,13 @@
 						</div>
 					</div>
 				</div>
-				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--occupation-parent">
+				<div class="receptionist-field receptionist-field--inline-detail-parent receptionist-field--occupation-parent" data-patient-field="occupation">
 					<label class="form-label" for="occupation">Nghề nghiệp</label>
 					<div class="receptionist-input-with-action receptionist-smart-input-control">
 						<input type="text" class="form-control" id="occupation" placeholder="Nhập nghề nghiệp" autocomplete="off">
 						<div class="occupation-dropdown" id="occupationDropdown"></div>
 						{% if patient_info_show_detail_actions %}
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action" type="button" id="occupationEditBtn" data-receptionist-inline-toggle="occupationInlineDetailPanel" aria-controls="occupationInlineDetailPanel" aria-expanded="false" title="Mở thông tin nghề nghiệp mở rộng">
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="receptionist-icon-action qlpk-occupation-edit-btn" type="button" id="occupationEditBtn" data-receptionist-inline-toggle="occupationInlineDetailPanel" aria-controls="occupationInlineDetailPanel" aria-expanded="false" title="Mở thông tin nghề nghiệp mở rộng">
 							<i class="bi bi-chevron-down qlpk-button-icon"></i>
 						</button>
 						{% endif %}
@@ -187,11 +187,11 @@
 				<div class="receptionist-address-inline-grid">
 					<input type="text" class="form-control" id="addressDetail" placeholder="Số nhà, đường, khu phố..." autocomplete="off">
 					<div class="receptionist-address-autocomplete-field">
-						<input type="text" class="form-control" id="province" placeholder="Tỉnh/Thành phố" autocomplete="off">
+						<input type="text" class="form-control" id="province" placeholder="Tỉnh/Thành phố" aria-label="Tỉnh/Thành phố" autocomplete="off">
 						<div class="receptionist-address-dropdown" id="provinceDropdown"></div>
 					</div>
 					<div class="receptionist-address-autocomplete-field">
-						<input type="text" class="form-control" id="ward" placeholder="Phường/Xã" autocomplete="off">
+						<input type="text" class="form-control" id="ward" placeholder="Phường/Xã" aria-label="Phường/Xã" autocomplete="off">
 						<div class="receptionist-address-dropdown" id="wardDropdown"></div>
 					</div>
 				</div>

@@ -1,28 +1,28 @@
-#transferModal {
-    --transfer-surface: #fffdf9;
-    --transfer-surface-soft: #fbf8f2;
-    --transfer-surface-hover: #f8f1e9;
-    --transfer-text: #352821;
-    --transfer-muted: #725d51;
-    --transfer-line: #eadccf;
+.transfer-modal {
+    --transfer-surface: var(--qlpk-color-surface-warm);
+    --transfer-surface-soft: var(--qlpk-color-page-bg);
+    --transfer-surface-hover: var(--qlpk-color-brown-soft);
+    --transfer-text: var(--qlpk-color-text);
+    --transfer-muted: var(--qlpk-toast-muted);
+    --transfer-line: var(--qlpk-toast-border);
     --transfer-brand: var(--qlpk-color-primary);
     --transfer-brand-soft: var(--qlpk-color-primary-strong);
-    --transfer-accent: #d6a069;
+    --transfer-accent: var(--qlpk-color-gold);
     --transfer-doctor: var(--qlpk-color-primary);
     --transfer-psychologist: var(--qlpk-color-primary);
-    --transfer-receptionist: #9a5b16;
+    --transfer-receptionist: var(--qlpk-palette-orange-35-a);
 }
 
 .transfer-dialog {
     max-width: min(94vw, 38rem);
 }
 
-.transfer-modal {
+.modal-content.transfer-modal {
     overflow: hidden;
     border: 0;
     border-radius: 0.85rem;
     background: var(--transfer-surface);
-    box-shadow: 0 1rem 3rem rgba(53, 40, 33, 0.22);
+    box-shadow: 0 1rem 3rem rgba(var(--qlpk-color-text-rgb), 0.22);
     color: var(--transfer-text);
 }
 
@@ -30,7 +30,7 @@
     align-items: center;
     border: 0;
     background: var(--qlpk-workflow-context-header-bg);
-    color: #fffaf3;
+    color: var(--qlpk-color-surface-subtle);
     padding: 0.72rem 0.9rem;
 }
 
@@ -49,14 +49,14 @@
     inline-size: 2rem;
     block-size: 2rem;
     border-radius: 999rem;
-    background: rgba(255, 250, 243, 0.16);
-    color: #f8d7a5;
+    background: rgba(var(--qlpk-color-surface-subtle-rgb), 0.16);
+    color: var(--qlpk-palette-orange-81);
     font-size: var(--qlpk-font-size-xl);
 }
 
 .transfer-modal__title {
     margin: 0;
-    color: #fffaf3;
+    color: var(--qlpk-color-surface-subtle);
     font-size: var(--qlpk-font-size-lg);
     font-weight: var(--qlpk-font-weight-semibold);
     line-height: 1.2;
@@ -64,7 +64,7 @@
 
 .transfer-modal__subtitle {
     margin: 0.18rem 0 0;
-    color: #f8e4cf;
+    color: var(--qlpk-palette-orange-89);
     font-size: var(--qlpk-font-size-sm);
     line-height: 1.35;
 }
@@ -135,7 +135,7 @@
 
 .transfer-role-btn:hover,
 .transfer-role-btn:focus-visible {
-    background: #ffffff;
+    background: var(--qlpk-color-white);
     border-color: var(--transfer-accent);
     box-shadow: 0 0.45rem 1rem rgba(var(--qlpk-brown-800-rgb), 0.12);
     outline: 0;
@@ -143,7 +143,7 @@
 }
 
 .transfer-role-btn.active {
-    background: #ffffff;
+    background: var(--qlpk-color-white);
     border-color: var(--transfer-brand);
     box-shadow: inset 0 0 0 0.12rem rgba(var(--qlpk-brown-800-rgb), 0.18), 0 0.45rem 1rem rgba(var(--qlpk-brown-800-rgb), 0.12);
 }
@@ -156,7 +156,7 @@
     inline-size: 1.55rem;
     block-size: 1.55rem;
     border-radius: 999rem;
-    background: #ffffff;
+    background: var(--qlpk-color-white);
     font-size: var(--qlpk-font-size-lg);
 }
 
@@ -208,8 +208,8 @@
 }
 
 .transfer-error-state {
-    color: #9f1239;
-    background: #fff1f2;
+    color: var(--qlpk-palette-red-35);
+    background: var(--qlpk-feedback-critical-bg);
 }
 
 .person-badge {
@@ -219,7 +219,7 @@
     max-inline-size: 100%;
     border: 0.0625rem solid var(--transfer-line);
     border-radius: 999rem;
-    background: #ffffff;
+    background: var(--qlpk-color-white);
     color: var(--transfer-text);
     cursor: pointer;
     font: inherit;
@@ -240,9 +240,9 @@
 
 .person-badge.selected {
     border-color: var(--transfer-doctor);
-    background: #ecfdf5;
-    color: #064e3b;
-    box-shadow: inset 0 0 0 0.12rem rgba(15, 118, 110, 0.16);
+    background: var(--qlpk-palette-green-96-b);
+    color: var(--qlpk-palette-green-16);
+    box-shadow: inset 0 0 0 0.12rem var(--qlpk-alpha-teal-26-16);
 }
 
 .person-badge i,
@@ -288,12 +288,12 @@
 }
 .transfer-modal__cancel:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: var(--transfer-line);
-    background: #ffffff;
+    background: var(--qlpk-color-white);
     color: var(--transfer-text);
 }
 .transfer-modal__confirm:not([data-qlpk-button], [data-qlpk-button] *) {
     background: var(--qlpk-workflow-context-header-bg);
-    color: #ffffff;
+    color: var(--qlpk-color-white);
 }
 .transfer-modal__cancel:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .transfer-modal__cancel:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -308,7 +308,7 @@
 }
 .transfer-modal__confirm:hover:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *),
 .transfer-modal__confirm:focus-visible:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #0b5f59;
+    background: var(--qlpk-palette-teal-21-b);
     box-shadow: 0 0.45rem 1rem rgba(var(--qlpk-color-primary-rgb), 0.24);
     outline: 0;
 }
@@ -317,8 +317,8 @@
     cursor: not-allowed;
 }
 .transfer-modal__confirm:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: #cbd5d1;
-    color: #41534e;
+    background: var(--qlpk-palette-gray-82);
+    color: var(--qlpk-palette-gray-29);
 }
 
 @media (max-width: 36rem) {

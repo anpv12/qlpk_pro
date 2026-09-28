@@ -16,7 +16,7 @@
 								<div class="row g-2">
 									<div class="col-12">
 										<input type="text" class="form-control form-control-lg" id="modalPatientSearch"
-											placeholder="Nhập tên bệnh nhân hoặc số hồ sơ">
+											placeholder="Nhập tên bệnh nhân hoặc số hồ sơ" aria-label="Tìm bệnh nhân theo tên hoặc số hồ sơ">
 									</div>
 								</div>
 							</div>
@@ -145,7 +145,7 @@
 									<div class="tab-pane fade show active patient-search-modal__tab-pane" id="prescription-content" role="tabpanel">
 										<div class="card h-100 patient-search-modal__tab-card">
 											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
-												<div id="modalContentArea">
+												<div id="modalContentArea" class="patient-search-modal__tab-content-area qlpk-modal-content-area">
 													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
 														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
 															<i class="bi bi-prescription patient-search-modal__empty-icon"></i>
@@ -175,7 +175,7 @@
 									<div class="tab-pane fade patient-search-modal__tab-pane" id="medical-record-content" role="tabpanel">
 										<div class="card h-100 patient-search-modal__tab-card">
 											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
-												<div id="medicalRecordContentArea">
+												<div id="medicalRecordContentArea" class="patient-search-modal__tab-content-area">
 													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
 														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
 															<i class="bi bi-file-medical patient-search-modal__empty-icon"></i>
@@ -190,7 +190,7 @@
 									<div class="tab-pane fade patient-search-modal__tab-pane" id="medical-record-tlg-content" role="tabpanel">
 										<div class="card h-100 patient-search-modal__tab-card">
 											<div class="card-body p-3 patient-search-modal__tab-body-scroll">
-												<div id="medicalRecordTLGContentArea">
+												<div id="medicalRecordTLGContentArea" class="patient-search-modal__tab-content-area">
 													<div class="patient-search-modal__empty-state patient-search-modal__empty-state--panel">
 														<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
 															<i class="bi bi-file-medical patient-search-modal__empty-icon"></i>
@@ -235,10 +235,10 @@
 															<div id="vitalSignsYAxisFixed" class="vital-signs-yaxis-fixed"></div>
 															<div id="vitalSignsChartScrollable" class="vital-signs-chart-scrollable">
 																<div id="vitalSignsHeaderTable" class="vital-chart-header-table"></div>
-																<div class="canvas-container"><canvas id="vitalSignsChart"></canvas></div>
+																<div class="canvas-container"><canvas id="vitalSignsChart" class="patient-search-modal__vitals-chart"></canvas></div>
 															</div>
 														</div>
-														<div id="vitalSignsTableWrapper"></div>
+														<div id="vitalSignsTableWrapper" class="patient-search-modal__vitals-table"></div>
 													</div>
 												</div>
 											</div>

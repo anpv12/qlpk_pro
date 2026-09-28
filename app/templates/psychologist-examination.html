@@ -8,8 +8,8 @@
 	<title>Tâm lý gia khám bệnh</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
   {% include 'partials/brand-theme.html' %}
@@ -25,14 +25,13 @@
 	<link rel="stylesheet" href="/static/css/personal-detail-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/patient-search-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/referral-source-control.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
 	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
 	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25" integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 	<script src="/static/js/autocomplete-base.js?v={{ app_version }}"></script>
 	<script src="/static/js/occupation-autocomplete.js?v={{ app_version }}"></script>
 	<script src="/static/js/sexual-orientation-autocomplete.js?v={{ app_version }}"></script>
@@ -65,7 +64,7 @@
 <body data-doctor-ui="true" data-joint-exam-context="psychologist">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content">
 				{% include 'partials/psychologist-clinical-workspace.html' %}
 			</main>
@@ -102,7 +101,6 @@
 	</div>
 
 
-	<!-- Modal Thông tin đầy đủ - Được load từ DRY module (personal-detail-modal-dry.js) -->
 
 
 
@@ -119,6 +117,7 @@
 		<i class="bi bi-check-circle me-1"></i>Đã lưu
 	</div>
 	<!-- Custom JavaScript -->
+		<script src="/static/js/components/patient-search-dropdown.js?v={{ app_version }}"></script>
 		<script src="/static/js/relative-table.js?v={{ app_version }}"></script>
 		<script src="/static/js/relative-link-handler.js?v={{ app_version }}"></script>
 		<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
@@ -141,18 +140,20 @@
 		<!-- Canonical patient modal contract; legacy page helpers remain compatibility-only. -->
 		<script src="/static/js/components/modal-function-tabs-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/modal-medical-history-list-ui.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/modal-patient-search-data.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/modal-patient-search-dom.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/modal-patient-search-state.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/modal-patient-search-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/patient-history-modal.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/patient-modal-contract.js?v={{ app_version }}"></script>
 		<script src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
-		<script src="/static/js/personal-detail-modal-dry.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-type-contract.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-dose-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-document-template.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/components/prescription-print-document.js?v={{ app_version }}"></script>
-		<script src="/static/js/patient-search-modal-dry.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/components/prescription-modal-preview.js?v={{ app_version }}"></script>
-		<script src="/static/js/prescriptions/components/prescription-modal-print.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/modal-history-data-runtime.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/modal-history-print-controller.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/waiting-queue-card-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/examination-waiting-list-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/examination-action-buttons-ui.js?v={{ app_version }}"></script>
@@ -168,6 +169,7 @@
 		<script src="/static/js/components/document-file-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/document-section-ui-utils.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/vital-calculation-utils.js?v={{ app_version }}"></script>
+		<script src="/static/js/components/history-tab-core.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/prescription-history-tab-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/service-history-tab-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/medical-record-history-tab-ui.js?v={{ app_version }}"></script>

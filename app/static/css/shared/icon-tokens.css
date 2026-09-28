@@ -5,11 +5,11 @@
 	--qlpk-icon-action-surface-strength: 11%;
 	--qlpk-icon-action-border-strength: 34%;
 	--qlpk-icon-action-hover-surface-strength: 18%;
-	--qlpk-icon-action-shadow: 0 0.25rem 0.75rem rgba(53, 40, 33, 0.08);
+	--qlpk-icon-action-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-text-rgb), 0.08);
 	--qlpk-icon-action-add: var(--qlpk-color-primary);
 	--qlpk-icon-action-view: var(--qlpk-color-primary);
 	--qlpk-icon-action-edit: var(--qlpk-color-primary);
-	--qlpk-icon-action-delete: #b42318;
+	--qlpk-icon-action-delete: var(--qlpk-palette-red-40);
 	--qlpk-icon-action-transfer: var(--qlpk-color-primary);
 	--qlpk-icon-action-download: var(--qlpk-color-primary);
 	--qlpk-icon-action-upload: var(--qlpk-color-primary);
@@ -38,7 +38,7 @@
 }
 .qlpk-icon-action:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: var(--qlpk-icon-action-border-width) solid color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-border-strength), transparent);
-	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-surface-strength), #ffffff);
+	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-surface-strength), var(--qlpk-color-white));
 	box-shadow: none;
 	color: var(--qlpk-icon-action-color);
 	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
@@ -59,7 +59,7 @@
 .qlpk-icon-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-icon-action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: color-mix(in srgb, var(--qlpk-icon-action-color) 54%, transparent);
-	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-hover-surface-strength), #ffffff);
+	background: color-mix(in srgb, var(--qlpk-icon-action-color) var(--qlpk-icon-action-hover-surface-strength), var(--qlpk-color-white));
 	box-shadow: var(--qlpk-icon-action-shadow);
 	color: var(--qlpk-icon-action-color);
 }
@@ -134,7 +134,7 @@
 .qlpk-icon-text-button:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: var(--qlpk-icon-action-border-width) solid var(--qlpk-color-primary);
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
@@ -146,7 +146,7 @@
 .qlpk-icon-text-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
 	border-color: var(--qlpk-color-primary-strong);
-	color: #ffffff;
+	color: var(--qlpk-color-white);
 	box-shadow: var(--qlpk-icon-action-shadow);
 }
 

@@ -8,7 +8,7 @@
 
 .qlpk-admin-page {
 	--admin-bg: var(--qlpk-workspace-bg);
-	--admin-surface: #ffffff;
+	--admin-surface: var(--qlpk-color-white);
 	--admin-text: var(--qlpk-color-text);
 	--admin-muted: var(--qlpk-color-text-muted);
 	--admin-muted-strong: var(--qlpk-color-text-muted);
@@ -17,8 +17,8 @@
 	--admin-accent: var(--qlpk-color-primary);
 	--admin-accent-strong: var(--qlpk-color-primary-strong);
 	--admin-accent-soft: var(--qlpk-color-primary-soft);
-	--admin-success: #15803d;
-	--admin-danger: #dc2626;
+	--admin-success: var(--qlpk-palette-green-29-a);
+	--admin-danger: var(--qlpk-feedback-error);
 	--admin-radius: var(--clinic-surface-radius);
 	background: var(--admin-bg);
 	color: var(--admin-text);
@@ -84,11 +84,11 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 	color: var(--admin-border-strong);
 }
 
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card,
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card-wrap,
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .qlpk-admin-surface,
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .import-export-section,
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .stm-card {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card-wrap,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-surface,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .import-export-section,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .stm-card {
 	margin: 12px 20px 0;
 }
 
@@ -220,8 +220,8 @@ body.qlpk-admin-page .form-check-label {
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 
-body.qlpk-admin-page #userModal .form-label,
-body.qlpk-admin-page #userModal .form-check-label {
+body.qlpk-admin-page .modal.qlpk-user-modal .form-label,
+body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
 	color: var(--admin-muted-strong);
 }
 
@@ -237,7 +237,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-accent) !important;
 	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: #fff !important;
+	color: var(--qlpk-color-white) !important;
 }
 .qlpk-admin-page .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
@@ -246,7 +246,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-accent-strong) !important;
 	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: #fff !important;
+	color: var(--qlpk-color-white) !important;
 }
 .qlpk-admin-page .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline:not([data-qlpk-button], [data-qlpk-button] *),
@@ -265,7 +265,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--admin-success) !important;
 	background: var(--admin-success) !important;
-	color: #fff !important;
+	color: var(--qlpk-color-white) !important;
 }
 .qlpk-admin-page .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -288,14 +288,14 @@ body.qlpk-admin-page #userModal .form-check-label {
 	border-radius: 0 0 var(--admin-radius) var(--admin-radius);
 }
 
-.qlpk-admin-page table:has(#serviceTableBody) :is(th, td):nth-child(n+4) {
+.qlpk-admin-page table:has(.qlpk-service-table-body) :is(th, td):nth-child(n+4) {
 	white-space: nowrap;
 }
 
 .qlpk-admin-page .table,
 .qlpk-admin-page .ai-table,
 .qlpk-admin-page .di-table,
-.qlpk-admin-page #surveyTable {
+.qlpk-admin-page .qlpk-survey-table {
 	width: 100%;
 	margin: 0;
 	border-collapse: collapse;
@@ -307,7 +307,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .table thead th,
 .qlpk-admin-page .ai-table thead th,
 .qlpk-admin-page .di-table thead th,
-.qlpk-admin-page #surveyTable thead th {
+.qlpk-admin-page .qlpk-survey-table thead th {
 	padding: 9px 10px;
 	border: 1px solid var(--admin-border);
 	background: var(--qlpk-brown-150) !important;
@@ -321,7 +321,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .table tbody td,
 .qlpk-admin-page .ai-table tbody td,
 .qlpk-admin-page .di-table tbody td,
-.qlpk-admin-page #surveyTable tbody td {
+.qlpk-admin-page .qlpk-survey-table tbody td {
 	padding: 9px 10px;
 	border: 1px solid var(--qlpk-brown-100);
 	background: var(--admin-surface);
@@ -332,7 +332,7 @@ body.qlpk-admin-page #userModal .form-check-label {
 .qlpk-admin-page .table tbody tr:hover td,
 .qlpk-admin-page .ai-table tbody tr:hover td,
 .qlpk-admin-page .di-table tbody tr:hover td,
-.qlpk-admin-page #surveyTable tbody tr:hover td {
+.qlpk-admin-page .qlpk-survey-table tbody tr:hover td {
 	background: var(--qlpk-brown-50);
 }
 
@@ -411,7 +411,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 .qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.active .page-link {
 	border-color: var(--admin-accent);
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 
 .qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.disabled .page-link {
@@ -421,7 +421,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 .qlpk-admin-page .modal-content {
 	border: 1px solid var(--admin-border);
 	border-radius: var(--clinic-surface-radius, var(--admin-radius));
-	box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+	box-shadow: 0 16px 40px var(--qlpk-alpha-blue-11-16);
 	overflow: hidden;
 }
 
@@ -429,15 +429,15 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 	flex: 0 0 auto;
 	padding: 10px 14px;
 	border: 0;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	border-bottom: 1px solid rgba(var(--qlpk-color-white-rgb), 0.2);
 	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
 	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 
 .qlpk-admin-page .modal-header .modal-title,
 .qlpk-admin-page .modal-header .modal-title i {
-	color: #fff !important;
+	color: var(--qlpk-color-white) !important;
 	font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-md, 14px));
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
@@ -472,7 +472,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 }
 
 .qlpk-admin-page .shadow-sm {
-	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+	box-shadow: 0 1px 3px var(--qlpk-alpha-blue-11-04-b) !important;
 }
 
 .qlpk-admin-page .um-btn-primary-pill-lg,
@@ -491,7 +491,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 .qlpk-admin-page .save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	border: 1px solid var(--admin-accent) !important;
 	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: #fff !important;
+	color: var(--qlpk-color-white) !important;
 }
 
 .qlpk-admin-page .um-btn-pill-lg,
@@ -542,8 +542,8 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 
 .qlpk-admin-actions { gap: 0.5rem; }
 
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mt-4,
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4 {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mt-4,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4 {
 	margin: 12px 20px 0 !important;
 }
 
@@ -572,11 +572,11 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 	padding: 12px 14px;
 }
 
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4 {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4 {
 	margin-bottom: 0 !important;
 }
 
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-3 {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-3 {
 	margin: 12px 20px 0 !important;
 	padding: 10px;
 	border: 1px solid var(--admin-border);
@@ -585,7 +585,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 	row-gap: 0.5rem;
 }
 
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card:not(.modal-content) .card-body.p-0 {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card:not(.modal-content) .card-body.p-0 {
 	padding: 0 !important;
 }
 
@@ -717,58 +717,56 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 /* Long admin tables scroll inside their own surface on narrow screens. A
  * minimum reading width prevents names/addresses/statuses from collapsing
  * into one-character columns while preserving the page viewport. */
-.qlpk-admin-page #userTable,
-.qlpk-admin-page #groupTable,
-.qlpk-admin-page table:has(#textExpansionsTableBody) {
+.qlpk-admin-page .qlpk-user-table,
+.qlpk-admin-page .qlpk-group-table,
+.qlpk-admin-page table:has(.qlpk-text-expansions-table-body) {
 	min-width: 720px;
 }
 
-.qlpk-admin-page #surveyTable {
+.qlpk-admin-page .qlpk-survey-table {
 	min-width: 740px;
 }
 
-.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(2) {
+.qlpk-admin-page table:has(.qlpk-text-expansions-table-body) td:nth-child(2) {
 	white-space: normal;
 	min-width: 20rem;
 	max-width: 28rem;
 }
 
-.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(5) {
+.qlpk-admin-page table:has(.qlpk-text-expansions-table-body) td:nth-child(5) {
 	min-width: 8rem;
 }
 
-.qlpk-admin-page table:has(#textExpansionsTableBody) td:nth-child(5) .badge {
+.qlpk-admin-page table:has(.qlpk-text-expansions-table-body) td:nth-child(5) .badge {
 	white-space: nowrap;
 }
 
-.qlpk-admin-page #groupTable td:nth-child(4) {
+.qlpk-admin-page .qlpk-group-table td:nth-child(4) {
 	white-space: normal;
 	min-width: 28rem;
 }
 
-.qlpk-admin-page table:has(#orderItemsTableBody),
-.qlpk-admin-page table:has(#holidayTableBody),
-.qlpk-admin-page table:has(#categoryTableBody),
-.qlpk-admin-page table:has(#serviceTableBody) {
+.qlpk-admin-page table:has(.qlpk-holiday-table-body),
+.qlpk-admin-page table:has(.qlpk-category-table-body),
+.qlpk-admin-page table:has(.qlpk-service-table-body) {
 	min-width: 680px;
 }
 
 @media (max-width: 576px) {
-	.qlpk-admin-page #userTable,
-	.qlpk-admin-page #groupTable,
-	.qlpk-admin-page table:has(#textExpansionsTableBody),
-	.qlpk-admin-page #surveyTable,
-	.qlpk-admin-page table:has(#orderItemsTableBody),
-	.qlpk-admin-page table:has(#holidayTableBody),
-	.qlpk-admin-page table:has(#icdTableBody),
-	.qlpk-admin-page table:has(#categoryTableBody),
-	.qlpk-admin-page table:has(#serviceTableBody) {
+	.qlpk-admin-page .qlpk-user-table,
+	.qlpk-admin-page .qlpk-group-table,
+	.qlpk-admin-page table:has(.qlpk-text-expansions-table-body),
+	.qlpk-admin-page .qlpk-survey-table,
+	.qlpk-admin-page table:has(.qlpk-holiday-table-body),
+	.qlpk-admin-page table:has(.qlpk-icd-table-body),
+	.qlpk-admin-page table:has(.qlpk-category-table-body),
+	.qlpk-admin-page table:has(.qlpk-service-table-body) {
 		white-space: nowrap;
 	}
 }
 
 /* Empty/placeholder states remain readable without adding a second card. */
-.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .mt-5 {
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .mt-5 {
 	margin: 12px 20px 0 !important;
 	padding: 42px 20px;
 	border: 1px dashed var(--admin-border-strong);
@@ -796,15 +794,15 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 		flex: 1 1 160px;
 	}
 
-	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card,
-	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .card-wrap,
-	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .qlpk-admin-surface,
-	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .import-export-section,
-	.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .stm-card,
-		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mt-4,
-		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-4,
-		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .row.mb-3,
-		.qlpk-admin-page :is(.main-content, #qlpkWorkspaceNativePane) > .mt-5 {
+	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card,
+	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card-wrap,
+	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-surface,
+	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .import-export-section,
+	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .stm-card,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mt-4,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-3,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .mt-5 {
 		margin-right: 12px !important;
 		margin-left: 12px !important;
 	}

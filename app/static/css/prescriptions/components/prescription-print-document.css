@@ -2,7 +2,7 @@
 	size: A4;
 	margin: 20mm 20mm 20mm 30mm;
 }
-html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+html, body { margin: 0; padding: 0; background: var(--qlpk-color-white); color: var(--qlpk-color-black); }
 .prescription-print-document__pages { width: 100%; max-width: 160mm; margin: 0 auto; }
 .prescription-print-document__page { display: block; }
 .prescription-print-document__page + .prescription-print-document__page {
@@ -16,8 +16,8 @@ html, body { margin: 0; padding: 0; background: #fff; color: #000; }
 	padding: 0;
 }
 .prescription-print-document__asset-error {
-	border: 1px solid #b91c1c;
-	color: #991b1b;
+	border: 1px solid var(--qlpk-palette-red-42);
+	color: var(--qlpk-feedback-critical);
 	padding: 1rem;
 	font-family: var(--qlpk-font-family);
 }

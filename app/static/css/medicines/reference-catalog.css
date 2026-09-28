@@ -4,7 +4,7 @@ body {
     margin: 0;
 }
 
-#sidebar-container.col-md-2 {
+.qlpk-shell-sidebar.col-md-2 {
     flex: 0 0 16.66667% !important;
     max-width: 16.66667% !important;
 }
@@ -13,7 +13,6 @@ body {
     flex: 0 0 83.33333% !important;
     max-width: 83.33333% !important;
 }
-
 
 .toolbar {
     display: grid;
@@ -38,13 +37,12 @@ body {
 }
 
 .surface {
-    background: #fff;
+    background: var(--qlpk-color-white);
     border: 1px solid var(--qlpk-color-border);
     border-radius: var(--clinic-surface-radius);
     box-shadow: var(--clinic-surface-shadow);
     padding: 0.875rem;
 }
-
 
 .reference-table {
     width: 100%;

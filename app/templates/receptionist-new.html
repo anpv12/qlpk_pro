@@ -8,8 +8,8 @@
 	<title>Quản lý khám - Lễ tân</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
 		rel="stylesheet">
   {% include 'partials/brand-theme.html' %}
@@ -22,19 +22,18 @@
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
 	<!-- Flatpickr CSS -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
 
 	<!-- jQuery -->
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25" integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2" crossorigin="anonymous"></script>
 
 	<!-- Flatpickr JS -->
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
-	<script src="/static/js/flatpickr-vn.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+	<script src="/static/js/flatpickr-vn.js?v={{ app_version }}"></script>
 
 	<!-- DRY Datepicker Init -->
 	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
@@ -64,7 +63,7 @@
 <body>
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content">
 
 						<!-- Main Content -->
@@ -115,7 +114,7 @@
 																<div class="receptionist-field receptionist-field--appointment-service">
 																	<label class="form-label required-field" for="serviceType">Dịch vụ:</label>
 																	<div class="service-autocomplete-wrapper">
-																		<input type="text" class="form-control" id="serviceType" placeholder="Tìm dịch vụ..." autocomplete="off">
+																		<input type="text" class="form-control qlpk-service-type" id="serviceType" placeholder="Tìm dịch vụ..." autocomplete="off">
 																		<input type="hidden" id="serviceTypeId">
 																		<div class="service-autocomplete-dropdown" id="serviceTypeDropdown"></div>
 																	</div>
@@ -128,7 +127,7 @@
 												<span>Tải lên</span>
 											</button>
 											<input type="file" id="documentFileInput" class="receptionist-hidden" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-											<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn" id="saveInfoBtn">
+											<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn qlpk-save-info-btn" id="saveInfoBtn">
 												<i class="bi bi-save qlpk-button-icon"></i>
 												<span>Lưu</span>
 													</button>
@@ -202,7 +201,7 @@
 
 
 	<!-- Duplicate Patient Modal -->
-	<div class="modal fade" id="duplicatePatientModal" tabindex="-1" aria-labelledby="duplicatePatientModalLabel"
+	<div class="modal fade qlpk-duplicate-patient-modal" id="duplicatePatientModal" tabindex="-1" aria-labelledby="duplicatePatientModalLabel"
 		aria-hidden="true">
 		<div class="modal-dialog modal-md">
 			<div class="modal-content duplicate-patient-modal">
@@ -214,7 +213,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
 				</div>
 				<div class="modal-body duplicate-patient-modal__body">
-					<div id="duplicateList" class="duplicate-patient-modal__list" aria-live="polite"></div>
+					<div id="duplicateList" class="duplicate-patient-modal__list qlpk-duplicate-list" aria-live="polite"></div>
 				</div>
 				<div class="modal-footer duplicate-patient-modal__footer">
 					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="duplicate-patient-modal__button duplicate-patient-modal__button--ghost" data-bs-dismiss="modal">
@@ -243,6 +242,7 @@
 
 		<!-- Custom JavaScript -->
 	<script src="/static/js/receptionist/formatters.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/patient-search-dropdown.js?v={{ app_version }}"></script>
 	<script src="/static/js/relative-table.js?v={{ app_version }}"></script>
 	<script src="/static/js/relative-link-handler.js?v={{ app_version }}"></script>
 	<script src="/static/js/receptionist/patient-relatives-table.js?v={{ app_version }}"></script>
@@ -282,6 +282,7 @@
 	<script src="/static/js/receptionist/form-save-controls.js?v={{ app_version }}"></script>
 	<script src="/static/js/receptionist/appointment-submit.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/document-section-ui-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/receptionist-new.js?v={{ app_version }}"></script>
 	</body>
 

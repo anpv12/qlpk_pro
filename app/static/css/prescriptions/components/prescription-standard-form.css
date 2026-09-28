@@ -16,8 +16,8 @@
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	background: #fff;
-	color: #000;
+	background: var(--qlpk-color-white);
+	color: var(--qlpk-color-black);
 	font-family: var(--moh-font-family);
 	font-size: var(--moh-text-size);
 	font-weight: var(--qlpk-font-weight-regular, 400);
@@ -27,12 +27,12 @@
 }
 .prescription-preview--moh * { box-sizing: border-box; }
 .prescription-preview--moh strong { font-weight: var(--qlpk-font-weight-bold, 700); }
-.moh-form { border: 1px solid #000; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.moh-form { border: 1px solid var(--qlpk-color-black); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .moh-code {
 	display: table;
 	max-width: 100%;
-	border-right: 1px solid #000;
-	border-bottom: 1px solid #000;
+	border-right: 1px solid var(--qlpk-color-black);
+	border-bottom: 1px solid var(--qlpk-color-black);
 	padding: 1.5mm 4mm;
 }
 .moh-content { padding: 4mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
@@ -57,10 +57,10 @@
 	width: 0.7em;
 	height: 0.7em;
 	line-height: 0.6;
-	border: 1px solid #000;
+	border: 1px solid var(--qlpk-color-black);
 	text-align: center;
 }
-.moh-blank { display: inline-block; width: 100%; min-width: 8mm; height: 6mm; border-bottom: 1px dotted #555; vertical-align: baseline; }
+.moh-blank { display: inline-block; width: 100%; min-width: 8mm; height: 6mm; border-bottom: 1px dotted var(--qlpk-palette-gray-33-a); vertical-align: baseline; }
 .moh-code .moh-blank { width: 35mm; }
 .moh-diagnosis { padding-top: 1mm; }
 .moh-periods { margin: 3mm 0; line-height: 8mm; break-inside: avoid; }
@@ -96,7 +96,7 @@
 .moh-contact > div + div { margin-top: 1mm; }
 .moh-companion { display: block; }
 .moh-companion .moh-field-value { display: block; }
-.moh-recipient { margin: 3mm -4mm -4mm; padding: 3mm 4mm; border-top: 1px solid #000; break-inside: avoid; }
+.moh-recipient { margin: 3mm -4mm -4mm; padding: 3mm 4mm; border-top: 1px solid var(--qlpk-color-black); break-inside: avoid; }
 @media screen and (max-width: 48rem) {
 	.patient-search-modal .prescription-preview.prescription-preview--moh { padding: 4mm; }
 }

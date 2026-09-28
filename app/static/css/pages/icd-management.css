@@ -28,15 +28,15 @@
 .table :is(th, td):nth-child(6) { width: 6rem; }
 .table td:nth-child(1) { font-weight: var(--qlpk-font-weight-semibold); }
 
-#importProgressModal .icd-import-progress { height: 1.25rem; }
-#importProgressModal .progress { background-color: var(--qlpk-color-primary-soft); }
-#importProgressModal .progress-bar {
+.modal.qlpk-import-progress-modal .icd-import-progress { height: 1.25rem; }
+.modal.qlpk-import-progress-modal .progress { background-color: var(--qlpk-color-primary-soft); }
+.modal.qlpk-import-progress-modal .progress-bar {
   width: 0%;
   background: var(--qlpk-workflow-context-header-bg);
   font-weight: var(--qlpk-font-weight-semibold);
 }
-#importProgressModal .spinner-border { width: 3rem; height: 3rem; border-width: 0.3em; }
-#importErrorList {
+.modal.qlpk-import-progress-modal .spinner-border { width: 3rem; height: 3rem; border-width: 0.3em; }
+.qlpk-import-error-list {
   max-height: 18.75rem;
   overflow-y: auto;
   padding: 12px;
@@ -44,7 +44,7 @@
   border-radius: var(--clinic-control-radius);
   background: var(--qlpk-color-surface);
 }
-#importErrorList small { color: var(--qlpk-feedback-warning); }
+.qlpk-import-error-list small { color: var(--qlpk-feedback-warning); }
 
 @media (max-width: 48rem) {
   .icd-search-form { flex-basis: 100%; }

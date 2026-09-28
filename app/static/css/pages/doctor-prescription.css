@@ -254,6 +254,8 @@
 	grid-column: 2;
 	display: flex;
 	align-items: stretch;
+	justify-content: center;
+	gap: 0.35rem;
 	min-block-size: var(--prescription-context-control-height);
 	min-width: 0;
 	border: 0.0625rem solid var(--doctor-line-strong);
@@ -268,14 +270,15 @@
 }
 
 .doctor-prescription-summary-field__input-line input {
-	flex: 1 1 0;
-	inline-size: 0;
+	flex: 0 1 3ch;
+	inline-size: 3ch;
+	padding-inline: 0;
 	min-inline-size: 0;
 	min-block-size: 0;
 	border: 0;
 	background: transparent;
 	box-shadow: none;
-	text-align: left;
+	text-align: center;
 }
 
 .doctor-prescription-summary-field__input-line input:focus {
@@ -304,7 +307,7 @@
 
 .doctor-prescription-summary-field__input-line small {
 	align-self: center;
-	padding-inline-end: 0.65rem;
+	padding-inline-end: 0;
 	color: var(--doctor-muted);
 	font-size: var(--qlpk-font-size-base);
 	white-space: nowrap;
@@ -621,7 +624,7 @@
 .doctor-prescription-table__stt,
 .doctor-prescription-table__stt-cell {
 	width: 2.75rem;
-	text-align: center !important;
+	text-align: center;
 }
 
 .doctor-prescription-table__stt-cell,
@@ -652,7 +655,7 @@
 .doctor-prescription-table__actions-heading,
 .doctor-prescription-table__actions-cell {
 	width: 2.75rem;
-	text-align: center !important;
+	text-align: center;
 }
 
 .doctor-prescription-table__body-row {
@@ -853,7 +856,7 @@
 }
 
 .doctor-prescription-table__dose-cell {
-	padding-inline: 0.35rem !important;
+	padding-inline: 0.35rem;
 	text-align: center;
 }
 
@@ -1036,7 +1039,7 @@ body[data-doctor-ui].qlpk-workspace-shell.doctor-prescription-history-modal-open
 .doctor-prescription-history-modal:not([hidden]) {
 	position: fixed;
 	inset: 0;
-	z-index: 1100;
+	z-index: var(--qlpk-z-toast);
 	display: grid;
 	place-items: center;
 	padding: clamp(0.65rem, 2vw, 1.5rem);
@@ -1050,7 +1053,7 @@ body[data-doctor-ui].qlpk-workspace-shell.doctor-prescription-history-modal-open
 
 .doctor-prescription-history-modal__dialog {
 	position: relative;
-	z-index: 1;
+	z-index: var(--qlpk-z-base);
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr) auto;
 	inline-size: min(94vw, 90rem);

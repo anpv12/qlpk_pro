@@ -1,14 +1,14 @@
 /* Opt-in visual foundation, shared by inventory and administrative pages.
  * Page owners retain their own workflow, scrolling and form lifecycles. */
 .qlpk-clinic-page {
-  --qlpk-workspace-bg: #f3ebdd;
+  --qlpk-workspace-bg: var(--qlpk-palette-brown-91);
   --clinic-surface-radius: 0.875rem;
   --clinic-control-radius: 0.5625rem;
   --clinic-control-font-size: var(--qlpk-font-size-base);
   --qlpk-control-font-size-sm: var(--clinic-control-font-size);
   --clinic-modal-title-size: var(--qlpk-font-size-xl);
   --clinic-placeholder-color: var(--qlpk-color-text-muted);
-  --clinic-surface-shadow: 0 1px 2px rgba(59, 32, 18, 0.04), 0 10px 24px -12px rgba(59, 32, 18, 0.1);
+  --clinic-surface-shadow: 0 1px 2px var(--qlpk-alpha-brown-15-04), 0 10px 24px -12px var(--qlpk-alpha-brown-15-10);
   background: var(--qlpk-workspace-bg);
 }
 
@@ -35,8 +35,8 @@
 
 .qlpk-clinic-header::before {
   inset: 0 0 0 38%;
-  background: url("/static/assets/images/medicine-clinic-interior.png") center 58% / cover no-repeat;
-  mask-image: linear-gradient(to right, transparent, #000 50%);
+  background: url("/static/assets/images/medicine-clinic-interior.jpg") center 58% / cover no-repeat;
+  mask-image: linear-gradient(to right, transparent, var(--qlpk-color-black) 50%);
   opacity: 0.22;
 }
 
@@ -139,7 +139,6 @@
   padding-inline: 0.625rem;
 }
 
-
 .qlpk-pagination {
   display: flex;
   flex: 0 0 auto;
@@ -183,7 +182,7 @@
 @media (max-width: 36rem) {
   .qlpk-pagination { align-items: flex-start; flex-direction: column; }
   .qlpk-pagination--standalone { margin-inline: 0.75rem; }
-  .qlpk-pagination #clinicPageInfo { flex-basis: 100%; }
+  .qlpk-pagination .qlpk-clinic-page-info { flex-basis: 100%; }
 }
 
 /* Shared form primitives; workflow CSS owns layout and semantic field states. */

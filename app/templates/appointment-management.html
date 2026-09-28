@@ -8,9 +8,9 @@
 	<title>Lịch hẹn</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-	<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+	<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" integrity="sha384-39yVKLsD9lMelmY+ij49KZgE+Mfk6hjdUPNE8yKHqdMPceLXzhlCJAK81xlD5jDj" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
@@ -19,20 +19,20 @@
 
 	{% include 'partials/flatpickr.html' %}
 	<link rel="stylesheet" href="/static/css/holiday-calendar.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js" integrity="sha384-5/vsv56401Wf+RP3yE5/aIKW4wutk4nLY3HjueTXN0rA+DmweMtrYaN6RSjdv31b" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js" integrity="sha384-9+/HBX0Y0hvf5o5feiYSrPLkt1TMV4U1SBZn6jLSGeSDw+Puli3cb9fyNiReDXR+" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/appointment-management.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/components/appointment-calendar.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
 </head>
 
 <body>
 	<!-- Hidden sidebar container - sidebar-dry-loader needs this to avoid overlay -->
-	<div id="sidebar-container"></div>
+	<div id="sidebar-container" class="qlpk-shell-sidebar"></div>
 
 	<!-- Layout toàn màn hình -->
 	<div class="appointment-fullscreen">
@@ -53,12 +53,12 @@
 				</select>
 			</div>
 			<div class="appt-header-actions">
-				<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm" id="syncCalendarBtn" data-bs-toggle="modal"
+				<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm qlpk-sync-calendar-btn" id="syncCalendarBtn" data-bs-toggle="modal"
 					data-bs-target="#syncCalendarModal" title="Đồng bộ" aria-label="Đồng bộ lịch Google">
 					<i class="bi bi-arrow-repeat"></i> <span class="btn-text-label">Đồng bộ</span>
 				</button>
 				<div class="calendar-integration-section">
-					<div id="calendarStatus"></div>
+					<div id="calendarStatus" class="qlpk-calendar-status"></div>
 					<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm appointment-hidden" id="connectGoogleCalendarBtn" title="Kết nối Google Calendar" aria-label="Kết nối Google Calendar">
 						<i class="bi bi-google"></i> <span class="btn-text-label">Kết nối Google Calendar</span>
 					</button>
@@ -70,7 +70,7 @@
 					data-bs-target="#addAppointmentModal" title="Thêm lịch hẹn" aria-label="Thêm lịch hẹn">
 					<i class="bi bi-plus-circle"></i> <span class="btn-text-label">Thêm lịch hẹn</span>
 				</button>
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm" type="button" id="exportDataBtn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu lịch hẹn">
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn appointment-button appointment-button--header appointment-button--sm qlpk-export-data-btn" type="button" id="exportDataBtn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu lịch hẹn">
 					<i class="bi bi-download"></i> <span class="btn-text-label">Xuất dữ liệu</span>
 				</button>
 
@@ -84,34 +84,13 @@
 			<aside class="appt-left-panel">
 				<!-- Mini Calendar (Flatpickr inline) -->
 				<div class="appt-panel-section">
-					<div id="miniCalendar"></div>
+					<div id="miniCalendar" class="qlpk-mini-calendar"></div>
 				</div>
 
 				<!-- Trạng thái -->
 				<div class="appt-panel-section appt-panel-section--status">
 					<label class="appt-panel-label">TRẠNG THÁI</label>
-					<div class="appt-status-list">
-						<div class="appt-status-item appointment-status-scheduled">
-							<span class="appt-status-badge badge-warning"></span>
-							<span class="appt-status-text">Chờ xác nhận:</span>
-							<span class="appt-status-count" id="pendingCount">0</span>
-						</div>
-						<div class="appt-status-item appointment-status-confirmed">
-							<span class="appt-status-badge badge-success"></span>
-							<span class="appt-status-text">Đã xác nhận:</span>
-							<span class="appt-status-count" id="confirmedCount">0</span>
-						</div>
-						<div class="appt-status-item appointment-status-no-show">
-							<span class="appt-status-badge badge-dark"></span>
-							<span class="appt-status-text">Không đến:</span>
-							<span class="appt-status-count" id="overdueCount">0</span>
-						</div>
-						<div class="appt-status-item appointment-status-cancelled">
-							<span class="appt-status-badge badge-danger"></span>
-							<span class="appt-status-text">Hủy:</span>
-							<span class="appt-status-count" id="cancelledCount">0</span>
-						</div>
-					</div>
+					<div class="appt-status-list qlpk-calendar-statuses"></div>
 				</div>
 
 				<!-- Legend bác sĩ -->
@@ -135,9 +114,9 @@
 			<!-- MAIN CALENDAR AREA -->
 			<main class="appt-main">
 				<!-- Calendar View -->
-				<div id="calendarViewContainer">
+				<div id="calendarViewContainer" class="qlpk-calendar-view-container">
 					<div class="calendar-container">
-						<div id="calendar"></div>
+						<div id="calendar" class="qlpk-calendar"></div>
 					</div>
 				</div>
 
@@ -169,7 +148,7 @@
 	<script src="/static/js/appointment-management/icd-multiselect-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/page-actions-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/doctor-legend-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-event-content-utils.js?v={{ app_version }}"></script>
+	<script src="/static/js/components/appointment-calendar.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/calendar-event-source-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/calendar-date-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/appointment-management/busy-schedule-utils.js?v={{ app_version }}"></script>

@@ -124,7 +124,7 @@
 	position: absolute;
 	inset-block-start: 1.05rem;
 	inset-inline-start: 0.58rem;
-	z-index: 1;
+	z-index: var(--qlpk-z-base);
 	translate: 0 -50%;
 	color: var(--doctor-muted);
 	font-size: var(--qlpk-font-size-sm);
@@ -138,7 +138,7 @@
 	inset-block-end: var(--doctor-indication-dropdown-block-end, auto);
 	inset-inline-start: var(--doctor-indication-dropdown-inline-start, 0);
 	inset-inline-end: auto;
-	z-index: 1040;
+	z-index: var(--qlpk-z-modal-backdrop);
 	inline-size: var(--doctor-indication-dropdown-inline-size, auto);
 	min-inline-size: 0;
 	max-block-size: var(--doctor-indication-dropdown-max-block-size, min(18rem, 48vh));

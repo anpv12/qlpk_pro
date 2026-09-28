@@ -9,40 +9,39 @@
 	<meta name="description" content="Quản lý chi tiêu - Phòng khám Sơn Tâm">
 	<meta name="qlpk-app-version" content="{{ app_version }}">
 	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="/static/js/permission-check.js?v={{ app_version }}"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
-	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-	<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js" integrity="sha384-WfMJmNkW9rHcGx0bjgYsPhG+fdSYOS6y8wx5TEWGSb711dkFsZGfO7dD92dUDwux" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" integrity="sha384-pPi0zxBAoDu6+JXW/C68UZLvBUUtU+7zonhif43rqj7pxsGyqyqzcian2Rj37Rss" crossorigin="anonymous"></script>
+	<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="/static/css/chi-tieu.css?v={{ app_version }}">
 </head>
 
 <body class="qlpk-data-tables">
 	<div class="container-fluid p-0">
 		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2"></div>
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
 			<main class="col-md-10 main-content">
 
 				<!-- Tabs + Date Filters cùng dòng -->
 				<ul class="nav nav-tabs-custom mb-2" role="tablist">
 					<li class="nav-item" role="presentation">
-						<a class="nav-link active" href="#" onclick="switchTab('tonghop');return false;">
+						<a class="nav-link active" href="#" data-qlpk-call="switchTab" data-qlpk-args='["tonghop"]' data-qlpk-prevent>
 							<i class="bi bi-pie-chart me-1"></i> Tổng hợp
 						</a>
 					</li>
 					<li class="nav-item" role="presentation">
-						<a class="nav-link" href="#" onclick="switchTab('chi');return false;">
+						<a class="nav-link" href="#" data-qlpk-call="switchTab" data-qlpk-args='["chi"]' data-qlpk-prevent>
 							<i class="bi bi-list-check me-1"></i> Chi tiết
 						</a>
 					</li>
@@ -59,17 +58,17 @@
 							<input type="text" class="date-input" id="dateTo" readonly>
 						</div>
 	                                                <div class="preset-group">
-	                                                    <div class="preset-dd"><button class="preset-btn" onclick="togglePresetDD('week',this)">Tuần <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-week"></div></div>
-	                                                    <div class="preset-dd"><button class="preset-btn active" onclick="togglePresetDD('month',this)">Tháng <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-month"></div></div>
-	                                                    <div class="preset-dd"><button class="preset-btn" onclick="togglePresetDD('quarter',this)">Quý <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-quarter"></div></div>
-	                                                    <div class="preset-dd"><button class="preset-btn" onclick="togglePresetDD('year',this)">Năm <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-year"></div></div>
-	                                                    <button class="preset-btn" onclick="setPreset('all')">Tất cả</button>
+	                                                    <div class="preset-dd"><button class="preset-btn" data-qlpk-call="togglePresetDD" data-qlpk-args='["week", "$this"]'>Tuần <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-week"></div></div>
+	                                                    <div class="preset-dd"><button class="preset-btn active" data-qlpk-call="togglePresetDD" data-qlpk-args='["month", "$this"]'>Tháng <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-month"></div></div>
+	                                                    <div class="preset-dd"><button class="preset-btn" data-qlpk-call="togglePresetDD" data-qlpk-args='["quarter", "$this"]'>Quý <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-quarter"></div></div>
+	                                                    <div class="preset-dd"><button class="preset-btn" data-qlpk-call="togglePresetDD" data-qlpk-args='["year", "$this"]'>Năm <i class="bi bi-caret-down-fill ct-caret-xs"></i></button><div class="preset-dd-menu" id="dd-year"></div></div>
+	                                                    <button class="preset-btn" data-qlpk-call="setPreset" data-qlpk-args='["all"]'>Tất cả</button>
 	                                                </div>
 					</li>
 				</ul>
 
 				<!-- TAB TỔNG HỢP -->
-				<div id="tab-tonghop" class="ct-tab-active">
+				<div id="tab-tonghop" class="ct-tab-active qlpk-tab-tonghop">
 					<!-- Summary Strip -->
 					<div class="summary-strip" id="summaryStrip"></div>
 
@@ -79,7 +78,7 @@
 							<div class="chart-card">
 								<div class="cc-header ct-card-header-tight ct-header-between">
 									<span><i class="bi bi-bar-chart-fill ct-icon-primary"></i> Thống kê thu chi</span>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportThuChiExcel()" title="Xuất Excel Thu Chi">
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" data-qlpk-call="exportThuChiExcel" title="Xuất Excel Thu Chi">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
 								</div>
@@ -98,10 +97,10 @@
 								<div class="cc-header ct-card-header-tight ct-header-between ct-header-wrap">
 									<span><i class="bi bi-graph-up-arrow ct-icon-success"></i> Doanh thu</span>
 									<div class="ct-header-actions">
-										<button id="btnRevTime" class="rev-toggle-btn active" onclick="setRevView('time')">Theo thời gian</button>
-										<button id="btnRevService" class="rev-toggle-btn" onclick="setRevView('service')">Theo dịch vụ</button>
-										<button id="btnRevMedicine" class="rev-toggle-btn" onclick="setRevView('medicine')">Theo thuốc</button>
-										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportRevenueExcel()" title="Xuất Excel">
+										<button id="btnRevTime" class="rev-toggle-btn active" data-qlpk-call="setRevView" data-qlpk-args='["time"]'>Theo thời gian</button>
+										<button id="btnRevService" class="rev-toggle-btn" data-qlpk-call="setRevView" data-qlpk-args='["service"]'>Theo dịch vụ</button>
+										<button id="btnRevMedicine" class="rev-toggle-btn" data-qlpk-call="setRevView" data-qlpk-args='["medicine"]'>Theo thuốc</button>
+										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" data-qlpk-call="exportRevenueExcel" title="Xuất Excel">
 											<i class="bi bi-file-earmark-excel"></i> Excel
 										</button>
 									</div>
@@ -118,7 +117,7 @@
 							<div class="chart-card ct-card-fill">
 								<div class="cc-header ct-card-header-tight ct-header-between">
 									<span><i class="bi bi-pie-chart-fill ct-icon-danger"></i> Chi tiêu</span>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" onclick="exportChiTieuExcel()" title="Xuất Excel Chi tiêu">
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-export-btn" data-qlpk-call="exportChiTieuExcel" title="Xuất Excel Chi tiêu">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
 								</div>
@@ -179,17 +178,17 @@
 				</div>
 
 				<!-- TAB CHI TIẾT -->
-				<div id="tab-chi" class="ct-hidden">
+				<div id="tab-chi" class="ct-hidden qlpk-tab-chi">
 					<div class="data-card">
 						<div class="dc-header">
 							<span class="ct-nowrap"><i class="bi bi-list-check me-2"></i>Danh sách khoản chi</span>
 							<div class="filter-bar">
 								<div class="search-wrap">
 									<i class="bi bi-search"></i>
-									<input type="text" id="filterSearch" placeholder="Tìm kiếm..." oninput="render()">
+									<input type="text" id="filterSearch" placeholder="Tìm kiếm..." data-qlpk-call="render" data-qlpk-on="input">
 								</div>
 								<div class="faux-select-wrap" id="filterTypeWrap">
-									<div class="faux-select" onclick="toggleMultiSelect(event, 'filterTypeMenu')">
+									<div class="faux-select" data-qlpk-call="toggleMultiSelect" data-qlpk-args='["$event", "filterTypeMenu"]'>
 										<span id="filterTypeLabel">Tất cả loại chi</span>
 										<i class="bi bi-chevron-down text-muted ct-chevron-xs"></i>
 									</div>
@@ -197,19 +196,19 @@
 										<!-- Options injected by populateFilterOptions -->
 									</div>
 								</div>
-								<select id="filterPayment" onchange="render()">
+								<select id="filterPayment" data-qlpk-call="render" data-qlpk-on="change">
 									<option value="">Tất cả hình thức</option>
 								</select>
 							</div>
 							<div class="ct-toolbar-actions">
-								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" onclick="toggleConfig()"><i class="bi bi-columns-gap"></i> Cột</button>
-								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-import-xl" onclick="downloadTemplate()" title="Tải file mẫu"><i class="bi bi-file-earmark-arrow-down"></i> Mẫu</button>
-								<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn-import-xl" onclick="document.getElementById('importFile').click()"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
-								<input type="file" id="importFile" accept=".csv,.txt,.xlsx" class="ct-hidden" onchange="importCSV(this)">
-								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-export-xl" onclick="exportExcel()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" data-qlpk-call="toggleConfig"><i class="bi bi-columns-gap"></i> Cột</button>
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-import-xl" data-qlpk-call="downloadTemplate" title="Tải file mẫu"><i class="bi bi-file-earmark-arrow-down"></i> Mẫu</button>
+								<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn-import-xl" data-qlpk-call="triggerImportFile"><i class="bi bi-file-earmark-arrow-up"></i> Import</button>
+								<input type="file" id="importFile" accept=".csv,.txt,.xlsx" class="ct-hidden" data-qlpk-call="importCSV" data-qlpk-args='["$this"]' data-qlpk-on="change">
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-export-xl" data-qlpk-call="exportExcel"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
 							</div>
 						</div>
-						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="add-row-btn" onclick="addRow()"><i class="bi bi-plus-circle"></i> Thêm khoản chi</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="add-row-btn" data-qlpk-call="addRow"><i class="bi bi-plus-circle"></i> Thêm khoản chi</button>
 						<div class="table-responsive">
 							<table class="expense-table" id="chiTable">
 								<thead id="chiHead"></thead>
@@ -231,16 +230,16 @@
 	</div>
 
 	<!-- Column Config Modal -->
-	<div class="config-overlay ct-hidden" id="configOverlay" onclick="if(event.target===this)toggleConfig()">
+	<div class="config-overlay ct-hidden" id="configOverlay" data-qlpk-call="toggleConfig" data-qlpk-self>
 		<div class="config-panel">
 			<div class="config-header">
 				<h3><i class="bi bi-columns-gap me-2"></i>Cấu hình cột</h3>
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-icon-button-muted" onclick="toggleConfig()">✕</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="ct-icon-button-muted" data-qlpk-call="toggleConfig">✕</button>
 			</div>
 			<div class="config-body">
 				<p class="ct-config-help">Click <i class="bi bi-pencil"></i> sửa · <i class="bi bi-trash"></i> xóa</p>
 				<ul class="col-list" id="colList"></ul>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom ct-full-action" onclick="showAddCol()"><i class="bi bi-plus-lg"></i> Thêm cột mới</button>
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom ct-full-action" data-qlpk-call="showAddCol"><i class="bi bi-plus-lg"></i> Thêm cột mới</button>
 			</div>
 			<div id="colFormSection" class="ct-hidden">
 				<div class="ct-col-form-panel">
@@ -248,7 +247,7 @@
 					<div class="form-group"><label class="form-label-custom">Tên cột</label><input
 							class="form-input-custom" id="colName" placeholder="VD: Tiền điện"></div>
 					<div class="form-group"><label class="form-label-custom">Kiểu dữ liệu</label>
-						<select class="form-input-custom ct-cursor-pointer" id="colType" onchange="onTypeChange()">
+						<select class="form-input-custom ct-cursor-pointer" id="colType" data-qlpk-call="onTypeChange" data-qlpk-on="change">
 							<option value="number">Số</option>
 							<option value="text">Văn bản</option>
 							<option value="date">Ngày</option>
@@ -270,8 +269,8 @@
 					</div>
 				</div>
 				<div class="config-footer">
-					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" onclick="hideAddCol()">Hủy</button>
-					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom" onclick="saveCol()">Lưu cột</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="tb-btn btn-outline" data-qlpk-call="hideAddCol">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tb-btn btn-primary-custom" data-qlpk-call="saveCol">Lưu cột</button>
 				</div>
 			</div>
 		</div>

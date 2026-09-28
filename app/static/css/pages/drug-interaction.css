@@ -14,11 +14,11 @@
 /* Add button */
 		.btn-add:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg);
-			color: #fff;
+			color: var(--qlpk-color-white);
 }
 .btn-add:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg);
-			color: #fff;
+			color: var(--qlpk-color-white);
 }
 
 		/* Type badges */
@@ -34,13 +34,13 @@
 		}
 
 		.badge-contra {
-			background: #FEE2E2;
-			color: #DC2626;
+			background: var(--qlpk-palette-red-94-b);
+			color: var(--qlpk-feedback-error);
 		}
 
 		.badge-approved {
-			background: #D1FAE5;
-			color: #059669;
+			background: var(--qlpk-palette-green-90-a);
+			color: var(--qlpk-palette-green-30);
 		}
 
 		/* Autocomplete dropdown */
@@ -49,13 +49,13 @@
 			top: 100%;
 			left: 0;
 			right: 0;
-			background: #fff;
+			background: var(--qlpk-color-white);
 			border: 1px solid var(--qlpk-color-border);
 			border-radius: 8px;
 			max-height: 220px;
 			overflow-y: auto;
 			z-index: 1060;
-			box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+			box-shadow: 0 8px 24px rgba(var(--qlpk-color-black-rgb), 0.12);
 		}
 
 		.ac-item {
@@ -96,11 +96,11 @@
 		}
 
 		.di-view-type-contra {
-			color: #DC2626;
+			color: var(--qlpk-feedback-error);
 		}
 
 		.di-view-type-approved {
-			color: #059669;
+			color: var(--qlpk-palette-green-30);
 		}
 
 		/* Modal compact */
@@ -140,7 +140,7 @@
 
 		.drug-pair .vs {
 			font-weight: var(--qlpk-font-weight-bold, 700);
-			color: #DC2626;
+			color: var(--qlpk-feedback-error);
 			font-size: var(--qlpk-font-size-lg, 16px);
 			flex-shrink: 0;
 		}
@@ -179,23 +179,23 @@
 		}
 
 		.type-label:has(input:checked).type-contra {
-			border-color: #DC2626;
-			background: #FEF2F2;
-			color: #DC2626;
+			border-color: var(--qlpk-feedback-error);
+			background: var(--qlpk-feedback-error-bg);
+			color: var(--qlpk-feedback-error);
 		}
 
 		.type-label:has(input:checked).type-approved {
-			border-color: #059669;
-			background: #D1FAE5;
-			color: #059669;
+			border-color: var(--qlpk-palette-green-30);
+			background: var(--qlpk-palette-green-90-a);
+			color: var(--qlpk-palette-green-30);
 		}
 
 		.type-contra {
-			color: #DC2626;
+			color: var(--qlpk-feedback-error);
 		}
 
 		.type-approved {
-			color: #059669;
+			color: var(--qlpk-palette-green-30);
 		}
 
 		/* View modal */
@@ -251,7 +251,7 @@
 
 .di-modal-header {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 	border-radius: 8px 8px 0 0;
 }
 
@@ -269,11 +269,11 @@
 }
 .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 .di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
-	color: #fff;
+	color: var(--qlpk-color-white);
 }
 
 .di-view-pair {

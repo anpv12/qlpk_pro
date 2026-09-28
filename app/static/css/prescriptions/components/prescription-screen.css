@@ -1,21 +1,21 @@
 /* Web-only prescription. The history tab owns scrolling; no physical paper sizing. */
-#modalContentArea:has(> .rx-screen) {
+.patient-search-modal__tab-content-area.qlpk-modal-content-area:has(> .rx-screen) {
 	container-type: inline-size;
 	padding: 0.5rem;
 }
 
 .rx-screen {
-	--rx-screen-accent: #214de6;
+	--rx-screen-accent: var(--qlpk-palette-blue-52-b);
 	--rx-screen-columns: minmax(0, 3fr) minmax(0, 2fr);
 	--rx-screen-column-gap: 1.5rem;
 	box-sizing: border-box;
 	width: 100%;
 	min-width: 0;
 	padding: clamp(1rem, 2.5cqi, 2rem);
-	border: 1px solid #d9e1ea;
+	border: 1px solid var(--qlpk-palette-blue-88-a);
 	border-radius: 1rem;
-	background: #fff;
-	color: #212529;
+	background: var(--qlpk-color-white);
+	color: var(--qlpk-palette-gray-15);
 	font-family: var(--qlpk-font-family, Arial, sans-serif);
 	font-size: var(--qlpk-font-size-md);
 	line-height: 1.65;
@@ -30,7 +30,7 @@
 	align-items: center;
 	gap: 1rem;
 	padding-bottom: 1rem;
-	border-bottom: 4px solid #268bee;
+	border-bottom: 4px solid var(--qlpk-palette-blue-54-a);
 }
 .rx-screen__logo { width: 100%; height: auto; }
 .rx-screen__clinic-name { color: var(--rx-screen-accent); font-size: var(--qlpk-font-size-xl); font-weight: var(--qlpk-font-weight-bold); }
@@ -39,7 +39,7 @@
 .rx-screen__code svg { display: block; width: 9rem; max-width: 100%; height: 2.25rem; margin: 0 auto 0.35rem; }
 .rx-screen__title { margin: 1.25rem 0 2rem; text-align: center; }
 .rx-screen__title h3 { margin: 0 0 0.1rem; color: var(--rx-screen-accent); font-size: var(--qlpk-font-size-3xl); font-weight: var(--qlpk-font-weight-bold); }
-.rx-screen__prescription-code { margin-top: 0.3rem; font-size: var(--qlpk-font-size-sm); color: #526174; }
+.rx-screen__prescription-code { margin-top: 0.3rem; font-size: var(--qlpk-font-size-sm); color: var(--qlpk-palette-blue-39); }
 .rx-screen__patient { display: grid; grid-template-columns: var(--rx-screen-columns); column-gap: var(--rx-screen-column-gap); }
 .rx-screen__field { margin-bottom: 0.45rem; }
 .rx-screen__treatment { margin-top: 0.5rem; }
@@ -60,7 +60,7 @@
 .rx-screen__medicine-heading > strong { min-width: 0; padding-left: 1.5rem; }
 .rx-screen__medicine-heading > span { min-width: 0; text-align: left; }
 .rx-screen__usage, .rx-screen__advice-text { white-space: pre-line; }
-.rx-screen__empty { color: #59616a; margin: 0 0 1rem; }
+.rx-screen__empty { color: var(--qlpk-palette-gray-38-b); margin: 0 0 1rem; }
 .rx-screen__advice { margin-top: 0.8rem; }
 .rx-screen__notice { margin: 1rem 0 0; }
 .rx-screen__signature {

@@ -3,7 +3,7 @@
     .group-checkbox-list .form-check { margin-bottom: 12px; }
     .group-list .save-btn { min-width: 140px; font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 18px)); border-radius: var(--clinic-control-radius, 30px); font-weight: var(--qlpk-font-weight-bold, 700); }
     .alert { margin-top: 16px; }
-    .card { border: none; background: #fff; }
+    .card { border: none; background: var(--qlpk-color-white); }
     .user-tree .form-check, .group-tree .form-check { margin-bottom: 10px; }
     .user-tree .form-check-input, .group-tree .form-check-input { margin-right: 8px; }
     .user-tree .user-branch, .group-tree .group-branch { margin-left: 18px; }

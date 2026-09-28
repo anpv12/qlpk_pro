@@ -27,7 +27,7 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(var(--qlpk-color-white-rgb), 0.1) 0%, transparent 70%);
             animation: shimmer 8s ease-in-out infinite;
         }
 
@@ -39,14 +39,14 @@
         .page-header h1 {
             font-size: var(--qlpk-font-size-6xl, 36px);
             font-weight: var(--qlpk-font-weight-bold, 700);
-            color: #fff;
+            color: var(--qlpk-color-white);
             position: relative;
             z-index: 1;
             letter-spacing: -0.5px;
         }
 
         .page-header .subtitle {
-            color: rgba(255,255,255,0.85);
+            color: rgba(var(--qlpk-color-white-rgb), 0.85);
             font-size: var(--qlpk-font-size-lg, 16px);
             margin-top: 10px;
             position: relative;
@@ -66,20 +66,20 @@
         .logo-icon {
             width: 48px;
             height: 48px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(var(--qlpk-color-white-rgb), 0.2);
             border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: var(--qlpk-font-size-3xl, 24px);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(var(--qlpk-color-white-rgb), 0.3);
         }
 
         .logo-text {
             font-size: var(--qlpk-font-size-3xl, 24px);
             font-weight: var(--qlpk-font-weight-bold, 700);
-            color: #fff;
+            color: var(--qlpk-color-white);
         }
 
         .container {
@@ -91,11 +91,11 @@
         }
 
         .content-card {
-            background: #fff;
+            background: var(--qlpk-color-white);
             border-radius: 20px;
             padding: 50px 45px;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
-            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 4px 30px rgba(var(--qlpk-color-black-rgb), 0.08), 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.04);
+            border: 1px solid rgba(var(--qlpk-color-white-rgb), 0.8);
         }
 
         .last-updated {
@@ -180,8 +180,8 @@
         }
 
         .warning-box {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, var(--qlpk-palette-amber-89-a), var(--qlpk-palette-amber-77));
+            border-left: 4px solid var(--qlpk-palette-orange-50);
             padding: 18px 22px;
             border-radius: 0 12px 12px 0;
             margin: 20px 0;
@@ -189,7 +189,7 @@
 
         .warning-box p {
             margin-bottom: 0;
-            color: #92400e;
+            color: var(--qlpk-palette-orange-31);
             font-weight: var(--qlpk-font-weight-medium, 500);
         }
 
