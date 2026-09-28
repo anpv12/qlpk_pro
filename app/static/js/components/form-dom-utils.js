@@ -52,26 +52,6 @@
 		return '';
 	}
 
-	function syncModalFieldsToHidden(fields = [], context = {}) {
-		const doc = getDocument(context);
-		const setValue = typeof context.safeSetValue === 'function'
-			? context.safeSetValue
-			: (elementId, value) => safeSetValue(elementId, value, context);
-
-		fields.forEach(field => {
-			if (!field || !field.hiddenId) return;
-			if (typeof field.getValue === 'function') {
-				setValue(field.hiddenId, field.getValue({ document: doc }) || '');
-				return;
-			}
-
-			const modalEl = doc.getElementById(field.modalId);
-			if (modalEl || field.always === true) {
-				setValue(field.hiddenId, modalEl?.value || '');
-			}
-		});
-	}
-
 	function collectClinicalAdministrativeFormData(options = {}) {
 		const doc = getDocument(options);
 		const getValue = typeof options.getElementValue === 'function'
@@ -198,41 +178,6 @@
 			main_reason: formData.main_reason,
 			main_symptoms: formData.main_symptoms,
 			...(options.includeRiskAssessment ? { risk_assessment: formData.risk_assessment } : {})
-		};
-	}
-
-	function getRawFormValue(selector, context = {}) {
-		const $ = context.$ || window.jQuery || window.$;
-		if (typeof $ === 'function') {
-			const value = $(selector).val();
-			return value || '';
-		}
-		const doc = getDocument(context);
-		const element = doc.querySelector(selector);
-		return element && element.value ? element.value : '';
-	}
-
-	function collectSelectedIcdIds(fieldName, context = {}) {
-		const selectedICDs = context.selectedICDs || window.selectedICDs || {};
-		return (selectedICDs[fieldName] || [])
-			.filter(icd => icd && icd.id != null)
-			.map(icd => icd.id);
-	}
-
-	function collectPsychologistExaminationFormData(context = {}) {
-		return {
-			main_reason: getRawFormValue('#examinationMainReason', context),
-			trieu_chung_va_hanh_vi_hien_tai: getRawFormValue('#diagnosis', context),
-			nhan_dinh_chung: getRawFormValue('#benhKemTheo', context),
-			ke_hoach_can_thiep: getRawFormValue('#treatmentPlan', context)
-		};
-	}
-
-	function buildPsychologistExaminationUpdatePayload(formData = {}) {
-		return {
-			trieu_chung_va_hanh_vi_hien_tai: formData.trieu_chung_va_hanh_vi_hien_tai,
-			nhan_dinh_chung: formData.nhan_dinh_chung,
-			ke_hoach_can_thiep: formData.ke_hoach_can_thiep
 		};
 	}
 
@@ -435,28 +380,28 @@
 		return true;
 	}
 
-	function initializeWorkflowPageShell(options = {}) {
-		const doc = getDocument(options);
+	function scheduleWorkflowShellDeferredTasks(options, doc) {
 		const schedule = options.setTimeout || window.setTimeout;
-
-		if (typeof options.resetFormToDefault === 'function') options.resetFormToDefault();
-		if (typeof schedule === 'function' && typeof options.loadAddressDraftFromCache === 'function') {
+		if (typeof schedule !== 'function') return false;
+		if (typeof options.loadAddressDraftFromCache === 'function') {
 			schedule(() => options.loadAddressDraftFromCache(), options.addressDraftDelayMs || 100);
 		}
-		if (typeof schedule === 'function') {
-			schedule(() => clearPageAgeField(doc), options.clearAgeDelayMs || 100);
-		}
+		schedule(() => clearPageAgeField(doc), options.clearAgeDelayMs || 100);
+		return true;
+	}
 
+	function runWorkflowShellLoaders(options, doc) {
 		const sidebarUi = options.sidebarUserInfoUi || window.SidebarUserInfoUi;
 		if (sidebarUi && typeof sidebarUi.loadSidebarUserInfo === 'function') {
 			sidebarUi.loadSidebarUserInfo({ document: doc });
 		}
-
 		if (typeof options.loadProvinces === 'function') options.loadProvinces();
 		if (typeof options.loadAppointments === 'function') {
 			options.loadAppointments(options.currentStatus, options.currentPage);
 		}
+	}
 
+	function bindWorkflowShellAdapters(options, doc) {
 		if (options.occupationOptions) {
 			initializeOccupationAutocomplete({
 				document: doc,
@@ -482,7 +427,14 @@
 			autoSaveField: options.autoSaveField,
 			console: options.console
 		});
+	}
 
+	function initializeWorkflowPageShell(options = {}) {
+		const doc = getDocument(options);
+		if (typeof options.resetFormToDefault === 'function') options.resetFormToDefault();
+		scheduleWorkflowShellDeferredTasks(options, doc);
+		runWorkflowShellLoaders(options, doc);
+		bindWorkflowShellAdapters(options, doc);
 		return true;
 	}
 
@@ -575,17 +527,6 @@
 		return true;
 	}
 
-	const DOCTOR_WORKFLOW_RESET_FIELDS = [
-		'fullName', 'nickname', 'dateOfBirth', 'gender', 'idCard', 'phoneNumber',
-		'occupation', 'donViCongTac', 'diaChiCongTy', 'maritalStatus', 'address', 'addressDetail',
-		'province', 'provinceHidden', 'district', 'ward', 'nationality', 'religion', 'ethnicity',
-		'educationLevel', 'sexualOrientation', 'mainReason', 'referralSource', 'problemStartTime',
-		'symptomProgression', 'psychiatricHistory', 'substanceHistory', 'familyHistory',
-		'familyRelationship', 'livingEnvironment', 'socialSupport', 'mainSymptoms',
-		'currentBehavior', 'notes', 'age', 'allergies', 'physHistory', 'severityLevel',
-		'examinationMainReason', 'examDetailMedicalHistory', 'diagnosis', 'treatmentPlan',
-		'examinationNotes', 'reminderCheck', 'reminderTime'
-	];
 	const PSYCHOLOGIST_WORKFLOW_RESET_FIELDS = [
 		'fullName', 'nickname', 'dateOfBirth', 'gender', 'idCard', 'phoneNumber',
 		'occupation', 'donViCongTac', 'diaChiCongTy', 'maritalStatus', 'sexualOrientation', 'address', 'addressDetail',
@@ -597,23 +538,10 @@
 		'examinationMainReason', 'examDetailMedicalHistory', 'diagnosis', 'treatmentPlan', 'benhKemTheo',
 		'reminderCheck', 'reminderTime'
 	];
-	const DOCTOR_WORKFLOW_PLACEHOLDER_FIELDS = [
-		'dateOfBirth', 'occupation', 'address', 'phoneNumber',
-		'maritalStatus', 'nationality', 'religion', 'ethnicity', 'educationLevel'
-	];
 	const PSYCHOLOGIST_WORKFLOW_PLACEHOLDER_FIELDS = [
 		'dateOfBirth', 'occupation', 'address', 'phoneNumber', 'sexualOrientation',
 		'maritalStatus', 'nationality', 'religion', 'ethnicity', 'educationLevel'
 	];
-
-	function resetDoctorWorkflowFormDomState(options = {}) {
-		return resetWorkflowFormDomState({
-			...options,
-			fieldsToReset: options.fieldsToReset || DOCTOR_WORKFLOW_RESET_FIELDS,
-			placeholderFields: options.placeholderFields || DOCTOR_WORKFLOW_PLACEHOLDER_FIELDS,
-			autocompleteNames: options.autocompleteNames || ['modalOccupationAutocomplete', 'sexualOrientationAutocomplete']
-		});
-	}
 
 	function resetPsychologistWorkflowFormDomState(options = {}) {
 		return resetWorkflowFormDomState({
@@ -649,214 +577,11 @@
 		return true;
 	}
 
-	function resetDoctorWorkflowPageState(options = {}) {
-		return resetWorkflowPageState({
-			...options,
-			resetDomState: () => resetDoctorWorkflowFormDomState(options)
-		});
-	}
-
 	function resetPsychologistWorkflowPageState(options = {}) {
 		return resetWorkflowPageState({
 			...options,
 			resetDomState: () => resetPsychologistWorkflowFormDomState(options)
 		});
-	}
-
-	function populatePatientAdministrativeFields(patient, options = {}) {
-		if (!patient) return false;
-		const doc = getDocument(options);
-		const setValue = typeof options.safeSetValue === 'function'
-			? options.safeSetValue
-			: (elementId, value) => safeSetValue(elementId, value, { document: doc });
-		const setDatepicker = typeof options.setDatepickerValue === 'function'
-			? options.setDatepickerValue
-			: (elementId, value) => setValue(elementId, value || '');
-		const calculateAge = typeof options.calculateAge === 'function'
-			? options.calculateAge
-			: () => '';
-		const buildFullAddress = typeof options.buildFullAddressFromParts === 'function'
-			? options.buildFullAddressFromParts
-			: (...parts) => parts.filter(Boolean).join(', ');
-		const jquery = options.$ || window.jQuery || window.$;
-
-		setValue('patientId', patient.id);
-		setValue('fullName', patient.full_name || '');
-		setValue('nickname', patient.nickname || '');
-		setDatepicker('dateOfBirth', patient.date_of_birth);
-
-		if (patient.date_of_birth) {
-			const age = calculateAge(patient.date_of_birth);
-			setValue('age', age ? age : '');
-			if (jquery && options.triggerDateOfBirthChange !== false) jquery('#dateOfBirth').trigger('change');
-		} else {
-			setValue('age', '');
-		}
-
-		if (typeof options.setCurrentPatientId === 'function') options.setCurrentPatientId(patient.id);
-		if (typeof options.setCurrentPatientData === 'function') options.setCurrentPatientData(patient);
-
-		setValue('gender', patient.gender || '');
-		setValue('idCard', patient.id_number || '');
-		setValue('phoneNumber', patient.phone || '');
-		setValue('occupation', patient.occupation || '');
-		setValue('donViCongTac', patient.don_vi_cong_tac || '');
-		setValue('diaChiCongTy', patient.dia_chi_cong_ty || '');
-		setValue('maritalStatus', patient.marital_status || '');
-		setValue('sexualOrientation', patient.sexual_orientation || '');
-		setValue('mangThai', patient.mang_thai ? '1' : '');
-		setValue('ngayDuSinh', patient.expected_delivery_date || '');
-		setValue('soTuanThai', patient.so_tuan_thai || '');
-
-		setValue('addressDetail', patient.address_detail || '');
-		setValue('province', patient.province || '');
-		setValue('provinceHidden', patient.province || '');
-		setValue('district', patient.district || '');
-		setValue('ward', patient.ward || '');
-		setValue('addressSummary', patient.address || '');
-		setValue('address', buildFullAddress(patient.address_detail, patient.ward, patient.district, patient.province));
-
-		setValue('nationality', patient.nationality || '');
-		setValue('religion', patient.religion || '');
-		setValue('ethnicity', patient.ethnicity || '');
-		setValue('educationLevel', patient.education_level || '');
-		setValue('referralSource', patient.referral_source);
-
-		return true;
-	}
-
-	function isReExaminationAppointment(appointment, options = {}) {
-		if (!appointment) return false;
-		if (typeof options.isReExamination === 'function') return Boolean(options.isReExamination(appointment));
-		return appointment.appointment_category === 'RE_EXAMINATION';
-	}
-
-	function populateAppointmentAdministrativeFields(appointment, options = {}) {
-		if (!appointment) return false;
-		const doc = getDocument(options);
-		const setValue = typeof options.safeSetValue === 'function'
-			? options.safeSetValue
-			: (elementId, value) => safeSetValue(elementId, value, { document: doc });
-		const jquery = options.$ || window.jQuery || window.$;
-
-		setValue(options.notesField || 'notes', appointment.notes);
-
-		const reExaminationCheck = doc.getElementById(options.reExaminationField || 'reExaminationCheck');
-		if (reExaminationCheck) {
-			reExaminationCheck.checked = isReExaminationAppointment(appointment, options);
-		}
-
-		if (options.includeReminder) {
-			const reminderCheck = doc.getElementById(options.reminderField || 'reminderCheck');
-			if (reminderCheck) reminderCheck.checked = appointment.reminder || false;
-			setValue(options.reminderTimeField || 'reminderTime', appointment.reminder_time);
-		}
-
-		if (appointment.service_id) {
-			setValue(options.serviceTypeField || 'serviceType', appointment.service_id);
-			if (jquery && options.triggerServiceChange !== false) jquery(`#${options.serviceTypeField || 'serviceType'}`).trigger('change');
-		} else if (appointment.package_id) {
-			setValue(options.packageField || 'packageId', appointment.package_id);
-			if (jquery && options.triggerPackageChange !== false) jquery(`#${options.packageField || 'packageId'}`).trigger('change');
-		}
-
-		return true;
-	}
-
-	function populateExaminationVitalFields(examination, options = {}) {
-		if (!examination) return false;
-		const doc = getDocument(options);
-		const setValue = typeof options.safeSetValue === 'function'
-			? options.safeSetValue
-			: (elementId, value) => safeSetValue(elementId, value, { document: doc });
-
-		setValue('weight', examination.weight);
-		setValue('height', examination.height);
-		setValue('bmi', examination.bmi);
-		if (typeof options.updateBMIClassification === 'function') options.updateBMIClassification();
-		setValue('pulse', examination.pulse);
-		setValue('bloodPressure', examination.blood_pressure);
-		setValue('temperature', examination.temperature);
-
-		if (typeof examination.breathing !== 'undefined' && examination.breathing !== null) {
-			setValue('breathing', examination.breathing);
-			setValue(options.respiratoryRateField || 'respiratoryRate', examination.breathing);
-		} else if (options.clearMissingBreathing || Object.prototype.hasOwnProperty.call(examination, 'breathing')) {
-			setValue('breathing', '');
-			setValue(options.respiratoryRateField || 'respiratoryRate', '');
-		}
-
-		return true;
-	}
-
-	function hydratePatientAppointmentShell(patient, examination = null, appointment = null, options = {}) {
-		if (!patient && !examination && !appointment) return false;
-		const includePatient = options.includePatient !== false && Boolean(patient);
-		const includeAppointment = options.includeAppointment !== false && Boolean(appointment);
-		const includeVitals = options.includeVitals !== false && Boolean(examination);
-
-		const relativeTable = typeof options.getRelativeTable === 'function'
-			? options.getRelativeTable()
-			: options.relativeTable;
-		if (patient && relativeTable) {
-			if (typeof relativeTable.setPatientId === 'function') relativeTable.setPatientId(patient.id);
-			if (typeof relativeTable.setCurrentAppointmentDate === 'function') {
-				relativeTable.setCurrentAppointmentDate(appointment && appointment.appointment_date ? appointment.appointment_date : null);
-			}
-		}
-
-		if (includePatient) {
-			populatePatientAdministrativeFields(patient, options.patientOptions || options);
-		}
-		if (includeAppointment) {
-			populateAppointmentAdministrativeFields(appointment, options.appointmentOptions || options);
-		}
-		if (includeVitals) {
-			populateExaminationVitalFields(examination, options.vitalOptions || options);
-		}
-
-		return true;
-	}
-
-	function clearPatientSwitchClinicalDomFields(options = {}) {
-		const doc = getDocument(options);
-		const setValue = typeof options.safeSetValue === 'function'
-			? options.safeSetValue
-			: (elementId, value) => safeSetValue(elementId, value, { document: doc });
-		const jquery = options.$ || window.jQuery || window.$;
-
-		if (jquery) {
-			jquery('#mainReason').val('');
-			jquery('#mainSymptoms').val('');
-			if (Object.prototype.hasOwnProperty.call(options, 'defaultTreatmentMethod')) {
-				jquery('#treatmentMethod').val(options.defaultTreatmentMethod);
-			}
-		} else {
-			setValue('mainReason', '');
-			setValue('mainSymptoms', '');
-			if (Object.prototype.hasOwnProperty.call(options, 'defaultTreatmentMethod')) {
-				setValue('treatmentMethod', options.defaultTreatmentMethod);
-			}
-		}
-
-		['breathing', 'respiratoryRate', 'weight', 'height', 'bmi', 'pulse', 'bloodPressure', 'temperature', 'notes', 'socialSupport', 'hiddenSocialSupport'].forEach(fieldId => {
-			setValue(fieldId, '');
-		});
-
-		const reExamCheck = doc.getElementById(options.reExaminationField || 'reExaminationCheck');
-		if (reExamCheck) reExamCheck.checked = false;
-
-		if (options.hidePreviousVitals) {
-			(options.previousVitalHintIds || ['prevWeight', 'prevHeight']).forEach(fieldId => {
-				const element = doc.getElementById(fieldId);
-				if (element) {
-					element.style.display = 'none';
-					element.textContent = '';
-				}
-			});
-		}
-
-		return true;
 	}
 
 	function getReferralSourceControl(context = {}) {
@@ -901,14 +626,9 @@
 		safeSetInnerHTML,
 		updateElements,
 		getHiddenOrModalValue,
-		syncModalFieldsToHidden,
 		collectClinicalAdministrativeFormData,
 		buildPatientSavePayload,
 		buildAppointmentClinicalUpdatePayload,
-		getRawFormValue,
-		collectSelectedIcdIds,
-		collectPsychologistExaminationFormData,
-		buildPsychologistExaminationUpdatePayload,
 		bindNumericInputGuard,
 		bindAgeInputGuard,
 		bindPatientFormAutoSaveFields,
@@ -921,19 +641,11 @@
 		resetDomFields,
 		clearPlaceholderValues,
 		resetWorkflowFormDomState,
-		resetDoctorWorkflowFormDomState,
 		resetPsychologistWorkflowFormDomState,
 		resetWorkflowPageState,
-		resetDoctorWorkflowPageState,
 		resetPsychologistWorkflowPageState,
-		populatePatientAdministrativeFields,
-		populateAppointmentAdministrativeFields,
-		populateExaminationVitalFields,
-		hydratePatientAppointmentShell,
-		clearPatientSwitchClinicalDomFields,
 		createFormDomAdapter
 	};
 
 	window.ClinicalFormDomUtils = api;
-	window.DoctorExaminationFormDomUtils = api;
 })(window);

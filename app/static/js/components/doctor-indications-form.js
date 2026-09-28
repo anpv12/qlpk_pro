@@ -483,48 +483,63 @@
 			return true;
 		}
 
-		function readForm(doc) {
-			const nameInput = el(doc, 'name');
+		function readFormInputs(doc) {
 			const performer = el(doc, 'performer');
-			const outFacility = el(doc, 'outFacility');
-			const date = el(doc, 'date');
+			const performerOption = performer && performer.selectedOptions ? performer.selectedOptions[0] : null;
 			const selectedLocation = doc.querySelector('input[name="doctorIndicationLocation"]:checked');
-			const locationType = normalizeLocation(selectedLocation && selectedLocation.value);
+			return {
+				nameInput: el(doc, 'name'),
+				performer,
+				outFacility: el(doc, 'outFacility'),
+				date: el(doc, 'date'),
+				locationType: normalizeLocation(selectedLocation && selectedLocation.value),
+				typedName: textOf(el(doc, 'name') && el(doc, 'name').value),
+				scheduledFor: textOf(el(doc, 'date') && el(doc, 'date').value),
+				outFacilityName: textOf(el(doc, 'outFacility') && el(doc, 'outFacility').value),
+				performerId: normalizeId(performer && performer.value),
+				performerName: textOf(performerOption && (performerOption.dataset.userName || performerOption.textContent))
+			};
+		}
+
+		function resolveSelectedSurvey(typedName) {
 			const selectedSurvey = STATE.selectedSurvey;
-			const typedName = textOf(nameInput && nameInput.value);
 			const selectedSurveyId = normalizeId(selectedSurvey && selectedSurvey.id);
 			const selectedSurveyName = textOf(selectedSurvey && selectedSurvey.name);
 			const hasSelectedSurvey = Boolean(selectedSurveyId && selectedSurveyName && typedName === selectedSurveyName);
-			const source = hasSelectedSurvey ? 'survey' : 'custom';
-			const orderName = typedName;
-			const surveyTemplateId = hasSelectedSurvey ? selectedSurveyId : null;
-			if (orderName.length > MAX_ORDER_NAME_LENGTH) {
-				if (nameInput) nameInput.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: `Tên chỉ định tối đa ${MAX_ORDER_NAME_LENGTH} ký tự.`, focus: nameInput };
-			}
-			const scheduledFor = textOf(date && date.value);
-			const outFacilityName = textOf(outFacility && outFacility.value);
-			const performerId = normalizeId(performer && performer.value);
-			const performerOption = performer && performer.selectedOptions ? performer.selectedOptions[0] : null;
-			const performerName = textOf(performerOption && (performerOption.dataset.userName || performerOption.textContent));
-			if (!typedName) {
-				if (nameInput) nameInput.setAttribute('aria-invalid', 'true');
-				return { valid: false, message: 'Nhập tên chỉ định hoặc chọn một mẫu khảo sát.', focus: nameInput };
-			}
-			if (!scheduledFor) return { valid: false, message: 'Chọn ngày chỉ định.', focus: date };
-			if (locationType === 'in' && !performerId) return { valid: false, message: 'Chọn người thực hiện trong cơ sở.', focus: performer };
-			if (locationType === 'out' && !outFacilityName) return { valid: false, message: 'Nhập cơ sở thực hiện bên ngoài.', focus: outFacility };
+			return { source: hasSelectedSurvey ? 'survey' : 'custom', surveyTemplateId: hasSelectedSurvey ? selectedSurveyId : null };
+		}
+
+		function invalidName(inputs, message) {
+			if (inputs.nameInput) inputs.nameInput.setAttribute('aria-invalid', 'true');
+			return { valid: false, message, focus: inputs.nameInput };
+		}
+
+		function validateFormInputs(inputs) {
+			if (inputs.typedName.length > MAX_ORDER_NAME_LENGTH) return invalidName(inputs, `Tên chỉ định tối đa ${MAX_ORDER_NAME_LENGTH} ký tự.`);
+			if (!inputs.typedName) return invalidName(inputs, 'Nhập tên chỉ định hoặc chọn một mẫu khảo sát.');
+			if (!inputs.scheduledFor) return { valid: false, message: 'Chọn ngày chỉ định.', focus: inputs.date };
+			if (inputs.locationType === 'in' && !inputs.performerId) return { valid: false, message: 'Chọn người thực hiện trong cơ sở.', focus: inputs.performer };
+			if (inputs.locationType === 'out' && !inputs.outFacilityName) return { valid: false, message: 'Nhập cơ sở thực hiện bên ngoài.', focus: inputs.outFacility };
+			return null;
+		}
+
+		function readForm(doc) {
+			const inputs = readFormInputs(doc);
+			const invalid = validateFormInputs(inputs);
+			if (invalid) return invalid;
+			const { locationType } = inputs;
+			const survey = resolveSelectedSurvey(inputs.typedName);
 			return {
 				valid: true,
 				data: {
-					survey_template_id: surveyTemplateId,
-					order_name: orderName,
+					survey_template_id: survey.surveyTemplateId,
+					order_name: inputs.typedName,
 					location_type: locationType,
-					in_house_unit_id: locationType === 'in' ? performerId : null,
-					in_house_unit: locationType === 'in' ? performerName : '',
-					out_facility: locationType === 'out' ? outFacilityName : '',
-					scheduled_for: scheduledFor,
-					source,
+					in_house_unit_id: locationType === 'in' ? inputs.performerId : null,
+					in_house_unit: locationType === 'in' ? inputs.performerName : '',
+					out_facility: locationType === 'out' ? inputs.outFacilityName : '',
+					scheduled_for: inputs.scheduledFor,
+					source: survey.source,
 					status: 'sent',
 					is_completed: false
 				}
@@ -808,6 +823,7 @@
 			restoreDraftSnapshot,
 			markRestoredRows: (doc, baseRows, draftRows) => markRestoredRows(getDocument({ document: doc }), '[data-doctor-indication-row]', changedRowIndexes(baseRows, draftRows)),
 			getState: () => STATE,
+			readForm: doc => readForm(getDocument({ document: doc })),
 			getConfig: () => ({ ...config, dom: { ...config.dom }, endpoints: { ...config.endpoints } })
 		};
 	}

@@ -139,31 +139,31 @@
 			return instance;
 		}
 
-		async function hydrateIcdField(doc, field, examination, token) {
+		async function applyIcdSelection(doc, field, ids, token) {
 			const instance = getIcdInstance(doc, field);
-			if (!instance) return;
-			const ids = parseIdList(examination[field.idSourceKey]);
-			if (!ids.length) {
-				instance.clear({ silent: true });
-				setValue(doc, field.controlId, '');
-				return;
-			}
-
+			if (!instance) return false;
 			const loader = REGISTRY.get('icdDataLoader')?.loadICDData;
-			if (typeof loader !== 'function') {
+			if (!ids.length || typeof loader !== 'function') {
 				instance.clear({ silent: true });
 				setValue(doc, field.controlId, '');
-				return;
+				return false;
 			}
 			const selected = await loader('', {
 				ids,
 				limit: ids.length,
 				getAuthHeader: getIcdAuthHeader
 			});
-			if (token !== state.contextToken) return;
+			if (token !== state.contextToken) return false;
 			instance.setSelected(Array.isArray(selected) ? selected : [], { silent: true });
 			setValue(doc, field.controlId, '');
-			setValue(doc, field.hiddenControlId, JSON.stringify(ids));
+			return true;
+		}
+
+		async function hydrateIcdField(doc, field, examination, token) {
+			const ids = parseIdList(examination[field.idSourceKey]);
+			if (await applyIcdSelection(doc, field, ids, token)) {
+				setValue(doc, field.hiddenControlId, JSON.stringify(ids));
+			}
 		}
 
 		function serializeIcdDraftValue(doc, field) {
@@ -175,31 +175,13 @@
 			if (!instance) return;
 			const ids = parseIdList(rawValue);
 			setValue(doc, field.hiddenControlId, JSON.stringify(ids));
-			if (!ids.length) {
-				instance.clear({ silent: true });
-				setValue(doc, field.controlId, '');
-				return;
-			}
-
-			const loader = REGISTRY.get('icdDataLoader')?.loadICDData;
-			if (typeof loader !== 'function') {
-				instance.clear({ silent: true });
-				setValue(doc, field.controlId, '');
-				return;
-			}
 			try {
-				const selected = await loader('', {
-					ids,
-					limit: ids.length,
-					getAuthHeader: getIcdAuthHeader
-				});
-				if (token !== state.contextToken) return;
-				instance.setSelected(Array.isArray(selected) ? selected : [], { silent: true });
+				await applyIcdSelection(doc, field, ids, token);
 			} catch (error) {
 				if (token !== state.contextToken) return;
 				instance.clear({ silent: true });
+				setValue(doc, field.controlId, '');
 			}
-			setValue(doc, field.controlId, '');
 		}
 
 		function bindIcdFields(doc) {

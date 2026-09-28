@@ -9,6 +9,58 @@
 	let realtimeRefreshTimer = null;
 	let settingsReloadTable = null;
 	let userNameById = {};
+	let sessionBound = false;
+	let shortcutRevision = 0;
+	let shortcutsCurrent = () => false;
+	let settingsCurrent = null;
+
+	function currentUser() {
+		const owner = window.QLPKApiTransport?.session?.owner;
+		if (owner) {
+			const current = owner.snapshot();
+			return current.status === 'authenticated' ? current.session.user : {};
+		}
+		try { return JSON.parse(localStorage.getItem('qlpk_user') || '{}') || {}; }
+		catch (_) { return {}; }
+	}
+
+	function captureIdentity() {
+		const owner = window.QLPKApiTransport?.session?.owner;
+		if (owner) {
+			const current = owner.snapshot();
+			return () => window.QLPKApiTransport?.session?.owner === owner
+				&& current.status === 'authenticated' && owner.snapshot().status === 'authenticated'
+				&& owner.snapshot().revision === current.revision;
+		}
+		const identity = localStorage.getItem('qlpk_user');
+		return () => !window.QLPKApiTransport?.session && localStorage.getItem('qlpk_user') === identity;
+	}
+
+	function clearSessionState() {
+		shortcutRevision += 1;
+		shortcuts = [];
+		shortcutsCurrent = () => false;
+		currentRows = [];
+		userNameById = {};
+		window.clearTimeout(realtimeRefreshTimer);
+		if (settingsCurrent && !settingsCurrent()) {
+			settingsReloadTable = null;
+			const form = document.getElementById('shortcutForm');
+			if (form) form.inert = true;
+			document.getElementById('shortcutTableBody')?.replaceChildren();
+			showMessage(document.getElementById('shortcutAlert'), 'Phiên đã thay đổi. Vui lòng tải lại trang để cấu hình phím tắt.', 'warning');
+		}
+	}
+
+	function bindSessionState() {
+		if (sessionBound) return;
+		sessionBound = true;
+		window.QLPKApiTransport?.session?.owner.subscribe(clearSessionState);
+		window.addEventListener('storage', event => {
+			if (!event.key || ['qlpk_user', 'qlpk_token', 'token'].includes(event.key)) clearSessionState();
+		});
+		document.addEventListener('qlpk:logout:confirmed', clearSessionState);
+	}
 
 	const ROUTE_OPTIONS = [
 		{ label: 'Trang chủ', url: '/index.html' },
@@ -34,26 +86,9 @@
 	}, {});
 
 
-	function getAuthHeader() {
-		const raw = localStorage.getItem('qlpk_token') || localStorage.getItem('token');
-		if (!raw) return null;
-		try {
-			if (raw.startsWith('{')) {
-				const obj = JSON.parse(raw);
-				const t = obj.access_token || obj.token || obj.Authorization || obj.authorization;
-				return t ? `Bearer ${String(t).replace(/^Bearer\s+/i, '')}` : null;
-			}
-			return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-		} catch (e) {
-			return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-		}
-	}
-
 	async function apiCall(url, options = {}) {
-		const auth = getAuthHeader();
 		const hasBody = typeof options.body !== 'undefined' && options.body !== null;
 		const headers = {
-			...(auth ? { 'Authorization': auth } : {}),
 			...(hasBody ? { 'Content-Type': 'application/json' } : {}),
 			...(options.headers || {})
 		};
@@ -113,13 +148,22 @@
 	}
 
 	async function refreshShortcuts() {
-		shortcuts = await loadShortcuts();
+		bindSessionState();
+		const owner = window.QLPKApiTransport?.session?.owner;
+		if (owner) await owner.ready();
+		const revision = ++shortcutRevision;
+		const isCurrent = captureIdentity();
+		const rows = await loadShortcuts();
+		if (revision !== shortcutRevision || !isCurrent()) return;
+		shortcuts = rows;
+		shortcutsCurrent = isCurrent;
 	}
 
 	function bindGlobalListener() {
 		if (isGlobalBound) return;
 		isGlobalBound = true;
 		document.addEventListener('keydown', function (e) {
+			if (!shortcutsCurrent()) return;
 			if (isTypingContext(e.target)) return;
 			const combo = normalizeFromEvent(e);
 			if (!combo) return;
@@ -300,21 +344,22 @@
 	}
 
 	function isAdminUser() {
-		try {
-			const raw = localStorage.getItem('qlpk_user');
-			if (!raw) return false;
-			const u = JSON.parse(raw);
-			const role = String(u?.role || '').toLowerCase();
-			return role === 'admin' || role === 'userrole.admin';
-		} catch (e) {
-			return false;
-		}
+		const role = String(currentUser().role || '').toLowerCase();
+		return role === 'admin' || role === 'userrole.admin';
 	}
 
 	async function attachSettingsPage() {
 		const page = document.getElementById('shortcutSettingsPage');
 		if (!page) return;
 		if (isSettingsBound) return;
+		bindSessionState();
+		const owner = window.QLPKApiTransport?.session?.owner;
+		if (owner) {
+			try { await owner.ready(); } catch (_) { return; }
+		}
+		if (isSettingsBound) return;
+		settingsCurrent = captureIdentity();
+		if (!settingsCurrent()) return;
 		isSettingsBound = true;
 
 		const form = document.getElementById('shortcutForm');
@@ -329,11 +374,7 @@
 		const scopeSelect = document.getElementById('shortcutScope');
 		const userSelect = document.getElementById('shortcutTargetUser');
 		const isAdmin = isAdminUser();
-		let currentUserId = null;
-		try {
-			const me = JSON.parse(localStorage.getItem('qlpk_user') || '{}');
-			currentUserId = me.id || null;
-		} catch (_) {}
+		const currentUserId = currentUser().id || null;
 		const scopeWrap = document.getElementById('shortcutScopeInlineWrap');
 		const targetUserWrap = document.getElementById('shortcutTargetUserWrap');
 
@@ -355,10 +396,11 @@
 		};
 
 		const loadUsersForAdmin = async () => {
-			if (!isAdmin || !userSelect) return;
+			if (!settingsCurrent() || !isAdmin || !userSelect) return;
 			const res = await apiCall('/users/');
 			if (!res.ok) throw new Error('Không tải được danh sách user');
 			const users = await res.json();
+			if (!settingsCurrent()) return;
 			userNameById = {};
 			(users || []).forEach(u => {
 				const name = u.full_name || u.username || ('User #' + u.id);
@@ -387,7 +429,9 @@
 		};
 
 		const reloadTable = async () => {
+			if (!settingsCurrent()) return;
 			const rows = await fetchRowsForDisplay();
+			if (!settingsCurrent()) return;
 			currentRows = Array.isArray(rows) ? rows : [];
 			renderRows(currentRows, tbody, {
 				isAdmin,
@@ -430,6 +474,7 @@
 
 		form.addEventListener('submit', async function (e) {
 			e.preventDefault();
+			if (!settingsCurrent()) { clearSessionState(); return; }
 			hideMessage(alertBox);
 			const combo = normalizeComboText(comboInput.value);
 			if (!combo) {
@@ -478,6 +523,7 @@
 			try {
 				const method = id ? 'PUT' : 'POST';
 				const res = await apiCall(url, { method, body: JSON.stringify(payload) });
+				if (!settingsCurrent()) return;
 				if (!res.ok) {
 					let err = 'Không thể lưu phím tắt';
 					try {
@@ -496,6 +542,7 @@
 		});
 
 		tbody.addEventListener('click', async function (e) {
+			if (!settingsCurrent()) { clearSessionState(); return; }
 			const btn = e.target.closest('button[data-action]');
 			if (!btn) return;
 			const tr = e.target.closest('tr[data-id]');
@@ -516,8 +563,10 @@
 
 			if (action === 'delete') {
 				if (!window.confirm('Bạn có chắc muốn xóa phím tắt này?')) return;
+				if (!settingsCurrent()) return;
 				try {
 					const res = await apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });
+					if (!settingsCurrent()) return;
 					if (!res.ok) {
 						showMessage(alertBox, 'Không thể xóa phím tắt.', 'danger');
 						return;

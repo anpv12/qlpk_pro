@@ -50,22 +50,6 @@
 			pageRuntime: REGISTRY?.get('pageRuntime') || null,
 			isLoading: isPageLoading,
 			getPatientId: getPagePatientId,
-			normalizePayload: payload => {
-				const history = payload?.medical_history || {};
-				const historyPatient = history.patient || {};
-				const historyExamination = history.examination || {};
-				const previousExamination = history.previous_examination || {};
-				return {
-					patientId: historyPatient.id || null,
-					physicalHistory: historyPatient.physical_history || [],
-					familyHistory: historyPatient.family_history || [],
-					allergies: Array.isArray(historyPatient.allergies) ? historyPatient.allergies : [],
-					riskAssessment: historyExamination.risk_assessment || {},
-					previousRiskAssessment: previousExamination.risk_assessment || {},
-					substanceUseHistory: historyPatient.substance_use_history || {},
-					safetyPlan: historyPatient.safety_plan || {}
-				};
-			},
 			modeConfig: {
 				physHistory: { containerId: 'physHistoryContainer', textInputId: 'physHistoryTextInput', hiddenId: 'patientPhysicalHistory', fieldName: 'physical_history' },
 				famHistory: { containerId: 'famHistoryContainer', textInputId: 'famHistoryTextInput', hiddenId: 'patientFamilyHistory', fieldName: 'family_history' }

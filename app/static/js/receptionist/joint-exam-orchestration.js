@@ -22,6 +22,7 @@
 		const opts = options || {};
 		const instance = new JointExamManager({
 			getAppointmentId: opts.getAppointmentId,
+			getContextToken: opts.getContextToken,
 			onReloadFamilyMembers: opts.onReloadFamilyMembers,
 			showToast: opts.showToast,
 			apiCall: opts.apiCall,
@@ -46,10 +47,11 @@
 		}
 	}
 
-	async function savePendingList(instance, appointmentId) {
+	async function savePendingList(instance, appointmentId, options = {}) {
 		if (instance) {
-			await instance.savePendingList(appointmentId);
+			return instance.savePendingList(appointmentId, options);
 		}
+		return { status: 'saved' };
 	}
 
 	function clearPendingList(instance) {

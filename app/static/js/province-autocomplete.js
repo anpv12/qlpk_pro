@@ -17,12 +17,7 @@ class ProvinceAutocomplete extends AutocompleteBase {
 
 	async loadItems() {
 		try {
-			const token = localStorage.getItem('qlpk_token');
-			const response = await fetch('/api/vietnam-address/regions', {
-				headers: {
-					'Authorization': `Bearer ${token}`
-				}
-			});
+			const response = await fetch('/api/vietnam-address/regions');
 
 			if (response.ok) {
 				const data = await response.json();

@@ -1,5 +1,27 @@
 (function (window, document) {
 	'use strict';
+	const actionStates = new WeakMap();
+
+	async function deleteServerDocument(id, options, isCurrentContext) {
+		if (typeof options.showConfirmationDialog !== 'function') return;
+		try {
+			const confirmed = await options.showConfirmationDialog({
+				title: 'Xóa tài liệu', text: 'Bạn có chắc chắn muốn xóa tài liệu này?',
+				confirmText: 'Xóa', cancelText: 'Hủy', variant: 'danger', showToast: options.showToast
+			});
+			if (!confirmed || !isCurrentContext()) return;
+			const response = await options.apiCall(`/attachments/${id}`, { method: 'DELETE' });
+			if (!isCurrentContext()) return;
+			if (!response.ok) {
+				options.showToast?.('error', 'Xoá tài liệu thất bại');
+				return;
+			}
+			options.showToast?.('success', 'Đã xoá tài liệu');
+			await options.loadAttachmentsForCurrentPatient?.();
+		} catch (error) {
+			if (isCurrentContext()) options.showToast?.('error', 'Xoá tài liệu gặp lỗi');
+		}
+	}
 
 	function getDocument(options) {
 		return options && options.document ? options.document : document;
@@ -147,7 +169,7 @@
 	`;
 	}
 
-	function bindDocumentActions(list, options) {
+	function bindDocumentActions(list) {
 		if (list._documentAttachmentActionsBound) return;
 
 		list.addEventListener('click', async event => {
@@ -157,42 +179,35 @@
 			const action = btn.getAttribute('data-action');
 			const id = btn.getAttribute('data-id');
 			if (!id) return;
+			const state = actionStates.get(list);
+			const options = state.options;
+			const isDelete = action === 'delete' || action === 'draft-delete';
+			const isCurrentContext = () => actionStates.get(list) === state && state.isCurrentContext()
+				&& (!isDelete || options.ensureEditingAllowed?.(false) !== false);
+			if (!isCurrentContext() || btn.disabled) return;
 
 			if (action === 'download') {
 				const filename = btn.getAttribute('data-filename') || `attachment-${id}`;
 				if (typeof options.openAttachmentPreviewInNewTab === 'function') {
-					await options.openAttachmentPreviewInNewTab(id, filename);
+					await options.openAttachmentPreviewInNewTab(id, filename, { isCurrentContext });
 				}
 				return;
 			}
 
-			if (action === 'delete') {
-				if (typeof options.showConfirmationDialog !== 'function') return;
-				const confirmed = await options.showConfirmationDialog({
-					title: 'Xóa tài liệu',
-					text: 'Bạn có chắc chắn muốn xóa tài liệu này?',
-					confirmText: 'Xóa',
-					cancelText: 'Hủy',
-					variant: 'danger',
-					showToast: options.showToast
-				});
-				if (!confirmed) return;
+			if (isDelete) {
+				const key = `${action}:${id}`;
+				if (state.pending.has(key)) return;
+				state.pending.add(key);
 				try {
-					const res = await options.apiCall(`/attachments/${id}`, { method: 'DELETE' });
-					if (res.ok) {
-						if (typeof options.showToast === 'function') {
-							options.showToast('success', 'Đã xoá tài liệu');
-						}
-						if (typeof options.loadAttachmentsForCurrentPatient === 'function') {
-							await options.loadAttachmentsForCurrentPatient();
-						}
-					} else if (typeof options.showToast === 'function') {
-						options.showToast('error', 'Xoá tài liệu thất bại');
+					if (action === 'delete') {
+						await deleteServerDocument(id, options, isCurrentContext);
+					} else {
+						await options.deleteDraftDocument?.(id, { isCurrentContext });
 					}
-				} catch (e) {
-					if (typeof options.showToast === 'function') {
-						options.showToast('error', 'Xoá tài liệu gặp lỗi');
-					}
+				} catch (error) {
+					if (isCurrentContext()) options.showToast?.('error', 'Xoá tài liệu gặp lỗi');
+				} finally {
+					state.pending.delete(key);
 				}
 				return;
 			}
@@ -202,9 +217,6 @@
 				return;
 			}
 
-			if (action === 'draft-delete' && typeof options.deleteDraftDocument === 'function') {
-				await options.deleteDraftDocument(id);
-			}
 		});
 
 		list._documentAttachmentActionsBound = true;
@@ -222,6 +234,12 @@
 		const doc = getDocument(options);
 		const documentsList = doc.getElementById('documentsList');
 		if (!documentsList) return;
+		actionStates.set(documentsList, {
+			options,
+			isCurrentContext: window.ReceptionistDocumentAttachmentControls.createContextGuard(options),
+			pending: actionStates.get(documentsList)?.pending || new Set()
+		});
+		bindDocumentActions(documentsList);
 
 		const attachments = getAttachments(options);
 		const uploadedDocuments = getUploadedDocuments(options);
@@ -235,7 +253,6 @@
 		const serverHtml = (attachments || []).map(att => buildServerDocumentHtml(att, options)).join('');
 		const draftHtml = uploadedDocuments.map(docItem => buildDraftDocumentHtml(docItem, options)).join('');
 		documentsList.innerHTML = buildDocumentsTable(serverHtml + draftHtml);
-		bindDocumentActions(documentsList, options);
 	}
 
 	window.ReceptionistDocumentAttachmentList = {

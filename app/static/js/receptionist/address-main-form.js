@@ -104,6 +104,7 @@
 	}
 
 	async function setMainAddressProvinceValue(provinceName, options = {}) {
+		if (options.isCurrentLoad?.() === false) return null;
 		const doc = getDocument(options);
 		const province = doc.getElementById('province');
 		if (!province) return null;
@@ -117,6 +118,7 @@
 		if (!provinceName) return null;
 
 		const regions = await loadMainAddressRegions(options);
+		if (options.isCurrentLoad?.() === false) return null;
 		const match = findAddressItemByName(regions, provinceName);
 		if (match && province.dataset) {
 			province.dataset.code = match.code || '';
@@ -124,7 +126,16 @@
 		return match;
 	}
 
+	async function resolveMainProvinceCode(province, options) {
+		const provinceCode = province && province.dataset ? province.dataset.code : '';
+		if (provinceCode || !province || !province.value) return provinceCode;
+		const provinceMatch = await setMainAddressProvinceValue(province.value, options);
+		if (options.isCurrentLoad?.() === false) return null;
+		return provinceMatch ? provinceMatch.code : '';
+	}
+
 	async function setMainAddressWardValue(wardName, options = {}) {
+		if (options.isCurrentLoad?.() === false) return null;
 		const doc = getDocument(options);
 		const province = doc.getElementById('province');
 		const ward = doc.getElementById('ward');
@@ -134,14 +145,10 @@
 		if (ward.dataset) ward.dataset.code = '';
 		if (!wardName) return null;
 
-		let provinceCode = province && province.dataset ? province.dataset.code : '';
-		if (!provinceCode && province && province.value) {
-			const provinceMatch = await setMainAddressProvinceValue(province.value, options);
-			provinceCode = provinceMatch ? provinceMatch.code : '';
-		}
-
+		const provinceCode = await resolveMainProvinceCode(province, options);
 		if (!provinceCode) return null;
 		const units = await loadMainAddressUnits(provinceCode, options);
+		if (options.isCurrentLoad?.() === false) return null;
 		const match = findAddressItemByName(units, wardName);
 		if (match && ward.dataset) {
 			ward.dataset.code = match.code || '';

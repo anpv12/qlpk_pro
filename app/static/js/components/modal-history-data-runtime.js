@@ -325,41 +325,69 @@
 		return value || '';
 	}
 
-	function buildMedicalRecordHTML(options = {}) {
-		const patient = options.patient || {};
-		const history = options.history || {};
-		const details = options.examinationDetailsBySection || {};
+	const MEDICAL_RECORD_ORGAN_FIELDS = [
+		['Tuần hoàn', 'circulation'], ['Tiêu hoá', 'digestive'],
+		['Thận-tiết niệu-sinh dục', 'renal_urogenital'], ['Cơ-xương-khớp', 'musculoskeletal'],
+		['Tai-mũi-họng', 'ent'], ['Nội tiết-dinh dưỡng', 'endocrine_nutrition_others'],
+		['Thần kinh', 'neurological']
+	];
+	const MEDICAL_RECORD_MENTAL_FIELDS = [
+		['Ý thức định hướng', 'orientation'], ['Tình cảm, cảm xúc', 'emotions'],
+		['Tri giác', 'perception'], ['Tư duy', 'thought'], ['Hành vi tác phong', 'behavior'],
+		['Trí nhớ', 'memory'], ['Tập trung - chú ý', 'attention'], ['Trí năng', 'intelligence']
+	];
+	const MEDICAL_RECORD_LABELS = {
+		doctor: { title: 'HỒ SƠ BỆNH ÁN', prefix: 'bac_si', manifestations: 'Biểu hiện chung', examination: 'KQ khám toàn thân', diagnosis: 'Chẩn đoán (ICD-10)', accompanying: 'Bệnh kèm theo', plan: 'Kết luận & Hướng Đ.trị', signer: 'Bác sĩ khám bệnh', fallbackName: 'Bác sĩ' },
+		psychologist: { title: 'HỒ SƠ BỆNH ÁN TÂM LÝ', prefix: 'tam_ly_gia', manifestations: 'Đánh giá ban đầu', examination: 'Diễn tiến trong phiên khám', diagnosis: 'Triệu chứng & Hành vi', accompanying: 'Nhận định chung', plan: 'Kế hoạch can thiệp', signer: 'Tâm lý gia', fallbackName: 'Tâm lý gia' }
+	};
+
+	function buildMedicalRecordModel(options = {}) {
 		const role = options.role === 'psychologist' ? 'psychologist' : 'doctor';
-		const prefix = role === 'psychologist' ? 'tam_ly_gia' : 'bac_si';
-		const formSection = details[`${prefix}_kham_form_kham`] || {};
-		const historySection = details[`${prefix}_kham_tien_su`] || {};
-		const generalSection = details[`${prefix}_kham_kham_tong_quat`] || {};
-		const mentalSection = details[`${prefix}_kham_kham_tam_than`] || {};
-		const labSection = details[`${prefix}_kham_xet_nghiem`] || {};
-		const appointment = options.appointment || {};
-		const prescriptionData = options.prescriptionData || {};
-		const relatives = options.relatives || [];
-		const title = role === 'psychologist' ? 'HỒ SƠ BỆNH ÁN TÂM LÝ' : 'HỒ SƠ BỆNH ÁN';
-		const patientAddress = buildAddress(patient);
-		const age = formatAge(patient.date_of_birth, history.examination_date);
-		const mainReason = getField(formSection, 'main_reason', history.main_reason || '');
-		const personalHistory = formatHistoryEntries(patient.physical_history);
-		const familyHistory = formatHistoryEntries(patient.family_history);
-		const medicalHistory = getField(historySection, 'medical_history', '');
-		const generalManifestations = role === 'doctor'
-			? getField(generalSection, 'bieu_hien_chung', '')
-			: getField(mentalSection, 'danh_gia_ban_dau', '');
-		const generalExamination = role === 'doctor'
-			? getField(generalSection, 'general_examination', '')
-			: getField(mentalSection, 'dien_tien_trong_phien_kham', '');
-		const diagnosis = role === 'doctor' ? history.diagnosis || '' : history.psychologist_summary || '';
-		const accompanyingDiagnosis = role === 'doctor'
-			? history.benh_kem_theo || ''
-			: getField(formSection, 'nhan_dinh_chung', '');
-		const treatmentPlan = role === 'doctor'
-			? history.treatment_plan || ''
-			: getField(formSection, 'ke_hoach_can_thiep', '');
-		const vitalItems = [
+		const labels = MEDICAL_RECORD_LABELS[role];
+		const details = options.examinationDetailsBySection || {};
+		const section = name => details[`${labels.prefix}_kham_${name}`] || {};
+		const history = options.history || {};
+		const formSection = section('form_kham');
+		const generalSection = section('kham_tong_quat');
+		const mentalSection = section('kham_tam_than');
+		const isDoctor = role === 'doctor';
+		return {
+			role, labels, isDoctor, history,
+			patient: options.patient || {},
+			appointment: options.appointment || {},
+			prescriptionData: options.prescriptionData || {},
+			relatives: options.relatives || [],
+			clinicInfo: options.clinicInfo || getClinicInfo(),
+			generalSection, mentalSection,
+			labSection: section('xet_nghiem'),
+			mainReason: getField(formSection, 'main_reason', history.main_reason || ''),
+			medicalHistory: getField(section('tien_su'), 'medical_history', ''),
+			...buildMedicalRecordRoleFields(isDoctor, { formSection, generalSection, mentalSection }, history)
+		};
+	}
+
+	function buildMedicalRecordRoleFields(isDoctor, sections, history) {
+		const { formSection, generalSection, mentalSection } = sections;
+		if (isDoctor) {
+			return {
+				generalManifestations: getField(generalSection, 'bieu_hien_chung', ''),
+				generalExamination: getField(generalSection, 'general_examination', ''),
+				diagnosis: history.diagnosis || '',
+				accompanyingDiagnosis: history.benh_kem_theo || '',
+				treatmentPlan: history.treatment_plan || ''
+			};
+		}
+		return {
+			generalManifestations: getField(mentalSection, 'danh_gia_ban_dau', ''),
+			generalExamination: getField(mentalSection, 'dien_tien_trong_phien_kham', ''),
+			diagnosis: history.psychologist_summary || '',
+			accompanyingDiagnosis: getField(formSection, 'nhan_dinh_chung', ''),
+			treatmentPlan: getField(formSection, 'ke_hoach_can_thiep', '')
+		};
+	}
+
+	function buildMedicalRecordVitals(history) {
+		return [
 			['Mạch', history.pulse, 'lần/phút'],
 			['Huyết áp', history.blood_pressure, 'mmHg'],
 			['Chiều cao', history.height, 'cm'],
@@ -368,27 +396,17 @@
 			['Nhịp thở', history.breathing, 'lần/phút'],
 			['BMI', history.bmi, '']
 		].map(([label, value, unit]) => `${label}: ${value ? `${escapeHtml(value)}${unit === '°C' ? '' : ' '}${unit}`.trim() : 'Chưa ghi nhận'}`).join(', ');
-		const organFields = [
-			['Tuần hoàn', 'circulation'], ['Tiêu hoá', 'digestive'],
-			['Thận-tiết niệu-sinh dục', 'renal_urogenital'], ['Cơ-xương-khớp', 'musculoskeletal'],
-			['Tai-mũi-họng', 'ent'], ['Nội tiết-dinh dưỡng', 'endocrine_nutrition_others'],
-			['Thần kinh', 'neurological']
-		];
-		const mentalFields = [
-			['Ý thức định hướng', 'orientation'], ['Tình cảm, cảm xúc', 'emotions'],
-			['Tri giác', 'perception'], ['Tư duy', 'thought'], ['Hành vi tác phong', 'behavior'],
-			['Trí nhớ', 'memory'], ['Tập trung - chú ý', 'attention'], ['Trí năng', 'intelligence']
-		];
-		const prescriptionType = prescriptionData.prescriptions?.[0]?.type
-			|| prescriptionData.prescription_type || prescriptionData.type || '';
-		const doctorName = history.doctor?.full_name || (role === 'doctor' ? 'Bác sĩ' : 'Tâm lý gia');
-		const medicinesHtml = buildMedicineRows(prescriptionData);
+	}
 
+	function buildMedicalRecordFieldLines(fields, sectionData) {
+		return fields.map(([label, key]) => `<div class="medical-record-line medical-record-line--compact">+ ${label}: ${formatMultiline(getField(sectionData, key, ''))}</div>`).join('');
+	}
+
+	function buildMedicalRecordAdminHtml(model) {
+		const { patient, appointment } = model;
+		const patientAddress = buildAddress(patient);
+		const age = formatAge(patient.date_of_birth, model.history.examination_date);
 		return `
-			<div class="prescription-preview prescription-preview--document">
-				${buildClinicHeader(options.clinicInfo || getClinicInfo(), patient.patient_code)}
-				<div class="prescription-gradient-separator"></div>
-				<h3 class="prescription-preview__title prescription-preview__title--document">${title}</h3>
 				<div class="medical-record-section">
 					<h6 class="medical-record-section-title">I. HÀNH CHÍNH</h6>
 					<div class="medical-record-admin-grid">
@@ -412,56 +430,92 @@
 							<div class="medical-record-line medical-record-line--tight"><strong>Thẻ BHYT:</strong> ${escapeHtml(patient.insurance_card || patient.insurance || '')}</div>
 						</div>
 					</div>
-				</div>
+				</div>`;
+	}
+
+	function buildMedicalRecordInquiryHtml(model) {
+		const { patient, history } = model;
+		return `
 				<div class="medical-record-section">
 					<h6 class="medical-record-section-title">II. HỎI BỆNH</h6>
-					<div class="medical-record-line"><strong>Lý do chính đến khám:</strong> ${formatMultiline(mainReason)}</div>
+					<div class="medical-record-line"><strong>Lý do chính đến khám:</strong> ${formatMultiline(model.mainReason)}</div>
 					<div class="medical-record-line"><strong>Triệu chứng chính:</strong> ${formatMultiline(history.main_symptoms || '')}</div>
-					<div class="medical-record-line"><strong>Đến khám cùng:</strong> ${escapeHtml(buildRelativeText(relatives))}</div>
+					<div class="medical-record-line"><strong>Đến khám cùng:</strong> ${escapeHtml(buildRelativeText(model.relatives))}</div>
 					<div class="medical-record-block"><strong>Tiền sử bệnh:</strong><div class="medical-record-indent">
-						<div class="medical-record-line medical-record-line--compact"><strong>+ Bản thân:</strong> ${escapeHtml(personalHistory)}</div>
-						<div class="medical-record-line medical-record-line--compact"><strong>+ Gia đình:</strong> ${escapeHtml(familyHistory)}</div>
+						<div class="medical-record-line medical-record-line--compact"><strong>+ Bản thân:</strong> ${escapeHtml(formatHistoryEntries(patient.physical_history))}</div>
+						<div class="medical-record-line medical-record-line--compact"><strong>+ Gia đình:</strong> ${escapeHtml(formatHistoryEntries(patient.family_history))}</div>
 					</div></div>
-				</div>
-				<div class="medical-record-section">
-					<h6 class="medical-record-section-title">III. KHÁM BỆNH</h6>
-					<div class="medical-record-section-title"><strong>Sinh hiệu:</strong> ${vitalItems}</div>
-					<div class="medical-record-line"><strong>Bệnh sử:</strong> ${formatMultiline(medicalHistory)}</div>
-					<div class="medical-record-line"><strong>${role === 'doctor' ? 'Biểu hiện chung' : 'Đánh giá ban đầu'}:</strong> ${formatMultiline(generalManifestations)}</div>
-					<div class="medical-record-block"><strong>${role === 'doctor' ? 'KQ khám toàn thân' : 'Diễn tiến trong phiên khám'}:</strong> ${formatMultiline(generalExamination)}
-						${role === 'doctor' ? `
-						<div class="medical-record-indent medical-record-examination-grid">
+				</div>`;
+	}
+
+	const MEDICAL_RECORD_DETAIL_LEAD = '\n\t\t\t\t\t\t\n\t\t\t\t\t\t';
+
+	function buildMedicalRecordExaminationDetailHtml(model) {
+		const mental = buildMedicalRecordFieldLines(MEDICAL_RECORD_MENTAL_FIELDS, model.mentalSection);
+		if (model.isDoctor) {
+			return `${MEDICAL_RECORD_DETAIL_LEAD}<div class="medical-record-indent medical-record-examination-grid">
 							<div class="medical-record-examination-group">
 								<div class="medical-record-subtitle"><strong>- Các cơ quan:</strong></div>
-								<div class="medical-record-indent-lg">${organFields.map(([label, key]) => `<div class="medical-record-line medical-record-line--compact">+ ${label}: ${formatMultiline(getField(generalSection, key, ''))}</div>`).join('')}</div>
+								<div class="medical-record-indent-lg">${buildMedicalRecordFieldLines(MEDICAL_RECORD_ORGAN_FIELDS, model.generalSection)}</div>
 							</div>
 							<div class="medical-record-examination-group">
 								<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
-								<div class="medical-record-indent-lg">${mentalFields.map(([label, key]) => `<div class="medical-record-line medical-record-line--compact">+ ${label}: ${formatMultiline(getField(mentalSection, key, ''))}</div>`).join('')}</div>
+								<div class="medical-record-indent-lg">${mental}</div>
 							</div>
-						</div>` : `
-						<div class="medical-record-indent">
+						</div>`;
+		}
+		return `${MEDICAL_RECORD_DETAIL_LEAD}<div class="medical-record-indent">
 							<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
-							<div class="medical-record-indent-lg">${mentalFields.map(([label, key]) => `<div class="medical-record-line medical-record-line--compact">+ ${label}: ${formatMultiline(getField(mentalSection, key, ''))}</div>`).join('')}</div>
-						</div>`}
+							<div class="medical-record-indent-lg">${mental}</div>
+						</div>`;
+	}
+
+	function buildMedicalRecordExaminationHtml(model) {
+		const { labels, isDoctor, patient } = model;
+		return `
+				<div class="medical-record-section">
+					<h6 class="medical-record-section-title">III. KHÁM BỆNH</h6>
+					<div class="medical-record-section-title"><strong>Sinh hiệu:</strong> ${buildMedicalRecordVitals(model.history)}</div>
+					<div class="medical-record-line"><strong>Bệnh sử:</strong> ${formatMultiline(model.medicalHistory)}</div>
+					<div class="medical-record-line"><strong>${labels.manifestations}:</strong> ${formatMultiline(model.generalManifestations)}</div>
+					<div class="medical-record-block"><strong>${labels.examination}:</strong> ${formatMultiline(model.generalExamination)}${buildMedicalRecordExaminationDetailHtml(model)}
 					</div>
-					${role === 'doctor' ? `<div class="medical-record-line"><strong>- Các xét nghiệm cận lâm sàng cần làm:</strong> ${formatMultiline(getField(labSection, 'required_tests', ''))}</div>` : ''}
-					<div class="medical-record-line"><strong>${role === 'doctor' ? 'Chẩn đoán (ICD-10)' : 'Triệu chứng & Hành vi'}:</strong> ${formatMultiline(diagnosis)}</div>
-					<div class="medical-record-line"><strong>${role === 'doctor' ? 'Bệnh kèm theo' : 'Nhận định chung'}:</strong> ${formatMultiline(accompanyingDiagnosis)}</div>
-					<div class="medical-record-line"><strong>${role === 'doctor' ? 'Kết luận & Hướng Đ.trị' : 'Kế hoạch can thiệp'}:</strong> ${formatMultiline(treatmentPlan)}</div>
-					${role === 'doctor' ? `<div class="medical-record-line"><strong>Dị ứng thuốc:</strong> ${escapeHtml(formatAllergies(patient.allergies))}</div>` : ''}
-				</div>
-				${role === 'doctor' ? `<div class="medical-record-section">
+					${isDoctor ? `<div class="medical-record-line"><strong>- Các xét nghiệm cận lâm sàng cần làm:</strong> ${formatMultiline(getField(model.labSection, 'required_tests', ''))}</div>` : ''}
+					<div class="medical-record-line"><strong>${labels.diagnosis}:</strong> ${formatMultiline(model.diagnosis)}</div>
+					<div class="medical-record-line"><strong>${labels.accompanying}:</strong> ${formatMultiline(model.accompanyingDiagnosis)}</div>
+					<div class="medical-record-line"><strong>${labels.plan}:</strong> ${formatMultiline(model.treatmentPlan)}</div>
+					${isDoctor ? `<div class="medical-record-line"><strong>Dị ứng thuốc:</strong> ${escapeHtml(formatAllergies(patient.allergies))}</div>` : ''}
+				</div>`;
+	}
+
+	function buildMedicalRecordTreatmentHtml(model) {
+		if (!model.isDoctor) return '';
+		const { prescriptionData, history } = model;
+		const prescriptionType = prescriptionData.prescriptions?.[0]?.type
+			|| prescriptionData.prescription_type || prescriptionData.type || '';
+		return `<div class="medical-record-section">
 					<h6 class="medical-record-section-title">IV. ĐIỀU TRỊ</h6>
 					<div class="medical-record-block"><strong>Loại đơn thuốc:</strong> ${escapeHtml(formatPrescriptionType(prescriptionType))}</div>
 					<div class="medical-record-block"><strong>Số ngày thuốc:</strong> ${escapeHtml(resolvePrescriptionDays(prescriptionData))}</div>
 					<div class="medical-record-block"><strong>Hẹn ngày tái khám:</strong> ${formatDate(prescriptionData.re_examination_date)}</div>
-					<div class="medical-record-treatment-list"><strong>Danh sách thuốc:</strong>${medicinesHtml}</div>
+					<div class="medical-record-treatment-list"><strong>Danh sách thuốc:</strong>${buildMedicineRows(prescriptionData)}</div>
 					<div class="medical-record-loi-dan"><strong>Lời dặn:</strong><div class="medical-record-loi-dan-text">${formatMultiline(history.loi_dan || '')}</div></div>
-				</div>` : ''}
+				</div>`;
+	}
+
+	function buildMedicalRecordHTML(options = {}) {
+		const model = buildMedicalRecordModel(options);
+		const { labels, history, patient } = model;
+		const doctorName = history.doctor?.full_name || labels.fallbackName;
+		return `
+			<div class="prescription-preview prescription-preview--document">
+				${buildClinicHeader(model.clinicInfo, patient.patient_code)}
+				<div class="prescription-gradient-separator"></div>
+				<h3 class="prescription-preview__title prescription-preview__title--document">${labels.title}</h3>${buildMedicalRecordAdminHtml(model)}${buildMedicalRecordInquiryHtml(model)}${buildMedicalRecordExaminationHtml(model)}
+				${buildMedicalRecordTreatmentHtml(model)}
 				<div class="prescription-preview__signature prescription-preview__signature--avoid-break">
 					<div>${formatSignatureDate(history.examination_date)}</div>
-					<div class="prescription-preview__signature-role">${role === 'doctor' ? 'Bác sĩ khám bệnh' : 'Tâm lý gia'}</div>
+					<div class="prescription-preview__signature-role">${labels.signer}</div>
 					<div class="prescription-preview__signature-name">${escapeHtml(doctorName)}</div>
 				</div>
 			</div>`;

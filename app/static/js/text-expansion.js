@@ -1,8 +1,32 @@
-// Text Expansion JavaScript - Áp dụng toàn hệ thống
+(function (window, document) {
+'use strict';
 
 // Global variables
 let textExpansions = {};
 let isLoaded = false;
+let loadRevision = 0;
+let cachedSessionRevision = null;
+
+function clearExpansionCache() {
+    loadRevision += 1;
+    textExpansions = {};
+    isLoaded = false;
+    cachedSessionRevision = null;
+}
+
+function isExpansionCacheCurrent() {
+    const owner = window.QLPKApiTransport?.session?.owner;
+    if (isLoaded && owner && (owner.snapshot().status !== 'authenticated' || owner.snapshot().revision !== cachedSessionRevision)) clearExpansionCache();
+    return isLoaded;
+}
+
+window.QLPKApiTransport?.session?.owner.subscribe(current => {
+    if (isLoaded || !['unknown', 'loading', 'authenticated'].includes(current.status)) clearExpansionCache();
+});
+window.addEventListener('storage', event => {
+    if (!event.key || ['qlpk_token', 'token', 'qlpk_user'].includes(event.key)) clearExpansionCache();
+});
+document.addEventListener('qlpk:logout:confirmed', clearExpansionCache);
 
 // Initialize text expansion functionality
 function initializeTextExpansion() {
@@ -64,38 +88,32 @@ if (typeof jQuery !== 'undefined') {
 
 // Load text expansions from server
 async function loadTextExpansions() {
+    const revision = ++loadRevision;
     try {
-        const token = localStorage.getItem('qlpk_token');
-        if (!token) {
-            console.warn('Text Expansion: No token found, skipping load');
-            return;
-        }
-        
-        const response = await fetch('/api/text-expansions/active', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetch('/api/text-expansions/active', { method: 'GET' });
         
         if (response.ok) {
             const result = await response.json();
+            if (revision !== loadRevision) return;
             if (result.success && result.data) {
 				// Clear existing data first
 				textExpansions = {};
 				// Copy all data from result
 				Object.assign(textExpansions, result.data);
 				isLoaded = true;
+				cachedSessionRevision = window.QLPKApiTransport?.session?.owner.snapshot().revision ?? null;
 			} else {
 				textExpansions = {};
 				isLoaded = false;
 			}
         } else {
+            if (revision !== loadRevision) return;
             console.warn('Text Expansion: API request failed', response.status);
             textExpansions = {};
             isLoaded = false;
         }
     } catch (error) {
+        if (revision !== loadRevision) return;
         console.error('Text Expansion: Error loading expansions', error);
         textExpansions = {};
         isLoaded = false;
@@ -116,7 +134,7 @@ function handleTextExpansion(e, $element) {
     }
     
     // Check if textExpansions is loaded and not empty
-    if (!isLoaded || !textExpansions || Object.keys(textExpansions).length === 0) {
+    if (!isExpansionCacheCurrent() || !textExpansions || Object.keys(textExpansions).length === 0) {
         return;
     }
     
@@ -188,6 +206,7 @@ function showExpansionFeedback($element, abbreviation, fullText) {
 
 // Manual text expansion function (can be called programmatically)
 function expandText($element) {
+    if (!isExpansionCacheCurrent()) return false;
     const currentValue = $element.val();
     const cursorPosition = $element[0].selectionStart;
     
@@ -213,23 +232,26 @@ function expandText($element) {
 
 // Get all available abbreviations
 function getAvailableAbbreviations() {
+    isExpansionCacheCurrent();
     return Object.keys(textExpansions);
 }
 
 // Check if an abbreviation exists
 function hasAbbreviation(abbreviation) {
+    isExpansionCacheCurrent();
     return abbreviation in textExpansions;
 }
 
 // Get full text for an abbreviation
 function getFullText(abbreviation) {
+    isExpansionCacheCurrent();
     return textExpansions[abbreviation] || null;
 }
 
 // Refresh text expansions (useful after admin updates)
 function refreshTextExpansions() {
-    isLoaded = false;
-    loadTextExpansions();
+    clearExpansionCache();
+    return loadTextExpansions();
 }
 
 // Add custom abbreviation (for runtime additions)
@@ -251,6 +273,7 @@ window.textExpansion = {
     refreshTextExpansions: refreshTextExpansions,
     addCustomAbbreviation: addCustomAbbreviation,
     removeCustomAbbreviation: removeCustomAbbreviation,
-    isLoaded: () => isLoaded,
-    getCount: () => Object.keys(textExpansions).length
+    isLoaded: isExpansionCacheCurrent,
+    getCount: () => getAvailableAbbreviations().length
 };
+})(window, document);

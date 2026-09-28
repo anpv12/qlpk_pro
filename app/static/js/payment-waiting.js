@@ -54,16 +54,6 @@ function getSafeApiErrorMessage(xhr, fallback = 'Không thể xử lý lúc này
 	return window.QLPKUserFeedback?.resolveError(xhr, { fallback }) || fallback;
 }
 
-function getStoredAuthToken() {
-	return localStorage.getItem('qlpk_token') || localStorage.getItem('token') || sessionStorage.getItem('qlpk_token') || '';
-}
-
-function getAuthorizationHeaderValue() {
-	const token = getStoredAuthToken();
-	if (!token) return '';
-	return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-}
-
 async function openInvoiceWindow(examinationId) {
 	const invoiceWindow = window.open('', '_blank');
 	if (!invoiceWindow) {
@@ -76,10 +66,7 @@ async function openInvoiceWindow(examinationId) {
 	invoiceWindow.document.close();
 
 	try {
-		const authHeader = getAuthorizationHeaderValue();
-		const response = await fetch(`/payment-waiting/invoice/${encodeURIComponent(examinationId)}`, {
-			headers: authHeader ? { 'Authorization': authHeader } : {}
-		});
+		const response = await fetch(`/payment-waiting/invoice/${encodeURIComponent(examinationId)}`);
 
 		if (!response.ok) {
 			throw new Error('Không thể tải hóa đơn');
@@ -334,9 +321,6 @@ function loadPaymentData() {
 	$.ajax({
 		url: '/api/payment-waiting',
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-		},
 		data: {
 			page: currentPage,
 			per_page: perPage,
@@ -536,9 +520,8 @@ function editPayment(paymentId) {
 function loadExaminationDetailModal(paymentId) {
 	financialSummaryCache = null;
 
-	// Check if token exists
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		$('#examinationDetailContent').html(`
             <div class="text-center py-5">
                 <i class="bi bi-exclamation-triangle text-danger pw-error-icon"></i>
@@ -575,9 +558,6 @@ function loadExaminationDetailModal(paymentId) {
 	$.ajax({
 		url: `/api/examination-detail/${paymentId}`,
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (data) {
 			// Lưu examination ID vào modal và global variable
 			$('#examinationDetailModal').data('examination-id', paymentId);
@@ -854,17 +834,14 @@ function renderExaminationDetailContent(data, examinationId) {
 
 // Load services for modal
 function loadServicesForModal(examinationId) {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		return;
 	}
 
 	$.ajax({
 		url: `/api/examination-detail/${examinationId}/services`,
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (data) {
 			renderServicesTable(data);
 			loadFinancialSummaryFromDB(examinationId);
@@ -877,17 +854,14 @@ function loadServicesForModal(examinationId) {
 
 // Load prescriptions for modal
 function loadPrescriptionsForModal(examinationId) {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		return;
 	}
 
 	$.ajax({
 		url: `/api/prescription/appointment/${examinationId}`,
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (data) {
 			const rows = (data?.medicines || []).map(medicine => ({
 				medicine_name: medicine.name || '',
@@ -1097,8 +1071,8 @@ function calculateFinancials() {
 
 // Load financial summary từ database
 function loadFinancialSummaryFromDB(examinationId) {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		calculateFromServicesTable();
 		return;
 	}
@@ -1106,9 +1080,6 @@ function loadFinancialSummaryFromDB(examinationId) {
 	$.ajax({
 		url: `/api/examination-detail/${examinationId}/financial-summary`,
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (data) {
 			// Sử dụng dữ liệu từ database
 			const subtotalPreTax = parseFloat(data.subtotal_pre_tax) || 0;
@@ -1252,7 +1223,6 @@ function saveNewService() {
 		url: `/api/examination-detail/${examinationId}/services`,
 		method: 'POST',
 		headers: {
-			'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1316,7 +1286,7 @@ function buildEditServiceModalHtml(viewModel) {
 		safeTaxPercent
 	} = viewModel;
 	return `
-        <div class="modal fade" id="editServiceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal fade qlpk-edit-service-modal" id="editServiceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -1441,7 +1411,6 @@ function saveEditService(serviceId) {
 		url: `/api/examination-detail/${examinationId}/services/${serviceId}`,
 		method: 'PUT',
 		headers: {
-			'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1491,9 +1460,6 @@ function deleteService(serviceId) {
 			$.ajax({
 				url: `/api/examination-detail/${examinationId}/services/${serviceId}`,
 				method: 'DELETE',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
 				success: function (response) {
 					showCustomToast('success', 'Xóa dịch vụ thành công');
 					financialSummaryCache = null;
@@ -1512,8 +1478,8 @@ function deleteService(serviceId) {
 // Confirm invoice
 function confirmInvoice(examinationId) {
 	if (isConfirmInvoiceSubmitting) return;
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại');
 		return;
 	}
@@ -1560,7 +1526,6 @@ function confirmInvoice(examinationId) {
 				url: `/api/payment-waiting/${examinationId}/confirm`,
 				method: 'PUT',
 				headers: {
-					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify({
@@ -1637,7 +1602,7 @@ function deletePayment(paymentId) {
 
 function buildActionSelectionModalHtml(safePaymentId) {
 	return `
-        <div class="modal fade" id="actionSelectionModal" tabindex="-1" aria-labelledby="actionSelectionModalLabel" aria-hidden="true">
+        <div class="modal fade qlpk-action-selection-modal" id="actionSelectionModal" tabindex="-1" aria-labelledby="actionSelectionModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -1746,14 +1711,12 @@ function returnToAppointment(paymentId) {
 
 // Thực hiện trả về lễ tân
 function executeReturnToReceptionist(paymentId) {
-	const token = localStorage.getItem('qlpk_token');
 
 	// Sử dụng API update status trực tiếp: WAITING_TRANSFER (chờ chuyển khám)
 	$.ajax({
 		url: `/examinations/${paymentId}/status`,
 		method: 'PUT',
 		headers: {
-			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1772,14 +1735,12 @@ function executeReturnToReceptionist(paymentId) {
 
 // Thực hiện trả về bác sĩ
 function executeReturnToDoctor(paymentId) {
-	const token = localStorage.getItem('qlpk_token');
 
 	// Sử dụng API update status trực tiếp: DOCTOR_EXAM (bác sĩ khám)
 	$.ajax({
 		url: `/examinations/${paymentId}/status`,
 		method: 'PUT',
 		headers: {
-			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1798,14 +1759,12 @@ function executeReturnToDoctor(paymentId) {
 
 // Thực hiện trả về tâm lý gia
 function executeReturnToPsychologist(paymentId) {
-	const token = localStorage.getItem('qlpk_token');
 
 	// Sử dụng API update status trực tiếp: PSYCHOLOGIST_EXAM (tâm lý gia khám)
 	$.ajax({
 		url: `/examinations/${paymentId}/status`,
 		method: 'PUT',
 		headers: {
-			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1824,7 +1783,6 @@ function executeReturnToPsychologist(paymentId) {
 
 // Thực hiện trả về lịch hẹn
 function executeReturnToAppointment(paymentId) {
-	const token = localStorage.getItem('qlpk_token');
 
 	// Tạm thời dùng cùng WAITING_TRANSFER như luồng trả lễ tân theo backend hiện tại.
 	// Nếu backend tách trạng thái lịch hẹn riêng, cập nhật lại mapping tại đây.
@@ -1832,7 +1790,6 @@ function executeReturnToAppointment(paymentId) {
 		url: `/examinations/${paymentId}/status`,
 		method: 'PUT',
 		headers: {
-			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({
@@ -1860,7 +1817,6 @@ function exportPaymentData() {
 		url: '/api/payment-waiting/export',
 		method: 'POST',
 		headers: {
-			'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify({

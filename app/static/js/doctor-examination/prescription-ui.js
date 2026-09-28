@@ -36,17 +36,27 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 	};
 	const instances = new WeakMap();
 
+	const DEPENDENCY_MODULES = {
+		model: 'prescriptionModel',
+		rows: 'prescriptionRows',
+		history: 'prescriptionHistory',
+		reExam: 'prescriptionReExam',
+		medicineSearch: 'prescriptionMedicineSearch'
+	};
+
+	function resolveDependencies(options) {
+		const registry = window.QLPKDoctorModuleRegistry;
+		const RUNTIME = options.runtime || registry.require('supportRuntime');
+		if (!RUNTIME) throw new Error('Thiếu prescription support runtime');
+		const resolved = Object.fromEntries(Object.entries(DEPENDENCY_MODULES).map(([key, name]) => [key, options[key] || registry?.get(name)]));
+		if (Object.values(resolved).some(module => !module)) throw new Error('Thiếu prescription dependencies');
+		return { RUNTIME, ...resolved };
+	}
+
 	function create(options = {}) {
 		const config = options.config || {};
 		const registry = window.QLPKDoctorModuleRegistry;
-		const RUNTIME = options.runtime || registry.require('supportRuntime');
-		const MODEL = options.model || registry?.get('prescriptionModel');
-		const ROWS = options.rows || registry?.get('prescriptionRows');
-		const HISTORY = options.history || registry?.get('prescriptionHistory');
-		const REEXAM = options.reExam || registry?.get('prescriptionReExam');
-		const MEDICINE_SEARCH = options.medicineSearch || registry?.get('prescriptionMedicineSearch');
-		if (!RUNTIME) throw new Error('Thiếu prescription support runtime');
-		if (!MODEL || !ROWS || !HISTORY || !REEXAM || !MEDICINE_SEARCH) throw new Error('Thiếu prescription dependencies');
+		const { RUNTIME, model: MODEL, rows: ROWS, history: HISTORY, reExam: REEXAM, medicineSearch: MEDICINE_SEARCH } = resolveDependencies(options);
 
 		const dom = { ...DEFAULT_DOM, ...(config.dom || {}) };
 		const endpoints = { ...DEFAULT_ENDPOINTS, ...(config.endpoints || {}) };
@@ -439,11 +449,19 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			}
 		});
 	}
+	function normalizeStoredQuantity(rawQuantity) {
+		if (rawQuantity === undefined || rawQuantity === null || rawQuantity === '') return 0;
+		return roundPrescriptionQuantity(toNumber(rawQuantity, 0));
+	}
+
+	function resolveStoredStockQuantity(item, batchAllocation) {
+		return item.current_stock_quantity ?? item.stock_quantity ?? batchAllocation?.aggregate_stock ?? null;
+	}
+
 	function normalizePrescriptionRow(item = {}, externalFallback = false) {
 		const medicineId = normalizeId(item.medicine_id || item.id);
 		const isExternal = item.is_external === undefined ? Boolean(externalFallback) : Boolean(item.is_external);
 		const usagePayload = parseMedicineUsage(item.usage || '', STATE.prescriptionUsageMode);
-		const rawQuantity = item.quantity;
 		const batchAllocation = item.batch_allocation && typeof item.batch_allocation === 'object'
 			? JSON.parse(JSON.stringify(item.batch_allocation))
 			: null;
@@ -452,9 +470,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			medicineId: isExternal ? null : medicineId,
 			name: textOf(item.name || item.medicine_name),
 			genericName: textOf(item.generic_name || item.active_ingredient),
-			quantity: rawQuantity === undefined || rawQuantity === null || rawQuantity === ''
-				? 0
-				: roundPrescriptionQuantity(toNumber(rawQuantity, 0)),
+			quantity: normalizeStoredQuantity(item.quantity),
 			unit: textOf(item.unit),
 			strength: textOf(item.strength),
 			route: textOf(item.route || item.administration_method),
@@ -465,9 +481,7 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			),
 			schedule: usagePayload.schedule || normalizeSchedulePayload({}, STATE.prescriptionUsageMode),
 			unitPrice: toNumber(item.unit_price ?? item.price, 0),
-			currentStockQuantity: isExternal
-				? null
-				: (item.current_stock_quantity ?? item.stock_quantity ?? batchAllocation?.aggregate_stock ?? null),
+			currentStockQuantity: isExternal ? null : resolveStoredStockQuantity(item, batchAllocation),
 			isExternal,
 			categoryType: textOf(item.category_type || 'DRUG'),
 			prescriptionType: normalizePrescriptionType(item.prescription_type),
@@ -657,6 +671,28 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		});
 	}
 
+	function buildPrescriptionCodeMap(data) {
+		const codes = {};
+		(data.prescriptions || []).forEach(prescription => {
+			const prescriptionType = prescription && (prescription.type || prescription.prescription_type);
+			if (prescriptionType && prescription.prescription_code) {
+				codes[prescriptionType] = prescription.prescription_code;
+			}
+		});
+		if (data.prescription_code && !Object.keys(codes).length) codes.BASIC = data.prescription_code;
+		return codes;
+	}
+
+	function applyLoadedReExamination(doc, data) {
+		STATE.reExaminationAppointmentId = normalizeId(data.re_examination_appointment_id);
+		STATE.reExaminationDateTime = buildDateTimeInputValue(data.re_examination_date, data.re_examination_time) || '';
+		STATE.reExaminationStatus = textOf(data.re_examination_status) || null;
+		STATE.reExaminationSnapshot = data.re_examination_snapshot || null;
+		STATE.reExaminationDraftSelection = STATE.reExaminationSnapshot?.selection || null;
+		STATE.reExaminationError = '';
+		setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
+	}
+
 	async function loadPrescription(context) {
 		const { doc, token, appointmentId } = context;
 		try {
@@ -668,25 +704,10 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			STATE.prescriptionRows = Array.isArray(data && data.medicines)
 				? data.medicines.map(item => normalizePrescriptionRow(item))
 				: [];
-			STATE.prescriptionCodesByType = {};
-			(data.prescriptions || []).forEach(prescription => {
-				const prescriptionType = prescription && (prescription.type || prescription.prescription_type);
-				if (prescriptionType && prescription.prescription_code) {
-					STATE.prescriptionCodesByType[prescriptionType] = prescription.prescription_code;
-				}
-			});
-			if (data.prescription_code && !Object.keys(STATE.prescriptionCodesByType).length) {
-				STATE.prescriptionCodesByType.BASIC = data.prescription_code;
-			}
+			STATE.prescriptionCodesByType = buildPrescriptionCodeMap(data);
 			STATE.preservedGlobalUsage = usageState.globalUsage || '';
 			setValue(doc, 'doctorPrescriptionMedicineDays', usageState.medicineDays || '');
-			STATE.reExaminationAppointmentId = normalizeId(data.re_examination_appointment_id);
-			STATE.reExaminationDateTime = buildDateTimeInputValue(data.re_examination_date, data.re_examination_time) || '';
-			STATE.reExaminationStatus = textOf(data.re_examination_status) || null;
-			STATE.reExaminationSnapshot = data.re_examination_snapshot || null;
-			STATE.reExaminationDraftSelection = STATE.reExaminationSnapshot?.selection || null;
-			STATE.reExaminationError = '';
-			setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
+			applyLoadedReExamination(doc, data);
 			syncPrescriptionRowQuantities(doc, { markAllocationStale: false });
 			STATE.prescriptionLoaded = true;
 			syncPrescriptionReExamControls(doc);
@@ -789,10 +810,8 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 		STATE.reExaminationStatus = reExamSync.status || null;
 	}
 
-	async function savePrescription(options = {}) {
-		const doc = getDocument(options);
-		const appointmentId = getCurrentAppointmentId();
-		if (!appointmentId) return { skipped: true, reason: 'missing-appointment' };
+	function getPrescriptionSaveSkip(doc) {
+		if (!getCurrentAppointmentId()) return { skipped: true, reason: 'missing-appointment' };
 		if (STATE.isLoading && STATE.isLoading()) return { skipped: true, reason: 'loading' };
 		if (!STATE.prescriptionLoaded) {
 			const error = new Error('Chưa tải xong đơn thuốc của lượt khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.');
@@ -802,6 +821,58 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			throw error;
 		}
 		if (STATE.prescriptionSaving) return { skipped: true, reason: 'saving', module: 'prescription' };
+		return null;
+	}
+
+	function applySavedPrescription(doc, data, revision, options) {
+		STATE.prescriptionCodesByType = data && data.prescription_codes_by_type ? data.prescription_codes_by_type : STATE.prescriptionCodesByType;
+		applyStockAllocationStates(data && data.stock_allocation_states);
+		const hasNewChanges = !CHANGES.settle(revision);
+		applyReExaminationSyncState(data && data.re_examination_sync_result);
+		if (!hasNewChanges) {
+			STATE.reExaminationDraftSelection = STATE.reExaminationSnapshot?.selection || null;
+			setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
+		}
+		STATE.reExaminationError = '';
+		renderPrescriptionRows(doc);
+		updatePrescriptionFooter(doc);
+
+		setPrescriptionSaveStatus(
+			doc,
+			hasNewChanges ? 'dirty' : 'saved',
+			hasNewChanges ? 'Đã lưu bản trước · còn thay đổi' : 'Đã lưu'
+		);
+		showToast(
+			hasNewChanges ? 'info' : 'success',
+			hasNewChanges ? 'Đã lưu đơn thuốc trước đó; có thay đổi mới cần lưu lại.' : buildInventorySaveMessage(data),
+			options
+		);
+		return {
+			status: 'success',
+			module: 'prescription',
+			data,
+			hasNewChanges,
+			inventoryMessage: buildInventorySaveMessage(data)
+		};
+	}
+
+	function handlePrescriptionSaveError(doc, error) {
+		if (String(error.code || '').startsWith('re-examination-')) {
+			const current = error.payload?.re_examination_snapshot;
+			if (current && error.code === 're-examination-conflict') {
+				applyReExaminationSyncState(current);
+				STATE.reExaminationDraftSelection = current.selection || null;
+				setPrescriptionReExamDate(doc, current.datetime || '');
+			}
+			showReExaminationError(doc, error.payload?.detail || error.message);
+		}
+		setPrescriptionSaveStatus(doc, 'error', 'Lưu thất bại');
+	}
+
+	async function savePrescription(options = {}) {
+		const doc = getDocument(options);
+		const skip = getPrescriptionSaveSkip(doc);
+		if (skip) return skip;
 		validatePrescriptionBeforeSave(doc);
 
 		const revision = CHANGES.capture();
@@ -814,47 +885,9 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 				method: 'POST',
 				body: payload
 			});
-			STATE.prescriptionCodesByType = data && data.prescription_codes_by_type ? data.prescription_codes_by_type : STATE.prescriptionCodesByType;
-			applyStockAllocationStates(data && data.stock_allocation_states);
-			const reExamSync = data && data.re_examination_sync_result;
-			const hasNewChanges = !CHANGES.settle(revision);
-			applyReExaminationSyncState(reExamSync);
-			if (!hasNewChanges) {
-				STATE.reExaminationDraftSelection = STATE.reExaminationSnapshot?.selection || null;
-				setPrescriptionReExamDate(doc, STATE.reExaminationDateTime);
-			}
-			STATE.reExaminationError = '';
-			renderPrescriptionRows(doc);
-			updatePrescriptionFooter(doc);
-
-			setPrescriptionSaveStatus(
-				doc,
-				hasNewChanges ? 'dirty' : 'saved',
-				hasNewChanges ? 'Đã lưu bản trước · còn thay đổi' : 'Đã lưu'
-			);
-			showToast(
-				hasNewChanges ? 'info' : 'success',
-				hasNewChanges ? 'Đã lưu đơn thuốc trước đó; có thay đổi mới cần lưu lại.' : buildInventorySaveMessage(data),
-				options
-			);
-			return {
-				status: 'success',
-				module: 'prescription',
-				data,
-				hasNewChanges,
-				inventoryMessage: buildInventorySaveMessage(data)
-			};
+			return applySavedPrescription(doc, data, revision, options);
 		} catch (error) {
-			if (String(error.code || '').startsWith('re-examination-')) {
-				const current = error.payload?.re_examination_snapshot;
-				if (current && error.code === 're-examination-conflict') {
-					applyReExaminationSyncState(current);
-					STATE.reExaminationDraftSelection = current.selection || null;
-					setPrescriptionReExamDate(doc, current.datetime || '');
-				}
-				showReExaminationError(doc, error.payload?.detail || error.message);
-			}
-			setPrescriptionSaveStatus(doc, 'error', 'Lưu thất bại');
+			handlePrescriptionSaveError(doc, error);
 			throw error;
 		} finally {
 			STATE.prescriptionSaving = false;
@@ -960,53 +993,87 @@ import { createReExaminationCalendar } from './re-examination-calendar.js';
 			medicineSummary
 		};
 	}
+	const PRESCRIPTION_TIME_SLOT_FIELDS = ['morning', 'noon', 'afternoon', 'evening'];
+	const PRESCRIPTION_SCHEDULE_FIELDS = ['qtyPerTime', 'timesPerDay', ...PRESCRIPTION_TIME_SLOT_FIELDS];
+
+	function ensureRowSchedule(doc, row) {
+		row.schedule = normalizeSchedulePayload(row.schedule || {}, getCurrentPrescriptionUsageMode(doc));
+		return row.schedule;
+	}
+
+	function applyPrescriptionNameInput(doc, row, target) {
+		row.name = target.value.trim();
+		if (!row.isExternal) {
+			row.medicineId = null;
+			row.currentStockQuantity = null;
+			row.batchAllocation = null;
+			row.batchAllocationStale = false;
+		}
+		syncBatchAllocationStaleness();
+		updateBatchAllocationDisplays(doc);
+		SEARCH.search(target, row);
+		return true;
+	}
+
+	const PRESCRIPTION_FIELD_HANDLERS = new Map([
+		['name', applyPrescriptionNameInput],
+		['quantity', () => false],
+		['unit', (doc, row, target) => {
+			if (!row.isExternal) return false;
+			row.unit = target.value.trim();
+			return true;
+		}],
+		['unitPrice', (doc, row, target) => {
+			row.unitPrice = Math.max(0, toNumber(target.value, 0));
+			updatePrescriptionRowTotal(doc, row);
+			return true;
+		}],
+		['prescriptionType', (doc, row, target) => {
+			row.prescriptionType = normalizePrescriptionType(target.value);
+			return true;
+		}],
+		['qtyPerTime', (doc, row, target) => {
+			ensureRowSchedule(doc, row).times_per_day.qty_per_time = Math.max(0.001, parseDoseValue(target.value, 1) || 1);
+			return true;
+		}],
+		['timesPerDay', (doc, row, target) => {
+			ensureRowSchedule(doc, row).times_per_day.times_per_day = Math.max(1, toNumber(target.value, 1));
+			return true;
+		}],
+		['usageNote', (doc, row, target) => {
+			row.usageNote = target.value;
+			row.usageNoteMode = PRESCRIPTION_USAGE_NOTE_MODES.MANUAL;
+			return true;
+		}]
+	]);
+
+	function applyPrescriptionFieldInput(doc, row, target, field) {
+		if (PRESCRIPTION_TIME_SLOT_FIELDS.includes(field)) {
+			ensureRowSchedule(doc, row).time_slots[field] = Math.max(0, parseDoseValue(target.value, 0));
+			return true;
+		}
+		const handler = PRESCRIPTION_FIELD_HANDLERS.get(field);
+		if (handler) return handler(doc, row, target);
+		row[field] = target.value;
+		return true;
+	}
+
+	function syncAfterPrescriptionInput(doc, field) {
+		if (PRESCRIPTION_SCHEDULE_FIELDS.includes(field)) {
+			syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
+		} else if (['route', 'unit'].includes(field)) {
+			syncPrescriptionUsageNotes(doc);
+		}
+	}
+
 	function handlePrescriptionInput(doc, target) {
 		const rowUid = getRowUidFromTarget(target, '[data-prescription-row-id]', 'data-prescription-row-id');
 		const row = findPrescriptionRow(rowUid);
 		if (!row) return false;
 		const field = target.dataset.prescriptionField;
 		if (!field) return false;
-		if (field === 'name') {
-			row.name = target.value.trim();
-			if (!row.isExternal) {
-				row.medicineId = null;
-				row.currentStockQuantity = null;
-				row.batchAllocation = null;
-				row.batchAllocationStale = false;
-			}
-			syncBatchAllocationStaleness();
-			updateBatchAllocationDisplays(doc);
-			SEARCH.search(target, row);
-		} else if (field === 'quantity') {
-			return false;
-		} else if (field === 'unit') {
-			if (!row.isExternal) return false;
-			row.unit = target.value.trim();
-		} else if (field === 'unitPrice') {
-			row.unitPrice = Math.max(0, toNumber(target.value, 0));
-			updatePrescriptionRowTotal(doc, row);
-		} else if (field === 'prescriptionType') {
-			row.prescriptionType = normalizePrescriptionType(target.value);
-		} else if (field === 'qtyPerTime') {
-			row.schedule = normalizeSchedulePayload(row.schedule || {}, getCurrentPrescriptionUsageMode(doc));
-			row.schedule.times_per_day.qty_per_time = Math.max(0.001, parseDoseValue(target.value, 1) || 1);
-		} else if (field === 'timesPerDay') {
-			row.schedule = normalizeSchedulePayload(row.schedule || {}, getCurrentPrescriptionUsageMode(doc));
-			row.schedule.times_per_day.times_per_day = Math.max(1, toNumber(target.value, 1));
-		} else if (['morning', 'noon', 'afternoon', 'evening'].includes(field)) {
-			row.schedule = normalizeSchedulePayload(row.schedule || {}, getCurrentPrescriptionUsageMode(doc));
-			row.schedule.time_slots[field] = Math.max(0, parseDoseValue(target.value, 0));
-		} else if (field === 'usageNote') {
-			row.usageNote = target.value;
-			row.usageNoteMode = PRESCRIPTION_USAGE_NOTE_MODES.MANUAL;
-		} else {
-			row[field] = target.value;
-		}
-		if (['qtyPerTime', 'timesPerDay', 'morning', 'noon', 'afternoon', 'evening'].includes(field)) {
-			syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
-		} else if (['route', 'unit'].includes(field)) {
-			syncPrescriptionUsageNotes(doc);
-		}
+		if (!applyPrescriptionFieldInput(doc, row, target, field)) return false;
+		syncAfterPrescriptionInput(doc, field);
 		markPrescriptionDirty();
 		updatePrescriptionFooter(doc);
 		return true;

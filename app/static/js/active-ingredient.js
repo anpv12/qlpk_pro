@@ -6,15 +6,8 @@ let listRevision = 0;
 let totalItems = 0;
 const escapeHtml = window.QLPKSharedUtils.escapeHtml;
 
-function getAuthorizationHeaderValue() {
-    const token = localStorage.getItem('qlpk_token') || localStorage.getItem('token') || sessionStorage.getItem('qlpk_token') || '';
-    if (!token) return '';
-    return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-}
-
 function downloadProtectedFile(url, filename) {
-    const authHeader = getAuthorizationHeaderValue();
-    fetch(url, { headers: authHeader ? { 'Authorization': authHeader } : {} })
+    fetch(url)
         .then(response => {
             if (!response.ok) throw new Error(response.status);
             return response.blob();
@@ -165,8 +158,8 @@ function renderTable(data) {
                 <td class="catalog-dict-name-cell">${escapeHtml(item.ten_hoat_chat)}</td>
                 <td class="text-muted catalog-dict-desc-cell">${item.mo_ta ? escapeHtml(item.mo_ta) : ''}</td>
                 <td class="catalog-dict-action-cell">
-                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm text-primary p-1" onclick="editItem(${item.id})" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-                    <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm text-danger p-1" onclick="deleteItem(${item.id})" title="Xóa"><i class="bi bi-trash3"></i></button>
+                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm text-primary p-1" data-qlpk-call="editItem" data-qlpk-args='[${item.id}]' title="Sửa"><i class="bi bi-pencil-square"></i></button>
+                    <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm text-danger p-1" data-qlpk-call="deleteItem" data-qlpk-args='[${item.id}]' title="Xóa"><i class="bi bi-trash3"></i></button>
                 </td>
             </tr>
         `;

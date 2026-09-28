@@ -142,10 +142,10 @@ function renderICDList(icdList) {
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-primary" onclick="editICD(${icd.id})" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-primary" data-qlpk-call="editICD" data-qlpk-args='[${icd.id}]' title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" onclick="deleteICD(${icd.id}, '${icd.icd_code}')" title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" data-qlpk-call="deleteICD" data-qlpk-args='[${icd.id}, "${icd.icd_code}"]' title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -674,7 +674,7 @@ function showImportProgressModal() {
 	// Tạo modal nếu chưa có
 	if (!$('#importProgressModal').length) {
 		$('body').append(`
-            <div class="modal fade" id="importProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal fade qlpk-import-progress-modal" id="importProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -785,7 +785,7 @@ function showImportResult(successCount, validationErrors, validationErrorList = 
                             ${allErrors.length > 0 ? `
                                 <div class="alert alert-warning">
                                     <h6><i class="bi bi-exclamation-triangle me-2"></i>Chi tiết lỗi:</h6>
-                                    <div id="importErrorList">
+                                    <div id="importErrorList" class="qlpk-import-error-list">
                                         ${allErrors.map(error => `<div class="mb-1"><small>• ${error}</small></div>`).join('')}
                                     </div>
                                 </div>
@@ -801,7 +801,7 @@ function showImportResult(successCount, validationErrors, validationErrorList = 
                         <div class="modal-footer">
                             <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                             ${allErrors.length > 0 ? `
-                                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-warning" onclick="exportImportErrors()">
+                                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-warning" data-qlpk-call="exportImportErrors">
                                     <i class="bi bi-download me-2"></i>Xuất danh sách lỗi
                                 </button>
                             ` : ''}

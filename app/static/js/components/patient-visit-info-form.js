@@ -12,18 +12,8 @@
 		'referralSource'
 	];
 
-	const DEFAULT_CONFIG = {
-		rootId: '',
-		strictRoot: false,
-		fields: {}
-	};
-
 	function mergeConfig(config = {}) {
-		return {
-			...DEFAULT_CONFIG,
-			...config,
-			fields: { ...DEFAULT_CONFIG.fields, ...(config.fields || {}) }
-		};
+		return window.QLPKComponentDomScope.mergeScopedConfig(config);
 	}
 
 	function getDocument(options) {
@@ -123,45 +113,10 @@
 		}
 	}
 
-	function getScopedDocument(options = {}) {
-		const config = mergeConfig(options.config);
-		if (options.context?.getDocument && config.rootId) {
-			return options.context.getDocument({
-				rootId: config.rootId,
-				strictRoot: config.strictRoot,
-				fields: config.fields
-			});
-		}
-		const scope = window.QLPKComponentDomScope;
-		if (!scope || typeof scope.create !== 'function') return getDocument(options);
-		return scope.create({
-			document: getDocument(options),
-			rootId: config.rootId,
-			strictRoot: config.strictRoot,
-			fields: config.fields
-		});
-	}
-
 	function create(options = {}) {
 		const config = mergeConfig(options.config);
-		const invoke = (handler, callOptions = {}) => handler({
-			...options,
-			...callOptions,
-			document: getScopedDocument({ ...options, ...callOptions, config })
-		});
 		return {
-			bind: callOptions => invoke(bind, callOptions),
-			clear: callOptions => invoke(clear, callOptions),
-			populate: (payload, callOptions = {}) => populate(payload, {
-				...options,
-				...callOptions,
-				document: getScopedDocument({ ...options, ...callOptions, config })
-			}),
-			collect: callOptions => collect({
-				...options,
-				...(callOptions || {}),
-				document: getScopedDocument({ ...options, ...(callOptions || {}), config })
-			}),
+			...window.QLPKComponentDomScope.createScopedComponent(options, config, { bind, clear, populate, collect }),
 			getConfig: () => mergeConfig(config)
 		};
 	}

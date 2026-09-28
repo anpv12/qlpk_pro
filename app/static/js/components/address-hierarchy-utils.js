@@ -45,41 +45,39 @@
 		}
 	}
 
+	async function fetchDistrictsByProvinceCode(provinceName, options) {
+		const apiCall = getApiCall(options);
+		const response = await apiCall('/api/vietnam-address/provinces');
+		const payload = await response.json();
+		const province = (payload.data || []).find(item =>
+			item.name === provinceName || item.name?.normalize('NFC') === provinceName?.normalize('NFC')
+		);
+		const provinceCode = province && (province.code || province.id);
+		return provinceCode ? apiCall(`/api/vietnam-address/districts/${provinceCode}`) : null;
+	}
+
+	async function fetchWardsByDistrictCode(params, options) {
+		const apiCall = getApiCall(options);
+		const encode = getEncodeURIComponent(options);
+		let response = await apiCall(`/api/vietnam-address/districts?province=${encode(params.province)}`);
+		if (response.status === 404) {
+			response = await fetchDistrictsByProvinceCode(params.province, options);
+		}
+		if (!response) return null;
+		const payload = await response.json();
+		const districts = payload.data || payload || [];
+		const district = districts.find(item => (item.name || item.district_name) === params.district);
+		const districtCode = district && (district.code || district.id);
+		return districtCode ? apiCall(`/api/vietnam-address/wards/${districtCode}`) : null;
+	}
+
 	async function tryFallbackAPI(endpoint, params = {}, options = {}) {
 		try {
-			const apiCall = getApiCall(options);
-			const encode = getEncodeURIComponent(options);
 			if (endpoint.includes('/districts')) {
-				const provRes = await apiCall('/api/vietnam-address/provinces');
-				const provData = await provRes.json();
-				const match = (provData.data || []).find(p =>
-					p.name === params.province ||
-					p.name?.normalize('NFC') === params.province?.normalize('NFC')
-				);
-				if (match && (match.code || match.id)) {
-					return await apiCall(`/api/vietnam-address/districts/${match.code || match.id}`);
-				}
-			} else if (endpoint.includes('/wards')) {
-				const distRes = await apiCall(`/api/vietnam-address/districts?province=${encode(params.province)}`);
-				if (distRes.status === 404) {
-					const provRes = await apiCall('/api/vietnam-address/provinces');
-					const provData = await provRes.json();
-					const matchProv = (provData.data || []).find(p =>
-						p.name === params.province ||
-						p.name?.normalize('NFC') === params.province?.normalize('NFC')
-					);
-					if (matchProv && (matchProv.code || matchProv.id)) {
-						const distRes2 = await apiCall(`/api/vietnam-address/districts/${matchProv.code || matchProv.id}`);
-						const distData = await distRes2.json();
-						const distList = distData.data || distData || [];
-						const matchDist = distList.find(d =>
-							(d.name || d.district_name) === params.district
-						);
-						if (matchDist && (matchDist.code || matchDist.id)) {
-							return await apiCall(`/api/vietnam-address/wards/${matchDist.code || matchDist.id}`);
-						}
-					}
-				}
+				return await fetchDistrictsByProvinceCode(params.province, options);
+			}
+			if (endpoint.includes('/wards')) {
+				return await fetchWardsByDistrictCode(params, options);
 			}
 			return null;
 		} catch (error) {
@@ -190,18 +188,7 @@
 
 	async function loadDistricts(provinceName, options = {}) {
 		try {
-			const apiCall = getApiCall(options);
-			const encode = getEncodeURIComponent(options);
-			let response = await apiCall(`/api/vietnam-address/districts?province=${encode(provinceName)}`);
-			if (response.status === 404) {
-				const provRes = await apiCall('/api/vietnam-address/provinces');
-				const provData = await provRes.json();
-				const match = (provData.data || []).find(p => p.name === provinceName || p.name.normalize('NFC') === provinceName.normalize('NFC'));
-				if (match && (match.code || match.id)) {
-					const code = match.code || match.id;
-					response = await apiCall(`/api/vietnam-address/districts/${code}`);
-				}
-			}
+			const response = await callVietnamAddressAPI('/api/vietnam-address/districts', { province: provinceName }, options);
 			const data = await response.json();
 			if (data && (data.success || Array.isArray(data))) {
 				const list = data.data || data;
@@ -220,27 +207,10 @@
 
 	async function loadWards(provinceName, districtName, options = {}) {
 		try {
-			const apiCall = getApiCall(options);
-			const encode = getEncodeURIComponent(options);
-			let response = await apiCall(`/api/vietnam-address/wards?province=${encode(provinceName)}&district=${encode(districtName)}`);
-			if (response.status === 404) {
-				let distRes = await apiCall(`/api/vietnam-address/districts?province=${encode(provinceName)}`);
-				if (distRes.status === 404) {
-					const provRes = await apiCall('/api/vietnam-address/provinces');
-					const provData = await provRes.json();
-					const matchProv = (provData.data || []).find(p => p.name === provinceName || p.name.normalize('NFC') === provinceName.normalize('NFC'));
-					if (matchProv && (matchProv.code || matchProv.id)) {
-						distRes = await apiCall(`/api/vietnam-address/districts/${matchProv.code || matchProv.id}`);
-					}
-				}
-				const distData = await distRes.json();
-				const distList = distData.data || distData || [];
-				const matchDist = (distList || []).find(d => (d.name || d.district_name) === districtName);
-				const distCode = matchDist ? (matchDist.code || matchDist.id) : undefined;
-				if (distCode) {
-					response = await apiCall(`/api/vietnam-address/wards/${distCode}`);
-				}
-			}
+			const response = await callVietnamAddressAPI('/api/vietnam-address/wards', {
+				province: provinceName,
+				district: districtName
+			}, options);
 			const data = await response.json();
 			if (data && (data.success || Array.isArray(data))) {
 				const list = data.data || data;

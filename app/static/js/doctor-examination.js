@@ -12,7 +12,7 @@
 	if (!COMPONENT_CONTEXT_API?.create) throw new Error('Thiếu Doctor component context');
 	const {
 		apiCall,
-		ensureToken,
+		ensureSession,
 		formatDateDisplay,
 		getAuthHeader,
 		showCustomToast
@@ -367,6 +367,49 @@
 		COMPONENT_CONTEXT.emit('patient:cleared', { appointmentId: state.currentAppointmentId });
 	}
 
+	function markPatientLoadFailed(reason, toastMessage, eventDetail) {
+		state.loadFailed = true;
+		state.loadFailure = reason;
+		const clinicalWorkspace = getModule('clinicalWorkspace');
+		if (clinicalWorkspace && typeof clinicalWorkspace.setLoadFailed === 'function') {
+			clinicalWorkspace.setLoadFailed(true, reason);
+		}
+		const examSurface = DOM.getElementById('doctorExamSurface');
+		if (examSurface) examSurface.dataset.loadState = 'error';
+		showCustomToast('error', toastMessage);
+		COMPONENT_CONTEXT.emit('patient:load-failed', { ...eventDetail, reason });
+		return false;
+	}
+
+	function activateMainPane() {
+		const workflowTwoPane = requireModule('workflowTwoPane');
+		if (workflowTwoPane && typeof workflowTwoPane.activate === 'function') {
+			workflowTwoPane.activate('main', { document: DOM, context: COMPONENT_CONTEXT });
+		}
+	}
+
+	function startPatientSurfaceLoads(payload, clinicalWorkspace) {
+		const medicalHistoryBridge = getModule('medicalHistoryBridge');
+		const supportModulesUi = getModule('supportModulesUi');
+		const clinicalLoad = typeof clinicalWorkspace.whenInitialLoadSettled === 'function'
+			? clinicalWorkspace.whenInitialLoadSettled()
+			: Promise.resolve(true);
+		const medicalHistoryLoad = medicalHistoryBridge && typeof medicalHistoryBridge.populate === 'function'
+			? medicalHistoryBridge.populate(payload).catch(() => false)
+			: Promise.resolve(true);
+		syncPatientSupportSections(payload);
+		const supportLoad = supportModulesUi && typeof supportModulesUi.load === 'function'
+			? supportModulesUi.load({
+				document: DOM,
+				context: COMPONENT_CONTEXT,
+				payload,
+				appointmentId: payload && payload.id ? payload.id : state.currentAppointmentId,
+				patientId: getPatientIdFromPayload(payload)
+			}).catch(() => false)
+			: Promise.resolve(true);
+		return [clinicalLoad, medicalHistoryLoad, supportLoad];
+	}
+
 	async function renderPatientSurface(payload, loadToken, options = {}) {
 		const examSurface = DOM.getElementById('doctorExamSurface');
 		if (examSurface) {
@@ -377,49 +420,21 @@
 		}
 
 		const clinicalWorkspace = getModule('clinicalWorkspace');
-		const medicalHistoryBridge = getModule('medicalHistoryBridge');
-		const supportModulesUi = getModule('supportModulesUi');
 		const draftRecovery = getModule('draftRecovery');
 		if (!clinicalWorkspace || typeof clinicalWorkspace.render !== 'function') {
 			throw new Error('missing-clinical-workspace-module');
 		}
 
 		clinicalWorkspace.render(payload, { document: DOM, context: COMPONENT_CONTEXT });
-		const clinicalLoad = typeof clinicalWorkspace.whenInitialLoadSettled === 'function'
-			? clinicalWorkspace.whenInitialLoadSettled()
-			: Promise.resolve(true);
-		let medicalHistoryLoad = Promise.resolve(true);
-		if (medicalHistoryBridge && typeof medicalHistoryBridge.populate === 'function') {
-			medicalHistoryLoad = medicalHistoryBridge.populate(payload).catch(() => false);
-		}
-		syncPatientSupportSections(payload);
-		let supportLoad = Promise.resolve(true);
-		if (supportModulesUi && typeof supportModulesUi.load === 'function') {
-			supportLoad = supportModulesUi.load({
-				document: DOM,
-				context: COMPONENT_CONTEXT,
-				payload,
-				appointmentId: payload && payload.id ? payload.id : state.currentAppointmentId,
-				patientId: getPatientIdFromPayload(payload)
-			}).catch(() => false);
-		}
 		const loadLabels = ['Khám chi tiết', 'Tiền sử', 'Đơn thuốc, Dịch vụ và Chỉ định'];
-		const loadResults = await Promise.allSettled([clinicalLoad, medicalHistoryLoad, supportLoad]);
+		const loadResults = await Promise.allSettled(startPatientSurfaceLoads(payload, clinicalWorkspace));
 		if (loadToken !== state.loadToken) return false;
 		const failedLoads = loadResults
 			.map((result, index) => ({ result, label: loadLabels[index] }))
 			.filter(({ result }) => result.status !== 'fulfilled' || !isLoadGroupSuccessful(result.value));
 		if (failedLoads.length) {
 			const reason = `Chưa tải đủ dữ liệu: ${failedLoads.map(item => item.label).join(', ')}.`;
-			state.loadFailed = true;
-			state.loadFailure = reason;
-			if (clinicalWorkspace && typeof clinicalWorkspace.setLoadFailed === 'function') {
-				clinicalWorkspace.setLoadFailed(true, reason);
-			}
-			if (examSurface) examSurface.dataset.loadState = 'error';
-			showCustomToast('error', `${reason} Chưa thể lưu ca khám; hãy tải lại ca để thử lại.`);
-			COMPONENT_CONTEXT.emit('patient:load-failed', { appointmentId: state.currentAppointmentId, reason });
-			return false;
+			return markPatientLoadFailed(reason, `${reason} Chưa thể lưu ca khám; hãy tải lại ca để thử lại.`, { appointmentId: state.currentAppointmentId });
 		}
 		state.loadFailed = false;
 		state.loadFailure = null;
@@ -474,10 +489,7 @@
 				sourceAppointmentDate: getAppointmentDateFromPayload(payload)
 			};
 			setHistoryViewMode(true, payload);
-			const workflowTwoPane = requireModule('workflowTwoPane');
-			if (workflowTwoPane && typeof workflowTwoPane.activate === 'function') {
-				workflowTwoPane.activate('main', { document: DOM, context: COMPONENT_CONTEXT });
-			}
+			activateMainPane();
 			return true;
 		} catch (error) {
 			if (token !== state.loadToken) return false;
@@ -485,21 +497,10 @@
 				showCustomToast('warning', 'Không thể nạp lịch sử lên form khám.');
 				return false;
 			}
-			state.loadFailed = true;
-			state.loadFailure = error?.message || 'Không tải được lịch sử khám';
-			const clinicalWorkspace = getModule('clinicalWorkspace');
-			if (clinicalWorkspace && typeof clinicalWorkspace.setLoadFailed === 'function') {
-				clinicalWorkspace.setLoadFailed(true, state.loadFailure);
-			}
-			const examSurface = DOM.getElementById('doctorExamSurface');
-			if (examSurface) examSurface.dataset.loadState = 'error';
-			showCustomToast('error', 'Không tải được lịch sử lên form khám.');
-			COMPONENT_CONTEXT.emit('patient:load-failed', {
+			return markPatientLoadFailed(error?.message || 'Không tải được lịch sử khám', 'Không tải được lịch sử lên form khám.', {
 				appointmentId: currentAppointmentId,
-				historyAppointmentId: numericAppointmentId,
-				reason: state.loadFailure
+				historyAppointmentId: numericAppointmentId
 			});
-			return false;
 		} finally {
 			if (token === state.loadToken) setLoadingState(false);
 		}
@@ -527,15 +528,22 @@
 		return guard.requestLeave(options);
 	}
 
+	function isAppointmentAlreadyShown(numericAppointmentId, options) {
+		return state.currentAppointmentId === numericAppointmentId
+			&& !options.reload && !state.loadFailed && !state.historyView.active;
+	}
+
+	async function canLeaveCurrentAppointment(options) {
+		if (options.skipUnsavedGuard || !state.currentAppointmentId) return true;
+		return requestWorkspaceLeave({ reason: 'patient-switch' });
+	}
+
 	async function selectPatientCard(appointmentId, options = {}) {
 		if (!appointmentId) return;
 		const numericAppointmentId = Number(appointmentId);
 		if (!Number.isFinite(numericAppointmentId)) return false;
-		if (state.currentAppointmentId === numericAppointmentId && !options.reload && !state.loadFailed && !state.historyView.active) return true;
-		if (!options.skipUnsavedGuard && state.currentAppointmentId) {
-			const canLeave = await requestWorkspaceLeave({ reason: 'patient-switch' });
-			if (!canLeave) return false;
-		}
+		if (isAppointmentAlreadyShown(numericAppointmentId, options)) return true;
+		if (!await canLeaveCurrentAppointment(options)) return false;
 		const token = state.loadToken + 1;
 		state.loadToken = token;
 		setLoadingState(true);
@@ -552,10 +560,7 @@
 			setSelectedAppointment(appointmentId);
 			const rendered = await renderPatientSurface(payload, token);
 			if (!rendered || token !== state.loadToken) return false;
-			const workflowTwoPane = requireModule('workflowTwoPane');
-			if (workflowTwoPane && typeof workflowTwoPane.activate === 'function') {
-				workflowTwoPane.activate('main', { document: DOM, context: COMPONENT_CONTEXT });
-			}
+			activateMainPane();
 			return true;
 		} catch (error) {
 			if (token !== state.loadToken) return false;
@@ -563,20 +568,9 @@
 				showCustomToast('warning', options.loadFailureMessage || 'Không thể nạp lượt khám lịch sử vào form.');
 				return false;
 			}
-			state.loadFailed = true;
-			state.loadFailure = error?.message || 'Không tải được chi tiết lịch hẹn';
-			const clinicalWorkspace = getModule('clinicalWorkspace');
-			if (clinicalWorkspace && typeof clinicalWorkspace.setLoadFailed === 'function') {
-				clinicalWorkspace.setLoadFailed(true, state.loadFailure);
-			}
-			const examSurface = DOM.getElementById('doctorExamSurface');
-			if (examSurface) examSurface.dataset.loadState = 'error';
-			showCustomToast('error', 'Không tải được chi tiết lịch hẹn');
-			COMPONENT_CONTEXT.emit('patient:load-failed', {
-				appointmentId: numericAppointmentId,
-				reason: state.loadFailure
+			return markPatientLoadFailed(error?.message || 'Không tải được chi tiết lịch hẹn', 'Không tải được chi tiết lịch hẹn', {
+				appointmentId: numericAppointmentId
 			});
-			return false;
 		} finally {
 			if (token === state.loadToken) setLoadingState(false);
 		}
@@ -626,8 +620,8 @@
 		return waitingListAdapter;
 	}
 
-	function loadAppointments(status = 'doctor_exam', page = 1) {
-		if (!ensureToken()) return Promise.resolve(null);
+	async function loadAppointments(status = 'doctor_exam', page = 1) {
+		if (!await ensureSession()) return null;
 		const adapter = createWaitingListAdapter();
 		if (!adapter) {
 			showCustomToast('error', 'Không thể tải danh sách chờ khám. Vui lòng tải lại trang.');
@@ -753,6 +747,37 @@
 		loadAppointments();
 	}
 
+	const ORDER_REALTIME_TYPES = ['order.changed', 'survey.changed', 'realtime.resynced'];
+
+	function isCurrentAppointmentEvent(payload) {
+		return !payload.appointment_id || Number(payload.appointment_id) === Number(state.currentAppointmentId);
+	}
+
+	function isCurrentPatientEvent(payload) {
+		const eventPatientId = payload.patient_id ? Number(payload.patient_id) : null;
+		return Boolean(eventPatientId && state.currentPatientId && eventPatientId === Number(state.currentPatientId));
+	}
+
+	function syncRelativesFromRealtime(payload) {
+		const relatives = state.relativeTableInstance;
+		if (!relatives) return;
+		const handled = typeof relatives.applyPatientChanged === 'function' ? relatives.applyPatientChanged(payload) : false;
+		if (!handled && payload.action !== 'family_member_updated' && typeof relatives.reload === 'function') relatives.reload();
+	}
+
+	function applyRealtimeEvent(plan, event) {
+		const payload = event && event.payload ? event.payload : {};
+		if (ORDER_REALTIME_TYPES.includes(event.type)) {
+			if (isCurrentAppointmentEvent(payload)) plan.refreshOrders = true;
+			if (event.type !== 'realtime.resynced') return plan;
+		}
+		const attachments = getDocumentAttachments();
+		if (typeof attachments?.handleRealtimeEvent === 'function' && attachments.handleRealtimeEvent(event, state.currentPatientId)) return plan;
+		if (event.type === 'patient.changed' && isCurrentPatientEvent(payload)) syncRelativesFromRealtime(payload);
+		plan.refreshQueue = true;
+		return plan;
+	}
+
 	function bindRealtimeRefresh() {
 		const realtimeHooks = requireModule('realtimePageHooks');
 		if (!realtimeHooks || typeof realtimeHooks.register !== 'function') return;
@@ -761,37 +786,15 @@
 			debounceMs: 500,
 			batch: true,
 			handler: events => {
-				let refreshQueue = false;
-				let refreshOrders = false;
-				for (const event of events) {
-					const payload = event && event.payload ? event.payload : {};
-					if (['order.changed', 'survey.changed', 'realtime.resynced'].includes(event.type)) {
-						if (!payload.appointment_id || Number(payload.appointment_id) === Number(state.currentAppointmentId)) refreshOrders = true;
-						if (event.type !== 'realtime.resynced') continue;
-					}
-					const eventPatientId = payload.patient_id ? Number(payload.patient_id) : null;
-					const attachments = getDocumentAttachments();
-					if (attachments && typeof attachments.handleRealtimeEvent === 'function'
-						&& attachments.handleRealtimeEvent(event, state.currentPatientId)) {
-						continue;
-					}
-					if (event.type === 'patient.changed' && eventPatientId && state.currentPatientId && eventPatientId === Number(state.currentPatientId) && state.relativeTableInstance) {
-						const handledRelativeUpdate = typeof state.relativeTableInstance.applyPatientChanged === 'function'
-							? state.relativeTableInstance.applyPatientChanged(payload)
-							: false;
-						if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof state.relativeTableInstance.reload === 'function') {
-							state.relativeTableInstance.reload();
-						}
-					}
-					refreshQueue = true;
-				}
-				if (refreshQueue) loadAppointments('doctor_exam', 1);
-				if (refreshOrders) getModule('supportModulesUi')?.refreshIndications?.({ document: DOM });
+				const plan = events.reduce((result, event) => applyRealtimeEvent(result, event), { refreshQueue: false, refreshOrders: false });
+				if (plan.refreshQueue) loadAppointments('doctor_exam', 1);
+				if (plan.refreshOrders) getModule('supportModulesUi')?.refreshIndications?.({ document: DOM });
 			}
 		});
 	}
 
-	DOM.addEventListener('DOMContentLoaded', () => {
+	DOM.addEventListener('DOMContentLoaded', async () => {
+		if (!await ensureSession()) return;
 		initializeWaitingQueue();
 		const leaveGuard = getModule('workspaceLeaveGuard');
 		if (leaveGuard && typeof leaveGuard.initialize === 'function') {

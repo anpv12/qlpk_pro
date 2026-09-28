@@ -3,7 +3,7 @@ import {
   escapeAttr as medicalHistoryEscapeAttr,
   escapeHtml as medicalHistoryEscapeHtml,
   getComponent as medicalHistoryGetComponent,
-  getJsonAuthHeaders as medicalHistoryGetJsonAuthHeaders
+  getJsonHeaders as medicalHistoryGetJsonHeaders
 } from './medical-history-context.js';
 
 /* ══════════════════════════════════════════════════════════════════
@@ -234,7 +234,7 @@ async function fetchAllergenSuggestions(q, input, dropdown, positionDropdown) {
     const url = q
       ? `/api/allergen?search=${encodeURIComponent(q)}&page=1&limit=10`
       : `/api/allergen?page=1&limit=10`;
-    const res = await fetch(url, { method: 'GET', headers: medicalHistoryGetJsonAuthHeaders() });
+    const res = await fetch(url, { method: 'GET', headers: medicalHistoryGetJsonHeaders() });
     if (!res.ok) return;
     const data = await res.json();
     if (!data.success) return;
@@ -280,7 +280,7 @@ async function createAndSelectAllergen(name, input, dropdown) {
   try {
     const res = await fetch('/api/allergen', {
       method: 'POST',
-      headers: medicalHistoryGetJsonAuthHeaders(),
+      headers: medicalHistoryGetJsonHeaders(),
       body: JSON.stringify({ ten_di_nguyen: name, mo_ta: '' })
     });
     if (!res.ok) return;

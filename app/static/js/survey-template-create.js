@@ -72,11 +72,6 @@
 		return window.QLPKUserFeedback?.show(type, message);
 	}
 
-	function authHeaders(extra = {}) {
-		const token = localStorage.getItem('qlpk_token') || localStorage.getItem('access_token') || '';
-		return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
-	}
-
 	function renderPerformerOptions(selectedId = state.defaultPerformerId) {
 		const select = surveyPerformerInput();
 		if (!select) return;
@@ -95,7 +90,7 @@
 		const select = surveyPerformerInput();
 		if (!select) return [];
 		if (!performersPromise) {
-			performersPromise = fetch('/users/doctors', { headers: authHeaders() })
+			performersPromise = fetch('/users/doctors')
 				.then(response => response.ok ? response.json() : [])
 				.then(data => Array.isArray(data) ? data : [])
 				.catch(() => []);
@@ -109,7 +104,6 @@
 		if (criteriaCache) return criteriaCache;
 		try {
 			const res = await fetch('/api/survey-criteria/', {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			const json = await res.json();
 			criteriaCache = json.success ? json.data : [];
@@ -124,7 +118,6 @@
 			const res = await fetch('/api/survey-criteria/', {
 				method: 'POST',
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({ name })
@@ -259,7 +252,7 @@
 		state.loading = true;
 		saveButton().disabled = true;
 		try {
-			const response = await fetch('/api/survey-templates/access', { headers: authHeaders() });
+			const response = await fetch('/api/survey-templates/access');
 			const access = await response.json();
 			if (revision !== state.loadRevision) return;
 			if (!response.ok || !access.can_manage) {
@@ -370,7 +363,7 @@
 		state.loading = true;
 		saveButton().disabled = true;
 		try {
-			const res = await fetch(`/api/survey-templates/${id}`, { headers: authHeaders() });
+			const res = await fetch(`/api/survey-templates/${id}`);
 			const json = await res.json();
 			if (revision !== state.loadRevision) return;
 			if (!json.success) return showToast('error', 'Không tải được dữ liệu');
@@ -863,7 +856,7 @@
 		try {
 			const res = await fetch(url, {
 				method: isEdit ? 'PUT' : 'POST',
-				headers: authHeaders({ 'Content-Type': 'application/json' }),
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data),
 			});
 			json = await res.json();
@@ -878,7 +871,7 @@
 			showToast('success', isEdit ? 'Đã cập nhật mẫu khảo sát' : 'Đã tạo mẫu khảo sát mới');
 			setTimeout(() => {
 				if (overlayEl()) close(true);
-				if (typeof surveyTemplateManager !== 'undefined') surveyTemplateManager.loadTemplates();
+				if (window.surveyTemplateManager) window.surveyTemplateManager.loadTemplates();
 				else window.location.href = '/survey-template-management.html';
 			}, 800);
 		} else {

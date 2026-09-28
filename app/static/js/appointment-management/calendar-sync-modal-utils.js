@@ -114,9 +114,6 @@
 					url: '/api/calendar/delete-all',
 					method: 'DELETE',
 					contentType: 'application/json',
-					headers: {
-						'Authorization': `Bearer ${options.getToken()}`
-					},
 					data: JSON.stringify({
 						from_date: options.syncDateUtils.parseDisplayDateToApi(fromDate),
 						to_date: options.syncDateUtils.parseDisplayDateToApi(toDate)

@@ -67,6 +67,8 @@
 
 		const manager = new window.JointExamManager({
 			getAppointmentId: getCurrentAppointmentId,
+			getContextToken: () => window.QLPKDoctorPage?.getState().loadToken
+				?? window.QLPKPsychologistPageState?.contextToken,
 			onReloadFamilyMembers: reloadFamilyMembers,
 			showToast,
 			apiCall: getApiCall(),

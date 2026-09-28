@@ -12,7 +12,7 @@
     let savedPreview = null;
     let choosing = false;
     let changedCount = 0;
-    const headers = () => ({Authorization: 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json'});
+    const headers = () => ({'Content-Type': 'application/json'});
 
     async function request(url, options = {}) {
         const response = await fetch(url, {headers: headers(), ...options});

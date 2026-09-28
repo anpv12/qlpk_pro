@@ -144,6 +144,8 @@
 	}
 
 	function readStoredUser() {
+		const session = window.QLPKApiTransport?.session;
+		if (session) return session.owner.snapshot().session?.user || {};
 		try {
 			return JSON.parse(localStorage.getItem('qlpk_user') || '{}') || {};
 		} catch (error) {
@@ -270,6 +272,7 @@
 		event.preventDefault();
 
 		const { currentPassword, newPassword, confirmPassword, submitBtn } = getPasswordModalElements();
+		if (submitBtn?.disabled) return;
 		const currentValue = currentPassword ? currentPassword.value.trim() : '';
 		const newValue = newPassword ? newPassword.value.trim() : '';
 		const confirmValue = confirmPassword ? confirmPassword.value.trim() : '';
@@ -289,16 +292,25 @@
 			return;
 		}
 
-		const token = localStorage.getItem('qlpk_token');
-		if (!token) {
+		const session = window.QLPKApiTransport?.session;
+		const token = session ? null : localStorage.getItem('qlpk_token');
+		if (!session && !token) {
 			setPasswordMessage('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 			return;
 		}
 
 		if (submitBtn) submitBtn.disabled = true;
 		setPasswordMessage('', '');
+		let passwordChanged = false;
 
 		try {
+			if (session) {
+				await session.actions.changePassword(currentValue, newValue);
+				setPasswordMessage('success', 'Đổi mật khẩu thành công.');
+				getPasswordModalElements().form?.reset();
+				closePasswordModalSoon();
+				return;
+			}
 			const response = await fetch('/users/me/password', {
 				method: 'PUT',
 				headers: {
@@ -315,25 +327,35 @@
 			if (!response.ok) {
 				throw new Error(payload.detail || 'Không thể đổi mật khẩu.');
 			}
+			passwordChanged = true;
+			if (localStorage.getItem('qlpk_token') !== token) {
+				setPasswordMessage('error', 'Mật khẩu đã đổi; phiên đăng nhập đã thay đổi. Vui lòng đăng nhập lại nếu cần.');
+				return;
+			}
+			if (typeof payload.access_token !== 'string' || !payload.access_token) {
+				throw new Error('Missing replacement session');
+			}
+			localStorage.setItem('qlpk_token', payload.access_token);
+			localStorage.removeItem('token');
+			window.QLPKRealtimeClient?.stop();
+			window.QLPKRealtimeClient?.start();
 
 			setPasswordMessage('success', payload.detail || 'Đổi mật khẩu thành công.');
 			const { form } = getPasswordModalElements();
 			if (form) form.reset();
 			closePasswordModalSoon();
 		} catch (error) {
-			setPasswordMessage('error', 'Không thể đổi mật khẩu. Vui lòng thử lại.');
+			setPasswordMessage('error', passwordChanged
+				? 'Mật khẩu đã đổi. Vui lòng đăng nhập lại bằng mật khẩu mới.'
+				: 'Không thể xác nhận đổi mật khẩu. Vui lòng kiểm tra lại trước khi thử tiếp.');
 		} finally {
 			if (submitBtn) submitBtn.disabled = false;
 		}
 	}
 
 	async function fetchCurrentUser() {
-		const token = localStorage.getItem('qlpk_token');
-		if (!token) return null;
-
-		const response = await fetch('/users/me', {
-			headers: { Authorization: `Bearer ${token}` },
-		});
+		if (!hasHeaderSession()) return null;
+		const response = await fetch('/users/me');
 		if (!response.ok) throw new Error('Failed to load current user');
 		return response.json();
 	}
@@ -348,9 +370,9 @@
 			const user = await fetchCurrentUser();
 			if (!user) return;
 			updateUserUi(user);
-			localStorage.setItem('qlpk_user', JSON.stringify(user));
+			if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_user', JSON.stringify(user));
 			if (user.permissions) {
-				localStorage.setItem('qlpk_permissions', JSON.stringify(user.permissions));
+				if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_permissions', JSON.stringify(user.permissions));
 				if (typeof window.checkPermissions === 'function') {
 					window.checkPermissions();
 				}
@@ -408,8 +430,7 @@
 	}
 
 	function globalSearchApiHeaders() {
-		const token = getAuthToken();
-		return token ? { Accept: 'application/json', Authorization: `Bearer ${token}` } : { Accept: 'application/json' };
+		return { Accept: 'application/json' };
 	}
 
 	function itemActions(item) {
@@ -599,7 +620,7 @@
 			headers: globalSearchApiHeaders(),
 			signal: globalSearchAbortController.signal,
 		});
-		const payload = await response.json().catch(() => ({}));
+		const payload = await response.json();
 		if (!response.ok) throw new Error(payload.detail || 'Không thể tìm kiếm.');
 		return payload;
 	}
@@ -819,18 +840,74 @@
 		tryRunPendingGlobalSearchAction();
 	}
 
-	function logout() {
-		try {
-			localStorage.removeItem('qlpk_token');
-			localStorage.removeItem('qlpk_user');
-			localStorage.removeItem('qlpk_permissions');
-			localStorage.removeItem('sidebarHidden');
-			localStorage.removeItem('qlpk_workspace_tabs');
-			localStorage.removeItem('qlpk_workspace_active_tab');
-		} catch (error) {
-			console.error('Error clearing localStorage:', error);
+	let logoutPending = false;
+	let confirmedLogoutCleanup = null;
+	async function clearConfirmedLogout(confirmation, isCurrent) {
+		if (!isCurrent()) return;
+		window.QLPKRealtimeClient?.stop();
+		const pendingCleanup = [];
+		const notifyLogout = target => {
+			target.document.dispatchEvent(new target.CustomEvent('qlpk:logout:confirmed', {
+				detail: { pendingCleanup, ...confirmation }
+			}));
+		};
+		notifyLogout(window);
+		document.querySelectorAll('iframe.qlpk-workspace-iframe').forEach(frame => {
+			try { if (frame.contentWindow) notifyLogout(frame.contentWindow); } catch (_) {}
+		});
+		const results = await Promise.allSettled(pendingCleanup);
+		if (!isCurrent()) return;
+		if (results.some(result => result.status === 'rejected' || result.value === false)) {
+			throw new Error('Draft cleanup incomplete');
 		}
+		for (const key of ['qlpk_token', 'token', 'qlpk_user', 'qlpk_permissions', 'sidebarHidden']) localStorage.removeItem(key);
+		for (const key of ['qlpk_token', 'token']) window.sessionStorage?.removeItem(key);
+		localStorage.removeItem('qlpk_workspace_tabs');
+		localStorage.removeItem('qlpk_workspace_active_tab');
 		window.location.href = '/login.html';
+	}
+
+	async function logout() {
+		if (logoutPending) return;
+		const session = window.QLPKApiTransport?.session;
+		const token = session ? null : window.QLPKApiTransport.getAuthHeader();
+		logoutPending = true;
+		try {
+			if (session) {
+				if (confirmedLogoutCleanup) {
+					const pending = confirmedLogoutCleanup;
+					await window.navigator.locks.request('qlpk:browser-session-mutation', { mode: 'exclusive' },
+						() => clearConfirmedLogout(pending.confirmation, pending.isCurrent));
+					confirmedLogoutCleanup = null;
+					return;
+				}
+				await session.actions.logout(async confirmation => {
+					const revision = session.owner.snapshot().revision;
+					const isCurrent = () => {
+						const current = session.owner.snapshot();
+						return current.status === 'anonymous' && current.revision === revision;
+					};
+					confirmedLogoutCleanup = { confirmation, isCurrent };
+					await clearConfirmedLogout(confirmation, isCurrent);
+					confirmedLogoutCleanup = null;
+				});
+				return;
+			}
+			if (token) {
+				const response = await fetch('/auth/logout', {
+					method: 'POST', headers: { Authorization: token },
+					signal: AbortSignal.timeout(10000)
+				});
+				if (!response.ok && response.status !== 401) throw new Error('Session revocation unavailable');
+			}
+			await clearConfirmedLogout({}, () => window.QLPKApiTransport.getAuthHeader() === token);
+		} catch (error) {
+			window.QLPKUserFeedback?.show('error', confirmedLogoutCleanup
+				? 'Đã đăng xuất trên máy chủ nhưng chưa dọn xong nháp cục bộ. Vui lòng thử lại.'
+				: 'Chưa thể xác nhận đăng xuất. Vui lòng thử lại.');
+		} finally {
+			logoutPending = false;
+		}
 	}
 
 	function bindLogout() {
@@ -986,21 +1063,21 @@
 		updateFullscreenButton();
 	}
 
-	function getAuthToken() {
+	function hasHeaderSession() {
+		const session = window.QLPKApiTransport?.session;
+		if (session) return ['unknown', 'loading', 'authenticated'].includes(session.owner.snapshot().status);
 		try {
-			return localStorage.getItem('qlpk_token') || localStorage.getItem('token') || '';
+			return Boolean(localStorage.getItem('qlpk_token') || localStorage.getItem('token'));
 		} catch (error) {
-			return '';
+			return false;
 		}
 	}
 
 	async function notificationApi(path, options = {}) {
-		const token = getAuthToken();
-		if (!token) throw new Error('Missing token');
+		if (!hasHeaderSession()) throw new Error('Session unavailable');
 
 		const headers = {
 			Accept: 'application/json',
-			Authorization: `Bearer ${token}`,
 			...(options.headers || {}),
 		};
 
@@ -1012,7 +1089,7 @@
 			...options,
 			headers,
 		});
-		const payload = await response.json().catch(() => ({}));
+		const payload = await response.json();
 		if (!response.ok) {
 			throw new Error(payload.detail || 'Không thể tải thông báo.');
 		}
@@ -1217,8 +1294,7 @@
 
 	async function loadNotifications(options = {}) {
 		if (notificationLoading) return;
-		const token = getAuthToken();
-		if (!token) {
+		if (!hasHeaderSession()) {
 			setNotificationBadge(0);
 			notificationItems = [];
 			renderNotifications();
@@ -1238,8 +1314,7 @@
 
 	async function loadNotificationCenter() {
 		if (notificationCenterLoading) return;
-		const token = getAuthToken();
-		if (!token) {
+		if (!hasHeaderSession()) {
 			notificationCenterItems = [];
 			renderNotificationCenter();
 			return;
@@ -1448,7 +1523,9 @@
 			window.QLPKWorkspaceShell.init();
 		}
 		if (window.QLPKRealtimeClient && typeof window.QLPKRealtimeClient.start === 'function') {
-			window.QLPKRealtimeClient.start();
+			const session = window.QLPKApiTransport?.session;
+			if (session) window.QLPKRealtimeClient.bindSession(session.owner);
+			else window.QLPKRealtimeClient.start();
 		}
 		hydrateUser();
 		loadNotifications({ silent: true });
@@ -1486,6 +1563,7 @@
 
 	window.QLPKAppHeader = {
 		reload: mountHeader,
+		logout,
 		updateUserUi,
 	};
 })(window, document);

@@ -2,6 +2,7 @@
 	'use strict';
 
 	const SYNC_VERIFY_BATCH_SIZE = 5;
+	const SYNC_WRITE_BATCH_SIZE = 50;
 	let syncVerifyRunId = 0;
 	let activeSyncStatusRequest = null;
 	let activeVerifyRequest = null;
@@ -18,14 +19,12 @@
 	}
 
 	function validateCalendarConnections(options) {
-		const token = options.getToken();
-		if (!token) return Promise.resolve();
+		if (!options.hasSession()) return Promise.resolve();
 
 		return options.$.ajax({
 			url: '/api/calendar/validate-connections',
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json'
 			}
 		}).then(function (data) {
@@ -74,8 +73,7 @@
 
 	function loadSyncData(options) {
 		const runId = startNewSyncVerifyRun();
-		const token = options.getToken();
-		if (!token) {
+		if (!options.hasSession()) {
 			options.showCustomToast('error', 'Vui lòng đăng nhập lại');
 			return;
 		}
@@ -93,9 +91,6 @@
 		activeSyncStatusRequest = options.$.ajax({
 			url: `/api/calendar/sync-status?from=${fromDate}&to=${toDate}`,
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`
-			},
 			success: function (data) {
 				if (!isCurrentSyncVerifyRun(runId)) return;
 
@@ -152,15 +147,14 @@
 	}
 
 	function verifyCalendarEvents(options, appointmentIds, runId) {
-		const token = options.getToken();
-		if (!token || !appointmentIds || appointmentIds.length === 0) return;
+		if (!options.hasSession() || !appointmentIds || appointmentIds.length === 0) return;
 
 		const currentRunId = runId || syncVerifyRunId;
 		const batches = chunkSyncVerifyIds(appointmentIds);
-		verifyCalendarEventBatch(options, batches, 0, token, currentRunId);
+		verifyCalendarEventBatch(options, batches, 0, currentRunId);
 	}
 
-	function verifyCalendarEventBatch(options, batches, batchIndex, token, runId) {
+	function verifyCalendarEventBatch(options, batches, batchIndex, runId) {
 		if (!isCurrentSyncVerifyRun(runId) || batchIndex >= batches.length) {
 			activeVerifyRequest = null;
 			return;
@@ -171,7 +165,6 @@
 			url: '/api/calendar/verify-events',
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json'
 			},
 			data: JSON.stringify({ appointment_ids: batchIds }),
@@ -201,7 +194,7 @@
 				if (textStatus === 'abort' || !isCurrentSyncVerifyRun(runId)) return;
 
 				activeVerifyRequest = null;
-				verifyCalendarEventBatch(options, batches, batchIndex + 1, token, runId);
+				verifyCalendarEventBatch(options, batches, batchIndex + 1, runId);
 			}
 		});
 	}
@@ -259,52 +252,71 @@
 	}
 
 	function syncAppointments(options, appointmentIds) {
-		const token = options.getToken();
-		if (!token) {
+		if (!options.hasSession()) {
 			options.showCustomToast('error', 'Vui lòng đăng nhập lại');
 			return;
 		}
+		const ids = Array.from(new Set(appointmentIds || []));
+		if (ids.length === 0) return;
 
 		options.controlsUtils.setBulkButtonsDisabled(options.$, true);
-		options.controlsUtils.setActionButtonsLoading(options.$, appointmentIds);
-		options.showCustomToast('info', `Đang đồng bộ ${appointmentIds.length} lịch hẹn...`);
+		options.controlsUtils.setActionButtonsLoading(options.$, ids);
+		options.showCustomToast('info', `Đang đồng bộ ${ids.length} lịch hẹn...`);
+		const batches = [];
+		for (let index = 0; index < ids.length; index += SYNC_WRITE_BATCH_SIZE) {
+			batches.push(ids.slice(index, index + SYNC_WRITE_BATCH_SIZE));
+		}
+		syncAppointmentBatch(options, batches, 0, { failed: false, warned: false });
+	}
 
+	function applySyncResults(options, results, summary) {
+		Object.keys(results || {}).forEach(appointmentId => {
+			const result = results[appointmentId];
+			const $row = options.$(`tr[data-appt-id="${appointmentId}"]`);
+			const $button = options.$(`.action-btn[data-appt-id="${appointmentId}"]`);
+			const $icons = options.$(`.verify-icons[data-appt-id="${appointmentId}"]`);
+			$icons.html(options.statusUtils.buildSyncResultIconsHtml(result));
+
+			const rowStatus = options.statusUtils.getSyncResultRowStatus(result);
+			options.controlsUtils.applyActionButtonState($button, options.statusUtils.getSyncResultButtonState(result));
+			$row.attr('data-sync-status', rowStatus).data('sync-status', rowStatus);
+			if (rowStatus === 'error' && result.errors && result.errors.length > 0) summary.warned = true;
+		});
+	}
+
+	function finishSyncAppointments(options, summary) {
+		options.controlsUtils.setBulkButtonsDisabled(options.$, false);
+		options.updateSyncCounters();
+		if (summary.failed) {
+			options.showCustomToast('error', 'Có nhóm lịch hẹn chưa đồng bộ được. Vui lòng thử lại.');
+		} else if (summary.warned) {
+			options.showCustomToast('warning', 'Có lịch hẹn chưa đồng bộ được. Vui lòng kiểm tra trạng thái trong danh sách.');
+		} else {
+			options.showCustomToast('success', 'Đã đồng bộ lịch hẹn.');
+		}
+	}
+
+	function syncAppointmentBatch(options, batches, batchIndex, summary) {
+		if (batchIndex >= batches.length) {
+			finishSyncAppointments(options, summary);
+			return;
+		}
+		const batchIds = batches[batchIndex];
 		options.$.ajax({
 			url: '/api/calendar/sync',
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json'
 			},
-			data: JSON.stringify({ appointment_ids: appointmentIds }),
+			data: JSON.stringify({ appointment_ids: batchIds }),
 			success: function (data) {
-				options.showCustomToast('success', 'Đã đồng bộ lịch hẹn.');
-
-				if (data.results) {
-					Object.keys(data.results).forEach(appointmentId => {
-						const result = data.results[appointmentId];
-						const $row = options.$(`tr[data-appt-id="${appointmentId}"]`);
-						const $button = options.$(`.action-btn[data-appt-id="${appointmentId}"]`);
-						const $icons = options.$(`.verify-icons[data-appt-id="${appointmentId}"]`);
-						$icons.html(options.statusUtils.buildSyncResultIconsHtml(result));
-
-						const rowStatus = options.statusUtils.getSyncResultRowStatus(result);
-						options.controlsUtils.applyActionButtonState($button, options.statusUtils.getSyncResultButtonState(result));
-						$row.attr('data-sync-status', rowStatus).data('sync-status', rowStatus);
-
-						if (rowStatus === 'error' && result.errors && result.errors.length > 0) {
-							options.showCustomToast('warning', 'Có lịch hẹn chưa đồng bộ được. Vui lòng kiểm tra trạng thái trong danh sách.');
-						}
-					});
-				}
-
-				options.controlsUtils.setBulkButtonsDisabled(options.$, false);
-				options.updateSyncCounters();
+				applySyncResults(options, data && data.results, summary);
+				syncAppointmentBatch(options, batches, batchIndex + 1, summary);
 			},
-			error: function (xhr) {
-				options.showCustomToast('error', 'Không thể đồng bộ lịch. Vui lòng thử lại.');
-				options.controlsUtils.resetActionButtonsToDefault(options.$, appointmentIds);
-				options.controlsUtils.setBulkButtonsDisabled(options.$, false);
+			error: function () {
+				summary.failed = true;
+				options.controlsUtils.resetActionButtonsToDefault(options.$, batchIds);
+				syncAppointmentBatch(options, batches, batchIndex + 1, summary);
 			}
 		});
 	}

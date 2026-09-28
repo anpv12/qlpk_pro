@@ -26,6 +26,7 @@
 
 	function create(options = {}) {
 		let config = mergeConfig(options.config);
+		let contextToken = 0;
 		const patientInfo = options.patientInfo || (
 			window.QLPKPatientInfoForm && typeof window.QLPKPatientInfoForm.create === 'function'
 				? window.QLPKPatientInfoForm.create({ config: config.patient })
@@ -55,6 +56,7 @@
 		}
 
 		function clear(clearOptions = {}) {
+			contextToken += 1;
 			ensureComponents();
 			const doc = clearOptions.document || document;
 			patientInfo.clear({ document: doc });
@@ -63,20 +65,28 @@
 
 		function populate(payload = {}, populateOptions = {}) {
 			ensureComponents();
+			const token = ++contextToken;
+			const isCurrentLoad = () => token === contextToken && populateOptions.isCurrentLoad?.() !== false;
 			const doc = populateOptions.document || document;
 			const optionsForPatient = {
 				...populateOptions,
+				isCurrentLoad,
 				document: doc
+			};
+			if (!isCurrentLoad()) return false;
+			const populateVisit = patientResult => {
+				if (!isCurrentLoad() || patientResult === false) return false;
+				const visitResult = patientVisit.populate(payload, { document: doc });
+				return visitResult === false ? false : payload;
 			};
 			const patientResult = patientInfo.populate(payload, optionsForPatient);
 			if (patientResult && typeof patientResult.then === 'function') {
-				return patientResult.then(() => {
-					patientVisit.populate(payload, { document: doc });
-					return payload;
+				return patientResult.then(populateVisit, error => {
+					if (!isCurrentLoad()) return false;
+					throw error;
 				});
 			}
-			patientVisit.populate(payload, { document: doc });
-			return payload;
+			return populateVisit(patientResult);
 		}
 
 		function collect(collectOptions = {}) {

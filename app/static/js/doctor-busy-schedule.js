@@ -30,8 +30,7 @@ $(document).ready(function () {
 
 // Load user information
 function loadUserInfo() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = 'login.html';
 		return;
 	}
@@ -39,16 +38,12 @@ function loadUserInfo() {
 	$.ajax({
 		url: '/check/me',
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (response) {
 			currentUser = response;
 			updateSidebarUserInfo();
 		},
 		error: function (xhr) {
 			if (xhr.status === 401) {
-				localStorage.removeItem('qlpk_token');
 				window.location.href = 'login.html';
 			} else {
 				showAlert('Không thể tải thông tin người dùng', 'error');
@@ -85,7 +80,11 @@ function setupEventHandlers() {
 
 	// Real-time validation
 	$('input[name="start_datetime"], input[name="end_datetime"]').on('change', function () {
+		setQuickTimeSelection();
 		validateDateTimeInputs();
+	});
+	$('#busyScheduleForm').on('reset', function () {
+		setQuickTimeSelection();
 	});
 
 	// Search functionality
@@ -117,8 +116,7 @@ function setupEventHandlers() {
 
 	// Logout
 	$('#logoutBtn').on('click', function () {
-		localStorage.removeItem('token');
-		window.location.href = 'login.html';
+		window.QLPKAppHeader?.logout();
 	});
 }
 
@@ -193,14 +191,9 @@ function loadBusyReasons() {
 		return;
 	}
 
-	const token = localStorage.getItem('qlpk_token');
-
 	$.ajax({
 		url: '/api/doctor-busy-schedules/busy-reasons',
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (response) {
 			if (response.success && response.reasons) {
 				// Cache the results
@@ -236,7 +229,7 @@ function displayReasonSuggestions(suggestions) {
 	}
 
 	const suggestionsHtml = suggestions.map(reason =>
-		`<span class="suggestion-badge" title="Click để chọn">${reason}</span>`
+		`<span class="suggestion-badge" title="Click để chọn">${window.QLPKSharedUtils.escapeHtml(reason)}</span>`
 	).join('');
 
 	suggestionsContainer.html(`
@@ -299,8 +292,6 @@ function createBusySchedule() {
 	const loadingText = isUpdate ? 'Đang cập nhật...' : 'Đang tạo...';
 	submitBtn.prop('disabled', true).html(`<i class="spinner-border spinner-border-sm me-2"></i>${loadingText}`);
 
-	const token = localStorage.getItem('qlpk_token');
-
 	// Set URL and method based on operation
 	const url = isUpdate ? `/api/doctor-busy-schedules/${window.editingScheduleId}` : '/api/doctor-busy-schedules';
 	const method = isUpdate ? 'PUT' : 'POST';
@@ -309,7 +300,6 @@ function createBusySchedule() {
 		url: url,
 		method: method,
 		headers: {
-			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify(data),
@@ -370,7 +360,6 @@ function createBusySchedule() {
 				errorMessage = 'Thông tin lịch bận chưa hợp lệ. Vui lòng kiểm tra lại.';
 			} else if (xhr.status === 401) {
 				errorMessage = 'Phiên đăng nhập đã hết hạn';
-				localStorage.removeItem('qlpk_token');
 				window.location.href = 'login.html';
 				return;
 			} else if (xhr.status === 500) {
@@ -390,7 +379,6 @@ function loadMyBusySchedules() {
 		return;
 	}
 
-	const token = localStorage.getItem('qlpk_token');
 	const status = $('#statusFilter').val();
 	const revision = ++busyListRevision;
 
@@ -399,9 +387,6 @@ function loadMyBusySchedules() {
 	$.ajax({
 		url: url,
 		method: 'GET',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (response) {
 			if (revision !== busyListRevision) return;
 			if (response.success) {
@@ -459,7 +444,7 @@ function renderBusySchedulesTable(schedules) {
                 </td>
                 <td>
                     <span class="reason-badge">
-                        ${schedule.reason || 'Không có lý do'}
+                        ${window.QLPKSharedUtils.escapeHtml(schedule.reason || 'Không có lý do')}
                     </span>
                 </td>
                 <td>
@@ -468,10 +453,10 @@ function renderBusySchedulesTable(schedules) {
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         ${schedule.status === 'active' ? `
-                            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-warning btn-sm" onclick="editBusySchedule(${schedule.id})" title="Chỉnh sửa">
+                            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-warning btn-sm" data-qlpk-call="editBusySchedule" data-qlpk-args='[${schedule.id}]' title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteBusySchedule(${schedule.id})" title="Xóa">
+                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger btn-sm" data-qlpk-call="confirmDeleteBusySchedule" data-qlpk-args='[${schedule.id}]' title="Xóa">
                                 <i class="bi bi-trash"></i>
                             </button>
                         ` : `
@@ -631,7 +616,7 @@ function getStatusIndicator(startTime, endTime, status) {
 }
 
 // Quick time selectors
-function setQuickTime(type) {
+function setQuickTime(type, buttonElement) {
 	const now = new Date();
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -682,8 +667,12 @@ function setQuickTime(type) {
 	}
 
 	// Highlight the selected button
-	$('.btn-outline-primary').removeClass('active');
-	$(event.target).addClass('active');
+	setQuickTimeSelection(buttonElement);
+}
+
+function setQuickTimeSelection(buttonElement) {
+	$('#busyScheduleForm [data-qlpk-call="setQuickTime"]').removeClass('active').attr('aria-pressed', 'false');
+	if (buttonElement) $(buttonElement).addClass('active').attr('aria-pressed', 'true');
 }
 
 // Filter table based on search and status
@@ -795,13 +784,13 @@ function confirmDeleteBusySchedule(scheduleId) {
                         <p>Bạn có chắc chắn muốn xóa lịch bận này?</p>
                         <div class="alert alert-warning">
                             <strong>Thời gian:</strong> ${timeRange}<br>
-                            <strong>Lý do:</strong> ${schedule.reason || 'Không có lý do'}
+                            <strong>Lý do:</strong> ${window.QLPKSharedUtils.escapeHtml(schedule.reason || 'Không có lý do')}
                         </div>
                         <p class="text-danger"><small>Hành động này không thể hoàn tác!</small></p>
                     </div>
                     <div class="modal-footer">
                         <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-danger" onclick="deleteBusySchedule(${scheduleId})">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-danger" data-qlpk-call="deleteBusySchedule" data-qlpk-args='[${scheduleId}]'>
                             <i class="bi bi-trash me-1"></i>Xóa
                         </button>
                     </div>
@@ -822,14 +811,9 @@ function confirmDeleteBusySchedule(scheduleId) {
 
 // Delete busy schedule
 function deleteBusySchedule(scheduleId) {
-	const token = localStorage.getItem('qlpk_token');
-
 	$.ajax({
 		url: `/api/doctor-busy-schedules/${scheduleId}`,
 		method: 'DELETE',
-		headers: {
-			'Authorization': `Bearer ${token}`
-		},
 		success: function (response) {
 			if (response.success) {
 				showAlert('Xóa lịch bận thành công!', 'success');

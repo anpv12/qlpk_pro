@@ -47,29 +47,11 @@ let filterInputTimer = null;
 let patientInputHandler = null; // Store handler reference for cleanup
 let patientInputKeydownHandler = null; // Store keydown handler reference for cleanup
 
-// Helper: Get auth header
-function getAuthHeader() {
-	try {
-		let raw = localStorage.getItem('qlpk_token') || localStorage.getItem('token') || sessionStorage.getItem('qlpk_token');
-		if (!raw) return null;
-		if (raw.trim().startsWith('{')) {
-			const obj = JSON.parse(raw);
-			const t = obj.access_token || obj.token || obj.Authorization || obj.authorization;
-			return t ? `Bearer ${t.replace(/^Bearer\s+/i, '')}` : null;
-		}
-		return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-	} catch (e) {
-		return null;
-	}
-}
-
 // API call wrapper
 function apiCall(url, options = {}) {
-	const auth = getAuthHeader();
 	const defaultOptions = {
 		headers: {
-			'Content-Type': 'application/json',
-			...(auth ? { 'Authorization': auth } : {})
+			'Content-Type': 'application/json'
 		}
 	};
 
@@ -304,6 +286,10 @@ function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
 	return div.innerHTML;
+}
+
+function attrJson(values) {
+	return JSON.stringify(values).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 // Attach event listeners to table
@@ -1126,8 +1112,8 @@ function renderSurveyResultsByCriteria(template, response) {
                     <input type="text" class="form-control form-control-sm level-input" placeholder="Nhập mức độ"
                         data-criteria="${escapeHtml(criteriaName)}" data-criteria-key="${criteriaKey}"
                         id="level-input-${criteriaKey}-${response.id}"
-                        onchange="saveSurveyLevelForOrder('${escapeHtml(criteriaName)}', '${response.examination_id}', this)"
-                        oninput="updateLevelInputAlignment(this)">
+                        data-qlpk-call="saveSurveyLevelForOrder" data-qlpk-args="${attrJson([criteriaName, String(response.examination_id), '$this'])}" data-qlpk-on="change"
+                        data-qlpk-call="updateLevelInputAlignment" data-qlpk-args='["$this"]' data-qlpk-on="input">
                 </div>
             </div>`;
 	});
@@ -1321,12 +1307,8 @@ async function uploadResultFile(orderId, file) {
 		const formData = new FormData();
 		formData.append('file', file);
 
-		const auth = getAuthHeader();
 		const response = await fetch(`/api/chi-dinh/${orderId}/upload-result`, {
 			method: 'POST',
-			headers: {
-				...(auth ? { 'Authorization': auth } : {})
-			},
 			body: formData
 		});
 
@@ -1408,12 +1390,7 @@ async function deleteResultFile(orderId, fileId) {
 // Download result file
 async function downloadResultFile(orderId, fileId) {
 	try {
-		const auth = getAuthHeader();
-		const response = await fetch(`/api/chi-dinh/${orderId}/result-files/${fileId}/download`, {
-			headers: {
-				...(auth ? { 'Authorization': auth } : {})
-			}
-		});
+		const response = await fetch(`/api/chi-dinh/${orderId}/result-files/${fileId}/download`);
 
 		if (!response.ok) {
 			throw new Error('Lỗi khi tải file');

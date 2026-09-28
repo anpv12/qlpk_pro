@@ -12,8 +12,8 @@ window.CustomModal = {
             <div class="custom-modal-title">${title}</div>
             <div class="custom-modal-message">${message}</div>
             <div class="custom-modal-buttons">
-              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="custom-modal-btn cancel" onclick="CustomModal.closeModal('${modalId}', false)">Hủy bỏ</button>
-              <button data-qlpk-button="${buttonRole === 'danger' ? 'danger' : 'execute'}" data-qlpk-button-variant="solid" class="custom-modal-btn confirm" onclick="CustomModal.closeModal('${modalId}', true)">Xác nhận</button>
+              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="custom-modal-btn cancel" data-qlpk-call="CustomModal.closeModal" data-qlpk-args='["${modalId}", false]'>Hủy bỏ</button>
+              <button data-qlpk-button="${buttonRole === 'danger' ? 'danger' : 'execute'}" data-qlpk-button-variant="solid" class="custom-modal-btn confirm" data-qlpk-call="CustomModal.closeModal" data-qlpk-args='["${modalId}", true]'>Xác nhận</button>
             </div>
           </div>
         </div>
@@ -54,7 +54,7 @@ window.CustomModal = {
             <div class="custom-modal-title">${title}</div>
             <div class="custom-modal-message">${message}</div>
             <div class="custom-modal-buttons">
-              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="custom-modal-btn success" onclick="CustomModal.closeModal('${modalId}', true)">OK</button>
+              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="custom-modal-btn success" data-qlpk-call="CustomModal.closeModal" data-qlpk-args='["${modalId}", true]'>OK</button>
             </div>
           </div>
         </div>

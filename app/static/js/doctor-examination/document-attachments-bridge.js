@@ -2,6 +2,7 @@
 	'use strict';
 
 	const STATE = {
+		contextToken: 0,
 		initialized: false,
 		uploadedDocuments: [],
 		attachments: [],
@@ -29,6 +30,8 @@
 	function renderDocumentsList() {
 		ATTACHMENT_LIST.renderDocumentsList({
 			document,
+			getCurrentPatientId: STATE.options.getCurrentPatientId,
+			getContextToken: () => STATE.contextToken,
 			utils: ATTACHMENT_UTILS,
 			getAttachments: () => STATE.attachments,
 			getUploadedDocuments: () => STATE.uploadedDocuments,
@@ -45,12 +48,13 @@
 
 	function getAttachmentOptions(options = {}) {
 		return Object.assign({
+			getCurrentPatientId: STATE.options.getCurrentPatientId,
+			getContextToken: () => STATE.contextToken,
 			window,
 			document,
 			URL: window.URL,
 			fetch: window.fetch.bind(window),
 			showConfirmationDialog: CONFIRMATION_DIALOG.confirm,
-			getAuthHeader: STATE.options.getAuthHeader,
 			showToast,
 			getUploadedDocuments: () => STATE.uploadedDocuments,
 			setUploadedDocuments: value => { STATE.uploadedDocuments = Array.isArray(value) ? value : []; },
@@ -71,6 +75,7 @@
 			renderDocumentsList,
 			loadAttachmentsForCurrentPatient,
 			getCurrentPatientId: STATE.options.getCurrentPatientId,
+			getContextToken: () => STATE.contextToken,
 			getUploadedDocuments: () => STATE.uploadedDocuments,
 			setUploadedDocuments: value => { STATE.uploadedDocuments = Array.isArray(value) ? value : []; },
 			getAttachments: () => STATE.attachments,
@@ -96,6 +101,7 @@
 			maxSizeBytes: STATE.maxSizeBytes,
 			maxSizeMb: STATE.maxSizeMb,
 			isDraft: options.isDraft,
+			isCurrentContext: options.isCurrentContext,
 			shouldShowToast: options.showToast !== false,
 			onUploadSuccess: attachment => {
 				if (options.isDraft || !attachment || !attachment.id) return;
@@ -110,16 +116,16 @@
 		return ATTACHMENT_CONTROLS.loadAttachmentsForCurrentPatient(getControlsOptions());
 	}
 
-	async function openAttachmentPreviewInNewTab(attachmentId, filename) {
-		await ATTACHMENT_UTILS.openAttachmentPreviewInNewTab(attachmentId, filename, getAttachmentOptions());
+	async function openAttachmentPreviewInNewTab(attachmentId, filename, actionOptions = {}) {
+		await ATTACHMENT_UTILS.openAttachmentPreviewInNewTab(attachmentId, filename, getAttachmentOptions(actionOptions));
 	}
 
 	function downloadDocument(docId) {
 		ATTACHMENT_UTILS.downloadDraftDocument(docId, getAttachmentOptions());
 	}
 
-	function deleteDocument(docId) {
-		ATTACHMENT_UTILS.deleteDraftDocument(docId, getAttachmentOptions());
+	function deleteDocument(docId, options = {}) {
+		return ATTACHMENT_UTILS.deleteDraftDocument(docId, getAttachmentOptions(options));
 	}
 
 	function initialize(options = {}) {
@@ -137,6 +143,7 @@
 	}
 
 	function clear() {
+		STATE.contextToken++;
 		STATE.uploadedDocuments = [];
 		STATE.attachments = [];
 		renderDocumentsList();

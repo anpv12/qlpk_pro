@@ -29,23 +29,8 @@
         document.getElementById('referenceTableBody').replaceChildren(row);
     }
 
-    function getAuthHeader() {
-        try {
-            const raw = localStorage.getItem('qlpk_token') || localStorage.getItem('token') || sessionStorage.getItem('qlpk_token');
-            if (!raw) return null;
-            if (raw.trim().startsWith('{')) {
-                const parsed = JSON.parse(raw);
-                const token = parsed.access_token || parsed.token || parsed.Authorization || parsed.authorization;
-                return token ? `Bearer ${token.replace(/^Bearer\s+/i, '')}` : null;
-            }
-            return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-        } catch (error) {
-            return null;
-        }
-    }
-
     function ensureToken() {
-        if (!getAuthHeader()) {
+        if (!window.QLPKApiTransport.hasSession()) {
             window.location.href = '/login';
             return false;
         }
@@ -53,12 +38,10 @@
     }
 
     async function apiFetch(url, options = {}) {
-        const authHeader = getAuthHeader();
         const response = await fetch(url, {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                ...(authHeader ? { Authorization: authHeader } : {}),
                 ...(options.headers || {})
             }
         });

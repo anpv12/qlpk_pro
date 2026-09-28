@@ -1,5 +1,7 @@
 // Text Expansion Management JavaScript
 
+window.QLPKApiTransport.installJQuery($);
+
 let currentPage = 1;
 let totalPages = 1;
 let searchTimeout;
@@ -54,9 +56,6 @@ function loadTextExpansions(page = 1) {
     $.ajax({
         url: `/api/text-expansions/?${params}`,
         method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         success: function(response) {
             if (revision !== listRevision) return;
             if (response.success) {
@@ -109,10 +108,10 @@ function displayTextExpansions(data) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" onclick="editTextExpansion(${item.id})" title="Sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" data-qlpk-call="editTextExpansion" data-qlpk-args='[${item.id}]' title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteTextExpansion(${item.id})" title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-qlpk-call="deleteTextExpansion" data-qlpk-args='[${item.id}]' title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -143,9 +142,6 @@ function loadStats() {
     $.ajax({
         url: '/api/text-expansions/',
         method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         success: function(response) {
             if (response.success) {
                 const total = response.pagination.total;
@@ -176,9 +172,6 @@ function editTextExpansion(id) {
     $.ajax({
         url: `/api/text-expansions/${id}`,
         method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         success: function(response) {
             if (response.success) {
                 const data = response.data;
@@ -224,7 +217,6 @@ function saveTextExpansion() {
         url: url,
         method: method,
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
             'Content-Type': 'application/json'
         },
         data: JSON.stringify(data),
@@ -257,9 +249,6 @@ function deleteTextExpansion(id) {
     $.ajax({
         url: `/api/text-expansions/${id}`,
         method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         success: function(response) {
             if (response.success) {
                 showToast('success', 'Xóa thành công');
@@ -299,9 +288,6 @@ function importFromExcel() {
     $.ajax({
         url: '/api/text-expansions/import',
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         data: formData,
         processData: false,
         contentType: false,
@@ -328,8 +314,23 @@ function importFromExcel() {
 }
 
 // Export to Excel
-function exportToExcel() {
-    window.open('/api/text-expansions/export', '_blank');
+async function exportToExcel() {
+    try {
+        const response = await fetch('/api/text-expansions/export');
+        if (!response.ok) throw new Error('Export failed');
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'text_expansions.xlsx';
+        document.body.appendChild(anchor);
+        try { anchor.click(); } finally {
+            anchor.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+    } catch (error) {
+        showToast('error', 'Không thể xuất từ viết tắt. Vui lòng thử lại.');
+    }
 }
 
 // Download template
@@ -366,9 +367,6 @@ function resetAll() {
     $.ajax({
         url: '/api/text-expansions/reset',
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-        },
         success: function(response) {
             if (response.success) {
                 showToast('success', 'Reset thành công');
@@ -403,6 +401,5 @@ function showToast(type, message) {
 
 // Logout function
 function logout() {
-    localStorage.removeItem('qlpk_token');
-    window.location.href = 'login.html';
+    window.QLPKAppHeader?.logout();
 }

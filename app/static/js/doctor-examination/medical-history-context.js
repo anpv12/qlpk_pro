@@ -6,13 +6,11 @@ const getComponent = () => {
 
 const getPageRuntime = () => {
   const pageRuntime = getComponent().config.pageRuntime;
-  if (!pageRuntime || typeof pageRuntime.getAuthHeader !== 'function') {
+  if (!pageRuntime || typeof pageRuntime.apiCall !== 'function') {
     throw new Error('Thiếu page runtime cho medical history');
   }
   return pageRuntime;
 };
-
-const getAuthHeader = () => getPageRuntime().getAuthHeader() || '';
 
 const getSelectedICDs = () => {
   const historyIcd = getComponent().getFeature('icd');
@@ -29,13 +27,7 @@ const debugLog = (...args) => {
   }
 };
 
-const getJsonAuthHeaders = () => {
-  const authHeader = getAuthHeader();
-  return {
-    ...(authHeader ? { Authorization: authHeader } : {}),
-    'Content-Type': 'application/json'
-  };
-};
+const getJsonHeaders = () => ({ 'Content-Type': 'application/json' });
 
 const callAction = (name, ...args) => {
   const action = getComponent().getAction(name);
@@ -57,10 +49,9 @@ export {
   debugLog,
   escapeAttr,
   escapeHtml,
-  getAuthHeader,
   getComponent,
   getIcdLookup,
-  getJsonAuthHeaders,
+  getJsonHeaders,
   getPageRuntime,
   getSelectedICDs,
   setVisible

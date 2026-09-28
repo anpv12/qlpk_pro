@@ -775,17 +775,56 @@
 		return `${formatDate(date)} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
 	}
 
+	function buildHistoryRowFlags(exam, options) {
+		const isCurrentExam = isCurrentAppointmentMatch(options.currentAppointmentId, exam.appointment_id);
+		const isExamining = isExaminingStatus(exam.status);
+		const displayDate = getDisplayDate(exam);
+		const isToday = isSameDate(displayDate, new Date());
+		return {
+			isCurrentExam,
+			isExamining,
+			isToday,
+			displayDate,
+			isWaitingPayment: String(exam.status || '').trim().toUpperCase() === 'WAITING_PAYMENT',
+			isPastHistory: !isCurrentExam && !isExamining && !(isToday && exam.payment_status !== 'PAID')
+		};
+	}
+
+	function buildHistoryRowActions(exam, index, flags, options) {
+		const actionButtons = [];
+		if (options.showCopyAction !== false) {
+			actionButtons.push(`
+						<button class="btn btn-sm patient-search-modal__history-copy-button ${flags.isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${flags.isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${flags.isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
+                            <i class="bi ${flags.isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}"></i>
+                        </button>
+                    `);
+		}
+		if (options.showDeleteAction !== false) {
+			actionButtons.push(`
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `);
+		}
+		return actionButtons.join('');
+	}
+
+	function buildHistoryRowClasses(flags, selectedIndex, index) {
+		return [
+			'row', 'border-bottom', 'py-2', 'align-items-center',
+			'modal-history-row', 'modal-history-item',
+			selectedIndex === index ? 'modal-history-item-active' : '',
+			flags.isCurrentExam ? 'current-exam-highlight' : '',
+			flags.isExamining ? 'modal-history-item--examining' : '',
+			flags.isPastHistory ? 'past-exam-history' : ''
+		].filter(Boolean).join(' ');
+	}
+
 	function buildHistoryRowHtml(options = {}) {
 		const exam = options.exam || {};
 		const index = options.index || 0;
-		const selectedIndex = options.selectedIndex;
-		const isCurrentExam = isCurrentAppointmentMatch(options.currentAppointmentId, exam.appointment_id);
-		const isExamining = isExaminingStatus(exam.status);
-		const isWaitingPayment = String(exam.status || '').trim().toUpperCase() === 'WAITING_PAYMENT';
-		const displayDate = getDisplayDate(exam);
-		const isToday = isSameDate(displayDate, new Date());
-		const isPastHistory = !isCurrentExam && !isExamining && !(isToday && exam.payment_status !== 'PAID');
-		const statusBadge = buildVisitBadge({ isCurrentExam, isExamining, isToday, paymentStatus: exam.payment_status });
+		const flags = buildHistoryRowFlags(exam, options);
+		const statusBadge = buildVisitBadge({ isCurrentExam: flags.isCurrentExam, isExamining: flags.isExamining, isToday: flags.isToday, paymentStatus: exam.payment_status });
 		const getDescription = typeof options.getDescription === 'function'
 			? options.getDescription
 			: item => item.diagnosis || '';
@@ -793,50 +832,24 @@
 		const getStatusText = typeof options.getExaminationStatusText === 'function'
 			? options.getExaminationStatusText
 			: status => status || '';
-		const showCopyAction = options.showCopyAction !== false;
-		const showDeleteAction = options.showDeleteAction !== false;
-		const actionButtons = [];
-
-		if (showCopyAction) {
-			actionButtons.push(`
-						<button class="btn btn-sm patient-search-modal__history-copy-button ${isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
-                            <i class="bi ${isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}"></i>
-                        </button>
-                    `);
-		}
-		if (showDeleteAction) {
-			actionButtons.push(`
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `);
-		}
-
-		const rowClasses = [
-			'row', 'border-bottom', 'py-2', 'align-items-center',
-			'modal-history-row', 'modal-history-item',
-			selectedIndex === index ? 'modal-history-item-active' : '',
-			isCurrentExam ? 'current-exam-highlight' : '',
-			isExamining ? 'modal-history-item--examining' : '',
-			isPastHistory ? 'past-exam-history' : ''
-		].filter(Boolean).join(' ');
+		const rowClasses = buildHistoryRowClasses(flags, options.selectedIndex, index);
 
 		return `
-                <div class="${rowClasses}" data-index="${index}" data-exam-id="${exam.id}" data-appointment-id="${exam.appointment_id}" data-is-current="${isCurrentExam}">
+                <div class="${rowClasses}" data-index="${index}" data-exam-id="${exam.id}" data-appointment-id="${exam.appointment_id}" data-is-current="${flags.isCurrentExam}">
                     <div class="col-3 text-start col-history-date">
-                        <span class="modal-history-date-time">${formatDateTime(displayDate, options)}</span>
+                        <span class="modal-history-date-time">${formatDateTime(flags.displayDate, options)}</span>
                         ${statusBadge}
                     </div>
                     <div class="col-5 text-start col-history-diagnosis">
                         <span class="d-block text-truncate" title="${description}">${description}</span>
 					</div>
 					<div class="col-2 text-center col-history-payment">
-						<span class="qlpk-status patient-search-modal__exam-status-badge${isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
+						<span class="qlpk-status patient-search-modal__exam-status-badge${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
 							${getStatusText(exam.status)}
 						</span>
                     </div>
                     <div class="col-2 text-center">
-                        ${actionButtons.join('')}
+                        ${buildHistoryRowActions(exam, index, flags, options)}
                     </div>
                 </div>
             `;

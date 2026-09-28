@@ -45,8 +45,7 @@
 	}
 
 	function loadCalendarStatus(options) {
-		const token = options.getToken();
-		if (!token) {
+		if (!options.hasSession()) {
 			applyCalendarStatusPendingUi(options.$, buildUnknownStatusHtml());
 			return null;
 		}
@@ -56,9 +55,6 @@
 		return options.$.ajax({
 			url: '/api/calendar/status',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`
-			},
 			success: function (data) {
 				applyCalendarStatusUi(options.$, Boolean(data.connected && data.is_active));
 			},
@@ -70,8 +66,7 @@
 	}
 
 	function connectGoogleCalendar(options) {
-		const token = options.getToken();
-		if (!token) {
+		if (!options.hasSession()) {
 			showCalendarToast(options, 'warning', 'Vui lòng đăng nhập để kết nối Google Calendar');
 			return;
 		}
@@ -79,9 +74,6 @@
 		options.$.ajax({
 			url: '/api/calendar/connect/google/init',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`
-			},
 			success: function (data) {
 				if (data.url) {
 					const targetWindow = options.window.top || options.window;
@@ -102,15 +94,11 @@
 	}
 
 	function disconnectGoogleCalendar(options) {
-		const token = options.getToken();
-		if (!token) return;
+		if (!options.hasSession()) return;
 
 		options.$.ajax({
 			url: '/api/calendar/disconnect',
 			method: 'POST',
-			headers: {
-				'Authorization': `Bearer ${token}`
-			},
 			success: function () {
 				options.loadCalendarStatus();
 				options.showCustomToast('success', 'Đã ngắt kết nối Google Calendar');

@@ -84,8 +84,7 @@
 		return { ...defaults, ...(supplied || {}) };
 	}
 
-	function create(options = {}) {
-		const doc = options.document || document;
+	function resolveModalDependencies(options) {
 		const modalUi = requireDependency(
 			options.modalUi || REGISTRY?.get?.('modalPatientSearchUi'),
 			'ModalPatientSearchUi'
@@ -94,13 +93,52 @@
 			options.tabsUi || REGISTRY?.get?.('modalFunctionTabsUi'),
 			'ModalFunctionTabsUi'
 		);
-		requireDependency(
+		const historyListUi = requireDependency(
 			options.historyListUi || REGISTRY?.get?.('modalMedicalHistoryListUi'),
 			'ModalMedicalHistoryListUi'
 		);
 		if (typeof modalUi.createWorkflowModalSearchContext !== 'function') {
 			throw new Error('ModalPatientSearchUi không hỗ trợ tạo workflow context');
 		}
+		return { modalUi, tabsUi, historyListUi };
+	}
+
+	function createPrintController(options, context, doc) {
+		const printFactory = options.printFactory || REGISTRY?.get?.('modalHistoryPrintController');
+		if (options.print === false || !printFactory || typeof printFactory.create !== 'function') return null;
+		const printController = printFactory.create({
+			document: doc,
+			stateStore: context.stateStore,
+			renderers: context.historyTabRenderers,
+			showToast: options.showToast,
+			...(options.printOptions || {})
+		});
+		printController.bind();
+		return printController;
+	}
+
+	function unbindTriggers(triggerElements) {
+		triggerElements.forEach(trigger => {
+			const binding = trigger[TRIGGER_PROPERTY];
+			if (binding?.handler) trigger.removeEventListener('click', binding.handler);
+			delete trigger[TRIGGER_PROPERTY];
+		});
+		triggerElements.clear();
+	}
+
+	function bindConfiguredTriggers(triggers, bindTrigger) {
+		(triggers || []).forEach(trigger => {
+			if (trigger && typeof trigger === 'object' && !trigger.nodeType) {
+				bindTrigger(trigger.element || trigger.id, trigger);
+				return;
+			}
+			bindTrigger(trigger);
+		});
+	}
+
+	function create(options = {}) {
+		const doc = options.document || document;
+		const { modalUi, tabsUi, historyListUi } = resolveModalDependencies(options);
 
 		const modalElement = resolveElement(options.modal || options.modalId || 'patientSearchModal', doc);
 		if (!modalElement) throw new Error('Không tìm thấy #patientSearchModal');
@@ -112,7 +150,7 @@
 			...contextOptions,
 			document: doc,
 			tabsUi,
-			historyListUi: options.historyListUi || REGISTRY?.get?.('modalMedicalHistoryListUi'),
+			historyListUi,
 			elements: options.elements,
 			ids: options.ids
 		});
@@ -158,12 +196,7 @@
 		function destroy() {
 			if (destroyed) return false;
 			destroyed = true;
-			triggerElements.forEach(trigger => {
-				const binding = trigger[TRIGGER_PROPERTY];
-				if (binding?.handler) trigger.removeEventListener('click', binding.handler);
-				delete trigger[TRIGGER_PROPERTY];
-			});
-			triggerElements.clear();
+			unbindTriggers(triggerElements);
 			if (printController && typeof printController.destroy === 'function') printController.destroy();
 			if (typeof context.flow.destroy === 'function') context.flow.destroy();
 			if (modalElement[INSTANCE_PROPERTY]) delete modalElement[INSTANCE_PROPERTY];
@@ -187,17 +220,7 @@
 			return trigger;
 		}
 
-		const printFactory = options.printFactory || REGISTRY?.get?.('modalHistoryPrintController');
-		if (options.print !== false && printFactory && typeof printFactory.create === 'function') {
-			printController = printFactory.create({
-				document: doc,
-				stateStore: context.stateStore,
-				renderers: context.historyTabRenderers,
-				showToast: options.showToast,
-				...(options.printOptions || {})
-			});
-			printController.bind();
-		}
+		printController = createPrintController(options, context, doc);
 
 		const instance = Object.freeze({
 			element: modalElement,
@@ -217,13 +240,7 @@
 		modalElement[INSTANCE_PROPERTY] = instance;
 
 		if (options.autoBind !== false) bindControls();
-		(options.triggers || []).forEach(trigger => {
-			if (trigger && typeof trigger === 'object' && !trigger.nodeType) {
-				bindTrigger(trigger.element || trigger.id, trigger);
-				return;
-			}
-			bindTrigger(trigger);
-		});
+		bindConfiguredTriggers(options.triggers, bindTrigger);
 
 		return instance;
 	}

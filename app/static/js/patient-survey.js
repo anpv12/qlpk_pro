@@ -1695,13 +1695,10 @@ async function loadOrderSurveyResult(orderId, refresh = false) {
         $('#patient-name, #patient-phone').text('—');
         $('#no-survey-message').text(message).show();
     };
-    const token = localStorage.getItem('qlpk_token');
-    if (!token) { fail('Vui lòng đăng nhập tài khoản phòng khám rồi mở lại Xem kết quả.'); return; }
+    if (!window.QLPKApiTransport.hasSession()) { fail('Vui lòng đăng nhập tài khoản phòng khám rồi mở lại Xem kết quả.'); return; }
     try {
         if (!/^\d+$/.test(orderId)) throw new Error('Liên kết kết quả không hợp lệ.');
-        const response = await fetch(`/api/chi-dinh/${orderId}/survey-result`, {
-            headers: {Authorization: `Bearer ${token}`}, cache: 'no-store'
-        });
+        const response = await fetch(`/api/chi-dinh/${orderId}/survey-result`, {cache: 'no-store'});
         if (!response.ok) {
             const message = response.status === 401 ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
                 : response.status === 403 ? 'Bạn không có quyền xem kết quả chỉ định này.'
@@ -2271,7 +2268,7 @@ function showAlert(type, message) {
     const alertHtml = `
         <div class="custom-alert ${alertClass}" role="alert">
             <div class="alert-message">${message}</div>
-            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="alert-close" onclick="closeAlert(this)">×</button>
+            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="alert-close" data-qlpk-call="closeAlert" data-qlpk-args='["$this"]'>×</button>
         </div>
     `;
     

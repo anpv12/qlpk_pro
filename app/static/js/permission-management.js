@@ -165,8 +165,7 @@ $(function () {
 
   // Đăng xuất
   $('#logoutBtn').on('click', function () {
-    localStorage.removeItem('qlpk_token');
-    window.location.href = '/login.html';
+    window.QLPKAppHeader?.logout();
   });
 
   $('#userSearchInput').on('input', function () {

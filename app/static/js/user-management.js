@@ -4,14 +4,13 @@ function showCustomToast(type, message) {
 }
 
 $(document).ready(function () {
-	if (!localStorage.getItem('qlpk_token')) {
+	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = '/login.html';
 		return;
 	}
 
 	$('#logoutBtn').on('click', function () {
-		localStorage.removeItem('qlpk_token');
-		window.location.href = '/login.html';
+		window.QLPKAppHeader?.logout();
 	});
 
 	$('#addUserBtn').on('click', function () {
@@ -306,7 +305,6 @@ $(document).ready(function () {
 			data: formData,
 			processData: false,
 			contentType: false,
-			headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` },
 			success: function (res) {
 				currentAvatarUrl = res.avatar;
 				showCustomToast('success', 'Tải avatar thành công');
@@ -345,7 +343,6 @@ $(document).ready(function () {
 			data: formData,
 			processData: false,
 			contentType: false,
-			headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` },
 			success: function (res) {
 				currentLicenseCertificateUrl = res.license_certificate_file;
 				// Sử dụng tên file gốc từ response
@@ -380,17 +377,13 @@ $(document).ready(function () {
 
 	// Function load thông tin user đã đăng nhập
 	function loadCurrentUserInfo() {
-		const token = localStorage.getItem('qlpk_token');
-		if (!token) {
+		if (!window.QLPKApiTransport.hasSession()) {
 			return;
 		}
 
 		$.ajax({
 			url: '/users/me',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`
-			},
 			success: function (response) {
 
 				// Cập nhật sidebar

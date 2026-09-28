@@ -1,47 +1,20 @@
 (function (window) {
 	'use strict';
 
-	function getStorageToken(storage) {
-		if (!storage) return null;
-		return storage.getItem('qlpk_token') || storage.getItem('token');
-	}
-
-	function normalizeAuthHeader(rawToken) {
-		if (!rawToken) return null;
-		try {
-			const trimmed = String(rawToken).trim();
-			if (!trimmed) return null;
-			if (trimmed.startsWith('{')) {
-				const tokenObject = JSON.parse(trimmed);
-				const token = tokenObject.access_token || tokenObject.token || tokenObject.Authorization || tokenObject.authorization;
-				return token ? `Bearer ${String(token).replace(/^Bearer\s+/i, '')}` : null;
-			}
-			return /^Bearer\s+/i.test(trimmed) ? trimmed : `Bearer ${trimmed}`;
-		} catch (error) {
-			return null;
-		}
-	}
-
 	function getAuthHeader() {
-		return normalizeAuthHeader(getStorageToken(window.localStorage) || getStorageToken(window.sessionStorage));
+		return window.QLPKApiTransport.getAuthHeader();
 	}
 
 	function redirectToLogin() {
 		window.location.href = '/login';
 	}
 
-	function ensureToken() {
-		if (getAuthHeader()) return true;
-		redirectToLogin();
-		return false;
+	function ensureSession() {
+		return window.QLPKApiTransport.ensureSession();
 	}
 
 	function apiCall(url, options = {}) {
 		const headers = new Headers(options.headers || {});
-		const authHeader = getAuthHeader();
-		if (authHeader && !headers.has('Authorization')) {
-			headers.set('Authorization', authHeader);
-		}
 
 		return window.fetch(url, { ...options, headers }).then(response => {
 			if (response.status === 401) redirectToLogin();
@@ -65,7 +38,7 @@
 
 	const runtime = {
 		apiCall,
-		ensureToken,
+		ensureSession,
 		formatDateDisplay,
 		getAuthHeader,
 		showCustomToast

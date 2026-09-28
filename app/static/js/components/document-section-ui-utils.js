@@ -66,7 +66,7 @@
 			documentsList.querySelectorAll('button').forEach(btn => {
 				const action = btn.getAttribute('data-action');
 				const role = btn.getAttribute('data-role');
-				const isDeleteButton = action === 'delete' || action === 'server-delete' || role === 'draft-delete' || btn.classList.contains('btn-outline-danger');
+				const isDeleteButton = action === 'delete' || action === 'server-delete' || action === 'draft-delete' || role === 'draft-delete' || btn.classList.contains('btn-outline-danger');
 				if (isDeleteButton) {
 					btn.disabled = locked;
 					btn.style.pointerEvents = locked ? 'none' : '';
@@ -130,8 +130,10 @@
 					return;
 				}
 				const files = Array.from(e.target.files || []);
+				const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
 				if (hasCurrentPatient()) {
 					for (const f of files) {
+						if (!isCurrentContext()) break;
 						await uploadAttachment(f);
 					}
 				} else {
@@ -235,11 +237,15 @@
 		const ensureEditingAllowed = options.ensureEditingAllowed || function () { return true; };
 		if (!ensureEditingAllowed()) return false;
 
+		const getDocuments = () => options.getUploadedDocuments?.() || [];
+		const target = getDocuments().find(item => String(item.id) === String(docId));
+		const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+		if (!target || !isCurrentContext()) return false;
 		const confirmed = await confirmDocumentDelete(options);
-		if (!confirmed) return false;
+		if (!confirmed || !isCurrentContext() || !ensureEditingAllowed() || !getDocuments().includes(target)) return false;
 
 		const documents = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
-		const nextDocuments = documents.filter(d => d.id !== docId);
+		const nextDocuments = documents.filter(item => item !== target);
 		if (typeof options.setUploadedDocuments === 'function') {
 			options.setUploadedDocuments(nextDocuments);
 		}
@@ -287,7 +293,9 @@
 		}
 
 		if (typeof options.uploadFile !== 'function') return false;
-		return options.uploadFile(file, currentPatientId, { isDraft: false, showToast: true });
+		const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+		if (!isCurrentContext()) return false;
+		return options.uploadFile(file, currentPatientId, { isDraft: false, showToast: true, isCurrentContext });
 	}
 
 	function renderSharedDocumentList(options = {}) {
@@ -310,12 +318,12 @@
 		const showToast = typeof options.showToast === 'function' ? options.showToast : function () {};
 		const openAttachmentPreviewInNewTab = options.openAttachmentPreviewInNewTab || (
 			typeof attachmentUtils.openAttachmentPreviewInNewTab === 'function'
-				? (attachmentId, filename) => attachmentUtils.openAttachmentPreviewInNewTab(attachmentId, filename, {
+				? (attachmentId, filename, actionOptions = {}) => attachmentUtils.openAttachmentPreviewInNewTab(attachmentId, filename, {
+					...actionOptions,
 					window,
 					document: doc,
 					URL: options.URL || window.URL,
 					fetch: options.fetch || window.fetch.bind(window),
-					getAuthHeader: options.getAuthHeader,
 					showToast
 				})
 				: null
@@ -326,6 +334,9 @@
 			document: doc,
 			utils: attachmentUtils,
 			getAttachments: options.getAttachments,
+			getCurrentPatientId: options.getCurrentPatientId,
+			getContextToken: options.getContextToken,
+			ensureEditingAllowed: options.ensureEditingAllowed,
 			getUploadedDocuments: options.getUploadedDocuments,
 			formatDateDisplay: options.formatDateDisplay || options.formatDraftDate,
 			openAttachmentPreviewInNewTab,
@@ -344,50 +355,15 @@
 	}
 
 	async function loadAttachmentsForCurrentPatient(options = {}) {
-		const doc = getDocument(options);
-		const list = doc.getElementById('documentsList');
-		if (!list) return false;
-
-		const currentPatientId = typeof options.getCurrentPatientId === 'function' ? options.getCurrentPatientId() : null;
-		if (!currentPatientId) {
-			try {
-				const raw = options.sessionStorage.getItem(options.documentDraftKey);
-				if (raw) {
-					const meta = JSON.parse(raw) || [];
-					if (typeof options.setUploadedDocuments === 'function') {
-						options.setUploadedDocuments(meta.map(m => ({ ...m })));
-					}
-				}
-			} catch (e) { }
-			if (typeof options.setAttachments === 'function') {
-				options.setAttachments([]);
-			}
-			if (typeof options.renderDocumentsList === 'function') {
-				options.renderDocumentsList();
-			}
-			return true;
-		}
-
-		try {
-			const res = await options.apiCall(`/attachments/patients/${currentPatientId}/attachments`);
-			if (res.ok) {
-				const data = await res.json();
-				if (typeof options.setAttachments === 'function') {
-					options.setAttachments(Array.isArray(data) ? data : (data.attachments || []));
-				}
-				if (typeof options.renderAttachmentsList === 'function') {
-					options.renderAttachmentsList();
-				}
-			} else {
-				list.innerHTML = '<div class="text-danger py-3">Không tải được danh sách tài liệu.</div>';
-			}
-		} catch (e) {
-			list.innerHTML = '<div class="text-danger py-3">Lỗi khi tải danh sách tài liệu.</div>';
-		}
-		return true;
+		return window.ReceptionistDocumentAttachmentControls.loadAttachmentsForCurrentPatient({
+			...options,
+			renderDocumentsList: options.renderDocumentsList || options.renderAttachmentsList
+		});
 	}
 
 	async function uploadFileToPatient(file, patientId, options = {}) {
+		const isCurrentContext = () => options.isCurrentContext?.() !== false;
+		if (!isCurrentContext()) return false;
 		const isDraft = Boolean(options.isDraft);
 		const showToast = options.showToast !== false;
 		const validateFile = options.validateFile || function () { return true; };
@@ -398,13 +374,13 @@
 		try {
 			const form = new FormData();
 			form.append('file', file);
-			const auth = typeof options.getAuthHeader === 'function' ? options.getAuthHeader() : null;
-			const res = await options.fetch(`/attachments/patients/${patientId}/attachments`, {
+			const fetchRequest = options.fetch || window.fetch.bind(window);
+			const res = await fetchRequest(`/attachments/patients/${patientId}/attachments`, {
 				method: 'POST',
-				body: form,
-				headers: auth ? { 'Authorization': auth } : undefined
+				body: form
 			});
 
+			if (!isCurrentContext()) return false;
 			if (res.ok) {
 				if (showToast && typeof options.showSuccess === 'function') {
 					options.showSuccess('Tải lên tài liệu thành công');
@@ -415,44 +391,58 @@
 				return true;
 			}
 
-			const errorData = await res.json();
 			if (showToast && typeof options.showError === 'function') {
-				options.showError(`Tải lên thất bại: ${errorData.detail || 'Lỗi không xác định'}`);
+				options.showError('Không thể tải tài liệu lên. Vui lòng thử lại.');
 			}
 			return false;
 		} catch (e) {
-			if (showToast && typeof options.showError === 'function') {
+			if (isCurrentContext() && showToast && typeof options.showError === 'function') {
 				options.showError('Tải lên gặp lỗi');
 			}
 			return false;
 		}
 	}
 
-	async function uploadDraftDocumentsForPatient(patientId, options = {}) {
-		const uploadedDocuments = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
-		if (!patientId || !Array.isArray(uploadedDocuments) || uploadedDocuments.length === 0) return false;
+	function persistRemainingDocumentDrafts(documents, options) {
 		try {
-			for (const documentItem of uploadedDocuments) {
-				if (!documentItem || !documentItem.file) continue;
-				if (typeof options.uploadFile === 'function') {
-					await options.uploadFile(documentItem.file, patientId, { isDraft: true, showToast: false });
-				}
+			if (!options.sessionStorage || !options.documentDraftKey) return;
+			if (!documents.length) {
+				options.sessionStorage.removeItem(options.documentDraftKey);
+				return;
 			}
-			if (typeof options.setUploadedDocuments === 'function') {
-				options.setUploadedDocuments([]);
-			}
-			try {
-				if (options.sessionStorage && options.documentDraftKey) {
-					options.sessionStorage.removeItem(options.documentDraftKey);
-				}
-			} catch (e) { }
-			try {
-				if (typeof options.loadAttachments === 'function') await options.loadAttachments();
-			} catch (e) { }
-			return true;
-		} catch (e) {
-			return false;
+			options.sessionStorage.setItem(options.documentDraftKey, JSON.stringify(documents.map(item => ({
+				id: item.id, name: item.name, size: item.size, type: item.type, uploadDate: item.uploadDate
+			}))));
+		} catch (error) {
+			console.warn('[DocumentSection] draft cache update failed', error);
 		}
+	}
+
+	function assertDocumentUploadContext(options) {
+		if (typeof options.isCurrentContext === 'function' && !options.isCurrentContext()) {
+			throw new Error('document-upload-stale');
+		}
+	}
+
+	async function uploadDraftDocumentsForPatient(patientId, options = {}) {
+		const getDocuments = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments : () => [];
+		const uploadedDocuments = getDocuments();
+		if (!patientId || !Array.isArray(uploadedDocuments) || uploadedDocuments.length === 0) return false;
+		for (const documentItem of [...uploadedDocuments]) {
+			assertDocumentUploadContext(options);
+			if (!documentItem?.file || typeof options.uploadFile !== 'function') throw new Error('document-upload-unavailable');
+			const uploaded = await options.uploadFile(documentItem.file, patientId, { isDraft: true, showToast: false, isCurrentContext: options.isCurrentContext });
+			assertDocumentUploadContext(options);
+			if (uploaded !== true) throw new Error('document-upload-failed');
+			const currentDocuments = getDocuments();
+			const index = currentDocuments.indexOf(documentItem);
+			if (index !== -1) currentDocuments.splice(index, 1);
+			if (typeof options.setUploadedDocuments === 'function') options.setUploadedDocuments(currentDocuments);
+			persistRemainingDocumentDrafts(currentDocuments, options);
+		}
+		if (getDocuments().length) throw new Error('document-upload-new-drafts');
+		if (typeof options.loadAttachments === 'function') await options.loadAttachments();
+		return true;
 	}
 
 	function createDocumentSectionAdapter(options = {}) {
@@ -505,6 +495,8 @@
 				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
 				handleFileUpload: adapter.handleFileUpload,
 				uploadAttachment: adapter.uploadAttachmentForCurrentPatient,
+				getCurrentPatientId: options.getCurrentPatientId,
+				getContextToken: options.getContextToken,
 				hasCurrentPatient: () => Boolean(typeof options.getCurrentPatientId === 'function' ? options.getCurrentPatientId() : null),
 				getUploadedDocuments,
 				showInfo: message => showToast('info', message),
@@ -518,15 +510,15 @@
 				...uploadOptions,
 				fetch: options.fetch,
 				validateFile: options.validateFile,
-				getAuthHeader: options.getAuthHeader,
 				loadAttachments: adapter.loadAttachmentsForCurrentPatient,
 				showSuccess: message => showToast('success', message),
 				showError: message => showToast('error', message)
 			});
 		};
 
-		adapter.uploadDraftDocumentsForPatient = function (patientId) {
+		adapter.uploadDraftDocumentsForPatient = function (patientId, uploadOptions = {}) {
 			return uploadDraftDocumentsForPatient(patientId, {
+				isCurrentContext: uploadOptions.isCurrentContext,
 				getUploadedDocuments,
 				setUploadedDocuments: options.setUploadedDocuments,
 				sessionStorage: options.sessionStorage,
@@ -552,13 +544,15 @@
 		adapter.renderDocumentsList = function () {
 			return renderSharedDocumentList({
 				document: doc,
+				getCurrentPatientId: options.getCurrentPatientId,
+				getContextToken: options.getContextToken,
+				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
 				getUploadedDocuments,
 				getAttachments,
 				formatDateDisplay: options.formatDisplayDate,
 				formatDraftDate: options.formatDraftDate,
 				apiCall: options.apiCall,
 				fetch: options.fetch,
-				getAuthHeader: options.getAuthHeader,
 				showToast,
 				showConfirmationDialog: options.showConfirmationDialog,
 				loadAttachmentsForCurrentPatient: adapter.loadAttachmentsForCurrentPatient,
@@ -577,6 +571,8 @@
 				documentDraftKey: options.documentDraftKey,
 				apiCall: options.apiCall,
 				getCurrentPatientId: options.getCurrentPatientId,
+				getContextToken: options.getContextToken,
+				getUploadedDocuments,
 				setUploadedDocuments: options.setUploadedDocuments,
 				setAttachments: options.setAttachments,
 				renderDocumentsList: adapter.renderDocumentsList,
@@ -592,6 +588,7 @@
 			return uploadAttachmentForCurrentPatient(file, {
 				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
 				getCurrentPatientId: options.getCurrentPatientId,
+				getContextToken: options.getContextToken,
 				uploadFile: adapter.uploadFile,
 				showError: message => showToast('error', message)
 			});
@@ -605,8 +602,11 @@
 			});
 		};
 
-		adapter.deleteDocument = function (docId) {
+		adapter.deleteDocument = function (docId, actionOptions = {}) {
 			return deleteDraftDocument(docId, {
+				...actionOptions,
+				getCurrentPatientId: options.getCurrentPatientId,
+				getContextToken: options.getContextToken,
 				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
 				getUploadedDocuments,
 				setUploadedDocuments: options.setUploadedDocuments,

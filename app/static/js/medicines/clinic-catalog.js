@@ -229,22 +229,21 @@
         const params = new URLSearchParams({search: query, status: 'active',
             page: String(Math.floor(skip / limit) + 1), per_page: String(limit), mode: 'autocomplete'});
         const key = params.toString();
-        const token = localStorage.getItem('qlpk_token');
-        if (token !== cacheToken) { cache.clear(); cacheToken = token; }
+        const sessionRevision = window.QLPKApiTransport.sessionRevision();
+        if (sessionRevision !== cacheToken) { cache.clear(); cacheToken = sessionRevision; }
         const cached = cache.get(key);
         let result;
         if (cached && Date.now() - cached.createdAt < cacheLifetime) result = cached.result;
         else {
             cache.delete(key);
-            const response = await fetch(`/api/medicine-reference-catalog?${params}`, {
-                headers: {Authorization: 'Bearer ' + token}, signal
-            });
+            const response = await fetch(`/api/medicine-reference-catalog?${params}`, {signal});
             result = await response.json();
             if (!response.ok || !result.success) {
                 if (currentForm === formRevision && !signal.aborted) cache.clear();
                 throw new Error('Không tải được danh mục DAV.');
             }
-            if (currentForm === formRevision && !signal.aborted && token === cacheToken) {
+            if (currentForm === formRevision && !signal.aborted
+                && window.QLPKApiTransport.sessionRevision() === cacheToken) {
                 cache.set(key, {result, createdAt: Date.now()});
                 if (cache.size > cacheLimit) cache.delete(cache.keys().next().value);
             }

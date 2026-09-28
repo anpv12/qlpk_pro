@@ -14,13 +14,8 @@ class DashboardManager {
 
 	async init() {
 		// Kiểm tra quyền hiển thị
-		let userRole = null;
-		try {
-			const user = JSON.parse(localStorage.getItem('qlpk_user') || '{}');
-			userRole = user.role ? user.role.toLowerCase() : null;
-		} catch (e) {
-			console.error('Error parsing user info in dashboard:', e);
-		}
+		const user = await window.QLPKApiTransport.currentUser();
+		const userRole = user.role ? String(user.role).toLowerCase() : null;
 
 		if (userRole !== 'admin') {
 			this.setElementVisible('user-welcome-view', true);
@@ -141,7 +136,6 @@ class DashboardManager {
 			const now = new Date();
 			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 			const response = await fetch(`/api/?per_page=1000&date_from=${today}&date_to=${today}`, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (response.ok) {
 				const data = await response.json();
@@ -218,7 +212,7 @@ class DashboardManager {
 	async loadExamStats() {
 		try {
 			const url = `/api/dashboard/exam-stats-by-day?from_date=${this.revFromDate}&to_date=${this._getRevToDate()}`;
-			const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` } });
+			const res = await fetch(url);
 			if (res.ok) {
 				const data = await res.json();
 				this.renderExamStatsChart(data.items || []);
@@ -388,7 +382,6 @@ class DashboardManager {
 
 		try {
 			const res = await fetch(`/api/dashboard/exam-detail-by-day?date=${dateISO}`, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (!res.ok) throw new Error('API error');
 			const data = await res.json();
@@ -446,7 +439,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/referral-sources?from_date=${this.referralSourceFromDate}&to_date=${this.referralSourceToDate}`;
 			const response = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (response.ok) {
 				const data = await response.json();
@@ -550,7 +542,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/referral-source-detail?source=${encodeURIComponent(sourceKey)}&from_date=${this.referralSourceFromDate}&to_date=${this.referralSourceToDate}`;
 			const res = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (!res.ok) throw new Error('API error');
 			const data = await res.json();
@@ -589,7 +580,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/top-icd?from_date=${this.icdFromDate}&to_date=${this.icdToDate}`;
 			const response = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (response.ok) {
 				const data = await response.json();
@@ -694,7 +684,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/icd-detail?icd_code=${encodeURIComponent(icdCode)}&from_date=${this.icdFromDate}&to_date=${this.icdToDate}`;
 			const res = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (!res.ok) throw new Error('API error');
 			const data = await res.json();
@@ -734,7 +723,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/export-icd-excel?from_date=${this.icdFromDate}&to_date=${this.icdToDate}`;
 			const response = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (!response.ok) {
 				const err = await response.json();
@@ -765,7 +753,6 @@ class DashboardManager {
 		try {
 			const url = `/api/dashboard/export-referral-source-excel?from_date=${this.referralSourceFromDate}&to_date=${this.referralSourceToDate}`;
 			const response = await fetch(url, {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (!response.ok) {
 				const err = await response.json();
@@ -794,7 +781,6 @@ class DashboardManager {
 	async loadStaffOnline() {
 		try {
 			const response = await fetch('/api/dashboard/staff-online', {
-				headers: { 'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}` }
 			});
 			if (response.ok) {
 				const data = await response.json();
@@ -873,7 +859,7 @@ class DashboardManager {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-	if (!localStorage.getItem('qlpk_token')) {
+	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = '/login.html';
 		return;
 	}

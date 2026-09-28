@@ -93,8 +93,7 @@
     }
     async function request(suffix = '', body) {
         const response = await fetch(`/api/medicines/${medicine.id}/price${suffix}`, {
-            method: body ? 'POST' : 'GET', headers: {Authorization: 'Bearer ' + localStorage.getItem('qlpk_token'),
-                'Content-Type': 'application/json'}, ...(body ? {body: JSON.stringify(body)} : {})
+            method: body ? 'POST' : 'GET', headers: {'Content-Type': 'application/json'}, ...(body ? {body: JSON.stringify(body)} : {})
         });
         let data;
         try { data = await response.json(); } catch (_) { throw new Error('Không tải được thông tin giá. Hãy mở lại để kiểm tra.'); }

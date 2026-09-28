@@ -46,11 +46,7 @@ class OccupationAutocomplete {
     
     async loadOccupations() {
         try {
-            const response = await fetch('/api/occupations/', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-                }
-            });
+            const response = await fetch('/api/occupations/');
             
             if (response.ok) {
                 const data = await response.json();
@@ -181,7 +177,6 @@ class OccupationAutocomplete {
             const response = await fetch('/api/occupations/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ name: name })

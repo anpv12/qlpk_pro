@@ -60,11 +60,10 @@ let columns = [...DEFAULT_COLUMNS];
 let rows = [];
 
 // ===== API HELPER =====
-function getToken() { return localStorage.getItem('qlpk_token') || localStorage.getItem('token'); }
 async function apiRequest(url, method = 'GET', body = null) {
 	const opts = {
 		method,
-		headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }
+		headers: { 'Content-Type': 'application/json' }
 	};
 	if (body) opts.body = JSON.stringify(body);
 	const res = await fetch(url, opts);
@@ -102,13 +101,73 @@ async function loadExpenses() {
 }
 
 // ===== ENGINE =====
+const FORMULA_TOKEN = /\s*(\d+(?:\.\d+)?|[-+*/%()])\s*/y;
+
+function tokenizeFormula(expr) {
+	const tokens = [];
+	FORMULA_TOKEN.lastIndex = 0;
+	while (FORMULA_TOKEN.lastIndex < expr.length) {
+		const match = FORMULA_TOKEN.exec(expr);
+		if (!match) return null;
+		tokens.push(match[1]);
+	}
+	return tokens;
+}
+
+// Arithmetic-only evaluator for formula columns: numbers, + - * / %, parentheses, unary sign.
+// Division/modulo by zero yields 0; anything else (functions, identifiers, code) yields 0.
+function evaluateArithmetic(expr) {
+	const tokens = tokenizeFormula(String(expr ?? ''));
+	if (!tokens || !tokens.length) return 0;
+	let index = 0;
+	const peek = () => tokens[index];
+	const next = () => tokens[index++];
+	function parsePrimary() {
+		const token = next();
+		if (token === '(') {
+			const value = parseExpression();
+			if (next() !== ')') throw new Error('missing )');
+			return value;
+		}
+		if (token === '-') return -parsePrimary();
+		if (token === '+') return parsePrimary();
+		if (token !== undefined && /^\d/.test(token)) return parseFloat(token);
+		throw new Error('unexpected token');
+	}
+	function parseTerm() {
+		let value = parsePrimary();
+		while (peek() === '*' || peek() === '/' || peek() === '%') {
+			const operator = next();
+			const right = parsePrimary();
+			if (operator === '*') value *= right;
+			else value = right === 0 ? 0 : (operator === '/' ? value / right : value % right);
+		}
+		return value;
+	}
+	function parseExpression() {
+		let value = parseTerm();
+		while (peek() === '+' || peek() === '-') {
+			const operator = next();
+			const right = parseTerm();
+			value = operator === '+' ? value + right : value - right;
+		}
+		return value;
+	}
+	try {
+		const value = parseExpression();
+		return index === tokens.length && Number.isFinite(value) ? value : 0;
+	} catch {
+		return 0;
+	}
+}
+
 function evalFormula(formula, rowData) {
 	let expr = formula;
 	for (const m of (formula.match(/\[([^\]]+)\]/g) || [])) {
 		const col = columns.find(c => c.name === m.slice(1, -1));
 		expr = expr.replace(m, col ? (parseFloat(rowData[col.id]) || 0) : 0);
 	}
-	try { return eval(expr); } catch { return 0; }
+	return evaluateArithmetic(expr);
 }
 function computeRow(row) {
 	const c = { ...row };
@@ -151,9 +210,9 @@ function selectAc(ri, colId, value) {
 	// Find the input by scanning visible rows
 	const tbody = document.getElementById('chiBody');
 	if (!tbody) return;
-	const inputs = tbody.querySelectorAll(`input[onfocus*="'${colId}'"]`);
+	const inputs = tbody.querySelectorAll(`input[data-col="${colId}"]`);
 	inputs.forEach(inp => {
-		if (inp.getAttribute('onfocus')?.includes(`${ri},`)) {
+		if (inp.dataset.ri === String(ri)) {
 			inp.value = value;
 			if (colId === 'type') {
 				const cat = getCat(value);
@@ -433,6 +492,7 @@ async function loadAndRenderThuChi(chiRows, totalChi = 0, daysWithExpense = 0, t
 }
 
 function renderThuChiChart(labels, thuValues, chiValues) {
+	_thuChiExportData = { labels, thuValues, chiValues };
 	const dom = document.getElementById('thuChiChart');
 	if (!dom) return;
 
@@ -503,24 +563,15 @@ function renderThuChiChart(labels, thuValues, chiValues) {
 	window.addEventListener('resize', () => chart.resize());
 }
 
-// Store last chart data for export
+// Last chart data, kept for export
 let _thuChiExportData = null;
-
-// Override renderThuChiChart to capture data
-const _origRenderThuChi = renderThuChiChart;
-renderThuChiChart = function(labels, thuValues, chiValues) {
-	_thuChiExportData = { labels, thuValues, chiValues };
-	_origRenderThuChi(labels, thuValues, chiValues);
-};
 
 window.exportThuChiExcel = async function() {
 	try {
 		const range = getRevDateRange();
 		if (!range) { alert('Chưa có dữ liệu để xuất'); return; }
 		const url = `/api/dashboard/export-thu-chi?from_date=${range.fromISO}&to_date=${range.toISO}`;
-		const response = await fetch(url, {
-			headers: { 'Authorization': 'Bearer ' + getToken() }
-		});
+		const response = await fetch(url);
 		if (!response.ok) { alert('Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
@@ -545,9 +596,7 @@ window.exportChiTieuExcel = async function() {
 		const toEl = document.getElementById('dateTo');
 		if (!fromEl || !toEl || !fromEl.value || !toEl.value) { alert('Chưa có dữ liệu'); return; }
 		const url = `/api/expenses/export?from=${encodeURIComponent(fromEl.value)}&to=${encodeURIComponent(toEl.value)}`;
-		const response = await fetch(url, {
-			headers: { 'Authorization': 'Bearer ' + getToken() }
-		});
+		const response = await fetch(url);
 		if (!response.ok) { alert('Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
@@ -871,9 +920,7 @@ window.exportRevenueExcel = async function() {
 		const range = getRevDateRange();
 		if (!range) return;
 		const url = `/api/dashboard/export-excel?from_date=${range.fromISO}&to_date=${range.toISO}`;
-		const response = await fetch(url, {
-			headers: { 'Authorization': 'Bearer ' + getToken() }
-		});
+		const response = await fetch(url);
 		if (!response.ok) { alert('L\u1ed7i xu\u1ea5t Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
@@ -951,8 +998,8 @@ function clearActivePreset() { activePreset = ''; updatePresetBtns(); }
 
 function updatePresetBtns() {
 	document.querySelectorAll('.preset-btn').forEach(btn => {
-		const onclick = btn.getAttribute('onclick') || '';
-		const p = onclick.match(/'(\w+)'/)?.[1];
+		let p = '';
+		try { p = JSON.parse(btn.getAttribute('data-qlpk-args') || '[]')[0] || ''; } catch { p = ''; }
 		btn.classList.toggle('active', p === activePreset);
 	});
 }
@@ -979,21 +1026,21 @@ function togglePresetDD(type, btnEl) {
 	if (type === 'month') {
 		for (let m = 0; m < 12; m++) {
 			const isCur = (selectedMonth === m);
-			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" onclick="selectPresetItem('month',${m},${selectedYear})">T${m + 1}</div>`;
+			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" data-qlpk-call="selectPresetItem" data-qlpk-args='["month", ${m}, ${selectedYear}]'>T${m + 1}</div>`;
 		}
 		menu.innerHTML = html;
 		menu.classList.remove('cols-2');
 	} else if (type === 'quarter') {
 		for (let q = 0; q < 4; q++) {
 			const isCur = (selectedQuarter === q);
-			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" onclick="selectPresetItem('quarter',${q},${selectedYear})">Q${q + 1}</div>`;
+			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" data-qlpk-call="selectPresetItem" data-qlpk-args='["quarter", ${q}, ${selectedYear}]'>Q${q + 1}</div>`;
 		}
 		menu.innerHTML = html;
 		menu.classList.add('cols-2');
 	} else if (type === 'year') {
 		for (let y = curYear; y >= curYear - 4; y--) {
 			const isCur = (y === selectedYear);
-			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" onclick="selectPresetItem('year',0,${y})">${y}</div>`;
+			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" data-qlpk-call="selectPresetItem" data-qlpk-args='["year", 0, ${y}]'>${y}</div>`;
 		}
 		menu.innerHTML = html;
 		menu.classList.add('cols-2');
@@ -1001,7 +1048,7 @@ function togglePresetDD(type, btnEl) {
 		const labels = ['Tuần này', '1 tuần trước', '2 tuần trước', '3 tuần trước'];
 		for (let w = 0; w < 4; w++) {
 			const isCur = (w === 0);
-			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" onclick="selectPresetItem('week',${w},${curYear})">${labels[w]}</div>`;
+			html += `<div class="preset-dd-item${isCur ? ' current' : ''}" data-qlpk-call="selectPresetItem" data-qlpk-args='["week", ${w}, ${curYear}]'>${labels[w]}</div>`;
 		}
 		menu.innerHTML = html;
 		menu.classList.add('cols-2');
@@ -1183,8 +1230,8 @@ function populateFilterOptions() {
 		let html = '';
 		types.forEach(t => {
 			const checked = selectedFilterTypes.includes(t) ? 'checked' : '';
-			html += `<label class="multi-sel-item" onclick="event.stopPropagation()">
-				<input type="checkbox" value="${t}" ${checked} onchange="handleTypeChange(this)">
+			html += `<label class="multi-sel-item">
+				<input type="checkbox" value="${t}" ${checked} data-qlpk-call="handleTypeChange" data-qlpk-args='["$this"]' data-qlpk-on="change">
 				${t}
 			</label>`;
 		});
@@ -1226,7 +1273,7 @@ function renderGrid() {
 		} else {
 			sortIcon = ` <i class="bi bi-chevron-bar-expand ms-1 ct-sort-icon-muted"></i>`;
 		}
-		h += `<th class="ct-sortable-th"${widthAttr} onclick="setSort('${col.id}')" title="Sắp xếp theo ${col.name}">
+		h += `<th class="ct-sortable-th"${widthAttr} data-qlpk-call="setSort" data-qlpk-args='["${col.id}"]' title="Sắp xếp theo ${col.name}">
 			<div class="ct-th-content">${col.name}${sortIcon}</div>
 		</th>`;
 	}
@@ -1301,7 +1348,7 @@ function renderGrid() {
 			const collapseState = isExpanded ? 'false' : 'true';
 			const iconCollapsedClass = isExpanded ? '' : 'ct-toggle-icon-collapsed';
 			
-			b += `<tr class="month-group-row" data-collapsed="${collapseState}" onclick="toggleMonthGroup('${currentGroupId}', this)">`;
+			b += `<tr class="month-group-row" data-collapsed="${collapseState}" data-qlpk-call="toggleMonthGroup" data-qlpk-args='["${currentGroupId}", "$this"]'>`;
 			b += `<td class="row-num ct-month-toggle-cell"><i class="bi bi-chevron-down text-primary toggle-icon ${iconCollapsedClass}"></i></td>`;
 			
 			for (const col of columns) {
@@ -1331,25 +1378,25 @@ function renderGrid() {
 				const cat = isType ? getCat(val) : null;
 				const typeStyle = isType ? `style="--ct-type-bg:${cat.bg};--ct-type-color:${cat.color};"` : '';
 				b += `<td class="${isType ? 'ct-type-cell' : ''}" ${typeStyle}><div class="ac-wrap">
-					<input class="cell-input ${isType ? 'ct-type-input' : ''}" value="${val}"
-						onfocus="openAcList(${ri},'${col.id}',this)"
-						oninput="openAcList(${ri},'${col.id}',this)"
-						onblur="acBlurTimer=setTimeout(closeAllAc,200)"
-						onchange="updateCell(${ri},'${col.id}',this.value)">
+					<input class="cell-input ${isType ? 'ct-type-input' : ''}" value="${val}" data-ri="${ri}" data-col="${col.id}"
+						data-qlpk-on-focusin="openAcList" data-qlpk-on-focusin-args='[${ri}, "${col.id}", "$this"]'
+						data-qlpk-on-input="openAcList" data-qlpk-on-input-args='[${ri}, "${col.id}", "$this"]'
+						data-qlpk-on-focusout="scheduleCloseAc"
+						data-qlpk-on-change="updateCell" data-qlpk-on-change-args='[${ri}, "${col.id}", "$value"]'>
 					<div class="ac-list"></div>
 				</div></td>`;
 			} else if (col.type === 'number') {
 				const raw = val || '';
 				const display = raw !== '' ? fmtNum(parseFloat(raw)) : '';
 				b += `<td><input class="cell-input num" value="${display}" data-raw="${raw}"
-					onfocus="this.value=this.dataset.raw||''"
-					onblur="if(this.value!==''){this.dataset.raw=this.value;this.value=fmtNum(parseFloat(this.value)||0)}else{this.dataset.raw='';}"
-					onchange="updateCell(${ri},'${col.id}',this.value)" placeholder=""></td>`;
+					data-qlpk-on-focusin="showRawNumberCell" data-qlpk-on-focusin-args='["$this"]'
+					data-qlpk-on-focusout="formatNumberCell" data-qlpk-on-focusout-args='["$this"]'
+					data-qlpk-on-change="updateCell" data-qlpk-on-change-args='[${ri}, "${col.id}", "$value"]' placeholder=""></td>`;
 			} else {
-				b += `<td><input class="cell-input" value="${val}" onchange="updateCell(${ri},'${col.id}',this.value)" placeholder=""></td>`;
+				b += `<td><input class="cell-input" value="${val}" data-qlpk-call="updateCell" data-qlpk-args='[${ri}, "${col.id}", "$value"]' data-qlpk-on="change" placeholder=""></td>`;
 			}
 		}
-		b += `<td class="row-actions"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" onclick="deleteRow(${ri})" title="Xóa"><i class="bi bi-trash"></i></button></td></tr>`;
+		b += `<td class="row-actions"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" data-qlpk-call="deleteRow" data-qlpk-args='[${ri}]' title="Xóa"><i class="bi bi-trash"></i></button></td></tr>`;
 	});
 	document.getElementById('chiBody').innerHTML = b;
 
@@ -1378,8 +1425,7 @@ function exportExcel() {
 	if (from) params.set('from', from);
 	if (to) params.set('to', to);
 	const url = '/api/expenses/export' + (params.toString() ? '?' + params : '');
-	const token = localStorage.getItem('qlpk_token') || localStorage.getItem('token');
-	fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+	fetch(url)
 		.then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
 		.then(blob => {
 			const blobUrl = URL.createObjectURL(blob);
@@ -1392,8 +1438,7 @@ function exportExcel() {
 }
 
 function downloadTemplate() {
-	const token = localStorage.getItem('qlpk_token') || localStorage.getItem('token');
-	fetch('/api/expenses/template', { headers: { 'Authorization': 'Bearer ' + token } })
+	fetch('/api/expenses/template')
 		.then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
 		.then(blob => {
 			const blobUrl = URL.createObjectURL(blob);
@@ -1603,7 +1648,7 @@ function renderColList() {
 	const typeLabels = { number: 'Số', text: 'Văn bản', date: 'Ngày', time: 'Giờ', select: 'Dropdown', formula: 'Công thức', autocomplete: 'Tự động' };
 	document.getElementById('colList').innerHTML = columns.map(col => {
 		const fTag = col.type === 'formula' ? `<span class="ct-formula-summary">= ${col.formula}</span>` : '';
-		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${col.name}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" onclick="editCol('${col.id}')"><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" onclick="deleteCol('${col.id}')"><i class="bi bi-trash"></i></button></div></li>`;
+		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${col.name}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" data-qlpk-call="editCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" data-qlpk-call="deleteCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-trash"></i></button></div></li>`;
 	}).join('');
 }
 function showAddCol() {
@@ -1635,10 +1680,41 @@ function onTypeChange() {
 	setCtVisible('formulaGroup', t === 'formula');
 	setCtVisible('optionsGroup', t === 'select' || t === 'autocomplete');
 }
+function scheduleCloseAc() {
+	acBlurTimer = setTimeout(closeAllAc, 200);
+}
+
+function showRawNumberCell(input) {
+	input.value = input.dataset.raw || '';
+}
+
+function formatNumberCell(input) {
+	if (input.value !== '') {
+		input.dataset.raw = input.value;
+		input.value = fmtNum(parseFloat(input.value) || 0);
+	} else {
+		input.dataset.raw = '';
+	}
+}
+
+function attrJson(values) {
+	return JSON.stringify(values).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function appendFormulaToken(token) {
+	const field = document.getElementById('colFormula');
+	if (field) field.value += token;
+}
+
+window.triggerImportFile = function () {
+	const input = document.getElementById('importFile');
+	if (input) input.click();
+};
+
 function renderFormulaPicker() {
 	const nc = columns.filter(c => c.type === 'number' || c.type === 'formula');
-	document.getElementById('formulaPicker').innerHTML = nc.map(c => `<span class="formula-tag" onclick="document.getElementById('colFormula').value+='[${c.name}]'">${c.name}</span>`).join('') +
-		'<span class="formula-op" onclick="document.getElementById(\'colFormula\').value+=\' + \'">+</span><span class="formula-op" onclick="document.getElementById(\'colFormula\').value+=\' - \'">−</span><span class="formula-op" onclick="document.getElementById(\'colFormula\').value+=\' * \'">×</span>';
+	document.getElementById('formulaPicker').innerHTML = nc.map(c => `<span class="formula-tag" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson(['[' + c.name + ']'])}">${c.name}</span>`).join('') +
+		['+', '-', '*'].map((op, index) => `<span class="formula-op" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson([' ' + op + ' '])}">${['+', '−', '×'][index]}</span>`).join('');
 }
 function saveCol() {
 	const name = document.getElementById('colName').value.trim();

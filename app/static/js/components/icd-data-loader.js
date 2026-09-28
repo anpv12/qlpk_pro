@@ -14,17 +14,6 @@
 		return window.fetch ? window.fetch.bind(window) : null;
 	}
 
-	function resolveAuthHeader(options = {}) {
-		if (typeof options.getAuthHeader === 'function') {
-			return options.getAuthHeader();
-		}
-
-		const storage = options.localStorage || window.localStorage;
-		const token = storage ? storage.getItem('qlpk_token') : null;
-		if (!token) return null;
-		return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-	}
-
 	function buildIcdUrl(query = '', options = {}) {
 		const limit = Math.max(1, toFiniteInteger(options.limit, DEFAULT_PAGE_SIZE));
 		const skip = Math.max(0, toFiniteInteger(options.skip, 0));
@@ -84,13 +73,6 @@
 
 	async function loadICDPage(query = '', options = {}) {
 		try {
-			const authHeader = resolveAuthHeader(options);
-			if (!authHeader) {
-				if (options.throwOnError) throw new Error('missing-icd-auth');
-				console.error(options.missingTokenMessage || 'No token found');
-				return emptyPage(options);
-			}
-
 			const fetcher = resolveFetch(options);
 			if (!fetcher) {
 				if (options.throwOnError) throw new Error('missing-icd-fetch');
@@ -102,7 +84,6 @@
 				method: 'GET',
 				signal: options.signal,
 				headers: {
-					'Authorization': authHeader,
 					'Content-Type': 'application/json'
 				}
 			});
@@ -116,7 +97,7 @@
 			console.error('Error loading ICD data:', response.statusText);
 			return emptyPage(options);
 		} catch (error) {
-			if (options.throwOnError || error.name === 'AbortError') throw error;
+			if (options.throwOnError || error.name === 'AbortError' || error.code?.startsWith('session.')) throw error;
 			console.error('Error loading ICD data:', error);
 			return emptyPage(options);
 		}

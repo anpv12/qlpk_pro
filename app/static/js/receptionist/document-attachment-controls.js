@@ -1,5 +1,6 @@
 (function (window, document) {
 	'use strict';
+	const attachmentLoads = new WeakMap();
 
 	function getDocument(options) {
 		return options && options.document ? options.document : document;
@@ -138,53 +139,71 @@
 		if (fileInput) fileInput.value = '';
 	}
 
+	function restoreAttachmentDrafts(options) {
+		if (getUploadedDocuments(options).length) return;
+		try {
+			const raw = getSessionStorage(options).getItem(options.documentDraftKey);
+			const metadata = raw ? JSON.parse(raw) : [];
+			if (Array.isArray(metadata)) setUploadedDocuments(options, metadata.map(item => ({ ...item })));
+		} catch (error) {
+			console.warn('[Attachments] draft cache unavailable', error);
+		}
+	}
+
 	async function loadAttachmentsForCurrentPatient(options = {}) {
 		const doc = getDocument(options);
 		const list = doc.getElementById('documentsList');
 		const patientId = getCurrentPatientId(options);
+		const loadOwner = list || doc;
+		const requestToken = {};
+		attachmentLoads.set(loadOwner, requestToken);
+		const contextToken = options.getContextToken?.();
+		const isCurrentContext = () => attachmentLoads.get(loadOwner) === requestToken
+			&& patientId === getCurrentPatientId(options) && contextToken === options.getContextToken?.();
+		setAttachments(options, []);
+		options.renderDocumentsList?.();
 
 		if (!patientId) {
-			try {
-				const raw = getSessionStorage(options).getItem(options.documentDraftKey);
-				if (raw) {
-					const meta = JSON.parse(raw) || [];
-					setUploadedDocuments(options, meta.map(m => ({ ...m })));
-				}
-			} catch (e) { }
-			setAttachments(options, []);
-			if (typeof options.renderDocumentsList === 'function') {
-				options.renderDocumentsList();
-			}
+			restoreAttachmentDrafts(options);
+			options.renderDocumentsList?.();
 			return;
 		}
 
 		try {
 			const res = await options.apiCall(`/attachments/patients/${patientId}/attachments`);
+			if (!isCurrentContext()) return false;
 			if (res.ok) {
 				const data = await res.json();
-				if (Number(getCurrentPatientId(options)) !== Number(patientId)) {
-					return;
-				}
+				if (!isCurrentContext()) return false;
 				setAttachments(options, Array.isArray(data) ? data : (data.attachments || []));
-				if (typeof options.renderDocumentsList === 'function') {
-					options.renderDocumentsList();
-				}
+				options.renderDocumentsList?.();
 			} else {
 				if (list) list.innerHTML = '<div class="text-danger py-3">Không tải được danh sách tài liệu.</div>';
 			}
 		} catch (e) {
+			if (!isCurrentContext()) return false;
 			if (list) list.innerHTML = '<div class="text-danger py-3">Lỗi khi tải danh sách tài liệu.</div>';
 		}
 	}
 
+	function createContextGuard(options = {}) {
+		const patientId = getCurrentPatientId(options);
+		const contextToken = options.getContextToken?.();
+		return () => getCurrentPatientId(options) === patientId
+			&& options.getContextToken?.() === contextToken
+			&& options.isCurrentContext?.() !== false;
+	}
+
 	async function uploadAttachmentForCurrentPatient(file, options = {}) {
+		const isCurrentContext = createContextGuard(options);
+		if (!isCurrentContext()) return false;
 		const patientId = getCurrentPatientId(options);
 		if (!patientId) {
 			showToast(options, 'error', 'Vui lòng chọn bệnh nhân trước khi tải tệp');
 			return;
 		}
 		if (typeof options.uploadFile === 'function') {
-			await options.uploadFile(file, patientId, { isDraft: false, showToast: true });
+			return options.uploadFile(file, patientId, { isDraft: false, showToast: true, isCurrentContext });
 		}
 	}
 
@@ -217,11 +236,13 @@
 				}
 
 				const hasPatient = Boolean(getCurrentPatientId(options));
+				const isCurrentContext = createContextGuard(options);
 				setButtonLoading(uploadBtn, true, hasPatient ? 'Đang tải...' : 'Đang thêm...');
 				try {
 					if (hasPatient) {
 						for (const f of files) {
-							await uploadAttachmentForCurrentPatient(f, options);
+							if (!isCurrentContext()) break;
+							await uploadAttachmentForCurrentPatient(f, { ...options, isCurrentContext });
 						}
 					} else {
 						handleFileUpload(files, options);
@@ -237,6 +258,7 @@
 	}
 
 	window.ReceptionistDocumentAttachmentControls = {
+		createContextGuard,
 		updateAttachmentSizeHint,
 		loadAttachmentConfig,
 		initializeDocumentUpload,

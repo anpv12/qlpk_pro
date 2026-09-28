@@ -289,59 +289,189 @@ function prescriptionMedicineTitle(medicine) {
 }
 
 /** Web presentation only. Shares clinical formatters with the paper form below. */
-function buildPrescriptionScreenHTML(options = {}) {
-	const { patient, history, examinationDetail, prescriptionData } = buildPrescriptionDocumentViewModel(options);
-	const clinic = options.clinicInfo || {};
+function rxScreenField(label, english, value) {
+	return '<div class="rx-screen__field"><strong>' + label + '</strong>' +
+		(english ? ' <em>(' + english + ')</em>' : '') + ': ' + prescriptionFormEscape(value) + '</div>';
+}
+
+function buildRxScreenHeaderHtml(clinic, patientCode) {
 	const esc = prescriptionFormEscape;
-	const type = String(options.overridePrescriptionType || prescriptionData.prescription_type || 'BASIC').toUpperCase();
-	const title = type === 'H' || type === 'N' ? 'ĐƠN THUỐC “' + type + '”' : 'ĐƠN THUỐC';
-	const age = calculateDetailedAge(patient.date_of_birth, history.examination_date);
-	const birth = formatVietnamDate(patient.date_of_birth);
-	const address = buildFullAddressFromParts(patient.address_detail, patient.ward, patient.district, patient.province) || patient.address;
-	const weight = examinationDetail.weight || history.weight || '';
-	const usage = parseGlobalUsagePayload(prescriptionData.usage_instructions || '') || {};
-	const medicines = Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [];
-	const field = (label, english, value) => '<div class="rx-screen__field"><strong>' + label + '</strong>' +
-		(english ? ' <em>(' + english + ')</em>' : '') + ': ' + esc(value) + '</div>';
-	const advice = [examinationDetail.loi_dan || history.loi_dan || '', usage.global_usage || usage.globalUsage || usage.note || ''].filter(Boolean);
-	const reExamDate = prescriptionData.show_re_examination_date !== false ? formatVietnamDate(prescriptionData.re_examination_date) : '';
-	const date = history.examination_date ? new Date(history.examination_date) : null;
-	const dateLine = date && !Number.isNaN(date.getTime()) ? 'Ngày <em>(Date)</em> ' + date.getDate() +
-		' Tháng <em>(Month)</em> ' + (date.getMonth() + 1) + ' Năm <em>(Year)</em> ' + date.getFullYear() : '';
-	return '<article class="rx-screen" data-prescription-type="' + esc(type) + '">' +
-		'<header class="rx-screen__header"><img class="rx-screen__logo" src="/static/assets/sontam.jpg" alt="Logo phòng khám Sơn Tâm">' +
+	return '<header class="rx-screen__header"><img class="rx-screen__logo" src="/static/assets/sontam.jpg" alt="Logo phòng khám Sơn Tâm">' +
 		'<div class="rx-screen__clinic"><div class="rx-screen__clinic-name">' + esc(clinic.name) + '</div>' +
 		'<div>📍 <strong>Địa chỉ:</strong> ' + esc(clinic.address) + '</div>' +
 		'<div>📞 <strong>Zalo:</strong> ' + esc(clinic.zalo || clinic.phone) + '</div>' +
 		'<div>📧 <strong>Email:</strong> ' + esc(clinic.email) + '</div>' +
 		'<div>📘 <strong>Fanpage:</strong> ' + esc(clinic.fanpage) + '</div></div>' +
-		(patient.patient_code ? '<div class="rx-screen__code"><svg class="barcode-svg" data-barcode="' + esc(patient.patient_code) +
-		'" role="img" aria-label="Mã vạch hồ sơ ' + esc(patient.patient_code) + '"></svg><strong>Mã hồ sơ: ' + esc(patient.patient_code) + '</strong></div>' : '') + '</header>' +
-		'<div class="rx-screen__title"><h3>' + title + '</h3><em>PRESCRIPTION</em>' +
-		(prescriptionData.prescription_code ? '<div class="rx-screen__prescription-code">Mã đơn thuốc: ' + esc(prescriptionData.prescription_code) + '</div>' : '') + '</div>' +
-		'<section class="rx-screen__patient"><div>' + field('Họ tên', 'Full name', patient.full_name) +
+		(patientCode ? '<div class="rx-screen__code"><svg class="barcode-svg" data-barcode="' + esc(patientCode) +
+		'" role="img" aria-label="Mã vạch hồ sơ ' + esc(patientCode) + '"></svg><strong>Mã hồ sơ: ' + esc(patientCode) + '</strong></div>' : '') + '</header>';
+}
+
+function buildRxScreenPatientHtml(patient, history, examinationDetail) {
+	const field = rxScreenField;
+	const age = calculateDetailedAge(patient.date_of_birth, history.examination_date);
+	const birth = formatVietnamDate(patient.date_of_birth);
+	const address = buildFullAddressFromParts(patient.address_detail, patient.ward, patient.district, patient.province) || patient.address;
+	const weight = examinationDetail.weight || history.weight || '';
+	return '<section class="rx-screen__patient"><div>' + field('Họ tên', 'Full name', patient.full_name) +
 		field('Ngày sinh', 'Date of birth', birth + (birth && age.text ? ' — ' + age.text : '')) +
 		field('Số định danh cá nhân (CCCD/CMT/MSA)', '', patient.id_number || patient.id_card || patient.cccd) +
 		field('Địa chỉ', 'Address', address) + '</div><div>' + field('Giới tính', 'Gender', formatGenderDisplay(patient.gender)) +
 		field('Số điện thoại', 'Phone', patient.phone || patient.phone_number) + field('Cân nặng', 'Weight', weight ? weight + ' kg' : '') +
-		field('Mã số bảo hiểm y tế', 'Health insurance', '') + '</div></section>' +
+		field('Mã số bảo hiểm y tế', 'Health insurance', '') + '</div></section>';
+}
+
+function buildRxScreenMedicinesHtml(medicines) {
+	const esc = prescriptionFormEscape;
+	if (!medicines.length) return '<p class="rx-screen__empty"><em>Chưa có thuốc trong đơn.</em></p>';
+	return '<ol class="rx-screen__medicines">' + medicines.map(medicine => {
+		const quantity = Number(medicine.quantity);
+		return '<li><div class="rx-screen__medicine-heading"><strong>' + esc(prescriptionMedicineTitle(medicine)) + '</strong>' +
+			'<span>Số lượng: <strong>' + (Number.isFinite(quantity) && quantity > 0 ? esc(String(quantity).replace('.', ',') + ' ' + (medicine.unit || '')) : 'Chưa ghi nhận') + '</strong></span></div>' +
+			'<div class="rx-screen__usage">' + (prescriptionFormUsage(medicine) || '<em>Chưa ghi cách dùng.</em>') + '</div></li>';
+	}).join('') + '</ol>';
+}
+
+function buildRxScreenDateLine(examinationDate) {
+	const date = examinationDate ? new Date(examinationDate) : null;
+	return date && !Number.isNaN(date.getTime()) ? 'Ngày <em>(Date)</em> ' + date.getDate() +
+		' Tháng <em>(Month)</em> ' + (date.getMonth() + 1) + ' Năm <em>(Year)</em> ' + date.getFullYear() : '';
+}
+
+function resolvePrescriptionAdvice(examinationDetail, history, prescriptionData) {
+	const usage = parseGlobalUsagePayload(prescriptionData.usage_instructions || '') || {};
+	return [examinationDetail.loi_dan || history.loi_dan || '', usage.global_usage || usage.globalUsage || usage.note || ''].filter(Boolean);
+}
+
+function resolvePrescriptionReExamDate(prescriptionData) {
+	return prescriptionData.show_re_examination_date !== false ? formatVietnamDate(prescriptionData.re_examination_date) : '';
+}
+
+function buildPrescriptionScreenHTML(options = {}) {
+	const { patient, history, examinationDetail, prescriptionData } = buildPrescriptionDocumentViewModel(options);
+	const esc = prescriptionFormEscape;
+	const field = rxScreenField;
+	const type = String(options.overridePrescriptionType || prescriptionData.prescription_type || 'BASIC').toUpperCase();
+	const title = type === 'H' || type === 'N' ? 'ĐƠN THUỐC “' + type + '”' : 'ĐƠN THUỐC';
+	const medicines = Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [];
+	const advice = resolvePrescriptionAdvice(examinationDetail, history, prescriptionData);
+	const reExamDate = resolvePrescriptionReExamDate(prescriptionData);
+	return '<article class="rx-screen" data-prescription-type="' + esc(type) + '">' +
+		buildRxScreenHeaderHtml(options.clinicInfo || {}, patient.patient_code) +
+		'<div class="rx-screen__title"><h3>' + title + '</h3><em>PRESCRIPTION</em>' +
+		(prescriptionData.prescription_code ? '<div class="rx-screen__prescription-code">Mã đơn thuốc: ' + esc(prescriptionData.prescription_code) + '</div>' : '') + '</div>' +
+		buildRxScreenPatientHtml(patient, history, examinationDetail) +
 		field('Chẩn đoán', 'Diagnosis', [examinationDetail.diagnosis, examinationDetail.benh_kem_theo].filter(Boolean).join('; ')) +
-		'<section class="rx-screen__treatment">' + field('Thuốc điều trị', 'Medication', '') +
-		(medicines.length ? '<ol class="rx-screen__medicines">' + medicines.map(medicine => {
-			const quantity = Number(medicine.quantity);
-			return '<li><div class="rx-screen__medicine-heading"><strong>' + esc(prescriptionMedicineTitle(medicine)) + '</strong>' +
-				'<span>Số lượng: <strong>' + (Number.isFinite(quantity) && quantity > 0 ? esc(String(quantity).replace('.', ',') + ' ' + (medicine.unit || '')) : 'Chưa ghi nhận') + '</strong></span></div>' +
-				'<div class="rx-screen__usage">' + (prescriptionFormUsage(medicine) || '<em>Chưa ghi cách dùng.</em>') + '</div></li>';
-		}).join('') + '</ol>' : '<p class="rx-screen__empty"><em>Chưa có thuốc trong đơn.</em></p>') + '</section>' +
+		'<section class="rx-screen__treatment">' + field('Thuốc điều trị', 'Medication', '') + buildRxScreenMedicinesHtml(medicines) + '</section>' +
 		(reExamDate ? field('Tái khám ngày', 'Follow-up date', reExamDate) : '') +
 		'<section class="rx-screen__advice">' + field('Lời dặn', 'Note', '') + '<div class="rx-screen__advice-text">' + advice.map(esc).join('\n') + '</div></section>' +
 		'<p class="rx-screen__notice"><em>Vui lòng mang theo đơn thuốc này khi tái khám! Toa thuốc chỉ có giá trị cho lần khám này.<br>' +
 		'(Please bring this prescription to the next appointment. This prescription is valid only for this visit.)</em></p>' +
-		'<footer class="rx-screen__signature"><div>' + dateLine + '</div><div>Bác sĩ khám bệnh <em>(Doctor)</em></div><em>Ký tên (Sign)</em>' +
+		'<footer class="rx-screen__signature"><div>' + buildRxScreenDateLine(history.examination_date) + '</div><div>Bác sĩ khám bệnh <em>(Doctor)</em></div><em>Ký tên (Sign)</em>' +
 		'<div class="rx-screen__doctor-name">' + esc(history.doctor?.full_name) + '</div></footer></article>';
 }
 
 /** Paper/verify form; field labels follow the user's Đơn H.docx. */
+const MOH_BLANK = '<span class="moh-blank" aria-label="Để trống"></span>';
+
+function mohField(value) {
+	return String(value ?? '').trim() ? prescriptionFormEscape(value) : MOH_BLANK;
+}
+
+function mohLine(label, value, className = '') {
+	return '<div class="moh-field-line ' + className + '"><span>' + label + '</span><span class="moh-field-value">' + mohField(value) + '</span></div>';
+}
+
+function resolvePrescriptionFormType(overridePrescriptionType, prescriptionData, examinationDetailsBySection) {
+	const section = examinationDetailsBySection.don_thuoc || {};
+	const examForm = examinationDetailsBySection.bac_si_kham_form_kham || {};
+	return String(overridePrescriptionType || prescriptionData.prescription_type || prescriptionData.prescriptionType
+		|| section.prescription_type || section.prescriptionType || examForm.prescription_type || examForm.prescriptionType || 'BASIC').toUpperCase();
+}
+
+function buildMohPatientContext(patient, history, examinationDetail, relatives) {
+	const age = calculateDetailedAge(patient.date_of_birth, history.examination_date);
+	const months = age.years === null ? null : age.years * 12 + age.months;
+	return {
+		months,
+		under72Months: months !== null && months >= 0 && months < 72,
+		birth: formatVietnamDate(patient.date_of_birth),
+		gender: formatGenderDisplay(patient.gender),
+		weight: examinationDetail.weight || history.weight || '',
+		address: buildFullAddressFromParts(patient.address_detail, patient.ward, patient.district, patient.province) || patient.address,
+		companions: relatives.map(relative => relative.name || relative.relative_full_name || relative.relative_name || relative.full_name || '').filter(Boolean),
+		contactPhone: patient.phone || patient.phone_number || relatives.find(relative => relative.phone)?.phone || ''
+	};
+}
+
+function buildMohMedicineRows(medicines, type) {
+	const esc = prescriptionFormEscape;
+	return medicines.map((medicine, index) => {
+		const title = prescriptionMedicineTitle(medicine);
+		const amount = Number(medicine.quantity);
+		const quantity = Number.isFinite(amount) && amount > 0
+			? (amount < 10 ? '0' : '') + String(amount).replace('.', ',') : '';
+		const words = type === 'N' && quantity ? prescriptionQuantityWords(amount) : '';
+		return '<div class="moh-medicine">' +
+			'<div class="moh-medicine-heading"><strong>' + (index + 1) + '. ' + esc(title) + '</strong>' +
+			'<span class="moh-quantity">Số lượng: <strong>' + mohField(quantity) + ' ' + esc(medicine.unit || '') + '</strong>' +
+			(words ? ' <span class="moh-quantity-words">(' + esc(words) + ')</span>' : '') + '</span></div>' +
+			'<div class="moh-usage">' + (prescriptionFormUsage(medicine) || 'Cách dùng: ................................') + '</div></div>';
+	});
+}
+
+function buildMohDateLine(examinationDate) {
+	const date = examinationDate ? new Date(examinationDate) : null;
+	return date && !Number.isNaN(date.getTime())
+		? 'Ngày ' + date.getDate() + ' tháng ' + (date.getMonth() + 1) + ' năm ' + date.getFullYear()
+		: 'Ngày ...... tháng ...... năm ........';
+}
+
+function buildMohHeaderHtml(clinic, prescriptionCode, title) {
+	return '<div class="moh-code">Mã đơn thuốc: <strong>' + mohField(prescriptionCode) + '</strong></div>' +
+		'<div class="moh-content"><header class="moh-header">' +
+		'<div>Tên đơn vị: <strong>' + mohField(clinic.name) + '</strong></div><div>Địa chỉ: ' + mohField(clinic.address) + '</div><div>Điện thoại: ' + mohField(clinic.phone) + '</div>' +
+		'<h3 class="moh-title">' + title + '</h3></header>';
+}
+
+function buildMohPatientSectionHtml(patient, examinationDetail, ctx) {
+	return '<section class="moh-patient">' + mohLine('Họ tên:', patient.full_name, 'moh-patient-name') +
+		mohLine('Căn cước công dân:', patient.id_number || patient.id_card || patient.cccd) +
+		'<div class="moh-demographics">' + mohLine('Ngày sinh:', ctx.birth + (ctx.under72Months ? ' (' + ctx.months + ' tháng tuổi)' : '')) +
+		mohLine('Cân nặng:', ctx.weight ? ctx.weight + ' kg' : '') +
+		'<div>Giới tính: <span class="moh-check">' + (ctx.gender === 'Nam' ? '×' : '') + '</span> Nam <span class="moh-check">' + (ctx.gender === 'Nữ' ? '×' : '') + '</span> Nữ</div></div>' +
+		mohLine('Số thẻ bảo hiểm y tế (nếu có):', '') +
+		mohLine('Địa chỉ liên hệ:', ctx.address) +
+		mohLine('Chẩn đoán:', [examinationDetail.diagnosis, examinationDetail.benh_kem_theo].filter(Boolean).join('; '), 'moh-diagnosis') + '</section>';
+}
+
+function buildMohPeriodsHtml(type) {
+	if (type === 'N') return '<div class="moh-periods">' + [1, 2, 3].map(index => '<div>Đợt ' + index + ': Từ ngày ...../...../.......... đến hết ngày ...../...../..........</div>').join('') + '</div>';
+	if (type === 'H') return '<div class="moh-periods">Đợt.......(từ ngày...../...../20.... đến hết ngày ...../...../ 20....)</div>';
+	return '';
+}
+
+function buildMohSignatureHtml({ showSignature, qr, dateLine, doctorName }) {
+	if (showSignature === false && !qr) return '';
+	const esc = prescriptionFormEscape;
+	return '<div class="moh-signature">' +
+		'<div class="moh-qr">' + (qr ? '<img src="' + qr + '" class="moh-qr-image" alt="QR xác thực đơn thuốc" data-required-print-asset="verification-qr" loading="eager" decoding="sync"><div>Xác thực đơn thuốc</div>' : '') + '</div>' +
+		'<div class="moh-doctor">' + (showSignature !== false ? '<div>' + dateLine + '</div><strong>Bác sỹ/Y sỹ khám bệnh</strong><div>(Ký, ghi rõ họ tên)</div><div class="moh-doctor-name">' + esc(doctorName || '') + '</div>' : '') + '</div></div>';
+}
+
+function buildMohTreatmentHtml(rows, advice, reExamDate) {
+	const esc = prescriptionFormEscape;
+	return '<section class="moh-treatment"><div class="moh-treatment-label">Thuốc điều trị:</div>' + (rows.length ? rows.slice(0, -1).join('') : '<div class="moh-empty">' + mohField('') + mohField('') + '</div>') + '</section>' +
+		'<div class="moh-ending">' + (rows.at(-1) || '') +
+		'<div class="moh-advice"><div class="moh-section-label">Lời dặn:</div>' + (advice.length ? '<div>' + advice.map(esc).join('<br>') + '</div>' : mohField('')) +
+		(reExamDate ? '<div>Tái khám ngày: ' + esc(reExamDate) + '</div>' : '') + '</div>';
+}
+
+function buildMohContactHtml(ctx, controlled) {
+	return '<footer class="moh-contact"><div>- Khám lại xin mang theo đơn này.</div>' + mohLine('- Số điện thoại liên hệ:', ctx.contactPhone) +
+		mohLine('- Tên bố hoặc mẹ của trẻ hoặc người đưa trẻ đến khám bệnh, chữa bệnh:', ctx.under72Months ? ctx.companions.join(', ') : '', 'moh-companion') + '</footer>' +
+		(controlled ? mohLine('Căn cước công dân của người nhận thuốc:', '', 'moh-recipient') : '');
+}
+
 function buildPrescriptionPreviewHTML({
 	clinicInfo, patient, history, examinationDetail, examinationDetailsBySection,
 	prescriptionData, relatives = [], overridePrescriptionType = null,
@@ -351,79 +481,28 @@ function buildPrescriptionPreviewHTML({
 		examinationDetailsBySection, prescriptionData, relatives });
 	({ patient, history, examinationDetail, examinationDetailsBySection, prescriptionData, relatives } = data);
 	const esc = prescriptionFormEscape;
-	const field = value => String(value ?? '').trim() ? esc(value) : '<span class="moh-blank" aria-label="Để trống"></span>';
-	const line = (label, value, className = '') => '<div class="moh-field-line ' + className + '"><span>' + label +
-		'</span><span class="moh-field-value">' + field(value) + '</span></div>';
 	const clinic = clinicInfo || {};
-	const section = examinationDetailsBySection.don_thuoc || {};
-	const examForm = examinationDetailsBySection.bac_si_kham_form_kham || {};
-	const type = String(overridePrescriptionType || prescriptionData.prescription_type || prescriptionData.prescriptionType
-		|| section.prescription_type || section.prescriptionType || examForm.prescription_type || examForm.prescriptionType || 'BASIC').toUpperCase();
+	const type = resolvePrescriptionFormType(overridePrescriptionType, prescriptionData, examinationDetailsBySection);
 	const controlled = type === 'H' || type === 'N';
 	const title = controlled ? 'ĐƠN THUỐC “' + type + '”' : 'ĐƠN THUỐC';
 	const context = renderContext || (isPrint ? 'print' : 'screen');
 	const prescriptionCode = prescriptionData.prescription_code || '';
 	const qr = showVerificationQr !== false && prescriptionCode
 		? `/api/public/prescription/${encodeURIComponent(prescriptionCode)}/verification-qr.png` : '';
-	const age = calculateDetailedAge(patient.date_of_birth, history.examination_date);
-	const months = age.years === null ? null : age.years * 12 + age.months;
-	const under72Months = months !== null && months >= 0 && months < 72;
-	const birth = formatVietnamDate(patient.date_of_birth);
-	const gender = formatGenderDisplay(patient.gender);
-	const weight = examinationDetail.weight || history.weight || '';
-	const address = buildFullAddressFromParts(patient.address_detail, patient.ward, patient.district, patient.province) || patient.address;
-	const companions = relatives.map(relative => relative.name || relative.relative_full_name || relative.relative_name || relative.full_name || '').filter(Boolean);
-	const contactPhone = patient.phone || patient.phone_number || relatives.find(relative => relative.phone)?.phone || '';
-	const usage = parseGlobalUsagePayload(prescriptionData.usage_instructions || '') || {};
-	const medicines = Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [];
-	const rows = medicines.map((medicine, index) => {
-		const title = prescriptionMedicineTitle(medicine);
-		const amount = Number(medicine.quantity);
-		const quantity = Number.isFinite(amount) && amount > 0
-			? (amount < 10 ? '0' : '') + String(amount).replace('.', ',') : '';
-		const words = type === 'N' && quantity ? prescriptionQuantityWords(amount) : '';
-		return '<div class="moh-medicine">' +
-			'<div class="moh-medicine-heading"><strong>' + (index + 1) + '. ' + esc(title) + '</strong>' +
-			'<span class="moh-quantity">Số lượng: <strong>' + field(quantity) + ' ' + esc(medicine.unit || '') + '</strong>' +
-			(words ? ' <span class="moh-quantity-words">(' + esc(words) + ')</span>' : '') + '</span></div>' +
-			'<div class="moh-usage">' + (prescriptionFormUsage(medicine) || 'Cách dùng: ................................') + '</div></div>';
-	});
-	const reExamDate = prescriptionData.show_re_examination_date !== false
-		? formatVietnamDate(prescriptionData.re_examination_date) : '';
-	const advice = [examinationDetail.loi_dan || history.loi_dan || '',
-		usage.global_usage || usage.globalUsage || usage.note || ''].filter(Boolean);
-	const date = history.examination_date ? new Date(history.examination_date) : null;
-	const dateLine = date && !Number.isNaN(date.getTime())
-		? 'Ngày ' + date.getDate() + ' tháng ' + (date.getMonth() + 1) + ' năm ' + date.getFullYear()
-		: 'Ngày ...... tháng ...... năm ........';
+	const ctx = buildMohPatientContext(patient, history, examinationDetail, relatives);
+	const rows = buildMohMedicineRows(Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [], type);
+	const advice = resolvePrescriptionAdvice(examinationDetail, history, prescriptionData);
+	const reExamDate = resolvePrescriptionReExamDate(prescriptionData);
 	return '<div class="prescription-preview prescription-preview--rx prescription-preview--moh' +
 		(context === 'verify' ? ' prescription-preview--verify' : '') + '" data-render-context="' + esc(context) + '" data-prescription-type="' + esc(controlled ? type : 'BASIC') + '">' +
 		'<div class="moh-form">' +
-		'<div class="moh-code">Mã đơn thuốc: <strong>' + field(prescriptionCode) + '</strong></div>' +
-		'<div class="moh-content"><header class="moh-header">' +
-		'<div>Tên đơn vị: <strong>' + field(clinic.name) + '</strong></div><div>Địa chỉ: ' + field(clinic.address) + '</div><div>Điện thoại: ' + field(clinic.phone) + '</div>' +
-		'<h3 class="moh-title">' + title + '</h3></header>' +
-		'<section class="moh-patient">' + line('Họ tên:', patient.full_name, 'moh-patient-name') +
-		line('Căn cước công dân:', patient.id_number || patient.id_card || patient.cccd) +
-		'<div class="moh-demographics">' + line('Ngày sinh:', birth + (under72Months ? ' (' + months + ' tháng tuổi)' : '')) +
-		line('Cân nặng:', weight ? weight + ' kg' : '') +
-		'<div>Giới tính: <span class="moh-check">' + (gender === 'Nam' ? '×' : '') + '</span> Nam <span class="moh-check">' + (gender === 'Nữ' ? '×' : '') + '</span> Nữ</div></div>' +
-		line('Số thẻ bảo hiểm y tế (nếu có):', '') +
-		line('Địa chỉ liên hệ:', address) +
-		line('Chẩn đoán:', [examinationDetail.diagnosis, examinationDetail.benh_kem_theo].filter(Boolean).join('; '), 'moh-diagnosis') + '</section>' +
-		(type === 'N' ? '<div class="moh-periods">' + [1, 2, 3].map(index => '<div>Đợt ' + index + ': Từ ngày ...../...../.......... đến hết ngày ...../...../..........</div>').join('') + '</div>' : '') +
-		(type === 'H' ? '<div class="moh-periods">Đợt.......(từ ngày...../...../20.... đến hết ngày ...../...../ 20....)</div>' : '') +
-		'<section class="moh-treatment"><div class="moh-treatment-label">Thuốc điều trị:</div>' + (rows.length ? rows.slice(0, -1).join('') : '<div class="moh-empty">' + field('') + field('') + '</div>') + '</section>' +
-		'<div class="moh-ending">' + (rows.at(-1) || '') +
-		'<div class="moh-advice"><div class="moh-section-label">Lời dặn:</div>' + (advice.length ? '<div>' + advice.map(esc).join('<br>') + '</div>' : field('')) +
-		(reExamDate ? '<div>Tái khám ngày: ' + esc(reExamDate) + '</div>' : '') + '</div>' +
+		buildMohHeaderHtml(clinic, prescriptionCode, title) +
+		buildMohPatientSectionHtml(patient, examinationDetail, ctx) +
+		buildMohPeriodsHtml(type) +
+		buildMohTreatmentHtml(rows, advice, reExamDate) +
 		'<div class="moh-closing">' +
-		((showSignature !== false || qr) ? '<div class="moh-signature">' +
-			'<div class="moh-qr">' + (qr ? '<img src="' + qr + '" class="moh-qr-image" alt="QR xác thực đơn thuốc" data-required-print-asset="verification-qr" loading="eager" decoding="sync"><div>Xác thực đơn thuốc</div>' : '') + '</div>' +
-			'<div class="moh-doctor">' + (showSignature !== false ? '<div>' + dateLine + '</div><strong>Bác sỹ/Y sỹ khám bệnh</strong><div>(Ký, ghi rõ họ tên)</div><div class="moh-doctor-name">' + esc(history.doctor?.full_name || '') + '</div>' : '') + '</div></div>' : '') +
-		'<footer class="moh-contact"><div>- Khám lại xin mang theo đơn này.</div>' + line('- Số điện thoại liên hệ:', contactPhone) +
-		line('- Tên bố hoặc mẹ của trẻ hoặc người đưa trẻ đến khám bệnh, chữa bệnh:', under72Months ? companions.join(', ') : '', 'moh-companion') + '</footer>' +
-		(controlled ? line('Căn cước công dân của người nhận thuốc:', '', 'moh-recipient') : '') +
+		buildMohSignatureHtml({ showSignature, qr, dateLine: buildMohDateLine(history.examination_date), doctorName: history.doctor?.full_name }) +
+		buildMohContactHtml(ctx, controlled) +
 		'</div></div></div></div></div>';
 }
 

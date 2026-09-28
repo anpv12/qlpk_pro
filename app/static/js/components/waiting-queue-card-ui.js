@@ -262,37 +262,32 @@
 		`;
 	}
 
-	function renderAppointmentCard(options = {}) {
-		const appointment = options.appointment || {};
-		const index = Number.isFinite(options.index) ? options.index : 0;
-		const currentPage = options.currentPage || 1;
-		const perPage = options.perPage || 0;
-		const sequenceNumber = options.sequenceMode === 'page' && perPage
-			? (currentPage - 1) * perPage + index + 1
-			: index + 1;
-		const appointmentId = appointment.id || '';
-		const dateText = formatAppointmentDateText(appointment, options);
-		const timeText = formatAppointmentTimeText(appointment);
-		const practitionerText = appointment.doctor_name || appointment.psychologist_name || appointment.practitioner_name || '';
-		const scheduleHtml = options.includeSchedule === false ? '' : buildScheduleHtml(timeText);
+	function resolveCardStatus(appointment, options) {
 		const isRecentlyEdited = Boolean(appointment.is_latest_edited);
-		const statusText = options.includeStatus === false
-			? ''
-			: isRecentlyEdited && options.recentlyEditedStatusText
-				? options.recentlyEditedStatusText
-				: getStatusText(appointment, options.statusTextFallback || 'Đang chờ');
-		const statusClass = joinClasses(
-			getStatusClass(appointment),
-			isRecentlyEdited && options.recentlyEditedStatusText ? 'is-recently-edited' : ''
-		);
-		const statusInActions = statusText && options.statusPlacement === 'actions';
-		const identityItems = [
+		const recentlyEditedLabel = isRecentlyEdited && options.recentlyEditedStatusText ? options.recentlyEditedStatusText : '';
+		let statusText = '';
+		if (options.includeStatus !== false) {
+			statusText = recentlyEditedLabel || getStatusText(appointment, options.statusTextFallback || 'Đang chờ');
+		}
+		return {
+			isRecentlyEdited,
+			statusText,
+			statusClass: joinClasses(getStatusClass(appointment), recentlyEditedLabel ? 'is-recently-edited' : ''),
+			statusInActions: Boolean(statusText) && options.statusPlacement === 'actions'
+		};
+	}
+
+	function buildCardIdentityItems(appointment, options) {
+		return [
 			options.includePatientCode === false ? '' : formatPatientCodeText(appointment, options),
 			options.includeGender ? formatPatientGenderText(appointment) : '',
 			options.includeAge ? formatPatientAgeText(appointment, options) : '',
 			options.includePhone ? (appointment.patient_phone || appointment.phone || '') : ''
 		].filter(Boolean);
-		const metaHtml = [
+	}
+
+	function buildCardMetaHtml(options, { practitionerText, dateText, timeText, scheduleHtml }) {
+		return [
 			options.includePractitioner === false || !practitionerText ? '' : `
 				<div class="qlpk-waiting-card__meta-item qlpk-waiting-card__meta-item--practitioner">
 					<span class="qlpk-waiting-card__practitioner-line"><i class="bi bi-heart-pulse-fill qlpk-waiting-card__meta-icon qlpk-waiting-card__meta-icon--practitioner" aria-hidden="true"></i><span class="qlpk-waiting-card__practitioner-text">${renderPractitionerDisplayName(practitionerText, options.practitionerLabel || 'BS/TLG:')}</span></span>
@@ -307,61 +302,92 @@
 				</div>
 			`
 		].filter(Boolean).join('');
-		const leadingHtml = [
-			statusInActions ? `<div class="qlpk-waiting-card__status-wrap qlpk-waiting-card__status-wrap--actions">${renderStatusBadgeHtml(statusText, statusClass, options.statusBadgeClass)}</div>` : '',
+	}
+
+	function buildCardLeadingHtml(appointment, options, status) {
+		return [
+			status.statusInActions ? `<div class="qlpk-waiting-card__status-wrap qlpk-waiting-card__status-wrap--actions">${renderStatusBadgeHtml(status.statusText, status.statusClass, options.statusBadgeClass)}</div>` : '',
 			options.showRecentlyEdited && options.showRecentlyEditedBadge !== false ? renderRecentlyEditedBadge(Boolean(appointment.is_latest_edited)) : '',
 			options.leadingActionHtml || ''
 		].filter(Boolean).join('');
-		const recentlyEditedClass = isRecentlyEdited && options.showRecentlyEdited ? 'qlpk-waiting-card--recently-edited' : '';
+	}
 
-		if (options.variant === 'timeline') {
-			return renderTimelineAppointmentCard({
-				attrs: Object.assign({
-					'data-appointment-id': appointmentId
-				}, options.attrs || {}),
-				cardClass: joinClasses(
-					options.cardClass,
-					recentlyEditedClass
-				),
-				initials: normalizeInitials(appointment.patient_full_name || options.fallbackPatientName || ''),
-				patientNameHtml: escapeHtml(appointment.patient_full_name || options.fallbackPatientName || 'Chưa có tên'),
-				patientAfterHtml: options.showSeverity ? renderSeverityIcon(appointment) : '',
-				dateText,
-				timeText,
-				identityItems,
-				statusText,
-				statusClass,
-				actionsHtml: renderActions(options.actions || [], {
-					appointment,
-					leadingHtml,
-					actionGroupLabel: options.actionGroupLabel
-				})
-			});
-		}
+	function resolveSequenceNumber(options, index) {
+		const currentPage = options.currentPage || 1;
+		const perPage = options.perPage || 0;
+		return options.sequenceMode === 'page' && perPage
+			? (currentPage - 1) * perPage + index + 1
+			: index + 1;
+	}
 
-		return renderCard({
-			attrs: Object.assign({
-				'data-appointment-id': appointmentId
-			}, options.attrs || {}),
-			cardClass: joinClasses(
-				options.cardClass,
-				recentlyEditedClass
-			),
-			patientNameHtml: escapeHtml(appointment.patient_full_name || options.fallbackPatientName || 'Chưa có tên'),
+	function buildAppointmentCardModel(options) {
+		const appointment = options.appointment || {};
+		const status = resolveCardStatus(appointment, options);
+		const timeText = formatAppointmentTimeText(appointment);
+		const patientName = appointment.patient_full_name || options.fallbackPatientName || '';
+		return {
+			appointment,
+			status,
+			timeText,
+			index: Number.isFinite(options.index) ? options.index : 0,
+			dateText: formatAppointmentDateText(appointment, options),
+			practitionerText: appointment.doctor_name || appointment.psychologist_name || appointment.practitioner_name || '',
+			scheduleHtml: options.includeSchedule === false ? '' : buildScheduleHtml(timeText),
+			identityItems: buildCardIdentityItems(appointment, options),
+			leadingHtml: buildCardLeadingHtml(appointment, options, status),
+			attrs: Object.assign({ 'data-appointment-id': appointment.id || '' }, options.attrs || {}),
+			cardClass: joinClasses(options.cardClass, status.isRecentlyEdited && options.showRecentlyEdited ? 'qlpk-waiting-card--recently-edited' : ''),
+			patientNameHtml: escapeHtml(patientName || 'Chưa có tên'),
 			patientAfterHtml: options.showSeverity ? renderSeverityIcon(appointment) : '',
-			identityItems,
-				statusText: statusInActions ? '' : statusText,
-				statusClass,
-				indexText: options.indexText || `#${sequenceNumber}`,
-				scheduleHtml,
-				metaHtml,
-				actionsHtml: renderActions(options.actions || [], {
-				appointment,
-				leadingHtml,
-				actionGroupLabel: options.actionGroupLabel,
-				className: statusInActions ? 'qlpk-waiting-card__actions--status-leading' : ''
+			initials: normalizeInitials(patientName)
+		};
+	}
+
+	function renderTimelineVariant(model, options) {
+		return renderTimelineAppointmentCard({
+			attrs: model.attrs,
+			cardClass: model.cardClass,
+			initials: model.initials,
+			patientNameHtml: model.patientNameHtml,
+			patientAfterHtml: model.patientAfterHtml,
+			dateText: model.dateText,
+			timeText: model.timeText,
+			identityItems: model.identityItems,
+			statusText: model.status.statusText,
+			statusClass: model.status.statusClass,
+			actionsHtml: renderActions(options.actions || [], {
+				appointment: model.appointment,
+				leadingHtml: model.leadingHtml,
+				actionGroupLabel: options.actionGroupLabel
 			})
 		});
+	}
+
+	function renderQueueVariant(model, options) {
+		const { status } = model;
+		return renderCard({
+			attrs: model.attrs,
+			cardClass: model.cardClass,
+			patientNameHtml: model.patientNameHtml,
+			patientAfterHtml: model.patientAfterHtml,
+			identityItems: model.identityItems,
+			statusText: status.statusInActions ? '' : status.statusText,
+			statusClass: status.statusClass,
+			indexText: options.indexText || `#${resolveSequenceNumber(options, model.index)}`,
+			scheduleHtml: model.scheduleHtml,
+			metaHtml: buildCardMetaHtml(options, { practitionerText: model.practitionerText, dateText: model.dateText, timeText: model.timeText, scheduleHtml: model.scheduleHtml }),
+			actionsHtml: renderActions(options.actions || [], {
+				appointment: model.appointment,
+				leadingHtml: model.leadingHtml,
+				actionGroupLabel: options.actionGroupLabel,
+				className: status.statusInActions ? 'qlpk-waiting-card__actions--status-leading' : ''
+			})
+		});
+	}
+
+	function renderAppointmentCard(options = {}) {
+		const model = buildAppointmentCardModel(options);
+		return options.variant === 'timeline' ? renderTimelineVariant(model, options) : renderQueueVariant(model, options);
 	}
 
 	function renderTimelineAppointmentCard(options = {}) {

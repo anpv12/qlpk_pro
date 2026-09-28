@@ -31,8 +31,6 @@
 				document,
 				apiCall: options.apiCall,
 				showToast: options.showToast,
-				dataRuntime: false,
-				print: false,
 				autoBind: false,
 				contextOptions: {
 					showConfirmationDialog: options.showConfirmationDialog,
@@ -40,8 +38,6 @@
 					getCurrentPatientData,
 					getCurrentAppointmentId,
 					getFormatDateDisplay,
-					renderActiveTabLoading: tabOptions => window.ModalFunctionTabsUi.renderActiveTabLoading(tabOptions),
-					loadVitalSigns: options.loadVitalSigns,
 					prepareFormForCopy,
 					setLoadingState: value => options.setLoadingState?.(value),
 					setCurrentAppointmentId: value => options.setCurrentAppointmentId?.(value),
@@ -56,14 +52,9 @@
 						: formatDisplayDate(date)),
 					getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
 					getExaminationStatusText: options.getExaminationStatusText,
-					fetchPatientDetail: options.fetchPatientDetail,
-					fetchExaminationDetail: options.fetchExaminationDetail,
-					fetchSectionDetails: options.fetchSectionDetails,
-					fetchPrescription: options.fetchPrescription,
 					getFormatDate: () => window.formatDateDisplay || formatDisplayDate,
 					resetFormToDefault: options.resetFormToDefault,
-					loadAppointments: options.loadAppointments,
-					buildHistoryRendererOptions: options.buildHistoryRendererOptions
+					loadAppointments: options.loadAppointments
 				}
 			});
 			window.QLPKPsychologistPatientHistoryModal = patientHistoryModal;
@@ -107,9 +98,9 @@
 				console,
 				getSelectedPatient: () => modalSearchState.get('selectedPatient'),
 				syncWindowState: () => modalPatientSearchFlow.syncWindowState(),
-				getClinicInfoConfig: options.getClinicInfoConfig,
-				buildMedicalRecordHTML: options.buildMedicalRecordHTML,
-				createBarcodesInElement: options.createBarcodesInElement
+				getClinicInfoConfig: patientHistoryModal.dataRuntime.getClinicInfo,
+				buildMedicalRecordHTML: patientHistoryModal.dataRuntime.buildMedicalRecordHTML,
+				createBarcodesInElement: patientHistoryModal.dataRuntime.createBarcodesInElement
 			});
 			window.updateMedicalRecordTab = medicalRecordRealtimeAdapter.updateMedicalRecordTab;
 

@@ -26,6 +26,7 @@
 	function applyAddressFields(patient, options) {
 		if (!patient) return;
 		const opts = options || {};
+		if (opts.isCurrentLoad?.() === false) return;
 		const safeSetValue = getSafeSetValue(opts);
 		const fullAddress = buildFullAddress(patient, opts) || patient.address || '';
 
@@ -60,62 +61,79 @@
 		}
 	}
 
+	async function syncProvince(patient, context) {
+		const { opts, isCurrentLoad, doc, jquery, mainAddressForm } = context;
+		if (!patient.province) return;
+		const provinceSelect = doc.querySelector('select#province');
+		if (provinceSelect) {
+			if ((!provinceSelect.options || provinceSelect.options.length <= 1) && opts.loadProvinces) {
+				await opts.loadProvinces();
+			}
+			if (!isCurrentLoad()) return false;
+			provinceSelect.value = patient.province;
+			triggerChange(provinceSelect, jquery);
+		} else if (typeof mainAddressForm.setMainAddressProvinceValue === 'function') {
+			await mainAddressForm.setMainAddressProvinceValue(patient.province, opts);
+		} else {
+			setInputValue(doc.querySelector('input#province'), patient.province);
+		}
+		if (!isCurrentLoad()) return false;
+		setInputValue(doc.querySelector('#provinceHidden'), patient.province);
+	}
+
+	async function syncDistrict(patient, context) {
+		const { opts, isCurrentLoad, doc, jquery } = context;
+		if (!patient.district) return;
+		const districtSelect = doc.querySelector('select#district');
+		if (districtSelect && districtSelect.options && districtSelect.options.length > 1) {
+			districtSelect.value = patient.district;
+			triggerChange(districtSelect, jquery);
+			if (patient.province && opts.loadWards) {
+				await opts.loadWards(patient.province, patient.district);
+			}
+		}
+		if (!isCurrentLoad()) return false;
+		setInputValue(doc.querySelector('input#district'), patient.district);
+	}
+
+	async function syncWard(patient, context) {
+		const { opts, isCurrentLoad, doc, mainAddressForm } = context;
+		if (!patient.ward) return;
+		const wardSelect = doc.querySelector('select#ward');
+		if (wardSelect && wardSelect.options && wardSelect.options.length > 1) {
+			wardSelect.value = patient.ward;
+		} else if (typeof mainAddressForm.setMainAddressWardValue === 'function') {
+			await mainAddressForm.setMainAddressWardValue(patient.ward, opts);
+		}
+		if (!isCurrentLoad()) return false;
+		setInputValue(doc.querySelector('input#ward'), patient.ward);
+	}
+
 	async function syncAddressHierarchy(patient, options) {
 		if (!patient) return;
 		const opts = options || {};
-		const doc = getDocument(opts);
-		const jquery = getJquery(opts);
-		const mainAddressForm = window.ReceptionistAddressMainForm || {};
-
-		if (patient.province) {
-			const provinceSelect = doc.querySelector('select#province');
-			if (provinceSelect) {
-				if ((!provinceSelect.options || provinceSelect.options.length <= 1) && opts.loadProvinces) {
-					await opts.loadProvinces();
-				}
-				provinceSelect.value = patient.province;
-				triggerChange(provinceSelect, jquery);
-			} else if (typeof mainAddressForm.setMainAddressProvinceValue === 'function') {
-				await mainAddressForm.setMainAddressProvinceValue(patient.province, opts);
-			} else {
-				setInputValue(doc.querySelector('input#province'), patient.province);
-			}
-			setInputValue(doc.querySelector('#provinceHidden'), patient.province);
+		const isCurrentLoad = () => opts.isCurrentLoad?.() !== false;
+		const context = {
+			opts, isCurrentLoad, doc: getDocument(opts), jquery: getJquery(opts),
+			mainAddressForm: window.ReceptionistAddressMainForm || {}
+		};
+		for (const sync of [syncProvince, syncDistrict, syncWard]) {
+			if (!isCurrentLoad()) return false;
+			await sync(patient, context);
 		}
-
-		if (patient.district) {
-			const districtSelect = doc.querySelector('select#district');
-			if (districtSelect && districtSelect.options && districtSelect.options.length > 1) {
-				districtSelect.value = patient.district;
-				triggerChange(districtSelect, jquery);
-				if (patient.province && opts.loadWards) {
-					await opts.loadWards(patient.province, patient.district);
-				}
-			}
-			setInputValue(doc.querySelector('input#district'), patient.district);
-		}
-
-		if (patient.ward) {
-			const wardSelect = doc.querySelector('select#ward');
-			if (wardSelect && wardSelect.options && wardSelect.options.length > 1) {
-				wardSelect.value = patient.ward;
-			} else if (typeof mainAddressForm.setMainAddressWardValue === 'function') {
-				await mainAddressForm.setMainAddressWardValue(patient.ward, opts);
-			}
-			setInputValue(doc.querySelector('input#ward'), patient.ward);
-		}
-
-		if (opts.updateAddressSummary) {
-			opts.updateAddressSummary();
-		}
+		if (!isCurrentLoad()) return false;
+		opts.updateAddressSummary?.();
+		return true;
 	}
 
 	async function applyAddressWithHierarchy(patient, options) {
 		applyAddressFields(patient, options);
 		try {
-			await syncAddressHierarchy(patient, options);
+			return await syncAddressHierarchy(patient, options);
 		} catch (error) {
+			if (options?.isCurrentLoad?.() === false) return false;
 			console.error((options && options.errorPrefix) || 'Error loading address hierarchy:', error);
+			return false;
 		}
 	}
 

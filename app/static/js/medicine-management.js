@@ -18,6 +18,13 @@ function escapeHtml(text) {
 	return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+function getUserFacingResponseMessage(xhr, statuses, fallback, field = 'user_message') {
+	const payload = xhr && xhr.responseJSON;
+	const candidate = payload && payload[field];
+	if (!statuses.includes(xhr && xhr.status) || typeof candidate !== 'string' || !candidate.trim()) return fallback;
+	return candidate;
+}
+
 function debounce(func, wait) {
 	let timeout;
 	return function executedFunction(...args) {
@@ -59,14 +66,13 @@ $(document).ready(function () {
 	document.querySelectorAll('[data-medicine-action-icon]').forEach(element => {
 		element.innerHTML = window.QLPKIconSystem.renderActionIcon(element.dataset.medicineActionIcon);
 	});
-	if (!localStorage.getItem('qlpk_token')) {
+	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = '/login.html';
 		return;
 	}
 
 	$('#logoutBtn').on('click', function () {
-		localStorage.removeItem('qlpk_token');
-		window.location.href = '/login.html';
+		window.QLPKAppHeader?.logout();
 	});
 
 	loadMedicines();
@@ -280,8 +286,8 @@ function toggleMissingImportPriceFilter() {
 }
 
 function loadMedicines() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại!');
 		return;
 	}
@@ -300,9 +306,6 @@ function loadMedicines() {
 	$.ajax({
 		url: url,
 		method: 'GET',
-		headers: {
-			'Authorization': 'Bearer ' + token
-		},
 		success: function (data) {
 			if (requestId !== medicineListRequest) return;
 			medicines = data.medicines || [];
@@ -335,17 +338,14 @@ function loadMedicines() {
 
 // Load tất cả thuốc cho dropdown (không phân trang)
 function loadAllMedicines() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		return;
 	}
 
 	$.ajax({
 		url: `/api/medicines/?page=1&per_page=5000`,
 		method: 'GET',
-		headers: {
-			'Authorization': 'Bearer ' + token
-		},
 		success: function (data) {
 			allMedicines = data.medicines || [];
 		},
@@ -484,7 +484,7 @@ function renderMedicineTable() {
                 <td>${latestImportPrice != null ? formatCurrency(latestImportPrice) : '-'}</td>
                 <td>${formatCurrency(medicine.unit_price)}</td>
                 <td>
-                    <button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="badge stock-detail-badge" onclick="showStockDetail(${medicine.id})" title="Xem chi tiết tồn kho" aria-label="Xem chi tiết ${batchCount} lần nhập">
+                    <button type="button" class="badge stock-detail-badge" onclick="showStockDetail(${medicine.id})" title="Xem chi tiết tồn kho" aria-label="Xem chi tiết ${batchCount} lần nhập">
                         ${batchCount} lần
                     </button>
                 </td>
@@ -560,8 +560,8 @@ function deleteSelectedMedicines() {
 	$('#confirmBulkDeleteBtn').off('click').on('click', function () {
 		$('#confirmBulkDeleteModal').modal('hide');
 
-		const token = localStorage.getItem('qlpk_token');
-		if (!token) {
+		const hasSession = window.QLPKApiTransport.hasSession();
+		if (!hasSession) {
 			showCustomToast('error', 'Vui lòng đăng nhập lại!');
 			return;
 		}
@@ -572,9 +572,6 @@ function deleteSelectedMedicines() {
 			$.ajax({
 				url: `/api/medicines/${id}`,
 				method: 'DELETE',
-				headers: {
-					'Authorization': 'Bearer ' + token
-				},
 				success: function () {
 					deletedCount++;
 					if (deletedCount === selectedIds.length) {
@@ -794,13 +791,12 @@ let medicineSaving = false;
 function editMedicine(id) {
     if (window.MedicinePriceEditor?.isSaving()) return;
     if (medicineSaving) return;
-    const token = localStorage.getItem('qlpk_token');
-    if (!token) { showCustomToast('error', 'Vui lòng đăng nhập lại!'); return; }
+    const hasSession = window.QLPKApiTransport.hasSession();
+    if (!hasSession) { showCustomToast('error', 'Vui lòng đăng nhập lại!'); return; }
     resetForm();
     const requestId = ++medicineEditRevision;
     $.ajax({
         url: `/api/medicines/${id}`, method: 'GET',
-        headers: {Authorization: 'Bearer ' + token},
         success(data) {
             if (requestId === medicineEditRevision) {
                 populateMedicineForm(data, id);
@@ -1020,8 +1016,8 @@ function saveMedicine() {
 	}
 	// Mã thuốc duy nhất (khuyến nghị có) - đã bỏ validation bắt buộc
 
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại!');
 		return;
 	}
@@ -1041,7 +1037,6 @@ function saveMedicine() {
 		url: url,
 		method: method,
 		headers: {
-			'Authorization': 'Bearer ' + token,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify(medicineData),
@@ -1057,8 +1052,7 @@ function saveMedicine() {
 			if (xhr.status === 401) {
 				showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
 			} else {
-				const message = [400, 409].includes(xhr.status) && typeof xhr.responseJSON?.user_message === 'string'
-					? xhr.responseJSON.user_message : 'Không lưu được thông tin thuốc. Hãy thử lại.';
+				const message = getUserFacingResponseMessage(xhr, [400, 409], 'Không lưu được thông tin thuốc. Hãy thử lại.');
 				$('#medicineFormError').removeClass('d-none').text(message);
 				showCustomToast('error', message);
 			}
@@ -1080,8 +1074,8 @@ function confirmDelete(id) {
 function deleteMedicine() {
 	const medicineId = $('#confirmDeleteBtn').data('medicine-id');
 
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại!');
 		return;
 	}
@@ -1089,9 +1083,6 @@ function deleteMedicine() {
 	$.ajax({
 		url: `/api/medicines/${medicineId}`,
 		method: 'DELETE',
-		headers: {
-			'Authorization': 'Bearer ' + token
-		},
 		success: function (response) {
 			showCustomToast('success', 'Xóa thuốc thành công');
 			$('#confirmDeleteModal').modal('hide');
@@ -1100,10 +1091,8 @@ function deleteMedicine() {
 		error: function (xhr, status, error) {
 			if (xhr.status === 401) {
 				showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
-			} else if (xhr.status === 409 && typeof xhr.responseJSON?.user_message === 'string') {
-				showCustomToast('error', xhr.responseJSON.user_message);
 			} else {
-				showCustomToast('error', 'Lỗi xóa thuốc');
+				showCustomToast('error', getUserFacingResponseMessage(xhr, [409], 'Không xóa được thuốc. Hãy thử lại.'));
 			}
 		}
 	});
@@ -1736,8 +1725,7 @@ function showImportBatchModal(preselectMedicineId = null) {
 		if (batchImportDate._flatpickr) batchImportDate._flatpickr.setDate(today, true);
 		else batchImportDate.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 	}
-	let actor = {};
-	try { actor = JSON.parse(localStorage.getItem('qlpk_user') || '{}'); } catch (_) {}
+	const actor = window.QLPKApiTransport.userSnapshot();
 	document.getElementById('batchImportUser').value = actor.full_name || actor.username || '';
 	document.getElementById('batchNote').value = '';
 
@@ -2022,7 +2010,6 @@ async function onBatchMedicineSelect(medicineId, rowId) {
     try {
         const response = await $.ajax({
             url: `/api/medicines/${medicineId}/batches`,
-            headers: {Authorization: 'Bearer ' + localStorage.getItem('qlpk_token')}
         });
         if (!row.isConnected || row.querySelector('.batch-medicine-id').value !== String(medicineId)) return;
         const latest = [...(response.batches || [])].sort((a,b) => b.import_date.localeCompare(a.import_date) || b.id - a.id)[0];
@@ -2139,12 +2126,10 @@ async function confirmBatchImport() {
 	isImportingBatch = true;
 	$('#confirmImportBatchBtn').prop('disabled', true);
 	try {
-		const token = localStorage.getItem('qlpk_token');
 		const response = await $.ajax({
 			url: '/api/medicine-batches/import-order',
 			method: 'POST',
 			headers: {
-				'Authorization': 'Bearer ' + token,
 				'Content-Type': 'application/json'
 			},
 			dataType: 'json',
@@ -2199,8 +2184,8 @@ function loadSuppliers() {
 
 	tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Đang tải dữ liệu...</td></tr>';
 
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
 		return;
 	}
@@ -2211,9 +2196,6 @@ function loadSuppliers() {
 	$.ajax({
 		url: '/api/suppliers/',
 		method: 'GET',
-		headers: {
-			'Authorization': 'Bearer ' + token
-		},
 		data: {
 			search: search,
 			is_active: statusFilter || undefined
@@ -2341,8 +2323,8 @@ function deleteSupplier(supplierId) {
 		return;
 	}
 
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
 		return;
 	}
@@ -2350,9 +2332,6 @@ function deleteSupplier(supplierId) {
 	$.ajax({
 		url: `/api/suppliers/${supplierId}`,
 		method: 'DELETE',
-		headers: {
-			'Authorization': 'Bearer ' + token
-		},
 		dataType: 'json',
 		success: function (response) {
 			showCustomToast('success', 'Đã xóa nhà cung cấp thành công');
@@ -2392,8 +2371,8 @@ $(document).ready(function () {
 
 // Hàm lưu nhà cung cấp
 function saveSupplier() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
 		return;
 	}
@@ -2422,7 +2401,6 @@ function saveSupplier() {
 		url: url,
 		method: method,
 		headers: {
-			'Authorization': 'Bearer ' + token,
 			'Content-Type': 'application/json'
 		},
 		data: JSON.stringify(formData),
@@ -2442,8 +2420,8 @@ function saveSupplier() {
 
 // ========== DASHBOARD TỔNG QUAN ==========
 function updateDashboard() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		return;
 	}
 
@@ -2454,7 +2432,6 @@ function updateDashboard() {
 	fetch('/api/medicines/dashboard', {
 		method: 'GET',
 		headers: {
-			'Authorization': 'Bearer ' + token,
 			'Content-Type': 'application/json'
 		},
 		signal: controller.signal
@@ -2514,8 +2491,8 @@ function updateDashboard() {
 // ========== XUẤT DỮ LIỆU ==========
 // Xuất danh sách thuốc ra Excel
 async function exportMedicineListExcel() {
-	const token = localStorage.getItem('qlpk_token');
-	if (!token) {
+	const hasSession = window.QLPKApiTransport.hasSession();
+	if (!hasSession) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại!');
 		return;
 	}
@@ -2524,9 +2501,6 @@ async function exportMedicineListExcel() {
 		// Gọi API để xuất Excel
 		const response = await fetch('/api/medicines/export/excel', {
 			method: 'GET',
-			headers: {
-				'Authorization': 'Bearer ' + token
-			}
 		});
 
 		if (!response.ok) {
@@ -2603,7 +2577,6 @@ async function loadImportLedger(page = 1) {
         if (importLedgerSort) params.set('sort', importLedgerSort);
         const response = await $.ajax({
             url: `/api/medicine-batches/?${params}`,
-            headers: {Authorization: 'Bearer ' + localStorage.getItem('qlpk_token')}
         });
         if (version !== importLedgerRequestVersion) return;
         importLedgerTotalPages = Math.max(1, response.total_pages || 1);
@@ -2690,8 +2663,6 @@ function showMissingImportPriceForm(batch, cell) {
     input.required = true;
     input.className = 'form-control form-control-sm';
     label.append(input);
-    const hint = document.createElement('small');
-    hint.textContent = '0đ = miễn phí. Không đổi giá vốn lần cấp cũ.';
     const save = document.createElement('button');
     save.type = 'submit';
     save.className = 'btn btn-sm btn-primary';
@@ -2710,7 +2681,7 @@ function showMissingImportPriceForm(batch, cell) {
     const actions = document.createElement('div');
     actions.className = 'd-flex gap-1';
     actions.append(save, cancel);
-    form.append(label, hint, actions, error);
+    form.append(label, actions, error);
     let saving = false;
     form.onsubmit = async event => {
         event.preventDefault();
@@ -2720,15 +2691,14 @@ function showMissingImportPriceForm(batch, cell) {
         error.textContent = '';
         try {
             await $.ajax({url: `/api/medicine-batches/${batch.id}/import-price`, method: 'POST',
-                contentType: 'application/json', data: JSON.stringify({import_price: input.value}),
-                headers: {Authorization: 'Bearer ' + localStorage.getItem('qlpk_token')}});
+                contentType: 'application/json', data: JSON.stringify({import_price: input.value})});
             showCustomToast('success', 'Đã bổ sung giá nhập. Tồn và giá vốn giao dịch cũ giữ nguyên.');
             currentPage = 1;
             loadMedicines();
             loadAllMedicines();
             if (cell.isConnected) loadImportLedger(importLedgerPage);
         } catch (failure) {
-            error.textContent = failure.responseJSON?.detail || 'Không lưu được. Hãy tải lại lịch sử nhập để kiểm tra.';
+            error.textContent = getUserFacingResponseMessage(failure, [403, 404, 409], 'Không lưu được. Hãy tải lại lịch sử nhập để kiểm tra.', 'detail');
             input.disabled = save.disabled = cancel.disabled = false;
         } finally {
             saving = false;
@@ -2852,8 +2822,7 @@ async function loadReceiptDispensing(page = 1) {
     try {
         const params = new URLSearchParams({batch_id: batchId, page, per_page: 20});
         Object.entries(receiptDispensingFilters).forEach(([key, value]) => { if (value) params.set(key, value); });
-        const response = await $.ajax({url: `/api/medicine/statistics/ledger?${params}`,
-            headers: {Authorization: 'Bearer ' + localStorage.getItem('qlpk_token')}});
+        const response = await $.ajax({url: `/api/medicine/statistics/ledger?${params}`});
         if (version !== receiptDispensingVersion) return;
         renderReceiptDispensingRows(response.transactions || []);
         info.textContent = `${response.total} giao dịch${response.total_pages > 1 ? ` · Trang ${response.page}/${response.total_pages}` : ''}`;

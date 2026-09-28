@@ -1,10 +1,8 @@
 (function (window) {
 	'use strict';
 
-	const FALLBACK_COLORS = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#994499', '#22AA99'];
-
-	function getDoctorLegendColor(doctor, index) {
-		return (doctor && doctor.calendar_color) || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+	function getDoctorLegendColor(doctor) {
+		return window.QLPKAppointmentCalendar.resolveDoctorDotColor(doctor?.id, doctor ? [doctor] : []);
 	}
 
 	function createLegendItem(doc, doctor, index) {

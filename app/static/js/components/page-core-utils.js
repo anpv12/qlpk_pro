@@ -5,14 +5,6 @@
 		return options && options.document ? options.document : window.document;
 	}
 
-	function getLocalStorage(options) {
-		return options && options.localStorage ? options.localStorage : window.localStorage;
-	}
-
-	function getSessionStorage(options) {
-		return options && options.sessionStorage ? options.sessionStorage : window.sessionStorage;
-	}
-
 	function getFetch(options) {
 		return options && options.fetch ? options.fetch : window.fetch.bind(window);
 	}
@@ -21,36 +13,18 @@
 		// CSS is owned by custom-animations.css; keep this function for legacy callers.
 	}
 
-	function ensureToken(options = {}) {
-		const token = getLocalStorage(options).getItem('qlpk_token');
-		if (!token) {
-			(options.window || window).location.href = '/login';
-			return false;
-		}
-		return true;
+	function ensureSession() {
+		return window.QLPKApiTransport.ensureSession();
 	}
 
-	function getAuthHeader(options = {}) {
-		try {
-			let raw = getLocalStorage(options).getItem('qlpk_token') || getLocalStorage(options).getItem('token') || getSessionStorage(options).getItem('qlpk_token');
-			if (!raw) return null;
-			if (raw.trim().startsWith('{')) {
-				const obj = JSON.parse(raw);
-				const token = obj.access_token || obj.token || obj.Authorization || obj.authorization;
-				return token ? `Bearer ${token.replace(/^Bearer\s+/i, '')}` : null;
-			}
-			return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-		} catch (e) {
-			return null;
-		}
+	function getAuthHeader() {
+		return window.QLPKApiTransport.getAuthHeader();
 	}
 
 	function apiCall(url, options = {}, coreOptions = {}) {
-		const auth = getAuthHeader(coreOptions);
 		const defaultOptions = {
 			headers: {
-				'Content-Type': 'application/json',
-				...(auth ? { 'Authorization': auth } : {})
+				'Content-Type': 'application/json'
 			}
 		};
 
@@ -63,13 +37,7 @@
 			}
 		};
 
-		return getFetch(coreOptions)(url, finalOptions)
-			.then(response => {
-				if (response.status === 401) {
-					// Preserve legacy no-op behavior.
-				}
-				return response;
-			});
+		return getFetch(coreOptions)(url, finalOptions);
 	}
 
 	function updatePagination(options = {}) {
@@ -226,199 +194,39 @@
 		}
 	}
 
-	async function saveExaminationFormDataShell(options = {}) {
-		if (typeof options.shouldSkip === 'function' && options.shouldSkip()) {
-			return { status: 'skipped' };
-		}
+	function shouldSkipAutoSave(options) {
+		return typeof options.shouldSkip === 'function' && Boolean(options.shouldSkip());
+	}
 
-		const resolvedAppointmentId = typeof options.resolveAppointmentId === 'function'
-			? await options.resolveAppointmentId()
-			: (typeof options.getCurrentAppointmentId === 'function' ? options.getCurrentAppointmentId() : options.currentAppointmentId);
-		if (!resolvedAppointmentId) return { status: 'missingAppointment' };
-
-		const appointmentId = (typeof options.getCurrentAppointmentId === 'function'
-			? options.getCurrentAppointmentId()
-			: null) || resolvedAppointmentId;
-		const formData = typeof options.collectFormData === 'function' ? options.collectFormData() : (options.formData || {});
-		const logger = options.console || window.console;
-
-		try {
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('saving');
-			}
-
-			const payload = typeof options.buildPayload === 'function'
-				? options.buildPayload(formData, appointmentId)
-				: (options.payload || {});
-			const response = await options.apiCall(`/api/appointments/${appointmentId}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload)
-			});
-
-			if (typeof options.isCurrentAppointment === 'function' && !options.isCurrentAppointment(appointmentId)) {
-				return { status: 'stale', appointmentId, response, formData, payload };
-			}
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				if (logger && typeof logger.error === 'function') {
-					logger.error(options.responseErrorLogMessage || 'Error saving examination form data:', response.status, errorText);
-				}
-				throw new Error(`Failed to save examination form data: ${errorText}`);
-			}
-
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('success');
-			}
-			return { status: 'saved', appointmentId, response, formData, payload };
-		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.errorLogMessage || 'Error saving examination form data:', error);
-			}
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('error');
-			}
-			if (typeof options.showToast === 'function') {
-				options.showToast('error', options.errorToastMessage || 'Không thể lưu thông tin khám bệnh. Vui lòng thử lại.');
-			}
-			return { status: 'error', appointmentId, error, formData };
+	function notifyAutoSaveIndicator(options, type) {
+		if (typeof options.showAutoSaveIndicator === 'function') {
+			options.showAutoSaveIndicator(type);
 		}
 	}
 
-	function createExaminationFormSaveAdapter(options = {}) {
-		const detailUtils = options.detailModalUtils || window.ClinicalExaminationDetailModalUtils;
-		const formDomUtils = options.formDomUtils || window.ClinicalFormDomUtils;
-		const saveShell = typeof options.saveShell === 'function'
-			? options.saveShell
-			: saveOptions => saveExaminationFormDataShell({
-				apiCall: options.apiCall,
-				console: options.console || window.console,
-				...(saveOptions || {})
-			});
-
-		function resolveAppointmentId() {
-			if (typeof options.resolveAppointmentId === 'function') return options.resolveAppointmentId();
-			if (!detailUtils || typeof detailUtils.resolveCurrentAppointmentId !== 'function') {
-				return typeof options.getCurrentAppointmentId === 'function'
-					? options.getCurrentAppointmentId()
-					: options.currentAppointmentId;
-			}
-			return detailUtils.resolveCurrentAppointmentId({
-				apiCall: options.apiCall,
-				getCurrentAppointmentId: options.getCurrentAppointmentId,
-				setCurrentAppointmentId: options.setCurrentAppointmentId,
-				getCurrentPatientId: options.getCurrentPatientId
-			});
-		}
-
-		function collectFormData() {
-			if (typeof options.collectFormData === 'function') return options.collectFormData();
-			if (formDomUtils && typeof formDomUtils.collectPsychologistExaminationFormData === 'function') {
-				return formDomUtils.collectPsychologistExaminationFormData({
-					$: options.$,
-					...(options.collectOptions || {})
-				});
-			}
-			return options.formData || {};
-		}
-
-		function buildPayload(formData, appointmentId) {
-			if (typeof options.buildPayload === 'function') return options.buildPayload(formData, appointmentId);
-			if (formDomUtils && typeof formDomUtils.buildPsychologistExaminationUpdatePayload === 'function') {
-				return formDomUtils.buildPsychologistExaminationUpdatePayload(formData, options.payloadOptions || {});
-			}
-			return {};
-		}
-
-		return {
-			resolveAppointmentId,
-			collectFormData,
-			buildPayload,
-			save: () => saveShell({
-				shouldSkip: options.shouldSkip,
-				resolveAppointmentId,
-				getCurrentAppointmentId: options.getCurrentAppointmentId,
-				collectFormData,
-				buildPayload,
-				isCurrentAppointment: options.isCurrentAppointment,
-				showAutoSaveIndicator: options.showAutoSaveIndicator,
-				showToast: options.showToast
-			})
-		};
-	}
-
-	async function saveDiagnosisAndTreatmentShell(options = {}) {
-		if (typeof options.shouldSkip === 'function' && options.shouldSkip()) {
-			return { status: 'skipped' };
-		}
-
-		const appointmentId = typeof options.getCurrentAppointmentId === 'function'
-			? options.getCurrentAppointmentId()
-			: options.currentAppointmentId;
-		if (!appointmentId) return { status: 'missingAppointment' };
-
-		const logger = options.console || window.console;
-		const diagnosisValue = typeof options.getDiagnosisValue === 'function'
-			? options.getDiagnosisValue()
-			: '';
-		const payload = typeof options.buildPayload === 'function'
-			? options.buildPayload(diagnosisValue)
-			: { diagnosis: diagnosisValue };
-
-		try {
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('saving');
-			}
-
-			const response = await options.apiCall(`/api/appointments/${appointmentId}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload)
-			});
-
-			if (response && response.ok === false) {
-				const errorText = typeof response.text === 'function' ? await response.text() : '';
-				throw new Error(errorText || `HTTP ${response.status || ''}`.trim());
-			}
-
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('success');
-			}
-			return { status: 'saved', appointmentId, response, payload };
-		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.errorLogMessage || 'Error saving diagnosis and treatment:', error);
-			}
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('error');
-			}
-			return { status: 'error', appointmentId, error, payload };
-		}
-	}
-
-	async function autoSavePatientFormFieldShell(fieldName, value, options = {}) {
-		if (typeof options.shouldSkip === 'function' && options.shouldSkip()) {
-			return { status: 'skipped' };
-		}
-
+	async function resolveAutoSaveAppointmentId(options) {
 		const hasAppointment = typeof options.ensureCurrentAppointmentIdForAutoSave === 'function'
 			? await options.ensureCurrentAppointmentIdForAutoSave()
 			: true;
-		if (!hasAppointment) return { status: 'missingAppointment' };
-
-		const appointmentId = typeof options.getCurrentAppointmentId === 'function'
+		if (!hasAppointment) return null;
+		return typeof options.getCurrentAppointmentId === 'function'
 			? options.getCurrentAppointmentId()
 			: options.currentAppointmentId;
+	}
+
+	async function autoSavePatientFormFieldShell(fieldName, value, options = {}) {
+		if (shouldSkipAutoSave(options)) {
+			return { status: 'skipped' };
+		}
+
+		const appointmentId = await resolveAutoSaveAppointmentId(options);
 		if (!appointmentId) return { status: 'missingAppointment' };
-		if (options.recheckSkipBeforeSave && typeof options.shouldSkip === 'function' && options.shouldSkip()) {
+		if (options.recheckSkipBeforeSave && shouldSkipAutoSave(options)) {
 			return { status: 'skipped', appointmentId };
 		}
 
 		try {
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('saving');
-			}
+			notifyAutoSaveIndicator(options, 'saving');
 
 			const payload = {};
 			payload[fieldName] = value || '';
@@ -433,20 +241,17 @@
 			}
 
 			if (response && response.ok) {
-				if (typeof options.showAutoSaveIndicator === 'function') {
-					options.showAutoSaveIndicator('success');
-				}
+				notifyAutoSaveIndicator(options, 'success');
 				return { status: 'saved', appointmentId, response, payload };
 			}
 
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('error');
-			}
+			notifyAutoSaveIndicator(options, 'error');
 			return { status: 'responseNotOk', appointmentId, response, payload };
 		} catch (error) {
-			if (typeof options.showAutoSaveIndicator === 'function') {
-				options.showAutoSaveIndicator('error');
+			if (typeof options.isCurrentAppointment === 'function' && !options.isCurrentAppointment(appointmentId)) {
+				return { status: 'stale', appointmentId, error };
 			}
+			notifyAutoSaveIndicator(options, 'error');
 			return { status: 'error', appointmentId, error };
 		}
 	}
@@ -478,110 +283,56 @@
 		return { status: 'saved', patient: await response.json(), response, method, url };
 	}
 
-	function validatePatientFormData(formData, options = {}) {
-		if (formData && formData.full_name && formData.gender) {
-			return true;
+	function isPatientSaveContextCurrent(options) {
+		return typeof options.isCurrentContext !== 'function' || options.isCurrentContext();
+	}
+
+	function reportPatientSaveFailure(error, options) {
+		if (!isPatientSaveContextCurrent(options)) return { status: 'stale', error };
+		const logger = options.console || window.console;
+		if (logger && typeof logger.error === 'function') {
+			logger.error(options.errorLogMessage || 'savePatientDataInternal: Error saving patient data:', error);
 		}
 		if (typeof options.showToast === 'function') {
-			options.showToast('error', options.requiredMessage || 'Vui lòng nhập đầy đủ thông tin bắt buộc');
+			options.showToast('error', options.errorToastMessage || 'Chưa lưu được đầy đủ thông tin và tài liệu. Vui lòng kiểm tra rồi lưu lại.');
 		}
-		return false;
+		return { status: 'error', error };
 	}
 
-	function reenableSaveButtonLater(options = {}) {
-		const $ = options.$ || window.jQuery || window.$;
-		if (typeof $ !== 'function') return false;
-		const delay = Number.isFinite(options.delayMs) ? options.delayMs : 2000;
-		const setTimeoutFn = options.setTimeout || window.setTimeout;
-		setTimeoutFn(() => {
-			$(options.saveButtonSelector || '#saveInfoBtn').prop('disabled', false);
-		}, delay);
-		return true;
-	}
-
-	async function runPatientSaveWithoutDuplicateCheck(options = {}) {
-		const logger = options.console || window.console;
-		try {
-			if (typeof options.syncModalDataIfNeeded === 'function') {
-				await Promise.resolve(options.syncModalDataIfNeeded());
-			}
-			const formData = typeof options.collectFormData === 'function' ? options.collectFormData() : null;
-			if (!validatePatientFormData(formData, options)) return { status: 'invalid', formData };
-
-			if (typeof options.savePatientDataInternal === 'function') {
-				await options.savePatientDataInternal(formData);
-			}
-			if (typeof options.saveExaminationFormData === 'function') {
-				await options.saveExaminationFormData();
-			}
-			return { status: 'saved', formData };
-		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.errorLogMessage || 'savePatientDataWithoutDuplicateCheck: Error saving patient data:', error);
-			}
+	async function savePatientAppointmentStep(options, savedPatient) {
+		const { formData, patientData, patient: patientResult } = savedPatient;
+		const appointmentSaveResult = await saveAppointmentClinicalUpdate({
+			apiCall: options.apiCall,
+			console: options.console || window.console,
+			getCurrentAppointmentId: options.getCurrentAppointmentId,
+			currentAppointmentId: options.currentAppointmentId,
+			patientId: patientResult.id,
+			buildPayload: () => typeof options.buildAppointmentPayload === 'function'
+				? options.buildAppointmentPayload(formData, patientResult, patientData)
+				: (options.appointmentPayload || {})
+		});
+		if (!isPatientSaveContextCurrent(options)) return { status: 'stale' };
+		if (appointmentSaveResult.status !== 'saved') {
 			if (typeof options.showToast === 'function') {
-				options.showToast('error', options.errorToastMessage || 'Không thể lưu bệnh nhân và lịch hẹn. Vui lòng kiểm tra lại.');
+				options.showToast('error', 'Đã lưu thông tin bệnh nhân nhưng chưa lưu được lịch hẹn. Vui lòng thử lưu lại.');
 			}
-			return { status: 'error', error };
-		} finally {
-			reenableSaveButtonLater(options);
+			return { status: 'appointmentError', ...savedPatient, appointmentSaveResult };
 		}
-	}
-
-	async function runPatientSaveWithDuplicateCheck(options = {}) {
-		const logger = options.console || window.console;
-		try {
-			if (typeof options.syncModalDataIfNeeded === 'function') {
-				await Promise.resolve(options.syncModalDataIfNeeded());
-			}
-			const formData = typeof options.collectFormData === 'function' ? options.collectFormData() : null;
-			if (!validatePatientFormData(formData, options)) return { status: 'invalid', formData };
-
-			const duplicateAdapter = options.duplicatePatientModalAdapter;
-			if (duplicateAdapter && typeof duplicateAdapter.showDuplicateIfNeeded === 'function') {
-				const duplicateShown = await duplicateAdapter.showDuplicateIfNeeded(formData, {
-					getCurrentPatientId: options.getCurrentPatientId
-				});
-				if (duplicateShown) return { status: 'duplicate', formData };
-			}
-
-			if (typeof options.savePatientDataInternal === 'function') {
-				await options.savePatientDataInternal(formData);
-			}
-			const currentAppointmentId = typeof options.getCurrentAppointmentId === 'function'
-				? options.getCurrentAppointmentId()
-				: options.currentAppointmentId;
-			if (currentAppointmentId && typeof options.saveExaminationFormData === 'function') {
-				await options.saveExaminationFormData();
-			}
-
-			if (typeof options.showToast === 'function') {
-				options.showToast('success', options.successMessage || 'Lưu thông tin bệnh nhân thành công');
-			}
-			const targetWindow = options.window || window;
-			const setTimeoutFn = options.setTimeout || targetWindow.setTimeout || window.setTimeout;
-			const reloadDelay = Number.isFinite(options.reloadDelayMs) ? options.reloadDelayMs : 1500;
-			setTimeoutFn(() => {
-				targetWindow.location.reload();
-			}, reloadDelay);
-			return { status: 'saved', formData };
-		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.errorLogMessage || 'Error in savePatientData:', error);
-			}
-			if (typeof options.showToast === 'function') {
-				options.showToast('error', options.errorToastMessage || 'Không thể lưu thông tin bệnh nhân. Vui lòng kiểm tra lại.');
-			}
-			return { status: 'error', error };
+		if (typeof options.setCurrentPatientId === 'function') options.setCurrentPatientId(patientResult.id);
+		if (typeof options.afterPatientSaved === 'function') {
+			await options.afterPatientSaved(patientResult, patientData, formData);
 		}
+		return { status: 'saved', ...savedPatient };
 	}
 
 	async function runPatientDataInternalSave(options = {}) {
 		const logger = options.console || window.console;
 		try {
+			if (!isPatientSaveContextCurrent(options)) return { status: 'stale' };
 			if (typeof options.syncModalDataIfNeeded === 'function') {
 				await Promise.resolve(options.syncModalDataIfNeeded());
 			}
+			if (!isPatientSaveContextCurrent(options)) return { status: 'stale' };
 
 			const formData = options.formData || {};
 			const patientData = typeof options.buildPatientPayload === 'function'
@@ -595,45 +346,21 @@
 				patientData,
 				showToast: options.showToast
 			});
+			if (!isPatientSaveContextCurrent(options)) return { status: 'stale' };
 
 			if (patientSaveResult.status !== 'saved') {
 				return { status: 'patientError', formData, patientData, patientSaveResult };
 			}
 
 			const patientResult = patientSaveResult.patient;
-			try {
-				if (typeof options.uploadDraftDocumentsForPatient === 'function') {
-					await options.uploadDraftDocumentsForPatient(patientResult.id);
-				}
-			} catch (e) { }
-
-			await saveAppointmentClinicalUpdate({
-				apiCall: options.apiCall,
-				console: logger,
-				getCurrentAppointmentId: options.getCurrentAppointmentId,
-				currentAppointmentId: options.currentAppointmentId,
-				patientId: patientResult.id,
-				buildPayload: () => typeof options.buildAppointmentPayload === 'function'
-					? options.buildAppointmentPayload(formData, patientResult, patientData)
-					: (options.appointmentPayload || {})
-			});
-
-			if (typeof options.setCurrentPatientId === 'function') {
-				options.setCurrentPatientId(patientResult.id);
+			if (typeof options.uploadDraftDocumentsForPatient === 'function') {
+				await options.uploadDraftDocumentsForPatient(patientResult.id, { isCurrentContext: options.isCurrentContext });
 			}
-			if (typeof options.afterPatientSaved === 'function') {
-				await options.afterPatientSaved(patientResult, patientData, formData);
-			}
+			if (!isPatientSaveContextCurrent(options)) return { status: 'stale' };
 
-			return { status: 'saved', formData, patientData, patient: patientResult };
+			return await savePatientAppointmentStep(options, { formData, patientData, patient: patientResult });
 		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.errorLogMessage || 'savePatientDataInternal: Error saving patient data:', error);
-			}
-			if (typeof options.showToast === 'function') {
-				options.showToast('error', options.errorToastMessage || 'Không thể lưu bệnh nhân và lịch hẹn. Vui lòng kiểm tra lại.');
-			}
-			return { status: 'error', error };
+			return reportPatientSaveFailure(error, options);
 		}
 	}
 
@@ -726,15 +453,13 @@
 		const coreOptions = () => ({
 			document: options.document,
 			window: options.window || window,
-			localStorage: options.localStorage,
-			sessionStorage: options.sessionStorage,
 			fetch: options.fetch
 		});
 		const adapter = {};
 
 		adapter.addButtonAnimationCSS = () => addButtonAnimationCSS(coreOptions());
-		adapter.ensureToken = () => ensureToken(coreOptions());
-		adapter.getAuthHeader = () => getAuthHeader(coreOptions());
+		adapter.ensureSession = ensureSession;
+		adapter.getAuthHeader = getAuthHeader;
 		adapter.apiCall = (url, requestOptions = {}) => apiCall(url, requestOptions, coreOptions());
 		adapter.updatePagination = () => updatePagination({
 			...coreOptions(),
@@ -765,27 +490,6 @@
 			console: options.console || window.console,
 			...(updateOptions || {})
 		});
-		adapter.saveExaminationFormDataShell = saveOptions => saveExaminationFormDataShell({
-			apiCall: adapter.apiCall,
-			console: options.console || window.console,
-			...(saveOptions || {})
-		});
-		adapter.createExaminationFormSaveAdapter = saveOptions => createExaminationFormSaveAdapter({
-			apiCall: adapter.apiCall,
-			console: options.console || window.console,
-			getCurrentAppointmentId: options.getCurrentAppointmentId,
-			setCurrentAppointmentId: options.setCurrentAppointmentId,
-			getCurrentPatientId: options.getCurrentPatientId,
-			saveShell: adapter.saveExaminationFormDataShell,
-			...(saveOptions || {})
-		});
-		adapter.saveDiagnosisAndTreatmentShell = saveOptions => saveDiagnosisAndTreatmentShell({
-			apiCall: adapter.apiCall,
-			console: options.console || window.console,
-			getCurrentAppointmentId: options.getCurrentAppointmentId,
-			showAutoSaveIndicator: adapter.showAutoSaveIndicator,
-			...(saveOptions || {})
-		});
 		adapter.autoSavePatientFormField = (fieldName, value, saveOptions = {}) => autoSavePatientFormFieldShell(fieldName, value, {
 			apiCall: adapter.apiCall,
 			ensureCurrentAppointmentIdForAutoSave: adapter.ensureCurrentAppointmentIdForAutoSave,
@@ -795,16 +499,6 @@
 		});
 		adapter.savePatientRecord = saveOptions => savePatientRecord({
 			apiCall: adapter.apiCall,
-			console: options.console || window.console,
-			...(saveOptions || {})
-		});
-		adapter.runPatientSaveWithoutDuplicateCheck = saveOptions => runPatientSaveWithoutDuplicateCheck({
-			...coreOptions(),
-			console: options.console || window.console,
-			...(saveOptions || {})
-		});
-		adapter.runPatientSaveWithDuplicateCheck = saveOptions => runPatientSaveWithDuplicateCheck({
-			...coreOptions(),
 			console: options.console || window.console,
 			...(saveOptions || {})
 		});
@@ -829,21 +523,8 @@
 		return adapter;
 	}
 
-	function initializeExaminationPageBootstrap(options = {}) {
-		const doc = getDocument(options);
-		const targetWindow = options.window || window;
-		const pageCoreAdapter = options.pageCoreAdapter || createPageCoreAdapter(options);
-
-		if (options.ensureToken !== false && pageCoreAdapter && typeof pageCoreAdapter.ensureToken === 'function') {
-			if (!pageCoreAdapter.ensureToken()) return { status: 'missingToken', relativeTableInstance: null };
-		}
-
-		if (pageCoreAdapter && typeof pageCoreAdapter.addButtonAnimationCSS === 'function') {
-			pageCoreAdapter.addButtonAnimationCSS();
-		}
-		if (typeof options.initializePage === 'function') options.initializePage();
-
-		const actionButtonsUi = options.actionButtonsUi || targetWindow.ExaminationActionButtonsUi;
+	function bindBootstrapRelativeTable(options, context) {
+		const { actionButtonsUi, doc, targetWindow } = context;
 		let relativeTableInstance = null;
 		if (actionButtonsUi && typeof actionButtonsUi.initRelativeTable === 'function') {
 			relativeTableInstance = actionButtonsUi.initRelativeTable({
@@ -861,7 +542,11 @@
 				printModalTabContent: options.printModalTabContent
 			});
 		}
+		return relativeTableInstance;
+	}
 
+	function bindBootstrapWaitingList(options, context) {
+		const { doc, targetWindow, pageCoreAdapter } = context;
 		const waitingListUi = options.waitingListUi || targetWindow.ClinicalExaminationWaitingListUi;
 		if (waitingListUi && typeof waitingListUi.bindStatusTabs === 'function') {
 			waitingListUi.bindStatusTabs({
@@ -892,7 +577,10 @@
 				loadAppointments: options.loadAppointments
 			});
 		}
+	}
 
+	function bindBootstrapFormControls(options, context) {
+		const { actionButtonsUi, targetWindow } = context;
 		if (typeof options.initializeForm === 'function') options.initializeForm();
 
 		const formDomUtils = options.formDomUtils || targetWindow.ClinicalFormDomUtils;
@@ -920,89 +608,38 @@
 				originalAppointmentInput: options.originalAppointmentInput || 'originalAppointmentId'
 			});
 		}
+	}
+
+	async function initializeExaminationPageBootstrap(options = {}) {
+		const doc = getDocument(options);
+		const targetWindow = options.window || window;
+		const pageCoreAdapter = options.pageCoreAdapter || createPageCoreAdapter(options);
+
+		if (options.ensureSession !== false) {
+			if (!await pageCoreAdapter.ensureSession()) return { status: 'sessionBlocked', relativeTableInstance: null };
+		}
+
+		if (pageCoreAdapter && typeof pageCoreAdapter.addButtonAnimationCSS === 'function') {
+			pageCoreAdapter.addButtonAnimationCSS();
+		}
+		if (typeof options.initializePage === 'function') options.initializePage();
+
+		const context = {
+			doc,
+			targetWindow,
+			pageCoreAdapter,
+			actionButtonsUi: options.actionButtonsUi || targetWindow.ExaminationActionButtonsUi
+		};
+		const relativeTableInstance = bindBootstrapRelativeTable(options, context);
+		bindBootstrapWaitingList(options, context);
+		bindBootstrapFormControls(options, context);
 
 		return { status: 'initialized', relativeTableInstance };
 	}
 
-	function bindWorkflowInteractionShell(options = {}) {
-		const targetWindow = options.window || window;
-		const modalSearchContext = options.modalSearchContext || {};
-		const elements = options.elements || modalSearchContext.elements || {};
-		const modalPatientSearchFlow = options.modalPatientSearchFlow || modalSearchContext.flow;
-		const modalHistoryDeleteFlow = options.modalHistoryDeleteFlow || modalSearchContext.deleteFlow;
-		const patientHistoryModal = options.patientHistoryModal;
-		const bindings = {};
-
-		if (options.bindDeleteQuickSearch !== false
-			&& modalHistoryDeleteFlow
-			&& typeof modalHistoryDeleteFlow.deleteQuickSearch === 'function') {
-			targetWindow.deleteExaminationFromQuickSearch = appointmentId => modalHistoryDeleteFlow.deleteQuickSearch(appointmentId);
-		}
-
-		const modalControlOptions = {
-				copyPatient: options.copyPatient || modalPatientSearchFlow?.copyPatientToForm,
-				copyHistory: options.copyHistory || modalPatientSearchFlow?.copyHistoryToForm,
-				deleteHistory: options.deleteHistory || (modalHistoryDeleteFlow && modalHistoryDeleteFlow.deleteHistory),
-				loadPatient: options.loadPatient,
-				isFormLocked: options.isFormLocked,
-				unlockForm: options.unlockForm,
-				...(options.modalControlOptions || {})
-		};
-		if (patientHistoryModal && typeof patientHistoryModal.bindControls === 'function') {
-			bindings.modalSearchControls = patientHistoryModal.bindControls(modalControlOptions);
-		} else if (modalPatientSearchFlow && typeof modalPatientSearchFlow.bindControls === 'function') {
-			bindings.modalSearchControls = modalPatientSearchFlow.bindControls(modalControlOptions);
-		}
-
-		const orderPageBridge = options.orderPageBridge;
-		if (orderPageBridge && typeof orderPageBridge.bindOrderPageInteractions === 'function') {
-			bindings.orderPage = orderPageBridge.bindOrderPageInteractions({
-				orderCategoryTreeEl: elements.orderCategoryTree,
-				orderSelectionsTableBody: elements.orderSelectionsTableBody,
-				orderClearBtn: elements.orderClearButton,
-				orderAddNewBtn: elements.orderAddNewButton,
-				orderPrintInternalBtn: elements.orderPrintInternalButton,
-				orderPrintExternalBtn: elements.orderPrintExternalButton,
-				orderBtn: elements.orderButton,
-				catalogStateAdapter: options.catalogStateAdapter,
-				catalogLoaderAdapter: options.catalogLoaderAdapter,
-				formAdapter: options.formAdapter,
-				selectionActionsAdapter: options.selectionActionsAdapter,
-				performerLoaderAdapter: options.performerLoaderAdapter,
-				printAdapter: options.printAdapter,
-				formatDateInput: options.formatDateInput,
-				hasSelectedOrders: options.hasSelectedOrders || (() => Boolean(options.orderCatalogState && options.orderCatalogState.selectedOrders && options.orderCatalogState.selectedOrders.length)),
-				showToast: options.showToast,
-				loadChiDinhFromServer: options.loadChiDinhFromServer,
-				...(options.orderInteractionOptions || {})
-			});
-		}
-
-		const actionButtonsUi = options.actionButtonsUi || targetWindow.ExaminationActionButtonsUi;
-		if (actionButtonsUi && typeof actionButtonsUi.bindExaminationActionButtons === 'function') {
-			bindings.examinationActionButtons = actionButtonsUi.bindExaminationActionButtons({
-				editHistoryButton: options.editHistoryButton || 'editHistoryBtn',
-				completeExaminationButton: options.completeExaminationButton || 'completeExaminationBtn',
-				unlockForm: options.unlockForm,
-				showToast: options.showToast,
-				apiCall: options.apiCall,
-				getCurrentAppointmentId: options.getCurrentAppointmentId,
-				transitionPath: options.transitionPath,
-				documentButton: options.documentButton || elements.documentButton,
-				loadDocumentModalData: options.loadDocumentModalData,
-				setupDocumentAutoSave: options.setupDocumentAutoSave,
-				saveMedicalHistoryButton: options.saveMedicalHistoryButton || 'saveMedicalHistoryBtn',
-				saveMedicalHistory: options.saveMedicalHistory,
-				...(options.actionButtonOptions || {})
-			});
-		}
-
-		return bindings;
-	}
-
 	const api = {
 		addButtonAnimationCSS,
-		ensureToken,
+		ensureSession,
 		getAuthHeader,
 		apiCall,
 		updatePagination,
@@ -1011,25 +648,16 @@
 		ensureCurrentAppointmentIdForAutoSave,
 		resolveAppointmentIdForPatientSave,
 		saveAppointmentClinicalUpdate,
-		saveExaminationFormDataShell,
-		createExaminationFormSaveAdapter,
-		saveDiagnosisAndTreatmentShell,
 		autoSavePatientFormFieldShell,
 		savePatientRecord,
-		validatePatientFormData,
-		reenableSaveButtonLater,
-		runPatientSaveWithoutDuplicateCheck,
-		runPatientSaveWithDuplicateCheck,
 		runPatientDataInternalSave,
 		reloadPage,
 		isRefreshButtonInReloadHeader,
 		bindRefreshButtons,
 		bindPaginationControls,
 		initializeExaminationPageBootstrap,
-		bindWorkflowInteractionShell,
 		createPageCoreAdapter
 	};
 
 	window.ClinicalPageCoreUtils = api;
-	window.DoctorExaminationPageCoreUtils = api;
 })(window);

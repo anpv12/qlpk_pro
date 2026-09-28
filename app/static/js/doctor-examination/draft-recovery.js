@@ -3,14 +3,17 @@
 
 	const RUNTIME = window.QLPKDoctorModuleRegistry.get('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
-
-	const DATABASE_NAME = 'qlpk_doctor_draft_recovery';
-	const DATABASE_VERSION = 1;
-	const STORE_NAME = 'clinical_drafts';
-	const DRAFT_SCHEMA_VERSION = 1;
-	const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+	const POLICY = window.QLPKDoctorModuleRegistry.get('draftRecoveryPolicy');
+	const STORE = window.QLPKDoctorModuleRegistry.get('draftRecoveryStore');
+	if (!POLICY || !STORE) throw new Error('Thiếu policy/store của bản nháp Doctor');
+	const { DRAFT_SCHEMA_VERSION, clone, isTransientClinicalControlId, sameValue, resolveDraftRecord } = POLICY;
+	const {
+		DRAFT_TTL_MS, draftKey, readRecord, writeRecord, deleteRecord,
+		deleteRecordIfMatches, replaceRecordIfMatches, purgeExpiredRecords, deleteUserRecords
+	} = STORE;
 	// Keep a local recovery copy shortly after a user change; this never writes to the server.
 	const CAPTURE_DELAY_MS = 250;
+	const pendingWrites = new Map();
 
 	const STATE = {
 		bound: false,
@@ -34,117 +37,9 @@
 
 	const { normalizeId } = RUNTIME;
 
-	function clone(value) {
-		return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
-	}
-
-	const TRANSIENT_CLINICAL_CONTROL_IDS = new Set(['diagnosis', 'benhKemTheo']);
-
-	function isTransientClinicalControlId(id) {
-		return TRANSIENT_CLINICAL_CONTROL_IDS.has(String(id || ''));
-	}
-
-	function normalizeDraftForComparison(value) {
-		if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
-		const normalized = clone(value);
-		[
-			normalized,
-			normalized?.prescription,
-			normalized?.support?.prescription
-		].forEach(candidate => {
-			if (candidate && typeof candidate === 'object') delete candidate.usageInstructions;
-		});
-		const controls = normalized?.clinical?.controls;
-		if (controls && typeof controls === 'object') {
-			TRANSIENT_CLINICAL_CONTROL_IDS.forEach(id => delete controls[id]);
-		}
-		return normalized;
-	}
-
-	function normalizeForComparison(value) {
-		if (Array.isArray(value)) return value.map(normalizeForComparison);
-		if (value && typeof value === 'object') {
-			return Object.keys(value).sort().reduce((result, key) => {
-				if (value[key] !== undefined) result[key] = normalizeForComparison(value[key]);
-				return result;
-			}, {});
-		}
-		return value === undefined || value === null ? '' : value;
-	}
-
-	function sameValue(left, right) {
-		return JSON.stringify(normalizeForComparison(normalizeDraftForComparison(left)))
-			=== JSON.stringify(normalizeForComparison(normalizeDraftForComparison(right)));
-	}
-
-	function isPlainObject(value) {
-		return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-	}
-
-	function mergeDraftValue(base, draft, current) {
-		if (sameValue(draft, base) || sameValue(current, draft)) return clone(current);
-		if (sameValue(current, base)) return clone(draft);
-		if (!isPlainObject(base) || !isPlainObject(draft) || !isPlainObject(current)) {
-			return clone(current);
-		}
-		return [...new Set([...Object.keys(base), ...Object.keys(draft), ...Object.keys(current)])]
-			.reduce((result, key) => {
-				result[key] = mergeDraftValue(base[key], draft[key], current[key]);
-				return result;
-			}, {});
-	}
-
-	function mergeFailedSaveDraft(base, draft, current) {
-		return mergeDraftValue(
-			normalizeDraftForComparison(base),
-			normalizeDraftForComparison(draft),
-			normalizeDraftForComparison(current)
-		);
-	}
-
-	function classifyDraftRecord(record, context, baseline, now = Date.now()) {
-		const valid = record
-			&& record.schemaVersion === DRAFT_SCHEMA_VERSION
-			&& record.userId === context.userId
-			&& record.appointmentId === context.appointmentId
-			&& record.patientId === context.patientId
-			&& record.expiresAt > now
-			&& Object.prototype.hasOwnProperty.call(record, 'baseSnapshot')
-			&& record.baseSnapshot && typeof record.baseSnapshot === 'object'
-			&& Object.prototype.hasOwnProperty.call(record, 'snapshot')
-			&& record.snapshot && typeof record.snapshot === 'object';
-		if (!valid) return 'invalid';
-		if (sameValue(baseline, record.snapshot)) return 'redundant';
-		if (!sameValue(baseline, record.baseSnapshot)) return 'superseded';
-		return 'recoverable';
-	}
-
-	function resolveDraftRecord(record, context, baseline, now = Date.now()) {
-		const disposition = classifyDraftRecord(record, context, baseline, now);
-		if (disposition === 'invalid' || disposition === 'redundant') return { action: 'delete', disposition };
-		if (disposition === 'superseded' && record.recoveryMode !== 'failed-save') {
-			return { action: 'delete', disposition };
-		}
-		if (record.recoveryMode !== 'failed-save') return { action: 'recover', disposition, record };
-
-		const rebasedSnapshot = disposition === 'superseded'
-			? mergeFailedSaveDraft(record.baseSnapshot, record.snapshot, baseline)
-			: clone(record.snapshot);
-		if (sameValue(baseline, rebasedSnapshot)) return { action: 'delete', disposition: 'redundant' };
-		return {
-			action: 'replace',
-			disposition,
-			record: {
-				...record,
-				captureId: `${now}-${Math.random().toString(36).slice(2)}`,
-				baseSnapshot: clone(baseline),
-				snapshot: rebasedSnapshot,
-				recoveryMode: 'standard'
-			}
-		};
-	}
-
 	function getCurrentUserId() {
+		const session = window.QLPKApiTransport?.session;
+		if (session) return normalizeId(session.owner.snapshot().session?.user.id);
 		try {
 			const raw = window.localStorage && window.localStorage.getItem('qlpk_user');
 			const user = raw ? JSON.parse(raw) : null;
@@ -187,114 +82,6 @@
 				? history.getDraftSnapshot({ document: doc })
 				: {}
 		};
-	}
-
-	function openDatabase() {
-		return new Promise((resolve, reject) => {
-			if (!window.indexedDB) {
-				reject(new Error('IndexedDB không khả dụng trên trình duyệt này'));
-				return;
-			}
-			const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-			request.onerror = () => reject(request.error || new Error('Không mở được kho nháp cục bộ'));
-			request.onupgradeneeded = () => {
-				const database = request.result;
-				const store = database.objectStoreNames.contains(STORE_NAME)
-					? request.transaction.objectStore(STORE_NAME)
-					: database.createObjectStore(STORE_NAME, { keyPath: 'key' });
-				if (!store.indexNames.contains('expiresAt')) store.createIndex('expiresAt', 'expiresAt', { unique: false });
-				if (!store.indexNames.contains('userId')) store.createIndex('userId', 'userId', { unique: false });
-			};
-			request.onsuccess = () => resolve(request.result);
-		});
-	}
-
-	async function withStore(mode, callback) {
-		const database = await openDatabase();
-		try {
-			return await new Promise((resolve, reject) => {
-				const transaction = database.transaction(STORE_NAME, mode);
-				const store = transaction.objectStore(STORE_NAME);
-				let result;
-				try {
-					result = callback(store, transaction);
-				} catch (error) {
-					reject(error);
-					return;
-				}
-				transaction.oncomplete = () => resolve(result);
-				transaction.onerror = () => reject(transaction.error || new Error('Không thể cập nhật kho nháp'));
-				transaction.onabort = () => reject(transaction.error || new Error('Đã hủy cập nhật kho nháp'));
-			});
-		} finally {
-			database.close();
-		}
-	}
-
-	function readRecord(key) {
-		return withStore('readonly', store => new Promise((resolve, reject) => {
-			const request = store.get(key);
-			request.onsuccess = () => resolve(request.result || null);
-			request.onerror = () => reject(request.error || new Error('Không đọc được bản nháp'));
-		}));
-	}
-
-	function writeRecord(record) {
-		return withStore('readwrite', store => store.put(record));
-	}
-
-	function deleteRecord(key) {
-		return withStore('readwrite', store => store.delete(key));
-	}
-
-	function deleteRecordIfMatches(record) {
-		if (!record?.key) return Promise.resolve(false);
-		return withStore('readwrite', store => new Promise((resolve, reject) => {
-			const request = store.get(record.key);
-			request.onsuccess = () => {
-				const current = request.result;
-				const matches = Boolean(current && (record.captureId
-					? current.captureId === record.captureId
-					: current.schemaVersion === record.schemaVersion && current.savedAt === record.savedAt));
-				if (matches) store.delete(record.key);
-				resolve(matches);
-			};
-			request.onerror = () => reject(request.error || new Error('Không đọc được bản nháp để kiểm tra race'));
-		}));
-	}
-
-	function replaceRecordIfMatches(record, replacement) {
-		if (!record?.key || !replacement?.key || record.key !== replacement.key) return Promise.resolve(false);
-		return withStore('readwrite', store => new Promise((resolve, reject) => {
-			const request = store.get(record.key);
-			request.onsuccess = () => {
-				const current = request.result;
-				const matches = Boolean(current && (record.captureId
-					? current.captureId === record.captureId
-					: current.schemaVersion === record.schemaVersion && current.savedAt === record.savedAt));
-				if (matches) store.put(replacement);
-				resolve(matches);
-			};
-			request.onerror = () => reject(request.error || new Error('Không đọc được bản nháp để cập nhật an toàn'));
-		}));
-	}
-
-	async function purgeExpiredRecords() {
-		const now = Date.now();
-		await withStore('readwrite', store => {
-			const index = store.index('expiresAt');
-			const request = index.openCursor(IDBKeyRange.upperBound(now));
-			request.onsuccess = event => {
-				const cursor = event.target.result;
-				if (!cursor) return;
-				cursor.delete();
-				cursor.continue();
-			};
-		});
-	}
-
-	function draftKey(context) {
-		return `doctor-clinical:${context.userId}:${context.appointmentId}`;
 	}
 
 	function getBanner(doc) {
@@ -363,22 +150,22 @@
 		return visibleId ? doc.getElementById(visibleId) : null;
 	}
 
-	function collectRestoreTargets(doc, baseline, draft) {
-		const targets = [];
+	function collectClinicalRestoreTargets(doc, baseline, draft, targets) {
 		const baseClinical = baseline?.clinical?.controls || {};
 		const draftClinical = draft?.clinical?.controls || {};
 		const form = doc.getElementById('doctorClinicalForm');
-		if (form) {
-			form.querySelectorAll('input, textarea, select').forEach(control => {
-				const id = control.id;
-				if (!id || isTransientClinicalControlId(id) || sameValue(baseClinical[id], draftClinical[id])) return;
-				const target = getVisibleClinicalTarget(doc, id);
-				const section = target?.closest('.doctor-workspace-section');
-				if (!target || !section) return;
-				targets.push({ sectionId: section.id, resolve: () => target, order: targets.length });
-			});
-		}
+		if (!form) return;
+		form.querySelectorAll('input, textarea, select').forEach(control => {
+			const id = control.id;
+			if (!id || isTransientClinicalControlId(id) || sameValue(baseClinical[id], draftClinical[id])) return;
+			const target = getVisibleClinicalTarget(doc, id);
+			const section = target?.closest('.doctor-workspace-section');
+			if (!target || !section) return;
+			targets.push({ sectionId: section.id, resolve: () => target, order: targets.length });
+		});
+	}
 
+	function collectHistoryRestoreTargets(baseline, draft, targets) {
 		const baseHistory = baseline?.history || {};
 		const draftHistory = draft?.history || {};
 		HISTORY_RESTORE_TARGETS.forEach(config => {
@@ -391,55 +178,56 @@
 				order: targets.length
 			});
 		});
+	}
 
+	const SUPPORT_RESTORE_TARGETS = [
+		{
+			key: 'services',
+			sectionId: 'doctorServicePanel',
+			selectors: '#doctorServicePanel .is-draft-restored, #doctorServiceSelectionList input, #doctorServiceCatalogList button'
+		},
+		{
+			key: 'indications',
+			sectionId: 'doctorIndicationsPanel',
+			selectors: '#doctorIndicationsPanel .is-draft-restored, #doctorIndicationName, #doctorIndicationsList'
+		}
+	];
+	const PRESCRIPTION_ROW_SELECTORS = '#doctorPrescriptionWorkspace .doctor-prescription-table__body-row.is-draft-restored [data-prescription-field="name"], #doctorPrescriptionWorkspace .doctor-prescription-table__body-row [data-prescription-field="name"], #doctorPrescriptionWorkspace input, #doctorPrescriptionWorkspace textarea';
+
+	function collectSupportRestoreTargets(baseline, draft, targets) {
 		const baseSupport = baseline?.support || {};
 		const draftSupport = draft?.support || {};
-		const basePrescription = baseSupport.prescription || {};
-		const draftPrescription = draftSupport.prescription || {};
-		const support = getSupportModules();
-		const reExamLocked = Boolean(support?.isReExaminationLocked?.());
-		[
-			{ key: 'usageMode', selector: '#doctorPrescriptionUsageMode' },
-			{ key: 'medicineDays', selector: '#doctorPrescriptionMedicineDays' },
-			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamButton' },
-			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' },
-			{ key: 'reExamSelection', selector: '#doctorPrescriptionReExamButton' }
-		].forEach(config => {
-			if (reExamLocked && ['reExamEnabled', 'reExamDateTime', 'reExamSelection'].includes(config.key)) return;
-			if (sameValue(basePrescription[config.key], draftPrescription[config.key])) return;
+		getChangedPrescriptionControls(baseSupport, draftSupport).forEach(config => {
 			targets.push({
 				sectionId: 'doctorClinicalDecisionPanel',
 				resolve: currentDoc => currentDoc.querySelector(config.selector),
 				order: targets.length
 			});
 		});
-		if (!sameValue(basePrescription.rows, draftPrescription.rows)) {
+		if (!sameValue((baseSupport.prescription || {}).rows, (draftSupport.prescription || {}).rows)) {
 			targets.push({
 				sectionId: 'doctorClinicalDecisionPanel',
-				resolve: currentDoc => getFirstVisibleElement(
-					currentDoc,
-					'#doctorPrescriptionWorkspace .doctor-prescription-table__body-row.is-draft-restored [data-prescription-field="name"], #doctorPrescriptionWorkspace .doctor-prescription-table__body-row [data-prescription-field="name"], #doctorPrescriptionWorkspace input, #doctorPrescriptionWorkspace textarea'
-				),
+				resolve: currentDoc => getFirstVisibleElement(currentDoc, PRESCRIPTION_ROW_SELECTORS),
 				fallback: currentDoc => currentDoc.getElementById('doctorPrescriptionWorkspace'),
 				order: targets.length
 			});
 		}
-		if (!sameValue(baseSupport.services, draftSupport.services)) {
+		SUPPORT_RESTORE_TARGETS.forEach(config => {
+			if (sameValue(baseSupport[config.key], draftSupport[config.key])) return;
 			targets.push({
-				sectionId: 'doctorServicePanel',
-				resolve: currentDoc => getFirstVisibleElement(currentDoc, '#doctorServicePanel .is-draft-restored, #doctorServiceSelectionList input, #doctorServiceCatalogList button'),
-				fallback: currentDoc => currentDoc.getElementById('doctorServicePanel'),
+				sectionId: config.sectionId,
+				resolve: currentDoc => getFirstVisibleElement(currentDoc, config.selectors),
+				fallback: currentDoc => currentDoc.getElementById(config.sectionId),
 				order: targets.length
 			});
-		}
-		if (!sameValue(baseSupport.indications, draftSupport.indications)) {
-			targets.push({
-				sectionId: 'doctorIndicationsPanel',
-				resolve: currentDoc => getFirstVisibleElement(currentDoc, '#doctorIndicationsPanel .is-draft-restored, #doctorIndicationName, #doctorIndicationsList'),
-				fallback: currentDoc => currentDoc.getElementById('doctorIndicationsPanel'),
-				order: targets.length
-			});
-		}
+		});
+	}
+
+	function collectRestoreTargets(doc, baseline, draft) {
+		const targets = [];
+		collectClinicalRestoreTargets(doc, baseline, draft, targets);
+		collectHistoryRestoreTargets(baseline, draft, targets);
+		collectSupportRestoreTargets(baseline, draft, targets);
 		return targets;
 	}
 
@@ -560,20 +348,27 @@
 		control.setAttribute('title', 'Giá trị này được khôi phục từ bản nháp và chưa lưu.');
 	}
 
-	function restoreSupportControlMarkers(doc, baseSupport = {}, draftSupport = {}) {
+	const PRESCRIPTION_SETUP_CONTROLS = [
+		{ key: 'usageMode', selector: '#doctorPrescriptionUsageMode' },
+		{ key: 'medicineDays', selector: '#doctorPrescriptionMedicineDays' },
+		{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamButton' },
+		{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' },
+		{ key: 'reExamSelection', selector: '#doctorPrescriptionReExamButton' }
+	];
+	const RE_EXAM_CONTROL_KEYS = ['reExamEnabled', 'reExamDateTime', 'reExamSelection'];
+
+	function getChangedPrescriptionControls(baseSupport = {}, draftSupport = {}) {
 		const basePrescription = baseSupport.prescription || {};
 		const draftPrescription = draftSupport.prescription || {};
-		const support = getSupportModules();
-		const reExamLocked = Boolean(support?.isReExaminationLocked?.());
-		[
-			{ key: 'usageMode', selector: '#doctorPrescriptionUsageMode' },
-			{ key: 'medicineDays', selector: '#doctorPrescriptionMedicineDays' },
-			{ key: 'reExamEnabled', selector: '#doctorPrescriptionReExamButton' },
-			{ key: 'reExamDateTime', selector: '#doctorPrescriptionReExamDateTime' },
-			{ key: 'reExamSelection', selector: '#doctorPrescriptionReExamButton' }
-		].forEach(config => {
-			if (reExamLocked && ['reExamEnabled', 'reExamDateTime', 'reExamSelection'].includes(config.key)) return;
-			if (sameValue(basePrescription[config.key], draftPrescription[config.key])) return;
+		const reExamLocked = Boolean(getSupportModules()?.isReExaminationLocked?.());
+		return PRESCRIPTION_SETUP_CONTROLS.filter(config => {
+			if (reExamLocked && RE_EXAM_CONTROL_KEYS.includes(config.key)) return false;
+			return !sameValue(basePrescription[config.key], draftPrescription[config.key]);
+		});
+	}
+
+	function restoreSupportControlMarkers(doc, baseSupport = {}, draftSupport = {}) {
+		getChangedPrescriptionControls(baseSupport, draftSupport).forEach(config => {
 			addRestoredControlMarker(doc.querySelector(config.selector));
 		});
 		const baseIndications = baseSupport.indications || {};
@@ -596,6 +391,32 @@
 		};
 	}
 
+	async function restoreDraftOwners(doc, snapshotData, token) {
+		const isCurrent = () => token === STATE.contextToken;
+		const workspace = getClinicalWorkspace();
+		if (typeof workspace?.restoreDraftSnapshot === 'function') {
+			await workspace.restoreDraftSnapshot(snapshotData.clinical || {}, { document: doc, isCurrent });
+			if (!isCurrent()) return false;
+		}
+		const support = getSupportModules();
+		if (typeof support?.restoreDraftSnapshot === 'function') {
+			await support.restoreDraftSnapshot(snapshotData.support || {}, {
+				document: doc,
+				...getSupportRestoreOptions(STATE.baseline.support, snapshotData.support)
+			});
+			if (!isCurrent()) return false;
+			restoreSupportControlMarkers(doc, STATE.baseline.support, snapshotData.support);
+		}
+		const history = getMedicalHistory();
+		if (typeof history?.restoreDraftSnapshot === 'function') {
+			await history.restoreDraftSnapshot(snapshotData.history || {}, {
+				document: doc,
+				dirty: !sameValue(STATE.baseline.history, snapshotData.history)
+			});
+		}
+		return isCurrent();
+	}
+
 	async function applyDraft() {
 		const doc = getDocument();
 		const draft = STATE.pendingDraft;
@@ -606,37 +427,9 @@
 		window.clearTimeout(STATE.captureTimer);
 		STATE.captureTimer = null;
 		try {
-			const workspace = getClinicalWorkspace();
-			const support = getSupportModules();
-			const history = getMedicalHistory();
 			const snapshotData = draft.snapshot || {};
-			const isCurrentRestore = () => token === STATE.contextToken;
 			clearRestoredMarkers(doc);
-
-			if (workspace && typeof workspace.restoreDraftSnapshot === 'function') {
-				await workspace.restoreDraftSnapshot(snapshotData.clinical || {}, {
-					document: doc,
-					isCurrent: isCurrentRestore
-				});
-			}
-			if (token !== STATE.contextToken) return false;
-			if (support && typeof support.restoreDraftSnapshot === 'function') {
-				await support.restoreDraftSnapshot(snapshotData.support || {}, {
-					document: doc,
-					...getSupportRestoreOptions(STATE.baseline.support, snapshotData.support)
-				});
-				if (token !== STATE.contextToken) return false;
-				restoreSupportControlMarkers(doc, STATE.baseline.support, snapshotData.support);
-			}
-			if (token !== STATE.contextToken) return false;
-			if (history && typeof history.restoreDraftSnapshot === 'function') {
-				await history.restoreDraftSnapshot(snapshotData.history || {}, {
-					document: doc,
-					dirty: !sameValue(STATE.baseline.history, snapshotData.history)
-				});
-				if (token !== STATE.contextToken) return false;
-			}
-			if (token !== STATE.contextToken) return false;
+			if (!await restoreDraftOwners(doc, snapshotData, token)) return false;
 
 			restoreControlMarkers(
 				doc,
@@ -700,20 +493,14 @@
 		}
 	}
 
-	async function captureDraft(options = {}) {
-		window.clearTimeout(STATE.captureTimer);
-		STATE.captureTimer = null;
-		STATE.captureGeneration += 1;
+	function canCaptureDraft() {
 		if (!STATE.context || !STATE.baseline || STATE.isRestoring || !isDirty()) return false;
-		if (options.recoveryMode === 'failed-save') STATE.recoveryMode = 'failed-save';
-		const captureGeneration = STATE.captureGeneration;
-		const captureContext = STATE.context;
-		const currentSnapshot = snapshot();
-		if (sameValue(STATE.baseline, currentSnapshot)) {
-			return rebaseAfterSave();
-		}
+		return !window.QLPKApiTransport?.session || getCurrentUserId() === STATE.context.userId;
+	}
+
+	function buildDraftRecord(currentSnapshot) {
 		const now = Date.now();
-		const record = {
+		return {
 			key: draftKey(STATE.context),
 			captureId: `${now}-${Math.random().toString(36).slice(2)}`,
 			schemaVersion: DRAFT_SCHEMA_VERSION,
@@ -726,11 +513,53 @@
 			savedAt: now,
 			expiresAt: now + DRAFT_TTL_MS
 		};
+	}
+
+	function captureScope() {
+		const sessionOwner = window.QLPKApiTransport?.session?.owner;
+		return {
+			generation: STATE.captureGeneration,
+			context: STATE.context,
+			sessionOwner,
+			sessionRevision: sessionOwner?.snapshot().revision,
+		};
+	}
+
+	function isCaptureContextCurrent(scope) {
+		return scope.generation === STATE.captureGeneration && STATE.context === scope.context;
+	}
+
+	function isCaptureSessionCurrent(scope, record) {
+		const owner = scope.sessionOwner;
+		if (!owner) return true;
+		return window.QLPKApiTransport?.session?.owner === owner
+			&& owner.snapshot().revision === scope.sessionRevision
+			&& getCurrentUserId() === record.userId;
+	}
+
+	async function writeDraftRecord(record) {
+		const writing = writeRecord(record);
+		pendingWrites.set(writing, record.userId);
+		try { await writing; } finally { pendingWrites.delete(writing); }
+	}
+
+	async function captureDraft(options = {}) {
+		window.clearTimeout(STATE.captureTimer);
+		STATE.captureTimer = null;
+		STATE.captureGeneration += 1;
+		if (!canCaptureDraft()) return false;
+		const scope = captureScope();
+		if (options.recoveryMode === 'failed-save') STATE.recoveryMode = 'failed-save';
+		const currentSnapshot = snapshot();
+		if (sameValue(STATE.baseline, currentSnapshot)) {
+			return rebaseAfterSave();
+		}
+		const record = buildDraftRecord(currentSnapshot);
 		try {
-			await writeRecord(record);
-			const isCurrentCapture = captureGeneration === STATE.captureGeneration
-				&& STATE.context === captureContext
-				&& record.key === draftKey(STATE.context);
+			await writeDraftRecord(record);
+			const isCurrentCapture = isCaptureContextCurrent(scope)
+				&& record.key === draftKey(STATE.context)
+				&& isCaptureSessionCurrent(scope, record);
 			if (!isCurrentCapture) {
 				await deleteRecordIfMatches(record);
 				return false;
@@ -738,9 +567,7 @@
 			STATE.pendingDraft = record;
 			return true;
 		} catch (error) {
-			const isCurrentCapture = captureGeneration === STATE.captureGeneration
-				&& STATE.context === captureContext;
-			if (isCurrentCapture && !options.silent && typeof STATE.showToast === 'function') {
+			if (isCaptureContextCurrent(scope) && !options.silent && typeof STATE.showToast === 'function') {
 				STATE.showToast('error', 'Không thể lưu bản nháp phục hồi trên thiết bị này');
 			}
 			return false;
@@ -758,7 +585,7 @@
 		const doc = getDocument(context);
 		const appointmentId = normalizeId(context.appointmentId);
 		const patientId = normalizeId(context.patientId);
-		const userId = normalizeId(context.userId) || getCurrentUserId();
+		const userId = window.QLPKApiTransport?.session ? getCurrentUserId() : normalizeId(context.userId) || getCurrentUserId();
 		window.clearTimeout(STATE.captureTimer);
 		STATE.captureTimer = null;
 		STATE.captureGeneration += 1;
@@ -839,28 +666,21 @@
 				if (action.dataset.doctorDraftAction === 'discard') discardCurrent({ document: doc });
 			});
 		}
-		doc.addEventListener('click', event => {
-			if (!event.target.closest('#logoutBtn, #qlpkHeaderLogoutBtn')) return;
-			clearCurrentUserDrafts();
+		doc.addEventListener('qlpk:logout:confirmed', event => {
+			const cleanup = clearCurrentUserDrafts(event.detail);
+			if (Array.isArray(event.detail?.pendingCleanup)) event.detail.pendingCleanup.push(cleanup);
 		});
 		STATE.bound = true;
 		return true;
 	}
 
-	async function clearCurrentUserDrafts() {
-		const userId = getCurrentUserId();
+	async function clearCurrentUserDrafts(confirmation) {
+		const userId = confirmation?.confirmed === true ? normalizeId(confirmation.userId) : getCurrentUserId();
 		if (!userId) return false;
+		if (STATE.context?.userId === userId) clearContext();
 		try {
-			await withStore('readwrite', store => {
-				const index = store.index('userId');
-				const request = index.openCursor(IDBKeyRange.only(userId));
-				request.onsuccess = event => {
-					const cursor = event.target.result;
-					if (!cursor) return;
-					cursor.delete();
-					cursor.continue();
-				};
-			});
+			await Promise.allSettled(Array.from(pendingWrites).filter(([, ownerId]) => ownerId === userId).map(([writing]) => writing));
+			await deleteUserRecords(userId);
 			return true;
 		} catch (error) {
 			return false;

@@ -35,23 +35,12 @@ class SurveyTemplateManager {
 	}
 
 	hasToken() {
-		return Boolean(this.getToken());
-	}
-
-	getToken() {
-		return localStorage.getItem('qlpk_token') || localStorage.getItem('access_token') || '';
-	}
-
-	getAuthHeaders(extra = {}) {
-		const token = this.getToken();
-		return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+		return window.QLPKApiTransport.hasSession();
 	}
 
 	async loadPerformers() {
 		try {
-			const response = await fetch('/users/doctors', {
-				headers: this.getAuthHeaders()
-			});
+			const response = await fetch('/users/doctors');
 			if (!response.ok) return;
 			const data = await response.json();
 			this.state.performers = Array.isArray(data) ? data : [];
@@ -184,7 +173,7 @@ class SurveyTemplateManager {
 				params.append('search', this.state.searchTerm);
 			}
 
-			const response = await fetch(`/api/survey-templates?${params}`, { headers: this.getAuthHeaders() });
+			const response = await fetch(`/api/survey-templates?${params}`);
 
 			const result = await response.json();
 			if (revision !== this.loadRevision) return;
@@ -327,7 +316,7 @@ class SurveyTemplateManager {
 			this.showLoading(true);
 			const response = await fetch(editing ? `/api/survey-templates/${editing}` : '/api/survey-templates/upload', {
 				method: editing ? 'PUT' : 'POST',
-				headers: this.getAuthHeaders(editing ? { 'Content-Type': 'application/json' } : {}),
+				headers: editing ? { 'Content-Type': 'application/json' } : {},
 				body: editing ? JSON.stringify(Object.fromEntries(formData)) : formData
 			});
 
@@ -386,7 +375,7 @@ class SurveyTemplateManager {
 		try {
 			this.showLoading(true);
 			const response = await fetch(`/api/survey-templates/${this.currentTemplateId}`, {
-				method: 'DELETE', headers: this.getAuthHeaders()
+				method: 'DELETE'
 			});
 
 			const result = await response.json();
@@ -423,7 +412,7 @@ class SurveyTemplateManager {
 
 	async downloadTemplate(template) {
 		try {
-			const response = await fetch(`/api/survey-templates/download/${template.id}`, { headers: this.getAuthHeaders() });
+			const response = await fetch(`/api/survey-templates/download/${template.id}`);
 			if (!response.ok) throw new Error('download');
 			const url = URL.createObjectURL(await response.blob());
 			const link = document.createElement('a');

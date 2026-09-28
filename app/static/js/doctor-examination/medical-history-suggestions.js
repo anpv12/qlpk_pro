@@ -1,7 +1,6 @@
 import {
   debugLog as medicalHistoryDebugLog,
   escapeHtml as medicalHistoryEscapeHtml,
-  getAuthHeader as medicalHistoryGetAuthHeader,
   getComponent as medicalHistoryGetComponent,
   getIcdLookup as medicalHistoryGetIcdLookup
 } from './medical-history-context.js';
@@ -19,12 +18,6 @@ function medicalHistoryGetSuggestionSelectedICDs() {
 
 async function medicalHistoryLoadAllIcds() {
   try {
-    const authHeader = medicalHistoryGetAuthHeader();
-    if (!authHeader) {
-      console.warn('[MedicalHistory] Không tìm thấy mã token để tải danh mục gợi ý.');
-      return;
-    }
-
     const codes = [
       'I10', 'E11', 'E78', 'K29', 'K21', 'J45', 'J44', 'B18.1', 'A15.9', 'D50', 'B20', 'M10', 'N18', 'I64',
       'K35', 'N20', 'K80', 'K40', 'I84', 'N40', 'H25', 'M17', 'S06',
@@ -40,7 +33,6 @@ async function medicalHistoryLoadAllIcds() {
     const response = await fetch(`/api/icd/?codes=${encodeURIComponent(codes.join(','))}&limit=200`, {
       method: 'GET',
       headers: {
-        'Authorization': authHeader,
         'Content-Type': 'application/json'
       }
     });
@@ -63,6 +55,7 @@ async function medicalHistoryLoadAllIcds() {
       console.error('[MedicalHistory] Lỗi khi tải danh sách ICD gợi ý:', response.statusText);
     }
   } catch (e) {
+    if (String(e?.code || '').startsWith('session.')) throw e;
     console.error('[MedicalHistory] Lỗi hệ thống khi tải danh sách ICD gợi ý:', e);
   }
 }

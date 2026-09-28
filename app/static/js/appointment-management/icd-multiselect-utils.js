@@ -18,11 +18,8 @@
 	function loadICDData(query = '', options = {}) {
 		const loader = window.ClinicalIcdDataLoader?.loadICDData;
 		if (typeof loader !== 'function') return Promise.resolve([]);
-		const token = options.token || window.localStorage?.getItem('qlpk_token') || '';
 		return loader(query, {
 				limit: Number.isFinite(options.limit) ? options.limit : (query ? 100 : 30),
-			getAuthHeader: () => token ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`) : null,
-			missingTokenMessage: 'Không tìm thấy token để tải danh mục ICD.'
 		});
 	}
 

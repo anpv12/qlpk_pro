@@ -15,9 +15,6 @@
 			$.ajax({
 				url: '/holidays/',
 				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
 				success: function (data) {
 					holidays = data;
 					renderHolidays(holidays);
@@ -61,10 +58,10 @@
             </span>
           </td>
           <td>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" onclick="editHoliday(${holiday.id})">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" data-qlpk-call="editHoliday" data-qlpk-args='[${holiday.id}]' aria-label="Sửa ngày nghỉ" title="Sửa ngày nghỉ">
               <i class="bi bi-pencil"></i>
             </button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" onclick="deleteHoliday(${holiday.id})">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-qlpk-call="deleteHoliday" data-qlpk-args='[${holiday.id}]' aria-label="Xóa ngày nghỉ" title="Xóa ngày nghỉ">
               <i class="bi bi-trash"></i>
             </button>
           </td>
@@ -109,7 +106,6 @@
 				url: '/holidays/',
 				method: 'POST',
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify(data),
@@ -174,7 +170,6 @@
 				url: `/holidays/${id}`,
 				method: 'PUT',
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify(data),
@@ -199,9 +194,6 @@
 			$.ajax({
 				url: `/holidays/${holidayId}`,
 				method: 'DELETE',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
 				success: function (res) {
 					showToast('success', 'Xóa ngày lễ thành công!');
 					loadHolidays();

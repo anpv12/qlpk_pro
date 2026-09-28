@@ -6,10 +6,9 @@
 import {
   callAction as medicalHistoryCallAction,
   debugLog as medicalHistoryDebugLog,
-  getAuthHeader as medicalHistoryGetAuthHeader,
   getComponent as medicalHistoryGetComponent,
   getIcdLookup as medicalHistoryGetIcdLookup,
-  getJsonAuthHeaders as medicalHistoryGetJsonAuthHeaders,
+  getJsonHeaders as medicalHistoryGetJsonHeaders,
   getPageRuntime as medicalHistoryGetPageRuntime,
   getSelectedICDs as medicalHistoryGetSelectedICDs,
   setVisible as medicalHistorySetVisible
@@ -71,17 +70,10 @@ async function medicalHistoryGetIcdObject(icdCode) {
   try {
     // Dùng ?codes= (exact match theo mã ICD) — không dùng ?search= vì search trả về nhiều kết quả
     // Nhất quán với restore path (/api/icd/?ids=...)
-    const authHeader = medicalHistoryGetAuthHeader();
-    if (!authHeader) return null;
     const runtime = medicalHistoryGetPageRuntime();
-    const response = typeof runtime.apiCall === 'function'
-      ? await runtime.apiCall(`/api/icd/?codes=${encodeURIComponent(icdCode.trim())}`, {
+    const response = await runtime.apiCall(`/api/icd/?codes=${encodeURIComponent(icdCode.trim())}`, {
         method: 'GET',
-        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }
-      })
-      : await fetch(`/api/icd/?codes=${encodeURIComponent(icdCode.trim())}`, {
-        method: 'GET',
-        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }
+        headers: medicalHistoryGetJsonHeaders()
       });
     if (response.ok) {
       const result = await response.json();
@@ -90,6 +82,7 @@ async function medicalHistoryGetIcdObject(icdCode) {
       if (found) return { id: found.id, icd_code: found.icd_code, disease_name: found.disease_name };
     }
   } catch (e) {
+    if (String(e?.code || '').startsWith('session.')) throw e;
     console.error('[medicalHistoryGetIcdObject] Lỗi khi tra mã ICD ' + icdCode, e);
   }
   return null;
@@ -113,6 +106,64 @@ function medicalHistoryEmitBanThanChange() {
   component.emitChange('riskAssessWrap', 'risk_assessment', riskAssessment);
 }
 
+function countMedicalHistoryNodes(selector) {
+  return medicalHistoryGetComponent().queryAll(selector).length;
+}
+
+function verifyPhysHistoryPopulate(patientHistory) {
+  const physHistory = patientHistory.physical_history || [];
+  if (!(physHistory.length > 0)) return [];
+  if (countMedicalHistoryNodes('#physHistoryTags .medical-history-chip') > 0) return [];
+  return [['[POPULATE ⚠] physHistory: DB có', physHistory.length, 'IDs nhưng chips = 0']];
+}
+
+function verifySuicideNotePopulate(item) {
+  const icd = String(item?.code || '').trim();
+  const note = String(item?.note || '').trim();
+  if (!icd || !note) return null;
+  const row = [...medicalHistoryGetComponent().queryAll('#suicideTableWrap tbody tr')]
+    .find(r => r.querySelector(`[data-icd="${icd}"]`));
+  const input = row?.querySelector('.medical-history-sub-input');
+  if (!input || input.value === note) return null;
+  return [`[POPULATE ⚠] Ghi chú nguy cơ ${icd}: DB="${note}" nhưng UI="${input.value}"`];
+}
+
+function verifySuicideHistoryPopulate(riskAssessment) {
+  const suicideHistory = Array.isArray(riskAssessment.suicide_history)
+    ? riskAssessment.suicide_history
+    : [];
+  if (suicideHistory.length === 0) return [];
+  const warnings = [];
+  if (countMedicalHistoryNodes('#suicideTableWrap input[type="checkbox"]:checked') === 0) {
+    warnings.push(['[POPULATE ⚠] Tự sát: risk_assessment có dữ liệu nhưng không có checkbox nào được tick']);
+  }
+  suicideHistory.forEach(item => {
+    const warning = verifySuicideNotePopulate(item);
+    if (warning) warnings.push(warning);
+  });
+  return warnings;
+}
+
+function verifyRiskAssessmentPopulate(riskAssessment) {
+  if (Object.keys(riskAssessment.assessment || {}).length === 0) return [];
+  if (countMedicalHistoryNodes('input[name^="risk_"]:checked') > 0) return [];
+  return [['[POPULATE ⚠] Đánh giá nguy cơ: risk_assessment có dữ liệu nhưng không có radio nào được chọn']];
+}
+
+function verifyFamilyHistoryPopulate(patientHistory) {
+  const familyHist = patientHistory.family_history || [];
+  if (!Array.isArray(familyHist) || familyHist.length === 0) return [];
+  if (countMedicalHistoryNodes('#famHistoryTags .medical-history-chip') > 0) return [];
+  return [['[POPULATE ⚠] Gia đình: DB có', familyHist.length, 'entries nhưng chips = 0']];
+}
+
+function verifyAllergyPopulate(patientHistory) {
+  const allergies = Array.isArray(patientHistory.allergies) ? patientHistory.allergies : [];
+  if (allergies.length === 0) return [];
+  if (countMedicalHistoryNodes('#drugAllergyBody .allergy-row') > 0) return [];
+  return [['[POPULATE ⚠] Dị ứng: DB có data nhưng UI không có hàng nào']];
+}
+
 /**
  * [GIAI ĐOẠN 2] VERIFY layer: Kiểm tra sau populate — log cảnh báo nếu DB có data nhưng UI không hiển thị.
  * Chỉ đọc DOM, không ghi, không gây side effect.
@@ -122,80 +173,22 @@ function medicalHistoryEmitBanThanChange() {
  *   [POPULATE ✓] → tất cả kiểm tra pass
  */
 function _verifyMedicalHistoryPopulate(appointmentData) {
-	if (!window.QLPK_DEBUG_MEDICAL_HISTORY) return;
+  if (!window.QLPK_DEBUG_MEDICAL_HISTORY) return;
 
   const history = appointmentData.medical_history || {};
   const patientHistory = history.patient || {};
   const riskAssessment = history.examination?.risk_assessment || {};
-  const physHistory = patientHistory.physical_history || [];
-    const familyHist  = patientHistory.family_history || [];
-    const allergies   = Array.isArray(patientHistory.allergies) ? patientHistory.allergies : [];
-    let   allOk = true;
-
-    // Kiểm tra 1: physHistory IDs → phải có chip tương ứng
-    if (physHistory.length > 0) {
-        const chipCount = medicalHistoryGetComponent().queryAll('#physHistoryTags .medical-history-chip').length;
-        if (chipCount === 0) {
-            console.warn('[POPULATE ⚠] physHistory: DB có', physHistory.length, 'IDs nhưng chips = 0');
-            allOk = false;
-        }
-    }
-
-    // Kiểm tra 2: risk_assessment có tiền sử tự sát → checkbox phải được tick
-    const suicideHistory = Array.isArray(riskAssessment.suicide_history)
-      ? riskAssessment.suicide_history
-      : [];
-    if (suicideHistory.length > 0) {
-        const checkedCount = medicalHistoryGetComponent().queryAll('#suicideTableWrap input[type="checkbox"]:checked').length;
-        if (checkedCount === 0) {
-            console.warn('[POPULATE ⚠] Tự sát: risk_assessment có dữ liệu nhưng không có checkbox nào được tick');
-            allOk = false;
-        }
-        // Kiểm tra note inputs có giá trị
-        suicideHistory.forEach(item => {
-            const icd = String(item?.code || '').trim();
-            const note = String(item?.note || '').trim();
-            if (!icd || !note) return;
-            const row = [...medicalHistoryGetComponent().queryAll('#suicideTableWrap tbody tr')]
-                .find(r => r.querySelector(`[data-icd="${icd}"]`));
-            const input = row?.querySelector('.medical-history-sub-input');
-            if (input && input.value !== note) {
-                console.warn(`[POPULATE ⚠] Ghi chú nguy cơ ${icd}: DB="${note}" nhưng UI="${input.value}"`);
-                allOk = false;
-            }
-        });
-    }
-
-    // Kiểm tra 3: risk_assessment có đánh giá → radio phải được chọn
-    if (Object.keys(riskAssessment.assessment || {}).length > 0) {
-        const checkedRadio = medicalHistoryGetComponent().queryAll('input[name^="risk_"]:checked').length;
-        if (checkedRadio === 0) {
-            console.warn('[POPULATE ⚠] Đánh giá nguy cơ: risk_assessment có dữ liệu nhưng không có radio nào được chọn');
-            allOk = false;
-        }
-    }
-
-    // Kiểm tra 4: Gia đình
-    if (familyHist && Array.isArray(familyHist) && familyHist.length > 0) {
-        const gdChips = medicalHistoryGetComponent().queryAll('#famHistoryTags .medical-history-chip').length;
-        if (gdChips === 0) {
-            console.warn('[POPULATE ⚠] Gia đình: DB có', familyHist.length, 'entries nhưng chips = 0');
-            allOk = false;
-        }
-    }
-
-    // Kiểm tra 5: Dị ứng
-    if (allergies.length > 0) {
-        const allergyRows = medicalHistoryGetComponent().queryAll('#drugAllergyBody .allergy-row').length;
-        if (allergyRows === 0) {
-            console.warn('[POPULATE ⚠] Dị ứng: DB có data nhưng UI không có hàng nào');
-            allOk = false;
-        }
-    }
-
-    if (allOk) {
-        medicalHistoryDebugLog('[POPULATE ✓] Tất cả kiểm tra pass');
-    }
+  const warnings = [
+    ...verifyPhysHistoryPopulate(patientHistory),
+    ...verifySuicideHistoryPopulate(riskAssessment),
+    ...verifyRiskAssessmentPopulate(riskAssessment),
+    ...verifyFamilyHistoryPopulate(patientHistory),
+    ...verifyAllergyPopulate(patientHistory)
+  ];
+  warnings.forEach(args => console.warn(...args));
+  if (warnings.length === 0) {
+    medicalHistoryDebugLog('[POPULATE ✓] Tất cả kiểm tra pass');
+  }
 }
 
 function medicalHistorySerializeGiaDinh() {
@@ -239,46 +232,24 @@ function medicalHistoryIsSuicideIcd(icd) {
   return false;
 }
 
-function medicalHistoryToggleBanThan(el, icdId) {
+function medicalHistoryToggleIcdById(icdId, target, missingLabel) {
   const icd = medicalHistoryGetComponent().getFeature('icd');
-  if (icd && typeof icd.toggleICDSelection === 'function') {
-    let icdObj = null;
-    const lookup = medicalHistoryGetIcdLookup();
-    if (lookup) {
-      for (const code in lookup) {
-        if (lookup[code].id === icdId) {
-          icdObj = lookup[code];
-          break;
-        }
-      }
-    }
-    if (!icdObj) {
-      console.error('[MedicalHistory] ICD ID not found in lookup map:', icdId);
-      return;
-    }
-    icd.toggleICDSelection(icdObj, 'physHistory');
+  if (!icd || typeof icd.toggleICDSelection !== 'function') return;
+  const lookup = medicalHistoryGetIcdLookup() || {};
+  const icdObj = Object.values(lookup).find(entry => entry.id === icdId) || null;
+  if (!icdObj) {
+    console.error(`[MedicalHistory] ICD ID not found in lookup map${missingLabel}:`, icdId);
+    return;
   }
+  icd.toggleICDSelection(icdObj, target);
+}
+
+function medicalHistoryToggleBanThan(el, icdId) {
+  medicalHistoryToggleIcdById(icdId, 'physHistory', '');
 }
 
 function medicalHistoryToggleGiaDinh(el, icdId) {
-  const icd = medicalHistoryGetComponent().getFeature('icd');
-  if (icd && typeof icd.toggleICDSelection === 'function') {
-    let icdObj = null;
-    const lookup = medicalHistoryGetIcdLookup();
-    if (lookup) {
-      for (const code in lookup) {
-        if (lookup[code].id === icdId) {
-          icdObj = lookup[code];
-          break;
-        }
-      }
-    }
-    if (!icdObj) {
-      console.error('[MedicalHistory] ICD ID not found in lookup map for Family:', icdId);
-      return;
-    }
-    icd.toggleICDSelection(icdObj, 'famHistory');
-  }
+  medicalHistoryToggleIcdById(icdId, 'famHistory', ' for Family');
 }
 
 function medicalHistorySyncFamHistoryRemove(icdCode) {
@@ -292,8 +263,7 @@ function medicalHistorySyncFamHistoryRemove(icdCode) {
 
 medicalHistoryGetComponent().registerActions({
   getPageRuntime: medicalHistoryGetPageRuntime,
-  getAuthHeader: medicalHistoryGetAuthHeader,
-  getJsonAuthHeaders: medicalHistoryGetJsonAuthHeaders,
+  getJsonHeaders: medicalHistoryGetJsonHeaders,
   getSelectedICDs: medicalHistoryGetSelectedICDs,
   getIcdLookup: medicalHistoryGetIcdLookup,
   toggleMedicalHistoryPanel: medicalHistoryToggleMedicalHistoryPanel,

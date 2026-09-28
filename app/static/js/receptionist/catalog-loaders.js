@@ -1,111 +1,66 @@
 (function (window) {
 	'use strict';
+	const loads = new WeakMap();
 
-	function getConsole(options) {
-		return options.console || window.console;
-	}
-
-	function getServicePackage(options) {
-		return options.servicePackage || window.ReceptionistServicePackage;
+	async function loadCatalog(kind, url, apply, options) {
+		const pageWindow = options.window || window;
+		const doc = options.document || pageWindow.document;
+		let state = loads.get(doc);
+		if (!state) {
+			state = {};
+			loads.set(doc, state);
+		}
+		const revision = (state[kind] || 0) + 1;
+		state[kind] = revision;
+		try {
+			const fetchRequest = options.fetch || pageWindow.fetch.bind(pageWindow);
+			const response = await fetchRequest(url, { signal: pageWindow.AbortSignal.timeout(10000) });
+			if (state[kind] !== revision) return false;
+			if (!response.ok) throw new Error('catalog_unavailable');
+			const data = await response.json();
+			if (state[kind] !== revision) return false;
+			if (!Array.isArray(data)) throw new Error('catalog_invalid_response');
+			apply(data);
+			return true;
+		} catch (error) {
+			if (state[kind] !== revision) return false;
+			const message = kind === 'doctors'
+				? 'Không thể tải danh sách người khám. Vui lòng tải lại trang.'
+				: 'Không thể tải danh sách dịch vụ. Vui lòng tải lại trang.';
+			const showToast = options.showCustomToast || pageWindow.QLPKUserFeedback?.show;
+			showToast?.('error', message);
+			return false;
+		}
 	}
 
 	function loadDoctorsForForm(options = {}) {
-		const $ = options.$ || window.$;
-		const storage = options.localStorage || window.localStorage;
-		const pageWindow = options.window || window;
-		const delay = options.setTimeout || window.setTimeout.bind(window);
-		const logger = getConsole(options);
-		const token = storage.getItem('qlpk_token');
-
-		if (!token) {
-			logger.error('No token found, redirecting to login...');
-			pageWindow.location.href = '/login.html';
-			return;
-		}
-
-		const doctorSelect = $('#doctorId');
-
-		if (doctorSelect.length === 0) {
-			logger.error('Doctor dropdown not found, retrying in 500ms...');
-			delay(() => {
-				loadDoctorsForForm(options);
-			}, 500);
-			return;
-		}
-
-		$.ajax({
-			url: '/users/doctors',
-			method: 'GET',
-			headers: {
-				'Authorization': 'Bearer ' + token
-			},
-			timeout: 10000,
-			success: function (data) {
-				const doctors = data || [];
-				if (typeof options.setDoctors === 'function') {
-					options.setDoctors(doctors);
-				}
-
-				doctorSelect.empty();
-				doctorSelect.append('<option value="">Chọn người khám</option>');
-
-				if (doctors.length > 0) {
-					doctors.forEach(doctor => {
-						doctorSelect.append(`<option value="${doctor.id}">${doctor.name}</option>`);
-					});
-				}
-			},
-			error: function (xhr, status) {
-				if (xhr.status === 401) {
-					logger.error('Token expired, redirecting to login...');
-					pageWindow.location.href = '/login.html';
-			} else if (xhr.status === 0 || status === 'timeout') {
-				delay(() => {
-					loadDoctorsForForm(options);
-				}, 2000);
-				} else {
-					logger.error('Unknown error, showing error message');
-					options.showCustomToast('error', 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
-				}
-			}
-		});
+		const doc = options.document || (options.window || window).document;
+		const select = doc.getElementById('doctorId');
+		if (!select) return Promise.resolve(false);
+		return loadCatalog('doctors', '/users/doctors', doctors => {
+			const selected = select.value;
+			const placeholder = doc.createElement('option');
+			placeholder.value = '';
+			placeholder.textContent = 'Chọn người khám';
+			select.replaceChildren(placeholder);
+			doctors.forEach(doctor => {
+				const option = doc.createElement('option');
+				option.value = doctor.id;
+				option.textContent = doctor.name || '';
+				select.appendChild(option);
+			});
+			select.value = doctors.some(doctor => String(doctor.id) === selected) ? selected : '';
+			options.setDoctors?.(doctors);
+		}, options);
 	}
 
 	function loadServicesForForm(options = {}) {
-		const $ = options.$ || window.$;
-		const logger = getConsole(options);
-		const servicePackage = getServicePackage(options);
-		const storage = options.localStorage || window.localStorage;
-		const pageWindow = options.window || window;
-		const token = storage.getItem('qlpk_token');
-
-		if (!token) {
-			logger.error('No token found, redirecting to login...');
-			pageWindow.location.href = '/login.html';
-			return;
-		}
-
-		$.ajax({
-			url: '/services',
-			method: 'GET',
-			headers: {
-				'Authorization': 'Bearer ' + token
-			},
-			success: function (data) {
-				const services = data || [];
-				if (typeof options.setServices === 'function') {
-					options.setServices(services);
-				}
-				servicePackage.initServiceAutocomplete('serviceType', 'serviceTypeDropdown', 'serviceTypeId', services, $);
-			},
-			error: function (xhr) {
-				logger.error('Error loading services for form:', xhr);
-			}
-		});
+		const servicePackage = options.servicePackage || window.ReceptionistServicePackage;
+		return loadCatalog('services', '/services', services => {
+			servicePackage.initServiceAutocomplete('serviceType', 'serviceTypeDropdown', 'serviceTypeId', services, options.$ || window.$);
+			options.setServices?.(services);
+		}, options);
 	}
 
-	window.ReceptionistCatalogLoaders = {
-		loadDoctorsForForm,
-		loadServicesForForm
-	};
+	window.ReceptionistCatalogLoaders = { loadDoctorsForForm, loadServicesForForm };
 })(window);

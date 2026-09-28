@@ -6,6 +6,7 @@
 
 (function () {
 	'use strict';
+	window.QLPKApiTransport.installJQuery($);
 
 	// State quản lý dữ liệu chuyển khám
 	let currentTransferData = {
@@ -22,9 +23,25 @@
 	let sessionToken = 0;
 	let personRequestToken = 0;
 	let transferring = false;
+	let authContext = null;
+
+	function captureAuthContext() {
+		const binding = window.QLPKApiTransport.session;
+		if (binding) {
+			const snapshot = binding.owner.snapshot();
+			return () => window.QLPKApiTransport.session === binding
+				&& snapshot.status === 'authenticated'
+				&& binding.owner.snapshot().status === 'authenticated'
+				&& binding.owner.snapshot().revision === snapshot.revision;
+		}
+		const credential = window.QLPKApiTransport.getAuthHeader();
+		return () => !window.QLPKApiTransport.session && Boolean(credential)
+			&& window.QLPKApiTransport.getAuthHeader() === credential;
+	}
 
 	function isCurrentSession(token) {
-		return token === sessionToken && (!transferOptions.isCurrent || transferOptions.isCurrent());
+		return token === sessionToken && authContext?.()
+			&& (!transferOptions.isCurrent || transferOptions.isCurrent());
 	}
 
 	function setTransferring(busy) {
@@ -70,9 +87,7 @@
 			.fail(function () {
 				console.error('Không thể load template modal chuyển khám');
 				modalLoading = false;
-				if (typeof showCustomToast === 'function') {
-					showCustomToast('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-				}
+				window.QLPKUserFeedback.show('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
 			});
 	}
 
@@ -84,6 +99,11 @@
 	 */
 	function openTransferModal(appointmentIds, fromRole, onSuccess, options = {}) {
 		if (transferring) return;
+		authContext = captureAuthContext();
+		if (!authContext()) {
+			window.QLPKUserFeedback.show('error', 'Phiên đăng nhập chưa sẵn sàng. Vui lòng tải lại trang.');
+			return;
+		}
 		const token = ++sessionToken;
 		transferOptions = options;
 		// Đảm bảo modal đã được load trước
@@ -137,9 +157,6 @@
 				$.ajax({
 					url: `/api/appointments/${firstAppointmentId}`,
 					method: 'GET',
-					headers: {
-						'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token')
-					},
 					success: function (appointment) {
 						if (!isCurrentSession(token) || currentTransferData.toRole) return;
 
@@ -260,6 +277,7 @@
 	 */
 	function loadPersonList(role, callback) {
 		const token = sessionToken;
+		if (!isCurrentSession(token)) return;
 		const requestToken = ++personRequestToken;
 		const isCurrent = () => isCurrentSession(token) && requestToken === personRequestToken;
 		$('#personSelector').html(`
@@ -273,12 +291,9 @@
 		const dbRole = mapRoleToDatabase(role);
 
 		$.ajax({
-			url: '/users',
+			url: '/users/transfer-recipients',
 			method: 'GET',
-			data: { role: dbRole },
-			headers: {
-				'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token')
-			},
+			data: { role: dbRole.toLowerCase() },
 			success: function (response) {
 				if (!isCurrent()) return;
 				if (response && response.length > 0) {
@@ -342,11 +357,10 @@
 		try {
 			if (beforeTransfer && await beforeTransfer() !== true) return;
 			if (!isCurrentSession(token)) return;
-			await $.ajax({
+			const result = await $.ajax({
 				url: '/api/appointments/transfer',
 				method: 'POST',
 				headers: {
-					'Authorization': 'Bearer ' + localStorage.getItem('qlpk_token'),
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify({
@@ -355,22 +369,23 @@
 					to_person_id: toPersonId
 				})
 			});
+			if (!isCurrentSession(token)) return;
+			if (result?.success !== true || !Number.isInteger(result.updated_count)) {
+				throw new Error('transfer_unconfirmed');
+			}
+			if (result.updated_count !== new Set(appointmentIds.map(Number)).size) {
+				window.QLPKUserFeedback.show('warning', 'Máy chủ chưa xác nhận chuyển đủ các lượt đã chọn. Vui lòng kiểm tra lại danh sách trước khi thử tiếp.');
+				return;
+			}
 			setTransferring(false);
 			$('#transferModal').modal('hide');
-			if (typeof showCustomToast === 'function') {
-				showCustomToast('success', 'Đã chuyển khám.');
-			} else {
-				alert('Đã chuyển khám.');
-			}
+			window.QLPKUserFeedback.show('success', 'Đã chuyển khám.');
 			$('#addExaminationModal').modal('hide');
 			if (typeof onSuccess === 'function') onSuccess();
 		} catch (error) {
+			if (!isCurrentSession(token)) return;
 			console.error('Transfer failed:', error);
-			if (typeof showCustomToast === 'function') {
-				showCustomToast('error', 'Không thể chuyển khám. Vui lòng kiểm tra lại.');
-			} else {
-				alert('Không thể chuyển khám. Vui lòng kiểm tra lại.');
-			}
+			window.QLPKUserFeedback.show('error', 'Không thể chuyển khám. Vui lòng kiểm tra lại.');
 		} finally {
 			if (token === sessionToken) setTransferring(false);
 		}
@@ -393,6 +408,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 			if (transferring) return;
+			if (!isCurrentSession(sessionToken)) return;
 
 			const role = $(this).data('role');
 
@@ -410,6 +426,7 @@
 		// Xử lý chọn người nhận
 		$('#transferModal').off('click', '.person-badge').on('click', '.person-badge', function () {
 			if (transferring) return;
+			if (!isCurrentSession(sessionToken)) return;
 			const personId = $(this).data('person-id');
 			const personName = $(this).data('person-name');
 
@@ -431,21 +448,13 @@
 			e.stopPropagation();
 
 			if (!currentTransferData.toRole) {
-				if (typeof showCustomToast === 'function') {
-					showCustomToast('error', 'Vui lòng chọn role chuyển đến');
-				} else {
-					alert('Vui lòng chọn role chuyển đến');
-				}
+				window.QLPKUserFeedback.show('error', 'Vui lòng chọn role chuyển đến');
 				return;
 			}
 
 			// Yêu cầu chọn người nhận cho tất cả các role (kể cả lễ tân)
 			if (!currentTransferData.toPersonId || currentTransferData.toPersonId === null || currentTransferData.toPersonId === undefined) {
-				if (typeof showCustomToast === 'function') {
-					showCustomToast('error', 'Vui lòng chọn người nhận');
-				} else {
-					alert('Vui lòng chọn người nhận');
-				}
+				window.QLPKUserFeedback.show('error', 'Vui lòng chọn người nhận');
 				return;
 			}
 
@@ -496,11 +505,7 @@
 	function openWithErrorHandling(appointmentIds, fromRole, onSuccess) {
 		if (!window.TransferModal || !window.TransferModal.open) {
 			console.error('TransferModal module chưa được load. Vui lòng đảm bảo transfer-modal-dry.js được load trước.');
-			if (typeof showCustomToast === 'function') {
-				showCustomToast('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-			} else {
-				alert('Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-			}
+			window.QLPKUserFeedback.show('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
 			return false;
 		}
 		window.TransferModal.open(appointmentIds, fromRole, onSuccess);

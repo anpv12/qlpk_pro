@@ -41,11 +41,7 @@ class AutocompleteBase {
     
     async loadItems() {
         try {
-            const response = await fetch(this.apiEndpoint, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-                }
-            });
+            const response = await fetch(this.apiEndpoint);
             
             if (response.ok) {
                 const data = await response.json();
@@ -179,7 +175,6 @@ class AutocompleteBase {
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ name: name })

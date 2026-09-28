@@ -1,48 +1,22 @@
 (function (window) {
 	'use strict';
 
-	function getLocalStorage(options) {
-		return options && options.localStorage ? options.localStorage : window.localStorage;
-	}
-
-	function getSessionStorage(options) {
-		return options && options.sessionStorage ? options.sessionStorage : window.sessionStorage;
-	}
-
 	function getFetch(options) {
 		return options && options.fetch ? options.fetch : window.fetch.bind(window);
 	}
 
-	function ensureToken(options = {}) {
-		const token = getLocalStorage(options).getItem('qlpk_token');
-		if (!token) {
-			(options.window || window).location.href = '/login';
-			return false;
-		}
-		return true;
+	function ensureSession() {
+		return window.QLPKApiTransport.ensureSession();
 	}
 
-	function getAuthHeader(options = {}) {
-		try {
-			let raw = getLocalStorage(options).getItem('qlpk_token') || getLocalStorage(options).getItem('token') || getSessionStorage(options).getItem('qlpk_token');
-			if (!raw) return null;
-			if (raw.trim().startsWith('{')) {
-				const obj = JSON.parse(raw);
-				const token = obj.access_token || obj.token || obj.Authorization || obj.authorization;
-				return token ? `Bearer ${token.replace(/^Bearer\s+/i, '')}` : null;
-			}
-			return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
-		} catch (e) {
-			return null;
-		}
+	function getAuthHeader() {
+		return window.QLPKApiTransport.getAuthHeader();
 	}
 
 	function apiCall(url, options = {}, coreOptions = {}) {
-		const auth = getAuthHeader(coreOptions);
 		const defaultOptions = {
 			headers: {
-				'Content-Type': 'application/json',
-				...(auth ? { 'Authorization': auth } : {})
+				'Content-Type': 'application/json'
 			}
 		};
 
@@ -82,7 +56,7 @@
 	}
 
 	window.ReceptionistPageCoreUtils = {
-		ensureToken,
+		ensureSession,
 		getAuthHeader,
 		apiCall,
 		alignToastToWorkspaceTabs,

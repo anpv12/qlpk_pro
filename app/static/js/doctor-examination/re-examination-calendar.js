@@ -1,4 +1,6 @@
 // Selection-only modal. Prescription form owns patient context, draft and save.
+import '../components/appointment-calendar.js';
+const calendarPresentation = globalThis.QLPKAppointmentCalendar;
 let calendarAssets;
 function loadCalendarAssets() {
 	if (window.FullCalendar) return Promise.resolve();
@@ -16,46 +18,62 @@ function loadCalendarAssets() {
 	return calendarAssets;
 }
 
-const statuses = {
-	SCHEDULED: { label: 'Chờ xác nhận', color: 'var(--qlpk-feedback-warning)' },
-	CONFIRMED: { label: 'Đã xác nhận', color: 'var(--qlpk-feedback-success)' },
-	NO_SHOW: { label: 'Không đến', color: 'var(--qlpk-feedback-neutral)' },
-	CANCELLED: { label: 'Hủy', color: 'var(--qlpk-feedback-error)' }
-};
+const statuses = calendarPresentation.STATUS_LABELS;
 const dayKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const pretty = value => value ? `${new Date(value.replace(' ', 'T')).toLocaleDateString('vi-VN', {
 	weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
 })} — ${value.slice(11, 16)}` : 'Chưa chọn ngày giờ';
 
 export function createReExaminationCalendar({ requestJson }) {
-	let dialog, calendar, mini, context, generation = 0, requestGeneration = 0, opener;
+	let dialog, calendar, resizeObserver, context, generation = 0, requestGeneration = 0, opener;
 	let loading = false, loadError = '', data = null, selectionInitialized = false;
+	const choiceFields = {};
+	const hasChoices = () => choiceFields.service?.getSelected().length && choiceFields.doctor?.getSelected().length;
 	const el = name => dialog.querySelector(`[data-reexam="${name}"]`);
 	const value = () => el('date').value && el('time').value ? `${el('date').value} ${el('time').value}` : '';
     function selectedIdentity() {
-        const [kind, id] = el('service').value.split(':');
-        return { doctor_id: Number(el('doctor').value), service_id: kind === 'service' ? Number(id) : null,
-            package_id: kind === 'package' ? Number(id) : null };
+        const service = choiceFields.service.getSelected()[0];
+        return { doctor_id: Number(choiceFields.doctor.getSelected()[0].id), service_id: service.kind === 'service' ? Number(service.id) : null,
+            package_id: service.kind === 'package' ? Number(service.id) : null };
     }
     function populateSelection(result, saved) {
         const chosen = saved || result.selection;
-        el('service').replaceChildren(); el('doctor').replaceChildren();
-        for (const item of result.services) {
-            const option = new Option(item.name, `${item.kind}:${item.id}`);
-            option.disabled = !!item.disabled; el('service').append(option);
-        }
-        for (const item of result.doctors) {
-            const option = new Option(item.name, item.id);
-            option.disabled = !!item.disabled; el('doctor').append(option);
-        }
-        el('service').value = chosen?.package_id ? `package:${chosen.package_id}` : `service:${chosen?.service_id}`;
-        el('doctor').value = chosen?.doctor_id || '';
+        const kind = chosen?.package_id ? 'package' : 'service';
+        const serviceId = chosen?.package_id || chosen?.service_id;
+        choiceFields.service.setSelected(result.services.filter(item => item.kind === kind && Number(item.id) === Number(serviceId)));
+        choiceFields.doctor.setSelected(result.doctors.filter(item => Number(item.id) === Number(chosen?.doctor_id)));
     }
+	function initializeChoices() {
+		const Autocomplete = window.QLPKDoctorModuleRegistry.require('autocompleteField');
+		const normalize = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
+		for (const [name, collection] of [['service', 'services'], ['doctor', 'doctors']]) {
+			choiceFields[name] = new Autocomplete(el(`${name}-field`), {
+				multiple: false, limit: 20,
+				getKey: item => `${item.kind || 'doctor'}:${item.id}`,
+				getLabel: item => item.name,
+				isEnabled: () => !!context && !loading && !loadError && data?.schedule?.editable !== false,
+				loadOptions: async (query, { skip, limit }) => {
+					const items = (data?.[collection] || []).filter(item => !item.disabled && normalize(item.name).includes(normalize(query)));
+					return { data: items.slice(skip, skip + limit), pagination: { per_page: limit, has_next: skip + limit < items.length } };
+				},
+				onChange: () => { error(''); syncSelection(); }
+			});
+			el(name).addEventListener('input', event => {
+				const field = choiceFields[name], query = el(name).value;
+				if (field.getSelected().length && query !== field.getSelected()[0].name) {
+					field.clear({ silent: false }); el(name).value = query;
+					if (!event.isComposing) field.scheduleRefresh(query);
+				}
+			});
+		}
+	}
 	function close() {
 		generation++; requestGeneration++;
 		context = null; data = null;
+		Object.values(choiceFields).forEach(field => field.clear());
+		resizeObserver?.disconnect(); resizeObserver = null;
 		calendar?.destroy(); calendar = null;
-		mini?.destroy(); mini = null;
+		if (el('detail').open) el('detail').close();
 		if (dialog?.open) dialog.close();
 		opener?.focus();
 	}
@@ -66,15 +84,34 @@ export function createReExaminationCalendar({ requestJson }) {
 	function syncSelection() {
 		const selected = value();
 		el('selection').textContent = selected ? `Đã chọn: ${pretty(selected)}` : 'Chọn ngày và giờ tái khám';
-		el('confirm').disabled = loading || !!loadError || !selected || !el('service').value || !el('doctor').value || data?.schedule?.editable === false;
-		mini?.setDate(el('date').value, false);
+		el('confirm').disabled = loading || !!loadError || !selected || !hasChoices() || data?.schedule?.editable === false;
 		dialog.querySelectorAll('.fc-daygrid-day[data-date]').forEach(cell => cell.classList.toggle('reexam-selected', cell.dataset.date === el('date').value));
 		el('service').disabled = el('doctor').disabled = loading || !!loadError || data?.schedule?.editable === false;
+		if (el('service').disabled) Object.values(choiceFields).forEach(field => field.close());
 	}
 	function selectDate(date) {
 		el('date').value = dayKey(date);
 		error('');
 		syncSelection();
+	}
+	function showDayEvents(events, page = 0) {
+		el('detail-content').replaceChildren();
+		const pageSize = 4;
+		for (const event of events.slice(page * pageSize, (page + 1) * pageSize)) {
+			const row = document.createElement('p');
+			row.className = 'doctor-reexam-calendar__event';
+			row.textContent = `${event.extendedProps.start.slice(11, 16)} — ${event.title}`;
+			el('detail-content').append(row);
+		}
+		const navigation = document.createElement('div'); navigation.className = 'doctor-reexam-calendar__pagination';
+		for (const [label, target] of [['Trước', page - 1], ['Sau', page + 1]]) {
+			const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-sm';
+			button.dataset.qlpkButton = 'neutral'; button.dataset.qlpkButtonVariant = 'soft';
+			button.textContent = label; button.disabled = target < 0 || target * pageSize >= events.length;
+			button.onclick = () => showDayEvents(events, target); navigation.append(button);
+		}
+		const summary = document.createElement('span'); summary.textContent = `${page + 1}/${Math.ceil(events.length / pageSize)} · ${events.length} lịch`;
+		navigation.prepend(summary); el('detail-content').append(navigation); el('detail').showModal();
 	}
 	function initialize() {
 		if (dialog) return;
@@ -82,16 +119,14 @@ export function createReExaminationCalendar({ requestJson }) {
 		dialog.className = 'doctor-reexam-calendar';
 		dialog.setAttribute('aria-labelledby', 'doctorReexamCalendarTitle');
 		dialog.innerHTML = `
-			<header class="doctor-reexam-calendar__header"><strong id="doctorReexamCalendarTitle"><i class="bi bi-calendar3"></i> Lịch tái khám — Chọn ngày & giờ</strong><button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close-top" aria-label="Đóng">×</button></header>
+			<header class="doctor-reexam-calendar__header" data-qlpk-button-surface="dark"><strong id="doctorReexamCalendarTitle"><i class="bi bi-calendar3"></i> Lịch tái khám — Chọn ngày & giờ</strong><button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close-top" aria-label="Đóng">×</button></header>
 			<div class="doctor-reexam-calendar__body">
 				<aside class="doctor-reexam-calendar__sidebar">
-					<div data-reexam="mini"></div>
 					<section><h3>Lịch tái khám</h3><div class="doctor-reexam-calendar__inputs">
 						<label>Ngày<input type="date" data-reexam="date"></label><label>Giờ<input type="time" data-reexam="time" step="60"></label>
 					</div></section>
-					<section class="doctor-reexam-calendar__choices"><label for="reexamService">Dịch vụ</label><select id="reexamService" data-reexam="service"></select><label for="reexamDoctor">Bác sĩ khám</label><select id="reexamDoctor" data-reexam="doctor"></select></section>
-					<section><h3>Trạng thái</h3><div data-reexam="counts"></div></section>
-					<section data-reexam="detail" aria-live="polite" hidden></section>
+					<section class="doctor-reexam-calendar__choices" data-reexam="choices"></section>
+					<section class="doctor-reexam-calendar__statuses"><h3>Trạng thái</h3><div data-reexam="counts"></div></section>
 				</aside>
 				<main class="doctor-reexam-calendar__main"><div class="doctor-reexam-calendar__notice" data-reexam="loading" role="status"></div><div data-reexam="calendar"></div></main>
 			</div>
@@ -100,20 +135,27 @@ export function createReExaminationCalendar({ requestJson }) {
 				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="retry" class="btn btn-outline-secondary btn-sm" hidden>Thử lại</button>
 				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close" class="btn btn-outline-secondary btn-sm">Đóng</button>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" data-reexam="confirm" class="btn btn-success btn-sm">✓ Xác nhận lịch tái khám</button>
-			</div></footer>`;
+			</div></footer>
+			<dialog class="doctor-reexam-calendar__detail" data-reexam="detail" aria-labelledby="doctorReexamDetailTitle">
+				<h3 id="doctorReexamDetailTitle">Lịch hẹn trong ngày</h3><div data-reexam="detail-content"></div>
+				<button type="button" class="btn btn-sm" data-qlpk-button="neutral" data-qlpk-button-variant="soft" data-reexam="close-detail">Đóng danh sách</button>
+			</dialog>`;
 		document.body.append(dialog);
+		el('choices').append(document.getElementById('doctorReexamChoiceFields').content.cloneNode(true));
+		initializeChoices();
 		el('close').onclick = el('close-top').onclick = close;
+		el('close-detail').onclick = () => el('detail').close();
+		el('detail').addEventListener('cancel', event => event.stopPropagation());
 		dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
 		el('date').onchange = () => {
 			if (el('date').value) calendar?.gotoDate(el('date').value);
 			error(''); syncSelection();
 		};
-		el('service').onchange = el('doctor').onchange = () => { error(''); syncSelection(); };
 		el('time').oninput = () => { error(''); syncSelection(); };
 		el('retry').onclick = () => { const options = context; close(); if (options) open(options); };
 		el('confirm').onclick = () => {
 			if (loading || loadError || !context || data?.schedule?.editable === false) return;
-			if (!el('service').value || !el('doctor').value) { error('Vui lòng chọn dịch vụ và bác sĩ.'); return; }
+			if (!hasChoices()) { error('Vui lòng chọn dịch vụ và bác sĩ.'); return; }
 			if (!value() || new Date(value().replace(' ', 'T')) <= new Date()) {
 				error('Ngày giờ tái khám phải ở tương lai. Vui lòng chọn lại.'); return;
 			}
@@ -134,8 +176,7 @@ export function createReExaminationCalendar({ requestJson }) {
 		el('date').min = dayKey(new Date());
 		el('date').value = options.value?.slice(0, 10) || '';
 		el('time').value = options.value?.slice(11, 16) || '09:00';
-		el('service').replaceChildren(new Option('Đang tải…', '')); el('doctor').replaceChildren(new Option('Đang tải…', ''));
-		el('counts').replaceChildren(); el('detail').replaceChildren(); el('detail').hidden = true;
+		el('counts').replaceChildren(); el('detail-content').replaceChildren();
 		el('clear').hidden = !options.hasSelection;
 		el('clear').disabled = true;
 		el('retry').hidden = true;
@@ -144,37 +185,17 @@ export function createReExaminationCalendar({ requestJson }) {
 		try {
 			await loadCalendarAssets();
 			if (token !== generation) return;
-			mini = window.flatpickr(el('mini'), {
-				inline: true, locale: 'vn', defaultDate: el('date').value || new Date(),
-                onDayCreate(_dates, _value, instance, day) {
-                    // Keep the final week containing this month, not Flatpickr's filler weeks.
-                    const end = new Date(instance.currentYear, instance.currentMonth + 1, 1);
-                    const trailingDays = (7 + instance.l10n.firstDayOfWeek - end.getDay()) % 7;
-                    end.setDate(end.getDate() + trailingDays);
-                    day.hidden = day.dateObj >= end;
-                },
-				onChange(dates) { if (dates[0]) { selectDate(dates[0]); calendar?.gotoDate(dates[0]); } }
-			});
-			calendar = new window.FullCalendar.Calendar(el('calendar'), {
-				initialView: 'dayGridMonth', initialDate: el('date').value || new Date(),
-				locale: 'vi', firstDay: 0, height: '100%', fixedWeekCount: false,
-				headerToolbar: { left: 'today prev,next title', right: 'dayGridWeek,dayGridMonth' },
-				buttonText: { today: 'Hôm nay', month: 'Tháng', week: 'Tuần' },
-				eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-				dayMaxEvents: true, moreLinkText: count => `+${count} lịch`,
+			calendar = calendarPresentation.create(el('calendar'), {
+				initialDate: el('date').value || new Date(),
+				moreLinkClick(info) { showDayEvents(info.allSegs.map(segment => segment.event)); return false; },
 				dateClick(info) { selectDate(info.date); },
 				eventDidMount(info) {
 					const item = info.event.extendedProps;
-					info.el.title = `${pretty(item.start)} • ${item.patient_name}\nDịch vụ: ${item.service_name || 'Chưa có'}\nBác sĩ: ${item.doctor_name || 'Chưa có'}\n${statuses[item.status]?.label || item.status}`;
+					info.el.title = `${pretty(item.start)} • ${item.patient_name}\nDịch vụ: ${item.service_name || 'Chưa có'}\nBác sĩ: ${item.doctor_name || 'Chưa có'}\n${statuses[item.status] || item.status}`;
 				},
-				eventClick(info) {
-					const item = info.event.extendedProps;
-					el('detail').replaceChildren(); el('detail').hidden = false;
-					for (const text of [item.patient_name, pretty(item.start), `Dịch vụ: ${item.service_name || 'Chưa có'}`, `Bác sĩ: ${item.doctor_name || 'Chưa có'}`, statuses[item.status]?.label || item.status]) {
-						const line = document.createElement('p'); line.textContent = text; el('detail').append(line);
-					}
+				datesSet() {
+					syncSelection();
 				},
-				datesSet() { syncSelection(); },
 				events: async (range, success, failure) => {
 					const revision = ++requestGeneration;
 					loading = true; loadError = ''; el('retry').hidden = true;
@@ -185,21 +206,16 @@ export function createReExaminationCalendar({ requestJson }) {
 						if (token !== generation || revision !== requestGeneration) return;
 						data = result;
 						if (!selectionInitialized) { populateSelection(result, options.selection); selectionInitialized = true; }
-						el('counts').replaceChildren();
-						for (const [status, config] of Object.entries(statuses)) {
-							const line = document.createElement('div');
-							line.className = 'doctor-reexam-calendar__count'; line.style.color = config.color;
-							const label = document.createElement('span'); label.textContent = config.label;
-							const count = document.createElement('strong'); count.textContent = result.events.filter(item => item.status === status).length;
-							line.append(label, count); el('counts').append(line);
-						}
+						calendarPresentation.renderStatusCounts(el('counts'), Object.fromEntries(
+							Object.keys(statuses).map(status => [status, result.events.filter(item => item.status === status).length])
+						));
 						success(result.events.map(item => ({
 							id: String(item.id), title: item.patient_name, start: item.start,
 							end: new Date(new Date(item.start).getTime() + item.duration * 60000),
-							backgroundColor: statuses[item.status]?.color, borderColor: statuses[item.status]?.color,
-							display: 'block', extendedProps: item
+							classNames: ['appointment-event', `status-${item.status.toLowerCase()}`],
+							display: 'block', extendedProps: { ...item, patientName: item.patient_name, doctorId: item.doctor_id, doctorName: item.doctor_name, doctorColor: item.doctor_color }
 						})));
-						el('loading').textContent = result.events.length ? '' : 'Không có lịch hẹn trong khoảng đang xem.';
+						el('loading').textContent = '';
 						if (!result.schedule.editable) error(result.schedule.lock_reason);
 					} catch (err) {
 						if (token !== generation || revision !== requestGeneration) return;
@@ -212,8 +228,10 @@ export function createReExaminationCalendar({ requestJson }) {
 						}
 					}
 				}
-			});
+			}, { monthOnly: true, getDoctors: () => data?.doctors || [] });
 			calendar.render();
+			resizeObserver = new ResizeObserver(() => calendar?.updateSize());
+			resizeObserver.observe(el('calendar'));
 		} catch (err) {
 			if (token !== generation) return;
 			loading = false; loadError = err.message; error(loadError); el('retry').hidden = false; syncSelection();

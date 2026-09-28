@@ -52,42 +52,12 @@
 	}
 
 	function renderState(container, state, options = {}) {
-		if (!container) return '';
-		const html = buildStateHtml(state, options);
-		container.innerHTML = html;
-		return html;
+		return window.QLPKHistoryTabCore.renderHtml(container, buildStateHtml(state, options));
 	}
 
-	function isCurrent(options) {
-		return typeof options.isContextCurrent !== 'function' || options.isContextCurrent();
-	}
-
-	function resolveHistoryState(options = {}) {
-		if (!options.patient) {
-			return { state: 'noPatient', history: null, index: null };
-		}
-
-		if (options.isHistoryLoading) {
-			return { state: 'historyLoading', history: null, index: null };
-		}
-
-		const histories = Array.isArray(options.histories) ? options.histories : [];
-		if (!histories.length) {
-			return { state: 'emptyHistory', history: null, index: null };
-		}
-
-		let index = Number.isInteger(options.selectedIndex) ? options.selectedIndex : 0;
-		if (index < 0 || index >= histories.length) {
-			index = 0;
-		}
-
-		const history = histories[index];
-		if (!history) {
-			return { state: 'missingHistory', history: null, index };
-		}
-
-		return { state: 'ready', history, index };
-	}
+	const historyTabCore = window.QLPKHistoryTabCore;
+	const isCurrent = historyTabCore.isContextCurrent;
+	const resolveHistoryState = historyTabCore.resolveHistoryState;
 
 	function buildRecordHtml(options = {}) {
 		if (typeof options.buildMedicalRecordHTML !== 'function') {
@@ -124,20 +94,9 @@
 	}
 
 	async function renderTab(options = {}) {
-		const contentArea = options.container;
-		if (!contentArea) return { state: 'missingContainer' };
-		if (!isCurrent(options)) return { state: 'stale' };
-
-		const historyState = resolveHistoryState({
-			patient: options.patient,
-			isHistoryLoading: options.isHistoryLoading,
-			histories: options.histories,
-			selectedIndex: options.selectedIndex
-		});
-		if (historyState.state !== 'ready') {
-			renderState(contentArea, historyState.state, options);
-			return historyState;
-		}
+		const tab = historyTabCore.resolveTabContext(options, (container, state) => renderState(container, state, options));
+		if (tab.done) return tab.done;
+		const { contentArea, historyState } = tab;
 
 		const history = historyState.history;
 		renderState(contentArea, 'recordLoading', options);

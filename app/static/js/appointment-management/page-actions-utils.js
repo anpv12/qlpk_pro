@@ -19,9 +19,6 @@
 			method: 'POST',
 			contentType: 'application/json',
 			data: JSON.stringify(payload),
-			headers: {
-				'Authorization': `Bearer ${options.getToken()}`
-			},
 			xhrFields: { responseType: 'blob' },
 			success: function (blob) {
 				const url = window.URL.createObjectURL(blob);

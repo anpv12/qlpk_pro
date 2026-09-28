@@ -79,8 +79,17 @@ const saveAddressDraftToCache = () => addressDraftAdapter.saveAddressDraftToCach
 const loadAddressDraftFromCache = () => addressDraftAdapter.loadAddressDraftFromCache();
 
 async function autoSavePatientField(fieldName, value) {
+	const appointmentId = currentAppointmentId;
+	const patientId = currentPatientId;
+	const contextToken = psychologistWorkspaceRuntime?.getState?.().contextToken;
+	const isCurrentContext = () => currentAppointmentId === appointmentId
+		&& currentPatientId === patientId
+		&& psychologistWorkspaceRuntime?.getState?.().contextToken === contextToken;
 	return pageCoreAdapter.autoSavePatientFormField(fieldName, value, {
-		shouldSkip: () => isLoadingExaminationData
+		shouldSkip: () => !appointmentId || isLoadingExaminationData
+			|| psychologistWorkspaceRuntime?.getState?.().loadFailed || !isCurrentContext(),
+		recheckSkipBeforeSave: true,
+		isCurrentAppointment: savedId => savedId === appointmentId && isCurrentContext()
 	});
 }
 
@@ -144,13 +153,24 @@ function syncModalDataIfNeeded() {
 
 // Lưu thông tin hành chính bằng owner dùng chung; phần lâm sàng do workspace runtime lưu.
 async function savePatientDataInternal(formData) {
+	const appointmentId = currentAppointmentId;
+	const patientId = currentPatientId;
+	const contextToken = psychologistWorkspaceRuntime?.getState?.().contextToken;
+	if (!appointmentId || isLoadingExaminationData || psychologistWorkspaceRuntime?.getState?.().loadFailed) {
+		return { status: 'skipped', reason: 'not-ready' };
+	}
 	return pageCoreAdapter.runPatientDataInternalSave({
 		formData,
+		isCurrentContext: () => currentAppointmentId === appointmentId
+			&& currentPatientId === patientId
+			&& !isLoadingExaminationData
+			&& !psychologistWorkspaceRuntime?.getState?.().loadFailed
+			&& psychologistWorkspaceRuntime?.getState?.().contextToken === contextToken,
 		syncModalDataIfNeeded,
-		getCurrentPatientId: () => currentPatientId,
+		getCurrentPatientId: () => patientId,
 		buildPatientPayload: data => window.ClinicalFormDomUtils.buildPatientSavePayload(data),
-		uploadDraftDocumentsForPatient: patientId => documentSectionAdapter.uploadDraftDocumentsForPatient(patientId),
-		getCurrentAppointmentId: () => currentAppointmentId,
+		uploadDraftDocumentsForPatient: (savedPatientId, uploadOptions) => documentSectionAdapter.uploadDraftDocumentsForPatient(savedPatientId, uploadOptions),
+		getCurrentAppointmentId: () => appointmentId,
 		buildAppointmentPayload: data => window.ClinicalFormDomUtils.buildAppointmentClinicalUpdatePayload(data),
 		setCurrentPatientId,
 		showToast: showCustomToast,
@@ -244,6 +264,7 @@ const documentFileAdapter = window.ClinicalDocumentFileUtils.createDocumentFileA
 
 const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
 	document,
+	getContextToken: () => window.QLPKPsychologistPageState?.contextToken,
 	sessionStorage,
 	documentDraftKey: DOCUMENT_DRAFT_KEY,
 	apiCall,
@@ -254,7 +275,7 @@ const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExami
 	formatFileSize: bytes => documentFileAdapter.formatFileSize(bytes),
 	formatDisplayDate,
 	showToast: (type, message) => showCustomToast(type, message),
-	showConfirmationDialog,
+	showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
 	console,
 	getIsLocked: () => isFormLocked,
 	getUploadInitialized: () => uploadInitialized,
@@ -308,14 +329,13 @@ function resetFormToDefault() {
 	});
 }
 // Event listeners
-document.addEventListener('DOMContentLoaded', function () {
-	const bootstrapResult = window.ClinicalPageCoreUtils.initializeExaminationPageBootstrap({
+document.addEventListener('DOMContentLoaded', async function () {
+	const bootstrapResult = await window.ClinicalPageCoreUtils.initializeExaminationPageBootstrap({
 		document,
 		window,
 		pageCoreAdapter,
 		initializePage,
 		initializeForm,
-		printModalTabContent,
 		setRelativeTableInstance: instance => { psychologistRelativeTableInstance = instance; },
 		setCurrentStatus: nextStatus => { currentStatus = nextStatus; },
 		setPatientSearchQuery: nextQuery => { patientSearchQuery = nextQuery; },
@@ -360,13 +380,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		$,
 		apiCall,
 		showToast: showCustomToast,
-		showConfirmationDialog,
+		showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
 		formatDisplayDate,
 		getAppointments: () => allAppointments,
 		getCurrentPatientData: () => window.currentPatientData,
 		getCurrentAppointmentId: () => currentAppointmentId,
 		getFormatDateDisplay: () => window.formatDateDisplay || formatDisplayDate,
-		loadVitalSigns: loadVitalSignsData,
 		setLoadingState: value => { isLoadingExaminationData = value; },
 		setCurrentAppointmentId: value => { currentAppointmentId = value; },
 		setCurrentPatientId,
@@ -377,24 +396,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		unlockForm: () => copyViewLockController.unlock(),
 		getExaminationStatusBadgeClass: psychologistGetExaminationStatusBadgeClass,
 		getExaminationStatusText: psychologistGetExaminationStatusText,
-		fetchPatientDetail: fetchPatientDetailForPrescription,
-		fetchExaminationDetail: fetchExaminationDetailForPrescription,
-		fetchSectionDetails: fetchExaminationDetailsBySection,
-		fetchPrescription: fetchPrescriptionDataForAppointment,
 		resetFormToDefault,
 		loadAppointments,
-		clearExaminationLayout: () => psychologistWorkspaceRuntime?.clear({ document }),
-		getClinicInfoConfig,
-		buildMedicalRecordHTML,
-		createBarcodesInElement,
-		buildHistoryRendererOptions: () => ({
-			fetchServicesForAppointment,
-			buildServiceInvoiceHTML,
-			buildMedicalRecordHTML,
-			setupPrescriptionTabPagination,
-			getClinicInfoConfig,
-			createBarcodesInElement
-		})
+		clearExaminationLayout: () => psychologistWorkspaceRuntime?.clear({ document })
 	}).bind();
 
 	// Print preview and queue management removed - not needed for psychologist examination page

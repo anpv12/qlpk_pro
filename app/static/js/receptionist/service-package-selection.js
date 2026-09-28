@@ -37,6 +37,10 @@
 		const $input = $(`#${inputId}`);
 		const $dropdown = $(`#${dropdownId}`);
 		const $hidden = $(`#${hiddenId}`);
+		const namespace = `.qlpkServiceAutocomplete_${inputId}`;
+		$input.off(namespace);
+		$(document).off(namespace);
+		$dropdown.empty().removeClass('show');
 
 		function renderDropdown(list) {
 			if (!list || list.length === 0) {
@@ -46,10 +50,8 @@
 			$dropdown.empty().addClass('show');
 			list.forEach(service => {
 				const $item = $('<div class="service-autocomplete-item">')
-					.html(`
-						<span class="service-name">${service.name}</span>
-						<span class="service-price">${service.default_price.toLocaleString()} VNĐ</span>
-					`)
+					.append($('<span class="service-name">').text(service.name || ''))
+					.append($('<span class="service-price">').text(`${Number(service.default_price || 0).toLocaleString()} VNĐ`))
 					.data('service', service)
 					.on('click', function () {
 						const selected = $(this).data('service');
@@ -62,17 +64,20 @@
 			});
 		}
 
-		$input.on('focus', function () {
+		$input.on(`focus${namespace}`, function () {
 			const query = normalizeSearchText($(this).val());
 			if (!query) {
 				renderDropdown(servicesList);
 			} else {
-				$input.trigger('input');
+				renderDropdown(servicesList.filter(service =>
+					normalizeSearchText(service.name).includes(query) ||
+					(service.code && normalizeSearchText(service.code).includes(query))));
 			}
 		});
 
-		$input.on('input', function () {
+		$input.on(`input${namespace}`, function () {
 			const query = normalizeSearchText($(this).val());
+			$hidden.val('');
 			if (!query) {
 				$hidden.val('');
 				renderDropdown(servicesList);
@@ -88,13 +93,13 @@
 			renderDropdown(filtered);
 		});
 
-		$(document).on('click', function (e) {
+		$(document).on(`click${namespace}`, function (e) {
 			if (!$(e.target).closest(`#${inputId}, #${dropdownId}`).length) {
 				$dropdown.removeClass('show');
 			}
 		});
 
-		$input.on('keydown', function (e) {
+		$input.on(`keydown${namespace}`, function (e) {
 			const $items = $dropdown.find('.service-autocomplete-item');
 			const $active = $items.filter('.active');
 			if (e.key === 'ArrowDown') {

@@ -13,6 +13,23 @@
 	let nativeTabId = '';
 	let resizeObserver = null;
 	let activeLauncherGroup = '';
+	let sessionBound = false;
+	let mountedUserId = '';
+	let sessionBlocked = false;
+
+	function captureAccess() {
+		const owner = window.QLPKApiTransport?.session?.owner;
+		if (owner) {
+			const current = owner.snapshot();
+			return () => !sessionBlocked && current.status === 'authenticated'
+				&& owner.snapshot().status === 'authenticated'
+				&& owner.snapshot().revision === current.revision;
+		}
+		const token = localStorage.getItem('qlpk_token');
+		const user = localStorage.getItem('qlpk_user');
+		return () => !window.QLPKApiTransport?.session && token === localStorage.getItem('qlpk_token')
+			&& user === localStorage.getItem('qlpk_user');
+	}
 
 	function normalizeLauncherSearchText(value) {
 		return window.QLPKSearchNormalization?.normalizeSearchText(value)
@@ -31,6 +48,7 @@
 	}
 
 	function readPermissions() {
+		if (window.QLPKApiTransport?.session) return readStoredUser().permissions || [];
 		try {
 			const raw = localStorage.getItem('qlpk_permissions');
 			const permissions = raw ? JSON.parse(raw) : [];
@@ -41,6 +59,11 @@
 	}
 
 	function readStoredUser() {
+		const session = window.QLPKApiTransport?.session;
+		if (session) {
+			const current = session.owner.snapshot();
+			return !sessionBlocked && current.status === 'authenticated' ? current.session.user : {};
+		}
 		try {
 			return JSON.parse(localStorage.getItem('qlpk_user') || '{}') || {};
 		} catch (error) {
@@ -115,6 +138,7 @@
 	}
 
 	function hasPermission(item) {
+		if (window.QLPKApiTransport?.session && !readStoredUser().id) return false;
 		if (!item || (!item.permission && !item.permissionAlt)) return true;
 		const permissions = readPermissions();
 		if (!permissions.length) return isAdminUser();
@@ -532,12 +556,14 @@
 	}
 
 	async function activatePane(tabId, options = {}) {
+		const isCurrent = captureAccess();
+		if (!isCurrent()) return false;
 		const tabs = readTabs();
 		const tab = tabs.find(item => item.id === tabId) || tabs[0];
 		if (!tab) return false;
 		if (!options.skipLeaveGuard) {
 			const canLeave = await requestActiveWorkspaceLeave(tab.id, 'switch-workspace-tab');
-			if (!canLeave) return false;
+			if (!canLeave || !isCurrent()) return false;
 		}
 
 		const frameHost = document.getElementById('qlpkWorkspaceFrameHost') || createWorkspaceHost();
@@ -567,6 +593,9 @@
 
 	async function openTab(item) {
 		if (!item || !item.href) return false;
+		const isCurrent = captureAccess();
+		const configuredItem = configuredNavItem(item.href);
+		if (!isCurrent() || (configuredItem && !hasPermission(configuredItem))) return false;
 
 		const nextTab = tabFromItem(item);
 		if (nextTab.id === nativeTabId) {
@@ -574,7 +603,7 @@
 			return activatePane(nativeTabId);
 		}
 		const canLeave = await requestActiveWorkspaceLeave(nextTab.id, 'open-workspace-tab');
-		if (!canLeave) return false;
+		if (!canLeave || !isCurrent()) return false;
 
 		const tabs = readTabs().filter(tab => normalizeHref(tab.href) !== nextTab.href);
 		tabs.push(nextTab);
@@ -594,7 +623,35 @@
 		});
 	}
 
+	function pickNextTab(tabs, nextTabs, index, tabId, currentActive) {
+		const keepActive = tabId === nativeTabId && currentActive !== tabId
+			? nextTabs.find(tab => tab.id === currentActive)
+			: null;
+		return keepActive || nextTabs[index - 1] || nextTabs[index] || nextTabs[nextTabs.length - 1];
+	}
+
+	async function confirmCloseTab(tabId, currentActive, next) {
+		const nextTabId = next ? next.id : '';
+		const canLeave = await requestWorkspaceLeave(tabId, {
+			reason: tabId === nativeTabId ? 'close-native-workspace-tab' : 'close-workspace-tab',
+			nextTabId,
+		});
+		if (!canLeave) return false;
+		if (tabId !== nativeTabId || !currentActive || currentActive === tabId) return true;
+		return requestWorkspaceLeave(currentActive, {
+			reason: 'navigate-after-close-native-workspace-tab',
+			nextTabId,
+		});
+	}
+
+	function removeClosedPane(tabId) {
+		const pane = document.querySelector(`#qlpkWorkspaceFrameHost [data-tab-id="${tabId}"]`);
+		if (pane && pane.id !== 'qlpkWorkspaceNativePane') pane.remove();
+	}
+
 	async function closeTab(tabId) {
+		const isCurrent = captureAccess();
+		if (!isCurrent()) return false;
 		const tabs = readTabs();
 		if (tabs.length <= 1) return false;
 		const index = tabs.findIndex(tab => tab.id === tabId);
@@ -602,25 +659,8 @@
 
 		const currentActive = activeTabId();
 		const nextTabs = tabs.filter(tab => tab.id !== tabId);
-		const next = (tabId === nativeTabId && currentActive !== tabId
-			? nextTabs.find(tab => tab.id === currentActive)
-			: null)
-			|| nextTabs[index - 1]
-			|| nextTabs[index]
-			|| nextTabs[nextTabs.length - 1];
-		const canLeave = await requestWorkspaceLeave(tabId, {
-			reason: tabId === nativeTabId ? 'close-native-workspace-tab' : 'close-workspace-tab',
-			nextTabId: next ? next.id : '',
-		});
-		if (!canLeave) return false;
-
-		if (tabId === nativeTabId && currentActive && currentActive !== tabId) {
-			const canLeaveActiveTab = await requestWorkspaceLeave(currentActive, {
-				reason: 'navigate-after-close-native-workspace-tab',
-				nextTabId: next ? next.id : '',
-			});
-			if (!canLeaveActiveTab) return false;
-		}
+		const next = pickNextTab(tabs, nextTabs, index, tabId, currentActive);
+		if (!(await confirmCloseTab(tabId, currentActive, next)) || !isCurrent()) return false;
 
 		saveTabs(nextTabs);
 		if (tabId === nativeTabId && next) {
@@ -629,16 +669,11 @@
 			return true;
 		}
 
-		const pane = document.querySelector(`#qlpkWorkspaceFrameHost [data-tab-id="${tabId}"]`);
-		if (pane && pane.id !== 'qlpkWorkspaceNativePane') pane.remove();
-
+		removeClosedPane(tabId);
 		if (currentActive === tabId) {
-			if (next) {
-				return activatePane(next.id, { skipLeaveGuard: true });
-			} else {
-				clearActiveTabId();
-				renderTabs();
-			}
+			if (next) return activatePane(next.id, { skipLeaveGuard: true });
+			clearActiveTabId();
+			renderTabs();
 			return true;
 		}
 
@@ -850,6 +885,30 @@
 	}
 
 	function init() {
+		const session = window.QLPKApiTransport?.session;
+		if (session && !sessionBound) {
+			sessionBound = true;
+			session.owner.subscribe(current => {
+				if (mountedUserId && current.status === 'authenticated'
+					&& String(current.session.user.id) !== mountedUserId) sessionBlocked = true;
+				if (mountedUserId && ['changed', 'expired', 'anonymous', 'auth-changing'].includes(current.status)) sessionBlocked = true;
+				const permitted = !sessionBlocked && current.status === 'authenticated';
+				const host = document.getElementById('qlpkWorkspaceFrameHost');
+				if (host) { host.hidden = !permitted; host.inert = !permitted; }
+				if (permitted && !initialized) init();
+				else if (permitted) { renderTabs(); renderLauncher(); }
+				else { renderTabs(); renderLauncher(); setLauncherOpen(false); }
+				if (sessionBlocked) window.QLPKUserFeedback?.show('error', 'Phiên đã thay đổi. Vui lòng tải lại trang trước khi tiếp tục.');
+			});
+			if (['unknown', 'loading'].includes(session.owner.snapshot().status)) {
+				void session.owner.ready().catch(() => {});
+			}
+		}
+		if (session) {
+			const current = session.owner.snapshot();
+			if (sessionBlocked || current.status !== 'authenticated') return;
+			mountedUserId = String(current.session.user.id);
+		}
 		if (!ensureCurrentTab()) return;
 		createWorkspaceHost();
 		watchShellMetrics();

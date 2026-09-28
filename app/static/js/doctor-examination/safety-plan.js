@@ -15,20 +15,11 @@ function safetyPlanGetState() {
 
 function safetyPlanGetPageRuntime() {
     const pageRuntime = medicalHistoryGetPageRuntime();
-    if (!pageRuntime || typeof pageRuntime.getAuthHeader !== 'function'
+    if (!pageRuntime || typeof pageRuntime.apiCall !== 'function'
         || typeof pageRuntime.showCustomToast !== 'function') {
         throw new Error('Thiếu page runtime cho safety plan');
     }
     return pageRuntime;
-}
-
-function safetyPlanGetAuthHeader() {
-    return safetyPlanGetPageRuntime().getAuthHeader() || '';
-}
-
-function safetyPlanGetAuthHeaders(extraHeaders = {}) {
-    const authHeader = safetyPlanGetAuthHeader();
-    return authHeader ? { ...extraHeaders, 'Authorization': authHeader } : extraHeaders;
 }
 
 function safetyPlanGetContextToken() {
@@ -64,14 +55,13 @@ async function safetyPlanLoadFamilyMembers(patientId, savedSupporters = [], opti
 
     let familyMembers = [];
     try {
-        const res  = await fetch(`/api/family-members/patient/${patientId}`, {
-            headers: safetyPlanGetAuthHeaders()
-        });
+        const res  = await fetch(`/api/family-members/patient/${patientId}`);
         const data = await res.json();
         if (!isCurrentLoad()) return false;
         // API trả { success: true, data: [...] }
         familyMembers = Array.isArray(data.data) ? data.data : [];
     } catch (e) {
+        if (String(e?.code || '').startsWith('session.')) throw e;
         if (!isCurrentLoad()) return false;
     }
 
@@ -210,10 +200,12 @@ async function safetyPlanOpenFile(event) {
     const contextToken = safetyPlanGetContextToken();
     const url = `/api/patients/${patientId}/safety-plan/file?t=${Date.now()}`;
     try {
-        const res = await fetch(url, { headers: safetyPlanGetAuthHeaders() });
+        const res = await fetch(url);
         if (!safetyPlanIsCurrent(patientId, contextToken)) return;
         if (res.ok) {
-            const blobUrl = URL.createObjectURL(await res.blob());
+            const blob = await res.blob();
+            if (!safetyPlanIsCurrent(patientId, contextToken)) return;
+            const blobUrl = URL.createObjectURL(blob);
             window.open(blobUrl, '_blank');
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } else if (res.status === 404) {
@@ -221,12 +213,13 @@ async function safetyPlanOpenFile(event) {
             if (!safetyPlanIsCurrent(patientId, contextToken)) return;
             safetyPlanUpdateFileStatus('');
             await safetyPlanClearUploadedFile(patientId, { contextToken });
+            if (!safetyPlanIsCurrent(patientId, contextToken)) return;
             safetyPlanToast('error', 'File không còn tồn tại trên server. Vui lòng upload lại.');
         } else {
             safetyPlanToast('error', 'Không thể mở file kế hoạch an toàn.');
         }
     } catch (error) {
-        safetyPlanToast('error', 'Không thể mở tệp. Vui lòng thử lại.');
+        if (safetyPlanIsCurrent(patientId, contextToken)) safetyPlanToast('error', 'Không thể mở tệp. Vui lòng thử lại.');
     }
 }
 
@@ -241,7 +234,7 @@ async function safetyPlanClearUploadedFile(patientId, options = {}) {
     planData.uploaded_file = null;    // explicit clear — đây là 1 nguồn duy nhất
     const response = await fetch(`/api/patients/${patientId}`, {
         method: 'PUT',
-        headers: safetyPlanGetAuthHeaders({ 'Content-Type': 'application/json' }),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ safety_plan: planData })
     });
     if (!response.ok) throw new Error('Không thể cập nhật trạng thái file kế hoạch an toàn.');
@@ -270,34 +263,30 @@ async function safetyPlanHandleUpload(input) {
 
         const res  = await fetch(`/api/patients/${patientId}/safety-plan/upload`, {
             method: 'POST',
-            headers: safetyPlanGetAuthHeaders(),
             body: formData
         });
         const data = await res.json();
 
-        if (res.ok && data.success && safetyPlanIsCurrent(patientId, contextToken)) {
+        if (!safetyPlanIsCurrent(patientId, contextToken)) return;
+        if (res.ok && data.success) {
             safetyPlanUpdateFileStatus(data.file_path);
             safetyPlanToast('success', 'Upload thành công!');
-        } else if (res.ok && data.success) {
-            return;
         } else {
             safetyPlanToast('error', 'Không thể tải kế hoạch an toàn lên. Vui lòng thử lại.');
         }
     } catch (e) {
-        safetyPlanToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
+        if (safetyPlanIsCurrent(patientId, contextToken)) safetyPlanToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
     } finally {
         if (labelEl && safetyPlanIsCurrent(patientId, contextToken)) {
             labelEl.innerHTML = '<i class="bi bi-upload" aria-hidden="true"></i><span>Upload bản đã ký</span>';
         }
-        input.value = '';
+        if (safetyPlanIsCurrent(patientId, contextToken)) input.value = '';
     }
 }
 
 medicalHistoryGetComponent().registerActions({
     getSafetyPlanState: safetyPlanGetState,
     getPageRuntime: safetyPlanGetPageRuntime,
-    getAuthHeader: safetyPlanGetAuthHeader,
-    getAuthHeaders: safetyPlanGetAuthHeaders,
     loadFamilyMembers: safetyPlanLoadFamilyMembers,
     populatePlan: safetyPlanPopulatePlan,
     resetPlan: safetyPlanResetPlan,

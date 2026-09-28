@@ -34,9 +34,6 @@ $(function () {
 		$.ajax({
 			url: '/users/doctors',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			success: function (res) {
 				doctors = res;
 				window.AppointmentManagementDoctorControlsUtils.populateMainDoctorControls($, doctors);
@@ -54,11 +51,7 @@ $(function () {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
-					autoLogin().then(() => {
-						loadDoctors(); // Retry after login
-					}).catch(() => {
-						showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-					});
+					showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
 				} else {
 					showCustomToast('error', 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
 				}
@@ -81,39 +74,9 @@ $(function () {
 
 	// Setup doctorFilter theo role của user hiện tại
 	function setupDoctorFilterForCurrentUser() {
-		// Lấy user info từ localStorage hoặc API
-		let currentUser = null;
-		try {
-			const userStr = localStorage.getItem('qlpk_user');
-			if (userStr) {
-				currentUser = JSON.parse(userStr);
-			}
-		} catch (e) {
-			console.warn('Could not parse user from localStorage:', e);
-		}
-
-		// Nếu không có trong localStorage, gọi API
-		if (!currentUser || !currentUser.id) {
-			$.ajax({
-				url: '/users/me',
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
-				success: function (userData) {
-					currentUser = userData;
-					if (currentUser) {
-						localStorage.setItem('qlpk_user', JSON.stringify(currentUser));
-					}
-					applyDoctorFilterSettings(currentUser);
-				},
-				error: function () {
-					console.warn('Could not get current user info');
-				}
-			});
-		} else {
-			applyDoctorFilterSettings(currentUser);
-		}
+		window.QLPKApiTransport.currentUser().then(currentUser => {
+			if (currentUser && currentUser.id) applyDoctorFilterSettings(currentUser);
+		});
 	}
 
 	// Áp dụng cài đặt filter theo user role
@@ -197,12 +160,6 @@ $(function () {
 		});
 	}
 
-	function getAuthHeaders() {
-		return {
-			'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-		};
-	}
-
 	function abortActiveRequest(request) {
 		if (request && request.readyState !== 4) {
 			request.abort();
@@ -238,7 +195,6 @@ $(function () {
 		appointmentsRequest = $.ajax({
 			url: url,
 			method: 'GET',
-			headers: getAuthHeaders(),
 			success: function (res) {
 				deferred.resolve(res.appointments || []);
 			},
@@ -250,18 +206,8 @@ $(function () {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
-					autoLogin().then(() => {
-						loadAppointmentsData(dateFrom, dateTo, { abortPrevious: false })
-							.done(function (appointments) {
-								deferred.resolve(appointments);
-							})
-							.fail(function (retryStatus) {
-								deferred.reject(retryStatus);
-							});
-					}).catch(() => {
-						showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-						deferred.resolve([]);
-					});
+					showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
+					deferred.reject('unauthorized');
 				} else {
 					deferred.resolve([]);
 				}
@@ -305,7 +251,6 @@ $(function () {
 		$.ajax({
 			url: '/holidays/',
 			method: 'GET',
-			headers: getAuthHeaders(),
 			success: function (holidays) {
 				cachedHolidays = Array.isArray(holidays) ? holidays : [];
 				deferred.resolve(cachedHolidays);
@@ -345,7 +290,6 @@ $(function () {
 		busySchedulesRequest = $.ajax({
 			url: url,
 			method: 'GET',
-			headers: getAuthHeaders(),
 			success: function (res) {
 				if (res.success && res.data) {
 					deferred.resolve(res.data);
@@ -459,7 +403,6 @@ $(function () {
 			url: '/api/check-doctor-availability',
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`,
 				'Content-Type': 'application/json'
 			},
 			data: JSON.stringify({
@@ -508,16 +451,7 @@ $(function () {
 
 	// Helper function để lấy user role từ localStorage
 	function getCurrentUserRole() {
-		try {
-			const userStr = localStorage.getItem('qlpk_user');
-			if (userStr) {
-				const currentUser = JSON.parse(userStr);
-				return (currentUser.role || '').toUpperCase();
-			}
-		} catch (e) {
-			console.warn('Could not parse user from localStorage:', e);
-		}
-		return '';
+		return String(window.QLPKApiTransport.userSnapshot().role || '').toUpperCase();
 	}
 
 	// Hàm cập nhật viewAppointments theo filter hiện tại
@@ -684,10 +618,7 @@ $(function () {
 		const statusCounts = window.AppointmentManagementFilterUtils.countByStatus(filteredAppointments);
 
 		// Cập nhật số lượng cho các badge
-		$('#pendingCount').text(statusCounts.SCHEDULED);
-		$('#confirmedCount').text(statusCounts.CONFIRMED);
-		$('#overdueCount').text(statusCounts.NO_SHOW);
-		$('#cancelledCount').text(statusCounts.CANCELLED);
+		window.QLPKAppointmentCalendar.renderStatusCounts(document.querySelector('.appt-status-list'), statusCounts);
 	}
 
 	// Sự kiện filter - date picker đã được xóa khỏi UI
@@ -709,7 +640,6 @@ $(function () {
 			document,
 			selectedDoctor,
 			selectedRoleFilter,
-			getToken: () => localStorage.getItem('qlpk_token'),
 			showCustomToast
 		});
 	}
@@ -770,9 +700,6 @@ $(function () {
 		$.ajax({
 			url: '/users/doctors',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			success: function (res) {
 				window.AppointmentManagementDoctorControlsUtils.populateDoctorSelect($, '#addDoctor', res, 'Chọn bác sĩ');
 			},
@@ -780,11 +707,7 @@ $(function () {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
-					autoLogin().then(() => {
-						loadDoctorsForAdd(); // Retry after login
-					}).catch(() => {
-						showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-					});
+					showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
 				} else {
 					showCustomToast('error', 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
 				}
@@ -831,24 +754,9 @@ $(function () {
 		const calendarEl = document.getElementById('calendar');
 		if (!calendarEl) return;
 
-		calendar = new FullCalendar.Calendar(calendarEl, {
-			initialView: 'dayGridMonth',
-			locale: 'vi',
-			dayHeaderFormat: { weekday: 'short' },
+		calendar = window.QLPKAppointmentCalendar.create(calendarEl, {
 			timeZone: 'local', // Đảm bảo sử dụng timezone local
-			headerToolbar: {
-				left: 'today prev,next title',
-				center: '',
-				right: 'timeGridWeek,dayGridMonth'
-			},
-			buttonText: {
-				today: 'Hôm nay',
-				day: 'Ngày',
-				week: 'Tuần',
-				month: 'Tháng'
-			},
 			// Title sẽ được format lại trong datesSet callback
-			height: '100%',
 			expandRows: true,
 			allDaySlot: false, // Bỏ all-day slot
 			slotDuration: '01:00:00', // Slot 1 giờ match doctor
@@ -885,18 +793,9 @@ $(function () {
 			editable: true,
 			selectable: true,
 			selectMirror: true,
-			dayMaxEvents: true, // Tự tính dựa trên chiều cao ô
 			moreLinkClick: 'popover', // Hiển thị popover khi có quá nhiều events
 			weekends: true,
-			fixedWeekCount: true,
 			datesSet: function (info) {
-				// Toolbar chỉ giữ phạm vi tháng để giảm nhiễu trong vùng calendar.
-				const d = info.view.currentStart;
-				const titleEl = calendarEl.querySelector('.fc-toolbar-title');
-				if (titleEl) {
-					titleEl.textContent = `Tháng ${d.getMonth() + 1}, ${d.getFullYear()}`;
-				}
-
 				// Load appointments theo range của view hiện tại
 				const start = info.start || info.view.activeStart;
 				const end = info.end || info.view.activeEnd;
@@ -906,11 +805,6 @@ $(function () {
 			},
 			events: [],
 			eventDisplay: 'block', // Đảm bảo hiển thị
-			eventTimeFormat: {
-				hour: '2-digit',
-				minute: '2-digit',
-				hour12: false
-			},
 			eventOverlap: false, // Tránh overlap events
 			slotEventOverlap: false, // Tránh overlap trong slot
 			eventConstraint: {
@@ -1001,11 +895,8 @@ $(function () {
 			},
 			dateClick: function (info) {
 				openAddModal(info.dateStr);
-			},
-			eventContent: function (arg) {
-				return window.AppointmentManagementCalendarEventContentUtils.buildEventContent(arg, { doctors });
 			}
-		});
+		}, { getDoctors: () => doctors });
 
 		calendar.render();
 		bindCalendarResizeObserver(calendarEl);
@@ -1064,9 +955,6 @@ $(function () {
 			url: `/api/${numericId}`,
 			method: 'PUT',
 			contentType: 'application/json',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			data: JSON.stringify(updateData),
 			success: function (response) {
 				showCustomToast('success', 'Đã cập nhật giờ hẹn thành công!');
@@ -1134,9 +1022,6 @@ $(function () {
 			url: `/api/${numericId}`,
 			method: 'PUT',
 			contentType: 'application/json',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			data: JSON.stringify(updateData),
 			success: function (response) {
 				showCustomToast('success', 'Đã cập nhật thời gian lịch hẹn!');
@@ -1224,9 +1109,6 @@ $(function () {
 			$.ajax({
 				url: `/api/${actualAppointmentId}/edit`,
 				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
 				success: async function (detailed) {
 					// Bỏ qua response cũ nếu user đã đóng modal hoặc mở lịch hẹn khác
 					if ($('#editAppointmentModal').data('appointmentId') !== actualAppointmentId) return;
@@ -1257,9 +1139,6 @@ $(function () {
 		return $.ajax({
 			url: '/users/doctors',
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			success: function (res) {
 				doctors = res;
 				window.AppointmentManagementDoctorControlsUtils.populateDoctorSelect($, '#editDoctor', doctors, 'Chọn bác sĩ');
@@ -1268,11 +1147,7 @@ $(function () {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
-					autoLogin().then(() => {
-						loadDoctorsForEdit(); // Retry after login
-					}).catch(() => {
-						showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-					});
+					showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
 				} else {
 					showCustomToast('error', 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
 				}
@@ -1519,9 +1394,6 @@ $(function () {
 				url: `/api/${appointmentId}`,
 				method: 'PUT',
 				contentType: 'application/json',
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-				},
 				data: JSON.stringify(formData),
 				timeout: 30000,
 				success: function (response) {
@@ -1758,9 +1630,6 @@ $(function () {
 			url: `/api/appointments/${appointmentId}/cancel`,
 			type: 'DELETE',
 			contentType: 'application/json',
-			headers: {
-				'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-			},
 			data: force ? JSON.stringify({ force: true }) : undefined,
 			success: function (response) {
 				showCustomToast('success', 'Đã xóa lịch hẹn thành công!');
@@ -2056,9 +1925,6 @@ $(function () {
 					url: `/api/${appointmentId}`,
 					method: 'PUT',
 					contentType: 'application/json',
-					headers: {
-						'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-					},
 						data: JSON.stringify({
 							status: normalizedStatus
 						}),
@@ -2263,13 +2129,13 @@ $(function () {
 	function loadCalendarStatus() {
 		return window.AppointmentManagementCalendarConnectionUtils.loadCalendarStatus({
 			$,
-			getToken: () => localStorage.getItem('qlpk_token')
+			hasSession: () => window.QLPKApiTransport.hasSession()
 		});
 	}
 
 	window.AppointmentManagementCalendarConnectionUtils.initializeCalendarConnection({
 		$,
-		getToken: () => localStorage.getItem('qlpk_token'),
+		hasSession: () => window.QLPKApiTransport.hasSession(),
 		loadCalendarStatus,
 		onReady: initSyncCalendarModal,
 		showCustomToast,
@@ -2287,7 +2153,6 @@ $(function () {
 			customModal: CustomModal,
 			filterSyncTable,
 			flatpickrInstance: typeof flatpickr !== 'undefined' ? flatpickr : null,
-			getToken: () => localStorage.getItem('qlpk_token'),
 			loadSyncData,
 			showCustomToast,
 			syncAppointments,
@@ -2303,7 +2168,7 @@ $(function () {
 			$,
 			controlsUtils: window.AppointmentManagementCalendarSyncControlsUtils,
 			filterUtils: window.AppointmentManagementCalendarSyncFilterUtils,
-			getToken: () => localStorage.getItem('qlpk_token'),
+			hasSession: () => window.QLPKApiTransport.hasSession(),
 			renderSyncTable,
 			showCustomToast,
 			statusUtils: window.AppointmentManagementCalendarSyncStatusUtils,

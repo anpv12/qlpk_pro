@@ -90,22 +90,33 @@
 				&& this.options.isEnabled();
 		}
 
+		viewportBox() {
+			const viewport = this.view.visualViewport;
+			return {
+				top: viewport?.offsetTop || 0,
+				left: viewport?.offsetLeft || 0,
+				width: viewport?.width || this.view.innerWidth,
+				height: viewport?.height || this.view.innerHeight
+			};
+		}
+
+		// The control belongs to its scroll panel; only the popup occupies the top layer.
+		isClippedByScrollParent(rect) {
+			for (let parent = this.control.parentElement; parent; parent = parent.parentElement) {
+				const style = this.view.getComputedStyle(parent);
+				if (!/(auto|scroll|hidden|clip)/.test(style.overflowY)) continue;
+				const bounds = parent.getBoundingClientRect();
+				if (rect.bottom <= bounds.top || rect.top >= bounds.bottom) return true;
+			}
+			return false;
+		}
+
 		position() {
 			if (!this.isOpen) return;
 			if (!this.enabled() || !this.control.getClientRects().length) { this.close(); return; }
 			const rect = this.control.getBoundingClientRect();
-			const viewport = this.view.visualViewport;
-			const top = viewport?.offsetTop || 0, left = viewport?.offsetLeft || 0;
-			const width = viewport?.width || this.view.innerWidth, height = viewport?.height || this.view.innerHeight;
-			// The control belongs to its scroll panel; only the popup occupies the top layer.
-			for (let parent = this.control.parentElement; parent; parent = parent.parentElement) {
-				const style = this.view.getComputedStyle(parent);
-				if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) {
-					const bounds = parent.getBoundingClientRect();
-					if (rect.bottom <= bounds.top || rect.top >= bounds.bottom) { this.close(); return; }
-				}
-			}
-			if (rect.bottom <= top || rect.top >= top + height) { this.close(); return; }
+			const { top, left, width, height } = this.viewportBox();
+			if (this.isClippedByScrollParent(rect) || rect.bottom <= top || rect.top >= top + height) { this.close(); return; }
 			const rem = parseFloat(this.view.getComputedStyle(this.doc.documentElement).fontSize);
 			const gap = rem * 0.25, margin = rem * 0.5;
 			const below = Math.max(0, top + height - rect.bottom - gap - margin);
@@ -289,13 +300,30 @@
 			});
 		}
 
+		handleDismissKey(event) {
+			if (event.key === 'Escape' && this.isOpen) { event.preventDefault(); event.stopPropagation(); }
+			this.close();
+		}
+
+		scrollActiveOptionIntoView() {
+			const active = this.getOptionElements()[this.activeIndex];
+			if (!active) return;
+			if (active.offsetTop < this.list.scrollTop) this.list.scrollTop = active.offsetTop;
+			else if (active.offsetTop + active.offsetHeight > this.list.scrollTop + this.list.clientHeight) this.list.scrollTop = active.offsetTop + active.offsetHeight - this.list.clientHeight;
+		}
+
+		async moveActiveOption(direction) {
+			if (!this.isOpen) { await this.open(); return; }
+			if (direction > 0 && this.activeIndex === this.currentItems.length - 1 && this.pagination?.has_next) await this.loadMore();
+			if (!this.isOpen || !this.currentItems.length) return;
+			this.activeIndex = Math.max(0, Math.min(this.currentItems.length - 1, this.activeIndex + direction));
+			this.updateActiveOption();
+			this.scrollActiveOptionIntoView();
+		}
+
 		async handleKeydown(event) {
 			if (event.isComposing) return;
-			if (event.key === 'Escape' || event.key === 'Tab') {
-				if (event.key === 'Escape' && this.isOpen) { event.preventDefault(); event.stopPropagation(); }
-				this.close();
-				return;
-			}
+			if (event.key === 'Escape' || event.key === 'Tab') { this.handleDismissKey(event); return; }
 			if (!this.enabled()) return;
 			if (event.key === 'Enter') {
 				event.preventDefault();
@@ -304,14 +332,7 @@
 			}
 			if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
 			event.preventDefault();
-			if (!this.isOpen) { await this.open(); return; }
-			if (event.key === 'ArrowDown' && this.activeIndex === this.currentItems.length - 1 && this.pagination?.has_next) await this.loadMore();
-			if (!this.isOpen || !this.currentItems.length) return;
-			this.activeIndex = Math.max(0, Math.min(this.currentItems.length - 1, this.activeIndex + (event.key === 'ArrowDown' ? 1 : -1)));
-			this.updateActiveOption();
-			const active = this.getOptionElements()[this.activeIndex];
-			if (active.offsetTop < this.list.scrollTop) this.list.scrollTop = active.offsetTop;
-			else if (active.offsetTop + active.offsetHeight > this.list.scrollTop + this.list.clientHeight) this.list.scrollTop = active.offsetTop + active.offsetHeight - this.list.clientHeight;
+			await this.moveActiveOption(event.key === 'ArrowDown' ? 1 : -1);
 		}
 
 		isSelected(item) { return this.selected.some(value => this.options.getKey(value) === this.options.getKey(item)); }

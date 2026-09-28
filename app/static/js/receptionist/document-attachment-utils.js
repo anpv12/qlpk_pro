@@ -17,10 +17,6 @@
 		return options && options.fetch ? options.fetch : window.fetch.bind(window);
 	}
 
-	function getAuthHeader(options) {
-		return options && typeof options.getAuthHeader === 'function' ? options.getAuthHeader() : null;
-	}
-
 	function showToast(options, type, message) {
 		if (options && typeof options.showToast === 'function') {
 			options.showToast(type, message);
@@ -100,9 +96,38 @@
 		return true;
 	}
 
+	async function readUploadedAttachment(response) {
+		try {
+			return await response.json();
+		} catch (error) {
+			if (String(error?.code || '').startsWith('session.')) throw error;
+			return null;
+		}
+	}
+
+	async function completeUpload(uploadedAttachment, options, flags) {
+		if (!flags.isDraft && uploadedAttachment && typeof options.onUploadSuccess === 'function') {
+			options.onUploadSuccess(uploadedAttachment);
+		}
+		if (flags.shouldShowToast) showToast(options, 'success', 'Tải lên tài liệu thành công');
+		if (!flags.isDraft && !uploadedAttachment && typeof options.reloadAttachments === 'function') {
+			await options.reloadAttachments();
+		}
+		return uploadedAttachment || true;
+	}
+
+	function showUploadFailure(response, options, shouldShowToast) {
+		if (!shouldShowToast) return;
+		const message = response.status === 413
+			? `Tệp quá lớn. Vui lòng chọn tệp không quá ${options.maxSizeMb || 50} MB.`
+			: 'Không thể tải tài liệu lên. Vui lòng thử lại.';
+		showToast(options, 'error', message);
+	}
+
 	async function uploadFile(file, patientId, options = {}) {
-		const isDraft = Boolean(options.isDraft);
-		const shouldShowToast = options.shouldShowToast !== false;
+		const isCurrentContext = () => options.isCurrentContext?.() !== false;
+		if (!isCurrentContext()) return false;
+		const flags = { isDraft: Boolean(options.isDraft), shouldShowToast: options.shouldShowToast !== false };
 
 		if (!validateFile(file, options)) {
 			return false;
@@ -111,40 +136,20 @@
 		try {
 			const form = getFormData(options);
 			form.append('file', file);
-			const auth = getAuthHeader(options);
 			const response = await getFetch(options)(`/attachments/patients/${patientId}/attachments`, {
 				method: 'POST',
-				body: form,
-				headers: auth ? { 'Authorization': auth } : undefined
+				body: form
 			});
-
+			if (!isCurrentContext()) return false;
 			if (response.ok) {
-				let uploadedAttachment = null;
-				try {
-					uploadedAttachment = await response.json();
-				} catch (e) { }
-				if (!isDraft && uploadedAttachment && typeof options.onUploadSuccess === 'function') {
-					options.onUploadSuccess(uploadedAttachment);
-				}
-				if (shouldShowToast) {
-					showToast(options, 'success', 'Tải lên tài liệu thành công');
-				}
-				if (!isDraft && !uploadedAttachment && typeof options.reloadAttachments === 'function') {
-					await options.reloadAttachments();
-				}
-				return uploadedAttachment || true;
+				const uploadedAttachment = await readUploadedAttachment(response);
+				if (!isCurrentContext()) return false;
+				return completeUpload(uploadedAttachment, options, flags);
 			}
-
-			if (shouldShowToast) {
-				if (response.status === 413) {
-					showToast(options, 'error', `Tệp quá lớn. Vui lòng chọn tệp không quá ${options.maxSizeMb || 50} MB.`);
-				} else {
-					showToast(options, 'error', 'Không thể tải tài liệu lên. Vui lòng thử lại.');
-				}
-			}
+			showUploadFailure(response, options, flags.shouldShowToast);
 			return false;
 		} catch (e) {
-			if (shouldShowToast) {
+			if (isCurrentContext() && flags.shouldShowToast) {
 				showToast(options, 'error', 'Không thể tải tài liệu lên. Vui lòng thử lại.');
 			}
 			return false;
@@ -152,6 +157,8 @@
 	}
 
 	async function openAttachmentPreviewInNewTab(attachmentId, filename, options = {}) {
+		const isCurrentContext = () => options.isCurrentContext?.() !== false;
+		if (!isCurrentContext()) return;
 		const ext = ((filename || '').split('.').pop() || '').toLowerCase();
 		if (ext === 'doc' || ext === 'docx') {
 			await downloadAttachmentWithAuth(attachmentId, filename, options);
@@ -159,11 +166,10 @@
 		}
 
 		try {
-			const auth = getAuthHeader(options);
 			const response = await getFetch(options)(getAttachmentUrl(attachmentId, 'preview'), {
-				method: 'GET',
-				headers: auth ? { 'Authorization': auth } : {}
+				method: 'GET'
 			});
+			if (!isCurrentContext()) return;
 			if (!response.ok) {
 				if (response.status === 401) {
 					showToast(options, 'error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -178,6 +184,7 @@
 			}
 
 			const blob = await response.blob();
+			if (!isCurrentContext()) return;
 			const urlApi = getURL(options);
 			const url = urlApi.createObjectURL(blob);
 			const tab = getWindow(options).open(url, '_blank');
@@ -186,18 +193,20 @@
 			}
 			getWindow(options).setTimeout(() => urlApi.revokeObjectURL(url), 30000);
 		} catch (error) {
+			if (!isCurrentContext()) return;
 			console.error('openAttachmentPreviewInNewTab error:', error);
 			showToast(options, 'error', 'Lỗi khi mở preview tài liệu.');
 		}
 	}
 
 	async function downloadAttachmentWithAuth(attachmentId, filename, options = {}) {
+		const isCurrentContext = () => options.isCurrentContext?.() !== false;
+		if (!isCurrentContext()) return;
 		try {
-			const auth = getAuthHeader(options);
 			const response = await getFetch(options)(getAttachmentUrl(attachmentId, 'download'), {
-				method: 'GET',
-				headers: auth ? { 'Authorization': auth } : {}
+				method: 'GET'
 			});
+			if (!isCurrentContext()) return;
 
 			if (!response.ok) {
 				if (response.status === 401) {
@@ -209,6 +218,7 @@
 			}
 
 			const blob = await response.blob();
+			if (!isCurrentContext()) return;
 			const doc = getDocument(options);
 			const urlApi = getURL(options);
 			const objectUrl = urlApi.createObjectURL(blob);
@@ -220,6 +230,7 @@
 			a.remove();
 			urlApi.revokeObjectURL(objectUrl);
 		} catch (error) {
+			if (!isCurrentContext()) return;
 			console.error('downloadAttachmentWithAuth error:', error);
 			showToast(options, 'error', 'Lỗi khi tải tài liệu.');
 		}
@@ -243,6 +254,10 @@
 	}
 
 	async function deleteDraftDocument(docId, options = {}) {
+		const getDocuments = () => options.getUploadedDocuments?.() || [];
+		const target = getDocuments().find(item => String(item.id) === String(docId));
+		const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+		if (!target || !isCurrentContext()) return false;
 		const showConfirmationDialog = options.showConfirmationDialog || options.confirmDelete;
 		if (typeof showConfirmationDialog !== 'function') return false;
 		const confirmed = await showConfirmationDialog({
@@ -253,11 +268,11 @@
 			variant: 'danger',
 			showToast: options.showToast
 		});
-		if (!confirmed) return false;
+		if (!confirmed || !isCurrentContext() || !getDocuments().includes(target)) return false;
 
 		const documents = typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
 		if (typeof options.setUploadedDocuments === 'function') {
-			options.setUploadedDocuments(documents.filter(item => String(item.id) !== String(docId)));
+			options.setUploadedDocuments(documents.filter(item => item !== target));
 		}
 		if (typeof options.renderDocumentsList === 'function') {
 			options.renderDocumentsList();

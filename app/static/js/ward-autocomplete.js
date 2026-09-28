@@ -41,12 +41,7 @@ class WardAutocomplete extends AutocompleteBase {
 		}
 
 		try {
-			const token = localStorage.getItem('qlpk_token');
-			const response = await fetch(`/api/vietnam-address/regions/${this.provinceCode}/units`, {
-				headers: {
-					'Authorization': `Bearer ${token}`
-				}
-			});
+			const response = await fetch(`/api/vietnam-address/regions/${this.provinceCode}/units`);
 
 			if (response.ok) {
 				const data = await response.json();

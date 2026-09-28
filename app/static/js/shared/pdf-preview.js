@@ -22,14 +22,13 @@
         try {
             const document = new DOMParser().parseFromString(html, 'text/html');
             await inlineVerificationImages(document);
-            const token = window.localStorage.getItem('qlpk_token') || window.localStorage.getItem('token') || window.sessionStorage.getItem('qlpk_token') || '';
             const controller = new AbortController();
             const timeout = window.setTimeout(() => controller.abort(), 55000);
             let response;
             try {
                 response = await window.fetch('/api/print/preview.pdf', {
                     method: 'POST',
-                    headers: {'Content-Type': 'text/html; charset=utf-8', 'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`},
+                    headers: {'Content-Type': 'text/html; charset=utf-8'},
                     body: '<!DOCTYPE html>' + document.documentElement.outerHTML,
                     signal: controller.signal
                 });

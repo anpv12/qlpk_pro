@@ -21,15 +21,69 @@ let currentTab = 'prescriptions'; // 'prescriptions' | 'inventory' | 'prescripti
 let expandedDoctors = new Set();
 let ledgerPage = 1;
 let ledgerRequest = 0;
+let ledgerMedicinePage = 1;
+let ledgerMedicineRequest = 0;
+let ledgerMedicineId = null;
+
+async function loadDispensingMedicines(page = 1) {
+	const requestId = ++ledgerMedicineRequest;
+	const params = new URLSearchParams(getFilterParams());
+	params.set('view', 'medicines');
+	params.set('page', page);
+	params.set('per_page', 20);
+	const rows = document.getElementById('ledgerMedicineRows');
+	const status = document.getElementById('ledgerMedicineStatus');
+	rows.replaceChildren();
+	status.textContent = 'Đang tải thống kê...';
+	document.getElementById('ledgerMedicinePage').textContent = '';
+	document.getElementById('ledgerMedicinePrevious').disabled = true;
+	document.getElementById('ledgerMedicineNext').disabled = true;
+	try {
+		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: getAuthHeaders() });
+		if (!response.ok) throw new Error('Không tải được thống kê');
+		const data = await response.json();
+		if (requestId !== ledgerMedicineRequest) return;
+		ledgerMedicinePage = data.page;
+		status.textContent = data.medicines.length ? 'Chọn tên thuốc để xem từng lần bốc, giá và lô. Số tiền chỉ cộng phần có dữ liệu; thiếu dữ liệu không có nghĩa là 0đ.' : 'Không có thuốc trong khoảng ngày này.';
+		const money = value => value == null ? 'Chưa rõ' : formatMoney(value);
+		data.medicines.forEach(item => {
+			const row = rows.insertRow();
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.dataset.qlpkButton = 'view';
+			button.className = 'btn btn-sm';
+			button.textContent = `${item.medicine_name} / ${item.unit || 'Chưa rõ đơn vị'}`;
+			button.addEventListener('click', () => {
+				ledgerMedicineId = item.medicine_id;
+				document.getElementById('ledgerAllMedicines').hidden = false;
+				loadDispensingLedger();
+			});
+			row.insertCell().append(button);
+			const count = item.untracked_export_rows ? `${item.dispensing_count} đã xác định; ${item.untracked_export_rows} dòng chưa rõ` : item.dispensing_count;
+			[count, item.visit_count, item.exported_quantity, item.returned_quantity, item.net_quantity,
+				money(item.recorded_revenue), money(item.recorded_cost), item.incomplete_rows ? 'Chưa đủ dữ liệu' : money(item.gross_margin_complete_rows),
+				`${item.incomplete_rows} dòng`].forEach(value => { row.insertCell().textContent = value; });
+		});
+		document.getElementById('ledgerMedicinePage').textContent = `Trang ${data.page}/${Math.max(1, data.total_pages)} · ${data.total} thuốc`;
+		document.getElementById('ledgerMedicinePrevious').disabled = data.page <= 1;
+		document.getElementById('ledgerMedicineNext').disabled = data.page >= data.total_pages;
+	} catch (error) {
+		if (requestId === ledgerMedicineRequest) status.textContent = 'Không tải được thống kê; kiểm tra khoảng ngày và thử lại.';
+	}
+}
 
 async function loadDispensingLedger(page = 1) {
 	const requestId = ++ledgerRequest;
 	const params = new URLSearchParams(getFilterParams());
 	params.set('page', page);
 	const summary = document.getElementById('ledgerSummary');
+	if (ledgerMedicineId !== null) params.set('medicine_id', ledgerMedicineId);
 	const rows = document.getElementById('ledgerRows');
 	rows.replaceChildren();
 	summary.textContent = 'Đang tải giao dịch...';
+	document.getElementById('ledgerPage').textContent = '';
+	document.getElementById('ledgerPrevious').disabled = true;
+	document.getElementById('ledgerNext').disabled = true;
 	try {
 		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: getAuthHeaders() });
 		if (!response.ok) throw new Error('Không tải được giao dịch');
@@ -45,6 +99,8 @@ async function loadDispensingLedger(page = 1) {
 			const row = rows.insertRow();
 			const values = [`${item.created_at} · ${labels[item.type] || item.type} #${item.id}${item.original_transaction_id ? ` ← #${item.original_transaction_id}` : ''}`, `${item.patient_name || 'Chưa rõ'} / #${item.appointment_id || '?'} (${item.appointment_date || 'Chưa rõ ngày khám'})`, `${item.medicine_name}${item.financial_trace_complete ? '' : ' — Thiếu truy vết'}`, `${item.receipt_reference || '?'} / ${item.batch_number || '?'}`, item.quantity, money(item.unit_cost_snapshot), money(item.sale_unit_price), money(item.sale_amount_delta)];
 			values.splice(5, 0, balance(item.balance_after, item.unit), balance(item.stock_balance_after, item.unit));
+			values[0] += ` · Lần lưu: ${item.operation_id ? item.operation_id.slice(0, 8) : 'Chưa rõ'}`;
+			row.title = item.operation_id ? `Mã lần lưu đầy đủ: ${item.operation_id}` : 'Chưa rõ lần lưu';
 			values.forEach(value => { row.insertCell().textContent = value; });
 		});
 		if (!data.transactions.length) rows.insertRow().insertCell().textContent = 'Không có giao dịch trong bộ lọc này.';
@@ -96,6 +152,23 @@ function initDatePickers() {
 }
 
 function setupEventListeners() {
+	document.getElementById('ledgerMedicinePrevious')?.addEventListener('click', () => loadDispensingMedicines(ledgerMedicinePage - 1));
+	document.getElementById('ledgerMedicineNext')?.addEventListener('click', () => loadDispensingMedicines(ledgerMedicinePage + 1));
+	document.getElementById('ledgerAllMedicines')?.addEventListener('click', () => {
+		ledgerMedicineId = null;
+		document.getElementById('ledgerAllMedicines').hidden = true;
+		loadDispensingLedger();
+	});
+	document.getElementById('ledgerThisMonth')?.addEventListener('click', () => {
+		const today = new Date();
+		const dates = { dateFrom: new Date(today.getFullYear(), today.getMonth(), 1), dateTo: today };
+		Object.entries(dates).forEach(([id, date]) => {
+			const input = document.getElementById(id);
+			if (input._flatpickr) input._flatpickr.setDate(date, false);
+			else input.value = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+		});
+		applyFilters();
+	});
 	document.getElementById('ledgerPrevious')?.addEventListener('click', () => loadDispensingLedger(ledgerPage - 1));
 	document.getElementById('ledgerNext')?.addEventListener('click', () => loadDispensingLedger(ledgerPage + 1));
 	// Tab switching - Hook into Bootstrap tabs
@@ -314,7 +387,6 @@ function updateSummaryCards(data) {
 	
 	el('totalRevenue').textContent = formatMoney(data.total_revenue);
 
-	// Lượt bốc thuốc: big number = total_dispensed, label = tổng viên
 	const dispensedEl = el('totalDispensed');
 	if (dispensedEl) dispensedEl.textContent = formatNumber(data.total_dispensed);
 
@@ -417,7 +489,7 @@ function renderPrescriptionsTable(data) {
 			if (pres) {
 				row.dataset.prescription = pres.id;
 				medicineTd = `<td>
-					<span class="medicine-toggle" onclick="toggleMedicineDetail(${pres.id})">
+					<span class="medicine-toggle" data-qlpk-call="toggleMedicineDetail" data-qlpk-args='[${pres.id}]'>
 						<span><i class="bi bi-caret-right-fill me-1" id="medIcon${pres.id}"></i><strong class="summary-qty">${pres.total_medicine_items}</strong> <small class="fw-semibold">Thuốc</small></span>
 						<span class="badge badge-type">${pres.medicine_count} Loại</span>
 					</span>
@@ -778,6 +850,9 @@ function convertDateFormat(dateStr) {
 
 function applyFilters() {
 	if (currentTab === 'ledger') {
+		ledgerMedicineId = null;
+		document.getElementById('ledgerAllMedicines').hidden = true;
+		loadDispensingMedicines();
 		loadDispensingLedger();
 		return;
 	}
@@ -803,10 +878,8 @@ function formatMoney(amount) {
 }
 
 function getAuthHeaders() {
-	const token = localStorage.getItem('qlpk_token') || localStorage.getItem('token');
 	return {
-		'Content-Type': 'application/json',
-		'Authorization': token ? `Bearer ${token}` : ''
+		'Content-Type': 'application/json'
 	};
 }
 

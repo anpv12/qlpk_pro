@@ -30,6 +30,20 @@ function setDatepickerValue(elementIdOrElement, value, triggerChange = true) {
 // Make globally available
 window.setDatepickerValue = setDatepickerValue;
 
+/**
+ * Set a Y-m-d (or ISO datetime) value on a dynamic input, then initialise Flatpickr on it.
+ * The value is written before initialisation so Flatpickr formats it for display.
+ */
+function initDatepickerWithValue(input, value) {
+	if (!input) return;
+	if (value) {
+		input.value = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+	}
+	initDatepickers(input);
+}
+
+window.initDatepickerWithValue = initDatepickerWithValue;
+
 function isDatepickerDisabled(el) {
 	return el.dataset.datepickerDisabled === 'true'
 		|| el.dataset.datepicker === 'off'
@@ -136,6 +150,15 @@ function initDatepickers(selector) {
 					instance.altInput.classList.add('qlpk-datepicker-alt-input');
 					if (instance.element.id) {
 						instance.altInput.dataset.datepickerAltFor = instance.element.id;
+					}
+					const sourceLabel = instance.element.getAttribute('aria-label')
+						|| Array.from(instance.element.labels || []).map(label => label.textContent.trim()).join(' ')
+						|| instance.element.placeholder;
+					const labelledBy = instance.element.getAttribute('aria-labelledby');
+					if (labelledBy) {
+						instance.altInput.setAttribute('aria-labelledby', labelledBy);
+					} else if (sourceLabel && !instance.altInput.getAttribute('aria-label')) {
+						instance.altInput.setAttribute('aria-label', sourceLabel);
 					}
 
 					// Forward input/change events from altInput to the original input

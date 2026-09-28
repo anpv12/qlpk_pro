@@ -12,13 +12,8 @@
 
 	const API_BASE = '/api/drug-interactions';
 	const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
-	const TOKEN = () => localStorage.getItem('qlpk_token');
 	const HEADERS = () => ({
-		'Authorization': 'Bearer ' + TOKEN(),
 		'Content-Type': 'application/json'
-	});
-	const FILE_HEADERS = () => ({
-		'Authorization': 'Bearer ' + TOKEN()
 	});
 
 	let allInteractions = [];
@@ -32,7 +27,7 @@
 
 	async function downloadProtectedFile(url, filename) {
 		try {
-			const response = await fetch(url, { headers: FILE_HEADERS() });
+			const response = await fetch(url);
 			if (!response.ok) throw new Error(response.status);
 			const blob = await response.blob();
 			const blobUrl = URL.createObjectURL(blob);
@@ -105,9 +100,9 @@
 				<td><div class="di-preline">${item.consequence || '—'}</div></td>
 				<td>
 					<div class="d-flex gap-1">
-						<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-secondary" title="Xem" onclick="DrugInteraction.view(${item.id})"><i class="bi bi-eye"></i></button>
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" title="Sửa" onclick="DrugInteraction.edit(${item.id})"><i class="bi bi-pencil"></i></button>
-						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="DrugInteraction.remove(${item.id})"><i class="bi bi-trash"></i></button>
+						<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-secondary" title="Xem" data-qlpk-call="DrugInteraction.view" data-qlpk-args='[${item.id}]'><i class="bi bi-eye"></i></button>
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" title="Sửa" data-qlpk-call="DrugInteraction.edit" data-qlpk-args='[${item.id}]'><i class="bi bi-pencil"></i></button>
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" title="Xóa" data-qlpk-call="DrugInteraction.remove" data-qlpk-args='[${item.id}]'><i class="bi bi-trash"></i></button>
 					</div>
 				</td>
 			</tr>`;

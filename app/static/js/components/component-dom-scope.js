@@ -44,7 +44,40 @@
 		return proxy;
 	}
 
-	window.QLPKComponentDomScope = Object.freeze({ create, resolveRoot });
+	const DEFAULT_SCOPED_CONFIG = Object.freeze({ rootId: '', strictRoot: false, fields: Object.freeze({}) });
+
+	function mergeScopedConfig(config = {}) {
+		return {
+			...DEFAULT_SCOPED_CONFIG,
+			...config,
+			fields: { ...DEFAULT_SCOPED_CONFIG.fields, ...(config.fields || {}) }
+		};
+	}
+
+	function resolveScopedDocument(options = {}, config = {}) {
+		const scopeOptions = { rootId: config.rootId, strictRoot: config.strictRoot, fields: config.fields };
+		if (options.context?.getDocument && config.rootId) {
+			return options.context.getDocument(scopeOptions);
+		}
+		return create({ document: options.document || document, ...scopeOptions });
+	}
+
+	function createScopedComponent(options = {}, config = {}, handlers = {}) {
+		const withScope = (callOptions = {}) => ({
+			...options,
+			...callOptions,
+			document: resolveScopedDocument({ ...options, ...callOptions }, config)
+		});
+		const api = {};
+		Object.keys(handlers).forEach(name => {
+			api[name] = name === 'populate'
+				? (payload, callOptions) => handlers[name](payload, withScope(callOptions))
+				: callOptions => handlers[name](withScope(callOptions));
+		});
+		return api;
+	}
+
+	window.QLPKComponentDomScope = Object.freeze({ create, resolveRoot, mergeScopedConfig, resolveScopedDocument, createScopedComponent });
 	window.QLPKDoctorModuleRegistry?.register?.('componentDomScope', window.QLPKComponentDomScope, {
 		owner: 'shared/dom-scope',
 		version: 2

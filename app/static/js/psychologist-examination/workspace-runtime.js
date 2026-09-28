@@ -9,12 +9,14 @@
 	const state = {
 		bound: false,
 		isLoadingExaminationData: false,
+		loadFailed: false,
 		currentAppointmentId: null,
 		currentPatientId: null,
 		currentPatientData: null,
 		contextToken: 0,
 		payload: null,
-		saving: false
+		saving: false,
+		completing: false
 	};
 
 	window.QLPKPsychologistPageState = state;
@@ -122,6 +124,7 @@
 	function clear(options = {}) {
 		state.contextToken += 1;
 		state.payload = null;
+		state.loadFailed = false;
 		setCurrentAppointment(null);
 		setCurrentPatient(null);
 		createComponents();
@@ -132,6 +135,21 @@
 		servicesForm?.clear?.(context);
 		indicationsForm?.clear?.(context);
 		return true;
+	}
+
+	async function populateWorkspace(payload, doc, appointmentId) {
+		const context = { document: doc, payload, appointmentId, patientId: state.currentPatientId };
+		const loaders = [
+			() => patientIntake.populate(payload, { document: doc }),
+			() => clinicalForm.render(payload, { document: doc }),
+			() => historyComponent.populate(historyComponent.config?.normalizePayload
+				? historyComponent.config.normalizePayload(payload) : payload),
+			() => servicesForm.load(context),
+			() => indicationsForm.load(context)
+		];
+		const results = await Promise.allSettled(loaders.map(load => Promise.resolve().then(load)));
+		const failure = results.find(result => result.status === 'rejected' || result.value === false);
+		if (failure) throw failure.reason || new Error('workspace-load-incomplete');
 	}
 
 	async function loadAppointment(appointmentId, options = {}) {
@@ -161,17 +179,7 @@
 			servicesForm.bind({ document: doc, apiCall, isLoading: () => state.isLoadingExaminationData });
 			indicationsForm.bind({ document: doc, apiCall, isLoading: () => state.isLoadingExaminationData });
 
-			patientIntake.populate(payload, { document: doc });
-			const clinicalLoad = clinicalForm.render(payload, { document: doc });
-			const historyPayload = historyComponent.config?.normalizePayload
-				? historyComponent.config.normalizePayload(payload)
-				: payload;
-			const historyLoad = historyComponent.populate?.(historyPayload) || true;
-			const supportLoad = Promise.all([
-				servicesForm.load({ document: doc, payload, appointmentId: numericAppointmentId, patientId: state.currentPatientId }),
-				indicationsForm.load({ document: doc, payload, appointmentId: numericAppointmentId, patientId: state.currentPatientId })
-			]);
-			await Promise.all([clinicalLoad, historyLoad, supportLoad]);
+			await populateWorkspace(payload, doc, numericAppointmentId);
 			if (loadToken !== state.contextToken) return { status: 'stale' };
 			setLoading(false);
 			window.PsychologistWorkspaceUi?.showWorkspace?.({
@@ -181,7 +189,9 @@
 			});
 			return { status: 'loaded', payload };
 		} catch (error) {
-			if (loadToken === state.contextToken) setLoading(false);
+			if (loadToken !== state.contextToken) return { status: 'stale' };
+			state.loadFailed = true;
+			setLoading(false);
 			showToast('error', 'Không thể tải đầy đủ dữ liệu lượt khám. Vui lòng thử lại.');
 			console.error('[Psychologist] workspace load failed:', error);
 			return { status: 'error', error };
@@ -192,27 +202,36 @@
 		const history = getHistoryComponent();
 		if (!history?.hasPendingChanges?.()) return { status: 'skipped', module: 'history' };
 		const revision = history.getSaveRevision?.();
+		const contextToken = state.contextToken;
 		const response = await apiCall(`/api/appointments/${state.currentAppointmentId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(history.getSavePayload?.() || {})
 		});
 		if (!response?.ok) throw new Error('history-save-failed');
-		if (revision === history.getSaveRevision?.()) history.markSaved?.(revision);
+		if (contextToken !== state.contextToken) throw new Error('history-save-stale');
+		if (revision !== history.getSaveRevision?.()) throw new Error('history-save-new-changes');
+		history.markSaved?.(revision);
 		return { status: 'success', module: 'history' };
+	}
+
+	function isSuccessfulSave(result) {
+		return ['saved', 'success'].includes(result?.status) && !result.skipped && !result.hasNewChanges;
 	}
 
 	async function saveClinicalDetails() {
 		if (!clinicalForm?.hasUnsavedChanges?.()) return { status: 'skipped', module: 'clinical' };
 		const saveState = clinicalForm.getSaveState?.();
 		const sections = saveState?.detailDirtySections || new Set();
-		if (!sections.size) return { status: 'skipped', module: 'clinical' };
-		return clinicalForm.saveDetails(
+		if (!sections.size) throw new Error('clinical-save-missing-sections');
+		const result = await clinicalForm.saveDetails(
 			document,
 			state.currentAppointmentId,
 			clinicalForm.getContextToken?.(),
 			sections
 		);
+		if (!isSuccessfulSave(result) || clinicalForm.hasUnsavedChanges?.()) throw new Error('clinical-save-incomplete');
+		return result;
 	}
 
 	async function saveSupport() {
@@ -222,25 +241,34 @@
 		].filter(item => item.instance?.hasUnsavedChanges?.());
 		if (!modules.length) return { status: 'skipped', modules: [] };
 		const settled = await Promise.allSettled(modules.map(item => item.instance.save({ document, silent: true })));
-		const failed = settled.filter(result => result.status === 'rejected' || result.value?.status === 'error');
+		const failed = settled.filter(result => result.status === 'rejected' || !isSuccessfulSave(result.value));
 		if (failed.length) throw failed[0].reason || new Error('support-save-failed');
 		return { status: 'success', modules: settled.map(result => result.value) };
 	}
 
 	async function save(options = {}) {
-		if (!state.currentAppointmentId || state.isLoadingExaminationData) return { status: 'skipped', reason: 'not-ready' };
+		if (!state.currentAppointmentId || state.isLoadingExaminationData || state.loadFailed) return { status: 'skipped', reason: 'not-ready' };
 		if (state.saving) return { status: 'skipped', reason: 'saving' };
+		const contextToken = state.contextToken;
 		state.saving = true;
 		try {
 			const baseSave = options.baseSave || window.QLPKPsychologistSaveBase;
-			if (typeof baseSave === 'function') {
-				const baseResult = await baseSave();
+			if (typeof baseSave !== 'function') throw new Error('base-save-unavailable');
+			const baseResult = await baseSave();
+			if (contextToken !== state.contextToken) return { status: 'stale' };
+			if (!isSuccessfulSave(baseResult)) {
 				if (baseResult?.status && !['saved', 'success'].includes(baseResult.status)) return baseResult;
+				throw new Error('base-save-incomplete');
 			}
-			const results = await Promise.all([saveHistory(), saveClinicalDetails(), saveSupport()]);
+			const settled = await Promise.allSettled([saveHistory(), saveClinicalDetails(), saveSupport()]);
+			if (contextToken !== state.contextToken) return { status: 'stale' };
+			const failed = settled.find(result => result.status === 'rejected');
+			if (failed) throw failed.reason;
+			const results = settled.map(result => result.value);
 			showToast('success', 'Đã lưu dữ liệu khám Tâm lý gia.');
 			return { status: 'saved', results };
 		} catch (error) {
+			if (contextToken !== state.contextToken) return { status: 'stale', error };
 			console.error('[Psychologist] workspace save failed:', error);
 			showToast('error', 'Chưa lưu được đầy đủ dữ liệu. Vui lòng kiểm tra lại.');
 			return { status: 'error', error };
@@ -250,18 +278,30 @@
 	}
 
 	async function complete() {
-		const saved = await save();
-		if (saved.status === 'error') return saved;
+		if (state.completing) return { status: 'skipped', reason: 'completing' };
+		const appointmentId = state.currentAppointmentId;
+		const contextToken = state.contextToken;
+		state.completing = true;
 		try {
-			const examResponse = await apiCall(`/api/examination-id/${state.currentAppointmentId}`);
+			const saved = await save();
+			if (saved.status !== 'saved') return saved;
+			if (contextToken !== state.contextToken) return { status: 'stale' };
+			const examResponse = await apiCall(`/api/examination-id/${appointmentId}`);
+			if (!examResponse?.ok) throw new Error('examination-lookup-failed');
 			const examData = await examResponse.json();
+			if (contextToken !== state.contextToken) return { status: 'stale' };
+			if (!examData.examination_id) throw new Error('missing-examination-id');
 			const response = await apiCall(`/examinations/${examData.examination_id}/complete-psychologist-exam`, { method: 'PUT' });
+			if (contextToken !== state.contextToken) return { status: 'stale' };
 			if (!response?.ok) throw new Error('complete-failed');
 			showToast('success', 'Đã hoàn thành lượt khám.');
 			return { status: 'completed' };
 		} catch (error) {
+			if (contextToken !== state.contextToken) return { status: 'stale', error };
 			showToast('error', 'Không thể hoàn thành lượt khám.');
 			return { status: 'error', error };
+		} finally {
+			state.completing = false;
 		}
 	}
 

@@ -70,6 +70,9 @@
 	let socket = null;
 	let started = false;
 	let needsResync = false;
+	let sessionOwner = null;
+	let unsubscribeSession = null;
+	let connectionCurrent = () => false;
 	const seenEvents = new Set();
 
 	function normalizePath(pathname) {
@@ -145,54 +148,97 @@
 	}
 
 	function subscribe() {
-		if (!socket || !socket.connected) return;
+		if (!socket || !socket.connected || !connectionCurrent()) return;
 		socket.emit('qlpk:subscribe', { rooms: currentRooms() });
 	}
 
+	function connectionIdentity() {
+		if (!sessionOwner) {
+			const token = getToken();
+			return token ? { auth: { token }, current: () => !sessionOwner && getToken() === token } : null;
+		}
+		const owner = sessionOwner;
+		const identity = owner.snapshot();
+		if (identity.status !== 'authenticated' || !identity.session) return null;
+		return {
+			auth: { csrf_token: identity.session.csrf },
+			current: () => owner === sessionOwner && owner.snapshot().status === 'authenticated'
+				&& owner.snapshot().revision === identity.revision,
+		};
+	}
+
 	function start() {
-		if (started || socket) return socket;
-
-		const token = getToken();
-		if (!token || typeof window.io !== 'function') return null;
 		started = true;
+		if (socket) return socket;
+		const identity = connectionIdentity();
+		if (!identity || typeof window.io !== 'function') return null;
 
-		socket = window.io({
+		const connection = window.io({
 			path: '/socket.io',
 			transports: ['websocket'],
 			upgrade: false,
-			auth: callback => callback({ token: getToken() }),
+			auth: callback => callback(started && identity.current() ? identity.auth : {}),
 			reconnection: true,
 			reconnectionAttempts: Infinity,
 			reconnectionDelay: 700,
 			reconnectionDelayMax: 5000,
 			timeout: 10000,
 		});
+		socket = connection;
+		const isCurrent = () => started && socket === connection && identity.current();
+		connectionCurrent = isCurrent;
 
 		socket.on('connect', function () {
+			if (!isCurrent()) return;
 			needsResync = true;
 			subscribe();
 		});
 		socket.on('qlpk:subscribed', function () {
-			if (!needsResync) return;
+			if (!isCurrent() || !needsResync) return;
 			needsResync = false;
 			dispatchEvent({ type: 'realtime.resynced', payload: {} });
 		});
-		socket.on('qlpk:event', dispatchEvent);
+		socket.on('qlpk:event', event => {
+			if (isCurrent()) dispatchEvent(event);
+		});
 		socket.on('connect_error', function () {
+			if (!isCurrent()) return;
 			dispatchEvent({ type: 'realtime.connection_error', payload: {} });
+		});
+		socket.on('disconnect', function (reason) {
+			if (reason !== 'io server disconnect' || !isCurrent()) return;
+			connection.connect();
 		});
 
 		return socket;
 	}
 
-	function stop() {
-		started = false;
+	function closeConnection() {
 		needsResync = false;
 		seenEvents.clear();
-		if (socket) {
-			socket.disconnect();
-			socket = null;
+		const previous = socket;
+		socket = null;
+		connectionCurrent = () => false;
+		if (previous) previous.disconnect();
+	}
+
+	function stop() {
+		started = false;
+		closeConnection();
+	}
+
+	function bindSession(owner) {
+		if (!owner || typeof owner.snapshot !== 'function' || typeof owner.subscribe !== 'function') {
+			throw new TypeError('Realtime yêu cầu bộ quản lý phiên hợp lệ.');
 		}
+		stop();
+		if (unsubscribeSession) unsubscribeSession();
+		sessionOwner = owner;
+		unsubscribeSession = owner.subscribe(() => {
+			closeConnection();
+			if (started) start();
+		});
+		return start();
 	}
 
 	function emitPageSubscription() {
@@ -220,6 +266,7 @@
 	window.QLPKRealtimeClient = {
 		start,
 		stop,
+		bindSession,
 		subscribe: emitPageSubscription,
 		dispatchEvent,
 		get socket() {

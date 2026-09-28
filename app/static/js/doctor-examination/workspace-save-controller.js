@@ -190,24 +190,26 @@
 			return messages[reason] || 'Chưa thể lưu dữ liệu khám lúc này.';
 		}
 
-		async function saveNow(options = {}) {
-			const doc = getDocument(options);
-			const appointmentId = getAppointmentId();
-			if (!appointmentId) return { skipped: true, reason: 'missing-appointment' };
-			if (typeof isLoading === 'function' && isLoading()) return { skipped: true, reason: 'loading' };
-			if (state.saving) return { skipped: true, reason: 'saving' };
-			if (typeof apiCall !== 'function') throw new Error('missing-api-call');
-			if (state.loadFailed) {
-				const error = new Error(state.loadFailure || 'Chưa tải đủ dữ liệu ca khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.');
-				error.module = 'clinical';
-				error.moduleLabel = 'Khám';
-				throw error;
-			}
+		function notify(options, type, message) {
+			if (!options.silent && typeof showToast === 'function') showToast(type, message);
+		}
 
-			const token = state.contextToken;
-			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
-			if (options.applyDetailDefaults === true) clinicalForm?.prepareEmptyDetailDefaults?.({ document: doc });
-			const clinicalState = clinicalForm?.getSaveState?.() || {
+		function createModuleError(message, module, moduleLabel) {
+			const error = new Error(message);
+			error.module = module;
+			error.moduleLabel = moduleLabel;
+			return error;
+		}
+
+		function getSaveSkipReason() {
+			if (!getAppointmentId()) return 'missing-appointment';
+			if (typeof isLoading === 'function' && isLoading()) return 'loading';
+			if (state.saving) return 'saving';
+			return null;
+		}
+
+		function getClinicalSaveState(clinicalForm) {
+			return clinicalForm?.getSaveState?.() || {
 				mainDirty: false,
 				mainRevision: 0,
 				detailDirtySections: new Set(),
@@ -215,152 +217,188 @@
 				detailsLoaded: false,
 				detailsLoadPromise: null
 			};
+		}
+
+		function buildSavePlan(doc, options) {
+			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
+			if (options.applyDetailDefaults === true) clinicalForm?.prepareEmptyDetailDefaults?.({ document: doc });
+			const clinicalState = getClinicalSaveState(clinicalForm);
 			const medicalHistory = typeof getMedicalHistory === 'function' ? getMedicalHistory() : null;
-			const historyPending = Boolean(medicalHistory
-				&& typeof medicalHistory.hasPendingChanges === 'function'
-				&& medicalHistory.hasPendingChanges());
-			const shouldSaveMain = state.mainDirty || clinicalState.mainDirty || historyPending;
-			const detailSections = new Set(clinicalState.detailDirtySections);
-			if (detailSections.size && clinicalState.detailsLoaded === false) {
-				const error = new Error('Chưa tải xong chi tiết khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.');
-				error.module = 'clinical';
-				error.moduleLabel = 'Khám chi tiết';
-				throw error;
+			const historyPending = typeof medicalHistory?.hasPendingChanges === 'function' && Boolean(medicalHistory.hasPendingChanges());
+			return {
+				clinicalForm,
+				clinicalState,
+				medicalHistory,
+				shouldSaveMain: Boolean(state.mainDirty || clinicalState.mainDirty || historyPending),
+				detailSections: new Set(clinicalState.detailDirtySections)
+			};
+		}
+
+		async function saveMainSection(doc, appointmentId, token, plan) {
+			const { clinicalForm, clinicalState, medicalHistory } = plan;
+			setWorkspaceSavePhase(doc, 'main');
+			const mainRevision = mainChanges.capture();
+			const clinicalMainRevision = clinicalState.mainRevision;
+			const historyRevision = typeof medicalHistory?.getSaveRevision === 'function'
+				? medicalHistory.getSaveRevision()
+				: null;
+			const payload = collect({ document: doc, context: getContext() });
+			if (typeof medicalHistory?.getSavePayload === 'function') {
+				Object.assign(payload, medicalHistory.getSavePayload());
 			}
-			if (!shouldSaveMain && !detailSections.size) return { skipped: true, reason: 'clean' };
+			const response = await apiCall(`/api/appointments/${appointmentId}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
+			if (token !== state.contextToken) return null;
+			if (!response || !response.ok) {
+				throw new Error(await readResponseError(response, 'Không lưu được dữ liệu khám'));
+			}
+			if (typeof medicalHistory?.markSaved === 'function') medicalHistory.markSaved(historyRevision);
+			mainChanges.settle(mainRevision);
+			if (clinicalForm?.markMainSaved) clinicalForm.markMainSaved(clinicalMainRevision);
+			return { status: 'success', appointmentId };
+		}
+
+		function assertSaveReady() {
+			if (typeof apiCall !== 'function') throw new Error('missing-api-call');
+			if (state.loadFailed) {
+				throw createModuleError(state.loadFailure || 'Chưa tải đủ dữ liệu ca khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám');
+			}
+		}
+
+		function assertDetailsSaveable(plan) {
+			if (plan.detailSections.size && plan.clinicalState.detailsLoaded === false) {
+				throw createModuleError('Chưa tải xong chi tiết khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám chi tiết');
+			}
+		}
+
+		async function waitForDetailsLoad(clinicalState, token) {
+			if (!clinicalState.detailsLoading || !clinicalState.detailsLoadPromise) return true;
+			await clinicalState.detailsLoadPromise;
+			return token === state.contextToken;
+		}
+
+		async function saveSections(doc, appointmentId, token, plan) {
+			const { shouldSaveMain, detailSections } = plan;
+			let mainResult = { skipped: true, reason: 'clean' };
+			let detailsResult = { skipped: true, reason: 'clean' };
+			if (shouldSaveMain) {
+				mainResult = await saveMainSection(doc, appointmentId, token, plan);
+				if (!mainResult) return null;
+			}
+			if (detailSections.size) {
+				setWorkspaceSavePhase(doc, 'details');
+				detailsResult = await saveClinicalDetails(doc, appointmentId, token, detailSections, getContext());
+				if (token !== state.contextToken) return null;
+			}
+			return { mainResult, detailsResult };
+		}
+
+		async function saveNow(options = {}) {
+			const doc = getDocument(options);
+			const appointmentId = getAppointmentId();
+			const skipReason = getSaveSkipReason();
+			if (skipReason) return { skipped: true, reason: skipReason };
+			assertSaveReady();
+
+			const token = state.contextToken;
+			const plan = buildSavePlan(doc, options);
+			assertDetailsSaveable(plan);
+			if (!plan.shouldSaveMain && !plan.detailSections.size) return { skipped: true, reason: 'clean' };
 
 			state.saving = true;
 			try {
-			if (clinicalState.detailsLoading && clinicalState.detailsLoadPromise) {
-				await clinicalState.detailsLoadPromise;
-					if (token !== state.contextToken) return { skipped: true, reason: 'stale' };
-				}
-
-				let mainResult = { skipped: true, reason: 'clean' };
-				let detailsResult = { skipped: true, reason: 'clean' };
-			if (shouldSaveMain) {
-				setWorkspaceSavePhase(doc, 'main');
-				const mainRevision = mainChanges.capture();
-				const clinicalMainRevision = clinicalState.mainRevision;
-					const historyRevision = medicalHistory && typeof medicalHistory.getSaveRevision === 'function'
-						? medicalHistory.getSaveRevision()
-						: null;
-					const payload = collect({ document: doc, context: getContext() });
-					if (medicalHistory && typeof medicalHistory.getSavePayload === 'function') {
-						Object.assign(payload, medicalHistory.getSavePayload());
-					}
-					const response = await apiCall(`/api/appointments/${appointmentId}`, {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(payload)
-					});
-					if (token !== state.contextToken) return { skipped: true, reason: 'stale' };
-					if (!response || !response.ok) {
-					throw new Error(await readResponseError(response, 'Không lưu được dữ liệu khám'));
-					}
-				if (medicalHistory && typeof medicalHistory.markSaved === 'function') medicalHistory.markSaved(historyRevision);
-				mainChanges.settle(mainRevision);
-				if (clinicalForm?.markMainSaved) clinicalForm.markMainSaved(clinicalMainRevision);
-					mainResult = { status: 'success', appointmentId };
-				}
-
-				if (detailSections.size) {
-					setWorkspaceSavePhase(doc, 'details');
-					detailsResult = await saveClinicalDetails(doc, appointmentId, token, detailSections, getContext());
-					if (token !== state.contextToken) return { skipped: true, reason: 'stale' };
-				}
+				if (!(await waitForDetailsLoad(plan.clinicalState, token))) return { skipped: true, reason: 'stale' };
+				const sections = await saveSections(doc, appointmentId, token, plan);
+				if (!sections) return { skipped: true, reason: 'stale' };
 				if (typeof syncDirtyState === 'function') syncDirtyState();
-					if (!options.silent && typeof showToast === 'function') showToast('success', 'Đã lưu dữ liệu khám');
-				return { status: 'success', appointmentId, mainResult, detailsResult };
+				notify(options, 'success', 'Đã lưu dữ liệu khám');
+				return { status: 'success', appointmentId, ...sections };
 			} catch (error) {
-				if (token === state.contextToken && !options.silent && typeof showToast === 'function') {
-					showToast('error', 'Không thể lưu dữ liệu khám. Vui lòng kiểm tra lại.');
-				}
+				if (token === state.contextToken) notify(options, 'error', 'Không thể lưu dữ liệu khám. Vui lòng kiểm tra lại.');
 				throw error;
 			} finally {
 				if (token === state.contextToken) state.saving = false;
 			}
 		}
 
+		function clinicalFailure(reason) {
+			return buildFailure({ key: 'clinical', label: 'Khám', reason });
+		}
+
+		async function failWorkspaceSave(options, failedModules, extra = {}) {
+			await captureLocalDraft();
+			notify(options, 'error', formatFailureMessage(failedModules));
+			return { status: 'error', failedModules, ...extra };
+		}
+
+		async function saveSupportModules(doc, supportModules) {
+			if (!supportModules || typeof supportModules.saveAll !== 'function') {
+				return {
+					status: 'error',
+					reason: 'missing-support-modules',
+					failedModules: [{ key: 'support', label: 'Các module hỗ trợ', reason: 'Không tải được các module Đơn thuốc, Dịch vụ và Chỉ định.' }]
+				};
+			}
+			setWorkspaceSavePhase(doc, 'support');
+			return supportModules.saveAll({ document: doc, context: getContext(), silent: true, onlyDirty: true });
+		}
+
+		function getSupportReadinessFailures(supportModules) {
+			if (typeof supportModules?.getSaveReadiness !== 'function') return [];
+			const failures = supportModules.getSaveReadiness()?.failures;
+			return Array.isArray(failures) ? failures : [];
+		}
+
+		function isSkippedFor(result, predicate) {
+			return Boolean(result && result.skipped) && predicate(result.reason);
+		}
+
+		function isCleanSupportResult(result) {
+			return Boolean(result && result.status === 'skipped' && result.reason === 'clean');
+		}
+
+		function getWorkspaceSuccessMessage(noChanges, supportResult) {
+			if (noChanges) return 'Không có thay đổi cần lưu.';
+			const supportSuccessMessage = Array.isArray(supportResult?.successMessages) ? supportResult.successMessages[0] : '';
+			return supportSuccessMessage || 'Đã lưu dữ liệu khám';
+		}
+
+		async function runWorkspaceSave(doc, options) {
+			const supportModules = typeof getSupportModules === 'function' ? getSupportModules() : null;
+			const readinessFailures = getSupportReadinessFailures(supportModules);
+			if (readinessFailures.length) return failWorkspaceSave(options, readinessFailures);
+			const mainResult = await saveNow({ document: doc, silent: true, applyDetailDefaults: options.applyDetailDefaults === true });
+			if (isSkippedFor(mainResult, reason => reason !== 'clean')) {
+				return failWorkspaceSave(options, [clinicalFailure(getSkippedSaveMessage(mainResult.reason))], { mainResult });
+			}
+
+			const supportResult = await saveSupportModules(doc, supportModules);
+			const results = { mainResult, supportResult, historyResult: { status: 'included-with-main-save' } };
+			const failedModules = getSupportFailures(supportResult);
+			if (failedModules.length || supportResult.status === 'error') return failWorkspaceSave(options, failedModules, results);
+			if (hasUnsavedChanges()) return failWorkspaceSave(options, [clinicalFailure('Dữ liệu đã thay đổi trong lúc đang lưu.')], results);
+
+			const noChanges = isSkippedFor(mainResult, reason => reason === 'clean') && isCleanSupportResult(supportResult);
+			notify(options, 'success', getWorkspaceSuccessMessage(noChanges, supportResult));
+			if (typeof afterSave === 'function') await afterSave();
+			return noChanges ? { status: 'success', noChanges: true, ...results } : { status: 'success', ...results };
+		}
+
 		async function saveWorkspace(options = {}) {
 			const doc = getDocument(options);
 			if (state.workspaceSaving) {
-				const failure = buildFailure({ key: 'clinical', label: 'Khám', reason: getSkippedSaveMessage('workspace-saving') });
-				if (!options.silent && typeof showToast === 'function') showToast('error', formatFailureMessage(failure));
+				const failure = clinicalFailure(getSkippedSaveMessage('workspace-saving'));
+				notify(options, 'error', formatFailureMessage(failure));
 				return { status: 'error', failedModules: [failure], reason: 'workspace-saving' };
 			}
 			const token = state.contextToken;
 			state.workspaceSaving = true;
 			setWorkspaceSavePhase(doc, 'main');
 			try {
-				const supportModules = typeof getSupportModules === 'function' ? getSupportModules() : null;
-				const supportReadiness = supportModules && typeof supportModules.getSaveReadiness === 'function'
-					? supportModules.getSaveReadiness()
-					: null;
-				if (supportReadiness && Array.isArray(supportReadiness.failures) && supportReadiness.failures.length) {
-					await captureLocalDraft();
-					if (!options.silent && typeof showToast === 'function') {
-						showToast('error', formatFailureMessage(supportReadiness.failures));
-					}
-					return { status: 'error', failedModules: supportReadiness.failures };
-				}
-				const mainResult = await saveNow({ document: doc, silent: true, applyDetailDefaults: options.applyDetailDefaults === true });
-				if (mainResult && mainResult.skipped && mainResult.reason !== 'clean') {
-					const failure = buildFailure({
-						key: 'clinical',
-						label: 'Khám',
-						reason: getSkippedSaveMessage(mainResult.reason)
-					});
-					await captureLocalDraft();
-					if (!options.silent && typeof showToast === 'function') showToast('error', formatFailureMessage(failure));
-					return { status: 'error', mainResult, failedModules: [failure] };
-				}
-
-				let supportResult = {
-					status: 'error',
-					reason: 'missing-support-modules',
-					failedModules: [{ key: 'support', label: 'Các module hỗ trợ', reason: 'Không tải được các module Đơn thuốc, Dịch vụ và Chỉ định.' }]
-				};
-				if (supportModules && typeof supportModules.saveAll === 'function') {
-					setWorkspaceSavePhase(doc, 'support');
-					supportResult = await supportModules.saveAll({ document: doc, context: getContext(), silent: true, onlyDirty: true });
-				}
-
-				const historyResult = { status: 'included-with-main-save' };
-				const failedModules = getSupportFailures(supportResult);
-				if (failedModules.length || supportResult.status === 'error') {
-					await captureLocalDraft();
-					if (!options.silent && typeof showToast === 'function') showToast('error', formatFailureMessage(failedModules));
-					return { status: 'error', mainResult, supportResult, historyResult, failedModules };
-				}
-
-				if (hasUnsavedChanges()) {
-					const failure = buildFailure({
-						key: 'clinical',
-						label: 'Khám',
-						reason: 'Dữ liệu đã thay đổi trong lúc đang lưu.'
-					});
-					await captureLocalDraft();
-					if (!options.silent && typeof showToast === 'function') showToast('error', formatFailureMessage(failure));
-					return { status: 'error', mainResult, supportResult, historyResult, failedModules: [failure] };
-				}
-
-				const noChanges = mainResult && mainResult.skipped && mainResult.reason === 'clean'
-					&& supportResult && supportResult.status === 'skipped' && supportResult.reason === 'clean';
-				if (noChanges) {
-					if (!options.silent && typeof showToast === 'function') showToast('success', 'Không có thay đổi cần lưu.');
-					if (typeof afterSave === 'function') await afterSave();
-					return { status: 'success', noChanges: true, mainResult, supportResult, historyResult };
-				}
-
-				const supportSuccessMessage = Array.isArray(supportResult?.successMessages)
-					? supportResult.successMessages[0]
-					: '';
-				if (!options.silent && typeof showToast === 'function') {
-					showToast('success', supportSuccessMessage || 'Đã lưu dữ liệu khám');
-				}
-				if (typeof afterSave === 'function') await afterSave();
-				return { status: 'success', mainResult, supportResult, historyResult };
+				return await runWorkspaceSave(doc, options);
 			} catch (error) {
 				const failure = buildFailure({
 					key: error?.module || 'clinical',
@@ -368,9 +406,7 @@
 					error,
 					reason: error?.message || 'Không lưu được dữ liệu khám'
 				});
-				await captureLocalDraft();
-				if (!options.silent && typeof showToast === 'function') showToast('error', formatFailureMessage(failure));
-				return { status: 'error', failedModules: [failure], error };
+				return failWorkspaceSave(options, [failure], { error });
 			} finally {
 				if (token === state.contextToken) {
 					state.workspaceSaving = false;
@@ -425,6 +461,33 @@
 			return false;
 		}
 
+		function reportIncompleteSave(saveResult) {
+			if (typeof showToast !== 'function') return;
+			const failedModules = saveResult?.failedModules || [{
+				key: 'clinical',
+				label: 'Khám',
+				reason: 'Vẫn còn dữ liệu chưa lưu.'
+			}];
+			const failureMessage = formatFailureMessage(failedModules);
+			showToast(
+				'error',
+				failedModules.some(isPrescriptionStockShortage)
+					? failureMessage
+					: `Chưa thể hoàn thành ca khám. ${failureMessage}`
+			);
+		}
+
+		async function transferToPayment(doc, examinationId) {
+			setWorkspaceSavePhase(doc, 'complete');
+			const response = await apiCall(`/examinations/${examinationId}/transfer-to-payment`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			if (!response || !response.ok) throw new Error(await readResponseError(response, 'Không hoàn thành được lượt khám'));
+			if (typeof showToast === 'function') showToast('success', 'Đã hoàn thành khám');
+			if (typeof afterComplete === 'function') afterComplete();
+		}
+
 		async function completeNow(options = {}) {
 			const doc = getDocument(options);
 			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
@@ -442,31 +505,11 @@
 			try {
 				const saveResult = await saveWorkspace({ document: doc, silent: true });
 				if (!saveResult || saveResult.status !== 'success') {
-					if (typeof showToast === 'function') {
-						const failedModules = saveResult?.failedModules || [{
-							key: 'clinical',
-							label: 'Khám',
-							reason: 'Vẫn còn dữ liệu chưa lưu.'
-						}];
-						const failureMessage = formatFailureMessage(failedModules);
-						showToast(
-							'error',
-							failedModules.some(isPrescriptionStockShortage)
-								? failureMessage
-								: `Chưa thể hoàn thành ca khám. ${failureMessage}`
-						);
-					}
+					reportIncompleteSave(saveResult);
 					return { skipped: true, reason: 'unsaved-changes', saveResult };
 				}
 				if (token !== state.contextToken) return { skipped: true, reason: 'stale' };
-				setWorkspaceSavePhase(doc, 'complete');
-				const response = await apiCall(`/examinations/${examinationId}/transfer-to-payment`, {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' }
-				});
-				if (!response || !response.ok) throw new Error(await readResponseError(response, 'Không hoàn thành được lượt khám'));
-				if (typeof showToast === 'function') showToast('success', 'Đã hoàn thành khám');
-				if (typeof afterComplete === 'function') afterComplete();
+				await transferToPayment(doc, examinationId);
 				return { status: 'success', examinationId };
 			} catch (error) {
 				if (token === state.contextToken && typeof showToast === 'function') showToast('error', 'Không thể hoàn thành lượt khám. Vui lòng thử lại.');

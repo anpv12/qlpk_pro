@@ -1,22 +1,12 @@
 $(document).ready(function() {
+    window.QLPKApiTransport.installJQuery($);
     let currentFolderId = null;
     let isUserAdmin = false;
-
-    // Check permissions
-    try {
-        const user = JSON.parse(localStorage.getItem('qlpk_user') || '{}');
-        isUserAdmin = (user.role === 'admin');
-    } catch (e) {
-        console.error('Error parsing user data', e);
-    }
-
-    if (!isUserAdmin) {
-        $('.admin-only-btn, .admin-only-col').addClass('doc-admin-hidden');
-    }
-
-    const API_HEADERS = {
-        'Authorization': `Bearer ${localStorage.getItem('qlpk_token')}`
-    };
+    $('.admin-only-btn, .admin-only-col').addClass('doc-admin-hidden');
+    window.QLPKApiTransport.currentUser().then(user => {
+        isUserAdmin = user.role === 'admin';
+        $('.admin-only-btn, .admin-only-col').toggleClass('doc-admin-hidden', !isUserAdmin);
+    });
 
     // --- UTILS ---
     function formatBytes(bytes, decimals = 2) {
@@ -52,13 +42,13 @@ $(document).ready(function() {
     function closeDocModal(selector) {
         $(selector).removeClass('doc-modal-open');
     }
+    window.closeDocModal = closeDocModal;
 
     // --- FOLDER TREE ---
     function loadFolderTree() {
         $.ajax({
             url: '/api/document-folders',
             method: 'GET',
-            headers: API_HEADERS,
             success: function(data) {
                 renderFolderTree(data);
             },
@@ -176,7 +166,6 @@ $(document).ready(function() {
                 $.ajax({
                     url: `/api/document-folders/${id}`,
                     method: 'DELETE',
-                    headers: API_HEADERS,
                     success: function() {
                         if (currentFolderId === id) {
                             currentFolderId = null;
@@ -205,7 +194,6 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/documents?folder_id=${folderId}`,
             method: 'GET',
-            headers: API_HEADERS,
             success: function(data) {
                 renderDocuments(data);
             },
@@ -268,7 +256,6 @@ $(document).ready(function() {
                 $.ajax({
                     url: `/api/documents/${id}`,
                     method: 'DELETE',
-                    headers: API_HEADERS,
                     success: function() {
                         loadDocuments(currentFolderId);
                     },
@@ -315,7 +302,6 @@ $(document).ready(function() {
         $.ajax({
             url: url,
             method: method,
-            headers: API_HEADERS,
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function() {
@@ -360,7 +346,6 @@ $(document).ready(function() {
         $.ajax({
             url: '/api/documents/link',
             method: 'POST',
-            headers: API_HEADERS,
             contentType: 'application/json',
             data: JSON.stringify({
                 folder_id: currentFolderId,
@@ -463,7 +448,6 @@ $(document).ready(function() {
             $.ajax({
                 url: '/api/documents/upload',
                 method: 'POST',
-                headers: API_HEADERS,
                 data: formData,
                 processData: false,
                 contentType: false,

@@ -129,50 +129,67 @@
 		return filteredAppointments;
 	}
 
+	function isStaleRequest(options) {
+		return Boolean(options.isCurrentRequest && !options.isCurrentRequest());
+	}
+
+	function collectUnique(target, seenIds, items) {
+		items.forEach(appointment => {
+			if (seenIds.has(appointment.id)) return;
+			seenIds.add(appointment.id);
+			target.push(appointment);
+		});
+	}
+
+	async function fetchStatusAppointments(options, statusItem, collector) {
+		const perPage = options.perPage || 10;
+		const roleQueryParam = options.roleQueryParam || 'doctor=true';
+		let nextPage = options.page || 1;
+		do {
+			const response = await options.apiCall(`/api/appointments/?examination_status=${statusItem}&page=${nextPage}&per_page=${perPage}&${roleQueryParam}`);
+			if (isStaleRequest(options)) return 'stale';
+			if (!response || !response.ok) throw new Error('Không thể tải danh sách chờ khám');
+			const data = await response.json();
+			if (!Array.isArray(data.appointments)) throw new Error('Danh sách chờ khám không hợp lệ');
+			collectUnique(collector.appointments, collector.seenIds, data.appointments);
+			nextPage = options.loadAllPages && data.pagination?.has_next ? data.pagination.next_page : null;
+		} while (nextPage);
+		return 'ok';
+	}
+
+	function callOption(options, name, ...args) {
+		if (typeof options[name] === 'function') options[name](...args);
+	}
+
+	function publishAppointments(options, appointments) {
+		const page = options.page || 1;
+		const perPage = options.perPage || 10;
+		if (appointments.length > 0) {
+			callOption(options, 'setAppointments', appointments);
+			callOption(options, 'setCurrentPage', page);
+			callOption(options, 'setTotalPages', Math.ceil(appointments.length / perPage));
+			callOption(options, 'render');
+			callOption(options, 'updatePagination');
+			return { appointments, status: 'loaded' };
+		}
+		callOption(options, 'setAppointments', []);
+		callOption(options, 'render');
+		return { appointments: [], status: 'empty' };
+	}
+
 	async function loadCombinedAppointments(options = {}) {
 		try {
 			const statuses = options.statuses || ['doctor_exam', 'conclusion'];
-			const page = options.page || 1;
-			const perPage = options.perPage || 10;
-			const roleQueryParam = options.roleQueryParam || 'doctor=true';
-			const appointments = [];
-			const seenAppointmentIds = new Set();
-
+			const collector = { appointments: [], seenIds: new Set() };
 			for (const statusItem of statuses) {
-				let nextPage = page;
-				do {
-					const response = await options.apiCall(`/api/appointments/?examination_status=${statusItem}&page=${nextPage}&per_page=${perPage}&${roleQueryParam}`);
-					if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
-					if (!response || !response.ok) throw new Error('Không thể tải danh sách chờ khám');
-					const data = await response.json();
-					if (!Array.isArray(data.appointments)) throw new Error('Danh sách chờ khám không hợp lệ');
-					data.appointments.forEach(appointment => {
-						if (seenAppointmentIds.has(appointment.id)) return;
-						seenAppointmentIds.add(appointment.id);
-						appointments.push(appointment);
-					});
-					nextPage = options.loadAllPages && data.pagination?.has_next ? data.pagination.next_page : null;
-				} while (nextPage);
+				if (await fetchStatusAppointments(options, statusItem, collector) === 'stale') return { status: 'stale' };
 			}
-
-			if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
-			if (!options.preserveServerOrder) appointments.sort((a, b) => b.id - a.id);
-
-			if (appointments.length > 0) {
-				if (typeof options.setAppointments === 'function') options.setAppointments(appointments);
-				if (typeof options.setCurrentPage === 'function') options.setCurrentPage(page);
-				if (typeof options.setTotalPages === 'function') options.setTotalPages(Math.ceil(appointments.length / perPage));
-				if (typeof options.render === 'function') options.render();
-				if (typeof options.updatePagination === 'function') options.updatePagination();
-				return { appointments, status: 'loaded' };
-			}
-
-			if (typeof options.setAppointments === 'function') options.setAppointments([]);
-			if (typeof options.render === 'function') options.render();
-			return { appointments: [], status: 'empty' };
+			if (isStaleRequest(options)) return { status: 'stale' };
+			if (!options.preserveServerOrder) collector.appointments.sort((a, b) => b.id - a.id);
+			return publishAppointments(options, collector.appointments);
 		} catch (error) {
-			if (options.isCurrentRequest && !options.isCurrentRequest()) return { status: 'stale' };
-			if (typeof options.showError === 'function') options.showError(error);
+			if (isStaleRequest(options)) return { status: 'stale' };
+			callOption(options, 'showError', error);
 			return { appointments: [], status: 'error', error };
 		}
 	}

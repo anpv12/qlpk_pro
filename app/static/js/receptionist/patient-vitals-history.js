@@ -1,5 +1,6 @@
 (function (window) {
 	'use strict';
+	const vitalLoads = new WeakMap();
 
 	const DEFAULT_FIELDS = [
 		{ elId: 'prevBreathing', key: 'breathing' },
@@ -48,6 +49,7 @@
 	function resetVitalsHints(options) {
 		const opts = options || {};
 		const doc = getDocument(opts);
+		vitalLoads.set(doc, {});
 		const fields = opts.fields || DEFAULT_FIELDS;
 
 		fields.forEach(function (field) {
@@ -82,16 +84,24 @@
 		const apiCall = getApiCall(opts);
 
 		resetVitalsHints(opts);
+		const doc = getDocument(opts);
+		const requestToken = vitalLoads.get(doc);
+		const contextToken = opts.getContextToken?.();
+		const isCurrentContext = () => vitalLoads.get(doc) === requestToken
+			&& contextToken === opts.getContextToken?.()
+			&& (!opts.getCurrentPatientId || patientId === opts.getCurrentPatientId());
 
 		if (!patientId || !apiCall) return;
 
 		try {
 			const response = await apiCall(`/api/patients/${patientId}/examinations?limit=10`);
-			if (!response.ok) return;
+			if (!isCurrentContext() || !response.ok) return;
 
 			const data = await response.json();
+			if (!isCurrentContext()) return;
 			renderVitalsHints(data.examinations || [], opts);
 		} catch (error) {
+			if (!isCurrentContext()) return;
 			console.warn('Error loading previous vitals:', error);
 		}
 	}
