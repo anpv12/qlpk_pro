@@ -112,11 +112,18 @@
 
 	function renderStatusCounts(host, counts) {
 		host.replaceChildren(); host.classList.add('qlpk-calendar-statuses');
+		const total = Object.keys(STATUS_LABELS).reduce((sum, status) => sum + (Number(counts[status]) || 0), 0);
 		for (const [status, label] of Object.entries(STATUS_LABELS)) {
+			const value = Number(counts[status]) || 0;
 			const row = host.ownerDocument.createElement('div'); row.className = `qlpk-appointment-status status-${status.toLowerCase()}`;
 			const name = host.ownerDocument.createElement('span'); name.textContent = label;
-			const count = host.ownerDocument.createElement('strong'); count.textContent = counts[status] || 0;
-			row.append(name, count); host.append(row);
+			const count = host.ownerDocument.createElement('strong'); count.textContent = value;
+			// Thanh tỉ lệ: phần của trạng thái trong tổng lịch đang hiển thị.
+			const track = host.ownerDocument.createElement('span'); track.className = 'qlpk-appointment-status__track'; track.setAttribute('aria-hidden', 'true');
+			const fill = host.ownerDocument.createElement('i'); fill.style.setProperty('--status-share', `${total ? Math.round(value / total * 100) : 0}%`);
+			track.append(fill);
+			row.title = `${label}: ${value}${total ? ` / ${total} lịch (${Math.round(value / total * 100)}%)` : ''}`;
+			row.append(name, count, track); host.append(row);
 		}
 	}
 

@@ -158,6 +158,8 @@
 		updateViewAppointments();
 		updateStats();
 		page.updateCalendarEvents();
+		// Lịch nhỏ đánh dấu ngày có lịch theo danh sách đang hiển thị.
+		document.dispatchEvent(new CustomEvent('qlpk:appointments-view-changed'));
 	}
 
 	function loadCalendarRangeData(dateFrom, dateTo) {

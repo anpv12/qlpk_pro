@@ -1448,7 +1448,6 @@ body {
 	--appointment-left-panel-border-block-end: var(--appointment-border-width) solid var(--appointment-color-border);
 	--appointment-panel-section-flex: initial;
 	--appointment-panel-section-min-width: initial;
-	--appointment-mini-calendar-display: flex;
 	position: relative;
 	z-index: var(--appointment-z-base);
 	display: flex;
@@ -1777,64 +1776,38 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 	overflow: hidden;
 }
 
-/* === MINI CALENDAR === */
+/* === MINI CALENDAR ===
+   flatpickr inline dựng lịch thành phần tử ANH EM ngay sau #miniCalendar (div neo rỗng, luôn ẩn).
+   Thiết kế A4: thẻ trắng bo góc, tiêu đề "Tháng 9, 2026" giữa hai mũi tên (JS gắn
+   .qlpk-mini-calendar__title), ngày tháng khác mờ, chấm dưới ngày có lịch, hôm nay tròn nâu. */
 .appointment-fullscreen .qlpk-mini-calendar {
-	display: var(--appointment-mini-calendar-display);
-	justify-content: center;
-	align-items: flex-start;
-	/* lề nhỏ đều 4 góc cho đẹp */
-	padding: var(--appointment-space-xs);
-	inline-size: 100%;
-	overflow: hidden;
-}
-
-/* flatpickr render lịch thành ANH EM -> div neo #miniCalendar rỗng tạo khoảng trống dư đầu panel.
-   Ẩn nó CHỈ khi lịch đã là anh em kế bên (an toàn: không ẩn nhầm khi lịch render bên trong). */
-.appointment-fullscreen .qlpk-mini-calendar:has(+ .flatpickr-calendar) {
 	display: none;
 }
 
-.appt-panel-section .flatpickr-calendar.inline,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar {
-	box-shadow: none;
-	border: none;
-	transform: none;
-	transform-origin: center center;
-	align-self: stretch;
-	flex: 1 1 auto;
-	width: 100%;
-	/* bung đầy chiều rộng khung (bỏ giới hạn 13rem khiến lịch lọt thỏm) */
-	max-width: none;
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar {
 	box-sizing: border-box;
+	inline-size: 100%;
+	max-inline-size: none;
 	margin: 0;
+	padding: 0.5rem 0.4rem 0.6rem;
+	border: 0.0625rem solid var(--qlpk-color-border);
+	border-radius: 0.75rem;
+	background: var(--qlpk-color-white);
+	box-shadow: none;
+	transform: none;
 }
 
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-innerContainer,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-innerContainer,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-rContainer,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-rContainer,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-days,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-days,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdays,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekdays {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdays {
 	inline-size: 100%;
 	min-inline-size: 0;
 	max-inline-size: none;
 }
 
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .dayContainer,
-.appointment-fullscreen .qlpk-mini-calendar .dayContainer {
-	inline-size: 100%;
-	min-inline-size: 0;
-	max-inline-size: none;
-	display: grid;
-	grid-template-columns: repeat(7, minmax(0, 1fr));
-	gap: 0.0625rem 0;
-}
-
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdaycontainer,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekdaycontainer {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekdaycontainer {
 	inline-size: 100%;
 	min-inline-size: 0;
 	max-inline-size: none;
@@ -1842,11 +1815,17 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 	grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-/* Kích thước ô (ngày + thứ) — layout chung */
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .dayContainer {
+	row-gap: 0.3rem;
+}
+
+/* flatpickr luôn dựng 6 tuần: ẩn tuần cuối khi cả tuần thuộc tháng sau. */
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .dayContainer:has(> .flatpickr-day:nth-child(36).nextMonthDay) > .flatpickr-day:nth-child(n+36) {
+	display: none;
+}
+
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekday {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday {
 	inline-size: 1.5rem;
 	block-size: 1.5rem;
 	max-inline-size: 1.5rem;
@@ -1854,50 +1833,77 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-weight: var(--appointment-font-weight-regular);
 	line-height: 1.5rem;
+	font-weight: var(--appointment-font-weight-regular);
 }
 
-/* font-size: thứ nhỏ, ngày to (tách riêng, không đặt chồng) */
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-weekday {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-weekday {
+	color: var(--qlpk-brown-500);
 	font-size: var(--appointment-font-size-compact);
 }
 
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day {
+	position: relative;
+	border: 0;
+	border-radius: 50%;
+	color: var(--qlpk-brown-900);
 	font-size: var(--appointment-font-size);
 }
 
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.prevMonthDay,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.prevMonthDay {
-	pointer-events: none;
-	visibility: hidden;
-}
-
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.nextMonthDay,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.nextMonthDay {
-	display: none;
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.nextMonthDay {
+	opacity: 0.35;
 	pointer-events: none;
 }
 
-/* Đảm bảo nút prev/next month luôn visible */
-/* Header lịch nhỏ: hàng flex [‹] [tháng/năm] [›] — mũi tên là flex item (KHÔNG định vị tuyệt đối) nên không chồng lên chữ */
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-months {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:hover,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:focus {
+	background: var(--appointment-calendar-accent-soft);
+	color: var(--appointment-calendar-accent-strong);
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.selected:not(.today) {
+	background: var(--qlpk-brown-150);
+	color: var(--qlpk-brown-800);
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.today,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.today:hover {
+	background: var(--qlpk-color-primary);
+	color: var(--qlpk-color-white);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.has-appointments::after {
+	content: "";
+	position: absolute;
+	inset-block-end: 0;
+	inset-inline-start: 50%;
+	inline-size: 0.25rem;
+	block-size: 0.25rem;
+	margin-inline-start: -0.125rem;
+	border-radius: 50%;
+	background: var(--qlpk-brown-500);
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.today.has-appointments::after {
+	background: var(--qlpk-color-white);
+}
+
+/* Header: hàng flex [‹] [Tháng 9, 2026] [›] — mũi tên là flex item, không đè lên chữ. */
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months {
 	display: flex;
 	align-items: center;
 	block-size: 2rem;
 	inline-size: 100%;
-	position: relative;
+	margin-block-end: 0.35rem;
+	padding-inline: 0.35rem;
+	box-sizing: border-box;
 }
 
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month {
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month {
 	position: static;
-	inset: auto;
 	flex: 0 0 auto;
 	block-size: 2rem;
 	inline-size: 1rem;
@@ -1907,128 +1913,43 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 	padding: 0;
 }
 
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months .flatpickr-month,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-months .flatpickr-month {
-	flex: 1 1 auto;
-	block-size: 2rem;
-	inline-size: auto;
-	min-inline-size: 0;
-	position: relative;
-}
-
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-current-month,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-current-month {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--appointment-space-2xs);
-	box-sizing: border-box;
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-regular);
-	line-height: 1.3;
-	block-size: 100%;
-	position: static;
-	inset: auto;
-	padding: 0;
-	transform: none;
-	inline-size: 100%;
-	max-inline-size: 100%;
-	overflow: hidden;
-}
-
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar .flatpickr-monthDropdown-months {
-	flex: 0 0 6rem;
-	inline-size: 6rem;
-	min-inline-size: 0;
-	max-inline-size: 6rem;
-	padding: 0 var(--appointment-space-2xs);
-	height: auto;
-	color: var(--appointment-color-text);
-	font-family: var(--appointment-font-family);
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-regular);
-	line-height: 1.3;
-	margin: 0;
-	overflow: hidden;
-	position: static;
-	text-overflow: ellipsis;
-	transform: none;
-	white-space: nowrap;
-}
-
-/* Year dropdown — style giống month dropdown */
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-yearDropdown,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar .flatpickr-yearDropdown,
-.flatpickr-calendar .flatpickr-yearDropdown {
-	appearance: auto;
-	-webkit-appearance: auto;
-	background: transparent;
-	border: none;
-	border-radius: 0;
-	box-sizing: border-box;
-	color: inherit;
-	cursor: pointer;
-	font-family: var(--appointment-font-family);
-	font-size: var(--appointment-font-size);
-	font-weight: var(--appointment-font-weight-regular);
-	height: auto;
-	inline-size: 3.75rem;
-	line-height: 1.3;
-	margin: -0.0625rem 0 0 0;
-	min-inline-size: 0;
-	max-inline-size: 3.75rem;
-	outline: none;
-	padding: 0 var(--appointment-space-2xs);
-	position: relative;
-	vertical-align: initial;
-	width: 3.75rem;
-}
-
-/* Màu today/selected — selector nhất quán (#miniCalendar + sibling); kích thước đã do rule chung lo */
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.today,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.today {
-	background: var(--appointment-calendar-accent-soft);
-	color: var(--appointment-calendar-accent-strong);
-	border-color: var(--appointment-calendar-accent);
-}
-
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day.selected,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day.selected {
-	background: var(--qlpk-workflow-context-header-bg);
-	color: var(--appointment-color-white);
-	border-color: var(--appointment-calendar-accent);
-}
-
-/* flatpickr lịch nhỏ: hover/dropdown/mũi tên dùng token chung. */
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day:hover,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-day:focus,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:hover,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-day:focus {
-	background: var(--appointment-calendar-accent-soft);
-	border-color: var(--appointment-calendar-accent-soft);
-	color: var(--appointment-calendar-accent-strong);
-}
-
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-monthDropdown-months,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-monthDropdown-months,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-yearDropdown,
-.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-yearDropdown {
-	color: var(--appointment-color-text);
-}
-
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month svg,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month svg,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month svg,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month svg {
-	fill: var(--appointment-color-text);
+	fill: var(--qlpk-brown-800);
 }
 
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-prev-month:hover svg,
-.appointment-fullscreen .qlpk-mini-calendar .flatpickr-next-month:hover svg,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-prev-month:hover svg,
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-next-month:hover svg {
 	fill: var(--appointment-calendar-accent);
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-months .flatpickr-month {
+	flex: 1 1 auto;
+	block-size: 2rem;
+	min-inline-size: 0;
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-current-month {
+	position: static;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	block-size: 100%;
+	inline-size: 100%;
+	padding: 0;
+	transform: none;
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-current-month .cur-month,
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .flatpickr-current-month .numInputWrapper {
+	display: none;
+}
+
+.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .qlpk-mini-calendar__title {
+	color: var(--qlpk-brown-800);
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	white-space: nowrap;
 }
 
 /* === STATUS LIST — status markers === */
@@ -2321,7 +2242,6 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 		--appointment-left-panel-border-block-end: var(--appointment-border-width) solid var(--appointment-color-border);
 		--appointment-panel-section-flex: 1;
 		--appointment-panel-section-min-width: 7.5rem;
-		--appointment-mini-calendar-display: none;
 		--appointment-header-button-padding: var(--appointment-space-2xs) var(--appointment-space-md);
 	}
 
@@ -2363,8 +2283,7 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 		justify-content: flex-end;
 	}
 
-	.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar,
-	.appointment-fullscreen .qlpk-mini-calendar .flatpickr-calendar {
+	.appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar {
 		display: none;
 	}
 
@@ -3371,4 +3290,118 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 		inline-size: min(100%, 24rem);
 		min-block-size: 2.1rem;
 	}
+}
+
+/* ==========================================================================
+   Lịch hẹn — giao diện A4 (29/09/2026)
+   Nền event = màu trạng thái (nhạt) + vạch trái đậm; chấm tròn = màu người khám.
+   Khối trạng thái: thẻ nền nhạt cùng tông (A1) + thanh tỉ lệ trong tổng lịch.
+   Chỉ áp cho màn Lịch hẹn (.appointment-fullscreen); lịch tái khám ở Bác sĩ giữ nguyên.
+   ========================================================================== */
+.appointment-fullscreen .qlpk-calendar-statuses {
+	gap: 0.5rem;
+}
+
+.appointment-fullscreen .qlpk-calendar-statuses .qlpk-appointment-status {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.4rem 0.5rem;
+	padding: 0.5rem 0.65rem 0.55rem;
+	border: 0.0625rem solid color-mix(in srgb, var(--calendar-status-color) 24%, var(--qlpk-color-white));
+	border-radius: 0.6rem;
+	background: var(--calendar-status-surface);
+	color: var(--calendar-status-text);
+	font-size: var(--qlpk-font-size-base, 13px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	line-height: 1.25;
+}
+
+.appointment-fullscreen .qlpk-calendar-statuses .qlpk-appointment-status strong {
+	min-inline-size: 1.6rem;
+	padding: 0.05rem 0.5rem;
+	border-radius: 999rem;
+	background: color-mix(in srgb, var(--qlpk-color-white) 72%, transparent);
+	color: var(--calendar-status-text);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	text-align: center;
+}
+
+.appointment-fullscreen .qlpk-calendar-statuses .qlpk-appointment-status__track {
+	display: block;
+	grid-column: 1 / -1;
+	block-size: 0.3rem;
+	overflow: hidden;
+	border-radius: 999rem;
+	background: color-mix(in srgb, var(--qlpk-color-white) 60%, transparent);
+}
+
+.appointment-fullscreen .qlpk-calendar-statuses .qlpk-appointment-status__track i {
+	display: block;
+	inline-size: var(--status-share, 0%);
+	block-size: 100%;
+	border-radius: inherit;
+	background: var(--calendar-status-color);
+	transition: inline-size 0.2s ease;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-event.appointment-event {
+	border: 0.0625rem solid color-mix(in srgb, var(--calendar-status-color) 26%, var(--qlpk-color-white));
+	border-inline-start: 0.1875rem solid var(--calendar-status-color);
+	border-radius: 0.3rem;
+	background: var(--calendar-status-surface);
+	color: var(--calendar-status-text);
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-event.appointment-event:hover {
+	background: color-mix(in srgb, var(--calendar-status-surface) 82%, var(--calendar-status-color));
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar .appointment-event .fc-event-compact-time {
+	font-variant-numeric: tabular-nums;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day.fc-day-sat,
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day.fc-day-sun {
+	background: color-mix(in srgb, var(--qlpk-brown-50) 55%, var(--qlpk-color-white));
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+	opacity: 0.4;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day.fc-day-today {
+	background: color-mix(in srgb, var(--qlpk-brown-50) 70%, var(--qlpk-color-white));
+	box-shadow: inset 0 0 0 0.125rem var(--qlpk-brown-800);
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day-top {
+	flex-direction: row;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-daygrid-day-number {
+	min-inline-size: 1.6rem;
+	margin: 0.25rem 0 0 0.3rem;
+	padding: 0.15rem 0.3rem;
+	text-align: center;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-dayGridMonth-view .fc-col-header-cell {
+	padding: 0.35rem 0.6rem;
+	text-align: start;
+	background: var(--qlpk-brown-50);
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-dayGridMonth-view .fc-col-header-cell-cushion {
+	padding: 0;
+	color: var(--qlpk-brown-700);
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	letter-spacing: 0.05em;
+}
+
+.appointment-fullscreen .qlpk-appointment-calendar.fc .fc-toolbar-title {
+	font-size: var(--qlpk-font-size-xl, 18px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--qlpk-brown-900);
 }

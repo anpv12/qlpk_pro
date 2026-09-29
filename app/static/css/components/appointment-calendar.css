@@ -37,6 +37,7 @@
 .qlpk-appointment-calendar .fc-event-compact-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qlpk-calendar-statuses { display: grid; gap: .375rem; }
 .qlpk-calendar-statuses .qlpk-appointment-status { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .375rem .5rem; border-radius: .25rem; background: var(--calendar-status-surface); color: var(--calendar-status-text); font-size: var(--qlpk-font-size-base); white-space: normal; }
+.qlpk-appointment-status__track { display: none; }
 @media (max-width: 35rem) {
 	.qlpk-appointment-calendar.fc .fc-toolbar,
 	.qlpk-appointment-calendar.fc .fc-toolbar-chunk { flex-wrap: wrap; }
