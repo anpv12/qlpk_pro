@@ -303,67 +303,83 @@
 	}
 
 	// ─── Bind all events ───
+	// Save the conditions being edited, apply `update`, then re-render.
+	function rerenderAfter(update) {
+		saveCurrentConditions();
+		update();
+		render();
+	}
+
+	function bindConfigSwitches(root) {
+		// Scoring method change
+		root.querySelectorAll('input[name="scScoringMethod"]').forEach(radio => {
+			radio.addEventListener('change', () => rerenderAfter(() => { currentConfig.scoring_method = radio.value; }));
+		});
+		// Calculation type change
+		root.querySelectorAll('input[name="scCalcType"]').forEach(radio => {
+			radio.addEventListener('change', () => rerenderAfter(() => { currentConfig.calculation_type = radio.value; }));
+		});
+		// Group tab click
+		root.querySelectorAll('.sc-rc-group-tab').forEach(btn => {
+			btn.addEventListener('click', () => rerenderAfter(() => { activeGroupTab = btn.dataset.group; }));
+		});
+	}
+
+	function changeConditionOperator(select) {
+		const tr = select.closest('tr');
+		const cell = tr.querySelector('.sc-rc-score-cell');
+		const cond = findCondition(tr.dataset.condId);
+		if (!cond) return;
+		// Capture the inputs for the previous operator before replacing them.
+		cond.min_score = readNumber(cell.querySelector(cond.operator === 'between'
+			? '.sc-rc-min-score' : '.sc-rc-single-score'));
+		cond.max_score = cond.operator === 'between' ? readNumber(cell.querySelector('.sc-rc-max-score')) : null;
+		cond.operator = select.value;
+		cell.innerHTML = buildScoreInputs(cond);
+	}
+
+	function addCondition() {
+		const newCond = createDefaultCondition();
+		if (currentConfig.scoring_method === 'total') {
+			currentConfig.conditions.push(newCond);
+		} else if (activeGroupTab && currentConfig.group_configs[activeGroupTab]) {
+			currentConfig.group_configs[activeGroupTab].conditions.push(newCond);
+		}
+	}
+
+	function addAlert() {
+		saveCurrentConditions();
+		const questions = extractQuestions();
+		const newAlert = {
+			id: genId('alert'),
+			question_id: questions[0]?.id || '',
+			operator: '>=',
+			threshold: null,
+			conclusion: '',
+			note: ''
+		};
+		currentConfig.special_alerts.push(newAlert);
+		const list = document.getElementById('scAlertsList');
+		if (list) {
+			list.insertAdjacentHTML('beforeend', buildAlertCard(newAlert, questions));
+			bindAlertDel(list.lastElementChild);
+		}
+	}
+
 	function bindEvents() {
 		const root = document.getElementById('scResultConfigRoot');
 		if (!root) return;
 
-		// Scoring method change
-		root.querySelectorAll('input[name="scScoringMethod"]').forEach(radio => {
-			radio.addEventListener('change', () => {
-				saveCurrentConditions();
-				currentConfig.scoring_method = radio.value;
-				render();
-			});
-		});
-
-		// Calculation type change
-		root.querySelectorAll('input[name="scCalcType"]').forEach(radio => {
-			radio.addEventListener('change', () => {
-				saveCurrentConditions();
-				currentConfig.calculation_type = radio.value;
-				render();
-			});
-		});
-
-		// Group tab click
-		root.querySelectorAll('.sc-rc-group-tab').forEach(btn => {
-			btn.addEventListener('click', () => {
-				saveCurrentConditions();
-				activeGroupTab = btn.dataset.group;
-				render();
-			});
-		});
+		bindConfigSwitches(root);
 
 		// Condition operator change
 		root.querySelectorAll('.sc-rc-cond-operator').forEach(select => {
-			select.addEventListener('change', () => {
-				const tr = select.closest('tr');
-				const cell = tr.querySelector('.sc-rc-score-cell');
-				const condId = tr.dataset.condId;
-				const cond = findCondition(condId);
-				if (cond) {
-					// Capture the inputs for the previous operator before replacing them.
-					cond.min_score = readNumber(cell.querySelector(cond.operator === 'between'
-						? '.sc-rc-min-score' : '.sc-rc-single-score'));
-					cond.max_score = cond.operator === 'between' ? readNumber(cell.querySelector('.sc-rc-max-score')) : null;
-					cond.operator = select.value;
-					cell.innerHTML = buildScoreInputs(cond);
-				}
-			});
+			select.addEventListener('change', () => changeConditionOperator(select));
 		});
 
 		// Add condition
 		root.querySelectorAll('.sc-rc-add-cond').forEach(btn => {
-			btn.addEventListener('click', () => {
-				saveCurrentConditions();
-				const newCond = createDefaultCondition();
-				if (currentConfig.scoring_method === 'total') {
-					currentConfig.conditions.push(newCond);
-				} else if (activeGroupTab && currentConfig.group_configs[activeGroupTab]) {
-					currentConfig.group_configs[activeGroupTab].conditions.push(newCond);
-				}
-				render();
-			});
+			btn.addEventListener('click', () => rerenderAfter(addCondition));
 		});
 
 		// Delete condition
@@ -378,26 +394,7 @@
 
 		// Add alert
 		const addAlertBtn = root.querySelector('.sc-rc-add-alert');
-		if (addAlertBtn) {
-			addAlertBtn.addEventListener('click', () => {
-				saveCurrentConditions();
-				const questions = extractQuestions();
-				const newAlert = {
-					id: genId('alert'),
-					question_id: questions[0]?.id || '',
-					operator: '>=',
-					threshold: null,
-					conclusion: '',
-					note: ''
-				};
-				currentConfig.special_alerts.push(newAlert);
-				const list = document.getElementById('scAlertsList');
-				if (list) {
-					list.insertAdjacentHTML('beforeend', buildAlertCard(newAlert, questions));
-					bindAlertDel(list.lastElementChild);
-				}
-			});
-		}
+		if (addAlertBtn) addAlertBtn.addEventListener('click', addAlert);
 
 		// Delete alert
 		root.querySelectorAll('.sc-rc-alert-card').forEach(card => bindAlertDel(card));

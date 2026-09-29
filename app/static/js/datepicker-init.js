@@ -94,120 +94,122 @@ function initDatepickers(selector) {
 
 	const elements = typeof selector === 'string' ? document.querySelectorAll(selector) : [selector];
 
-	elements.forEach(function (el) {
-		if (!el || !(el instanceof HTMLElement)) {
-			return;
+	elements.forEach(initDatepickerElement);
+}
+
+const DATEPICKER_LOCALE = {
+	firstDayOfWeek: 1,      // Monday
+	weekdays: {
+		shorthand: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+		longhand: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy']
+	},
+	months: {
+		shorthand: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+		longhand: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
+	}
+};
+
+function dispatchNativeEvents(element, types) {
+	types.forEach(type => element.dispatchEvent(new Event(type, { bubbles: true })));
+}
+
+// Close all other flatpickr instances
+function closeOtherDatepickers(selectedDates, dateStr, instance) {
+	document.querySelectorAll('.flatpickr-input').forEach(input => {
+		if (input._flatpickr && input._flatpickr !== instance) {
+			input._flatpickr.close();
 		}
+	});
+}
 
-		if (isDatepickerDisabled(el)) {
-			if (el._flatpickr) {
-				el._flatpickr.destroy();
-			}
-			return;
+// Remove the selector class from the altInput to prevent re-initialization,
+// copy its accessible name and forward typed input/change to the original input (auto-save).
+function prepareDatepickerAltInput(instance) {
+	instance.altInput.classList.remove('js-datepicker');
+	instance.altInput.classList.add('qlpk-datepicker-alt-input');
+	if (instance.element.id) {
+		instance.altInput.dataset.datepickerAltFor = instance.element.id;
+	}
+	const sourceLabel = instance.element.getAttribute('aria-label')
+		|| Array.from(instance.element.labels || []).map(label => label.textContent.trim()).join(' ')
+		|| instance.element.placeholder;
+	const labelledBy = instance.element.getAttribute('aria-labelledby');
+	if (labelledBy) {
+		instance.altInput.setAttribute('aria-labelledby', labelledBy);
+	} else if (sourceLabel && !instance.altInput.getAttribute('aria-label')) {
+		instance.altInput.setAttribute('aria-label', sourceLabel);
+	}
+	instance.altInput.addEventListener('input', () => dispatchNativeEvents(instance.element, ['input']));
+	instance.altInput.addEventListener('change', () => dispatchNativeEvents(instance.element, ['change']));
+}
+
+function createDatepickerReadyHandler(initialValue) {
+	return function (selectedDates, dateStr, instance) {
+		if (instance.altInput) prepareDatepickerAltInput(instance);
+
+		// Parse initial value from HTML attribute (not autocomplete)
+		// This ensures proper display format (d/m/Y) even when value comes from server
+		if (initialValue && initialValue.trim() !== '') {
+			// setDate formats it to altFormat (d/m/Y) for display; false = don't trigger onChange
+			instance.setDate(initialValue, false);
+		} else if (selectedDates.length === 0) {
+			// Only clear if no date is selected (avoid clearing user-edited values)
+			instance.clear();
 		}
+	};
+}
 
-		// Skip if already initialized or if it's a flatpickr generated input
-		if (el._flatpickr || el.classList.contains('flatpickr-input')) {
-			return;
+function initDatepickerElement(el) {
+	if (!el || !(el instanceof HTMLElement)) {
+		return;
+	}
+
+	if (isDatepickerDisabled(el)) {
+		if (el._flatpickr) {
+			el._flatpickr.destroy();
 		}
+		return;
+	}
 
-		// Disable autocomplete to prevent browser from caching medical data
-		el.setAttribute('autocomplete', 'off');
+	// Skip if already initialized or if it's a flatpickr generated input
+	if (el._flatpickr || el.classList.contains('flatpickr-input')) {
+		return;
+	}
 
-		// Read configuration from data attributes
-		const { dateFormat, altFormat, enableTime, noCalendar, minDate, maxDate, defaultDate, useAltInput, disableDates } = readDatepickerConfig(el);
+	// Disable autocomplete to prevent browser from caching medical data
+	el.setAttribute('autocomplete', 'off');
 
-		// Store initial value from HTML attribute (not from browser autocomplete)
-		// Use getAttribute to get only the value from HTML, not from browser cache
-		const initialValue = el.getAttribute('value') || '';
+	// Read configuration from data attributes
+	const { dateFormat, altFormat, enableTime, noCalendar, minDate, maxDate, defaultDate, useAltInput, disableDates } = readDatepickerConfig(el);
 
-		flatpickr(el, {
-			dateFormat: dateFormat,
-			altInput: useAltInput,
-			altFormat: altFormat,
-			allowInput: true,
-			enableTime: enableTime,
-			noCalendar: noCalendar,
-			minDate: minDate,
-			maxDate: maxDate,
-			disable: disableDates,
-			// Always append to body to avoid clipping by modal overflow:hidden
-			// This ensures the calendar is fully visible even in modals
-			appendTo: document.body,
-			defaultDate: defaultDate,
-			locale: {
-				firstDayOfWeek: 1,      // Monday
-				weekdays: {
-					shorthand: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-					longhand: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy']
-				},
-				months: {
-					shorthand: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
-					longhand: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
-				}
-			},
-			onOpen: function (selectedDates, dateStr, instance) {
-				// Close all other flatpickr instances
-				const allInstances = document.querySelectorAll('.flatpickr-input');
-				allInstances.forEach(input => {
-					if (input._flatpickr && input._flatpickr !== instance) {
-						input._flatpickr.close();
-					}
-				});
-			},
-			onReady: function (selectedDates, dateStr, instance) {
-				// Remove the selector class from the altInput to prevent re-initialization
-				if (instance.altInput) {
-					instance.altInput.classList.remove('js-datepicker');
-					instance.altInput.classList.add('qlpk-datepicker-alt-input');
-					if (instance.element.id) {
-						instance.altInput.dataset.datepickerAltFor = instance.element.id;
-					}
-					const sourceLabel = instance.element.getAttribute('aria-label')
-						|| Array.from(instance.element.labels || []).map(label => label.textContent.trim()).join(' ')
-						|| instance.element.placeholder;
-					const labelledBy = instance.element.getAttribute('aria-labelledby');
-					if (labelledBy) {
-						instance.altInput.setAttribute('aria-labelledby', labelledBy);
-					} else if (sourceLabel && !instance.altInput.getAttribute('aria-label')) {
-						instance.altInput.setAttribute('aria-label', sourceLabel);
-					}
+	// Store initial value from HTML attribute (not from browser autocomplete)
+	// Use getAttribute to get only the value from HTML, not from browser cache
+	const initialValue = el.getAttribute('value') || '';
 
-					// Forward input/change events from altInput to the original input
-					// This ensures auto-save works when user types manually
-					instance.altInput.addEventListener('input', function () {
-						const inputEvent = new Event('input', { bubbles: true });
-						instance.element.dispatchEvent(inputEvent);
-					});
-					instance.altInput.addEventListener('change', function () {
-						const changeEvent = new Event('change', { bubbles: true });
-						instance.element.dispatchEvent(changeEvent);
-					});
-				}
-
-				// Parse initial value from HTML attribute (not autocomplete)
-				// This ensures proper display format (d/m/Y) even when value comes from server
-				if (initialValue && initialValue.trim() !== '') {
-					// Parse the value using dateFormat (Y-m-d) and set it
-					// setDate will automatically format it to altFormat (d/m/Y) for display
-					instance.setDate(initialValue, false); // false = don't trigger onChange
-				} else if (selectedDates.length === 0) {
-					// Only clear if no date is selected (avoid clearing user-edited values)
-					instance.clear();
-				}
-			},
-			onChange: function (selectedDates, dateStr, instance) {
-				// Trigger native 'change' and 'input' events on the original input
-				// This ensures compatibility with existing event listeners (e.g., auto-save)
-				const changeEvent = new Event('change', { bubbles: true });
-				const inputEvent = new Event('input', { bubbles: true });
-				instance.element.dispatchEvent(changeEvent);
-				instance.element.dispatchEvent(inputEvent);
-			},
-			// Allow overriding position via data-position attribute (e.g. data-position="above")
-			// If not specified, default to 'auto'
-			position: el.dataset.position || 'auto'
-		});
+	flatpickr(el, {
+		dateFormat: dateFormat,
+		altInput: useAltInput,
+		altFormat: altFormat,
+		allowInput: true,
+		enableTime: enableTime,
+		noCalendar: noCalendar,
+		minDate: minDate,
+		maxDate: maxDate,
+		disable: disableDates,
+		// Always append to body to avoid clipping by modal overflow:hidden
+		// This ensures the calendar is fully visible even in modals
+		appendTo: document.body,
+		defaultDate: defaultDate,
+		locale: DATEPICKER_LOCALE,
+		onOpen: closeOtherDatepickers,
+		onReady: createDatepickerReadyHandler(initialValue),
+		// Trigger native 'change' and 'input' events on the original input (e.g. auto-save listeners)
+		onChange: function (selectedDates, dateStr, instance) {
+			dispatchNativeEvents(instance.element, ['change', 'input']);
+		},
+		// Allow overriding position via data-position attribute (e.g. data-position="above")
+		// If not specified, default to 'auto'
+		position: el.dataset.position || 'auto'
 	});
 }
 

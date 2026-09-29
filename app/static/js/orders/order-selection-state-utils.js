@@ -347,28 +347,45 @@
 		}
 	}
 
-	function createSelectedOrderActionsAdapter(options = {}) {
+	// Selection state accessors: explicit callbacks win, otherwise read/write options.state.
+	function createSelectionAccessors(options) {
 		const getState = () => typeof options.getState === 'function'
 			? options.getState()
 			: options.state;
-		const getSelectedOrders = () => {
-			if (typeof options.getSelectedOrders === 'function') return options.getSelectedOrders();
-			return getState()?.selectedOrders || [];
-		};
-		const setSelectedOrders = (orders) => {
-			if (typeof options.setSelectedOrders === 'function') {
-				options.setSelectedOrders(orders);
-				return;
+		return {
+			getState,
+			getSelectedOrders: () => {
+				if (typeof options.getSelectedOrders === 'function') return options.getSelectedOrders();
+				return getState()?.selectedOrders || [];
+			},
+			setSelectedOrders: (orders) => {
+				if (typeof options.setSelectedOrders === 'function') {
+					options.setSelectedOrders(orders);
+					return;
+				}
+				const state = getState();
+				if (state) state.selectedOrders = orders;
+			},
+			triggerAutoSave: () => {
+				if (typeof options.triggerAutoSave === 'function') options.triggerAutoSave();
+			},
+			showToast: (type, message) => {
+				if (typeof options.showToast === 'function') options.showToast(type, message);
 			}
-			const state = getState();
-			if (state) state.selectedOrders = orders;
 		};
-		const triggerAutoSave = () => {
-			if (typeof options.triggerAutoSave === 'function') options.triggerAutoSave();
-		};
-		const showToast = (type, message) => {
-			if (typeof options.showToast === 'function') options.showToast(type, message);
-		};
+	}
+
+	// Delegate to tableAdapter[method], else options[method]; null when neither exists.
+	function delegateTableCall(options, method, ...args) {
+		if (options.tableAdapter && typeof options.tableAdapter[method] === 'function') {
+			return options.tableAdapter[method](...args);
+		}
+		if (typeof options[method] === 'function') return options[method](...args);
+		return null;
+	}
+
+	function createSelectedOrderActionsAdapter(options = {}) {
+		const { getState, getSelectedOrders, setSelectedOrders, triggerAutoSave, showToast } = createSelectionAccessors(options);
 
 		const adapter = {
 			removeOrderFromSelection(entryId) {
@@ -389,23 +406,10 @@
 				return true;
 			},
 			renderSelectedOrders() {
-				const orders = getSelectedOrders();
-				if (options.tableAdapter && typeof options.tableAdapter.renderSelectedOrders === 'function') {
-					return options.tableAdapter.renderSelectedOrders(orders);
-				}
-				if (typeof options.renderSelectedOrders === 'function') {
-					return options.renderSelectedOrders(orders);
-				}
-				return null;
+				return delegateTableCall(options, 'renderSelectedOrders', getSelectedOrders());
 			},
 			updateStatusDropdownClasses() {
-				if (options.tableAdapter && typeof options.tableAdapter.updateStatusDropdownClasses === 'function') {
-					return options.tableAdapter.updateStatusDropdownClasses();
-				}
-				if (typeof options.updateStatusDropdownClasses === 'function') {
-					return options.updateStatusDropdownClasses();
-				}
-				return null;
+				return delegateTableCall(options, 'updateStatusDropdownClasses');
 			},
 			updateOrderStatus(orderTempId, newStatus) {
 				return handleOrderStatusUpdate(getSelectedOrders(), orderTempId, newStatus, {
