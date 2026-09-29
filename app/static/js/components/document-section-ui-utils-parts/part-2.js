@@ -3,178 +3,188 @@
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/document-section-ui-utils'] || (window.QLPKModuleParts['components/document-section-ui-utils'] = { state: {} });
 
-	function createDocumentSectionAdapter(options = {}) {
-		const doc = options.document || window.document;
-		const getUploadedDocuments = () => typeof options.getUploadedDocuments === 'function' ? options.getUploadedDocuments() : [];
-		const getAttachments = () => typeof options.getAttachments === 'function' ? options.getAttachments() : [];
-		const getIsLocked = () => typeof options.getIsLocked === 'function' ? options.getIsLocked() : Boolean(options.isLocked);
+	function installDocumentSectionFns1(ctx) {
+		const getUploadedDocuments = () => typeof ctx.options.getUploadedDocuments === 'function' ? ctx.options.getUploadedDocuments() : [];
+
+		const getAttachments = () => typeof ctx.options.getAttachments === 'function' ? ctx.options.getAttachments() : [];
+
+		const getIsLocked = () => typeof ctx.options.getIsLocked === 'function' ? ctx.options.getIsLocked() : Boolean(ctx.options.isLocked);
+
 		const showToast = (type, message) => {
-			if (typeof options.showToast === 'function') options.showToast(type, message);
+			if (typeof ctx.options.showToast === 'function') ctx.options.showToast(type, message);
 		};
-		const adapter = {};
 
-		adapter.updateNotesAttachmentCount = function () {
+		Object.assign(ctx, { getUploadedDocuments, getAttachments, getIsLocked, showToast });
+	}
+
+	function runDocumentSectionSetup1(closureCtx) {
+		closureCtx.ctx = {};
+		closureCtx.ctx.options = closureCtx.options;
+		installDocumentSectionFns1(closureCtx.ctx);
+		closureCtx.doc = closureCtx.ctx.options.document || window.document;
+		closureCtx.adapter = {};
+		closureCtx.adapter.updateNotesAttachmentCount = function () {
 			return moduleParts.updateNotesAttachmentCount({
-				document: doc,
-				notesAttachmentChip: typeof options.getNotesAttachmentChip === 'function' ? options.getNotesAttachmentChip() : options.notesAttachmentChip,
-				getTotalCount: () => (getAttachments()?.length || 0) + (getUploadedDocuments()?.length || 0)
+				document: closureCtx.doc,
+				notesAttachmentChip: typeof closureCtx.ctx.options.getNotesAttachmentChip === 'function' ? closureCtx.ctx.options.getNotesAttachmentChip() : closureCtx.ctx.options.notesAttachmentChip,
+				getTotalCount: () => (closureCtx.ctx.getAttachments()?.length || 0) + (closureCtx.ctx.getUploadedDocuments()?.length || 0)
 			});
 		};
-
-		adapter.bindNotesUploadButton = function () {
+		closureCtx.adapter.bindNotesUploadButton = function () {
 			const chip = moduleParts.bindNotesUploadButton({
-				notesAttachmentChip: typeof options.getNotesAttachmentChip === 'function' ? options.getNotesAttachmentChip() : options.notesAttachmentChip,
-				loadAttachments: adapter.loadAttachmentsForCurrentPatient,
-				getTotalCount: () => (getAttachments()?.length || 0) + (getUploadedDocuments()?.length || 0)
+				notesAttachmentChip: typeof closureCtx.ctx.options.getNotesAttachmentChip === 'function' ? closureCtx.ctx.options.getNotesAttachmentChip() : closureCtx.ctx.options.notesAttachmentChip,
+				loadAttachments: closureCtx.adapter.loadAttachmentsForCurrentPatient,
+				getTotalCount: () => (closureCtx.ctx.getAttachments()?.length || 0) + (closureCtx.ctx.getUploadedDocuments()?.length || 0)
 			});
-			if (typeof options.setNotesAttachmentChip === 'function') options.setNotesAttachmentChip(chip);
+			if (typeof closureCtx.ctx.options.setNotesAttachmentChip === 'function') closureCtx.ctx.options.setNotesAttachmentChip(chip);
 			return chip;
 		};
-
-		adapter.ensureDocumentEditingAllowed = function (showToastOption = true) {
+		closureCtx.adapter.ensureDocumentEditingAllowed = function (showToastOption = true) {
 			return moduleParts.ensureDocumentEditingAllowed({
-				isLocked: getIsLocked(),
+				isLocked: closureCtx.ctx.getIsLocked(),
 				showToast: showToastOption,
-				showWarning: message => showToast('warning', message)
+				showWarning: message => closureCtx.ctx.showToast('warning', message)
 			});
 		};
-
-		adapter.setDocumentSectionLockState = function (locked) {
-			return moduleParts.setDocumentSectionLockState(locked, { document: doc });
+		closureCtx.adapter.setDocumentSectionLockState = function (locked) {
+			return moduleParts.setDocumentSectionLockState(locked, { document: closureCtx.doc });
 		};
-
-		adapter.initializeDocumentUpload = function () {
-			if (typeof options.getUploadInitialized === 'function' && options.getUploadInitialized()) return false;
-			if (typeof options.setUploadInitialized === 'function') options.setUploadInitialized(true);
+		closureCtx.adapter.initializeDocumentUpload = function () {
+			if (typeof closureCtx.ctx.options.getUploadInitialized === 'function' && closureCtx.ctx.options.getUploadInitialized()) return false;
+			if (typeof closureCtx.ctx.options.setUploadInitialized === 'function') closureCtx.ctx.options.setUploadInitialized(true);
 			return moduleParts.bindDocumentUploadControls({
-				document: doc,
-				sessionStorage: options.sessionStorage,
-				documentDraftKey: options.documentDraftKey,
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				handleFileUpload: adapter.handleFileUpload,
-				uploadAttachment: adapter.uploadAttachmentForCurrentPatient,
-				getCurrentPatientId: options.getCurrentPatientId,
-				getContextToken: options.getContextToken,
-				hasCurrentPatient: () => Boolean(typeof options.getCurrentPatientId === 'function' ? options.getCurrentPatientId() : null),
-				getUploadedDocuments,
-				showInfo: message => showToast('info', message),
-				setLockState: adapter.setDocumentSectionLockState,
-				isLocked: getIsLocked()
+				document: closureCtx.doc,
+				sessionStorage: closureCtx.ctx.options.sessionStorage,
+				documentDraftKey: closureCtx.ctx.options.documentDraftKey,
+				ensureEditingAllowed: closureCtx.adapter.ensureDocumentEditingAllowed,
+				handleFileUpload: closureCtx.adapter.handleFileUpload,
+				uploadAttachment: closureCtx.adapter.uploadAttachmentForCurrentPatient,
+				getCurrentPatientId: closureCtx.ctx.options.getCurrentPatientId,
+				getContextToken: closureCtx.ctx.options.getContextToken,
+				hasCurrentPatient: () => Boolean(typeof closureCtx.ctx.options.getCurrentPatientId === 'function' ? closureCtx.ctx.options.getCurrentPatientId() : null),
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				showInfo: message => closureCtx.ctx.showToast('info', message),
+				setLockState: closureCtx.adapter.setDocumentSectionLockState,
+				isLocked: closureCtx.ctx.getIsLocked()
 			});
 		};
-
-		adapter.uploadFile = function (file, patientId, uploadOptions = {}) {
+		closureCtx.adapter.uploadFile = function (file, patientId, uploadOptions = {}) {
 			return moduleParts.uploadFileToPatient(file, patientId, {
 				...uploadOptions,
-				fetch: options.fetch,
-				validateFile: options.validateFile,
-				loadAttachments: adapter.loadAttachmentsForCurrentPatient,
-				showSuccess: message => showToast('success', message),
-				showError: message => showToast('error', message)
+				fetch: closureCtx.ctx.options.fetch,
+				validateFile: closureCtx.ctx.options.validateFile,
+				loadAttachments: closureCtx.adapter.loadAttachmentsForCurrentPatient,
+				showSuccess: message => closureCtx.ctx.showToast('success', message),
+				showError: message => closureCtx.ctx.showToast('error', message)
 			});
 		};
+	}
 
-		adapter.uploadDraftDocumentsForPatient = function (patientId, uploadOptions = {}) {
+	function runDocumentSectionSetup2(closureCtx) {
+		closureCtx.adapter.uploadDraftDocumentsForPatient = function (patientId, uploadOptions = {}) {
 			return moduleParts.uploadDraftDocumentsForPatient(patientId, {
 				isCurrentContext: uploadOptions.isCurrentContext,
-				getUploadedDocuments,
-				setUploadedDocuments: options.setUploadedDocuments,
-				sessionStorage: options.sessionStorage,
-				documentDraftKey: options.documentDraftKey,
-				uploadFile: adapter.uploadFile,
-				loadAttachments: adapter.loadAttachmentsForCurrentPatient
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				setUploadedDocuments: closureCtx.ctx.options.setUploadedDocuments,
+				sessionStorage: closureCtx.ctx.options.sessionStorage,
+				documentDraftKey: closureCtx.ctx.options.documentDraftKey,
+				uploadFile: closureCtx.adapter.uploadFile,
+				loadAttachments: closureCtx.adapter.loadAttachmentsForCurrentPatient
 			});
 		};
-
-		adapter.handleFileUpload = function (files) {
+		closureCtx.adapter.handleFileUpload = function (files) {
 			return moduleParts.handleDraftFileUpload(files, {
-				document: doc,
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				validateFile: options.validateFile,
-				getUploadedDocuments,
-				addUploadedDocument: documentItem => getUploadedDocuments().push(documentItem),
-				renderDocumentsList: adapter.renderDocumentsList,
-				showInfo: message => showToast('info', message),
-				showSuccess: message => showToast('success', message)
+				document: closureCtx.doc,
+				ensureEditingAllowed: closureCtx.adapter.ensureDocumentEditingAllowed,
+				validateFile: closureCtx.ctx.options.validateFile,
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				addUploadedDocument: documentItem => closureCtx.ctx.getUploadedDocuments().push(documentItem),
+				renderDocumentsList: closureCtx.adapter.renderDocumentsList,
+				showInfo: message => closureCtx.ctx.showToast('info', message),
+				showSuccess: message => closureCtx.ctx.showToast('success', message)
 			});
 		};
-
-		adapter.renderDocumentsList = function () {
+		closureCtx.adapter.renderDocumentsList = function () {
 			return moduleParts.renderSharedDocumentList({
-				document: doc,
-				getCurrentPatientId: options.getCurrentPatientId,
-				getContextToken: options.getContextToken,
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				getUploadedDocuments,
-				getAttachments,
-				formatDateDisplay: options.formatDisplayDate,
-				formatDraftDate: options.formatDraftDate,
-				apiCall: options.apiCall,
-				fetch: options.fetch,
-				showToast,
-				showConfirmationDialog: options.showConfirmationDialog,
-				loadAttachmentsForCurrentPatient: adapter.loadAttachmentsForCurrentPatient,
-				downloadDraftDocument: adapter.downloadDocument,
-				deleteDraftDocument: adapter.deleteDocument,
-				setLockState: adapter.setDocumentSectionLockState,
-				isLocked: getIsLocked(),
-				console: options.console || window.console
+				document: closureCtx.doc,
+				getCurrentPatientId: closureCtx.ctx.options.getCurrentPatientId,
+				getContextToken: closureCtx.ctx.options.getContextToken,
+				ensureEditingAllowed: closureCtx.adapter.ensureDocumentEditingAllowed,
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				getAttachments: closureCtx.ctx.getAttachments,
+				formatDateDisplay: closureCtx.ctx.options.formatDisplayDate,
+				formatDraftDate: closureCtx.ctx.options.formatDraftDate,
+				apiCall: closureCtx.ctx.options.apiCall,
+				fetch: closureCtx.ctx.options.fetch,
+				showToast: closureCtx.ctx.showToast,
+				showConfirmationDialog: closureCtx.ctx.options.showConfirmationDialog,
+				loadAttachmentsForCurrentPatient: closureCtx.adapter.loadAttachmentsForCurrentPatient,
+				downloadDraftDocument: closureCtx.adapter.downloadDocument,
+				deleteDraftDocument: closureCtx.adapter.deleteDocument,
+				setLockState: closureCtx.adapter.setDocumentSectionLockState,
+				isLocked: closureCtx.ctx.getIsLocked(),
+				console: closureCtx.ctx.options.console || window.console
 			});
 		};
-
-		adapter.loadAttachmentsForCurrentPatient = function () {
+		closureCtx.adapter.loadAttachmentsForCurrentPatient = function () {
 			return moduleParts.loadAttachmentsForCurrentPatient({
-				document: doc,
-				sessionStorage: options.sessionStorage,
-				documentDraftKey: options.documentDraftKey,
-				apiCall: options.apiCall,
-				getCurrentPatientId: options.getCurrentPatientId,
-				getContextToken: options.getContextToken,
-				getUploadedDocuments,
-				setUploadedDocuments: options.setUploadedDocuments,
-				setAttachments: options.setAttachments,
-				renderDocumentsList: adapter.renderDocumentsList,
-				renderAttachmentsList: adapter.renderAttachmentsList
+				document: closureCtx.doc,
+				sessionStorage: closureCtx.ctx.options.sessionStorage,
+				documentDraftKey: closureCtx.ctx.options.documentDraftKey,
+				apiCall: closureCtx.ctx.options.apiCall,
+				getCurrentPatientId: closureCtx.ctx.options.getCurrentPatientId,
+				getContextToken: closureCtx.ctx.options.getContextToken,
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				setUploadedDocuments: closureCtx.ctx.options.setUploadedDocuments,
+				setAttachments: closureCtx.ctx.options.setAttachments,
+				renderDocumentsList: closureCtx.adapter.renderDocumentsList,
+				renderAttachmentsList: closureCtx.adapter.renderAttachmentsList
 			});
 		};
-
-		adapter.renderAttachmentsList = function () {
-			return adapter.renderDocumentsList();
+		closureCtx.adapter.renderAttachmentsList = function () {
+			return closureCtx.adapter.renderDocumentsList();
 		};
+	}
 
-		adapter.uploadAttachmentForCurrentPatient = function (file) {
+	function runDocumentSectionSetup3(closureCtx) {
+		closureCtx.adapter.uploadAttachmentForCurrentPatient = function (file) {
 			return moduleParts.uploadAttachmentForCurrentPatient(file, {
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				getCurrentPatientId: options.getCurrentPatientId,
-				getContextToken: options.getContextToken,
-				uploadFile: adapter.uploadFile,
-				showError: message => showToast('error', message)
+				ensureEditingAllowed: closureCtx.adapter.ensureDocumentEditingAllowed,
+				getCurrentPatientId: closureCtx.ctx.options.getCurrentPatientId,
+				getContextToken: closureCtx.ctx.options.getContextToken,
+				uploadFile: closureCtx.adapter.uploadFile,
+				showError: message => closureCtx.ctx.showToast('error', message)
 			});
 		};
-
-		adapter.downloadDocument = function (docId) {
+		closureCtx.adapter.downloadDocument = function (docId) {
 			return moduleParts.downloadDraftDocument(docId, {
-				document: doc,
-				URL: options.URL || window.URL,
-				getUploadedDocuments
+				document: closureCtx.doc,
+				URL: closureCtx.ctx.options.URL || window.URL,
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments
 			});
 		};
-
-		adapter.deleteDocument = function (docId, actionOptions = {}) {
+		closureCtx.adapter.deleteDocument = function (docId, actionOptions = {}) {
 			return moduleParts.deleteDraftDocument(docId, {
 				...actionOptions,
-				getCurrentPatientId: options.getCurrentPatientId,
-				getContextToken: options.getContextToken,
-				ensureEditingAllowed: adapter.ensureDocumentEditingAllowed,
-				getUploadedDocuments,
-				setUploadedDocuments: options.setUploadedDocuments,
-				renderDocumentsList: adapter.renderDocumentsList,
-				showSuccess: message => showToast('success', message),
-				showConfirmationDialog: options.showConfirmationDialog
+				getCurrentPatientId: closureCtx.ctx.options.getCurrentPatientId,
+				getContextToken: closureCtx.ctx.options.getContextToken,
+				ensureEditingAllowed: closureCtx.adapter.ensureDocumentEditingAllowed,
+				getUploadedDocuments: closureCtx.ctx.getUploadedDocuments,
+				setUploadedDocuments: closureCtx.ctx.options.setUploadedDocuments,
+				renderDocumentsList: closureCtx.adapter.renderDocumentsList,
+				showSuccess: message => closureCtx.ctx.showToast('success', message),
+				showConfirmationDialog: closureCtx.ctx.options.showConfirmationDialog
 			});
 		};
+	}
 
-		return adapter;
+	function createDocumentSectionAdapter(options = {}) {
+		const closureCtx = {};
+		closureCtx.options = options;
+		runDocumentSectionSetup1(closureCtx);
+		runDocumentSectionSetup2(closureCtx);
+		runDocumentSectionSetup3(closureCtx);
+		return closureCtx.adapter;
 	}
 	function createExaminationDocumentSectionAdapter(options = {}) {
 		const showToast = (type, message) => {

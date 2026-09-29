@@ -40,39 +40,14 @@
 	} = PARTS;
 
 	const FLOW_PASSTHROUGH_OPTION_KEYS = [
-		'apiCall',
-		'showToast',
-		'getCurrentPatientData',
-		'getCurrentAppointmentId',
-		'getFormatDateDisplay',
-		'showPatientAction',
-		'renderActiveTabLoading',
-		'loadVitalSigns',
-		'clearHistoryTabs',
-		'prepareFormForCopy',
-		'setLoadingState',
-		'setCurrentAppointmentId',
-		'loadPatient',
-		'loadExaminationFormData',
-		'loadAppointmentServices',
-		'loadPrescriptionData',
-		'lockForm',
-		'activeStatuses',
-		'getHistoryDescription',
-		'formatHistoryDate',
-		'getExaminationStatusBadgeClass',
-		'getExaminationStatusText',
-		'showCopyAction',
-		'showDeleteAction',
-		'searchLimit',
-		'searchErrorMessage',
-		'copySuccessMessage',
-		'copyFallbackSuccessMessage',
-		'copyErrorLogMessage',
-		'serviceErrorMessage',
-		'prescriptionErrorMessage',
-		'formErrorMessage',
-		'onAfterHistoryLoad'
+		'apiCall', 'showToast', 'getCurrentPatientData', 'getCurrentAppointmentId', 'getFormatDateDisplay',
+		'showPatientAction', 'renderActiveTabLoading', 'loadVitalSigns', 'clearHistoryTabs',
+		'prepareFormForCopy', 'setLoadingState', 'setCurrentAppointmentId', 'loadPatient',
+		'loadExaminationFormData', 'loadAppointmentServices', 'loadPrescriptionData', 'lockForm',
+		'activeStatuses', 'getHistoryDescription', 'formatHistoryDate', 'getExaminationStatusBadgeClass',
+		'getExaminationStatusText', 'showCopyAction', 'showDeleteAction', 'searchLimit',
+		'searchErrorMessage', 'copySuccessMessage', 'copyFallbackSuccessMessage', 'copyErrorLogMessage',
+		'serviceErrorMessage', 'prescriptionErrorMessage', 'formErrorMessage', 'onAfterHistoryLoad'
 	];
 
 	function pickFlowPassthroughOptions(options) {
@@ -162,170 +137,207 @@
 		};
 	}
 
-	function createPatientSearchModalFlowAdapter(options = {}) {
+	function installSearchFlowFns1(ctx) {
 		const getState = () => {
-			if (typeof options.getState !== 'function') return {};
-			return options.getState() || {};
+			if (typeof ctx.options.getState !== 'function') return {};
+			return ctx.options.getState() || {};
 		};
+
 		const setState = patch => {
-			if (typeof options.setState === 'function') options.setState(patch || {});
+			if (typeof ctx.options.setState === 'function') ctx.options.setState(patch || {});
 			return getState();
 		};
-		const getRenderers = () => {
-			if (typeof options.getHistoryTabRenderers === 'function') return options.getHistoryTabRenderers();
-			return options.historyTabRenderers;
-		};
-		const getCurrentAppointmentId = () => {
-			if (typeof options.getCurrentAppointmentId === 'function') return options.getCurrentAppointmentId();
-			return options.currentAppointmentId;
-		};
-		const getCurrentPatientData = () => {
-			if (typeof options.getCurrentPatientData === 'function') return options.getCurrentPatientData();
-			return options.currentPatientData;
-		};
-		const getFormatDateDisplay = () => {
-			if (typeof options.getFormatDateDisplay === 'function') return options.getFormatDateDisplay();
-			return options.formatDateDisplay;
-		};
-		let searchRequestToken = 0;
-		let historyRequestToken = 0;
-		const flow = {};
 
-		flow.syncWindowState = () => {
-			const state = getState();
+		const getRenderers = () => {
+			if (typeof ctx.options.getHistoryTabRenderers === 'function') return ctx.options.getHistoryTabRenderers();
+			return ctx.options.historyTabRenderers;
+		};
+
+		const getCurrentAppointmentId = () => {
+			if (typeof ctx.options.getCurrentAppointmentId === 'function') return ctx.options.getCurrentAppointmentId();
+			return ctx.options.currentAppointmentId;
+		};
+
+		const getCurrentPatientData = () => {
+			if (typeof ctx.options.getCurrentPatientData === 'function') return ctx.options.getCurrentPatientData();
+			return ctx.options.currentPatientData;
+		};
+
+		const getFormatDateDisplay = () => {
+			if (typeof ctx.options.getFormatDateDisplay === 'function') return ctx.options.getFormatDateDisplay();
+			return ctx.options.formatDateDisplay;
+		};
+
+		function buildCopyFlowOptions(extra = {}) {
+			return {
+				apiCall: ctx.options.apiCall,
+				prepareFormForCopy: ctx.options.prepareFormForCopy,
+				setLoadingState: ctx.options.setLoadingState,
+				setCurrentAppointmentId: ctx.options.setCurrentAppointmentId,
+				loadPatient: ctx.options.loadPatient,
+				loadExaminationFormData: ctx.options.loadExaminationFormData,
+				loadAppointmentServices: ctx.options.loadAppointmentServices,
+				loadPrescriptionData: ctx.options.loadPrescriptionData,
+				showToast: ctx.options.showToast,
+				lockForm: ctx.options.lockForm,
+				showHistoryButton: ctx.options.showHistoryButton,
+				serviceErrorMessage: ctx.options.serviceErrorMessage,
+				prescriptionErrorMessage: ctx.options.prescriptionErrorMessage,
+				formErrorMessage: ctx.options.formErrorMessage,
+				successMessage: ctx.options.copySuccessMessage,
+				fallbackSuccessMessage: ctx.options.copyFallbackSuccessMessage,
+				errorLogMessage: ctx.options.copyErrorLogMessage,
+				...extra
+			};
+		}
+
+		Object.assign(ctx, {
+			getState, setState, getRenderers, getCurrentAppointmentId, getCurrentPatientData, getFormatDateDisplay,
+			buildCopyFlowOptions
+		});
+	}
+
+	function runSearchFlowSetup1(closureCtx) {
+		closureCtx.ctx = {};
+		closureCtx.ctx.options = closureCtx.options;
+		installSearchFlowFns1(closureCtx.ctx);
+		closureCtx.searchRequestToken = 0;
+		closureCtx.historyRequestToken = 0;
+		closureCtx.flow = {};
+		closureCtx.flow.syncWindowState = () => {
+			const state = closureCtx.ctx.getState();
 			return syncWindowState({
-				exposeLegacyWindowState: options.exposeLegacyWindowState,
+				exposeLegacyWindowState: closureCtx.ctx.options.exposeLegacyWindowState,
 				selectedPatient: state.selectedPatient,
 				medicalHistoryLoading: state.medicalHistoryLoading,
 				medicalHistoryData: state.medicalHistoryData,
 				selectedHistoryIndex: state.selectedHistoryIndex
 			});
 		};
-
-		flow.renderSearchResults = (isError = false) => {
-			const state = getState();
+		closureCtx.flow.renderSearchResults = (isError = false) => {
+			const state = closureCtx.ctx.getState();
 			return renderSearchResults({
-				container: options.resultsContainer,
+				container: closureCtx.ctx.options.resultsContainer,
 				isError,
 				patients: state.searchResults,
 				selectedPatient: state.selectedPatient,
-				formatDateDisplay: getFormatDateDisplay(),
-				showPatientAction: options.showPatientAction
+				formatDateDisplay: closureCtx.ctx.getFormatDateDisplay(),
+				showPatientAction: closureCtx.ctx.options.showPatientAction
 			});
 		};
-
-		flow.fetchSearchResults = async (query = '') => {
-			const requestToken = ++searchRequestToken;
+		closureCtx.flow.fetchSearchResults = async (query = '') => {
+			const requestToken = ++closureCtx.searchRequestToken;
 			return fetchSearchResultsForFlow({
 				query,
-				limit: options.searchLimit,
-				apiCall: options.apiCall,
-				isCurrent: () => requestToken === searchRequestToken,
+				limit: closureCtx.ctx.options.searchLimit,
+				apiCall: closureCtx.ctx.options.apiCall,
+				isCurrent: () => requestToken === closureCtx.searchRequestToken,
 				setSearchResults(value) {
-					setState({ searchResults: value });
+					closureCtx.ctx.setState({ searchResults: value });
 				},
-				renderResults: flow.renderSearchResults,
-				autoSelect: flow.autoSelectAfterSearch,
-				showToast: options.showToast,
-				errorMessage: options.searchErrorMessage
+				renderResults: closureCtx.flow.renderSearchResults,
+				autoSelect: closureCtx.flow.autoSelectAfterSearch,
+				showToast: closureCtx.ctx.options.showToast,
+				errorMessage: closureCtx.ctx.options.searchErrorMessage
 			});
 		};
-
-		flow.autoSelectAfterSearch = () => {
-			const state = getState();
+		closureCtx.flow.autoSelectAfterSearch = () => {
+			const state = closureCtx.ctx.getState();
 			return applyAutoSelectAfterSearchForFlow({
 				patients: state.searchResults,
 				prefillPatientId: state.prefillPatientId,
 				selectedPatient: state.selectedPatient,
 				applyNoResultsState(autoSelectState) {
-					setState({
+					closureCtx.ctx.setState({
 						selectedPatient: autoSelectState.selectedPatient,
 						currentPatientId: autoSelectState.currentPatientId,
 						medicalHistoryData: autoSelectState.medicalHistoryData,
 						selectedHistoryIndex: autoSelectState.selectedHistoryIndex
 					});
 				},
-				syncState: flow.syncWindowState,
-				updateContent: flow.updateContent,
-				selectPatient: flow.selectPatient
+				syncState: closureCtx.flow.syncWindowState,
+				updateContent: closureCtx.flow.updateContent,
+				selectPatient: closureCtx.flow.selectPatient
 			});
 		};
+	}
 
-		flow.updateContent = () => {
-			const tabsUi = getTabsUi(options);
+	function runSearchFlowSetup2(closureCtx) {
+		closureCtx.flow.updateContent = () => {
+			const tabsUi = getTabsUi(closureCtx.ctx.options);
 			if (!tabsUi || typeof tabsUi.dispatchPatientTabContent !== 'function') return null;
 			return tabsUi.dispatchPatientTabContent({
-				patient: getState().selectedPatient,
-				renderers: getRenderers()
+				patient: closureCtx.ctx.getState().selectedPatient,
+				renderers: closureCtx.ctx.getRenderers()
 			});
 		};
-
-		flow.getHistoryLoadStateHandlers = () => {
-			const historyUi = getHistoryListUi(options);
+		closureCtx.flow.getHistoryLoadStateHandlers = () => {
+			const historyUi = getHistoryListUi(closureCtx.ctx.options);
 			if (!historyUi || typeof historyUi.buildHistoryLoadStateHandlers !== 'function') return {};
 			return historyUi.buildHistoryLoadStateHandlers({
 				setMedicalHistoryLoading(value) {
-					setState({ medicalHistoryLoading: value });
+					closureCtx.ctx.setState({ medicalHistoryLoading: value });
 				},
 				setCurrentPatientId(value) {
-					setState({ currentPatientId: value });
+					closureCtx.ctx.setState({ currentPatientId: value });
 				},
 				setMedicalHistoryData(value) {
-					setState({ medicalHistoryData: value });
+					closureCtx.ctx.setState({ medicalHistoryData: value });
 				},
 				setSelectedHistoryIndex(value) {
-					setState({ selectedHistoryIndex: value });
+					closureCtx.ctx.setState({ selectedHistoryIndex: value });
 				},
-				syncState: flow.syncWindowState,
+				syncState: closureCtx.flow.syncWindowState,
 				onAfterLoad() {
-					const tabsUi = getTabsUi(options);
+					const tabsUi = getTabsUi(closureCtx.ctx.options);
 					if (tabsUi && typeof tabsUi.dispatchActiveTabRender === 'function') {
-						tabsUi.dispatchActiveTabRender({ renderers: getRenderers() });
+						tabsUi.dispatchActiveTabRender({ renderers: closureCtx.ctx.getRenderers() });
 					}
-					if (typeof options.onAfterHistoryLoad === 'function') options.onAfterHistoryLoad();
+					if (typeof closureCtx.ctx.options.onAfterHistoryLoad === 'function') closureCtx.ctx.options.onAfterHistoryLoad();
 				}
 			});
 		};
-
-		flow.loadMedicalHistory = async patientId => {
-			const historyUi = getHistoryListUi(options);
+		closureCtx.flow.loadMedicalHistory = async patientId => {
+			const historyUi = getHistoryListUi(closureCtx.ctx.options);
 			if (!historyUi || typeof historyUi.loadAndRenderHistoryList !== 'function') {
 				return { status: 'missingHistoryUi' };
 			}
-			const state = getState();
-			const requestToken = ++historyRequestToken;
+			const state = closureCtx.ctx.getState();
+			const requestToken = ++closureCtx.historyRequestToken;
 			const contextRevision = state.contextRevision;
 			const isCurrent = () => {
-				const current = getState();
-				return requestToken === historyRequestToken
+				const current = closureCtx.ctx.getState();
+				return requestToken === closureCtx.historyRequestToken
 					&& current.contextRevision === contextRevision
 					&& Number(current.selectedPatient?.id) === Number(patientId);
 			};
 			return historyUi.loadAndRenderHistoryList({
 				patientId,
-				apiCall: options.apiCall,
-				container: options.historyContainer,
+				apiCall: closureCtx.ctx.options.apiCall,
+				container: closureCtx.ctx.options.historyContainer,
 				selectedIndex: state.selectedHistoryIndex,
-				currentAppointmentId: getCurrentAppointmentId(),
-				activeStatuses: options.activeStatuses,
-				getDescription: options.getHistoryDescription,
-				formatDate: options.formatHistoryDate,
-				getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
-				getExaminationStatusText: options.getExaminationStatusText,
-				showCopyAction: options.showCopyAction,
-				showDeleteAction: options.showDeleteAction,
+				currentAppointmentId: closureCtx.ctx.getCurrentAppointmentId(),
+				activeStatuses: closureCtx.ctx.options.activeStatuses,
+				getDescription: closureCtx.ctx.options.getHistoryDescription,
+				formatDate: closureCtx.ctx.options.formatHistoryDate,
+				getExaminationStatusBadgeClass: closureCtx.ctx.options.getExaminationStatusBadgeClass,
+				getExaminationStatusText: closureCtx.ctx.options.getExaminationStatusText,
+				showCopyAction: closureCtx.ctx.options.showCopyAction,
+				showDeleteAction: closureCtx.ctx.options.showDeleteAction,
 				isCurrent,
-				...flow.getHistoryLoadStateHandlers()
+				...closureCtx.flow.getHistoryLoadStateHandlers()
 			});
 		};
+	}
 
-		flow.reset = () => resetModalStateForFlow({
+	function runSearchFlowSetup3(closureCtx) {
+		closureCtx.flow.reset = () => resetModalStateForFlow({
 			resetDom: true,
 			applyResetState(resetState) {
-				searchRequestToken += 1;
-				historyRequestToken += 1;
-				const currentRevision = Number(getState().contextRevision) || 0;
-				setState({
+				closureCtx.searchRequestToken += 1;
+				closureCtx.historyRequestToken += 1;
+				const currentRevision = Number(closureCtx.ctx.getState().contextRevision) || 0;
+				closureCtx.ctx.setState({
 					searchResults: resetState.searchResults,
 					selectedPatient: resetState.selectedPatient,
 					currentPatientId: resetState.currentPatientId,
@@ -335,162 +347,146 @@
 					medicalHistoryLoading: false,
 					contextRevision: currentRevision + 1
 				});
-				if (typeof options.clearHistoryTabs === 'function') options.clearHistoryTabs({ state: 'empty' });
+				if (typeof closureCtx.ctx.options.clearHistoryTabs === 'function') closureCtx.ctx.options.clearHistoryTabs({ state: 'empty' });
 			},
-			searchInput: options.searchInput,
-			searchResults: options.resultsContainer,
-			medicalHistory: options.historyContainer,
-			selectButton: options.selectButton
+			searchInput: closureCtx.ctx.options.searchInput,
+			searchResults: closureCtx.ctx.options.resultsContainer,
+			medicalHistory: closureCtx.ctx.options.historyContainer,
+			selectButton: closureCtx.ctx.options.selectButton
 		});
-
-		flow.selectPatient = index => {
-			const state = getState();
+		closureCtx.flow.selectPatient = index => {
+			const state = closureCtx.ctx.getState();
 			const nextRevision = (Number(state.contextRevision) || 0) + 1;
-			historyRequestToken += 1;
-			setState({ contextRevision: nextRevision });
-			if (typeof options.clearHistoryTabs === 'function') options.clearHistoryTabs({ state: 'loading' });
+			closureCtx.historyRequestToken += 1;
+			closureCtx.ctx.setState({ contextRevision: nextRevision });
+			if (typeof closureCtx.ctx.options.clearHistoryTabs === 'function') closureCtx.ctx.options.clearHistoryTabs({ state: 'loading' });
 			return selectPatientForModalFlow(state.searchResults, index, {
 				applySelectionState(selectionState) {
-					setState({
+					closureCtx.ctx.setState({
 						selectedPatient: selectionState.selectedPatient,
 						selectedHistoryIndex: selectionState.selectedHistoryIndex
 					});
 				},
-				syncState: flow.syncWindowState,
-				renderActiveTabLoading: options.renderActiveTabLoading,
-				loadHistory: flow.loadMedicalHistory,
-				updateContent: flow.updateContent,
-				loadVitalSigns: options.loadVitalSigns,
-				selectButton: options.selectButton
+				syncState: closureCtx.flow.syncWindowState,
+				renderActiveTabLoading: closureCtx.ctx.options.renderActiveTabLoading,
+				loadHistory: closureCtx.flow.loadMedicalHistory,
+				updateContent: closureCtx.flow.updateContent,
+				loadVitalSigns: closureCtx.ctx.options.loadVitalSigns,
+				selectButton: closureCtx.ctx.options.selectButton
 			});
 		};
-
-		flow.selectHistory = index => {
-			const historyUi = getHistoryListUi(options);
+		closureCtx.flow.selectHistory = index => {
+			const historyUi = getHistoryListUi(closureCtx.ctx.options);
 			if (!historyUi || typeof historyUi.selectHistoryForModalFlow !== 'function') return null;
 			return historyUi.selectHistoryForModalFlow(index, {
 				setSelectedHistoryIndex(value) {
-					const currentRevision = Number(getState().contextRevision) || 0;
-					setState({ selectedHistoryIndex: value, contextRevision: currentRevision + 1 });
+					const currentRevision = Number(closureCtx.ctx.getState().contextRevision) || 0;
+					closureCtx.ctx.setState({ selectedHistoryIndex: value, contextRevision: currentRevision + 1 });
 				},
-				syncState: flow.syncWindowState,
-				getRenderers
+				syncState: closureCtx.flow.syncWindowState,
+				getRenderers: closureCtx.ctx.getRenderers
 			});
 		};
-
-		function buildCopyFlowOptions(extra = {}) {
-			return {
-				apiCall: options.apiCall,
-				prepareFormForCopy: options.prepareFormForCopy,
-				setLoadingState: options.setLoadingState,
-				setCurrentAppointmentId: options.setCurrentAppointmentId,
-				loadPatient: options.loadPatient,
-				loadExaminationFormData: options.loadExaminationFormData,
-				loadAppointmentServices: options.loadAppointmentServices,
-				loadPrescriptionData: options.loadPrescriptionData,
-				showToast: options.showToast,
-				lockForm: options.lockForm,
-				showHistoryButton: options.showHistoryButton,
-				serviceErrorMessage: options.serviceErrorMessage,
-				prescriptionErrorMessage: options.prescriptionErrorMessage,
-				formErrorMessage: options.formErrorMessage,
-				successMessage: options.copySuccessMessage,
-				fallbackSuccessMessage: options.copyFallbackSuccessMessage,
-				errorLogMessage: options.copyErrorLogMessage,
-				...extra
-			};
-		}
-
-		flow.copyPatientToForm = index => {
-			const state = getState();
-			return copyPatientToFormFlow(index, buildCopyFlowOptions({
+		closureCtx.flow.copyPatientToForm = index => {
+			const state = closureCtx.ctx.getState();
+			return copyPatientToFormFlow(index, closureCtx.ctx.buildCopyFlowOptions({
 				patients: state.searchResults
 			}));
 		};
+	}
 
-		flow.copyHistoryToForm = historyIndex => {
-			const historyUi = getHistoryListUi(options);
+	function runSearchFlowSetup4(closureCtx) {
+		closureCtx.flow.copyHistoryToForm = historyIndex => {
+			const historyUi = getHistoryListUi(closureCtx.ctx.options);
 			if (!historyUi || typeof historyUi.copyHistoryToFormFlow !== 'function') {
 				return Promise.resolve({ status: 'missingHistoryUi' });
 			}
-			const state = getState();
-			return historyUi.copyHistoryToFormFlow(buildCopyFlowOptions({
+			const state = closureCtx.ctx.getState();
+			return historyUi.copyHistoryToFormFlow(closureCtx.ctx.buildCopyFlowOptions({
 				selectedPatient: state.selectedPatient,
 				histories: state.medicalHistoryData,
 				historyIndex: historyIndex === undefined ? state.selectedHistoryIndex : historyIndex,
 				selectedHistoryIndex: state.selectedHistoryIndex
 			}));
 		};
-
-		flow.setShouldPrefill = value => setState({ shouldPrefill: value });
-
-		flow.openSearchModal = () => {
-			const state = getState();
+		closureCtx.flow.setShouldPrefill = value => closureCtx.ctx.setState({ shouldPrefill: value });
+		closureCtx.flow.openSearchModal = () => {
+			const state = closureCtx.ctx.getState();
 			return openSearchModalAndFetch({
-				modal: options.modal,
-				missingMessage: options.missingMessage || 'Không tìm thấy modal tìm kiếm bệnh nhân',
-				reset: flow.reset,
-				searchInput: options.searchInput,
+				modal: closureCtx.ctx.options.modal,
+				missingMessage: closureCtx.ctx.options.missingMessage || 'Không tìm thấy modal tìm kiếm bệnh nhân',
+				reset: closureCtx.flow.reset,
+				searchInput: closureCtx.ctx.options.searchInput,
 				shouldPrefill: state.shouldPrefill,
-				currentPatientData: getCurrentPatientData(),
+				currentPatientData: closureCtx.ctx.getCurrentPatientData(),
 				setPrefillPatientId(value) {
-					setState({ prefillPatientId: value });
+					closureCtx.ctx.setState({ prefillPatientId: value });
 				},
-				fetchSearch: flow.fetchSearchResults,
-				setShouldPrefill: flow.setShouldPrefill
+				fetchSearch: closureCtx.flow.fetchSearchResults,
+				setShouldPrefill: closureCtx.flow.setShouldPrefill
 			});
 		};
-
-		flow.openLinkedRelative = async patientId => openLinkedRelativePatientSearch({
+		closureCtx.flow.openLinkedRelative = async patientId => openLinkedRelativePatientSearch({
 			patientId,
-			modal: options.modal,
-			missingMessage: options.missingMessage || 'Không tìm thấy modal tìm kiếm bệnh nhân',
-			apiCall: options.apiCall,
-			reset: flow.reset,
-			setShouldPrefill: flow.setShouldPrefill,
+			modal: closureCtx.ctx.options.modal,
+			missingMessage: closureCtx.ctx.options.missingMessage || 'Không tìm thấy modal tìm kiếm bệnh nhân',
+			apiCall: closureCtx.ctx.options.apiCall,
+			reset: closureCtx.flow.reset,
+			setShouldPrefill: closureCtx.flow.setShouldPrefill,
 			applyLoadedState(linkedPatientState) {
-				setState({
+				closureCtx.ctx.setState({
 					searchResults: linkedPatientState.searchResults,
 					prefillPatientId: linkedPatientState.prefillPatientId
 				});
 			},
-			renderResults: flow.renderSearchResults,
-			selectPatient: flow.selectPatient,
-			loadHistory: flow.loadMedicalHistory,
-			searchInput: options.searchInput,
-			selectButton: options.selectButton,
-			fetchFallback: flow.fetchSearchResults,
-			logMessage: options.linkedRelativeLogMessage || 'Không thể mở modal người thân liên kết:'
+			renderResults: closureCtx.flow.renderSearchResults,
+			selectPatient: closureCtx.flow.selectPatient,
+			loadHistory: closureCtx.flow.loadMedicalHistory,
+			searchInput: closureCtx.ctx.options.searchInput,
+			selectButton: closureCtx.ctx.options.selectButton,
+			fetchFallback: closureCtx.flow.fetchSearchResults,
+			logMessage: closureCtx.ctx.options.linkedRelativeLogMessage || 'Không thể mở modal người thân liên kết:'
 		});
+	}
 
-		flow.bindControls = (bindOptions = {}) => bindPatientSearchModalFlowControls({
-			searchButton: options.searchButton,
-			historyButton: options.historyButton,
-			setShouldPrefill: flow.setShouldPrefill,
-			open: flow.openSearchModal,
-			searchInput: options.searchInput,
-			fetchSearch: flow.fetchSearchResults,
-			resultsContainer: options.resultsContainer,
+	function runSearchFlowSetup5(closureCtx) {
+		closureCtx.flow.bindControls = (bindOptions = {}) => bindPatientSearchModalFlowControls({
+			searchButton: closureCtx.ctx.options.searchButton,
+			historyButton: closureCtx.ctx.options.historyButton,
+			setShouldPrefill: closureCtx.flow.setShouldPrefill,
+			open: closureCtx.flow.openSearchModal,
+			searchInput: closureCtx.ctx.options.searchInput,
+			fetchSearch: closureCtx.flow.fetchSearchResults,
+			resultsContainer: closureCtx.ctx.options.resultsContainer,
 			copyPatient: bindOptions.copyPatient,
-			selectPatient: flow.selectPatient,
-			historyContainer: options.historyContainer,
-			selectHistory: flow.selectHistory,
+			selectPatient: closureCtx.flow.selectPatient,
+			historyContainer: closureCtx.ctx.options.historyContainer,
+			selectHistory: closureCtx.flow.selectHistory,
 			copyHistory: bindOptions.copyHistory,
 			deleteHistory: bindOptions.deleteHistory,
-			showToast: options.showToast,
-			selectButton: options.selectButton,
-			getSelectedPatient: bindOptions.getSelectedPatient || (() => getState().selectedPatient),
+			showToast: closureCtx.ctx.options.showToast,
+			selectButton: closureCtx.ctx.options.selectButton,
+			getSelectedPatient: bindOptions.getSelectedPatient || (() => closureCtx.ctx.getState().selectedPatient),
 			loadPatient: bindOptions.loadPatient,
-			modal: options.modal,
+			modal: closureCtx.ctx.options.modal,
 			isFormLocked: bindOptions.isFormLocked,
 			unlockForm: bindOptions.unlockForm,
-			resetModal: flow.reset,
-			tabs: options.tabs,
-			updateContent: flow.updateContent,
-			openLinkedRelative: flow.openLinkedRelative
+			resetModal: closureCtx.flow.reset,
+			tabs: closureCtx.ctx.options.tabs,
+			updateContent: closureCtx.flow.updateContent,
+			openLinkedRelative: closureCtx.flow.openLinkedRelative
 		});
+	}
 
-		return flow;
+	function createPatientSearchModalFlowAdapter(options = {}) {
+		const closureCtx = {};
+		closureCtx.options = options;
+		runSearchFlowSetup1(closureCtx);
+		runSearchFlowSetup2(closureCtx);
+		runSearchFlowSetup3(closureCtx);
+		runSearchFlowSetup4(closureCtx);
+		runSearchFlowSetup5(closureCtx);
+		return closureCtx.flow;
 	}
 
 	const api = {

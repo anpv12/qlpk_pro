@@ -390,17 +390,16 @@
 		Object.assign(ctx, { restoreDraftSnapshot, bind });
 	}
 
-	function create(options = {}) {
-		const ctx = {};
-		installClinicalFormFns1(ctx);
-		installClinicalFormFns2(ctx);
-		installClinicalFormFns3(ctx);
-		installClinicalFormFns4(ctx);
-		installClinicalFormFns5(ctx);
-		installClinicalFormFns6(ctx);
-
-		ctx.config = mergeConfig(options.config);
-		ctx.state = {
+	function runClinicalFormSetup1(closureCtx) {
+		closureCtx.ctx = {};
+		installClinicalFormFns1(closureCtx.ctx);
+		installClinicalFormFns2(closureCtx.ctx);
+		installClinicalFormFns3(closureCtx.ctx);
+		installClinicalFormFns4(closureCtx.ctx);
+		installClinicalFormFns5(closureCtx.ctx);
+		installClinicalFormFns6(closureCtx.ctx);
+		closureCtx.ctx.config = mergeConfig(closureCtx.options.config);
+		closureCtx.ctx.state = {
 			contextToken: 0,
 			appointment: null,
 			patientId: null,
@@ -415,88 +414,92 @@
 			detailsLoadError: null,
 			detailsLoadPromise: null,
 			icdLoadPromise: null,
-			isLoading: options.isLoading || (() => false)
+			isLoading: closureCtx.options.isLoading || (() => false)
 		};
-		ctx.MAIN_CHANGES = RUNTIME.createChangeTracker(ctx.state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
-		ctx.DETAIL_CHANGES = RUNTIME.createSectionChangeTracker(ctx.state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
-		ctx.getDocument = options.getDocument || RUNTIME.getDocument;
-		ctx.getElement = options.getElement || ((doc, id) => doc.getElementById(id));
-		ctx.getValue = options.getValue || ((doc, id) => {
-			const element = ctx.getElement(doc, id);
+		closureCtx.ctx.MAIN_CHANGES = RUNTIME.createChangeTracker(closureCtx.ctx.state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
+		closureCtx.ctx.DETAIL_CHANGES = RUNTIME.createSectionChangeTracker(closureCtx.ctx.state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
+		closureCtx.ctx.getDocument = closureCtx.options.getDocument || RUNTIME.getDocument;
+		closureCtx.ctx.getElement = closureCtx.options.getElement || ((doc, id) => doc.getElementById(id));
+		closureCtx.ctx.getValue = closureCtx.options.getValue || ((doc, id) => {
+			const element = closureCtx.ctx.getElement(doc, id);
 			return element ? String(element.value || '').trim() : '';
 		});
-		ctx.setValue = options.setValue || ((doc, id, value) => {
-			const element = ctx.getElement(doc, id);
+		closureCtx.ctx.setValue = closureCtx.options.setValue || ((doc, id, value) => {
+			const element = closureCtx.ctx.getElement(doc, id);
 			if (element) element.value = value == null ? '' : String(value);
 		});
-		ctx.textOf = options.textOf || (value => value == null ? '' : String(value).trim());
-		ctx.hasValue = options.hasValue || (value => value !== undefined && value !== null && String(value).trim() !== '');
-		ctx.syncDirtyState = options.syncDirtyState || (() => {});
-		ctx.apiCall = options.apiCall || (() => Promise.reject(new Error('missing-api-call')));
-		ctx.fieldDefinitions = Object.values(ctx.config.mainFields).concat(ctx.config.detailFields);
-		ctx.fieldIds = ctx.fieldDefinitions.flatMap(field => [field.controlId, field.hiddenControlId]).filter(Boolean);
-		ctx.fieldByControlId = new Map(ctx.fieldDefinitions.map(field => [field.controlId, field]));
-		ctx.fieldByHiddenControlId = new Map(ctx.fieldDefinitions
+		closureCtx.ctx.textOf = closureCtx.options.textOf || (value => value == null ? '' : String(value).trim());
+		closureCtx.ctx.hasValue = closureCtx.options.hasValue || (value => value !== undefined && value !== null && String(value).trim() !== '');
+		closureCtx.ctx.syncDirtyState = closureCtx.options.syncDirtyState || (() => {});
+		closureCtx.ctx.apiCall = closureCtx.options.apiCall || (() => Promise.reject(new Error('missing-api-call')));
+		closureCtx.ctx.fieldDefinitions = Object.values(closureCtx.ctx.config.mainFields).concat(closureCtx.ctx.config.detailFields);
+		closureCtx.ctx.fieldIds = closureCtx.ctx.fieldDefinitions.flatMap(field => [field.controlId, field.hiddenControlId]).filter(Boolean);
+		closureCtx.ctx.fieldByControlId = new Map(closureCtx.ctx.fieldDefinitions.map(field => [field.controlId, field]));
+		closureCtx.ctx.fieldByHiddenControlId = new Map(closureCtx.ctx.fieldDefinitions
 			.filter(field => field.hiddenControlId)
 			.map(field => [field.hiddenControlId, field]));
-		ctx.icdInstances = new Map();
-		ctx.medicationInstances = new Map();
-		ctx.bound = false;
-
-		ctx.detailsPersistence = DETAILS.create({
-			fields: ctx.config.detailFields,
-			state: ctx.state,
-			detailChanges: ctx.DETAIL_CHANGES,
-			getElement: ctx.getElement,
-			getValue: ctx.getValue,
-			setValue: ctx.setValue,
-			textOf: ctx.textOf,
-			hasValue: ctx.hasValue,
+		closureCtx.ctx.icdInstances = new Map();
+		closureCtx.ctx.medicationInstances = new Map();
+		closureCtx.ctx.bound = false;
+		closureCtx.ctx.detailsPersistence = DETAILS.create({
+			fields: closureCtx.ctx.config.detailFields,
+			state: closureCtx.ctx.state,
+			detailChanges: closureCtx.ctx.DETAIL_CHANGES,
+			getElement: closureCtx.ctx.getElement,
+			getValue: closureCtx.ctx.getValue,
+			setValue: closureCtx.ctx.setValue,
+			textOf: closureCtx.ctx.textOf,
+			hasValue: closureCtx.ctx.hasValue,
 			parseResponseError: (...args) => RUNTIME.readResponseError?.(...args) || Promise.resolve('Không xử lý được phản hồi'),
-			syncDirtyState: ctx.syncDirtyState,
-			apiCall: (...args) => ctx.apiCall(...args)
+			syncDirtyState: closureCtx.ctx.syncDirtyState,
+			apiCall: (...args) => closureCtx.ctx.apiCall(...args)
 		});
+	}
 
+	function create(options = {}) {
+		const closureCtx = {};
+		closureCtx.options = options;
+		runClinicalFormSetup1(closureCtx);
 		return {
-			bind: ctx.bind,
-			clear: ctx.clear,
-			render: ctx.render,
-			populate: ctx.render,
-			collect: ctx.collect,
+			bind: closureCtx.ctx.bind,
+			clear: closureCtx.ctx.clear,
+			render: closureCtx.ctx.render,
+			populate: closureCtx.ctx.render,
+			collect: closureCtx.ctx.collect,
 			prepareEmptyDetailDefaults: options => {
-				if (ctx.isLoading()) return false;
-				return ctx.detailsPersistence.prepareEmptyDefaults(ctx.getDocument(options));
+				if (closureCtx.ctx.isLoading()) return false;
+				return closureCtx.ctx.detailsPersistence.prepareEmptyDefaults(closureCtx.ctx.getDocument(options));
 			},
-			loadDetails: (doc, appointmentId, token) => ctx.detailsPersistence.load(doc, appointmentId, token),
-			saveDetails: (doc, appointmentId, token, sections) => ctx.detailsPersistence.save(doc, appointmentId, token, sections),
-			hasUnsavedChanges: () => Boolean(ctx.state.mainDirty || ctx.state.detailDirtySections.size),
+			loadDetails: (doc, appointmentId, token) => closureCtx.ctx.detailsPersistence.load(doc, appointmentId, token),
+			saveDetails: (doc, appointmentId, token, sections) => closureCtx.ctx.detailsPersistence.save(doc, appointmentId, token, sections),
+			hasUnsavedChanges: () => Boolean(closureCtx.ctx.state.mainDirty || closureCtx.ctx.state.detailDirtySections.size),
 			getSaveState: () => ({
-				contextToken: ctx.state.contextToken,
-				mainDirty: ctx.state.mainDirty,
-				mainRevision: ctx.state.mainRevision,
-				detailDirtySections: new Set(ctx.state.detailDirtySections),
-				detailsLoading: ctx.state.detailsLoading,
-				detailsLoaded: ctx.state.detailsLoaded,
-				detailsLoadError: ctx.state.detailsLoadError,
-				detailsLoadPromise: ctx.state.detailsLoadPromise,
-				examinationId: ctx.state.examinationId
+				contextToken: closureCtx.ctx.state.contextToken,
+				mainDirty: closureCtx.ctx.state.mainDirty,
+				mainRevision: closureCtx.ctx.state.mainRevision,
+				detailDirtySections: new Set(closureCtx.ctx.state.detailDirtySections),
+				detailsLoading: closureCtx.ctx.state.detailsLoading,
+				detailsLoaded: closureCtx.ctx.state.detailsLoaded,
+				detailsLoadError: closureCtx.ctx.state.detailsLoadError,
+				detailsLoadPromise: closureCtx.ctx.state.detailsLoadPromise,
+				examinationId: closureCtx.ctx.state.examinationId
 			}),
 			markMainSaved: revision => {
-				ctx.MAIN_CHANGES.settle(revision);
-				ctx.syncDirtyState();
+				closureCtx.ctx.MAIN_CHANGES.settle(revision);
+				closureCtx.ctx.syncDirtyState();
 			},
-			getContextToken: () => ctx.state.contextToken,
-			getExaminationId: () => ctx.state.examinationId,
+			getContextToken: () => closureCtx.ctx.state.contextToken,
+			getExaminationId: () => closureCtx.ctx.state.examinationId,
 			whenInitialLoadSettled: () => Promise.allSettled([
-				ctx.state.detailsLoadPromise || Promise.resolve(true),
-				ctx.state.icdLoadPromise || Promise.resolve(true)
+				closureCtx.ctx.state.detailsLoadPromise || Promise.resolve(true),
+				closureCtx.ctx.state.icdLoadPromise || Promise.resolve(true)
 			]),
-			ownsField: ctx.ownsField,
-			handleFieldMutation: ctx.handleFieldMutation,
-			getDraftSnapshot: ctx.getDraftSnapshot,
-			restoreDraftSnapshot: ctx.restoreDraftSnapshot,
-			getFieldIds: () => ctx.fieldIds.slice(),
-			getConfig: () => ({ ...ctx.config, mainFields: { ...ctx.config.mainFields }, detailFields: ctx.config.detailFields.slice() })
+			ownsField: closureCtx.ctx.ownsField,
+			handleFieldMutation: closureCtx.ctx.handleFieldMutation,
+			getDraftSnapshot: closureCtx.ctx.getDraftSnapshot,
+			restoreDraftSnapshot: closureCtx.ctx.restoreDraftSnapshot,
+			getFieldIds: () => closureCtx.ctx.fieldIds.slice(),
+			getConfig: () => ({ ...closureCtx.ctx.config, mainFields: { ...closureCtx.ctx.config.mainFields }, detailFields: closureCtx.ctx.config.detailFields.slice() })
 		};
 	}
 

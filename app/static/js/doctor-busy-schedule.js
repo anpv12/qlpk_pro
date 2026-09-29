@@ -243,62 +243,34 @@ function displayReasonSuggestions(suggestions) {
 }
 
 // Create or update busy schedule
-function createBusySchedule() {
-	// Kiểm tra currentUser đã load chưa
-	if (!currentUser || !currentUser.id) {
-		showAlert('Đang tải thông tin người dùng, vui lòng thử lại sau', 'warning');
-		return;
-	}
-
+function runBusySchedule1(ctx) {
 	const formData = new FormData($('#busyScheduleForm')[0]);
-	const data = {
+	ctx.data = {
 		doctor_id: currentUser.id,
 		start_datetime: formData.get('start_datetime'),
 		end_datetime: formData.get('end_datetime'),
 		reason: formData.get('reason')
 	};
+}
 
-	// Validation
-	if (!data.start_datetime || !data.end_datetime || !data.reason) {
-		showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
-		return;
-	}
-
-	// Check if start time is before end time
-	const startTime = new Date(data.start_datetime);
-	const endTime = new Date(data.end_datetime);
-
-	if (startTime >= endTime) {
-		showAlert('Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc', 'warning');
-		return;
-	}
-
-	// Check if end time is in the past
-	if (endTime < new Date()) {
-		showAlert('Không thể tạo lịch bận trong quá khứ', 'warning');
-		return;
-	}
-
+function runBusySchedule2(ctx) {
 	// Show loading state
 	const submitBtn = $('#busyScheduleForm button[type="submit"]');
 	const originalText = submitBtn.html();
-
 	// Determine if this is create or update
 	const isUpdate = window.editingScheduleId;
 	const loadingText = isUpdate ? 'Đang cập nhật...' : 'Đang tạo...';
 	submitBtn.prop('disabled', true).html(`<i class="spinner-border spinner-border-sm me-2"></i>${loadingText}`);
-
 	// Set URL and method based on operation
 	const url = isUpdate ? `/api/doctor-busy-schedules/${window.editingScheduleId}` : '/api/doctor-busy-schedules';
 	const method = isUpdate ? 'PUT' : 'POST';
-
 	$.ajax({
 		url: url,
 		method: method,
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		data: JSON.stringify(data),
+		data: JSON.stringify(ctx.data),
 		success: function (response) {
 			// Restore button state
 			submitBtn.prop('disabled', false).html(originalText);
@@ -365,6 +337,34 @@ function createBusySchedule() {
 			showAlert(errorMessage, 'error');
 		}
 	});
+}
+
+function createBusySchedule() {
+	const ctx = {};
+	// Kiểm tra currentUser đã load chưa
+	if (!currentUser || !currentUser.id) {
+		showAlert('Đang tải thông tin người dùng, vui lòng thử lại sau', 'warning');
+		return;
+	}
+	runBusySchedule1(ctx);
+	// Validation
+	if (!ctx.data.start_datetime || !ctx.data.end_datetime || !ctx.data.reason) {
+		showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+		return;
+	}
+	// Check if start time is before end time
+	const startTime = new Date(ctx.data.start_datetime);
+	const endTime = new Date(ctx.data.end_datetime);
+	if (startTime >= endTime) {
+		showAlert('Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc', 'warning');
+		return;
+	}
+	// Check if end time is in the past
+	if (endTime < new Date()) {
+		showAlert('Không thể tạo lịch bận trong quá khứ', 'warning');
+		return;
+	}
+	runBusySchedule2(ctx);
 }
 
 // Load my busy schedules

@@ -341,78 +341,87 @@
 		}
 	}
 
-	function bindMainAddressAutocomplete(options = {}) {
-		const doc = getDocument(options);
-		const province = doc.getElementById('province');
-		const ward = doc.getElementById('ward');
-		const provinceDropdown = doc.getElementById('provinceDropdown');
-		const wardDropdown = doc.getElementById('wardDropdown');
-		const updateSummary = () => updateAddressSummary(options);
-
-		if (!province || !ward || !provinceDropdown || !wardDropdown) return;
-		if (province.tagName === 'SELECT' || ward.tagName === 'SELECT') return;
+	function installMainAddressFns1(ctx) {
+		const updateSummary = () => updateAddressSummary(ctx.options);
 
 		const selectProvince = async (region) => {
-			setFieldValue(doc, 'province', region.name);
-			if (province.dataset) province.dataset.code = region.code || '';
-			setFieldValue(doc, 'provinceHidden', region.name);
-			setFieldValue(doc, 'district', '');
-			setFieldValue(doc, 'ward', '');
-			if (ward.dataset) ward.dataset.code = '';
+			setFieldValue(ctx.doc, 'province', region.name);
+			if (ctx.province.dataset) ctx.province.dataset.code = region.code || '';
+			setFieldValue(ctx.doc, 'provinceHidden', region.name);
+			setFieldValue(ctx.doc, 'district', '');
+			setFieldValue(ctx.doc, 'ward', '');
+			if (ctx.ward.dataset) ctx.ward.dataset.code = '';
 			mainAddressAutocompleteState.units = [];
 			mainAddressAutocompleteState.unitProvinceCode = '';
-			await loadMainAddressUnits(region.code, options);
+			await loadMainAddressUnits(region.code, ctx.options);
 			updateSummary();
 			closeMainAddressDropdown();
 		};
 
 		const selectWard = (unit) => {
-			setFieldValue(doc, 'ward', unit.name);
-			if (ward.dataset) ward.dataset.code = unit.code || '';
+			setFieldValue(ctx.doc, 'ward', unit.name);
+			if (ctx.ward.dataset) ctx.ward.dataset.code = unit.code || '';
 			updateSummary();
 			closeMainAddressDropdown();
 		};
 
 		const showProvinceDropdown = async () => {
-			const regions = await loadMainAddressRegions(options);
+			const regions = await loadMainAddressRegions(ctx.options);
 			renderMainAddressDropdown(
-				province,
-				provinceDropdown,
-				filterAddressItems(regions, province.value),
+				ctx.province,
+				ctx.provinceDropdown,
+				filterAddressItems(regions, ctx.province.value),
 				selectProvince,
 				'Không tìm thấy tỉnh/thành phố'
 			);
 		};
 
 		const showWardDropdown = async () => {
-			let provinceCode = province.dataset ? province.dataset.code : '';
-			if (!provinceCode && province.value) {
-				const regions = await loadMainAddressRegions(options);
-				const provinceName = normalizeAddressQuery(province.value);
+			let provinceCode = ctx.province.dataset ? ctx.province.dataset.code : '';
+			if (!provinceCode && ctx.province.value) {
+				const regions = await loadMainAddressRegions(ctx.options);
+				const provinceName = normalizeAddressQuery(ctx.province.value);
 				const match = regions.find(region => normalizeAddressQuery(region.name) === provinceName || normalizeAddressQuery(region.full_name) === provinceName);
 				if (match) {
 					provinceCode = match.code;
-					province.dataset.code = provinceCode;
+					ctx.province.dataset.code = provinceCode;
 				}
 			}
 
 			if (!provinceCode) {
-				renderMainAddressDropdown(ward, wardDropdown, [], selectWard, 'Vui lòng chọn Tỉnh/Thành phố trước');
+				renderMainAddressDropdown(ctx.ward, ctx.wardDropdown, [], selectWard, 'Vui lòng chọn Tỉnh/Thành phố trước');
 				return;
 			}
 
-			const units = await loadMainAddressUnits(provinceCode, options);
+			const units = await loadMainAddressUnits(provinceCode, ctx.options);
 			renderMainAddressDropdown(
-				ward,
-				wardDropdown,
-				filterAddressItems(units, ward.value),
+				ctx.ward,
+				ctx.wardDropdown,
+				filterAddressItems(units, ctx.ward.value),
 				selectWard,
 				'Không tìm thấy phường/xã'
 			);
 		};
 
+		Object.assign(ctx, { updateSummary, showProvinceDropdown, showWardDropdown });
+	}
+
+	function bindMainAddressAutocomplete(options = {}) {
+		const ctx = {};
+		ctx.options = options;
+		installMainAddressFns1(ctx);
+
+		ctx.doc = getDocument(ctx.options);
+		ctx.province = ctx.doc.getElementById('province');
+		ctx.ward = ctx.doc.getElementById('ward');
+		ctx.provinceDropdown = ctx.doc.getElementById('provinceDropdown');
+		ctx.wardDropdown = ctx.doc.getElementById('wardDropdown');
+
+		if (!ctx.province || !ctx.ward || !ctx.provinceDropdown || !ctx.wardDropdown) return;
+		if (ctx.province.tagName === 'SELECT' || ctx.ward.tagName === 'SELECT') return;
+
 		if (!mainAddressAutocompleteState.outsideClickBound) {
-			doc.addEventListener('mousedown', event => {
+			ctx.doc.addEventListener('mousedown', event => {
 				const target = event.target;
 				if (target === mainAddressAutocompleteState.activeInput) return;
 				if (mainAddressAutocompleteState.activeDropdown && mainAddressAutocompleteState.activeDropdown.contains(target)) return;
@@ -422,46 +431,46 @@
 		}
 
 		if (!mainAddressAutocompleteState.focusCloseBound) {
-			doc.addEventListener('focusin', event => {
+			ctx.doc.addEventListener('focusin', event => {
 				const target = event.target;
 				if (target === mainAddressAutocompleteState.activeInput) return;
-				if (target === province || target === ward) return;
+				if (target === ctx.province || target === ctx.ward) return;
 				if (mainAddressAutocompleteState.activeDropdown && mainAddressAutocompleteState.activeDropdown.contains(target)) return;
 				closeMainAddressDropdown();
 			});
 			mainAddressAutocompleteState.focusCloseBound = true;
 		}
 
-		if (!province._mainAddressAutocompleteBound) {
-			province.addEventListener('focus', showProvinceDropdown);
-			province.addEventListener('input', function () {
+		if (!ctx.province._mainAddressAutocompleteBound) {
+			ctx.province.addEventListener('focus', ctx.showProvinceDropdown);
+			ctx.province.addEventListener('input', function () {
 				if (this.dataset) this.dataset.code = '';
-				setFieldValue(doc, 'provinceHidden', this.value);
-				setFieldValue(doc, 'district', '');
-				setFieldValue(doc, 'ward', '');
-				if (ward.dataset) ward.dataset.code = '';
+				setFieldValue(ctx.doc, 'provinceHidden', this.value);
+				setFieldValue(ctx.doc, 'district', '');
+				setFieldValue(ctx.doc, 'ward', '');
+				if (ctx.ward.dataset) ctx.ward.dataset.code = '';
 				mainAddressAutocompleteState.units = [];
 				mainAddressAutocompleteState.unitProvinceCode = '';
-				updateSummary();
-				showProvinceDropdown();
+				ctx.updateSummary();
+				ctx.showProvinceDropdown();
 			});
-			province.addEventListener('keydown', event => {
+			ctx.province.addEventListener('keydown', event => {
 				if (event.key === 'Escape') closeMainAddressDropdown();
 			});
-			province._mainAddressAutocompleteBound = true;
+			ctx.province._mainAddressAutocompleteBound = true;
 		}
 
-		if (!ward._mainAddressAutocompleteBound) {
-			ward.addEventListener('focus', showWardDropdown);
-			ward.addEventListener('input', function () {
+		if (!ctx.ward._mainAddressAutocompleteBound) {
+			ctx.ward.addEventListener('focus', ctx.showWardDropdown);
+			ctx.ward.addEventListener('input', function () {
 				if (this.dataset) this.dataset.code = '';
-				updateSummary();
-				showWardDropdown();
+				ctx.updateSummary();
+				ctx.showWardDropdown();
 			});
-			ward.addEventListener('keydown', event => {
+			ctx.ward.addEventListener('keydown', event => {
 				if (event.key === 'Escape') closeMainAddressDropdown();
 			});
-			ward._mainAddressAutocompleteBound = true;
+			ctx.ward._mainAddressAutocompleteBound = true;
 		}
 	}
 

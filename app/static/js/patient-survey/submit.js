@@ -2,7 +2,86 @@
 /* exported submitSurvey */
 
 // Submit survey
+function runSurveySubmit1(ctx) {
+	ctx.submitBtn = $('#next');
+	ctx.originalText = ctx.submitBtn.text();
+	// Disable button and show loading
+	ctx.submitBtn.prop('disabled', true).text('Đang gửi...');
+	const examinationId = localStorage.getItem('current_examination_id');
+	const patientId = localStorage.getItem('current_patient_id');
+	// Prepare data for each template
+	ctx.submissions = [];
+	surveyTemplates.forEach(template => {
+	    const templateResponses = collectTemplateResponses(template.id);
+	    const hasResponses = Object.keys(templateResponses).length > 0;
+	    if (hasResponses) {
+	        ctx.submissions.push({
+	            examination_id: parseInt(examinationId),
+	            survey_template_id: parseInt(template.id),
+	            patient_id: parseInt(patientId),
+	            session_token: new URLSearchParams(window.location.search).get('session_token'),
+	            responses: templateResponses
+	        });
+	    }
+	});
+	// Submit each template response
+	ctx.submittedCount = 0;
+	ctx.totalSubmissions = ctx.submissions.length;
+}
+
+function runSurveySubmit2(ctx) {
+	ctx.submissions.forEach((submission) => {
+
+
+	    $.ajax({
+	        url: '/api/survey-responses/public',
+	        method: 'POST',
+	        headers: {
+	            'Content-Type': 'application/json'
+	        },
+	        data: JSON.stringify(submission),
+	        success: function(response) {
+	            ctx.submittedCount++;
+	            $('#survey-result-summary').html(window.renderSurveyResultSummary?.(response.data?.result_summary) || '');
+
+	            if (ctx.submittedCount === ctx.totalSubmissions) {
+	                // All submissions completed
+	                ctx.submitBtn.text('Hoàn thành!');
+	                showAlert('success', 'Khảo sát đã được gửi thành công!');
+
+	                // Set flag completed trước
+	                isSurveyCompleted = true;
+	                clearTimeout(draftTimer);
+	                localStorage.removeItem(draftStorageKey());
+
+	                // Update session status to completed và đợi reload session data
+	                checkSessionStatus(new URLSearchParams(window.location.search).get('session_token')).then(() => {
+	                    // Đảm bảo hiển thị thời gian hoàn thành ngay lập tức
+	                    if (surveySessionData) {
+	                        displaySurveyTimeInfo();
+	                    }
+	                });
+
+	                // Clear localStorage since survey is completed
+	                clearSurveyResponsesFromStorage();
+
+	                // Update progress TRƯỚC KHI hideActionButtons để đảm bảo progress hiển thị đúng
+	                updateProgress();
+
+	                // Hide action buttons and show completion state
+	                hideActionButtons();
+	            }
+	        },
+	        error: function() {
+	            ctx.submitBtn.prop('disabled', false).text(ctx.originalText);
+	            showAlert('error', 'Lỗi khi gửi kết quả khảo sát. Vui lòng thử lại.');
+	        }
+	    });
+	});
+}
+
 async function submitSurvey() {
+    const ctx = {};
     if (reviewOrderId !== null) return;
     // Check if this is preview mode
     if (isPreviewMode()) {
@@ -13,22 +92,18 @@ async function submitSurvey() {
         hideActionButtons();
         return;
     }
-
     if (isSurveyClosed) {
         showAlert('info', 'Khảo sát đã được đóng và không thể gửi thêm kết quả.');
         return; // Ngăn chặn gửi nếu khảo sát đã đóng
     }
-
     if (isSurveyCompleted) {
         showAlert('info', 'Bài khảo sát đã được nộp. Bạn có thể xem lại nhưng không thể gửi thêm.');
         return; // Ngăn chặn gửi nếu khảo sát đã hoàn thành
     }
-
     if (isSurveyExpired) {
         showAlert('error', 'Khảo sát đã hết hạn và ngừng nhận bài nộp. Vui lòng liên hệ cơ sở y tế nếu cần làm khảo sát mới.');
         return; // Ngăn chặn gửi nếu khảo sát đã hết hạn
     }
-
     const missingRequired = allQuestions.find(question =>
         !canProceedSurveyQuestion(question, surveyResponses[`q_${question.id}`]));
     if (missingRequired) {
@@ -37,96 +112,17 @@ async function submitSurvey() {
         showAlert('error', 'Vui lòng trả lời đủ các câu hỏi bắt buộc trước khi nộp bài.');
         return;
     }
-
     if (!await flushSurveyDraft()) {
         showAlert('error', 'Chưa đồng bộ được bài khảo sát. Vui lòng kiểm tra thông báo lưu tiến độ.');
         return;
     }
-    const submitBtn = $('#next');
-    const originalText = submitBtn.text();
-
-    // Disable button and show loading
-    submitBtn.prop('disabled', true).text('Đang gửi...');
-
-    const examinationId = localStorage.getItem('current_examination_id');
-    const patientId = localStorage.getItem('current_patient_id');
-
-    // Prepare data for each template
-    const submissions = [];
-
-    surveyTemplates.forEach(template => {
-        const templateResponses = collectTemplateResponses(template.id);
-        const hasResponses = Object.keys(templateResponses).length > 0;
-        if (hasResponses) {
-            submissions.push({
-                examination_id: parseInt(examinationId),
-                survey_template_id: parseInt(template.id),
-                patient_id: parseInt(patientId),
-                session_token: new URLSearchParams(window.location.search).get('session_token'),
-                responses: templateResponses
-            });
-        }
-    });
-
-
-    // Submit each template response
-    let submittedCount = 0;
-    const totalSubmissions = submissions.length;
-
-    if (totalSubmissions === 0) {
-        submitBtn.prop('disabled', false).text(originalText);
+    runSurveySubmit1(ctx);
+    if (ctx.totalSubmissions === 0) {
+        ctx.submitBtn.prop('disabled', false).text(ctx.originalText);
         showAlert('error', 'Vui lòng trả lời ít nhất một câu hỏi trước khi nộp bài.');
         return;
     }
-
-    submissions.forEach((submission) => {
-
-
-        $.ajax({
-            url: '/api/survey-responses/public',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(submission),
-            success: function(response) {
-                submittedCount++;
-                $('#survey-result-summary').html(window.renderSurveyResultSummary?.(response.data?.result_summary) || '');
-
-                if (submittedCount === totalSubmissions) {
-                    // All submissions completed
-                    submitBtn.text('Hoàn thành!');
-                    showAlert('success', 'Khảo sát đã được gửi thành công!');
-
-                    // Set flag completed trước
-                    isSurveyCompleted = true;
-                    clearTimeout(draftTimer);
-                    localStorage.removeItem(draftStorageKey());
-
-                    // Update session status to completed và đợi reload session data
-                    checkSessionStatus(new URLSearchParams(window.location.search).get('session_token')).then(() => {
-                        // Đảm bảo hiển thị thời gian hoàn thành ngay lập tức
-                        if (surveySessionData) {
-                            displaySurveyTimeInfo();
-                        }
-                    });
-
-                    // Clear localStorage since survey is completed
-                    clearSurveyResponsesFromStorage();
-
-                    // Update progress TRƯỚC KHI hideActionButtons để đảm bảo progress hiển thị đúng
-                    updateProgress();
-
-                    // Hide action buttons and show completion state
-                    hideActionButtons();
-                }
-            },
-            error: function() {
-                submitBtn.prop('disabled', false).text(originalText);
-                showAlert('error', 'Lỗi khi gửi kết quả khảo sát. Vui lòng thử lại.');
-            }
-        });
-    });
+    runSurveySubmit2(ctx);
 }
 
 // Show alert message

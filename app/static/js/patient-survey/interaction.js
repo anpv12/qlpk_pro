@@ -2,165 +2,166 @@
 /* exported bindNavigationEvents, bindQuestionEvents, restoreAnswer, restoreSavedSurveyResponses, updateProgress */
 
 // Bind question events
+function runSurveyQuestionEvents1() {
+	// Radio button change event
+	$('#survey-content').off('change', 'input[type="radio"]').on('change', 'input[type="radio"]', function() {
+	    const questionId = $(this).attr('name');
+	    const answerId = $(this).val();
+	    const score = $(this).data('score');
+
+	    // Check if this is a grid question - dùng data attributes thay vì parse string
+	    const $this = $(this);
+	    const questionIdAttr = $this.data('question-id');
+	    const rowIdAttr = $this.data('row-id');
+
+	    if (questionIdAttr && rowIdAttr) {
+	        // Handle grid question response với data attributes
+	        handleGridQuestionResponse(questionIdAttr, rowIdAttr, answerId, 'radio');
+	    } else if (questionId.includes('_row_')) {
+	        // Fallback: parse string nếu không có data attributes (backward compatibility)
+	        handleGridQuestionResponse(null, null, answerId, 'radio', questionId);
+	    } else {
+	        // Regular question response
+	        surveyResponses[questionId] = {
+	            answer_id: answerId,
+	            score: score
+	        };
+	    }
+
+	    // Save to localStorage for persistence
+	    saveSurveyResponsesToStorage();
+
+	    // Update navigation buttons
+	    updateNavigationButtons();
+
+	    // Update progress for all questions view if in preview mode
+	    updateProgressIfPreview();
+	});
+	// Checkbox change event
+	$('#survey-content').off('change', 'input[type="checkbox"]').on('change', 'input[type="checkbox"]', function() {
+	    const questionId = $(this).attr('name').replace('[]', '');
+
+	    // Check if this is a grid question - dùng data attributes
+	    const $this = $(this);
+	    const questionIdAttr = $this.data('question-id');
+	    const rowIdAttr = $this.data('row-id');
+
+	    if (questionIdAttr && rowIdAttr) {
+	        // Handle grid question response với data attributes
+	        handleGridQuestionResponse(questionIdAttr, rowIdAttr, $this.val(), 'checkbox');
+	    } else if (questionId.includes('_row_')) {
+	        // Fallback: parse string nếu không có data attributes
+	        handleGridQuestionResponse(null, null, $this.val(), 'checkbox', questionId);
+	    } else {
+	        // Regular checkbox question
+	        const checkedBoxes = $(`input[name="${questionId}[]"]:checked`);
+	        const selectedValues = checkedBoxes.map(function() { return $(this).val(); }).get();
+	        const selectedScores = checkedBoxes.map(function() { return $(this).data('score'); }).get();
+
+	        // Store response
+	        surveyResponses[questionId] = {
+	            answer_ids: selectedValues,
+	            scores: selectedScores
+	        };
+	    }
+
+	    // Save to localStorage for persistence
+	    saveSurveyResponsesToStorage();
+
+	    // Update navigation buttons
+	    updateNavigationButtons();
+
+	    // Update progress for all questions view if in preview mode
+	    updateProgressIfPreview();
+	});
+	// Dropdown change event
+	$('#survey-content').off('change', 'select').on('change', 'select', function() {
+	    const questionId = $(this).attr('name');
+	    const answerId = $(this).val();
+
+	    // Store response
+	    surveyResponses[questionId] = {
+	        answer_id: answerId,
+	        score: 0
+	    };
+
+	    // Save to localStorage for persistence
+	    saveSurveyResponsesToStorage();
+
+	    // Update navigation buttons
+	    updateNavigationButtons();
+
+	    // Update progress for all questions view if in preview mode
+	    updateProgressIfPreview();
+	});
+	// Text input change event (Short Answer, Paragraph)
+	$('#survey-content').off('input', 'input[type="text"], textarea').on('input', 'input[type="text"], textarea', function() {
+	    const questionId = $(this).attr('name');
+	    const answerText = $(this).val();
+
+	    // Store response
+	    surveyResponses[questionId] = {
+	        answer_text: answerText,
+	        score: 0
+	    };
+
+	    // Save to localStorage for persistence
+	    saveSurveyResponsesToStorage();
+
+	    // Update navigation buttons
+	    updateNavigationButtons();
+
+	    // Update character counter
+	    updateCharacterCounter($(this));
+
+	    // Update progress for all questions view if in preview mode
+	    updateProgressIfPreview();
+	});
+}
+
+function runSurveyQuestionEvents2() {
+	// Date/Time input change event
+	$('#survey-content').off('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]').on('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]', function() {
+	    const questionId = $(this).attr('name');
+	    const answerValue = $(this).val();
+
+	    // Store response
+	    surveyResponses[questionId] = {
+	        answer_value: answerValue,
+	        score: 0
+	    };
+
+	    // Save to localStorage for persistence
+	    saveSurveyResponsesToStorage();
+
+	    // Update navigation buttons
+	    updateNavigationButtons();
+
+	    // Update progress for all questions view if in preview mode
+	    updateProgressIfPreview();
+	});
+	// Keyboard shortcuts for multiple choice
+	$(document).off('keydown.survey').on('keydown.survey', function(e) {
+	    const key = e.key;
+	    const currentCard = $('.card:visible').first();
+	    const radioInputs = currentCard.find('input[type="radio"]');
+
+	    if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(key)) {
+	        const index = parseInt(key) - 1;
+
+	        if (radioInputs[index]) {
+	            radioInputs[index].checked = true;
+	            // Use vanilla JavaScript event dispatch
+	            radioInputs[index].dispatchEvent(new Event('change', { bubbles: true }));
+	        }
+	    }
+	});
+}
+
 function bindQuestionEvents() {
     if (reviewOrderId !== null || isSurveyClosed || isSurveyCompleted || isSurveyExpired) return;
-
-    // Radio button change event
-    $('#survey-content').off('change', 'input[type="radio"]').on('change', 'input[type="radio"]', function() {
-        const questionId = $(this).attr('name');
-        const answerId = $(this).val();
-        const score = $(this).data('score');
-
-        // Check if this is a grid question - dùng data attributes thay vì parse string
-        const $this = $(this);
-        const questionIdAttr = $this.data('question-id');
-        const rowIdAttr = $this.data('row-id');
-
-        if (questionIdAttr && rowIdAttr) {
-            // Handle grid question response với data attributes
-            handleGridQuestionResponse(questionIdAttr, rowIdAttr, answerId, 'radio');
-        } else if (questionId.includes('_row_')) {
-            // Fallback: parse string nếu không có data attributes (backward compatibility)
-            handleGridQuestionResponse(null, null, answerId, 'radio', questionId);
-        } else {
-            // Regular question response
-            surveyResponses[questionId] = {
-                answer_id: answerId,
-                score: score
-            };
-        }
-
-        // Save to localStorage for persistence
-        saveSurveyResponsesToStorage();
-
-        // Update navigation buttons
-        updateNavigationButtons();
-
-        // Update progress for all questions view if in preview mode
-        updateProgressIfPreview();
-    });
-
-    // Checkbox change event
-    $('#survey-content').off('change', 'input[type="checkbox"]').on('change', 'input[type="checkbox"]', function() {
-        const questionId = $(this).attr('name').replace('[]', '');
-
-        // Check if this is a grid question - dùng data attributes
-        const $this = $(this);
-        const questionIdAttr = $this.data('question-id');
-        const rowIdAttr = $this.data('row-id');
-
-        if (questionIdAttr && rowIdAttr) {
-            // Handle grid question response với data attributes
-            handleGridQuestionResponse(questionIdAttr, rowIdAttr, $this.val(), 'checkbox');
-        } else if (questionId.includes('_row_')) {
-            // Fallback: parse string nếu không có data attributes
-            handleGridQuestionResponse(null, null, $this.val(), 'checkbox', questionId);
-        } else {
-            // Regular checkbox question
-            const checkedBoxes = $(`input[name="${questionId}[]"]:checked`);
-            const selectedValues = checkedBoxes.map(function() { return $(this).val(); }).get();
-            const selectedScores = checkedBoxes.map(function() { return $(this).data('score'); }).get();
-
-            // Store response
-            surveyResponses[questionId] = {
-                answer_ids: selectedValues,
-                scores: selectedScores
-            };
-        }
-
-        // Save to localStorage for persistence
-        saveSurveyResponsesToStorage();
-
-        // Update navigation buttons
-        updateNavigationButtons();
-
-        // Update progress for all questions view if in preview mode
-        updateProgressIfPreview();
-    });
-
-    // Dropdown change event
-    $('#survey-content').off('change', 'select').on('change', 'select', function() {
-        const questionId = $(this).attr('name');
-        const answerId = $(this).val();
-
-        // Store response
-        surveyResponses[questionId] = {
-            answer_id: answerId,
-            score: 0
-        };
-
-        // Save to localStorage for persistence
-        saveSurveyResponsesToStorage();
-
-        // Update navigation buttons
-        updateNavigationButtons();
-
-        // Update progress for all questions view if in preview mode
-        updateProgressIfPreview();
-    });
-
-    // Text input change event (Short Answer, Paragraph)
-    $('#survey-content').off('input', 'input[type="text"], textarea').on('input', 'input[type="text"], textarea', function() {
-        const questionId = $(this).attr('name');
-        const answerText = $(this).val();
-
-        // Store response
-        surveyResponses[questionId] = {
-            answer_text: answerText,
-            score: 0
-        };
-
-        // Save to localStorage for persistence
-        saveSurveyResponsesToStorage();
-
-        // Update navigation buttons
-        updateNavigationButtons();
-
-        // Update character counter
-        updateCharacterCounter($(this));
-
-        // Update progress for all questions view if in preview mode
-        updateProgressIfPreview();
-    });
-
-    // Date/Time input change event
-    $('#survey-content').off('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]').on('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]', function() {
-        const questionId = $(this).attr('name');
-        const answerValue = $(this).val();
-
-        // Store response
-        surveyResponses[questionId] = {
-            answer_value: answerValue,
-            score: 0
-        };
-
-        // Save to localStorage for persistence
-        saveSurveyResponsesToStorage();
-
-        // Update navigation buttons
-        updateNavigationButtons();
-
-        // Update progress for all questions view if in preview mode
-        updateProgressIfPreview();
-    });
-
-    // Keyboard shortcuts for multiple choice
-    $(document).off('keydown.survey').on('keydown.survey', function(e) {
-        const key = e.key;
-        const currentCard = $('.card:visible').first();
-        const radioInputs = currentCard.find('input[type="radio"]');
-
-        if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(key)) {
-            const index = parseInt(key) - 1;
-
-            if (radioInputs[index]) {
-                radioInputs[index].checked = true;
-                // Use vanilla JavaScript event dispatch
-                radioInputs[index].dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }
-    });
-
+    runSurveyQuestionEvents1();
+    runSurveyQuestionEvents2();
 }
 
 // Helper function to check if in preview mode

@@ -2,7 +2,7 @@
 /* exported currentPage, initializePage */
 
 // Initialize page
-function initializePage() {
+function runOrderPageInit1(ctx) {
 	const groupTabs = [...document.querySelectorAll('[data-status-group]')];
 	groupTabs.forEach((button, index) => {
 		button.addEventListener('click', () => selectOrderGroup(button.dataset.statusGroup));
@@ -21,10 +21,8 @@ function initializePage() {
 	const currentYear = today.getFullYear();
 	const startDateDefault = `${currentYear}-01-01`;
 	const endDateDefault = `${currentYear}-12-31`;
-
 	const fromDateInput = document.getElementById('filterFromDate');
 	const toDateInput = document.getElementById('filterToDate');
-
 	// Đợi Flatpickr init xong rồi mới set giá trị
 	setTimeout(function () {
 		// Clear Tên bệnh nhân
@@ -57,7 +55,6 @@ function initializePage() {
 		filterState.to_date = endDateDefault;
 		applyFilters();
 	}, 200);
-
 	// Select all checkbox
 	const selectAll = document.getElementById('selectAllOrders');
 	if (selectAll) {
@@ -75,11 +72,13 @@ function initializePage() {
 			updateSelectedCount();
 		});
 	}
-
 	// Refresh button - reset tất cả filter và reload
-	const refreshBtn = document.getElementById('refreshBtn');
-	if (refreshBtn) {
-		refreshBtn.addEventListener('click', () => {
+	ctx.refreshBtn = document.getElementById('refreshBtn');
+}
+
+function runOrderPageInit2(ctx) {
+	if (ctx.refreshBtn) {
+		ctx.refreshBtn.addEventListener('click', () => {
 			// Reset filter fields
 			const patientNameInput = document.getElementById('filterPatientName');
 			const fromDateInput = document.getElementById('filterFromDate');
@@ -122,19 +121,16 @@ function initializePage() {
 			showCustomToast('success', 'Đã làm mới bộ lọc và danh sách');
 		});
 	}
-
 	// Batch delete button
 	const batchDeleteBtn = document.getElementById('batchDeleteBtn');
 	if (batchDeleteBtn) {
 		batchDeleteBtn.addEventListener('click', batchDeleteOrders);
 	}
-
 	// Modal event listeners - chỉ setup một lần khi page load
 	// để đảm bảo luôn có currentOrderDetail và tránh duplicate listeners
 
 	// Load initial data
 	loadOrders();
-
 	if (window.QLPKRealtimePageHooks) {
 		window.QLPKRealtimePageHooks.register({
 			types: ['order.changed', 'examination.changed', 'survey.changed', 'catalog.changed'],
@@ -151,29 +147,38 @@ function initializePage() {
 			}
 		});
 	}
-
 	// ✅ Reload khi tab được focus lại để đồng bộ dữ liệu với các trang khác
-	let lastReloadTime = 0;
-	const MIN_RELOAD_INTERVAL_MS = 2000; // Tối thiểu 2 giây giữa các lần reload
+	ctx.lastReloadTime = 0;
+	ctx.MIN_RELOAD_INTERVAL_MS = 2000;
+	// Tối thiểu 2 giây giữa các lần reload
 
 	// Reload khi tab được focus lại
 	document.addEventListener('visibilitychange', () => {
 		if (!document.hidden) {
 			// Tab được focus lại
 			const now = Date.now();
-			if (now - lastReloadTime > MIN_RELOAD_INTERVAL_MS) {
-				lastReloadTime = now;
+			if (now - ctx.lastReloadTime > ctx.MIN_RELOAD_INTERVAL_MS) {
+				ctx.lastReloadTime = now;
 				loadOrders();
 			}
 		}
 	});
+}
 
+function runOrderPageInit3(ctx) {
 	// Reload khi window được focus lại (khi chuyển tab trình duyệt)
 	window.addEventListener('focus', () => {
 		const now = Date.now();
-		if (now - lastReloadTime > MIN_RELOAD_INTERVAL_MS) {
-			lastReloadTime = now;
+		if (now - ctx.lastReloadTime > ctx.MIN_RELOAD_INTERVAL_MS) {
+			ctx.lastReloadTime = now;
 			loadOrders();
 		}
 	});
+}
+
+function initializePage() {
+	const ctx = {};
+	runOrderPageInit1(ctx);
+	runOrderPageInit2(ctx);
+	runOrderPageInit3(ctx);
 }

@@ -1,4 +1,5 @@
-$(function() {
+(function () {
+function installLoginPageFns1(ctx) {
 	function normalizeRole(role) {
 		return String(role || '').replace(/^UserRole\./, '').trim().toLowerCase();
 	}
@@ -26,7 +27,7 @@ $(function() {
 		window.location.href = loginLandingPath(nextUser);
 	}
 
-  function showLoginError(error, submitBtn) {
+	function showLoginError(error, submitBtn) {
     let message = error.status === 401
       ? 'Tên đăng nhập hoặc mật khẩu không đúng.'
       : 'Không thể đăng nhập. Vui lòng thử lại.';
@@ -42,7 +43,7 @@ $(function() {
     setLoginPending(submitBtn, false);
   }
 
-  async function loginWithCookie(session, username, password, button) {
+	async function loginWithCookie(session, username, password, button) {
     try {
       const result = await session.actions.login(username, password);
       const current = session.owner.snapshot();
@@ -57,11 +58,18 @@ $(function() {
     }
   }
 
-  function setLoginPending(button, pending) {
+	function setLoginPending(button, pending) {
     button.prop('disabled', pending).attr('aria-busy', String(pending));
     button.find('.login-submit-label').text(pending ? 'Đang đăng nhập...' : 'Đăng nhập');
     button.find('.login-icon').toggleClass('bi-arrow-repeat', pending).toggleClass('bi-arrow-right', !pending);
   }
+
+	Object.assign(ctx, { completeLogin, showLoginError, loginWithCookie, setLoginPending });
+}
+
+$(function() {
+	const ctx = {};
+	installLoginPageFns1(ctx);
 
   $('#togglePassword').on('click', function() {
     const input = $('#passwordInput');
@@ -87,10 +95,10 @@ $(function() {
     
     $('#loginError').prop('hidden', true).text('');
     
-    setLoginPending(submitBtn, true);
+    ctx.setLoginPending(submitBtn, true);
 
     const session = window.QLPKApiTransport?.session;
-    if (session) return loginWithCookie(session, username, password, submitBtn);
+    if (session) return ctx.loginWithCookie(session, username, password, submitBtn);
     
     $.ajax({
       url: '/auth/login',
@@ -108,16 +116,17 @@ $(function() {
           type: 'GET',
           headers: { 'Authorization': 'Bearer ' + res.access_token },
           success: function(user) {
-			completeLogin(user);
+			ctx.completeLogin(user);
           },
           error: function() {
-			completeLogin(res.user);
+			ctx.completeLogin(res.user);
           }
         });
       },
       error: function(xhr) {
-        showLoginError(xhr, submitBtn);
+        ctx.showLoginError(xhr, submitBtn);
       }
     });
   });
-}); 
+});
+})(); 

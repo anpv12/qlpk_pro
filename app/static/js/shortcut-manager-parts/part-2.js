@@ -96,87 +96,83 @@
 		Object.assign(ctx, { deleteShortcut });
 	}
 
-	async function attachSettingsPage() {
-		const ctx = {};
-		installShortcutSettingsFns1(ctx);
-		installShortcutSettingsFns2(ctx);
+	function runShortcutSettingsSetup1(closureCtx) {
+		closureCtx.ctx = {};
+		installShortcutSettingsFns1(closureCtx.ctx);
+		installShortcutSettingsFns2(closureCtx.ctx);
+	}
 
-		if (!await moduleParts.claimSettingsPage()) return;
-
-		const form = document.getElementById('shortcutForm');
-		ctx.idInput = document.getElementById('shortcutId');
-		ctx.comboInput = document.getElementById('shortcutCombo');
-		ctx.routeSelect = document.getElementById('shortcutRoute');
-		ctx.urlInput = document.getElementById('shortcutUrl');
-		ctx.comboPreview = document.getElementById('shortcutComboPreview');
-		ctx.tbody = document.getElementById('shortcutTableBody');
-		ctx.alertBox = document.getElementById('shortcutAlert');
+	function runShortcutSettingsSetup2(closureCtx) {
+		closureCtx.form = document.getElementById('shortcutForm');
+		closureCtx.ctx.idInput = document.getElementById('shortcutId');
+		closureCtx.ctx.comboInput = document.getElementById('shortcutCombo');
+		closureCtx.ctx.routeSelect = document.getElementById('shortcutRoute');
+		closureCtx.ctx.urlInput = document.getElementById('shortcutUrl');
+		closureCtx.ctx.comboPreview = document.getElementById('shortcutComboPreview');
+		closureCtx.ctx.tbody = document.getElementById('shortcutTableBody');
+		closureCtx.ctx.alertBox = document.getElementById('shortcutAlert');
 		const clearBtn = document.getElementById('shortcutClearBtn');
-		ctx.scopeSelect = document.getElementById('shortcutScope');
-		ctx.userSelect = document.getElementById('shortcutTargetUser');
-		ctx.isAdmin = moduleParts.isAdminUser();
-		ctx.currentUserId = moduleParts.currentUser().id || null;
+		closureCtx.ctx.scopeSelect = document.getElementById('shortcutScope');
+		closureCtx.ctx.userSelect = document.getElementById('shortcutTargetUser');
+		closureCtx.ctx.isAdmin = moduleParts.isAdminUser();
+		closureCtx.ctx.currentUserId = moduleParts.currentUser().id || null;
 		const scopeWrap = document.getElementById('shortcutScopeInlineWrap');
 		const targetUserWrap = document.getElementById('shortcutTargetUserWrap');
-
-		if (ctx.isAdmin && scopeWrap) scopeWrap.style.display = '';
+		if (closureCtx.ctx.isAdmin && scopeWrap) scopeWrap.style.display = '';
 		if (targetUserWrap) targetUserWrap.style.display = 'none';
-
-		moduleParts.initRouteOptions(ctx.routeSelect);
-		moduleParts.captureCombo(ctx.comboInput, ctx.comboPreview);
-
-		if (ctx.routeSelect) {
-			ctx.routeSelect.addEventListener('change', () => {
-				ctx.urlInput.value = ctx.routeSelect.value || '';
+		moduleParts.initRouteOptions(closureCtx.ctx.routeSelect);
+		moduleParts.captureCombo(closureCtx.ctx.comboInput, closureCtx.ctx.comboPreview);
+		if (closureCtx.ctx.routeSelect) {
+			closureCtx.ctx.routeSelect.addEventListener('change', () => {
+				closureCtx.ctx.urlInput.value = closureCtx.ctx.routeSelect.value || '';
 			});
 		}
-		moduleState.settingsReloadTable = ctx.reloadTable;
-
-		if (ctx.isAdmin && ctx.scopeSelect) {
-			ctx.scopeSelect.value = 'all-users';
-			ctx.scopeSelect.addEventListener('change', async () => {
-				if (targetUserWrap) targetUserWrap.style.display = ctx.scopeSelect.value === 'user' ? '' : 'none';
-				moduleParts.hideMessage(ctx.alertBox);
-				try { await ctx.reloadTable(); } catch (e) { moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
+		moduleState.settingsReloadTable = closureCtx.ctx.reloadTable;
+		if (closureCtx.ctx.isAdmin && closureCtx.ctx.scopeSelect) {
+			closureCtx.ctx.scopeSelect.value = 'all-users';
+			closureCtx.ctx.scopeSelect.addEventListener('change', async () => {
+				if (targetUserWrap) targetUserWrap.style.display = closureCtx.ctx.scopeSelect.value === 'user' ? '' : 'none';
+				moduleParts.hideMessage(closureCtx.ctx.alertBox);
+				try { await closureCtx.ctx.reloadTable(); } catch (e) { moduleParts.showMessage(closureCtx.ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
 			});
 		}
-
-		if (ctx.isAdmin && ctx.userSelect) {
-			ctx.userSelect.addEventListener('change', async () => {
-				if (ctx.getCurrentScope() === 'user') {
-					try { await ctx.reloadTable(); } catch (e) { moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
+		if (closureCtx.ctx.isAdmin && closureCtx.ctx.userSelect) {
+			closureCtx.ctx.userSelect.addEventListener('change', async () => {
+				if (closureCtx.ctx.getCurrentScope() === 'user') {
+					try { await closureCtx.ctx.reloadTable(); } catch (e) { moduleParts.showMessage(closureCtx.ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
 				}
 			});
 		}
-
 		clearBtn.addEventListener('click', function () {
-			ctx.resetForm();
-			moduleParts.hideMessage(ctx.alertBox);
+			closureCtx.ctx.resetForm();
+			moduleParts.hideMessage(closureCtx.ctx.alertBox);
 		});
+	}
 
-		form.addEventListener('submit', async function (e) {
+	async function runShortcutSettingsSetup3(closureCtx) {
+		closureCtx.form.addEventListener('submit', async function (e) {
 			e.preventDefault();
 			if (!moduleState.settingsCurrent()) { moduleParts.clearSessionState(); return; }
-			moduleParts.hideMessage(ctx.alertBox);
-			const combo = moduleParts.normalizeComboText(ctx.comboInput.value);
+			moduleParts.hideMessage(closureCtx.ctx.alertBox);
+			const combo = moduleParts.normalizeComboText(closureCtx.ctx.comboInput.value);
 			if (!combo) {
-				moduleParts.showMessage(ctx.alertBox, 'Tổ hợp phím không hợp lệ. Cần có phím bổ trợ (Ctrl/Alt/Shift) + phím chính.', 'warning');
+				moduleParts.showMessage(closureCtx.ctx.alertBox, 'Tổ hợp phím không hợp lệ. Cần có phím bổ trợ (Ctrl/Alt/Shift) + phím chính.', 'warning');
 				return;
 			}
 			const payload = {
 				combo_key: combo,
-				target_url: (ctx.urlInput.value || '').trim(),
+				target_url: (closureCtx.ctx.urlInput.value || '').trim(),
 				is_active: true
 			};
 			if (!payload.target_url || !moduleState.ALLOWED_NAV_URLS.has(payload.target_url)) {
-				moduleParts.showMessage(ctx.alertBox, 'URL đích không hợp lệ.', 'warning');
+				moduleParts.showMessage(closureCtx.ctx.alertBox, 'URL đích không hợp lệ.', 'warning');
 				return;
 			}
 
-			const id = ctx.idInput.value;
-			const target = moduleParts.resolveShortcutSaveRequest({ id, scope: ctx.getCurrentScope(), userSelect: ctx.userSelect, currentUserId: ctx.currentUserId, payload });
+			const id = closureCtx.ctx.idInput.value;
+			const target = moduleParts.resolveShortcutSaveRequest({ id, scope: closureCtx.ctx.getCurrentScope(), userSelect: closureCtx.ctx.userSelect, currentUserId: closureCtx.ctx.currentUserId, payload });
 			if (target.warning) {
-				moduleParts.showMessage(ctx.alertBox, target.warning, 'warning');
+				moduleParts.showMessage(closureCtx.ctx.alertBox, target.warning, 'warning');
 				return;
 			}
 
@@ -185,18 +181,17 @@
 				const res = await moduleParts.apiCall(target.url, { method, body: JSON.stringify(payload) });
 				if (!moduleState.settingsCurrent()) return;
 				if (!res.ok) {
-					moduleParts.showMessage(ctx.alertBox, await moduleParts.readShortcutSaveError(res), 'danger');
+					moduleParts.showMessage(closureCtx.ctx.alertBox, await moduleParts.readShortcutSaveError(res), 'danger');
 					return;
 				}
-				moduleParts.showMessage(ctx.alertBox, 'Lưu phím tắt thành công.', 'success');
-				ctx.resetForm();
-				await ctx.reloadTable();
+				moduleParts.showMessage(closureCtx.ctx.alertBox, 'Lưu phím tắt thành công.', 'success');
+				closureCtx.ctx.resetForm();
+				await closureCtx.ctx.reloadTable();
 			} catch (err) {
-				moduleParts.showMessage(ctx.alertBox, 'Lỗi kết nối khi lưu phím tắt.', 'danger');
+				moduleParts.showMessage(closureCtx.ctx.alertBox, 'Lỗi kết nối khi lưu phím tắt.', 'danger');
 			}
 		});
-
-		ctx.tbody.addEventListener('click', async function (e) {
+		closureCtx.ctx.tbody.addEventListener('click', async function (e) {
 			if (!moduleState.settingsCurrent()) { moduleParts.clearSessionState(); return; }
 			const btn = e.target.closest('button[data-action]');
 			if (!btn) return;
@@ -208,21 +203,28 @@
 			if (!row) return;
 
 			if (action === 'edit') {
-				ctx.fillShortcutForm(row);
+				closureCtx.ctx.fillShortcutForm(row);
 				return;
 			}
 
-			if (action === 'delete') await ctx.deleteShortcut(id);
+			if (action === 'delete') await closureCtx.ctx.deleteShortcut(id);
 		});
-
 		try {
-			if (ctx.isAdmin && ctx.scopeSelect) {
-				await ctx.loadUsersForAdmin();
+			if (closureCtx.ctx.isAdmin && closureCtx.ctx.scopeSelect) {
+				await closureCtx.ctx.loadUsersForAdmin();
 			}
-			await ctx.reloadTable();
+			await closureCtx.ctx.reloadTable();
 		} catch (e) {
-			moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger');
+			moduleParts.showMessage(closureCtx.ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger');
 		}
+	}
+
+	async function attachSettingsPage() {
+		const closureCtx = {};
+		runShortcutSettingsSetup1(closureCtx);
+		if (!await moduleParts.claimSettingsPage()) return;
+		runShortcutSettingsSetup2(closureCtx);
+		await runShortcutSettingsSetup3(closureCtx);
 	}
 
 	Object.assign(moduleParts, {

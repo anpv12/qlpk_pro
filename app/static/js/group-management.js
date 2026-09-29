@@ -3,9 +3,124 @@ function showCustomToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
 }
 
-$(function () {
+(function () {
+function installGroupPageFns1(ctx) {
+	// Fetch group list from API
+	function fetchGroups(callback) {
+		$.get('/groups/', function (data) {
+			ctx.groupList = data;
+			if (callback) callback();
+			renderTable();
+		});
+	}
+
+	function renderTable() {
+        const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
+            || String(value || '').toLowerCase().trim();
+        const keyword = normalize($('#searchInput').val());
+        ctx.listPagination.setItems(ctx.groupList.filter(group =>
+            [group.code, group.name, group.desc].some(value => normalize(value).includes(keyword))));
+    }
+
+	function renderPage(pageData) {
+		const tbody = $('#groupTable tbody');
+		tbody.empty();
+		pageData.forEach((g) => {
+			tbody.append(`
+        <tr>
+          <td><input type="checkbox" class="row-check"></td>
+          <td>${g.code}</td>
+          <td>${g.name}</td>
+          <td>${renderPermBadges(g.permissions)}</td>
+          <td>
+            <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${g.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${g.id}" title="Xoá"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      `);
+		});
+
+	}
+
+	function renderPermBadges(perms) {
+		let html = '';
+		ctx.PERMISSIONS.forEach(p => {
+			const hasParent = perms.includes(p.id);
+			const selectedChildren = (p.children || []).filter(c => perms.includes(c.id));
+			if (hasParent || selectedChildren.length) {
+				html += `<div class="gm-perm-badge-wrap">`;
+				// Badge cha
+				html += `<span class="badge badge-role ${p.color}"><i class="${p.icon}"></i> ${p.label}</span>`;
+				// Badge con
+				selectedChildren.forEach(c => {
+					html += `<span class="badge badge-child">${c.label}</span>`;
+				});
+				html += `</div> `;
+			}
+		});
+		return html;
+	}
+
+	Object.assign(ctx, { fetchGroups, renderTable, renderPage });
+}
+
+function installGroupPageFns2(ctx) {
+	// Tree quyền (checkbox cha/con, expand/collapse)
+	function renderPermTree(container, checked = [], readonly = false) {
+		container.empty();
+		ctx.PERMISSIONS.forEach(p => {
+			const hasChildren = p.children && p.children.length;
+			const checkedParent = checked.includes(p.id) ? 'checked' : '';
+			const disabled = readonly ? 'disabled' : '';
+			const collapseId = 'collapse_' + p.id;
+			container.append(`
+        <div class="form-check tree-group mb-1">
+          <input class="form-check-input perm-parent" type="checkbox" value="${p.id}" id="perm_${p.id}" ${checkedParent} ${disabled}>
+          <label class="form-check-label" for="perm_${p.id}">${p.label}</label>
+          ${hasChildren ? `<span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}"><i class="bi bi-chevron-down"></i></span>` : ''}
+        </div>
+      `);
+			if (hasChildren) {
+				container.append(`<div class="collapse show tree-children mb-2" id="${collapseId}"></div>`);
+				const childDiv = container.find(`#${collapseId}`);
+				p.children.forEach(c => {
+					const checkedChild = checked.includes(c.id) ? 'checked' : '';
+					childDiv.append(`
+            <div class="form-check ms-2">
+              <input class="form-check-input perm-child" type="checkbox" value="${c.id}" id="perm_${c.id}" ${checkedChild} ${disabled}>
+              <label class="form-check-label" for="perm_${c.id}">${c.label}</label>
+            </div>
+          `);
+				});
+			}
+		});
+	}
+
+	function registerRealtimeHooks() {
+		if (!window.QLPKRealtimePageHooks) return;
+		window.QLPKRealtimePageHooks.register({
+			types: ['catalog.changed'],
+			filter: function (event) {
+				const entity = event && event.payload ? event.payload.entity : '';
+				return ['group', 'user_group'].includes(entity);
+			},
+			handler: function () {
+				ctx.fetchGroups();
+			},
+			debounceMs: 350,
+		});
+	}
+
+	Object.assign(ctx, { renderPermTree, registerRealtimeHooks });
+}
+
+function runGroupPageSetup1(closureCtx) {
+	closureCtx.ctx = {};
+	installGroupPageFns1(closureCtx.ctx);
+	installGroupPageFns2(closureCtx.ctx);
 	// Danh sách màn hình thực tế từ hệ thống
-	const PERMISSIONS = [
+	closureCtx.ctx.PERMISSIONS = [
 		{
 			id: 'dashboard', label: 'Trang chủ', icon: 'bi bi-house-door', color: 'badge-dashboard', children: []
 		},
@@ -60,109 +175,22 @@ $(function () {
 			]
 		}
 	];
-
-	let groupList = [];
-	let editingGroupId = null;
-	let deletingGroupId = null;
-
-
-	// Fetch group list from API
-	function fetchGroups(callback) {
-		$.get('/groups/', function (data) {
-			groupList = data;
-			if (callback) callback();
-			renderTable();
-		});
-	}
-
+	closureCtx.ctx.groupList = [];
+	closureCtx.editingGroupId = null;
+	closureCtx.deletingGroupId = null;
 	// Render table nhóm quyền
-	const listPagination = window.QLPKPagination.createClient({ render: renderPage });
-    function renderTable() {
-        const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
-            || String(value || '').toLowerCase().trim();
-        const keyword = normalize($('#searchInput').val());
-        listPagination.setItems(groupList.filter(group =>
-            [group.code, group.name, group.desc].some(value => normalize(value).includes(keyword))));
-    }
-    $('#groupFilterForm').on('submit', function (event) {
+	closureCtx.ctx.listPagination = window.QLPKPagination.createClient({ render: closureCtx.ctx.renderPage });
+	$('#groupFilterForm').on('submit', function (event) {
         event.preventDefault();
-        renderTable();
+        closureCtx.ctx.renderTable();
     });
-    $('#resetBtn').on('click', function () {
+}
+
+function runGroupPageSetup2(closureCtx) {
+	$('#resetBtn').on('click', function () {
         $('#searchInput').val('');
-        renderTable();
+        closureCtx.ctx.renderTable();
     });
-    function renderPage(pageData) {
-		const tbody = $('#groupTable tbody');
-		tbody.empty();
-		pageData.forEach((g) => {
-			tbody.append(`
-        <tr>
-          <td><input type="checkbox" class="row-check"></td>
-          <td>${g.code}</td>
-          <td>${g.name}</td>
-          <td>${renderPermBadges(g.permissions)}</td>
-          <td>
-            <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${g.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${g.id}" title="Xoá"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>
-      `);
-		});
-
-	}
-
-	function renderPermBadges(perms) {
-		let html = '';
-		PERMISSIONS.forEach(p => {
-			const hasParent = perms.includes(p.id);
-			const selectedChildren = (p.children || []).filter(c => perms.includes(c.id));
-			if (hasParent || selectedChildren.length) {
-				html += `<div class="gm-perm-badge-wrap">`;
-				// Badge cha
-				html += `<span class="badge badge-role ${p.color}"><i class="${p.icon}"></i> ${p.label}</span>`;
-				// Badge con
-				selectedChildren.forEach(c => {
-					html += `<span class="badge badge-child">${c.label}</span>`;
-				});
-				html += `</div> `;
-			}
-		});
-		return html;
-	}
-
-	// Tree quyền (checkbox cha/con, expand/collapse)
-	function renderPermTree(container, checked = [], readonly = false) {
-		container.empty();
-		PERMISSIONS.forEach(p => {
-			const hasChildren = p.children && p.children.length;
-			const checkedParent = checked.includes(p.id) ? 'checked' : '';
-			const disabled = readonly ? 'disabled' : '';
-			const collapseId = 'collapse_' + p.id;
-			container.append(`
-        <div class="form-check tree-group mb-1">
-          <input class="form-check-input perm-parent" type="checkbox" value="${p.id}" id="perm_${p.id}" ${checkedParent} ${disabled}>
-          <label class="form-check-label" for="perm_${p.id}">${p.label}</label>
-          ${hasChildren ? `<span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}"><i class="bi bi-chevron-down"></i></span>` : ''}
-        </div>
-      `);
-			if (hasChildren) {
-				container.append(`<div class="collapse show tree-children mb-2" id="${collapseId}"></div>`);
-				const childDiv = container.find(`#${collapseId}`);
-				p.children.forEach(c => {
-					const checkedChild = checked.includes(c.id) ? 'checked' : '';
-					childDiv.append(`
-            <div class="form-check ms-2">
-              <input class="form-check-input perm-child" type="checkbox" value="${c.id}" id="perm_${c.id}" ${checkedChild} ${disabled}>
-              <label class="form-check-label" for="perm_${c.id}">${c.label}</label>
-            </div>
-          `);
-				});
-			}
-		});
-	}
-
 	// Checkbox cha/con logic
 	$(document).on('change', '.perm-parent', function () {
 		const checked = $(this).is(':checked');
@@ -176,66 +204,64 @@ $(function () {
 		if (checked === all) parent.prop('checked', true);
 		else parent.prop('checked', false);
 	});
-
 	// Thêm mới nhóm quyền
 	$('#addGroupBtn').on('click', function () {
-		editingGroupId = null;
+		closureCtx.editingGroupId = null;
 		$('#groupModalLabel').text('Thêm mới nhóm quyền');
 		$('#groupForm')[0].reset();
-		renderPermTree($('#permTreeEdit'), [], false);
+		closureCtx.ctx.renderPermTree($('#permTreeEdit'), [], false);
 		$('#groupFormError').addClass('d-none').text('');
 		$('#groupModal').modal('show');
 	});
-
 	// Sửa nhóm quyền
 	$('#groupTable').on('click', '.edit-btn', function () {
 		const id = $(this).data('id');
-		const group = groupList.find(g => g.id === id);
+		const group = closureCtx.ctx.groupList.find(g => g.id === id);
 		if (!group) return;
-		editingGroupId = id;
+		closureCtx.editingGroupId = id;
 		$('#groupModalLabel').text('Cập nhật nhóm quyền');
 		$('#groupForm')[0].reset();
 		$('#groupForm [name="code"]').val(group.code);
 		$('#groupForm [name="name"]').val(group.name);
 		$('#groupForm [name="desc"]').val(group.desc);
-		renderPermTree($('#permTreeEdit'), group.permissions, false);
+		closureCtx.ctx.renderPermTree($('#permTreeEdit'), group.permissions, false);
 		$('#groupFormError').addClass('d-none').text('');
 		$('#groupModal').modal('show');
 	});
-
 	// Xem chi tiết nhóm quyền
 	$('#groupTable').on('click', '.view-btn', function () {
 		const id = $(this).data('id');
-		const group = groupList.find(g => g.id === id);
+		const group = closureCtx.ctx.groupList.find(g => g.id === id);
 		if (!group) return;
 		$('#viewGroupModal [name="code"]').val(group.code);
 		$('#viewGroupModal [name="name"]').val(group.name);
 		$('#viewGroupModal [name="desc"]').val(group.desc);
-		renderPermTree($('#permTreeView'), group.permissions, true);
+		closureCtx.ctx.renderPermTree($('#permTreeView'), group.permissions, true);
 		$('#viewGroupModal').modal('show');
 	});
-
 	// Xoá nhóm quyền
 	$('#groupTable').on('click', '.delete-btn', function () {
-		deletingGroupId = $(this).data('id');
+		closureCtx.deletingGroupId = $(this).data('id');
 		$('#confirmDeleteGroupModal').modal('show');
 	});
 	$('#confirmDeleteGroupBtn').on('click', function () {
-		if (!deletingGroupId) return;
+		if (!closureCtx.deletingGroupId) return;
 		$.ajax({
-			url: `/groups/${deletingGroupId}`,
+			url: `/groups/${closureCtx.deletingGroupId}`,
 			type: 'DELETE',
 			success: function () {
 				$('#confirmDeleteGroupModal').modal('hide');
-				fetchGroups();
-				deletingGroupId = null;
+				closureCtx.ctx.fetchGroups();
+				closureCtx.deletingGroupId = null;
 			},
 			error: function () {
 				showCustomToast('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
 			}
 		});
 	});
+}
 
+function runGroupPageSetup3(closureCtx) {
 	// Lưu nhóm quyền (thêm/sửa)
 	$('#groupForm').on('submit', function (e) {
 		e.preventDefault();
@@ -247,16 +273,16 @@ $(function () {
 			$('#groupFormError').removeClass('d-none').text('Vui lòng nhập đầy đủ thông tin bắt buộc và chọn ít nhất 1 quyền.');
 			return;
 		}
-		if (editingGroupId) {
+		if (closureCtx.editingGroupId) {
 			// Update
 			$.ajax({
-				url: `/groups/${editingGroupId}`,
+				url: `/groups/${closureCtx.editingGroupId}`,
 				type: 'PUT',
 				contentType: 'application/json',
 				data: JSON.stringify({ code, name, desc, permissions: perms }),
 				success: function () {
 					$('#groupModal').modal('hide');
-					fetchGroups();
+					closureCtx.ctx.fetchGroups();
 				},
 				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể cập nhật nhóm quyền. Vui lòng kiểm tra lại.');
@@ -271,7 +297,7 @@ $(function () {
 				data: JSON.stringify({ code, name, desc, permissions: perms }),
 				success: function () {
 					$('#groupModal').modal('hide');
-					fetchGroups();
+					closureCtx.ctx.fetchGroups();
 				},
 				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể tạo nhóm quyền. Vui lòng kiểm tra lại.');
@@ -279,28 +305,19 @@ $(function () {
 			});
 		}
 	});
-
 	// Đăng xuất
 	$('#logoutBtn').on('click', function () {
 		window.QLPKAppHeader?.logout();
 	});
-
-	function registerRealtimeHooks() {
-		if (!window.QLPKRealtimePageHooks) return;
-		window.QLPKRealtimePageHooks.register({
-			types: ['catalog.changed'],
-			filter: function (event) {
-				const entity = event && event.payload ? event.payload.entity : '';
-				return ['group', 'user_group'].includes(entity);
-			},
-			handler: function () {
-				fetchGroups();
-			},
-			debounceMs: 350,
-		});
-	}
-
 	// Khởi tạo
-	registerRealtimeHooks();
-	fetchGroups();
-}); 
+	closureCtx.ctx.registerRealtimeHooks();
+	closureCtx.ctx.fetchGroups();
+}
+
+$(function () {
+	const closureCtx = {};
+	runGroupPageSetup1(closureCtx);
+	runGroupPageSetup2(closureCtx);
+	runGroupPageSetup3(closureCtx);
+});
+})(); 

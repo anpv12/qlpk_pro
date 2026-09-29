@@ -160,10 +160,9 @@ function toVietnameseGender(gender) {
 }
 
 // Bind all event handlers
-function bindEvents() {
+function runPaymentWaitingEvents1() {
 	// Debounce timer for search input
 	let searchDebounceTimer;
-
 	// Realtime search on input (debounced 300ms)
 	$('#searchInput').on('input', function () {
 		clearTimeout(searchDebounceTimer);
@@ -171,7 +170,6 @@ function bindEvents() {
 			performSearch();
 		}, 300);
 	});
-
 	// Also support Enter key for immediate search
 	$('#searchInput').on('keypress', function (e) {
 		if (e.which === 13) {
@@ -179,20 +177,16 @@ function bindEvents() {
 			performSearch();
 		}
 	});
-
 	// Filter functionality
 	$('#statusFilter').on('change', function () {
 		applyFilters();
 	});
-
 	$('#startDate').on('change', function () {
 		applyFilters();
 	});
-
 	$('#endDate').on('change', function () {
 		applyFilters();
 	});
-
 	// Refresh button
 	$('#refreshListBtn').on('click', function () {
 		const { startDateDefault, endDateDefault } = getDefaultDateRange();
@@ -219,59 +213,51 @@ function bindEvents() {
 		// Load lại data
 		loadPaymentData();
 	});
-
 	// Export button
 	$('#exportTableBtn').on('click', function () {
 		exportPaymentData();
 	});
-
 	// Delegated handlers for dynamically rendered modal controls
 	$(document).off('change', '#serviceSelect').on('change', '#serviceSelect', function () {
 		const selectedOption = $(this).find('option:selected');
 		const price = selectedOption.data('price') || 0;
 		$('#servicePrice').val(price);
 	});
-
 	$(document).off('click', '#saveServiceBtn').on('click', '#saveServiceBtn', function () {
 		saveNewService();
 	});
-
 	$(document).off('click', '.js-edit-payment').on('click', '.js-edit-payment', function () {
 		const paymentId = Number($(this).data('payment-id')) || 0;
 		if (paymentId) editPayment(paymentId);
 	});
-
 	$(document).off('click', '.js-delete-payment').on('click', '.js-delete-payment', function () {
 		const paymentId = Number($(this).data('payment-id')) || 0;
 		if (paymentId) deletePayment(paymentId);
 	});
-
 	$(document).off('click', '.js-change-page').on('click', '.js-change-page', function (e) {
 		e.preventDefault();
 		const page = Number($(this).data('page')) || 0;
 		if (page) changePage(page);
 	});
-
 	$(document).off('click', '.js-retry-load-invoice').on('click', '.js-retry-load-invoice', function () {
 		const paymentId = Number($(this).data('payment-id')) || 0;
 		if (paymentId) loadExaminationDetailModal(paymentId);
 	});
+}
 
+function runPaymentWaitingEvents2() {
 	$(document).off('click', '.js-edit-service').on('click', '.js-edit-service', function () {
 		const serviceId = Number($(this).data('service-id')) || 0;
 		if (serviceId) editService(serviceId);
 	});
-
 	$(document).off('click', '.js-delete-service').on('click', '.js-delete-service', function () {
 		const serviceId = Number($(this).data('service-id')) || 0;
 		if (serviceId) deleteService(serviceId);
 	});
-
 	$(document).off('click', '.js-save-edit-service').on('click', '.js-save-edit-service', function () {
 		const serviceId = Number($(this).data('service-id')) || 0;
 		if (serviceId) saveEditService(serviceId);
 	});
-
 	$(document).off('click', '.js-return-action').on('click', '.js-return-action', function () {
 		const paymentId = Number($(this).data('payment-id')) || 0;
 		const action = $(this).data('return-action');
@@ -282,39 +268,38 @@ function bindEvents() {
 		if (action === 'psychologist') returnToPsychologist(paymentId);
 		if (action === 'appointment') returnToAppointment(paymentId);
 	});
-
 	$(document).off('click', '.js-go-login').on('click', '.js-go-login', function () {
 		window.location.href = '/login.html';
 	});
-
 	// Print button
 	$('#printBtn').on('click', function () {
 		printInvoices();
 	});
-
 	// Select all checkbox
 	$('#selectAll').on('change', function () {
 		const isChecked = $(this).is(':checked');
 		$('.payment-checkbox').prop('checked', isChecked);
 		updateSelectedItems();
 	});
-
 	// Per page selector
 	$('#perPageSelect').on('change', function () {
 		perPage = parseInt($(this).val());
 		currentPage = 1;
 		loadPaymentData();
 	});
-
 	// Print invoice button (always active)
 	$('#printInvoiceBtn').on('click', function () {
 		printInvoice();
 	});
-
 	// Reload danh sách hóa đơn khi modal đóng (bind 1 lần)
 	$('#examinationDetailModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
 		loadPaymentData();
 	});
+}
+
+function bindEvents() {
+	runPaymentWaitingEvents1();
+	runPaymentWaitingEvents2();
 }
 
 // Show custom toast
