@@ -52,6 +52,14 @@
 			patientName: inst.getElement(doc, 'doctorClinicalHeading')?.textContent?.trim() || ''
 		});
 	}
+
+		Object.assign(inst, {
+			updateBatchAllocationDisplays,
+			setPrescriptionHistoryPanel,
+			renderPrescriptionHistory
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function renderPrescriptionRows(doc) {
 		const mode = inst.getCurrentPrescriptionUsageMode(doc);
 		inst.setPrescriptionUsageMode(doc, mode);
@@ -105,6 +113,15 @@
 		);
 	}
 
+		Object.assign(inst, {
+			renderPrescriptionRows,
+			buildPrescriptionCodeMap,
+			applyLoadedReExamination,
+			normalizeLoadedRows,
+			hasPersistedPrescription
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	async function loadPrescription(context) {
 		const { doc, token, appointmentId } = context;
 		try {
@@ -113,18 +130,18 @@
 			const usageState = inst.parseGlobalUsageInstructions(data && data.usage_instructions, inst.STATE.prescriptionUsageMode);
 			inst.setPrescriptionUsageMode(doc, usageState.scheduleMode);
 
-			inst.STATE.prescriptionRows = normalizeLoadedRows(data);
-			inst.STATE.prescriptionCodesByType = buildPrescriptionCodeMap(data);
+			inst.STATE.prescriptionRows = inst.normalizeLoadedRows(data);
+			inst.STATE.prescriptionCodesByType = inst.buildPrescriptionCodeMap(data);
 			inst.STATE.preservedGlobalUsage = usageState.globalUsage || '';
 			inst.setValue(doc, 'doctorPrescriptionMedicineDays', usageState.medicineDays || '');
-			applyLoadedReExamination(doc, data);
+			inst.applyLoadedReExamination(doc, data);
 			inst.syncPrescriptionRowQuantities(doc, { markAllocationStale: false });
 			inst.STATE.prescriptionLoaded = true;
 			inst.syncPrescriptionReExamControls(doc);
 			inst.CHANGES.reset();
-			const persisted = hasPersistedPrescription(data, usageState);
+			const persisted = inst.hasPersistedPrescription(data, usageState);
 			inst.setPrescriptionSaveStatus(doc, persisted ? 'saved' : 'idle', persisted ? 'Đã lưu' : 'Chưa có thay đổi');
-			renderPrescriptionRows(doc);
+			inst.renderPrescriptionRows(doc);
 			return true;
 		} catch (error) {
 			if (inst.isCurrentToken(token, appointmentId)) {
@@ -133,6 +150,12 @@
 			return false;
 		}
 	}
+
+		Object.assign(inst, {
+			loadPrescription
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function collectPrescriptionPayload(doc) {
 		const appointmentId = inst.getCurrentAppointmentId();
 		const reExamLocked = inst.isReExaminationLocked();
@@ -173,6 +196,12 @@
 			re_examination_time: reExamEnabled ? (reExamDateTime.time || '09:00') : ''
 		};
 	}
+
+		Object.assign(inst, {
+			collectPrescriptionPayload
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function validatePrescriptionBeforeSave(doc) {
 		const invalidStockRow = inst.STATE.prescriptionRows.find(row => row.name
 			&& inst.toNumber(row.quantity, 0) > 0
@@ -223,17 +252,25 @@
 		if (inst.STATE.prescriptionSaving) return { skipped: true, reason: 'saving', module: 'prescription' };
 		return null;
 	}
+
+		Object.assign(inst, {
+			validatePrescriptionBeforeSave,
+			applyReExaminationSyncState,
+			getPrescriptionSaveSkip
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function applySavedPrescription(doc, data, revision, options) {
 		inst.STATE.prescriptionCodesByType = data && data.prescription_codes_by_type ? data.prescription_codes_by_type : inst.STATE.prescriptionCodesByType;
 		inst.applyStockAllocationStates(data && data.stock_allocation_states);
 		const hasNewChanges = !inst.CHANGES.settle(revision);
-		applyReExaminationSyncState(data && data.re_examination_sync_result);
+		inst.applyReExaminationSyncState(data && data.re_examination_sync_result);
 		if (!hasNewChanges) {
 			inst.STATE.reExaminationDraftSelection = inst.STATE.reExaminationSnapshot?.selection || null;
 			inst.setPrescriptionReExamDate(doc, inst.STATE.reExaminationDateTime);
 		}
 		inst.STATE.reExaminationError = '';
-		renderPrescriptionRows(doc);
+		inst.renderPrescriptionRows(doc);
 		inst.updatePrescriptionFooter(doc);
 
 		inst.setPrescriptionSaveStatus(
@@ -258,7 +295,7 @@
 		if (String(error.code || '').startsWith('re-examination-')) {
 			const current = error.payload?.re_examination_snapshot;
 			if (current && error.code === 're-examination-conflict') {
-				applyReExaminationSyncState(current);
+				inst.applyReExaminationSyncState(current);
 				inst.STATE.reExaminationDraftSelection = current.selection || null;
 				inst.setPrescriptionReExamDate(doc, current.datetime || '');
 			}
@@ -266,14 +303,21 @@
 		}
 		inst.setPrescriptionSaveStatus(doc, 'error', 'Lưu thất bại');
 	}
+
+		Object.assign(inst, {
+			applySavedPrescription,
+			handlePrescriptionSaveError
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	async function savePrescription(options = {}) {
 		const doc = inst.getDocument(options);
-		const skip = getPrescriptionSaveSkip(doc);
+		const skip = inst.getPrescriptionSaveSkip(doc);
 		if (skip) return skip;
-		validatePrescriptionBeforeSave(doc);
+		inst.validatePrescriptionBeforeSave(doc);
 
 		const revision = inst.CHANGES.capture();
-		const payload = collectPrescriptionPayload(doc);
+		const payload = inst.collectPrescriptionPayload(doc);
 		inst.STATE.prescriptionSaving = true;
 		inst.setPrescriptionSaveStatus(doc, 'saving', 'Đang lưu');
 		inst.syncPrescriptionReExamStatus(doc);
@@ -282,9 +326,9 @@
 				method: 'POST',
 				body: payload
 			});
-			return applySavedPrescription(doc, data, revision, options);
+			return inst.applySavedPrescription(doc, data, revision, options);
 		} catch (error) {
-			handlePrescriptionSaveError(doc, error);
+			inst.handlePrescriptionSaveError(doc, error);
 			throw error;
 		} finally {
 			inst.STATE.prescriptionSaving = false;
@@ -315,24 +359,33 @@
 		inst.markPrescriptionDirty();
 		inst.syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
 		inst.syncPrescriptionUsageNotes(doc);
-		renderPrescriptionRows(doc);
+		inst.renderPrescriptionRows(doc);
 		return true;
 	}
 	function addPrescriptionRow(doc, isExternal) {
 		inst.STATE.prescriptionRows.push(inst.normalizePrescriptionRow({ is_external: isExternal }, isExternal));
 		inst.markPrescriptionDirty();
-		renderPrescriptionRows(doc);
+		inst.renderPrescriptionRows(doc);
 	}
 	function removePrescriptionRow(doc, rowUid) {
 		inst.STATE.prescriptionRows = inst.STATE.prescriptionRows.filter(row => row.uid !== rowUid);
 		inst.syncBatchAllocationStaleness();
 		inst.markPrescriptionDirty();
-		renderPrescriptionRows(doc);
+		inst.renderPrescriptionRows(doc);
 	}
+
+		Object.assign(inst, {
+			savePrescription,
+			applyMedicineSelection,
+			addPrescriptionRow,
+			removePrescriptionRow
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	async function loadPrescriptionHistory(context) {
 		const { doc, token, appointmentId, patientId } = context;
 		if (!patientId) {
-			renderPrescriptionHistory(doc);
+			inst.renderPrescriptionHistory(doc);
 			return false;
 		}
 		try {
@@ -341,7 +394,7 @@
 			inst.STATE.prescriptionHistory = (Array.isArray(data && data.history) ? data.history : [])
 				.filter(record => String(record && record.appointment_id) !== String(appointmentId));
 			inst.STATE.prescriptionHistoryLoaded = true;
-			renderPrescriptionHistory(doc);
+			inst.renderPrescriptionHistory(doc);
 			doc.dispatchEvent(new CustomEvent('qlpk:doctor-prescription-history-loaded', {
 				detail: { patientId, appointmentId }
 			}));
@@ -350,7 +403,7 @@
 			if (inst.isCurrentToken(token, appointmentId)) {
 				inst.STATE.prescriptionHistory = [];
 				inst.STATE.prescriptionHistoryLoaded = false;
-				renderPrescriptionHistory(doc);
+				inst.renderPrescriptionHistory(doc);
 				doc.dispatchEvent(new CustomEvent('qlpk:doctor-prescription-history-loaded', {
 					detail: { patientId, appointmentId, failed: true }
 				}));
@@ -389,6 +442,14 @@
 		row.schedule = inst.normalizeSchedulePayload(row.schedule || {}, inst.getCurrentPrescriptionUsageMode(doc));
 		return row.schedule;
 	}
+
+		Object.assign(inst, {
+			loadPrescriptionHistory,
+			getLatestPreviousVisitSnapshot,
+			ensureRowSchedule
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function applyPrescriptionNameInput(doc, row, target) {
 		row.name = target.value.trim();
 		if (!row.isExternal) {
@@ -398,13 +459,13 @@
 			row.batchAllocationStale = false;
 		}
 		inst.syncBatchAllocationStaleness();
-		updateBatchAllocationDisplays(doc);
+		inst.updateBatchAllocationDisplays(doc);
 		inst.SEARCH.search(target, row);
 		return true;
 	}
 	function applyPrescriptionFieldInput(doc, row, target, field) {
 		if (inst.PRESCRIPTION_TIME_SLOT_FIELDS.includes(field)) {
-			ensureRowSchedule(doc, row).time_slots[field] = Math.max(0, inst.parseDoseValue(target.value, 0));
+			inst.ensureRowSchedule(doc, row).time_slots[field] = Math.max(0, inst.parseDoseValue(target.value, 0));
 			return true;
 		}
 		const handler = inst.PRESCRIPTION_FIELD_HANDLERS.get(field);
@@ -421,26 +482,6 @@
 	}
 
 		Object.assign(inst, {
-			updateBatchAllocationDisplays,
-			setPrescriptionHistoryPanel,
-			renderPrescriptionHistory,
-			renderPrescriptionRows,
-			buildPrescriptionCodeMap,
-			applyLoadedReExamination,
-			loadPrescription,
-			collectPrescriptionPayload,
-			validatePrescriptionBeforeSave,
-			applyReExaminationSyncState,
-			getPrescriptionSaveSkip,
-			applySavedPrescription,
-			handlePrescriptionSaveError,
-			savePrescription,
-			applyMedicineSelection,
-			addPrescriptionRow,
-			removePrescriptionRow,
-			loadPrescriptionHistory,
-			getLatestPreviousVisitSnapshot,
-			ensureRowSchedule,
 			applyPrescriptionNameInput,
 			applyPrescriptionFieldInput,
 			syncAfterPrescriptionInput

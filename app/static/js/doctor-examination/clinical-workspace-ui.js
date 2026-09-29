@@ -76,17 +76,8 @@
 			|| REGISTRY.get('workspaceSaveController');
 	}
 
-	function create(options = {}) {
-		// Functions of create() live in clinical-workspace-ui-parts/ (installed per instance, like the original closures).
-		const inst = {};
-		inst.options = options;
-		const outer = { getDocument, hasValue, runtimeGetValue, runtimeSetText, runtimeSetValue, textOf };
-		moduleParts.installers.forEach(install => install(inst, outer));
-		inst.suppliedConfig = options.config || {};
-		inst.COMPONENT_CONFIG = buildWorkspaceComponentConfig(inst.suppliedConfig);
-		inst.dom = inst.COMPONENT_CONFIG.dom;
-		inst.DEFAULT_SECTION_ID = inst.COMPONENT_CONFIG.defaultSectionId;
-		inst.STATE = {
+	function createWorkspaceState() {
+		return {
 			bound: false,
 			contextToken: 0,
 			appointment: null,
@@ -111,6 +102,71 @@
 			currentData: null,
 			context: null
 		};
+	}
+
+	function createWorkspaceSaveController(inst) {
+		return inst.saveControllerFactory.create({
+			state: inst.STATE,
+			mainChanges: inst.MAIN_CHANGES,
+			getDocument,
+			textOf,
+			valueOf: inst.valueOf,
+			apiCall: (...args) => inst.STATE.apiCall(...args),
+			isLoading: () => inst.STATE.isLoading && inst.STATE.isLoading(),
+			collect: inst.collect,
+			saveClinicalDetails: inst.saveClinicalDetails,
+			hasUnsavedChanges: inst.hasUnsavedChanges,
+			syncDirtyState: inst.syncClinicalDirtyState,
+			getClinicalForm: () => inst.clinicalForm,
+			registry: REGISTRY,
+			getDraftRecovery: () => REGISTRY.get('draftRecovery'),
+			getContext: () => inst.STATE.context,
+			getSupportModules: inst.getSupportModulesUi,
+			getMedicalHistory: inst.getMedicalHistoryBridge,
+			setWorkspaceSavePhase: inst.setWorkspaceSavePhase,
+			setBusy: inst.setBusy,
+			showToast: (...args) => inst.STATE.showToast && inst.STATE.showToast(...args),
+			afterSave: () => inst.STATE.afterSave && inst.STATE.afterSave(),
+			afterComplete: () => inst.STATE.afterComplete && inst.STATE.afterComplete()
+		});
+	}
+
+	function buildWorkspaceInstance(inst) {
+		return {
+			bind: inst.bind,
+			clear: inst.clear,
+			render: inst.render,
+			collect: inst.collect,
+			getDraftSnapshot: inst.getDraftSnapshot,
+			restoreDraftSnapshot: inst.restoreDraftSnapshot,
+			whenInitialLoadSettled: inst.whenInitialLoadSettled,
+			setLoadFailed: inst.setLoadFailed,
+			saveNow: inst.saveNow,
+			saveWorkspace: inst.saveWorkspace,
+			hasUnsavedChanges: inst.hasUnsavedChanges,
+			resolveUnsavedChanges: inst.resolveUnsavedChanges,
+			syncTransferActionState: inst.syncTransferActionState,
+			activateSection: inst.activateWorkspaceSection,
+			refreshPatientHeader: options => {
+				const doc = getDocument(options);
+				if (inst.STATE.currentData) inst.renderPatientHeader(doc, inst.STATE.currentData);
+			},
+			getContext: () => inst.STATE.context,
+			normalizePayload: inst.normalizePayload
+		};
+	}
+
+	function create(options = {}) {
+		// Functions of create() live in clinical-workspace-ui-parts/ (installed per instance, like the original closures).
+		const inst = {};
+		inst.options = options;
+		const outer = { getDocument, hasValue, runtimeGetValue, runtimeSetText, runtimeSetValue, textOf };
+		moduleParts.installers.forEach(install => install(inst, outer));
+		inst.suppliedConfig = options.config || {};
+		inst.COMPONENT_CONFIG = buildWorkspaceComponentConfig(inst.suppliedConfig);
+		inst.dom = inst.COMPONENT_CONFIG.dom;
+		inst.DEFAULT_SECTION_ID = inst.COMPONENT_CONFIG.defaultSectionId;
+		inst.STATE = createWorkspaceState();
 		inst.MAIN_CHANGES = RUNTIME.createChangeTracker(inst.STATE, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
 		inst.clinicalForm = null;
 
@@ -133,53 +189,9 @@
 	if (!inst.saveControllerFactory || typeof inst.saveControllerFactory.create !== 'function') {
 		throw new Error('Thiếu workspace save controller');
 	}
-	inst.workspaceSaveController = inst.saveControllerFactory.create({
-		state: inst.STATE,
-		mainChanges: inst.MAIN_CHANGES,
-		getDocument,
-		textOf,
-		valueOf: inst.valueOf,
-		apiCall: (...args) => inst.STATE.apiCall(...args),
-		isLoading: () => inst.STATE.isLoading && inst.STATE.isLoading(),
-		collect: inst.collect,
-		saveClinicalDetails: inst.saveClinicalDetails,
-		hasUnsavedChanges: inst.hasUnsavedChanges,
-		syncDirtyState: inst.syncClinicalDirtyState,
-		getClinicalForm: () => inst.clinicalForm,
-		registry: REGISTRY,
-		getDraftRecovery: () => REGISTRY.get('draftRecovery'),
-		getContext: () => inst.STATE.context,
-		getSupportModules: inst.getSupportModulesUi,
-		getMedicalHistory: inst.getMedicalHistoryBridge,
-		setWorkspaceSavePhase: inst.setWorkspaceSavePhase,
-		setBusy: inst.setBusy,
-		showToast: (...args) => inst.STATE.showToast && inst.STATE.showToast(...args),
-		afterSave: () => inst.STATE.afterSave && inst.STATE.afterSave(),
-		afterComplete: () => inst.STATE.afterComplete && inst.STATE.afterComplete()
-	});
+	inst.workspaceSaveController = createWorkspaceSaveController(inst);
 
-	inst.instance = {
-		bind: inst.bind,
-		clear: inst.clear,
-		render: inst.render,
-		collect: inst.collect,
-		getDraftSnapshot: inst.getDraftSnapshot,
-		restoreDraftSnapshot: inst.restoreDraftSnapshot,
-		whenInitialLoadSettled: inst.whenInitialLoadSettled,
-		setLoadFailed: inst.setLoadFailed,
-		saveNow: inst.saveNow,
-		saveWorkspace: inst.saveWorkspace,
-		hasUnsavedChanges: inst.hasUnsavedChanges,
-		resolveUnsavedChanges: inst.resolveUnsavedChanges,
-		syncTransferActionState: inst.syncTransferActionState,
-		activateSection: inst.activateWorkspaceSection,
-		refreshPatientHeader: options => {
-			const doc = getDocument(options);
-			if (inst.STATE.currentData) inst.renderPatientHeader(doc, inst.STATE.currentData);
-		},
-		getContext: () => inst.STATE.context,
-		normalizePayload: inst.normalizePayload
-	};
+	inst.instance = buildWorkspaceInstance(inst);
 	return inst.instance;
 	}
 

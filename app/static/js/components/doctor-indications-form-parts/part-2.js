@@ -3,8 +3,8 @@
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/doctor-indications-form#create'] || (window.QLPKModuleParts['components/doctor-indications-form#create'] = { installers: [] });
-	moduleParts.installers.push(function (inst, outer) {
-		function readForm(doc) {
+	moduleParts.installers.push(function (inst) {
+	function readForm(doc) {
 			const inputs = inst.readFormInputs(doc);
 			const invalid = inst.validateFormInputs(inputs);
 			if (invalid) return invalid;
@@ -50,7 +50,15 @@
 			inst.setFormReady(doc);
 			inst.setMessage(doc, existingIndex >= 0 ? 'Đã cập nhật chỉ định trong lượt khám. Nhấn Lưu để ghi nhận.' : 'Đã thêm chỉ định vào lượt khám. Nhấn Lưu để ghi nhận.', 'success');
 		}
-		async function handleDelete(doc, tempId) {
+
+		Object.assign(inst, {
+			readForm,
+			markDirty,
+			handleSubmit
+		});
+	});
+	moduleParts.installers.push(function (inst, outer) {
+	async function handleDelete(doc, tempId) {
 			const row = inst.STATE.rows.find(item => String(item.tempId) === String(tempId));
 			if (!row) return false;
 			const confirmed = await outer.CONFIRMATION_DIALOG.confirm({
@@ -66,7 +74,7 @@
 			if (!confirmed) return false;
 			inst.STATE.rows = inst.STATE.rows.filter(item => String(item.tempId) !== String(tempId));
 			if (String(inst.STATE.editingTempId) === String(tempId)) inst.resetForm(doc);
-			markDirty();
+			inst.markDirty();
 			inst.renderCurrentRows(doc);
 			inst.setMessage(doc, 'Đã xóa khỏi danh sách. Nhấn Lưu để ghi nhận.', 'success');
 			return true;
@@ -99,11 +107,19 @@
 			return true;
 		}
 
-		async function refreshCurrent(options = {}) {
+		Object.assign(inst, {
+			handleDelete,
+			loadCurrent,
+			hasLocalIndicationWork,
+			canApplyRealtimeRefresh
+		});
+	});
+	moduleParts.installers.push(function (inst) {
+	async function refreshCurrent(options = {}) {
 			const doc = inst.getDocument(options);
 			if (!inst.STATE.appointmentId) return false;
 			inst.STATE.realtimePending = true;
-			if (!canApplyRealtimeRefresh(doc)) return false;
+			if (!inst.canApplyRealtimeRefresh(doc)) return false;
 			const appointmentId = inst.STATE.appointmentId;
 			const token = inst.STATE.contextToken;
 			const revision = inst.CHANGES.capture();
@@ -111,7 +127,7 @@
 			try {
 				const data = await inst.requestJson(inst.endpoint('appointment', { appointmentId }), { method: 'GET' });
 				if (!inst.currentToken(token, appointmentId) || request !== inst.STATE.realtimeRequest) return false;
-				if (hasLocalIndicationWork() || inst.CHANGES.changedSince(revision)) return false;
+				if (inst.hasLocalIndicationWork() || inst.CHANGES.changedSince(revision)) return false;
 				inst.STATE.rows = inst.mapServerRows(data?.chi_dinh || []);
 				inst.STATE.realtimePending = false;
 				inst.renderCurrentRows(doc);
@@ -155,7 +171,15 @@
 				return false;
 			}
 		}
-		function resetContextData(doc) {
+
+		Object.assign(inst, {
+			refreshCurrent,
+			loadSurveyTemplates,
+			loadPerformers
+		});
+	});
+	moduleParts.installers.push(function (inst, outer) {
+	function resetContextData(doc) {
 			inst.STATE.realtimePending = false;
 			inst.STATE.realtimeRequest += 1;
 			inst.STATE.rows = [];
@@ -209,13 +233,21 @@
 			} finally {
 				inst.STATE.saving = false;
 				inst.setFormReady(doc);
-				if (inst.STATE.realtimePending && !inst.STATE.ordersDirty) refreshCurrent(options);
+				if (inst.STATE.realtimePending && !inst.STATE.ordersDirty) inst.refreshCurrent(options);
 			}
 		}
 		function getDraftSnapshot() {
 			return { rows: inst.draftRowsWithoutRuntimeIds(inst.STATE.rows) };
 		}
-		function restoreDraftSnapshot(snapshot = {}, restoreOptions = {}) {
+
+		Object.assign(inst, {
+			resetContextData,
+			save,
+			getDraftSnapshot
+		});
+	});
+	moduleParts.installers.push(function (inst, outer) {
+	function restoreDraftSnapshot(snapshot = {}, restoreOptions = {}) {
 			const doc = inst.getDocument(restoreOptions);
 			inst.STATE.rows = (Array.isArray(snapshot.rows) ? snapshot.rows : []).map(row => inst.normalizeRow(inst.cloneDraftValue(row)));
 			inst.CHANGES.restore(restoreOptions.dirty);
@@ -238,10 +270,10 @@
 				if (action) {
 					const rowId = action.dataset.doctorIndicationId;
 					if (action.dataset.doctorIndicationAction === 'edit') inst.startEdit(doc, rowId);
-					if (action.dataset.doctorIndicationAction === 'delete') handleDelete(doc, rowId);
+					if (action.dataset.doctorIndicationAction === 'delete') inst.handleDelete(doc, rowId);
 					return;
 				}
-				if (event.target.closest(`#${inst.domId('submit')}`)) handleSubmit(doc);
+				if (event.target.closest(`#${inst.domId('submit')}`)) inst.handleSubmit(doc);
 				if (event.target.closest(`#${inst.domId('cancelEdit')}`)) inst.resetForm(doc);
 			});
 			root.querySelectorAll('input[name="doctorIndicationLocation"]').forEach(input => {
@@ -259,7 +291,7 @@
 			inst.STATE.appointmentId = null;
 			inst.STATE.patientId = null;
 			inst.STATE.defaultDate = '';
-			resetContextData(doc);
+			inst.resetContextData(doc);
 		}
 		function resolveLoadIdentity(context) {
 			const appointment = context.payload || context.appointment || {};
@@ -270,9 +302,17 @@
 			};
 		}
 
-		function load(context = {}) {
+		Object.assign(inst, {
+			restoreDraftSnapshot,
+			bind,
+			clear,
+			resolveLoadIdentity
+		});
+	});
+	moduleParts.installers.push(function (inst) {
+	function load(context = {}) {
 			const doc = inst.getDocument(context);
-			const identity = resolveLoadIdentity(context);
+			const identity = inst.resolveLoadIdentity(context);
 			const appointmentId = identity.appointmentId;
 			if (!appointmentId) return Promise.resolve(false);
 			inst.STATE.contextToken += 1;
@@ -280,34 +320,20 @@
 			inst.STATE.appointmentId = appointmentId;
 			inst.STATE.patientId = inst.normalizeId(identity.patient);
 			inst.STATE.defaultDate = inst.normalizeDateInputValue(identity.appointmentDate);
-			resetContextData(doc);
+			inst.resetContextData(doc);
 			const loadTasks = [
-				loadCurrent({ doc, token, appointmentId }),
-				loadPerformers({ doc, token, appointmentId }),
-				loadSurveyTemplates({ doc, token, appointmentId })
+				inst.loadCurrent({ doc, token, appointmentId }),
+				inst.loadPerformers({ doc, token, appointmentId }),
+				inst.loadSurveyTemplates({ doc, token, appointmentId })
 			];
 			return Promise.allSettled(loadTasks).then(results => {
 				if (inst.currentToken(token, appointmentId)) inst.setFormReady(doc);
-				if (inst.currentToken(token, appointmentId) && inst.STATE.realtimePending) refreshCurrent(context);
+				if (inst.currentToken(token, appointmentId) && inst.STATE.realtimePending) inst.refreshCurrent(context);
 				return results.every(result => result.status === 'fulfilled' && result.value === true);
 			});
 		}
 
 		Object.assign(inst, {
-			readForm,
-			markDirty,
-			handleSubmit,
-			handleDelete,
-			loadCurrent,
-			refreshCurrent,
-			loadSurveyTemplates,
-			loadPerformers,
-			resetContextData,
-			save,
-			getDraftSnapshot,
-			restoreDraftSnapshot,
-			bind,
-			clear,
 			load
 		});
 	});

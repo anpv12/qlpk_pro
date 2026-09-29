@@ -3,7 +3,7 @@
 (function (window, document) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/prescription-ui#create'] || (window.QLPKModuleParts['doctor-examination/prescription-ui#create'] = { installers: [] });
-	moduleParts.installers.push(function (inst, outer) {
+	moduleParts.installers.push(function (inst) {
 	function getCurrentAppointmentId() {
 		return inst.RUNTIME.getCurrentAppointmentId(inst.STATE);
 	}
@@ -39,8 +39,8 @@
 	function markPrescriptionDirty() {
 		inst.CHANGES.mark();
 		if (inst.STATE.document) {
-			setPrescriptionSaveStatus(inst.STATE.document, 'dirty', 'Chưa lưu thay đổi');
-			syncPrescriptionReExamControls(inst.STATE.document);
+			inst.setPrescriptionSaveStatus(inst.STATE.document, 'dirty', 'Chưa lưu thay đổi');
+			inst.syncPrescriptionReExamControls(inst.STATE.document);
 		}
 	}
 	function getCurrentPrescriptionUsageMode(doc) {
@@ -60,6 +60,21 @@
 		const quantityInput = rowElement?.querySelector('[data-prescription-field="quantity"]');
 		if (quantityInput) quantityInput.value = inst.formatDoseValue(row.quantity) || '0';
 	}
+
+		Object.assign(inst, {
+			getCurrentAppointmentId,
+			getPrintController,
+			printPrescription,
+			requestJson,
+			showToast,
+			isCurrentToken,
+			markPrescriptionDirty,
+			getCurrentPrescriptionUsageMode,
+			setPrescriptionUsageMode,
+			updatePrescriptionRowQuantityDisplay
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function updatePrescriptionRowUsageNoteDisplay(doc, row) {
 		const workspace = inst.getElement(doc, 'doctorPrescriptionWorkspace');
 		const noteInput = workspace?.querySelector(
@@ -88,7 +103,7 @@
 		});
 	}
 	function syncPrescriptionRowQuantities(doc, options = {}) {
-		const mode = getCurrentPrescriptionUsageMode(doc);
+		const mode = inst.getCurrentPrescriptionUsageMode(doc);
 		const medicineDays = inst.getValue(doc, 'doctorPrescriptionMedicineDays');
 		const preserveWhenDaysMissing = options.preserveWhenDaysMissing !== false;
 		const medicineDaysMissing = inst.parseMedicineDays(medicineDays) === null;
@@ -97,8 +112,8 @@
 			if (medicineDaysMissing && preserveWhenDaysMissing) return;
 			const calculatedQuantity = inst.calculatePrescriptionQuantity(row, medicineDays, mode);
 			row.quantity = calculatedQuantity;
-			updatePrescriptionRowQuantityDisplay(doc, row);
-			updatePrescriptionRowTotal(doc, row);
+			inst.updatePrescriptionRowQuantityDisplay(doc, row);
+			inst.updatePrescriptionRowTotal(doc, row);
 		});
 		if (options.markAllocationStale !== false) {
 			syncBatchAllocationStaleness();
@@ -107,7 +122,7 @@
 		syncPrescriptionUsageNotes(doc);
 	}
 	function syncPrescriptionUsageNotes(doc) {
-		const mode = getCurrentPrescriptionUsageMode(doc);
+		const mode = inst.getCurrentPrescriptionUsageMode(doc);
 		const medicineDays = inst.getValue(doc, 'doctorPrescriptionMedicineDays');
 		inst.STATE.prescriptionRows.forEach(row => {
 			if (row.usageNoteMode === inst.PRESCRIPTION_USAGE_NOTE_MODES.MANUAL) return;
@@ -120,6 +135,15 @@
 			updatePrescriptionRowUsageNoteDisplay(doc, row);
 		});
 	}
+
+		Object.assign(inst, {
+			updatePrescriptionRowUsageNoteDisplay,
+			syncBatchAllocationStaleness,
+			syncPrescriptionRowQuantities,
+			syncPrescriptionUsageNotes
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function setPrescriptionReExamDate(doc, value) {
 		inst.STATE.reExaminationDraftDateTime = value || '';
 		const input = inst.getElement(doc, 'doctorPrescriptionReExamDateTime');
@@ -150,9 +174,9 @@
 		inst.STATE.prescriptionHistorySelectedIndex = 0;
 		inst.setValue(doc, 'doctorPrescriptionMedicineDays', '');
 		setPrescriptionReExamDate(doc, '');
-		syncPrescriptionReExamControls(doc);
-		setPrescriptionSaveStatus(doc, 'idle', 'Chưa có thay đổi');
-		setPrescriptionUsageMode(doc, inst.PRESCRIPTION_USAGE_MODES.TIME_SLOTS);
+		inst.syncPrescriptionReExamControls(doc);
+		inst.setPrescriptionSaveStatus(doc, 'idle', 'Chưa có thay đổi');
+		inst.setPrescriptionUsageMode(doc, inst.PRESCRIPTION_USAGE_MODES.TIME_SLOTS);
 		inst.setPrescriptionHistoryPanel(doc, false);
 		inst.renderPrescriptionRows(doc);
 		inst.renderPrescriptionHistory(doc);
@@ -162,16 +186,24 @@
 		const doc = inst.getDocument(options);
 		return {
 			rows: inst.draftRowsWithoutRuntimeIds(inst.STATE.prescriptionRows),
-			usageMode: getCurrentPrescriptionUsageMode(doc),
+			usageMode: inst.getCurrentPrescriptionUsageMode(doc),
 			medicineDays: inst.getValue(doc, 'doctorPrescriptionMedicineDays'),
 			reExamEnabled: Boolean(inst.STATE.reExaminationDraftDateTime),
 			reExamDateTime: inst.STATE.reExaminationDraftDateTime,
 			reExamSelection: inst.STATE.reExaminationDraftSelection
 		};
 	}
+
+		Object.assign(inst, {
+			setPrescriptionReExamDate,
+			resetContextData,
+			getDraftSnapshot
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function restorePrescriptionRows(rows, usageMode) {
 		inst.STATE.prescriptionRows = (Array.isArray(rows) ? rows : []).map(row => {
-			const normalized = normalizePrescriptionRow({
+			const normalized = inst.normalizePrescriptionRow({
 				medicine_id: row.medicineId,
 				name: row.name,
 				generic_name: row.genericName,
@@ -199,18 +231,18 @@
 	function restoreDraftSnapshot(snapshot = {}, options = {}) {
 		const doc = inst.getDocument(options);
 		const usageMode = inst.ensurePrescriptionUsageMode(snapshot.usageMode);
-		setPrescriptionUsageMode(doc, usageMode);
+		inst.setPrescriptionUsageMode(doc, usageMode);
 		restorePrescriptionRows(snapshot.rows, usageMode);
 		inst.setValue(doc, 'doctorPrescriptionMedicineDays', snapshot.medicineDays || '');
 		// A CONFIRMED appointment is server-owned. A SCHEDULED appointment remains
 		// editable and may therefore be restored from the local recovery copy.
 		if (!isReExaminationLocked()) {
-			setPrescriptionReExamDate(doc, snapshot.reExamDateTime || '');
+			inst.setPrescriptionReExamDate(doc, snapshot.reExamDateTime || '');
 			inst.STATE.reExaminationDraftSelection = snapshot.reExamSelection || inst.STATE.reExaminationSnapshot?.selection || null;
 		}
-		syncPrescriptionReExamControls(doc);
+		inst.syncPrescriptionReExamControls(doc);
 		inst.CHANGES.restore(options.dirty);
-		syncPrescriptionRowQuantities(doc);
+		inst.syncPrescriptionRowQuantities(doc);
 		inst.renderPrescriptionRows(doc);
 		return true;
 	}
@@ -221,7 +253,7 @@
 		inst.STATE.patientId = null;
 		inst.STATE.appointmentDate = null;
 		inst.SEARCH.hide(doc);
-		resetContextData(doc);
+		inst.resetContextData(doc);
 	}
 	function setPrescriptionSaveStatus(doc, status, label) {
 		const element = inst.getElement(doc, 'doctorPrescriptionSaveStatus');
@@ -232,6 +264,16 @@
 	function isReExaminationLocked() {
 		return inst.REEXAM.isLocked(inst.STATE);
 	}
+
+		Object.assign(inst, {
+			restorePrescriptionRows,
+			restoreDraftSnapshot,
+			clear,
+			setPrescriptionSaveStatus,
+			isReExaminationLocked
+		});
+	});
+	moduleParts.installers.push(function (inst, outer) {
 	function reExaminationLockReason() {
 		return inst.REEXAM.lockReason(inst.STATE);
 	}
@@ -258,27 +300,27 @@
 		});
 	}
 	function syncPrescriptionReExamControls(doc) {
-		if (isReExaminationLocked()) setPrescriptionReExamDate(doc, inst.STATE.reExaminationDateTime);
+		if (inst.isReExaminationLocked()) inst.setPrescriptionReExamDate(doc, inst.STATE.reExaminationDateTime);
 		inst.REEXAM.renderButton({ state: inst.STATE, buttonElement: inst.getElement(doc, 'doctorPrescriptionReExamButton') });
 		syncPrescriptionReExamStatus(doc);
 	}
 	function openReExaminationCalendar(doc) {
-		if (isReExaminationLocked() || !inst.STATE.prescriptionLoaded || inst.STATE.prescriptionSaving || inst.STATE.isLoading?.()) return;
+		if (inst.isReExaminationLocked() || !inst.STATE.prescriptionLoaded || inst.STATE.prescriptionSaving || inst.STATE.isLoading?.()) return;
 		const token = inst.STATE.contextToken;
 		const appointmentId = inst.STATE.appointmentId;
-		if (!inst.reExaminationCalendar) inst.reExaminationCalendar = outer.createReExaminationCalendar({ requestJson });
+		if (!inst.reExaminationCalendar) inst.reExaminationCalendar = outer.createReExaminationCalendar({ requestJson: inst.requestJson });
 		inst.reExaminationCalendar.open({
 			appointmentId,
 			hasSelection: Boolean(inst.STATE.reExaminationDraftDateTime),
 			selection: inst.STATE.reExaminationDraftSelection,
 			value: inst.STATE.reExaminationDraftDateTime || inst.calculateReExaminationDateTime(inst.getValue(doc, 'doctorPrescriptionMedicineDays')),
 			onConfirm(value, selection) {
-				if (!isCurrentToken(token, appointmentId) || isReExaminationLocked()) return;
+				if (!inst.isCurrentToken(token, appointmentId) || inst.isReExaminationLocked()) return;
 				if (value === inst.STATE.reExaminationDraftDateTime && sameReExaminationSelection(selection, inst.STATE.reExaminationDraftSelection)) return;
 				inst.STATE.reExaminationDraftSelection = selection;
 				inst.STATE.reExaminationError = '';
-				setPrescriptionReExamDate(doc, value);
-				markPrescriptionDirty();
+				inst.setPrescriptionReExamDate(doc, value);
+				inst.markPrescriptionDirty();
 			}
 		});
 	}
@@ -289,6 +331,20 @@
 	function resolveStoredStockQuantity(item, batchAllocation) {
 		return item.current_stock_quantity ?? item.stock_quantity ?? batchAllocation?.aggregate_stock ?? null;
 	}
+
+		Object.assign(inst, {
+			reExaminationLockReason,
+			showReExaminationError,
+			sameReExaminationSelection,
+			hasReExaminationChanges,
+			syncPrescriptionReExamStatus,
+			syncPrescriptionReExamControls,
+			openReExaminationCalendar,
+			normalizeStoredQuantity,
+			resolveStoredStockQuantity
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function normalizePrescriptionRow(item = {}, externalFallback = false) {
 		const medicineId = inst.normalizeId(item.medicine_id || item.id);
 		const isExternal = item.is_external === undefined ? Boolean(externalFallback) : Boolean(item.is_external);
@@ -298,10 +354,10 @@
 			uid: `rx-${inst.STATE.nextPrescriptionRowId++}`,
 			medicineId: isExternal ? null : medicineId,
 			...describeStoredMedicine(item),
-			quantity: normalizeStoredQuantity(item.quantity),
+			quantity: inst.normalizeStoredQuantity(item.quantity),
 			...describeStoredUsage(usagePayload),
 			unitPrice: inst.toNumber(item.unit_price ?? item.price, 0),
-			currentStockQuantity: isExternal ? null : resolveStoredStockQuantity(item, batchAllocation),
+			currentStockQuantity: isExternal ? null : inst.resolveStoredStockQuantity(item, batchAllocation),
 			isExternal,
 			prescriptionType: inst.normalizePrescriptionType(item.prescription_type),
 			batchAllocation,
@@ -332,6 +388,12 @@
 			schedule: usagePayload.schedule || inst.normalizeSchedulePayload({}, inst.STATE.prescriptionUsageMode)
 		};
 	}
+
+		Object.assign(inst, {
+			normalizePrescriptionRow
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function applyStockAllocationStates(states) {
 		const stateByMedicineId = new Map(
 			(Array.isArray(states) ? states : [])
@@ -358,7 +420,7 @@
 				row.batchAllocation = null;
 			}
 		});
-		syncBatchAllocationStaleness();
+		inst.syncBatchAllocationStaleness();
 	}
 	function buildInventorySaveMessage(data) {
 		const updates = Array.isArray(data && data.stock_updates) ? data.stock_updates : [];
@@ -391,6 +453,16 @@
 	function getPrescriptionRowTotal(row) {
 		return inst.roundPrescriptionQuantity(row.quantity) * inst.toNumber(row.unitPrice, 0);
 	}
+
+		Object.assign(inst, {
+			applyStockAllocationStates,
+			buildInventorySaveMessage,
+			findPrescriptionRow,
+			getPrescriptionTotal,
+			getPrescriptionRowTotal
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function updatePrescriptionFooter(doc) {
 		const codes = Object.values(inst.STATE.prescriptionCodesByType || {}).filter(Boolean);
 		const itemCount = inst.STATE.prescriptionRows.filter(row => row.name).length;
@@ -402,10 +474,10 @@
 			: '0 đơn vị';
 		inst.setText(doc, 'doctorPrescriptionCode', codes.length ? codes.join(' · ') : 'Chưa cấp mã');
 		inst.setText(doc, 'doctorPrescriptionTotalQuantity', quantityLabel);
-		inst.setText(doc, 'doctorPrescriptionGrandTotal', inst.formatCurrency(getPrescriptionTotal()));
+		inst.setText(doc, 'doctorPrescriptionGrandTotal', inst.formatCurrency(inst.getPrescriptionTotal()));
 		inst.setText(doc, 'doctorPrescriptionItemsCount', itemCount);
 		inst.setText(doc, 'doctorPrescriptionJumpCount', itemCount);
-		syncPrescriptionReExamStatus(doc);
+		inst.syncPrescriptionReExamStatus(doc);
 	}
 	function jumpToPrescriptionWorkspace(doc) {
 		const target = inst.getElement(doc, 'doctorPrescriptionWorkspace');
@@ -431,48 +503,11 @@
 			document: doc,
 			root: inst.getElement(doc, 'doctorPrescriptionWorkspace'),
 			row,
-			getRowTotal: rowValue => inst.formatCurrency(getPrescriptionRowTotal(rowValue))
+			getRowTotal: rowValue => inst.formatCurrency(inst.getPrescriptionRowTotal(rowValue))
 		});
 	}
 
 		Object.assign(inst, {
-			getCurrentAppointmentId,
-			getPrintController,
-			printPrescription,
-			requestJson,
-			showToast,
-			isCurrentToken,
-			markPrescriptionDirty,
-			getCurrentPrescriptionUsageMode,
-			setPrescriptionUsageMode,
-			updatePrescriptionRowQuantityDisplay,
-			updatePrescriptionRowUsageNoteDisplay,
-			syncBatchAllocationStaleness,
-			syncPrescriptionRowQuantities,
-			syncPrescriptionUsageNotes,
-			setPrescriptionReExamDate,
-			resetContextData,
-			getDraftSnapshot,
-			restorePrescriptionRows,
-			restoreDraftSnapshot,
-			clear,
-			setPrescriptionSaveStatus,
-			isReExaminationLocked,
-			reExaminationLockReason,
-			showReExaminationError,
-			sameReExaminationSelection,
-			hasReExaminationChanges,
-			syncPrescriptionReExamStatus,
-			syncPrescriptionReExamControls,
-			openReExaminationCalendar,
-			normalizeStoredQuantity,
-			resolveStoredStockQuantity,
-			normalizePrescriptionRow,
-			applyStockAllocationStates,
-			buildInventorySaveMessage,
-			findPrescriptionRow,
-			getPrescriptionTotal,
-			getPrescriptionRowTotal,
 			updatePrescriptionFooter,
 			jumpToPrescriptionWorkspace,
 			updatePrescriptionRowTotal

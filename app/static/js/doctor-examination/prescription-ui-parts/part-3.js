@@ -54,14 +54,13 @@
 		if (action === 'reuse') reusePrescriptionVisit(doc, visits[index]);
 	}
 
-	function bind(options = {}) {
-		const doc = inst.getDocument(options);
-		inst.STATE.document = doc;
-		inst.STATE.isLoading = options.isLoading || inst.STATE.isLoading;
-		inst.RUNTIME.configure(options);
-		const workspace = inst.getElement(doc, 'doctorClinicalWorkspace');
-		if (!workspace || inst.STATE.bound) return Boolean(workspace);
-
+		Object.assign(inst, {
+			handlePrescriptionInput,
+			runPrescriptionAction,
+			runPrescriptionHistoryAction
+		});
+	});
+	function bindPrescriptionClickActions(inst, doc) {
 		doc.addEventListener('click', event => {
 			const prescriptionNavigation = event.target.closest('[data-prescription-navigation]');
 			if (prescriptionNavigation) {
@@ -73,7 +72,7 @@
 			const prescriptionAction = event.target.closest('[data-prescription-action]');
 			if (prescriptionAction) {
 				event.preventDefault();
-				runPrescriptionAction(doc, prescriptionAction.dataset.prescriptionAction);
+				inst.runPrescriptionAction(doc, prescriptionAction.dataset.prescriptionAction);
 				return;
 			}
 
@@ -89,10 +88,12 @@
 			const prescriptionHistoryAction = event.target.closest('[data-prescription-history-action]');
 			if (prescriptionHistoryAction) {
 				event.preventDefault();
-				runPrescriptionHistoryAction(doc, prescriptionHistoryAction);
+				inst.runPrescriptionHistoryAction(doc, prescriptionHistoryAction);
 			}
 		});
+	}
 
+	function bindPrescriptionFieldInputs(inst, doc) {
 		doc.addEventListener('keydown', event => {
 			if (event.key !== 'Escape' || !inst.STATE.prescriptionHistoryPanelOpen) return;
 			event.preventDefault();
@@ -104,7 +105,7 @@
 			const target = event.target;
 			if (!target || !['INPUT', 'TEXTAREA'].includes(target.tagName)) return;
 
-			if (target.dataset.prescriptionField && handlePrescriptionInput(doc, target)) return;
+			if (target.dataset.prescriptionField && inst.handlePrescriptionInput(doc, target)) return;
 			if (target.id === inst.dom.medicineDays) {
 				if (target.id === inst.dom.medicineDays) {
 					inst.syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
@@ -115,6 +116,28 @@
 			}
 		});
 
+		doc.addEventListener('input', event => {
+			if (event.target && event.target.id === inst.dom.diagnosis) inst.updatePrescriptionFooter(doc);
+		});
+		doc.addEventListener('change', event => {
+			if (event.target && event.target.id === inst.dom.diagnosis) inst.updatePrescriptionFooter(doc);
+		});
+
+		doc.addEventListener('change', event => {
+			const target = event.target;
+			if (target?.tagName === 'SELECT') {
+				if (target.dataset.prescriptionField && inst.handlePrescriptionInput(doc, target)) return;
+				if (target.id === inst.dom.usageMode) {
+					inst.setPrescriptionUsageMode(doc, target.value);
+					inst.syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
+					inst.renderPrescriptionRows(doc);
+					inst.markPrescriptionDirty();
+				}
+			}
+		});
+	}
+
+	function bindPrescriptionMedicineSearch(inst, doc, workspace) {
 		workspace.addEventListener('focusin', event => {
 			const target = event.target;
 			if (!target || target.tagName !== 'INPUT' || target.dataset.prescriptionField !== 'name') return;
@@ -130,26 +153,6 @@
 			if (optionKey) inst.applyMedicineSelection(doc, optionKey);
 		});
 
-		doc.addEventListener('input', event => {
-			if (event.target && event.target.id === inst.dom.diagnosis) inst.updatePrescriptionFooter(doc);
-		});
-		doc.addEventListener('change', event => {
-			if (event.target && event.target.id === inst.dom.diagnosis) inst.updatePrescriptionFooter(doc);
-		});
-
-		doc.addEventListener('change', event => {
-			const target = event.target;
-			if (target?.tagName === 'SELECT') {
-				if (target.dataset.prescriptionField && handlePrescriptionInput(doc, target)) return;
-				if (target.id === inst.dom.usageMode) {
-					inst.setPrescriptionUsageMode(doc, target.value);
-					inst.syncPrescriptionRowQuantities(doc, { preserveWhenDaysMissing: false });
-					inst.renderPrescriptionRows(doc);
-					inst.markPrescriptionDirty();
-				}
-			}
-		});
-
 		doc.addEventListener('click', event => {
 			const medicineSelect = event.target.closest('[data-medicine-select]');
 			if (medicineSelect) {
@@ -163,10 +166,30 @@
 
 		doc.addEventListener('scroll', () => inst.SEARCH.position(doc), true);
 		(doc.defaultView || window).addEventListener('resize', () => inst.SEARCH.position(doc));
+	}
+
+	moduleParts.installers.push(function (inst) {
+	function bind(options = {}) {
+		const doc = inst.getDocument(options);
+		inst.STATE.document = doc;
+		inst.STATE.isLoading = options.isLoading || inst.STATE.isLoading;
+		inst.RUNTIME.configure(options);
+		const workspace = inst.getElement(doc, 'doctorClinicalWorkspace');
+		if (!workspace || inst.STATE.bound) return Boolean(workspace);
+
+		bindPrescriptionClickActions(inst, doc);
+		bindPrescriptionFieldInputs(inst, doc);
+		bindPrescriptionMedicineSearch(inst, doc, workspace);
 
 		inst.STATE.bound = true;
 		return true;
 	}
+
+		Object.assign(inst, {
+			bind
+		});
+	});
+	moduleParts.installers.push(function (inst) {
 	function load(context = {}) {
 		const doc = inst.getDocument(context);
 		const appointment = context.payload || context.appointment || {};
@@ -192,8 +215,6 @@
 	}
 
 		Object.assign(inst, {
-			handlePrescriptionInput,
-			bind,
 			load,
 			hasUnsavedChanges
 		});

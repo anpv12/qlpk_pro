@@ -1,6 +1,73 @@
 (function (window) {
 	'use strict';
 
+	function buildHistoryContextOptions(options, accessors) {
+		const { formatDisplayDate } = accessors;
+		return {
+			showConfirmationDialog: options.showConfirmationDialog,
+			getAppointments: accessors.getAppointments,
+			getCurrentPatientData: accessors.getCurrentPatientData,
+			getCurrentAppointmentId: accessors.getCurrentAppointmentId,
+			getFormatDateDisplay: accessors.getFormatDateDisplay,
+			prepareFormForCopy: accessors.prepareFormForCopy,
+			setLoadingState: value => options.setLoadingState?.(value),
+			setCurrentAppointmentId: value => options.setCurrentAppointmentId?.(value),
+			setCurrentPatientId: options.setCurrentPatientId,
+			loadPatient: options.loadPatient,
+			loadExaminationFormData: options.loadExaminationFormData,
+			lockForm: options.lockForm,
+			activeStatuses: ['PSYCHOLOGIST_EXAM', 'WAITING_TRANSFER'],
+			getHistoryDescription: exam => exam.psychologist_summary || '',
+			formatHistoryDate: date => (window.formatDateDisplay
+				? window.formatDateDisplay(date)
+				: formatDisplayDate(date)),
+			getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
+			getExaminationStatusText: options.getExaminationStatusText,
+			getFormatDate: () => window.formatDateDisplay || formatDisplayDate,
+			resetFormToDefault: options.resetFormToDefault,
+			loadAppointments: options.loadAppointments
+		};
+	}
+
+	function createGlobalSearchActions(getFlow, hasAppointmentInCurrentList) {
+		return {
+			handleAction(action = {}, item = {}) {
+				if (action.kind === 'open_patient_history') {
+					return this.openPatientHistory(action.payload || {}, item);
+				}
+				if (action.kind === 'open_appointment') {
+					return this.openAppointment(action.payload || {}, item);
+				}
+				return false;
+			},
+			openPatientHistory(payload = {}) {
+				const patientId = payload.patient_id;
+				const flow = getFlow();
+				if (!patientId || !flow
+					|| typeof flow.openLinkedRelative !== 'function') {
+					return false;
+				}
+				return flow.openLinkedRelative(patientId);
+			},
+			openAppointment(payload = {}) {
+				if (payload.appointment_id
+					&& hasAppointmentInCurrentList(payload.appointment_id)
+					&& typeof window.selectPatientCard === 'function') {
+					return window.selectPatientCard(payload.appointment_id);
+				}
+				return this.openPatientHistory(payload);
+			}
+		};
+	}
+
+	function bindRealtimeWhenReady(adapter, $, document) {
+		if ($ && typeof $(document).ready === 'function') {
+			$(document).ready(() => adapter.bindRealtimeUpdates());
+		} else {
+			adapter.bindRealtimeUpdates();
+		}
+	}
+
 	function create(options = {}) {
 		const document = options.document || window.document;
 		const $ = options.$ || window.jQuery || window.$;
@@ -32,30 +99,14 @@
 				apiCall: options.apiCall,
 				showToast: options.showToast,
 				autoBind: false,
-				contextOptions: {
-					showConfirmationDialog: options.showConfirmationDialog,
+				contextOptions: buildHistoryContextOptions(options, {
 					getAppointments,
 					getCurrentPatientData,
 					getCurrentAppointmentId,
 					getFormatDateDisplay,
 					prepareFormForCopy,
-					setLoadingState: value => options.setLoadingState?.(value),
-					setCurrentAppointmentId: value => options.setCurrentAppointmentId?.(value),
-					setCurrentPatientId: options.setCurrentPatientId,
-					loadPatient: options.loadPatient,
-					loadExaminationFormData: options.loadExaminationFormData,
-					lockForm: options.lockForm,
-					activeStatuses: ['PSYCHOLOGIST_EXAM', 'WAITING_TRANSFER'],
-					getHistoryDescription: exam => exam.psychologist_summary || '',
-					formatHistoryDate: date => (window.formatDateDisplay
-						? window.formatDateDisplay(date)
-						: formatDisplayDate(date)),
-					getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
-					getExaminationStatusText: options.getExaminationStatusText,
-					getFormatDate: () => window.formatDateDisplay || formatDisplayDate,
-					resetFormToDefault: options.resetFormToDefault,
-					loadAppointments: options.loadAppointments
-				}
+					formatDisplayDate
+				})
 			});
 			window.QLPKPsychologistPatientHistoryModal = patientHistoryModal;
 
@@ -64,33 +115,7 @@
 			const modalSearchState = modalSearchContext.stateStore;
 			modalPatientSearchFlow = modalSearchContext.flow;
 
-			window.QLPKGlobalSearchActions = {
-				handleAction(action = {}, item = {}) {
-					if (action.kind === 'open_patient_history') {
-						return this.openPatientHistory(action.payload || {}, item);
-					}
-					if (action.kind === 'open_appointment') {
-						return this.openAppointment(action.payload || {}, item);
-					}
-					return false;
-				},
-				openPatientHistory(payload = {}) {
-					const patientId = payload.patient_id;
-					if (!patientId || !modalPatientSearchFlow
-						|| typeof modalPatientSearchFlow.openLinkedRelative !== 'function') {
-						return false;
-					}
-					return modalPatientSearchFlow.openLinkedRelative(patientId);
-				},
-				openAppointment(payload = {}) {
-					if (payload.appointment_id
-						&& hasAppointmentInCurrentList(payload.appointment_id)
-						&& typeof window.selectPatientCard === 'function') {
-						return window.selectPatientCard(payload.appointment_id);
-					}
-					return this.openPatientHistory(payload);
-				}
-			};
+			window.QLPKGlobalSearchActions = createGlobalSearchActions(() => modalPatientSearchFlow, hasAppointmentInCurrentList);
 
 			const medicalRecordRealtimeAdapter = window.PsychologistMedicalRecordRealtimeUtils.createMedicalRecordRealtimeAdapter({
 				document,
@@ -104,11 +129,7 @@
 			});
 			window.updateMedicalRecordTab = medicalRecordRealtimeAdapter.updateMedicalRecordTab;
 
-			if ($ && typeof $(document).ready === 'function') {
-				$(document).ready(() => medicalRecordRealtimeAdapter.bindRealtimeUpdates());
-			} else {
-				medicalRecordRealtimeAdapter.bindRealtimeUpdates();
-			}
+			bindRealtimeWhenReady(medicalRecordRealtimeAdapter, $, document);
 
 			appointmentCopyFormPreparer = window.ModalPatientSearchUi.createAppointmentCopyFormPreparer({
 				clearExaminationLayout: options.clearExaminationLayout,

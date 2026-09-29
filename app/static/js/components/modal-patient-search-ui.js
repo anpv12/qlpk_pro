@@ -39,14 +39,72 @@
 		setSelectButtonEnabled, showBootstrapModal, showHistoryButton, syncWindowState
 	} = PARTS;
 
+	const FLOW_PASSTHROUGH_OPTION_KEYS = [
+		'apiCall',
+		'showToast',
+		'getCurrentPatientData',
+		'getCurrentAppointmentId',
+		'getFormatDateDisplay',
+		'showPatientAction',
+		'renderActiveTabLoading',
+		'loadVitalSigns',
+		'clearHistoryTabs',
+		'prepareFormForCopy',
+		'setLoadingState',
+		'setCurrentAppointmentId',
+		'loadPatient',
+		'loadExaminationFormData',
+		'loadAppointmentServices',
+		'loadPrescriptionData',
+		'lockForm',
+		'activeStatuses',
+		'getHistoryDescription',
+		'formatHistoryDate',
+		'getExaminationStatusBadgeClass',
+		'getExaminationStatusText',
+		'showCopyAction',
+		'showDeleteAction',
+		'searchLimit',
+		'searchErrorMessage',
+		'copySuccessMessage',
+		'copyFallbackSuccessMessage',
+		'copyErrorLogMessage',
+		'serviceErrorMessage',
+		'prescriptionErrorMessage',
+		'formErrorMessage',
+		'onAfterHistoryLoad'
+	];
+
+	function pickFlowPassthroughOptions(options) {
+		return Object.fromEntries(FLOW_PASSTHROUGH_OPTION_KEYS.map(key => [key, options[key]]));
+	}
+
+	function createHistoryDeleteFlow(historyListUi, options, stateStore, flow) {
+		return historyListUi.createExaminationDeleteFlowAdapter({
+			apiCall: options.apiCall,
+			showToast: options.showToast,
+			showConfirmationDialog: options.showConfirmationDialog,
+			getAppointments: options.getAppointments,
+			getHistories: () => stateStore.get('medicalHistoryData'),
+			getCurrentAppointmentId: options.getCurrentAppointmentId,
+			getFormatDate: options.getFormatDate,
+			resetFormToDefault: options.resetFormToDefault,
+			setCurrentAppointmentId: options.setCurrentAppointmentId,
+			setCurrentPatientId: options.setCurrentPatientId,
+			getModalCurrentPatientId: () => stateStore.get('currentPatientId'),
+			getModalSelectedPatient: () => stateStore.get('selectedPatient'),
+			loadAppointments: options.loadAppointments,
+			loadModalMedicalHistory: patientId => flow.loadMedicalHistory(patientId)
+		});
+	}
+
 	function createWorkflowModalSearchContext(options = {}) {
 		const elements = options.elements || resolveWorkflowModalElements(options);
 		const stateStore = options.stateStore || createModalSearchStateStore(options.initialState);
 		let historyTabRenderers = null;
 
 		const flow = createPatientSearchModalFlowAdapter({
-			apiCall: options.apiCall,
-			showToast: options.showToast,
+			...pickFlowPassthroughOptions(options),
 			tabsUi: getTabsUi(options),
 			historyListUi: getHistoryListUi(options),
 			searchButton: elements.searchPatientButton,
@@ -59,38 +117,7 @@
 			tabs: elements.tabs,
 			getState: stateStore.getState,
 			setState: stateStore.setState,
-			getHistoryTabRenderers: () => historyTabRenderers,
-			getCurrentPatientData: options.getCurrentPatientData,
-			getCurrentAppointmentId: options.getCurrentAppointmentId,
-			getFormatDateDisplay: options.getFormatDateDisplay,
-			showPatientAction: options.showPatientAction,
-			renderActiveTabLoading: options.renderActiveTabLoading,
-			loadVitalSigns: options.loadVitalSigns,
-			clearHistoryTabs: options.clearHistoryTabs,
-			prepareFormForCopy: options.prepareFormForCopy,
-			setLoadingState: options.setLoadingState,
-			setCurrentAppointmentId: options.setCurrentAppointmentId,
-			loadPatient: options.loadPatient,
-			loadExaminationFormData: options.loadExaminationFormData,
-			loadAppointmentServices: options.loadAppointmentServices,
-			loadPrescriptionData: options.loadPrescriptionData,
-			lockForm: options.lockForm,
-			activeStatuses: options.activeStatuses,
-			getHistoryDescription: options.getHistoryDescription,
-			formatHistoryDate: options.formatHistoryDate,
-			getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
-			getExaminationStatusText: options.getExaminationStatusText,
-			showCopyAction: options.showCopyAction,
-			showDeleteAction: options.showDeleteAction,
-			searchLimit: options.searchLimit,
-			searchErrorMessage: options.searchErrorMessage,
-			copySuccessMessage: options.copySuccessMessage,
-			copyFallbackSuccessMessage: options.copyFallbackSuccessMessage,
-			copyErrorLogMessage: options.copyErrorLogMessage,
-			serviceErrorMessage: options.serviceErrorMessage,
-			prescriptionErrorMessage: options.prescriptionErrorMessage,
-			formErrorMessage: options.formErrorMessage,
-			onAfterHistoryLoad: options.onAfterHistoryLoad
+			getHistoryTabRenderers: () => historyTabRenderers
 		});
 
 		flow.syncWindowState();
@@ -122,22 +149,7 @@
 			appointmentFetchers
 		});
 
-		const deleteFlow = historyListUi.createExaminationDeleteFlowAdapter({
-			apiCall: options.apiCall,
-			showToast: options.showToast,
-			showConfirmationDialog: options.showConfirmationDialog,
-			getAppointments: options.getAppointments,
-			getHistories: () => stateStore.get('medicalHistoryData'),
-			getCurrentAppointmentId: options.getCurrentAppointmentId,
-			getFormatDate: options.getFormatDate,
-			resetFormToDefault: options.resetFormToDefault,
-			setCurrentAppointmentId: options.setCurrentAppointmentId,
-			setCurrentPatientId: options.setCurrentPatientId,
-			getModalCurrentPatientId: () => stateStore.get('currentPatientId'),
-			getModalSelectedPatient: () => stateStore.get('selectedPatient'),
-			loadAppointments: options.loadAppointments,
-			loadModalMedicalHistory: patientId => flow.loadMedicalHistory(patientId)
-		});
+		const deleteFlow = createHistoryDeleteFlow(historyListUi, options, stateStore, flow);
 
 		return {
 			elements,

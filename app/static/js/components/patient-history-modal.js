@@ -138,6 +138,30 @@
 		});
 	}
 
+	function bindModalTrigger(triggerOrId, triggerOptions, deps) {
+		const trigger = resolveElement(triggerOrId, deps.doc);
+		if (!trigger) return null;
+		if (trigger[TRIGGER_PROPERTY]) return trigger;
+		const handler = async event => {
+			if (typeof triggerOptions.beforeOpen === 'function') {
+				const result = await triggerOptions.beforeOpen(event);
+				if (result === false) return;
+			}
+			await deps.open({ prefillCurrent: Boolean(triggerOptions.prefillCurrent) });
+		};
+		trigger.addEventListener('click', handler);
+		trigger[TRIGGER_PROPERTY] = { instance: deps.getInstance(), handler };
+		deps.triggerElements.add(trigger);
+		return trigger;
+	}
+
+	function teardownModalInstance({ triggerElements, printController, context, modalElement }) {
+		unbindTriggers(triggerElements);
+		if (printController && typeof printController.destroy === 'function') printController.destroy();
+		if (typeof context.flow.destroy === 'function') context.flow.destroy();
+		if (modalElement[INSTANCE_PROPERTY]) delete modalElement[INSTANCE_PROPERTY];
+	}
+
 	function create(options = {}) {
 		const doc = options.document || document;
 		const { modalUi, tabsUi, historyListUi } = resolveModalDependencies(options);
@@ -198,28 +222,12 @@
 		function destroy() {
 			if (destroyed) return false;
 			destroyed = true;
-			unbindTriggers(triggerElements);
-			if (printController && typeof printController.destroy === 'function') printController.destroy();
-			if (typeof context.flow.destroy === 'function') context.flow.destroy();
-			if (modalElement[INSTANCE_PROPERTY]) delete modalElement[INSTANCE_PROPERTY];
+			teardownModalInstance({ triggerElements, printController, context, modalElement });
 			return true;
 		}
 
 		function bindTrigger(triggerOrId, triggerOptions = {}) {
-			const trigger = resolveElement(triggerOrId, doc);
-			if (!trigger) return null;
-			if (trigger[TRIGGER_PROPERTY]) return trigger;
-			const handler = async event => {
-				if (typeof triggerOptions.beforeOpen === 'function') {
-					const result = await triggerOptions.beforeOpen(event);
-					if (result === false) return;
-				}
-				await open({ prefillCurrent: Boolean(triggerOptions.prefillCurrent) });
-			};
-			trigger.addEventListener('click', handler);
-			trigger[TRIGGER_PROPERTY] = { instance, handler };
-			triggerElements.add(trigger);
-			return trigger;
+			return bindModalTrigger(triggerOrId, triggerOptions, { doc, open, triggerElements, getInstance: () => instance });
 		}
 
 		printController = createPrintController(options, context, doc);
