@@ -22,8 +22,8 @@ test('doctor scheduling exposes one monthly calendar without a duplicate date pi
 });
 
 test('calendar resizes when async notices change available height and disconnects on close', () => {
-    assert.match(source, /new ResizeObserver\(\(\) => calendar\?\.updateSize\(\)\)/);
-    assert.match(source, /resizeObserver\.observe\(el\('calendar'\)\)/);
+    assert.match(source, /new ResizeObserver\(\(\) => (?:ctx\.)?calendar\?\.updateSize\(\)\)/);
+    assert.match(source, /resizeObserver\.observe\((?:ctx\.)?el\('calendar'\)\)/);
     assert.match(source, /resizeObserver\?\.disconnect\(\)/);
 });
 
@@ -62,8 +62,8 @@ test('service and doctor use shared single autocomplete and canonical IDs', () =
 
 test('editing display text invalidates selection and close clears pending dropdowns', () => {
     assert.match(source, /field\.clear\(\{ silent: false \}\)/);
-    assert.match(source, /!hasChoices\(\)/);
-    assert.match(source, /Object\.values\(choiceFields\)\.forEach\(field => field\.clear\(\)\)/);
+    assert.match(source, /!(?:ctx\.)?hasChoices\(\)/);
+    assert.match(source, /Object\.values\((?:ctx\.)?choiceFields\)\.forEach\(field => field\.clear\(\)\)/);
     assert.match(source, /!item\.disabled && normalize\(item\.name\)\.includes\(normalize\(query\)\)/);
     assert.match(source, /data\?\.schedule\?\.editable !== false/);
 });

@@ -63,16 +63,8 @@
 	}
 
 		Object.assign(inst, {
-			resolveDomId,
-			getWorkspaceRoot,
-			resetWorkspaceScrollPositions,
-			getElement,
-			valueOf,
-			setText,
-			setValue,
-			getValue,
-			updateBmiFromVitals,
-			normalizePayload
+			resolveDomId, getWorkspaceRoot, resetWorkspaceScrollPositions, getElement, valueOf, setText, setValue,
+			getValue, updateBmiFromVitals, normalizePayload
 		});
 	});
 	moduleParts.installers.push(function (inst, outer) {
@@ -139,13 +131,8 @@
 	}
 
 		Object.assign(inst, {
-			getPatientIntakeForm,
-			buildSharedPatientFormPayload,
-			getWorkspaceSaveStatusText,
-			syncTransferActionState,
-			setBusy,
-			setWorkspaceSavePhase,
-			getSectionTargetId
+			getPatientIntakeForm, buildSharedPatientFormPayload, getWorkspaceSaveStatusText, syncTransferActionState,
+			setBusy, setWorkspaceSavePhase, getSectionTargetId
 		});
 	});
 	moduleParts.installers.push(function (inst) {
@@ -212,12 +199,8 @@
 	}
 
 		Object.assign(inst, {
-			activateWorkspaceSection,
-			syncClinicalDirtyState,
-			isWorkspaceOwnedField,
-			getSupportModulesUi,
-			getMedicalHistoryBridge,
-			hasUnsavedChanges
+			activateWorkspaceSection, syncClinicalDirtyState, isWorkspaceOwnedField, getSupportModulesUi,
+			getMedicalHistoryBridge, hasUnsavedChanges
 		});
 	});
 	moduleParts.installers.push(function (inst, outer) {
@@ -270,11 +253,7 @@
 		return prescriptionUi.getLatestPreviousVisitSnapshot();
 	}
 
-		Object.assign(inst, {
-			resetClinicalSaveState,
-			clear,
-			getPreviousVisitSnapshot
-		});
+		Object.assign(inst, { resetClinicalSaveState, clear, getPreviousVisitSnapshot });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function renderPreviousVisitSummary(doc) {
@@ -341,12 +320,7 @@
 		return true;
 	}
 
-		Object.assign(inst, {
-			renderPreviousVisitSummary,
-			renderPatientHeader,
-			saveClinicalDetails,
-			render
-		});
+		Object.assign(inst, { renderPreviousVisitSummary, renderPatientHeader, saveClinicalDetails, render });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function collect(options = {}) {
@@ -399,13 +373,7 @@
 		return { controls };
 	}
 
-		Object.assign(inst, {
-			collect,
-			getDraftControlValue,
-			setDraftControlValue,
-			isClinicalDraftControl,
-			getDraftSnapshot
-		});
+		Object.assign(inst, { collect, getDraftControlValue, setDraftControlValue, isClinicalDraftControl, getDraftSnapshot });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	async function restoreDraftSnapshot(snapshot = {}, options = {}) {
@@ -460,12 +428,7 @@
 	}
 
 		Object.assign(inst, {
-			restoreDraftSnapshot,
-			whenInitialLoadSettled,
-			setLoadFailed,
-			saveNow,
-			saveWorkspace,
-			resolveUnsavedChanges,
+			restoreDraftSnapshot, whenInitialLoadSettled, setLoadFailed, saveNow, saveWorkspace, resolveUnsavedChanges,
 			completeNow
 		});
 	});

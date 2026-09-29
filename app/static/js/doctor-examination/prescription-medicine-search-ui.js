@@ -9,14 +9,7 @@
 	const DROPDOWN_ID = 'doctorMedicineDropdown';
 	const OPTION_SELECTOR = '[data-medicine-select]';
 
-	function create(options = {}) {
-		const { requestJson, getEndpoint, getDocument, isRowCurrent } = options;
-		if (typeof requestJson !== 'function' || typeof getEndpoint !== 'function'
-			|| typeof getDocument !== 'function' || typeof isRowCurrent !== 'function') {
-			throw new Error('Thiếu dependency cho ô tìm thuốc');
-		}
-		const state = { timer: null, token: 0, options: new Map(), input: null, activeIndex: -1 };
-
+	function installMedicineSearchFns1(ctx) {
 		function getDropdown(doc) {
 			let dropdown = doc.getElementById(DROPDOWN_ID);
 			if (dropdown) return dropdown;
@@ -39,7 +32,7 @@
 
 		function position(doc) {
 			const dropdown = getDropdown(doc);
-			const input = state.input;
+			const input = ctx.state.input;
 			if (!input || dropdown.hidden || !input.isConnected) return;
 			const view = doc.defaultView || window;
 			const rect = input.getBoundingClientRect();
@@ -63,43 +56,47 @@
 
 		function hide(doc) {
 			const dropdown = getDropdown(doc);
-			if (state.timer) window.clearTimeout(state.timer);
-			state.timer = null;
-			state.token += 1;
+			if (ctx.state.timer) window.clearTimeout(ctx.state.timer);
+			ctx.state.timer = null;
+			ctx.state.token += 1;
 			dropdown.hidden = true;
 			dropdown.innerHTML = '';
-			state.input?.removeAttribute('aria-busy');
-			setInputState(state.input, false);
-			state.input = null;
-			state.activeIndex = -1;
+			ctx.state.input?.removeAttribute('aria-busy');
+			setInputState(ctx.state.input, false);
+			ctx.state.input = null;
+			ctx.state.activeIndex = -1;
 		}
 
 		function reset(doc) {
-			state.options.clear();
+			ctx.state.options.clear();
 			hide(doc);
 		}
 
+		Object.assign(ctx, { getDropdown, setInputState, position, hide, reset });
+	}
+
+	function installMedicineSearchFns2(ctx) {
 		function setActive(doc, index) {
-			const dropdown = getDropdown(doc);
+			const dropdown = ctx.getDropdown(doc);
 			const optionElements = Array.from(dropdown.querySelectorAll(OPTION_SELECTOR));
 			if (!optionElements.length) return;
-			state.activeIndex = Math.max(0, Math.min(index, optionElements.length - 1));
+			ctx.state.activeIndex = Math.max(0, Math.min(index, optionElements.length - 1));
 			optionElements.forEach((option, optionIndex) => {
-				const active = optionIndex === state.activeIndex;
+				const active = optionIndex === ctx.state.activeIndex;
 				option.classList.toggle('is-active', active);
 				option.setAttribute('aria-selected', String(active));
 			});
-			const activeOption = optionElements[state.activeIndex];
+			const activeOption = optionElements[ctx.state.activeIndex];
 			if (activeOption) {
-				setInputState(state.input, true);
-				state.input?.setAttribute('aria-activedescendant', activeOption.id);
+				ctx.setInputState(ctx.state.input, true);
+				ctx.state.input?.setAttribute('aria-activedescendant', activeOption.id);
 				activeOption.scrollIntoView({ block: 'nearest' });
 			}
 		}
 
 		function buildOption(row, medicine, index) {
 			const optionKey = `${row.uid}:${medicine.id}`;
-			state.options.set(optionKey, medicine);
+			ctx.state.options.set(optionKey, medicine);
 			const rxType = normalizePrescriptionType(medicine.prescription_type);
 			const rxLabel = ({ H: 'Đơn hướng thần (H)', N: 'Đơn gây nghiện (N)' })[rxType] || '';
 			const rxClass = rxLabel ? ` doctor-support-dropdown__item--rx-${rxType.toLowerCase()}` : '';
@@ -115,81 +112,101 @@
 		}
 
 		function render(doc, input, row, medicines) {
-			const dropdown = getDropdown(doc);
-			state.options.clear();
-			state.input = input;
-			state.activeIndex = -1;
+			const dropdown = ctx.getDropdown(doc);
+			ctx.state.options.clear();
+			ctx.state.input = input;
+			ctx.state.activeIndex = -1;
 			input?.removeAttribute('aria-busy');
-			setInputState(input, true);
+			ctx.setInputState(input, true);
 			if (!Array.isArray(medicines) || !medicines.length) {
 				dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Không tìm thấy thuốc trong kho</div>';
 				dropdown.hidden = false;
-				position(doc);
+				ctx.position(doc);
 				return;
 			}
 			dropdown.innerHTML = medicines.map((medicine, index) => buildOption(row, medicine, index)).join('');
 			dropdown.hidden = false;
-			position(doc);
+			ctx.position(doc);
 		}
 
+		Object.assign(ctx, { setActive, render });
+	}
+
+	function installMedicineSearchFns3(ctx) {
 		function search(input, row) {
 			if (row.isExternal) return;
-			const doc = getDocument();
+			const doc = ctx.getDocument();
 			const query = input.value.trim();
-			hide(doc);
-			const token = ++state.token;
-			const dropdown = getDropdown(doc);
-			state.input = input;
-			state.activeIndex = -1;
+			ctx.hide(doc);
+			const token = ++ctx.state.token;
+			const dropdown = ctx.getDropdown(doc);
+			ctx.state.input = input;
+			ctx.state.activeIndex = -1;
 			input.setAttribute('aria-busy', 'true');
-			setInputState(input, true);
+			ctx.setInputState(input, true);
 			dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Đang tải danh sách thuốc...</div>';
 			dropdown.hidden = false;
-			position(doc);
-			state.timer = window.setTimeout(async () => {
+			ctx.position(doc);
+			ctx.state.timer = window.setTimeout(async () => {
 				try {
-					const data = await requestJson(getEndpoint(query));
-					if (token !== state.token || !input.isConnected || !isRowCurrent(row)) return;
-					render(doc, input, row, data && data.medicines ? data.medicines : []);
+					const data = await ctx.requestJson(ctx.getEndpoint(query));
+					if (token !== ctx.state.token || !input.isConnected || !ctx.isRowCurrent(row)) return;
+					ctx.render(doc, input, row, data && data.medicines ? data.medicines : []);
 				} catch (error) {
-					if (token === state.token) hide(doc);
+					if (token === ctx.state.token) ctx.hide(doc);
 				} finally {
-					if (token === state.token) state.timer = null;
+					if (token === ctx.state.token) ctx.state.timer = null;
 				}
 			}, query ? 250 : 0);
 		}
 
 		function handleKeydown(doc, event) {
-			const dropdown = getDropdown(doc);
+			const dropdown = ctx.getDropdown(doc);
 			if (event.key === 'Escape') {
-				hide(doc);
+				ctx.hide(doc);
 				return null;
 			}
-			if (dropdown.hidden || event.target !== state.input) return null;
+			if (dropdown.hidden || event.target !== ctx.state.input) return null;
 			const optionElements = Array.from(dropdown.querySelectorAll(OPTION_SELECTOR));
 			if (!optionElements.length) return null;
 			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 				event.preventDefault();
 				const direction = event.key === 'ArrowDown' ? 1 : -1;
-				const current = state.activeIndex;
+				const current = ctx.state.activeIndex;
 				const firstIndex = direction > 0 ? 0 : optionElements.length - 1;
-				setActive(doc, current < 0 ? firstIndex : current + direction);
+				ctx.setActive(doc, current < 0 ? firstIndex : current + direction);
 				return null;
 			}
-			if (event.key === 'Enter' && state.activeIndex >= 0) {
+			if (event.key === 'Enter' && ctx.state.activeIndex >= 0) {
 				event.preventDefault();
-				return optionElements[state.activeIndex].dataset.medicineSelect;
+				return optionElements[ctx.state.activeIndex].dataset.medicineSelect;
 			}
 			return null;
 		}
 
+		Object.assign(ctx, { search, handleKeydown });
+	}
+
+	function create(options = {}) {
+		const ctx = {};
+		installMedicineSearchFns1(ctx);
+		installMedicineSearchFns2(ctx);
+		installMedicineSearchFns3(ctx);
+
+		({ requestJson: ctx.requestJson, getEndpoint: ctx.getEndpoint, getDocument: ctx.getDocument, isRowCurrent: ctx.isRowCurrent } = options);
+		if (typeof ctx.requestJson !== 'function' || typeof ctx.getEndpoint !== 'function'
+			|| typeof ctx.getDocument !== 'function' || typeof ctx.isRowCurrent !== 'function') {
+			throw new Error('Thiếu dependency cho ô tìm thuốc');
+		}
+		ctx.state = { timer: null, token: 0, options: new Map(), input: null, activeIndex: -1 };
+
 		return Object.freeze({
-			search,
-			hide,
-			reset,
-			position,
-			handleKeydown,
-			getOption: optionKey => state.options.get(optionKey) || null
+			search: ctx.search,
+			hide: ctx.hide,
+			reset: ctx.reset,
+			position: ctx.position,
+			handleKeydown: ctx.handleKeydown,
+			getOption: optionKey => ctx.state.options.get(optionKey) || null
 		});
 	}
 

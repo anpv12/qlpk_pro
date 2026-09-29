@@ -65,17 +65,8 @@
 		}
 
 		Object.assign(inst, {
-			getDocument,
-			domId,
-			el,
-			endpoint,
-			currentToken,
-			normalizeLocation,
-			normalizeSource,
-			sourceForRow,
-			buildSurveyIndex,
-			formatDate,
-			normalizeDateInputValue
+			getDocument, domId, el, endpoint, currentToken, normalizeLocation, normalizeSource, sourceForRow,
+			buildSurveyIndex, formatDate, normalizeDateInputValue
 		});
 	});
 	moduleParts.installers.push(function (inst, outer) {
@@ -120,12 +111,7 @@
 			return true;
 		}
 
-		Object.assign(inst, {
-			getStatusConfig,
-			getPerformerName,
-			clearNameSelection,
-			setSurveySelection
-		});
+		Object.assign(inst, { getStatusConfig, getPerformerName, clearNameSelection, setSurveySelection });
 	});
 	moduleParts.installers.push(function (inst) {
 	function syncNameDropdownGeometry(doc) {
@@ -178,10 +164,7 @@
 			return sync;
 		}
 
-		Object.assign(inst, {
-			syncNameDropdownGeometry,
-			bindNameDropdownGeometry
-		});
+		Object.assign(inst, { syncNameDropdownGeometry, bindNameDropdownGeometry });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function setupNameAutocomplete(doc) {
@@ -249,12 +232,7 @@
 			return (items || []).map(item => normalizeRow(item));
 		}
 
-		Object.assign(inst, {
-			setupNameAutocomplete,
-			renderActionButton,
-			normalizeRow,
-			mapServerRows
-		});
+		Object.assign(inst, { setupNameAutocomplete, renderActionButton, normalizeRow, mapServerRows });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function buildSavePayload() {
@@ -320,14 +298,7 @@
 			if (currentValue && select.querySelector(`option[value="${CSS.escape(currentValue)}"]`)) select.value = currentValue;
 		}
 
-		Object.assign(inst, {
-			buildSavePayload,
-			setMessage,
-			setFormReady,
-			updateLocationFields,
-			renderNameField,
-			renderPerformers
-		});
+		Object.assign(inst, { buildSavePayload, setMessage, setFormReady, updateLocationFields, renderNameField, renderPerformers });
 	});
 	moduleParts.installers.push(function (inst) {
 	function renderCurrentRows(doc) {
@@ -389,13 +360,7 @@
 			return row.status === 'completed' || Boolean(row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status));
 		}
 
-		Object.assign(inst, {
-			renderCurrentRows,
-			render,
-			setSubmitMode,
-			resetForm,
-			isLockedIndicationRow
-		});
+		Object.assign(inst, { renderCurrentRows, render, setSubmitMode, resetForm, isLockedIndicationRow });
 	});
 	moduleParts.installers.push(function (inst) {
 	function fillIndicationEditFields(doc, row) {
@@ -461,12 +426,7 @@
 			return { valid: false, message, focus: inputs.nameInput };
 		}
 
-		Object.assign(inst, {
-			startEdit,
-			readFormInputs,
-			resolveSelectedSurvey,
-			invalidName
-		});
+		Object.assign(inst, { startEdit, readFormInputs, resolveSelectedSurvey, invalidName });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function validateFormInputs(inputs) {
@@ -478,8 +438,6 @@
 			return null;
 		}
 
-		Object.assign(inst, {
-			validateFormInputs
-		});
+		Object.assign(inst, { validateFormInputs });
 	});
 })(window);

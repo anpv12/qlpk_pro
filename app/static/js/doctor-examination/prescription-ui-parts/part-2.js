@@ -53,11 +53,7 @@
 		});
 	}
 
-		Object.assign(inst, {
-			updateBatchAllocationDisplays,
-			setPrescriptionHistoryPanel,
-			renderPrescriptionHistory
-		});
+		Object.assign(inst, { updateBatchAllocationDisplays, setPrescriptionHistoryPanel, renderPrescriptionHistory });
 	});
 	moduleParts.installers.push(function (inst) {
 	function renderPrescriptionRows(doc) {
@@ -114,10 +110,7 @@
 	}
 
 		Object.assign(inst, {
-			renderPrescriptionRows,
-			buildPrescriptionCodeMap,
-			applyLoadedReExamination,
-			normalizeLoadedRows,
+			renderPrescriptionRows, buildPrescriptionCodeMap, applyLoadedReExamination, normalizeLoadedRows,
 			hasPersistedPrescription
 		});
 	});
@@ -151,9 +144,7 @@
 		}
 	}
 
-		Object.assign(inst, {
-			loadPrescription
-		});
+		Object.assign(inst, { loadPrescription });
 	});
 	moduleParts.installers.push(function (inst) {
 	function collectPrescriptionPayload(doc) {
@@ -197,9 +188,7 @@
 		};
 	}
 
-		Object.assign(inst, {
-			collectPrescriptionPayload
-		});
+		Object.assign(inst, { collectPrescriptionPayload });
 	});
 	moduleParts.installers.push(function (inst) {
 	function validatePrescriptionBeforeSave(doc) {
@@ -253,11 +242,7 @@
 		return null;
 	}
 
-		Object.assign(inst, {
-			validatePrescriptionBeforeSave,
-			applyReExaminationSyncState,
-			getPrescriptionSaveSkip
-		});
+		Object.assign(inst, { validatePrescriptionBeforeSave, applyReExaminationSyncState, getPrescriptionSaveSkip });
 	});
 	moduleParts.installers.push(function (inst) {
 	function applySavedPrescription(doc, data, revision, options) {
@@ -304,10 +289,7 @@
 		inst.setPrescriptionSaveStatus(doc, 'error', 'Lưu thất bại');
 	}
 
-		Object.assign(inst, {
-			applySavedPrescription,
-			handlePrescriptionSaveError
-		});
+		Object.assign(inst, { applySavedPrescription, handlePrescriptionSaveError });
 	});
 	moduleParts.installers.push(function (inst) {
 	async function savePrescription(options = {}) {
@@ -374,12 +356,7 @@
 		inst.renderPrescriptionRows(doc);
 	}
 
-		Object.assign(inst, {
-			savePrescription,
-			applyMedicineSelection,
-			addPrescriptionRow,
-			removePrescriptionRow
-		});
+		Object.assign(inst, { savePrescription, applyMedicineSelection, addPrescriptionRow, removePrescriptionRow });
 	});
 	moduleParts.installers.push(function (inst) {
 	async function loadPrescriptionHistory(context) {
@@ -443,11 +420,7 @@
 		return row.schedule;
 	}
 
-		Object.assign(inst, {
-			loadPrescriptionHistory,
-			getLatestPreviousVisitSnapshot,
-			ensureRowSchedule
-		});
+		Object.assign(inst, { loadPrescriptionHistory, getLatestPreviousVisitSnapshot, ensureRowSchedule });
 	});
 	moduleParts.installers.push(function (inst) {
 	function applyPrescriptionNameInput(doc, row, target) {
@@ -481,10 +454,6 @@
 		}
 	}
 
-		Object.assign(inst, {
-			applyPrescriptionNameInput,
-			applyPrescriptionFieldInput,
-			syncAfterPrescriptionInput
-		});
+		Object.assign(inst, { applyPrescriptionNameInput, applyPrescriptionFieldInput, syncAfterPrescriptionInput });
 	});
 })(window);

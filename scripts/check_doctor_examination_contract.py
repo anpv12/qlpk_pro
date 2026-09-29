@@ -544,7 +544,7 @@ def main() -> int:
                 failures.append(f"Doctor prescription centered medicine-days thiếu {selector}: {marker}")
 
     save_controller = read_source((ROOT / "app/static/js/doctor-examination/workspace-save-controller.js"))
-    after_save_call = "if (typeof afterSave === 'function') await afterSave();"
+    after_save_call = "if (typeof ctx.afterSave === 'function') await ctx.afterSave();"
     success_return = "return noChanges ? { status: 'success', noChanges: true, ...results } : { status: 'success', ...results };"
     if (
         after_save_call not in save_controller

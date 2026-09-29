@@ -1,40 +1,16 @@
 (function (window) {
 	'use strict';
 
+	const PASSTHROUGH_OPTION_KEYS = ['state', 'mainChanges', 'getDocument', 'textOf', 'valueOf', 'apiCall', 'isLoading', 'collect', 'saveClinicalDetails', 'hasUnsavedChanges', 'syncDirtyState', 'getSupportModules', 'getMedicalHistory', 'getClinicalForm', 'setWorkspaceSavePhase', 'setBusy', 'showToast', 'afterSave', 'afterComplete'];
 	const PRESCRIPTION_STOCK_SHORTAGE_MESSAGE = 'Không đủ thuốc trong kho. Vui lòng kiểm tra số lượng đã kê và tồn kho.';
 
-	function create(options = {}) {
-		const state = options.state;
-		const mainChanges = options.mainChanges;
-		if (!mainChanges) throw new Error('Thiếu tracker thay đổi của vùng Khám');
-		const getDocument = options.getDocument;
-		const textOf = options.textOf;
-		const valueOf = options.valueOf;
-		const apiCall = options.apiCall;
-		const isLoading = options.isLoading;
-		const collect = options.collect;
-		const saveClinicalDetails = options.saveClinicalDetails;
-		const hasUnsavedChanges = options.hasUnsavedChanges;
-		const syncDirtyState = options.syncDirtyState;
-		const getSupportModules = options.getSupportModules;
-		const getMedicalHistory = options.getMedicalHistory;
-		const getClinicalForm = options.getClinicalForm;
-		const setWorkspaceSavePhase = options.setWorkspaceSavePhase;
-		const setBusy = options.setBusy;
-		const showToast = options.showToast;
-		const afterSave = options.afterSave;
-		const afterComplete = options.afterComplete;
-		const getContext = options.getContext || (() => null);
-		const registry = options.registry || window.QLPKDoctorModuleRegistry;
-		const readResponseError = options.readResponseError || registry?.get?.('supportRuntime')?.readResponseError;
-		const getDraftRecovery = options.getDraftRecovery || (() => registry?.get?.('draftRecovery'));
-
+	function installWorkspaceSaveFns1(ctx) {
 		function getAppointmentId() {
-			return textOf(valueOf(state.appointment && state.appointment.id, state.getAppointmentId && state.getAppointmentId()));
+			return ctx.textOf(ctx.valueOf(ctx.state.appointment && ctx.state.appointment.id, ctx.state.getAppointmentId && ctx.state.getAppointmentId()));
 		}
 
 		async function captureLocalDraft() {
-			const draftRecovery = getDraftRecovery();
+			const draftRecovery = ctx.getDraftRecovery();
 			if (!draftRecovery || typeof draftRecovery.captureNow !== 'function') return false;
 			try {
 				return Boolean(await draftRecovery.captureNow({ silent: true, recoveryMode: 'failed-save' }));
@@ -57,29 +33,13 @@
 			return (knownReasons[raw] || raw || fallback).replace(/\s+/g, ' ').trim();
 		}
 
-		// [module key or null for any, reason substrings, guidance], checked in order.
-		const FAILURE_GUIDANCE_RULES = [
-			[null, ['thay đổi trong lúc'], 'Vui lòng kiểm tra thay đổi mới và lưu lại.'],
-			[null, ['đang tải'], 'Vui lòng đợi tải xong rồi thử lại.'],
-			[null, ['đang được lưu'], 'Vui lòng đợi thao tác hiện tại hoàn tất.'],
-			[null, ['chưa chọn ca khám'], 'Vui lòng chọn ca khám rồi thử lại.'],
-			[null, ['chưa tải đủ', 'chưa tải xong'], 'Vui lòng tải lại trang trước khi tiếp tục.'],
-			['prescription', ['chọn thuốc từ kho', 'danh sách thuốc trong kho', 'medicine_id'], 'Vui lòng chọn thuốc từ danh sách trong kho hoặc bật Nhập ngoài cơ sở.'],
-			['prescription', ['tái khám'], 'Vui lòng kiểm tra thông tin tái khám rồi lưu lại.']
-		];
-		const MODULE_FAILURE_GUIDANCE = {
-			services: 'Vui lòng kiểm tra dịch vụ, số lượng và các trường bắt buộc.',
-			indications: 'Vui lòng kiểm tra chỉ định, người thực hiện và ngày thực hiện.',
-			clinical: 'Vui lòng kiểm tra các trường bắt buộc trong vùng Khám.'
-		};
-
 		function getFailureGuidance(moduleKey, reason) {
 			const normalizedReason = String(reason || '').toLowerCase();
-			const rule = FAILURE_GUIDANCE_RULES.find(([key, needles]) => (key === null || key === moduleKey)
+			const rule = ctx.FAILURE_GUIDANCE_RULES.find(([key, needles]) => (key === null || key === moduleKey)
 				&& needles.some(needle => normalizedReason.includes(needle)));
 			if (rule) return rule[2];
-			return Object.prototype.hasOwnProperty.call(MODULE_FAILURE_GUIDANCE, moduleKey)
-				? MODULE_FAILURE_GUIDANCE[moduleKey] : 'Vui lòng kiểm tra dữ liệu và thử lại.';
+			return Object.prototype.hasOwnProperty.call(ctx.MODULE_FAILURE_GUIDANCE, moduleKey)
+				? ctx.MODULE_FAILURE_GUIDANCE[moduleKey] : 'Vui lòng kiểm tra dữ liệu và thử lại.';
 		}
 
 		function resolveFailureCode(module) {
@@ -107,8 +67,12 @@
 				.map(buildFailure);
 		}
 
+		Object.assign(ctx, { getAppointmentId, captureLocalDraft, buildFailure, getSupportFailures });
+	}
+
+	function installWorkspaceSaveFns2(ctx) {
 		function isPrescriptionStockShortage(failure = {}) {
-			const normalizedFailure = buildFailure(failure);
+			const normalizedFailure = ctx.buildFailure(failure);
 			if (normalizedFailure.key !== 'prescription') return false;
 			if (normalizedFailure.code === 'inventory.insufficient') return true;
 			const reason = normalizedFailure.reason.toLowerCase();
@@ -153,17 +117,21 @@
 			return `Chưa lưu được đơn thuốc. ${details.join(' ')}${others}`;
 		}
 
+		Object.assign(ctx, { isPrescriptionStockShortage, formatStockShortageDetail, formatInventoryFailureMessage });
+	}
+
+	function installWorkspaceSaveFns3(ctx) {
 		function formatFailureMessage(failures) {
 			const normalizedFailures = (Array.isArray(failures) ? failures : [failures])
 				.filter(Boolean)
-				.map(buildFailure);
-			const hasStockShortage = normalizedFailures.some(isPrescriptionStockShortage);
-			const otherFailures = normalizedFailures.filter(failure => !isPrescriptionStockShortage(failure));
+				.map(ctx.buildFailure);
+			const hasStockShortage = normalizedFailures.some(ctx.isPrescriptionStockShortage);
+			const otherFailures = normalizedFailures.filter(failure => !ctx.isPrescriptionStockShortage(failure));
 			const shortageFailure = normalizedFailures.find(failure =>
-				isPrescriptionStockShortage(failure) && failure.error?.payload?.shortage);
-			const shortageMessage = shortageFailure ? formatStockShortageDetail(shortageFailure.error.payload.shortage, otherFailures) : null;
+				ctx.isPrescriptionStockShortage(failure) && failure.error?.payload?.shortage);
+			const shortageMessage = shortageFailure ? ctx.formatStockShortageDetail(shortageFailure.error.payload.shortage, otherFailures) : null;
 			if (shortageMessage) return shortageMessage;
-			const inventoryMessage = formatInventoryFailureMessage(normalizedFailures, otherFailures);
+			const inventoryMessage = ctx.formatInventoryFailureMessage(normalizedFailures, otherFailures);
 			if (inventoryMessage) return inventoryMessage;
 			if (hasStockShortage && !otherFailures.length) return PRESCRIPTION_STOCK_SHORTAGE_MESSAGE;
 			if (hasStockShortage) {
@@ -193,7 +161,7 @@
 		}
 
 		function notify(options, type, message) {
-			if (!options.silent && typeof showToast === 'function') showToast(type, message);
+			if (!options.silent && typeof ctx.showToast === 'function') ctx.showToast(type, message);
 		}
 
 		function createModuleError(message, module, moduleLabel) {
@@ -204,12 +172,16 @@
 		}
 
 		function getSaveSkipReason() {
-			if (!getAppointmentId()) return 'missing-appointment';
-			if (typeof isLoading === 'function' && isLoading()) return 'loading';
-			if (state.saving) return 'saving';
+			if (!ctx.getAppointmentId()) return 'missing-appointment';
+			if (typeof ctx.isLoading === 'function' && ctx.isLoading()) return 'loading';
+			if (ctx.state.saving) return 'saving';
 			return null;
 		}
 
+		Object.assign(ctx, { formatFailureMessage, getSkippedSaveMessage, notify, createModuleError, getSaveSkipReason });
+	}
+
+	function installWorkspaceSaveFns4(ctx) {
 		function getClinicalSaveState(clinicalForm) {
 			return clinicalForm?.getSaveState?.() || {
 				mainDirty: false,
@@ -222,64 +194,68 @@
 		}
 
 		function buildSavePlan(doc, options) {
-			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
+			const clinicalForm = typeof ctx.getClinicalForm === 'function' ? ctx.getClinicalForm() : null;
 			if (options.applyDetailDefaults === true) clinicalForm?.prepareEmptyDetailDefaults?.({ document: doc });
 			const clinicalState = getClinicalSaveState(clinicalForm);
-			const medicalHistory = typeof getMedicalHistory === 'function' ? getMedicalHistory() : null;
+			const medicalHistory = typeof ctx.getMedicalHistory === 'function' ? ctx.getMedicalHistory() : null;
 			const historyPending = typeof medicalHistory?.hasPendingChanges === 'function' && Boolean(medicalHistory.hasPendingChanges());
 			return {
 				clinicalForm,
 				clinicalState,
 				medicalHistory,
-				shouldSaveMain: Boolean(state.mainDirty || clinicalState.mainDirty || historyPending),
+				shouldSaveMain: Boolean(ctx.state.mainDirty || clinicalState.mainDirty || historyPending),
 				detailSections: new Set(clinicalState.detailDirtySections)
 			};
 		}
 
 		async function saveMainSection(doc, appointmentId, token, plan) {
 			const { clinicalForm, clinicalState, medicalHistory } = plan;
-			setWorkspaceSavePhase(doc, 'main');
-			const mainRevision = mainChanges.capture();
+			ctx.setWorkspaceSavePhase(doc, 'main');
+			const mainRevision = ctx.mainChanges.capture();
 			const clinicalMainRevision = clinicalState.mainRevision;
 			const historyRevision = typeof medicalHistory?.getSaveRevision === 'function'
 				? medicalHistory.getSaveRevision()
 				: null;
-			const payload = collect({ document: doc, context: getContext() });
+			const payload = ctx.collect({ document: doc, context: ctx.getContext() });
 			if (typeof medicalHistory?.getSavePayload === 'function') {
 				Object.assign(payload, medicalHistory.getSavePayload());
 			}
-			const response = await apiCall(`/api/appointments/${appointmentId}`, {
+			const response = await ctx.apiCall(`/api/appointments/${appointmentId}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
-			if (token !== state.contextToken) return null;
+			if (token !== ctx.state.contextToken) return null;
 			if (!response || !response.ok) {
-				throw new Error(await readResponseError(response, 'Không lưu được dữ liệu khám'));
+				throw new Error(await ctx.readResponseError(response, 'Không lưu được dữ liệu khám'));
 			}
 			if (typeof medicalHistory?.markSaved === 'function') medicalHistory.markSaved(historyRevision);
-			mainChanges.settle(mainRevision);
+			ctx.mainChanges.settle(mainRevision);
 			if (clinicalForm?.markMainSaved) clinicalForm.markMainSaved(clinicalMainRevision);
 			return { status: 'success', appointmentId };
 		}
 
 		function assertSaveReady() {
-			if (typeof apiCall !== 'function') throw new Error('missing-api-call');
-			if (state.loadFailed) {
-				throw createModuleError(state.loadFailure || 'Chưa tải đủ dữ liệu ca khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám');
+			if (typeof ctx.apiCall !== 'function') throw new Error('missing-api-call');
+			if (ctx.state.loadFailed) {
+				throw ctx.createModuleError(ctx.state.loadFailure || 'Chưa tải đủ dữ liệu ca khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám');
 			}
 		}
 
 		function assertDetailsSaveable(plan) {
 			if (plan.detailSections.size && plan.clinicalState.detailsLoaded === false) {
-				throw createModuleError('Chưa tải xong chi tiết khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám chi tiết');
+				throw ctx.createModuleError('Chưa tải xong chi tiết khám; chưa thực hiện lưu để tránh xóa nhầm dữ liệu.', 'clinical', 'Khám chi tiết');
 			}
 		}
 
+		Object.assign(ctx, { buildSavePlan, saveMainSection, assertSaveReady, assertDetailsSaveable });
+	}
+
+	function installWorkspaceSaveFns5(ctx) {
 		async function waitForDetailsLoad(clinicalState, token) {
 			if (!clinicalState.detailsLoading || !clinicalState.detailsLoadPromise) return true;
 			await clinicalState.detailsLoadPromise;
-			return token === state.contextToken;
+			return token === ctx.state.contextToken;
 		}
 
 		async function saveSections(doc, appointmentId, token, plan) {
@@ -287,55 +263,59 @@
 			let mainResult = { skipped: true, reason: 'clean' };
 			let detailsResult = { skipped: true, reason: 'clean' };
 			if (shouldSaveMain) {
-				mainResult = await saveMainSection(doc, appointmentId, token, plan);
+				mainResult = await ctx.saveMainSection(doc, appointmentId, token, plan);
 				if (!mainResult) return null;
 			}
 			if (detailSections.size) {
-				setWorkspaceSavePhase(doc, 'details');
-				detailsResult = await saveClinicalDetails(doc, appointmentId, token, detailSections, getContext());
-				if (token !== state.contextToken) return null;
+				ctx.setWorkspaceSavePhase(doc, 'details');
+				detailsResult = await ctx.saveClinicalDetails(doc, appointmentId, token, detailSections, ctx.getContext());
+				if (token !== ctx.state.contextToken) return null;
 			}
 			return { mainResult, detailsResult };
 		}
 
 		async function saveNow(options = {}) {
-			const doc = getDocument(options);
-			const appointmentId = getAppointmentId();
-			const skipReason = getSaveSkipReason();
+			const doc = ctx.getDocument(options);
+			const appointmentId = ctx.getAppointmentId();
+			const skipReason = ctx.getSaveSkipReason();
 			if (skipReason) return { skipped: true, reason: skipReason };
-			assertSaveReady();
+			ctx.assertSaveReady();
 
-			const token = state.contextToken;
-			const plan = buildSavePlan(doc, options);
-			assertDetailsSaveable(plan);
+			const token = ctx.state.contextToken;
+			const plan = ctx.buildSavePlan(doc, options);
+			ctx.assertDetailsSaveable(plan);
 			if (!plan.shouldSaveMain && !plan.detailSections.size) return { skipped: true, reason: 'clean' };
 
-			state.saving = true;
+			ctx.state.saving = true;
 			try {
 				if (!(await waitForDetailsLoad(plan.clinicalState, token))) return { skipped: true, reason: 'stale' };
 				const sections = await saveSections(doc, appointmentId, token, plan);
 				if (!sections) return { skipped: true, reason: 'stale' };
-				if (typeof syncDirtyState === 'function') syncDirtyState();
-				notify(options, 'success', 'Đã lưu dữ liệu khám');
+				if (typeof ctx.syncDirtyState === 'function') ctx.syncDirtyState();
+				ctx.notify(options, 'success', 'Đã lưu dữ liệu khám');
 				return { status: 'success', appointmentId, ...sections };
 			} catch (error) {
-				if (token === state.contextToken) notify(options, 'error', 'Không thể lưu dữ liệu khám. Vui lòng kiểm tra lại.');
+				if (token === ctx.state.contextToken) ctx.notify(options, 'error', 'Không thể lưu dữ liệu khám. Vui lòng kiểm tra lại.');
 				throw error;
 			} finally {
-				if (token === state.contextToken) state.saving = false;
+				if (token === ctx.state.contextToken) ctx.state.saving = false;
 			}
 		}
 
 		function clinicalFailure(reason) {
-			return buildFailure({ key: 'clinical', label: 'Khám', reason });
+			return ctx.buildFailure({ key: 'clinical', label: 'Khám', reason });
 		}
 
 		async function failWorkspaceSave(options, failedModules, extra = {}) {
-			await captureLocalDraft();
-			notify(options, 'error', formatFailureMessage(failedModules));
+			await ctx.captureLocalDraft();
+			ctx.notify(options, 'error', ctx.formatFailureMessage(failedModules));
 			return { status: 'error', failedModules, ...extra };
 		}
 
+		Object.assign(ctx, { saveNow, clinicalFailure, failWorkspaceSave });
+	}
+
+	function installWorkspaceSaveFns6(ctx) {
 		async function saveSupportModules(doc, supportModules) {
 			if (!supportModules || typeof supportModules.saveAll !== 'function') {
 				return {
@@ -344,8 +324,8 @@
 					failedModules: [{ key: 'support', label: 'Các module hỗ trợ', reason: 'Không tải được các module Đơn thuốc, Dịch vụ và Chỉ định.' }]
 				};
 			}
-			setWorkspaceSavePhase(doc, 'support');
-			return supportModules.saveAll({ document: doc, context: getContext(), silent: true, onlyDirty: true });
+			ctx.setWorkspaceSavePhase(doc, 'support');
+			return supportModules.saveAll({ document: doc, context: ctx.getContext(), silent: true, onlyDirty: true });
 		}
 
 		function getSupportReadinessFailures(supportModules) {
@@ -369,58 +349,66 @@
 		}
 
 		async function runWorkspaceSave(doc, options) {
-			const supportModules = typeof getSupportModules === 'function' ? getSupportModules() : null;
+			const supportModules = typeof ctx.getSupportModules === 'function' ? ctx.getSupportModules() : null;
 			const readinessFailures = getSupportReadinessFailures(supportModules);
-			if (readinessFailures.length) return failWorkspaceSave(options, readinessFailures);
-			const mainResult = await saveNow({ document: doc, silent: true, applyDetailDefaults: options.applyDetailDefaults === true });
+			if (readinessFailures.length) return ctx.failWorkspaceSave(options, readinessFailures);
+			const mainResult = await ctx.saveNow({ document: doc, silent: true, applyDetailDefaults: options.applyDetailDefaults === true });
 			if (isSkippedFor(mainResult, reason => reason !== 'clean')) {
-				return failWorkspaceSave(options, [clinicalFailure(getSkippedSaveMessage(mainResult.reason))], { mainResult });
+				return ctx.failWorkspaceSave(options, [ctx.clinicalFailure(ctx.getSkippedSaveMessage(mainResult.reason))], { mainResult });
 			}
 
 			const supportResult = await saveSupportModules(doc, supportModules);
 			const results = { mainResult, supportResult, historyResult: { status: 'included-with-main-save' } };
-			const failedModules = getSupportFailures(supportResult);
-			if (failedModules.length || supportResult.status === 'error') return failWorkspaceSave(options, failedModules, results);
-			if (hasUnsavedChanges()) return failWorkspaceSave(options, [clinicalFailure('Dữ liệu đã thay đổi trong lúc đang lưu.')], results);
+			const failedModules = ctx.getSupportFailures(supportResult);
+			if (failedModules.length || supportResult.status === 'error') return ctx.failWorkspaceSave(options, failedModules, results);
+			if (ctx.hasUnsavedChanges()) return ctx.failWorkspaceSave(options, [ctx.clinicalFailure('Dữ liệu đã thay đổi trong lúc đang lưu.')], results);
 
 			const noChanges = isSkippedFor(mainResult, reason => reason === 'clean') && isCleanSupportResult(supportResult);
-			notify(options, 'success', getWorkspaceSuccessMessage(noChanges, supportResult));
-			if (typeof afterSave === 'function') await afterSave();
+			ctx.notify(options, 'success', getWorkspaceSuccessMessage(noChanges, supportResult));
+			if (typeof ctx.afterSave === 'function') await ctx.afterSave();
 			return noChanges ? { status: 'success', noChanges: true, ...results } : { status: 'success', ...results };
 		}
 
+		Object.assign(ctx, { runWorkspaceSave });
+	}
+
+	function installWorkspaceSaveFns7(ctx) {
 		async function saveWorkspace(options = {}) {
-			const doc = getDocument(options);
-			if (state.workspaceSaving) {
-				const failure = clinicalFailure(getSkippedSaveMessage('workspace-saving'));
-				notify(options, 'error', formatFailureMessage(failure));
+			const doc = ctx.getDocument(options);
+			if (ctx.state.workspaceSaving) {
+				const failure = ctx.clinicalFailure(ctx.getSkippedSaveMessage('workspace-saving'));
+				ctx.notify(options, 'error', ctx.formatFailureMessage(failure));
 				return { status: 'error', failedModules: [failure], reason: 'workspace-saving' };
 			}
-			const token = state.contextToken;
-			state.workspaceSaving = true;
-			setWorkspaceSavePhase(doc, 'main');
+			const token = ctx.state.contextToken;
+			ctx.state.workspaceSaving = true;
+			ctx.setWorkspaceSavePhase(doc, 'main');
 			try {
-				return await runWorkspaceSave(doc, options);
+				return await ctx.runWorkspaceSave(doc, options);
 			} catch (error) {
-				const failure = buildFailure({
+				const failure = ctx.buildFailure({
 					key: error?.module || 'clinical',
 					label: error?.moduleLabel || (error?.module === 'prescription' ? 'Đơn thuốc' : 'Khám'),
 					error,
 					reason: error?.message || 'Không lưu được dữ liệu khám'
 				});
-				return failWorkspaceSave(options, [failure], { error });
+				return ctx.failWorkspaceSave(options, [failure], { error });
 			} finally {
-				if (token === state.contextToken) {
-					state.workspaceSaving = false;
-					state.workspacePhase = 'idle';
-					setBusy(doc, state.completing, state.completing ? 'complete' : 'idle');
+				if (token === ctx.state.contextToken) {
+					ctx.state.workspaceSaving = false;
+					ctx.state.workspacePhase = 'idle';
+					ctx.setBusy(doc, ctx.state.completing, ctx.state.completing ? 'complete' : 'idle');
 				}
 			}
 		}
 
+		Object.assign(ctx, { saveWorkspace });
+	}
+
+	function installWorkspaceSaveFns8(ctx) {
 		async function resolveUnsavedChanges(options = {}) {
-			const doc = getDocument(options);
-			if (!hasUnsavedChanges()) return true;
+			const doc = ctx.getDocument(options);
+			if (!ctx.hasUnsavedChanges()) return true;
 			const dialog = {
 				title: options.title || 'Có thay đổi chưa lưu',
 				message: options.message || 'Hãy lưu dữ liệu trước khi rời ca khám để tránh mất thông tin.',
@@ -430,9 +418,9 @@
 			};
 			const saveAndContinue = async () => {
 				try {
-					await saveWorkspace({ document: doc });
-					if (hasUnsavedChanges()) {
-						if (typeof showToast === 'function') showToast('info', 'Có thay đổi mới phát sinh. Vui lòng lưu lại trước khi rời màn hình.');
+					await ctx.saveWorkspace({ document: doc });
+					if (ctx.hasUnsavedChanges()) {
+						if (typeof ctx.showToast === 'function') ctx.showToast('info', 'Có thay đổi mới phát sinh. Vui lòng lưu lại trước khi rời màn hình.');
 						return false;
 					}
 					return true;
@@ -445,7 +433,7 @@
 				return typeof onDeny === 'function' && (await onDeny()) !== false;
 			};
 
-			const choice = await registry.require('confirmationDialog').choose({
+			const choice = await ctx.registry.require('confirmationDialog').choose({
 				variant: 'warning',
 				icon: 'warning',
 				title: dialog.title,
@@ -455,7 +443,7 @@
 				cancelText: dialog.cancelButtonText,
 				showCancelButton: options.showCancelButton !== false,
 				allowEscapeKey: options.allowEscapeKey !== false,
-				showToast,
+				showToast: ctx.showToast,
 				failureMessage: 'Không thể mở hộp thoại xác nhận. Vui lòng ở lại ca khám.'
 			});
 			if (choice === 'confirm') return saveAndContinue();
@@ -464,76 +452,118 @@
 		}
 
 		function reportIncompleteSave(saveResult) {
-			if (typeof showToast !== 'function') return;
+			if (typeof ctx.showToast !== 'function') return;
 			const failedModules = saveResult?.failedModules || [{
 				key: 'clinical',
 				label: 'Khám',
 				reason: 'Vẫn còn dữ liệu chưa lưu.'
 			}];
-			const failureMessage = formatFailureMessage(failedModules);
-			showToast(
+			const failureMessage = ctx.formatFailureMessage(failedModules);
+			ctx.showToast(
 				'error',
-				failedModules.some(isPrescriptionStockShortage)
+				failedModules.some(ctx.isPrescriptionStockShortage)
 					? failureMessage
 					: `Chưa thể hoàn thành ca khám. ${failureMessage}`
 			);
 		}
 
+		Object.assign(ctx, { resolveUnsavedChanges, reportIncompleteSave });
+	}
+
+	function installWorkspaceSaveFns9(ctx) {
 		async function transferToPayment(doc, examinationId) {
-			setWorkspaceSavePhase(doc, 'complete');
-			const response = await apiCall(`/examinations/${examinationId}/transfer-to-payment`, {
+			ctx.setWorkspaceSavePhase(doc, 'complete');
+			const response = await ctx.apiCall(`/examinations/${examinationId}/transfer-to-payment`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' }
 			});
-			if (!response || !response.ok) throw new Error(await readResponseError(response, 'Không hoàn thành được lượt khám'));
-			if (typeof showToast === 'function') showToast('success', 'Đã hoàn thành khám');
-			if (typeof afterComplete === 'function') afterComplete();
+			if (!response || !response.ok) throw new Error(await ctx.readResponseError(response, 'Không hoàn thành được lượt khám'));
+			if (typeof ctx.showToast === 'function') ctx.showToast('success', 'Đã hoàn thành khám');
+			if (typeof ctx.afterComplete === 'function') ctx.afterComplete();
 		}
 
 		async function completeNow(options = {}) {
-			const doc = getDocument(options);
-			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
+			const doc = ctx.getDocument(options);
+			const clinicalForm = typeof ctx.getClinicalForm === 'function' ? ctx.getClinicalForm() : null;
 			const examinationId = clinicalForm?.getExaminationId?.();
 			const blocked = getCompletionBlocker(examinationId);
 			if (blocked) return blocked;
-			if (typeof apiCall !== 'function') throw new Error('missing-api-call');
+			if (typeof ctx.apiCall !== 'function') throw new Error('missing-api-call');
 
-			const token = state.contextToken;
-			state.completing = true;
-			setWorkspaceSavePhase(doc, 'complete');
+			const token = ctx.state.contextToken;
+			ctx.state.completing = true;
+			ctx.setWorkspaceSavePhase(doc, 'complete');
 			try {
-				const saveResult = await saveWorkspace({ document: doc, silent: true });
+				const saveResult = await ctx.saveWorkspace({ document: doc, silent: true });
 				if (!saveResult || saveResult.status !== 'success') {
-					reportIncompleteSave(saveResult);
+					ctx.reportIncompleteSave(saveResult);
 					return { skipped: true, reason: 'unsaved-changes', saveResult };
 				}
-				if (token !== state.contextToken) return { skipped: true, reason: 'stale' };
+				if (token !== ctx.state.contextToken) return { skipped: true, reason: 'stale' };
 				await transferToPayment(doc, examinationId);
 				return { status: 'success', examinationId };
 			} catch (error) {
-				if (token === state.contextToken && typeof showToast === 'function') showToast('error', 'Không thể hoàn thành lượt khám. Vui lòng thử lại.');
+				if (token === ctx.state.contextToken && typeof ctx.showToast === 'function') ctx.showToast('error', 'Không thể hoàn thành lượt khám. Vui lòng thử lại.');
 				throw error;
 			} finally {
-				if (token === state.contextToken) releaseCompletion(doc);
+				if (token === ctx.state.contextToken) releaseCompletion(doc);
 			}
 		}
 
 		function getCompletionBlocker(examinationId) {
 			if (!examinationId) {
-				if (typeof showToast === 'function') showToast('error', 'Chưa có lượt khám để hoàn thành');
+				if (typeof ctx.showToast === 'function') ctx.showToast('error', 'Chưa có lượt khám để hoàn thành');
 				return { skipped: true, reason: 'missing-examination' };
 			}
-			if (state.completing) return { skipped: true, reason: 'completing' };
-			if (state.workspaceSaving) return { skipped: true, reason: 'workspace-saving' };
+			if (ctx.state.completing) return { skipped: true, reason: 'completing' };
+			if (ctx.state.workspaceSaving) return { skipped: true, reason: 'workspace-saving' };
 			return null;
 		}
 
 		function releaseCompletion(doc) {
-			state.completing = false;
-			setBusy(doc, false);
+			ctx.state.completing = false;
+			ctx.setBusy(doc, false);
 		}
 
-		return { saveNow, saveWorkspace, resolveUnsavedChanges, completeNow };
+		Object.assign(ctx, { completeNow });
+	}
+
+	function create(options = {}) {
+		const ctx = {};
+		installWorkspaceSaveFns1(ctx);
+		installWorkspaceSaveFns2(ctx);
+		installWorkspaceSaveFns3(ctx);
+		installWorkspaceSaveFns4(ctx);
+		installWorkspaceSaveFns5(ctx);
+		installWorkspaceSaveFns6(ctx);
+		installWorkspaceSaveFns7(ctx);
+		installWorkspaceSaveFns8(ctx);
+		installWorkspaceSaveFns9(ctx);
+
+		PASSTHROUGH_OPTION_KEYS.forEach(key => { ctx[key] = options[key]; });
+		if (!ctx.mainChanges) throw new Error('Thiếu tracker thay đổi của vùng Khám');
+		ctx.getContext = options.getContext || (() => null);
+		ctx.registry = options.registry || window.QLPKDoctorModuleRegistry;
+		ctx.readResponseError = options.readResponseError || ctx.registry?.get?.('supportRuntime')?.readResponseError;
+		ctx.getDraftRecovery = options.getDraftRecovery || (() => ctx.registry?.get?.('draftRecovery'));
+
+		// [module key or null for any, reason substrings, guidance], checked in order.
+		ctx.FAILURE_GUIDANCE_RULES = [
+			[null, ['thay đổi trong lúc'], 'Vui lòng kiểm tra thay đổi mới và lưu lại.'],
+			[null, ['đang tải'], 'Vui lòng đợi tải xong rồi thử lại.'],
+			[null, ['đang được lưu'], 'Vui lòng đợi thao tác hiện tại hoàn tất.'],
+			[null, ['chưa chọn ca khám'], 'Vui lòng chọn ca khám rồi thử lại.'],
+			[null, ['chưa tải đủ', 'chưa tải xong'], 'Vui lòng tải lại trang trước khi tiếp tục.'],
+			['prescription', ['chọn thuốc từ kho', 'danh sách thuốc trong kho', 'medicine_id'], 'Vui lòng chọn thuốc từ danh sách trong kho hoặc bật Nhập ngoài cơ sở.'],
+			['prescription', ['tái khám'], 'Vui lòng kiểm tra thông tin tái khám rồi lưu lại.']
+		];
+		ctx.MODULE_FAILURE_GUIDANCE = {
+			services: 'Vui lòng kiểm tra dịch vụ, số lượng và các trường bắt buộc.',
+			indications: 'Vui lòng kiểm tra chỉ định, người thực hiện và ngày thực hiện.',
+			clinical: 'Vui lòng kiểm tra các trường bắt buộc trong vùng Khám.'
+		};
+
+		return { saveNow: ctx.saveNow, saveWorkspace: ctx.saveWorkspace, resolveUnsavedChanges: ctx.resolveUnsavedChanges, completeNow: ctx.completeNow };
 	}
 
 	window.QLPKDoctorModuleRegistry.register('workspaceSaveController', { create }, {

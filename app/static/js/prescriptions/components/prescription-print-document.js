@@ -110,21 +110,15 @@
 			?.getAttribute('content') || '';
 	}
 
-	function create(options = {}) {
-		const hostDocument = options.document || document;
-		const hostWindow = hostDocument.defaultView || window;
-		const defaultOpenWindow = typeof window.open === 'function' ? window.open.bind(window) : null;
-		const openWindow = typeof options.openWindow === 'function' ? options.openWindow : defaultOpenWindow;
-		const activeDocumentUrls = new WeakMap();
-
+	function installPrintDocumentFns1(ctx) {
 		function getDocumentBaseUrl() {
-			const origin = hostDocument.location?.origin || hostWindow.location?.origin;
+			const origin = ctx.hostDocument.location?.origin || ctx.hostWindow.location?.origin;
 			return origin && origin !== 'null' ? `${origin}/` : '';
 		}
 
 		function createDocumentUrl(html) {
-			const UrlApi = hostWindow.URL || window.URL;
-			const BlobConstructor = hostWindow.Blob || window.Blob;
+			const UrlApi = ctx.hostWindow.URL || window.URL;
+			const BlobConstructor = ctx.hostWindow.Blob || window.Blob;
 			if (!UrlApi || typeof UrlApi.createObjectURL !== 'function' || typeof BlobConstructor !== 'function') {
 				throw new Error('Trình duyệt không hỗ trợ tài liệu in tạm thời');
 			}
@@ -132,9 +126,9 @@
 		}
 
 		function revokeDocumentUrl(printWindow, url) {
-			const UrlApi = hostWindow.URL || window.URL;
+			const UrlApi = ctx.hostWindow.URL || window.URL;
 			if (!UrlApi || typeof UrlApi.revokeObjectURL !== 'function') return;
-			if (activeDocumentUrls.get(printWindow) === url) activeDocumentUrls.delete(printWindow);
+			if (ctx.activeDocumentUrls.get(printWindow) === url) ctx.activeDocumentUrls.delete(printWindow);
 			UrlApi.revokeObjectURL(url);
 		}
 
@@ -143,8 +137,8 @@
 				throw new Error('Cửa sổ in đơn thuốc không còn khả dụng');
 			}
 			const url = createDocumentUrl(html);
-			const previousUrl = activeDocumentUrls.get(printWindow);
-			activeDocumentUrls.set(printWindow, url);
+			const previousUrl = ctx.activeDocumentUrls.get(printWindow);
+			ctx.activeDocumentUrls.set(printWindow, url);
 			if (previousUrl && typeof printWindow.addEventListener === 'function') {
 				printWindow.addEventListener('load', () => revokeDocumentUrl(printWindow, previousUrl), { once: true });
 			}
@@ -162,7 +156,7 @@
 			}
 			if (previousUrl) {
 				if (typeof printWindow.addEventListener !== 'function') {
-					hostWindow.setTimeout(() => revokeDocumentUrl(printWindow, previousUrl), 60000);
+					ctx.hostWindow.setTimeout(() => revokeDocumentUrl(printWindow, previousUrl), 60000);
 				}
 			}
 			return printWindow;
@@ -170,7 +164,7 @@
 
 		function resolvePreviewBuilder(input = {}) {
 			const builder = input.buildPrescriptionPreviewHTML
-				|| options.buildPrescriptionPreviewHTML
+				|| ctx.options.buildPrescriptionPreviewHTML
 				|| window.buildPrescriptionPreviewHTML;
 			if (typeof builder !== 'function') {
 				throw new Error('Thiếu mẫu tài liệu đơn thuốc dùng chung');
@@ -178,8 +172,12 @@
 			return builder;
 		}
 
+		Object.assign(ctx, { getDocumentBaseUrl, navigateDocument, resolvePreviewBuilder });
+	}
+
+	function installPrintDocumentFns2(ctx) {
 		function buildPagesHtml(input = {}) {
-			const buildPreview = resolvePreviewBuilder(input);
+			const buildPreview = ctx.resolvePreviewBuilder(input);
 			const pageModels = Array.isArray(input.pageModels)
 				? input.pageModels
 				: buildPageModels(input);
@@ -209,23 +207,23 @@
 
 		function open(input = {}) {
 			const title = input.title || DEFAULT_TITLE;
-			if (typeof openWindow !== 'function') {
+			if (typeof ctx.openWindow !== 'function') {
 				throw new Error('Trình duyệt không hỗ trợ cửa sổ in');
 			}
-			const printWindow = openWindow('', '_blank');
+			const printWindow = ctx.openWindow('', '_blank');
 			if (!printWindow) throw new Error('Trình duyệt đã chặn cửa sổ in');
-			return navigateDocument(printWindow, buildLoadingDocument(title));
+			return ctx.navigateDocument(printWindow, buildLoadingDocument(title));
 		}
 
 		function buildDocument(input = {}) {
 			const title = input.title || DEFAULT_TITLE;
-			const version = input.assetVersion || getAssetVersion(hostDocument);
+			const version = input.assetVersion || getAssetVersion(ctx.hostDocument);
 			const typographyUrl = buildAssetUrl('/static/css/shared/typography.css', version);
 			const colorTokensUrl = buildAssetUrl('/static/css/shared/color-tokens.css', version);
 			const printStylesUrl = buildAssetUrl('/static/css/prescriptions/components/prescription-print-document.css', version);
 			const formStylesUrl = buildAssetUrl('/static/css/prescriptions/components/prescription-standard-form.css', version);
 			const pagesHtml = buildPagesHtml(input);
-			const documentBaseUrl = getDocumentBaseUrl();
+			const documentBaseUrl = ctx.getDocumentBaseUrl();
 
 			return `<!DOCTYPE html>
 				<html lang="vi">
@@ -245,31 +243,51 @@
 				</html>`;
 		}
 
+		Object.assign(ctx, { buildPagesHtml, open, buildDocument });
+	}
+
+	function installPrintDocumentFns3(ctx) {
 		function render(printWindow, input = {}) {
 			if (!printWindow || printWindow.closed) {
 				throw new Error('Cửa sổ in đơn thuốc không còn khả dụng');
 			}
-			return window.QLPKPdfPreview.render(printWindow, buildDocument(input));
+			return window.QLPKPdfPreview.render(printWindow, ctx.buildDocument(input));
 		}
 
 		function renderError(printWindow, input = {}) {
 			if (!printWindow || printWindow.closed) return;
 			const title = input.title || DEFAULT_TITLE;
 			const message = input.message || 'Không thể chuẩn bị đơn thuốc';
-			navigateDocument(printWindow, `<!DOCTYPE html>
+			ctx.navigateDocument(printWindow, `<!DOCTYPE html>
 				<html lang="vi">
 				<head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
 				<body><h1>Không thể chuẩn bị đơn thuốc</h1><p>${escapeHtml(message)}</p></body>
 				</html>`);
 		}
 
+		Object.assign(ctx, { render, renderError });
+	}
+
+	function create(options = {}) {
+		const ctx = {};
+		ctx.options = options;
+		installPrintDocumentFns1(ctx);
+		installPrintDocumentFns2(ctx);
+		installPrintDocumentFns3(ctx);
+
+		ctx.hostDocument = ctx.options.document || document;
+		ctx.hostWindow = ctx.hostDocument.defaultView || window;
+		const defaultOpenWindow = typeof window.open === 'function' ? window.open.bind(window) : null;
+		ctx.openWindow = typeof ctx.options.openWindow === 'function' ? ctx.options.openWindow : defaultOpenWindow;
+		ctx.activeDocumentUrls = new WeakMap();
+
 		return {
-			buildDocument,
+			buildDocument: ctx.buildDocument,
 			buildPageModels,
-			buildPagesHtml,
-			open,
-			render,
-			renderError
+			buildPagesHtml: ctx.buildPagesHtml,
+			open: ctx.open,
+			render: ctx.render,
+			renderError: ctx.renderError
 		};
 	}
 

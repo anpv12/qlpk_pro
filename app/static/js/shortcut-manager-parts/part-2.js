@@ -4,44 +4,14 @@
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['shortcut-manager'] || (window.QLPKModuleParts['shortcut-manager'] = { state: {} });
 	const moduleState = moduleParts.state;
 
-	async function attachSettingsPage() {
-		if (!await moduleParts.claimSettingsPage()) return;
-
-		const form = document.getElementById('shortcutForm');
-		const idInput = document.getElementById('shortcutId');
-		const comboInput = document.getElementById('shortcutCombo');
-		const routeSelect = document.getElementById('shortcutRoute');
-		const urlInput = document.getElementById('shortcutUrl');
-		const comboPreview = document.getElementById('shortcutComboPreview');
-		const tbody = document.getElementById('shortcutTableBody');
-		const alertBox = document.getElementById('shortcutAlert');
-		const clearBtn = document.getElementById('shortcutClearBtn');
-		const scopeSelect = document.getElementById('shortcutScope');
-		const userSelect = document.getElementById('shortcutTargetUser');
-		const isAdmin = moduleParts.isAdminUser();
-		const currentUserId = moduleParts.currentUser().id || null;
-		const scopeWrap = document.getElementById('shortcutScopeInlineWrap');
-		const targetUserWrap = document.getElementById('shortcutTargetUserWrap');
-
-		if (isAdmin && scopeWrap) scopeWrap.style.display = '';
-		if (targetUserWrap) targetUserWrap.style.display = 'none';
-
-		moduleParts.initRouteOptions(routeSelect);
-		moduleParts.captureCombo(comboInput, comboPreview);
-
-		if (routeSelect) {
-			routeSelect.addEventListener('change', () => {
-				urlInput.value = routeSelect.value || '';
-			});
-		}
-
+	function installShortcutSettingsFns1(ctx) {
 		const getCurrentScope = () => {
-			if (!isAdmin || !scopeSelect) return 'mine';
-			return scopeSelect.value || 'mine';
+			if (!ctx.isAdmin || !ctx.scopeSelect) return 'mine';
+			return ctx.scopeSelect.value || 'mine';
 		};
 
 		const loadUsersForAdmin = async () => {
-			if (!moduleState.settingsCurrent() || !isAdmin || !userSelect) return;
+			if (!moduleState.settingsCurrent() || !ctx.isAdmin || !ctx.userSelect) return;
 			const res = await moduleParts.apiCall('/users/');
 			if (!res.ok) throw new Error('Không tải được danh sách user');
 			const users = await res.json();
@@ -51,12 +21,12 @@
 				const name = u.full_name || u.username || ('User #' + u.id);
 				moduleState.userNameById[u.id] = name;
 			});
-			userSelect.innerHTML = '<option value="">-- Chọn user --</option>' + (users || [])
+			ctx.userSelect.innerHTML = '<option value="">-- Chọn user --</option>' + (users || [])
 				.map(u => `<option value="${u.id}">${u.full_name || u.username || ('User #' + u.id)}</option>`).join('');
 		};
 
 		const fetchRowsForDisplay = async () => {
-			if (isAdmin) {
+			if (ctx.isAdmin) {
 				const [resUser, resGlobal] = await Promise.all([
 					moduleParts.apiCall('/api/user-shortcuts/all-users'),
 					moduleParts.apiCall('/api/user-shortcuts/global')
@@ -78,68 +48,135 @@
 			const rows = await fetchRowsForDisplay();
 			if (!moduleState.settingsCurrent()) return;
 			moduleState.currentRows = Array.isArray(rows) ? rows : [];
-			moduleParts.renderRows(moduleState.currentRows, tbody, {
-				isAdmin,
-				currentUserId,
-				targetUserName: (userSelect?.options?.[userSelect.selectedIndex]?.text || '')
+			moduleParts.renderRows(moduleState.currentRows, ctx.tbody, {
+				isAdmin: ctx.isAdmin,
+				currentUserId: ctx.currentUserId,
+				targetUserName: (ctx.userSelect?.options?.[ctx.userSelect.selectedIndex]?.text || '')
 			});
 			await moduleParts.refreshShortcuts();
 		};
-		moduleState.settingsReloadTable = reloadTable;
 
 		const resetForm = () => {
-			idInput.value = '';
-			if (routeSelect) routeSelect.value = '';
-			comboInput.value = '';
-			urlInput.value = '';
-			comboPreview.textContent = 'Chưa chọn';
+			ctx.idInput.value = '';
+			if (ctx.routeSelect) ctx.routeSelect.value = '';
+			ctx.comboInput.value = '';
+			ctx.urlInput.value = '';
+			ctx.comboPreview.textContent = 'Chưa chọn';
 		};
 
-		if (isAdmin && scopeSelect) {
-			scopeSelect.value = 'all-users';
-			scopeSelect.addEventListener('change', async () => {
-				if (targetUserWrap) targetUserWrap.style.display = scopeSelect.value === 'user' ? '' : 'none';
-				moduleParts.hideMessage(alertBox);
-				try { await reloadTable(); } catch (e) { moduleParts.showMessage(alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
+		function fillShortcutForm(row) {
+			ctx.idInput.value = row.id;
+			ctx.comboInput.value = row.combo_key || '';
+			ctx.urlInput.value = row.target_url || '';
+			if (ctx.routeSelect) ctx.routeSelect.value = row.target_url || '';
+			ctx.comboPreview.textContent = row.combo_key || 'Chưa chọn';
+		}
+
+		Object.assign(ctx, { getCurrentScope, loadUsersForAdmin, reloadTable, resetForm, fillShortcutForm });
+	}
+
+	function installShortcutSettingsFns2(ctx) {
+		async function deleteShortcut(id) {
+			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
+			if (!moduleState.settingsCurrent()) return;
+			try {
+				const res = await moduleParts.apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });
+				if (!moduleState.settingsCurrent()) return;
+				if (!res.ok) {
+					moduleParts.showMessage(ctx.alertBox, 'Không thể xóa phím tắt.', 'danger');
+					return;
+				}
+				moduleParts.showMessage(ctx.alertBox, 'Đã xóa phím tắt.', 'success');
+				await ctx.reloadTable();
+			} catch (err) {
+				moduleParts.showMessage(ctx.alertBox, 'Lỗi kết nối khi xóa phím tắt.', 'danger');
+			}
+		}
+
+		Object.assign(ctx, { deleteShortcut });
+	}
+
+	async function attachSettingsPage() {
+		const ctx = {};
+		installShortcutSettingsFns1(ctx);
+		installShortcutSettingsFns2(ctx);
+
+		if (!await moduleParts.claimSettingsPage()) return;
+
+		const form = document.getElementById('shortcutForm');
+		ctx.idInput = document.getElementById('shortcutId');
+		ctx.comboInput = document.getElementById('shortcutCombo');
+		ctx.routeSelect = document.getElementById('shortcutRoute');
+		ctx.urlInput = document.getElementById('shortcutUrl');
+		ctx.comboPreview = document.getElementById('shortcutComboPreview');
+		ctx.tbody = document.getElementById('shortcutTableBody');
+		ctx.alertBox = document.getElementById('shortcutAlert');
+		const clearBtn = document.getElementById('shortcutClearBtn');
+		ctx.scopeSelect = document.getElementById('shortcutScope');
+		ctx.userSelect = document.getElementById('shortcutTargetUser');
+		ctx.isAdmin = moduleParts.isAdminUser();
+		ctx.currentUserId = moduleParts.currentUser().id || null;
+		const scopeWrap = document.getElementById('shortcutScopeInlineWrap');
+		const targetUserWrap = document.getElementById('shortcutTargetUserWrap');
+
+		if (ctx.isAdmin && scopeWrap) scopeWrap.style.display = '';
+		if (targetUserWrap) targetUserWrap.style.display = 'none';
+
+		moduleParts.initRouteOptions(ctx.routeSelect);
+		moduleParts.captureCombo(ctx.comboInput, ctx.comboPreview);
+
+		if (ctx.routeSelect) {
+			ctx.routeSelect.addEventListener('change', () => {
+				ctx.urlInput.value = ctx.routeSelect.value || '';
+			});
+		}
+		moduleState.settingsReloadTable = ctx.reloadTable;
+
+		if (ctx.isAdmin && ctx.scopeSelect) {
+			ctx.scopeSelect.value = 'all-users';
+			ctx.scopeSelect.addEventListener('change', async () => {
+				if (targetUserWrap) targetUserWrap.style.display = ctx.scopeSelect.value === 'user' ? '' : 'none';
+				moduleParts.hideMessage(ctx.alertBox);
+				try { await ctx.reloadTable(); } catch (e) { moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
 			});
 		}
 
-		if (isAdmin && userSelect) {
-			userSelect.addEventListener('change', async () => {
-				if (getCurrentScope() === 'user') {
-					try { await reloadTable(); } catch (e) { moduleParts.showMessage(alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
+		if (ctx.isAdmin && ctx.userSelect) {
+			ctx.userSelect.addEventListener('change', async () => {
+				if (ctx.getCurrentScope() === 'user') {
+					try { await ctx.reloadTable(); } catch (e) { moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger'); }
 				}
 			});
 		}
 
 		clearBtn.addEventListener('click', function () {
-			resetForm();
-			moduleParts.hideMessage(alertBox);
+			ctx.resetForm();
+			moduleParts.hideMessage(ctx.alertBox);
 		});
 
 		form.addEventListener('submit', async function (e) {
 			e.preventDefault();
 			if (!moduleState.settingsCurrent()) { moduleParts.clearSessionState(); return; }
-			moduleParts.hideMessage(alertBox);
-			const combo = moduleParts.normalizeComboText(comboInput.value);
+			moduleParts.hideMessage(ctx.alertBox);
+			const combo = moduleParts.normalizeComboText(ctx.comboInput.value);
 			if (!combo) {
-				moduleParts.showMessage(alertBox, 'Tổ hợp phím không hợp lệ. Cần có phím bổ trợ (Ctrl/Alt/Shift) + phím chính.', 'warning');
+				moduleParts.showMessage(ctx.alertBox, 'Tổ hợp phím không hợp lệ. Cần có phím bổ trợ (Ctrl/Alt/Shift) + phím chính.', 'warning');
 				return;
 			}
 			const payload = {
 				combo_key: combo,
-				target_url: (urlInput.value || '').trim(),
+				target_url: (ctx.urlInput.value || '').trim(),
 				is_active: true
 			};
 			if (!payload.target_url || !moduleState.ALLOWED_NAV_URLS.has(payload.target_url)) {
-				moduleParts.showMessage(alertBox, 'URL đích không hợp lệ.', 'warning');
+				moduleParts.showMessage(ctx.alertBox, 'URL đích không hợp lệ.', 'warning');
 				return;
 			}
 
-			const id = idInput.value;
-			const target = moduleParts.resolveShortcutSaveRequest({ id, scope: getCurrentScope(), userSelect, currentUserId, payload });
+			const id = ctx.idInput.value;
+			const target = moduleParts.resolveShortcutSaveRequest({ id, scope: ctx.getCurrentScope(), userSelect: ctx.userSelect, currentUserId: ctx.currentUserId, payload });
 			if (target.warning) {
-				moduleParts.showMessage(alertBox, target.warning, 'warning');
+				moduleParts.showMessage(ctx.alertBox, target.warning, 'warning');
 				return;
 			}
 
@@ -148,43 +185,18 @@
 				const res = await moduleParts.apiCall(target.url, { method, body: JSON.stringify(payload) });
 				if (!moduleState.settingsCurrent()) return;
 				if (!res.ok) {
-					moduleParts.showMessage(alertBox, await moduleParts.readShortcutSaveError(res), 'danger');
+					moduleParts.showMessage(ctx.alertBox, await moduleParts.readShortcutSaveError(res), 'danger');
 					return;
 				}
-				moduleParts.showMessage(alertBox, 'Lưu phím tắt thành công.', 'success');
-				resetForm();
-				await reloadTable();
+				moduleParts.showMessage(ctx.alertBox, 'Lưu phím tắt thành công.', 'success');
+				ctx.resetForm();
+				await ctx.reloadTable();
 			} catch (err) {
-				moduleParts.showMessage(alertBox, 'Lỗi kết nối khi lưu phím tắt.', 'danger');
+				moduleParts.showMessage(ctx.alertBox, 'Lỗi kết nối khi lưu phím tắt.', 'danger');
 			}
 		});
 
-		function fillShortcutForm(row) {
-			idInput.value = row.id;
-			comboInput.value = row.combo_key || '';
-			urlInput.value = row.target_url || '';
-			if (routeSelect) routeSelect.value = row.target_url || '';
-			comboPreview.textContent = row.combo_key || 'Chưa chọn';
-		}
-
-		async function deleteShortcut(id) {
-			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
-			if (!moduleState.settingsCurrent()) return;
-			try {
-				const res = await moduleParts.apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });
-				if (!moduleState.settingsCurrent()) return;
-				if (!res.ok) {
-					moduleParts.showMessage(alertBox, 'Không thể xóa phím tắt.', 'danger');
-					return;
-				}
-				moduleParts.showMessage(alertBox, 'Đã xóa phím tắt.', 'success');
-				await reloadTable();
-			} catch (err) {
-				moduleParts.showMessage(alertBox, 'Lỗi kết nối khi xóa phím tắt.', 'danger');
-			}
-		}
-
-		tbody.addEventListener('click', async function (e) {
+		ctx.tbody.addEventListener('click', async function (e) {
 			if (!moduleState.settingsCurrent()) { moduleParts.clearSessionState(); return; }
 			const btn = e.target.closest('button[data-action]');
 			if (!btn) return;
@@ -196,20 +208,20 @@
 			if (!row) return;
 
 			if (action === 'edit') {
-				fillShortcutForm(row);
+				ctx.fillShortcutForm(row);
 				return;
 			}
 
-			if (action === 'delete') await deleteShortcut(id);
+			if (action === 'delete') await ctx.deleteShortcut(id);
 		});
 
 		try {
-			if (isAdmin && scopeSelect) {
-				await loadUsersForAdmin();
+			if (ctx.isAdmin && ctx.scopeSelect) {
+				await ctx.loadUsersForAdmin();
 			}
-			await reloadTable();
+			await ctx.reloadTable();
 		} catch (e) {
-			moduleParts.showMessage(alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger');
+			moduleParts.showMessage(ctx.alertBox, 'Không thể tải phím tắt. Vui lòng thử lại.', 'danger');
 		}
 	}
 

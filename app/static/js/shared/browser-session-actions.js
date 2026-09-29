@@ -1,13 +1,7 @@
 (function (window) {
 	'use strict';
 
-	function create(options) {
-		const owner = options.owner;
-		const send = options.fetch || window.fetch.bind(window);
-		const locks = options.locks || window.navigator.locks;
-		const origin = options.origin || window.location.origin;
-		let pending = false;
-
+	function installSessionActionFns1(ctx) {
 		function failure(code, message) {
 			const error = new Error(message);
 			error.code = code;
@@ -15,15 +9,15 @@
 		}
 
 		async function exclusive(action) {
-			if (pending) throw failure('session.busy', 'Một thao tác phiên đang được xử lý.');
-			if (!locks || typeof locks.request !== 'function') {
+			if (ctx.pending) throw failure('session.busy', 'Một thao tác phiên đang được xử lý.');
+			if (!ctx.locks || typeof ctx.locks.request !== 'function') {
 				throw failure('session.lock_unavailable', 'Trình duyệt chưa hỗ trợ khóa phiên an toàn giữa các tab.');
 			}
-			pending = true;
+			ctx.pending = true;
 			try {
-				return await locks.request('qlpk:browser-session-mutation', { mode: 'exclusive' }, action);
+				return await ctx.locks.request('qlpk:browser-session-mutation', { mode: 'exclusive' }, action);
 			} finally {
-				pending = false;
+				ctx.pending = false;
 			}
 		}
 
@@ -31,10 +25,10 @@
 			if (!expected.session || expected.status !== 'authenticated') {
 				throw failure('session.required', 'Cần đăng nhập trước khi thao tác.');
 			}
-			const current = await owner.bootstrap();
+			const current = await ctx.owner.bootstrap();
 			if (allowAnonymous && current.status === 'anonymous') return current;
 			if (!current.session || current.session.id !== expected.session.id) {
-				owner.invalidate('changed');
+				ctx.owner.invalidate('changed');
 				throw failure('session.changed', 'Phiên đã thay đổi trong lúc chờ; thao tác chưa được gửi.');
 			}
 			return current;
@@ -59,62 +53,80 @@
 				return Promise.reject(failure('session.invalid_input', 'Vui lòng nhập tài khoản và mật khẩu.'));
 			}
 			return exclusive(async () => {
-				owner.invalidate('auth-changing');
-				const expected = owner.snapshot().revision;
+				ctx.owner.invalidate('auth-changing');
+				const expected = ctx.owner.snapshot().revision;
 				try {
-					const response = await send(new URL('/auth/login', origin).href, {
+					const response = await ctx.send(new URL('/auth/login', ctx.origin).href, {
 						method: 'POST', credentials: 'same-origin', cache: 'no-store',
 						headers: { 'Content-Type': 'application/json', 'X-QLPK-Session': 'cookie' },
 						body: JSON.stringify({ username, password }),
 					});
-					return owner.replace(await parseResponse(response), expected, true);
+					return ctx.owner.replace(await parseResponse(response), expected, true);
 				} catch (error) {
-					owner.invalidate('unavailable', true);
+					ctx.owner.invalidate('unavailable', true);
 					throw error;
 				}
 			});
 		}
 
+		Object.assign(ctx, { failure, exclusive, sameSession, parseResponse, login });
+	}
+
+	function installSessionActionFns2(ctx) {
 		function changePassword(currentPassword, newPassword) {
 			if (typeof currentPassword !== 'string' || !currentPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
-				return Promise.reject(failure('session.invalid_input', 'Mật khẩu hiện tại và mật khẩu mới chưa hợp lệ.'));
+				return Promise.reject(ctx.failure('session.invalid_input', 'Mật khẩu hiện tại và mật khẩu mới chưa hợp lệ.'));
 			}
-			const expected = owner.snapshot();
-			return exclusive(async () => {
-				const current = await sameSession(expected);
+			const expected = ctx.owner.snapshot();
+			return ctx.exclusive(async () => {
+				const current = await ctx.sameSession(expected);
 				try {
-					const result = await owner.request('/users/me/password', {
+					const result = await ctx.owner.request('/users/me/password', {
 						method: 'PUT', headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
 					});
-					return owner.replace(await parseResponse(result.response), current.revision, true);
+					return ctx.owner.replace(await ctx.parseResponse(result.response), current.revision, true);
 				} catch (error) {
-					if (!error.status || error.status >= 500) owner.invalidate('unavailable', true);
+					if (!error.status || error.status >= 500) ctx.owner.invalidate('unavailable', true);
 					throw error;
 				}
 			});
 		}
 
 		function logout(onConfirmed) {
-			const expected = owner.snapshot();
-			return exclusive(async () => {
-				const current = await sameSession(expected, true);
+			const expected = ctx.owner.snapshot();
+			return ctx.exclusive(async () => {
+				const current = await ctx.sameSession(expected, true);
 				if (current.status !== 'anonymous') {
-					const result = await owner.request('/auth/logout', { method: 'POST' });
-					const payload = await parseResponse(result.response);
-					if (payload.success !== true) throw failure('session.invalid_response', 'Máy chủ chưa xác nhận đăng xuất.');
-					if (owner.snapshot().revision !== result.revision) {
-						throw failure('session.changed', 'Phiên đã thay đổi; không dọn dữ liệu của phiên mới.');
+					const result = await ctx.owner.request('/auth/logout', { method: 'POST' });
+					const payload = await ctx.parseResponse(result.response);
+					if (payload.success !== true) throw ctx.failure('session.invalid_response', 'Máy chủ chưa xác nhận đăng xuất.');
+					if (ctx.owner.snapshot().revision !== result.revision) {
+						throw ctx.failure('session.changed', 'Phiên đã thay đổi; không dọn dữ liệu của phiên mới.');
 					}
 				}
-				owner.invalidate('anonymous', true);
+				ctx.owner.invalidate('anonymous', true);
 				const confirmation = Object.freeze({ confirmed: true, previousSessionId: expected.session.id, userId: expected.session.user.id });
 				if (typeof onConfirmed === 'function') await onConfirmed(confirmation);
 				return confirmation;
 			});
 		}
 
-		return Object.freeze({ login, changePassword, logout, isPending: () => pending });
+		Object.assign(ctx, { changePassword, logout });
+	}
+
+	function create(options) {
+		const ctx = {};
+		installSessionActionFns1(ctx);
+		installSessionActionFns2(ctx);
+
+		ctx.owner = options.owner;
+		ctx.send = options.fetch || window.fetch.bind(window);
+		ctx.locks = options.locks || window.navigator.locks;
+		ctx.origin = options.origin || window.location.origin;
+		ctx.pending = false;
+
+		return Object.freeze({ login: ctx.login, changePassword: ctx.changePassword, logout: ctx.logout, isPending: () => ctx.pending });
 	}
 
 	window.QLPKBrowserSessionActions = Object.freeze({ create });

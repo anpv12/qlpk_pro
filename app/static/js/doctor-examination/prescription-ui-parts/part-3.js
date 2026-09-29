@@ -54,11 +54,7 @@
 		if (action === 'reuse') reusePrescriptionVisit(doc, visits[index]);
 	}
 
-		Object.assign(inst, {
-			handlePrescriptionInput,
-			runPrescriptionAction,
-			runPrescriptionHistoryAction
-		});
+		Object.assign(inst, { handlePrescriptionInput, runPrescriptionAction, runPrescriptionHistoryAction });
 	});
 	function bindPrescriptionClickActions(inst, doc) {
 		doc.addEventListener('click', event => {
@@ -185,9 +181,7 @@
 		return true;
 	}
 
-		Object.assign(inst, {
-			bind
-		});
+		Object.assign(inst, { bind });
 	});
 	moduleParts.installers.push(function (inst) {
 	function load(context = {}) {
@@ -214,9 +208,6 @@
 		return Boolean(inst.STATE.prescriptionDirty);
 	}
 
-		Object.assign(inst, {
-			load,
-			hasUnsavedChanges
-		});
+		Object.assign(inst, { load, hasUnsavedChanges });
 	});
 })(window);

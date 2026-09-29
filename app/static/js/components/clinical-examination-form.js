@@ -30,9 +30,377 @@
 		};
 	}
 
+	function installClinicalFormFns1(ctx) {
+		function getMedicationInstance(doc, field) {
+			const root = ctx.getElement(doc, field.autocompleteRootId);
+			if (!root || !ctx.config.medicationSearchEndpoint) return null;
+			if (ctx.medicationInstances.has(root)) return ctx.medicationInstances.get(root);
+			const control = ctx.getElement(doc, field.controlId);
+			const label = item => item.label || [item.name, item.strength].filter(Boolean).join(' · ');
+			const Autocomplete = REGISTRY.require('autocompleteField');
+			const instance = new Autocomplete(root, {
+				limit: 12, emptyQueryLimit: 12,
+				getKey: label,
+				getLabel: label,
+				getDescription: item => [item.registration_number && `SĐK: ${item.registration_number}`,
+					item.manufacturer_name].filter(Boolean).join(' · '),
+				isEnabled: () => !ctx.isLoading() && Boolean(ctx.state.appointment?.id) && !control.disabled,
+				loadOptions: async (query, { skip, limit, signal }) => {
+					const params = new URLSearchParams({ mode: 'autocomplete', status: 'all',
+						search: query, page: Math.floor(skip / limit) + 1, per_page: limit });
+					const response = await ctx.apiCall(`${ctx.config.medicationSearchEndpoint}?${params}`, { signal });
+					if (!response.ok) throw new Error('dav-search-failed');
+					const payload = await response.json();
+					if (!payload.success || !Array.isArray(payload.data)) throw new Error('dav-search-invalid');
+					return { data: payload.data, pagination: { per_page: limit, has_next: payload.has_more } };
+				},
+				onChange: values => {
+					if (ctx.isLoading()) return;
+					const names = values.map(label);
+					control.value = names.length ? JSON.stringify(names) : '';
+					ctx.markDirty(control);
+				}
+			});
+			const adapter = {
+				reset: () => instance.setSelected(ctx.parseMedicationText(control.value).map(name => ({ label: name })), { silent: true })
+			};
+			ctx.medicationInstances.set(root, adapter);
+			return adapter;
+		}
+
+		function getIcdAuthHeader() {
+			return ctx.config.getAuthHeader?.()
+				|| REGISTRY.get('pageRuntime')?.getAuthHeader?.()
+				|| null;
+		}
+
+		function getIcdInstance(doc, field) {
+			const IcdAutocomplete = REGISTRY.get('icdAutocomplete');
+			if (!field?.autocompleteRootId || !IcdAutocomplete) return null;
+			const root = ctx.getElement(doc, field.autocompleteRootId);
+			if (!root) return null;
+			if (ctx.icdInstances.has(root)) return ctx.icdInstances.get(root);
+			const instance = new IcdAutocomplete(root, {
+				multiple: true,
+				selectionKey: 'id',
+				getAuthHeader: getIcdAuthHeader,
+				onChange: selected => {
+					if (ctx.isLoading()) return;
+					const ids = selected.map(item => Number(item?.id)).filter(id => Number.isInteger(id) && id > 0);
+					ctx.setValue(doc, field.hiddenControlId, JSON.stringify(ids));
+					ctx.markDirty(ctx.getElement(doc, field.controlId));
+				}
+			});
+			ctx.icdInstances.set(root, instance);
+			return instance;
+		}
+
+		Object.assign(ctx, { getMedicationInstance, getIcdAuthHeader, getIcdInstance });
+	}
+
+	function installClinicalFormFns2(ctx) {
+		async function applyIcdSelection(doc, field, ids, token) {
+			const instance = ctx.getIcdInstance(doc, field);
+			if (!instance) return false;
+			const loader = REGISTRY.get('icdDataLoader')?.loadICDData;
+			if (!ids.length || typeof loader !== 'function') {
+				instance.clear({ silent: true });
+				ctx.setValue(doc, field.controlId, '');
+				return false;
+			}
+			const selected = await loader('', {
+				ids,
+				limit: ids.length,
+				getAuthHeader: ctx.getIcdAuthHeader
+			});
+			if (token !== ctx.state.contextToken) return false;
+			instance.setSelected(Array.isArray(selected) ? selected : [], { silent: true });
+			ctx.setValue(doc, field.controlId, '');
+			return true;
+		}
+
+		async function hydrateIcdField(doc, field, examination, token) {
+			const ids = parseIdList(examination[field.idSourceKey]);
+			if (await applyIcdSelection(doc, field, ids, token)) {
+				ctx.setValue(doc, field.hiddenControlId, JSON.stringify(ids));
+			}
+		}
+
+		function serializeIcdDraftValue(doc, field) {
+			return JSON.stringify(ctx.serializeIcdField(doc, field.hiddenControlId));
+		}
+
+		async function restoreIcdDraftField(doc, field, rawValue, token) {
+			const instance = ctx.getIcdInstance(doc, field);
+			if (!instance) return;
+			const ids = parseIdList(rawValue);
+			ctx.setValue(doc, field.hiddenControlId, JSON.stringify(ids));
+			try {
+				await applyIcdSelection(doc, field, ids, token);
+			} catch (error) {
+				if (token !== ctx.state.contextToken) return;
+				instance.clear({ silent: true });
+				ctx.setValue(doc, field.controlId, '');
+			}
+		}
+
+		function bindIcdFields(doc) {
+			Object.values(ctx.config.mainFields)
+				.filter(field => field.kind === 'icd')
+				.forEach(field => ctx.getIcdInstance(doc, field));
+		}
+
+		function parseIdList(raw) {
+			if (!ctx.hasValue(raw)) return [];
+			try {
+				const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+				const values = Array.isArray(parsed) ? parsed : [parsed];
+				return values
+					.map(item => (typeof item === 'object' && item ? item.id : item))
+					.filter(item => item !== null && item !== undefined && String(item).trim() !== '')
+					.map(item => Number(item))
+					.filter(item => Number.isInteger(item) && item > 0);
+			} catch (error) {
+				return [];
+			}
+		}
+
+		Object.assign(ctx, { hydrateIcdField, serializeIcdDraftValue, restoreIcdDraftField, bindIcdFields, parseIdList });
+	}
+
+	function installClinicalFormFns3(ctx) {
+		function parseMedicationText(raw) {
+			const value = ctx.textOf(raw);
+			if (!value) return [];
+			try {
+				const parsed = JSON.parse(value);
+				if (Array.isArray(parsed)) {
+					return parsed.map(item => typeof item === 'string'
+						? item.trim()
+						: ctx.textOf(item && (item.name || item.medicine_name || item.label || item.value)))
+						.filter(Boolean);
+				}
+			} catch (error) {
+				// Plain text remains valid for the existing examination payload.
+			}
+			return value.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
+		}
+
+		function serializeMedicationInput(raw) {
+			const items = parseMedicationText(raw);
+			return items.length ? JSON.stringify(items) : '';
+		}
+
+		function serializeIcdField(doc, hiddenId) {
+			if (!hiddenId) return [];
+			return ctx.parseIdList(ctx.getValue(doc, hiddenId));
+		}
+
+		function readPayloadValue(field, examination, patient) {
+			if (!field) return '';
+			const source = field.source === 'patient' ? patient : examination;
+			return source[field.sourceKey || field.payloadKey];
+		}
+
+		function isLoading() {
+			return typeof ctx.state.isLoading === 'function' && ctx.state.isLoading();
+		}
+
+		function ownsField(target) {
+			const root = target && target.closest ? target.closest(`#${ctx.config.rootId}`) : null;
+			return Boolean(root && ctx.fieldIds.includes(target.id));
+		}
+
+		function markDirty(control) {
+			if (isLoading()) return;
+			const config = ctx.detailsPersistence.getConfig(control);
+			if (config) ctx.DETAIL_CHANGES.mark(config.section);
+			else ctx.MAIN_CHANGES.mark();
+			ctx.syncDirtyState();
+		}
+
+		function handleFieldMutation(event) {
+			const target = event && event.target;
+			if (!target || !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || !ownsField(target)) return false;
+			markDirty(target);
+			return true;
+		}
+
+		Object.assign(ctx, {
+			parseMedicationText, serializeMedicationInput, serializeIcdField, readPayloadValue, isLoading, ownsField,
+			markDirty, handleFieldMutation
+		});
+	}
+
+	function installClinicalFormFns4(ctx) {
+		function clear(options = {}) {
+			const doc = ctx.getDocument(options);
+			ctx.state.contextToken += 1;
+			ctx.state.appointment = null;
+			ctx.state.patientId = null;
+			ctx.state.examinationId = null;
+			ctx.state.currentData = null;
+			ctx.state.detailsLoading = false;
+			ctx.state.detailsLoaded = false;
+			ctx.state.detailsLoadError = null;
+			ctx.state.detailsLoadPromise = null;
+			ctx.state.icdLoadPromise = null;
+			ctx.MAIN_CHANGES.reset();
+			ctx.DETAIL_CHANGES.reset();
+			ctx.icdInstances.forEach(instance => instance.clear({ silent: true }));
+			ctx.fieldIds.forEach(id => ctx.setValue(doc, id, ''));
+			ctx.medicationInstances.forEach(instance => instance.reset());
+			ctx.syncDirtyState();
+		}
+
+		function renderClinicalFields(doc, payload = {}, token = ctx.state.contextToken) {
+			const examination = payload.examination_info || {};
+			const patient = payload.patient_info || {};
+			Object.values(ctx.config.mainFields).forEach(field => {
+				let value = ctx.readPayloadValue(field, examination, patient);
+				if (field.kind === 'medication') value = ctx.serializeMedicationInput(value);
+				if (field.kind === 'icd') value = '';
+				ctx.setValue(doc, field.controlId, value);
+				if (field.kind === 'medication') ctx.getMedicationInstance(doc, field)?.reset();
+				if (field.hiddenControlId) {
+					const ids = examination[field.idSourceKey];
+					ctx.setValue(doc, field.hiddenControlId, JSON.stringify(ctx.parseIdList(ids)));
+				}
+			});
+			ctx.config.detailFields.forEach(field => ctx.setValue(doc, field.controlId, ''));
+			ctx.state.icdLoadPromise = Promise.all(
+				Object.values(ctx.config.mainFields)
+					.filter(field => field.kind === 'icd')
+					.map(field => ctx.hydrateIcdField(doc, field, examination, token))
+			).finally(() => {
+				if (token === ctx.state.contextToken) ctx.state.icdLoadPromise = null;
+			});
+		}
+
+		Object.assign(ctx, { clear, renderClinicalFields });
+	}
+
+	function installClinicalFormFns5(ctx) {
+		function render(payload = {}, options = {}) {
+			const doc = ctx.getDocument(options);
+			const appointment = payload || {};
+			ctx.state.contextToken += 1;
+			const token = ctx.state.contextToken;
+			const examination = payload.examination_info || {};
+			const patient = payload.patient_info || {};
+			ctx.state.appointment = appointment;
+			ctx.state.patientId = ctx.textOf(patient.id || appointment.patient_id);
+			ctx.state.examinationId = ctx.textOf(examination.id || appointment.examination_id);
+			ctx.state.currentData = payload;
+			ctx.MAIN_CHANGES.reset();
+			ctx.DETAIL_CHANGES.reset();
+			ctx.state.detailsLoaded = false;
+			ctx.state.detailsLoadError = null;
+			ctx.renderClinicalFields(doc, payload, token);
+			const appointmentId = ctx.textOf(appointment.id);
+			if (!appointmentId) return Promise.resolve(false);
+			const detailsLoadPromise = ctx.detailsPersistence.load(doc, appointmentId, token);
+			ctx.state.detailsLoadPromise = detailsLoadPromise;
+			detailsLoadPromise.catch(() => {});
+			return detailsLoadPromise;
+		}
+
+		function collect(options = {}) {
+			const doc = ctx.getDocument(options);
+			return Object.values(ctx.config.mainFields).reduce((payload, field) => {
+				if (!field.payloadKey) return payload;
+				if (field.kind === 'icd') payload[field.payloadKey] = ctx.serializeIcdField(doc, field.hiddenControlId);
+				else if (field.kind === 'medication') payload[field.payloadKey] = ctx.serializeMedicationInput(ctx.getValue(doc, field.controlId));
+				else payload[field.payloadKey] = ctx.getValue(doc, field.controlId);
+				return payload;
+			}, {});
+		}
+
+		function getDraftSnapshot(options = {}) {
+			const doc = ctx.getDocument(options);
+			const controls = {};
+			ctx.fieldDefinitions.forEach(field => {
+				const controlId = field.kind === 'icd' ? field.hiddenControlId : field.controlId;
+				if (!controlId) return;
+				const control = ctx.getElement(doc, controlId);
+				if (!control) return;
+				if (field.kind === 'icd') controls[controlId] = ctx.serializeIcdDraftValue(doc, field);
+				else controls[controlId] = control.type === 'checkbox' ? Boolean(control.checked) : ctx.textOf(control.value);
+			});
+			return { controls };
+		}
+
+		Object.assign(ctx, { render, collect, getDraftSnapshot });
+	}
+
+	function installClinicalFormFns6(ctx) {
+		async function restoreDraftSnapshot(snapshot = {}, options = {}) {
+			const doc = ctx.getDocument(options);
+			const isCurrent = typeof options.isCurrent === 'function' ? options.isCurrent : () => true;
+			if (!isCurrent()) return { restored: 0 };
+			const controls = snapshot && snapshot.controls && typeof snapshot.controls === 'object' ? snapshot.controls : {};
+			let restored = 0;
+			const detailSections = new Set();
+			let mainRestored = false;
+			Object.entries(controls).forEach(([id, value]) => {
+				if (!isCurrent()) return;
+				if (!ctx.fieldIds.includes(id)) return;
+				const field = ctx.fieldByControlId.get(id) || ctx.fieldByHiddenControlId.get(id);
+				if (field?.kind === 'icd' && id === field.controlId) return;
+				const control = ctx.getElement(doc, id);
+				if (!control) return;
+				if (control.type === 'checkbox') control.checked = Boolean(value);
+				else control.value = field?.kind === 'icd' ? JSON.stringify(ctx.parseIdList(value)) : ctx.textOf(value);
+				if (field?.kind === 'medication') {
+					control.value = ctx.serializeMedicationInput(value);
+					ctx.getMedicationInstance(doc, field)?.reset();
+				}
+				const config = ctx.detailsPersistence.getConfig(control);
+				if (config) detailSections.add(config.section);
+				else mainRestored = true;
+				restored += 1;
+			});
+			const token = ctx.state.contextToken;
+			await Promise.all(Object.values(ctx.config.mainFields)
+				.filter(field => field.kind === 'icd' && field.hiddenControlId && Object.prototype.hasOwnProperty.call(controls, field.hiddenControlId))
+				.map(field => ctx.restoreIcdDraftField(doc, field, controls[field.hiddenControlId], token)));
+			if (!isCurrent()) return { restored: 0 };
+			if (restored) {
+				if (mainRestored) ctx.MAIN_CHANGES.mark();
+				detailSections.forEach(section => ctx.DETAIL_CHANGES.mark(section));
+				ctx.syncDirtyState();
+			}
+			return { restored };
+		}
+
+		function bind(options = {}) {
+			const doc = ctx.getDocument(options);
+			ctx.state.isLoading = options.isLoading || ctx.state.isLoading;
+			const root = ctx.getElement(doc, ctx.config.rootId);
+			if (!root || ctx.bound) return Boolean(root);
+			ctx.bindIcdFields(doc);
+			Object.values(ctx.config.mainFields).filter(field => field.kind === 'medication')
+				.forEach(field => ctx.getMedicationInstance(doc, field));
+			root.addEventListener('input', ctx.handleFieldMutation);
+			root.addEventListener('change', ctx.handleFieldMutation);
+			ctx.bound = true;
+			return true;
+		}
+
+		Object.assign(ctx, { restoreDraftSnapshot, bind });
+	}
+
 	function create(options = {}) {
-		const config = mergeConfig(options.config);
-		const state = {
+		const ctx = {};
+		installClinicalFormFns1(ctx);
+		installClinicalFormFns2(ctx);
+		installClinicalFormFns3(ctx);
+		installClinicalFormFns4(ctx);
+		installClinicalFormFns5(ctx);
+		installClinicalFormFns6(ctx);
+
+		ctx.config = mergeConfig(options.config);
+		ctx.state = {
 			contextToken: 0,
 			appointment: null,
 			patientId: null,
@@ -49,419 +417,86 @@
 			icdLoadPromise: null,
 			isLoading: options.isLoading || (() => false)
 		};
-		const MAIN_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
-		const DETAIL_CHANGES = RUNTIME.createSectionChangeTracker(state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
-		const getDocument = options.getDocument || RUNTIME.getDocument;
-		const getElement = options.getElement || ((doc, id) => doc.getElementById(id));
-		const getValue = options.getValue || ((doc, id) => {
-			const element = getElement(doc, id);
+		ctx.MAIN_CHANGES = RUNTIME.createChangeTracker(ctx.state, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
+		ctx.DETAIL_CHANGES = RUNTIME.createSectionChangeTracker(ctx.state, { revisionsKey: 'detailRevisions', dirtyKey: 'detailDirtySections' });
+		ctx.getDocument = options.getDocument || RUNTIME.getDocument;
+		ctx.getElement = options.getElement || ((doc, id) => doc.getElementById(id));
+		ctx.getValue = options.getValue || ((doc, id) => {
+			const element = ctx.getElement(doc, id);
 			return element ? String(element.value || '').trim() : '';
 		});
-		const setValue = options.setValue || ((doc, id, value) => {
-			const element = getElement(doc, id);
+		ctx.setValue = options.setValue || ((doc, id, value) => {
+			const element = ctx.getElement(doc, id);
 			if (element) element.value = value == null ? '' : String(value);
 		});
-		const textOf = options.textOf || (value => value == null ? '' : String(value).trim());
-		const hasValue = options.hasValue || (value => value !== undefined && value !== null && String(value).trim() !== '');
-		const syncDirtyState = options.syncDirtyState || (() => {});
-		const apiCall = options.apiCall || (() => Promise.reject(new Error('missing-api-call')));
-		const fieldDefinitions = Object.values(config.mainFields).concat(config.detailFields);
-		const fieldIds = fieldDefinitions.flatMap(field => [field.controlId, field.hiddenControlId]).filter(Boolean);
-		const fieldByControlId = new Map(fieldDefinitions.map(field => [field.controlId, field]));
-		const fieldByHiddenControlId = new Map(fieldDefinitions
+		ctx.textOf = options.textOf || (value => value == null ? '' : String(value).trim());
+		ctx.hasValue = options.hasValue || (value => value !== undefined && value !== null && String(value).trim() !== '');
+		ctx.syncDirtyState = options.syncDirtyState || (() => {});
+		ctx.apiCall = options.apiCall || (() => Promise.reject(new Error('missing-api-call')));
+		ctx.fieldDefinitions = Object.values(ctx.config.mainFields).concat(ctx.config.detailFields);
+		ctx.fieldIds = ctx.fieldDefinitions.flatMap(field => [field.controlId, field.hiddenControlId]).filter(Boolean);
+		ctx.fieldByControlId = new Map(ctx.fieldDefinitions.map(field => [field.controlId, field]));
+		ctx.fieldByHiddenControlId = new Map(ctx.fieldDefinitions
 			.filter(field => field.hiddenControlId)
 			.map(field => [field.hiddenControlId, field]));
-		const icdInstances = new Map();
-		const medicationInstances = new Map();
-		let bound = false;
+		ctx.icdInstances = new Map();
+		ctx.medicationInstances = new Map();
+		ctx.bound = false;
 
-		function getMedicationInstance(doc, field) {
-			const root = getElement(doc, field.autocompleteRootId);
-			if (!root || !config.medicationSearchEndpoint) return null;
-			if (medicationInstances.has(root)) return medicationInstances.get(root);
-			const control = getElement(doc, field.controlId);
-			const label = item => item.label || [item.name, item.strength].filter(Boolean).join(' · ');
-			const Autocomplete = REGISTRY.require('autocompleteField');
-			const instance = new Autocomplete(root, {
-				limit: 12, emptyQueryLimit: 12,
-				getKey: label,
-				getLabel: label,
-				getDescription: item => [item.registration_number && `SĐK: ${item.registration_number}`,
-					item.manufacturer_name].filter(Boolean).join(' · '),
-				isEnabled: () => !isLoading() && Boolean(state.appointment?.id) && !control.disabled,
-				loadOptions: async (query, { skip, limit, signal }) => {
-					const params = new URLSearchParams({ mode: 'autocomplete', status: 'all',
-						search: query, page: Math.floor(skip / limit) + 1, per_page: limit });
-					const response = await apiCall(`${config.medicationSearchEndpoint}?${params}`, { signal });
-					if (!response.ok) throw new Error('dav-search-failed');
-					const payload = await response.json();
-					if (!payload.success || !Array.isArray(payload.data)) throw new Error('dav-search-invalid');
-					return { data: payload.data, pagination: { per_page: limit, has_next: payload.has_more } };
-				},
-				onChange: values => {
-					if (isLoading()) return;
-					const names = values.map(label);
-					control.value = names.length ? JSON.stringify(names) : '';
-					markDirty(control);
-				}
-			});
-			const adapter = {
-				reset: () => instance.setSelected(parseMedicationText(control.value).map(name => ({ label: name })), { silent: true })
-			};
-			medicationInstances.set(root, adapter);
-			return adapter;
-		}
-
-		function getIcdAuthHeader() {
-			return config.getAuthHeader?.()
-				|| REGISTRY.get('pageRuntime')?.getAuthHeader?.()
-				|| null;
-		}
-
-		function getIcdInstance(doc, field) {
-			const IcdAutocomplete = REGISTRY.get('icdAutocomplete');
-			if (!field?.autocompleteRootId || !IcdAutocomplete) return null;
-			const root = getElement(doc, field.autocompleteRootId);
-			if (!root) return null;
-			if (icdInstances.has(root)) return icdInstances.get(root);
-			const instance = new IcdAutocomplete(root, {
-				multiple: true,
-				selectionKey: 'id',
-				getAuthHeader: getIcdAuthHeader,
-				onChange: selected => {
-					if (isLoading()) return;
-					const ids = selected.map(item => Number(item?.id)).filter(id => Number.isInteger(id) && id > 0);
-					setValue(doc, field.hiddenControlId, JSON.stringify(ids));
-					markDirty(getElement(doc, field.controlId));
-				}
-			});
-			icdInstances.set(root, instance);
-			return instance;
-		}
-
-		async function applyIcdSelection(doc, field, ids, token) {
-			const instance = getIcdInstance(doc, field);
-			if (!instance) return false;
-			const loader = REGISTRY.get('icdDataLoader')?.loadICDData;
-			if (!ids.length || typeof loader !== 'function') {
-				instance.clear({ silent: true });
-				setValue(doc, field.controlId, '');
-				return false;
-			}
-			const selected = await loader('', {
-				ids,
-				limit: ids.length,
-				getAuthHeader: getIcdAuthHeader
-			});
-			if (token !== state.contextToken) return false;
-			instance.setSelected(Array.isArray(selected) ? selected : [], { silent: true });
-			setValue(doc, field.controlId, '');
-			return true;
-		}
-
-		async function hydrateIcdField(doc, field, examination, token) {
-			const ids = parseIdList(examination[field.idSourceKey]);
-			if (await applyIcdSelection(doc, field, ids, token)) {
-				setValue(doc, field.hiddenControlId, JSON.stringify(ids));
-			}
-		}
-
-		function serializeIcdDraftValue(doc, field) {
-			return JSON.stringify(serializeIcdField(doc, field.hiddenControlId));
-		}
-
-		async function restoreIcdDraftField(doc, field, rawValue, token) {
-			const instance = getIcdInstance(doc, field);
-			if (!instance) return;
-			const ids = parseIdList(rawValue);
-			setValue(doc, field.hiddenControlId, JSON.stringify(ids));
-			try {
-				await applyIcdSelection(doc, field, ids, token);
-			} catch (error) {
-				if (token !== state.contextToken) return;
-				instance.clear({ silent: true });
-				setValue(doc, field.controlId, '');
-			}
-		}
-
-		function bindIcdFields(doc) {
-			Object.values(config.mainFields)
-				.filter(field => field.kind === 'icd')
-				.forEach(field => getIcdInstance(doc, field));
-		}
-
-		function parseIdList(raw) {
-			if (!hasValue(raw)) return [];
-			try {
-				const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-				const values = Array.isArray(parsed) ? parsed : [parsed];
-				return values
-					.map(item => (typeof item === 'object' && item ? item.id : item))
-					.filter(item => item !== null && item !== undefined && String(item).trim() !== '')
-					.map(item => Number(item))
-					.filter(item => Number.isInteger(item) && item > 0);
-			} catch (error) {
-				return [];
-			}
-		}
-
-		function parseMedicationText(raw) {
-			const value = textOf(raw);
-			if (!value) return [];
-			try {
-				const parsed = JSON.parse(value);
-				if (Array.isArray(parsed)) {
-					return parsed.map(item => typeof item === 'string'
-						? item.trim()
-						: textOf(item && (item.name || item.medicine_name || item.label || item.value)))
-						.filter(Boolean);
-				}
-			} catch (error) {
-				// Plain text remains valid for the existing examination payload.
-			}
-			return value.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
-		}
-
-		function serializeMedicationInput(raw) {
-			const items = parseMedicationText(raw);
-			return items.length ? JSON.stringify(items) : '';
-		}
-
-		function serializeIcdField(doc, hiddenId) {
-			if (!hiddenId) return [];
-			return parseIdList(getValue(doc, hiddenId));
-		}
-
-		function readPayloadValue(field, examination, patient) {
-			if (!field) return '';
-			const source = field.source === 'patient' ? patient : examination;
-			return source[field.sourceKey || field.payloadKey];
-		}
-
-		function isLoading() {
-			return typeof state.isLoading === 'function' && state.isLoading();
-		}
-
-		function ownsField(target) {
-			const root = target && target.closest ? target.closest(`#${config.rootId}`) : null;
-			return Boolean(root && fieldIds.includes(target.id));
-		}
-
-		function markDirty(control) {
-			if (isLoading()) return;
-			const config = detailsPersistence.getConfig(control);
-			if (config) DETAIL_CHANGES.mark(config.section);
-			else MAIN_CHANGES.mark();
-			syncDirtyState();
-		}
-
-		function handleFieldMutation(event) {
-			const target = event && event.target;
-			if (!target || !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || !ownsField(target)) return false;
-			markDirty(target);
-			return true;
-		}
-
-		function clear(options = {}) {
-			const doc = getDocument(options);
-			state.contextToken += 1;
-			state.appointment = null;
-			state.patientId = null;
-			state.examinationId = null;
-			state.currentData = null;
-			state.detailsLoading = false;
-			state.detailsLoaded = false;
-			state.detailsLoadError = null;
-			state.detailsLoadPromise = null;
-			state.icdLoadPromise = null;
-			MAIN_CHANGES.reset();
-			DETAIL_CHANGES.reset();
-			icdInstances.forEach(instance => instance.clear({ silent: true }));
-			fieldIds.forEach(id => setValue(doc, id, ''));
-			medicationInstances.forEach(instance => instance.reset());
-			syncDirtyState();
-		}
-
-		function renderClinicalFields(doc, payload = {}, token = state.contextToken) {
-			const examination = payload.examination_info || {};
-			const patient = payload.patient_info || {};
-			Object.values(config.mainFields).forEach(field => {
-				let value = readPayloadValue(field, examination, patient);
-				if (field.kind === 'medication') value = serializeMedicationInput(value);
-				if (field.kind === 'icd') value = '';
-				setValue(doc, field.controlId, value);
-				if (field.kind === 'medication') getMedicationInstance(doc, field)?.reset();
-				if (field.hiddenControlId) {
-					const ids = examination[field.idSourceKey];
-					setValue(doc, field.hiddenControlId, JSON.stringify(parseIdList(ids)));
-				}
-			});
-			config.detailFields.forEach(field => setValue(doc, field.controlId, ''));
-			state.icdLoadPromise = Promise.all(
-				Object.values(config.mainFields)
-					.filter(field => field.kind === 'icd')
-					.map(field => hydrateIcdField(doc, field, examination, token))
-			).finally(() => {
-				if (token === state.contextToken) state.icdLoadPromise = null;
-			});
-		}
-
-		function render(payload = {}, options = {}) {
-			const doc = getDocument(options);
-			const appointment = payload || {};
-			state.contextToken += 1;
-			const token = state.contextToken;
-			const examination = payload.examination_info || {};
-			const patient = payload.patient_info || {};
-			state.appointment = appointment;
-			state.patientId = textOf(patient.id || appointment.patient_id);
-			state.examinationId = textOf(examination.id || appointment.examination_id);
-			state.currentData = payload;
-			MAIN_CHANGES.reset();
-			DETAIL_CHANGES.reset();
-			state.detailsLoaded = false;
-			state.detailsLoadError = null;
-			renderClinicalFields(doc, payload, token);
-			const appointmentId = textOf(appointment.id);
-			if (!appointmentId) return Promise.resolve(false);
-			const detailsLoadPromise = detailsPersistence.load(doc, appointmentId, token);
-			state.detailsLoadPromise = detailsLoadPromise;
-			detailsLoadPromise.catch(() => {});
-			return detailsLoadPromise;
-		}
-
-		function collect(options = {}) {
-			const doc = getDocument(options);
-			return Object.values(config.mainFields).reduce((payload, field) => {
-				if (!field.payloadKey) return payload;
-				if (field.kind === 'icd') payload[field.payloadKey] = serializeIcdField(doc, field.hiddenControlId);
-				else if (field.kind === 'medication') payload[field.payloadKey] = serializeMedicationInput(getValue(doc, field.controlId));
-				else payload[field.payloadKey] = getValue(doc, field.controlId);
-				return payload;
-			}, {});
-		}
-
-		function getDraftSnapshot(options = {}) {
-			const doc = getDocument(options);
-			const controls = {};
-			fieldDefinitions.forEach(field => {
-				const controlId = field.kind === 'icd' ? field.hiddenControlId : field.controlId;
-				if (!controlId) return;
-				const control = getElement(doc, controlId);
-				if (!control) return;
-				if (field.kind === 'icd') controls[controlId] = serializeIcdDraftValue(doc, field);
-				else controls[controlId] = control.type === 'checkbox' ? Boolean(control.checked) : textOf(control.value);
-			});
-			return { controls };
-		}
-
-		async function restoreDraftSnapshot(snapshot = {}, options = {}) {
-			const doc = getDocument(options);
-			const isCurrent = typeof options.isCurrent === 'function' ? options.isCurrent : () => true;
-			if (!isCurrent()) return { restored: 0 };
-			const controls = snapshot && snapshot.controls && typeof snapshot.controls === 'object' ? snapshot.controls : {};
-			let restored = 0;
-			const detailSections = new Set();
-			let mainRestored = false;
-			Object.entries(controls).forEach(([id, value]) => {
-				if (!isCurrent()) return;
-				if (!fieldIds.includes(id)) return;
-				const field = fieldByControlId.get(id) || fieldByHiddenControlId.get(id);
-				if (field?.kind === 'icd' && id === field.controlId) return;
-				const control = getElement(doc, id);
-				if (!control) return;
-				if (control.type === 'checkbox') control.checked = Boolean(value);
-				else control.value = field?.kind === 'icd' ? JSON.stringify(parseIdList(value)) : textOf(value);
-				if (field?.kind === 'medication') {
-					control.value = serializeMedicationInput(value);
-					getMedicationInstance(doc, field)?.reset();
-				}
-				const config = detailsPersistence.getConfig(control);
-				if (config) detailSections.add(config.section);
-				else mainRestored = true;
-				restored += 1;
-			});
-			const token = state.contextToken;
-			await Promise.all(Object.values(config.mainFields)
-				.filter(field => field.kind === 'icd' && field.hiddenControlId && Object.prototype.hasOwnProperty.call(controls, field.hiddenControlId))
-				.map(field => restoreIcdDraftField(doc, field, controls[field.hiddenControlId], token)));
-			if (!isCurrent()) return { restored: 0 };
-			if (restored) {
-				if (mainRestored) MAIN_CHANGES.mark();
-				detailSections.forEach(section => DETAIL_CHANGES.mark(section));
-				syncDirtyState();
-			}
-			return { restored };
-		}
-
-		const detailsPersistence = DETAILS.create({
-			fields: config.detailFields,
-			state,
-			detailChanges: DETAIL_CHANGES,
-			getElement,
-			getValue,
-			setValue,
-			textOf,
-			hasValue,
+		ctx.detailsPersistence = DETAILS.create({
+			fields: ctx.config.detailFields,
+			state: ctx.state,
+			detailChanges: ctx.DETAIL_CHANGES,
+			getElement: ctx.getElement,
+			getValue: ctx.getValue,
+			setValue: ctx.setValue,
+			textOf: ctx.textOf,
+			hasValue: ctx.hasValue,
 			parseResponseError: (...args) => RUNTIME.readResponseError?.(...args) || Promise.resolve('Không xử lý được phản hồi'),
-			syncDirtyState,
-			apiCall: (...args) => apiCall(...args)
+			syncDirtyState: ctx.syncDirtyState,
+			apiCall: (...args) => ctx.apiCall(...args)
 		});
 
-		function bind(options = {}) {
-			const doc = getDocument(options);
-			state.isLoading = options.isLoading || state.isLoading;
-			const root = getElement(doc, config.rootId);
-			if (!root || bound) return Boolean(root);
-			bindIcdFields(doc);
-			Object.values(config.mainFields).filter(field => field.kind === 'medication')
-				.forEach(field => getMedicationInstance(doc, field));
-			root.addEventListener('input', handleFieldMutation);
-			root.addEventListener('change', handleFieldMutation);
-			bound = true;
-			return true;
-		}
-
 		return {
-			bind,
-			clear,
-			render,
-			populate: render,
-			collect,
+			bind: ctx.bind,
+			clear: ctx.clear,
+			render: ctx.render,
+			populate: ctx.render,
+			collect: ctx.collect,
 			prepareEmptyDetailDefaults: options => {
-				if (isLoading()) return false;
-				return detailsPersistence.prepareEmptyDefaults(getDocument(options));
+				if (ctx.isLoading()) return false;
+				return ctx.detailsPersistence.prepareEmptyDefaults(ctx.getDocument(options));
 			},
-			loadDetails: (doc, appointmentId, token) => detailsPersistence.load(doc, appointmentId, token),
-			saveDetails: (doc, appointmentId, token, sections) => detailsPersistence.save(doc, appointmentId, token, sections),
-			hasUnsavedChanges: () => Boolean(state.mainDirty || state.detailDirtySections.size),
+			loadDetails: (doc, appointmentId, token) => ctx.detailsPersistence.load(doc, appointmentId, token),
+			saveDetails: (doc, appointmentId, token, sections) => ctx.detailsPersistence.save(doc, appointmentId, token, sections),
+			hasUnsavedChanges: () => Boolean(ctx.state.mainDirty || ctx.state.detailDirtySections.size),
 			getSaveState: () => ({
-				contextToken: state.contextToken,
-				mainDirty: state.mainDirty,
-				mainRevision: state.mainRevision,
-				detailDirtySections: new Set(state.detailDirtySections),
-				detailsLoading: state.detailsLoading,
-				detailsLoaded: state.detailsLoaded,
-				detailsLoadError: state.detailsLoadError,
-				detailsLoadPromise: state.detailsLoadPromise,
-				examinationId: state.examinationId
+				contextToken: ctx.state.contextToken,
+				mainDirty: ctx.state.mainDirty,
+				mainRevision: ctx.state.mainRevision,
+				detailDirtySections: new Set(ctx.state.detailDirtySections),
+				detailsLoading: ctx.state.detailsLoading,
+				detailsLoaded: ctx.state.detailsLoaded,
+				detailsLoadError: ctx.state.detailsLoadError,
+				detailsLoadPromise: ctx.state.detailsLoadPromise,
+				examinationId: ctx.state.examinationId
 			}),
 			markMainSaved: revision => {
-				MAIN_CHANGES.settle(revision);
-				syncDirtyState();
+				ctx.MAIN_CHANGES.settle(revision);
+				ctx.syncDirtyState();
 			},
-			getContextToken: () => state.contextToken,
-			getExaminationId: () => state.examinationId,
+			getContextToken: () => ctx.state.contextToken,
+			getExaminationId: () => ctx.state.examinationId,
 			whenInitialLoadSettled: () => Promise.allSettled([
-				state.detailsLoadPromise || Promise.resolve(true),
-				state.icdLoadPromise || Promise.resolve(true)
+				ctx.state.detailsLoadPromise || Promise.resolve(true),
+				ctx.state.icdLoadPromise || Promise.resolve(true)
 			]),
-			ownsField,
-			handleFieldMutation,
-			getDraftSnapshot,
-			restoreDraftSnapshot,
-			getFieldIds: () => fieldIds.slice(),
-			getConfig: () => ({ ...config, mainFields: { ...config.mainFields }, detailFields: config.detailFields.slice() })
+			ownsField: ctx.ownsField,
+			handleFieldMutation: ctx.handleFieldMutation,
+			getDraftSnapshot: ctx.getDraftSnapshot,
+			restoreDraftSnapshot: ctx.restoreDraftSnapshot,
+			getFieldIds: () => ctx.fieldIds.slice(),
+			getConfig: () => ({ ...ctx.config, mainFields: { ...ctx.config.mainFields }, detailFields: ctx.config.detailFields.slice() })
 		};
 	}
 

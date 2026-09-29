@@ -62,15 +62,8 @@
 	}
 
 		Object.assign(inst, {
-			getCurrentAppointmentId,
-			getPrintController,
-			printPrescription,
-			requestJson,
-			showToast,
-			isCurrentToken,
-			markPrescriptionDirty,
-			getCurrentPrescriptionUsageMode,
-			setPrescriptionUsageMode,
+			getCurrentAppointmentId, getPrintController, printPrescription, requestJson, showToast, isCurrentToken,
+			markPrescriptionDirty, getCurrentPrescriptionUsageMode, setPrescriptionUsageMode,
 			updatePrescriptionRowQuantityDisplay
 		});
 	});
@@ -137,9 +130,7 @@
 	}
 
 		Object.assign(inst, {
-			updatePrescriptionRowUsageNoteDisplay,
-			syncBatchAllocationStaleness,
-			syncPrescriptionRowQuantities,
+			updatePrescriptionRowUsageNoteDisplay, syncBatchAllocationStaleness, syncPrescriptionRowQuantities,
 			syncPrescriptionUsageNotes
 		});
 	});
@@ -194,11 +185,7 @@
 		};
 	}
 
-		Object.assign(inst, {
-			setPrescriptionReExamDate,
-			resetContextData,
-			getDraftSnapshot
-		});
+		Object.assign(inst, { setPrescriptionReExamDate, resetContextData, getDraftSnapshot });
 	});
 	moduleParts.installers.push(function (inst) {
 	function restorePrescriptionRows(rows, usageMode) {
@@ -265,13 +252,7 @@
 		return inst.REEXAM.isLocked(inst.STATE);
 	}
 
-		Object.assign(inst, {
-			restorePrescriptionRows,
-			restoreDraftSnapshot,
-			clear,
-			setPrescriptionSaveStatus,
-			isReExaminationLocked
-		});
+		Object.assign(inst, { restorePrescriptionRows, restoreDraftSnapshot, clear, setPrescriptionSaveStatus, isReExaminationLocked });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function reExaminationLockReason() {
@@ -333,15 +314,9 @@
 	}
 
 		Object.assign(inst, {
-			reExaminationLockReason,
-			showReExaminationError,
-			sameReExaminationSelection,
-			hasReExaminationChanges,
-			syncPrescriptionReExamStatus,
-			syncPrescriptionReExamControls,
-			openReExaminationCalendar,
-			normalizeStoredQuantity,
-			resolveStoredStockQuantity
+			reExaminationLockReason, showReExaminationError, sameReExaminationSelection, hasReExaminationChanges,
+			syncPrescriptionReExamStatus, syncPrescriptionReExamControls, openReExaminationCalendar,
+			normalizeStoredQuantity, resolveStoredStockQuantity
 		});
 	});
 	moduleParts.installers.push(function (inst) {
@@ -389,9 +364,7 @@
 		};
 	}
 
-		Object.assign(inst, {
-			normalizePrescriptionRow
-		});
+		Object.assign(inst, { normalizePrescriptionRow });
 	});
 	moduleParts.installers.push(function (inst) {
 	function applyStockAllocationStates(states) {
@@ -455,10 +428,7 @@
 	}
 
 		Object.assign(inst, {
-			applyStockAllocationStates,
-			buildInventorySaveMessage,
-			findPrescriptionRow,
-			getPrescriptionTotal,
+			applyStockAllocationStates, buildInventorySaveMessage, findPrescriptionRow, getPrescriptionTotal,
 			getPrescriptionRowTotal
 		});
 	});
@@ -507,10 +477,6 @@
 		});
 	}
 
-		Object.assign(inst, {
-			updatePrescriptionFooter,
-			jumpToPrescriptionWorkspace,
-			updatePrescriptionRowTotal
-		});
+		Object.assign(inst, { updatePrescriptionFooter, jumpToPrescriptionWorkspace, updatePrescriptionRowTotal });
 	});
 })(window, document);

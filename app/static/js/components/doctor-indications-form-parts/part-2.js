@@ -51,11 +51,7 @@
 			inst.setMessage(doc, existingIndex >= 0 ? 'Đã cập nhật chỉ định trong lượt khám. Nhấn Lưu để ghi nhận.' : 'Đã thêm chỉ định vào lượt khám. Nhấn Lưu để ghi nhận.', 'success');
 		}
 
-		Object.assign(inst, {
-			readForm,
-			markDirty,
-			handleSubmit
-		});
+		Object.assign(inst, { readForm, markDirty, handleSubmit });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	async function handleDelete(doc, tempId) {
@@ -107,12 +103,7 @@
 			return true;
 		}
 
-		Object.assign(inst, {
-			handleDelete,
-			loadCurrent,
-			hasLocalIndicationWork,
-			canApplyRealtimeRefresh
-		});
+		Object.assign(inst, { handleDelete, loadCurrent, hasLocalIndicationWork, canApplyRealtimeRefresh });
 	});
 	moduleParts.installers.push(function (inst) {
 	async function refreshCurrent(options = {}) {
@@ -172,11 +163,7 @@
 			}
 		}
 
-		Object.assign(inst, {
-			refreshCurrent,
-			loadSurveyTemplates,
-			loadPerformers
-		});
+		Object.assign(inst, { refreshCurrent, loadSurveyTemplates, loadPerformers });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function resetContextData(doc) {
@@ -240,11 +227,7 @@
 			return { rows: inst.draftRowsWithoutRuntimeIds(inst.STATE.rows) };
 		}
 
-		Object.assign(inst, {
-			resetContextData,
-			save,
-			getDraftSnapshot
-		});
+		Object.assign(inst, { resetContextData, save, getDraftSnapshot });
 	});
 	moduleParts.installers.push(function (inst, outer) {
 	function restoreDraftSnapshot(snapshot = {}, restoreOptions = {}) {
@@ -302,12 +285,7 @@
 			};
 		}
 
-		Object.assign(inst, {
-			restoreDraftSnapshot,
-			bind,
-			clear,
-			resolveLoadIdentity
-		});
+		Object.assign(inst, { restoreDraftSnapshot, bind, clear, resolveLoadIdentity });
 	});
 	moduleParts.installers.push(function (inst) {
 	function load(context = {}) {
@@ -333,8 +311,6 @@
 			});
 		}
 
-		Object.assign(inst, {
-			load
-		});
+		Object.assign(inst, { load });
 	});
 })(window);

@@ -104,24 +104,15 @@
 		script.addEventListener('error', () => console.error('Không tải được thư viện barcode'), { once: true });
 		document.head.appendChild(script);
 	}
-	function createVitalSignsController(fetchVitalSigns) {
-		let requestToken = 0;
-		let patientId = null;
-		let data = [];
-		let filteredData = [];
-		let timeRange = 'all';
-		let viewMode = typeof window.Chart === 'function' ? 'chart' : 'table';
-		let chart = null;
-		let lastLayoutSignature = '';
-
+	function installVitalSignsFns1(ctx) {
 		function setDisplay(element, visible, display = 'block') {
 			if (element) element.style.display = visible ? display : 'none';
 		}
 
 		function destroyChart() {
-			if (chart && typeof chart.destroy === 'function') chart.destroy();
-			chart = null;
-			lastLayoutSignature = '';
+			if (ctx.chart && typeof ctx.chart.destroy === 'function') ctx.chart.destroy();
+			ctx.chart = null;
+			ctx.lastLayoutSignature = '';
 		}
 
 		function parseBloodPressure(value) {
@@ -173,19 +164,23 @@
 		}
 
 		function clear(message = 'Chọn bệnh nhân để xem lưu đồ sinh hiệu') {
-			requestToken += 1;
-			patientId = null;
-			data = [];
-			filteredData = [];
+			ctx.requestToken += 1;
+			ctx.patientId = null;
+			ctx.data = [];
+			ctx.filteredData = [];
 			renderEmpty(message);
 		}
 
+		Object.assign(ctx, { setDisplay, destroyChart, processData, renderEmpty, clear });
+	}
+
+	function installVitalSignsFns2(ctx) {
 		function filterData() {
-			if (timeRange === 'all') return data;
-			const days = { '1w': 7, '1m': 30, '3m': 90 }[timeRange];
-			if (!days) return data;
+			if (ctx.timeRange === 'all') return ctx.data;
+			const days = { '1w': 7, '1m': 30, '3m': 90 }[ctx.timeRange];
+			if (!days) return ctx.data;
 			const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-			return data.filter(item => new Date(item.date).getTime() >= cutoff);
+			return ctx.data.filter(item => new Date(item.date).getTime() >= cutoff);
 		}
 
 		function renderTable(items) {
@@ -207,17 +202,21 @@
 				return `<td>${value === null || value === undefined || value === '' ? '-' : moduleParts.escapeHtml(value)}</td>`;
 			}).join('')}</tr>`).join('');
 			wrapper.innerHTML = `<table class="vital-signs-grid-table" style="width:${totalMinWidth}px"><colgroup>${cols}</colgroup><thead><tr><th class="vital-label-col" rowspan="2">Chỉ số \\ Thời gian</th>${headerCells('dateLabel', 'vital-grid-empty-date')}</tr><tr>${headerCells('timeLabel', 'vital-grid-empty-time')}</tr></thead><tbody>${rows}</tbody></table>`;
-			setDisplay(wrapper, true);
+			ctx.setDisplay(wrapper, true);
 		}
 
+		Object.assign(ctx, { filterData, renderTable });
+	}
+
+	function installVitalSignsFns3(ctx) {
 		function alignAxesAndHeader() {
-			if (!chart?.chartArea || !chart.scales?.yHA || !chart.scales?.x) return;
-			const yScale = chart.scales.yHA;
-			const xScale = chart.scales.x;
+			if (!ctx.chart?.chartArea || !ctx.chart.scales?.yHA || !ctx.chart.scales?.x) return;
+			const yScale = ctx.chart.scales.yHA;
+			const xScale = ctx.chart.scales.x;
 			const yValues = [200, 180, 160, 140, 120, 100, 80, 60, 40];
-			const signature = `${yValues.map(value => Math.round(yScale.getPixelForValue(value))).join(',')}|${filteredData.map((_, index) => Math.round(xScale.getPixelForValue(index))).join(',')}`;
-			if (signature === lastLayoutSignature) return;
-			lastLayoutSignature = signature;
+			const signature = `${yValues.map(value => Math.round(yScale.getPixelForValue(value))).join(',')}|${ctx.filteredData.map((_, index) => Math.round(xScale.getPixelForValue(index))).join(',')}`;
+			if (signature === ctx.lastLayoutSignature) return;
+			ctx.lastLayoutSignature = signature;
 			const axis = document.getElementById('vitalSignsYAxisFixed');
 			if (axis) {
 				axis.replaceChildren();
@@ -255,7 +254,7 @@
 				dateRow.className = 'vital-x-date-row';
 				const timeRow = document.createElement('div');
 				timeRow.className = 'vital-x-time-row';
-				filteredData.forEach((item, index) => {
+				ctx.filteredData.forEach((item, index) => {
 					const x = xScale.getPixelForValue(index);
 					const dateLabel = document.createElement('div');
 					dateLabel.className = 'vital-x-date-label';
@@ -272,17 +271,21 @@
 			}
 		}
 
+		Object.assign(ctx, { alignAxesAndHeader });
+	}
+
+	function installVitalSignsFns4(ctx) {
 		function renderChart(items) {
 			if (typeof window.Chart !== 'function') {
-				viewMode = 'table';
-				renderTable(items);
+				ctx.viewMode = 'table';
+				ctx.renderTable(items);
 				return;
 			}
 			const canvas = document.getElementById('vitalSignsChart');
 			const scrollContainer = document.getElementById('vitalSignsChartScrollable');
 			const header = document.getElementById('vitalSignsHeaderTable');
 			if (!canvas || !scrollContainer || !header) return;
-			destroyChart();
+			ctx.destroyChart();
 			const containerWidth = scrollContainer.clientWidth || 600;
 			const numCols = Math.max(items.length, 10, Math.floor(containerWidth / 80));
 			const calculatedWidth = Math.max(containerWidth, numCols * 60);
@@ -301,7 +304,7 @@
 				context.closePath(); context.fill();
 				return marker;
 			};
-			chart = new window.Chart(canvas.getContext('2d'), {
+			ctx.chart = new window.Chart(canvas.getContext('2d'), {
 				type: 'line',
 				data: {
 					labels: Array.from({ length: numCols }, (_, index) => index),
@@ -338,36 +341,40 @@
 						yTemp: { type: 'linear', display: true, position: 'left', min: 35, max: 43, ticks: { stepSize: 1, display: false }, grid: { drawOnChartArea: false }, border: { display: false } }
 					}
 				},
-				plugins: [{ id: 'modal-vital-layout', afterLayout: () => alignAxesAndHeader() }]
+				plugins: [{ id: 'modal-vital-layout', afterLayout: () => ctx.alignAxesAndHeader() }]
 			});
-			window.requestAnimationFrame(alignAxesAndHeader);
+			window.requestAnimationFrame(ctx.alignAxesAndHeader);
 		}
 
+		Object.assign(ctx, { renderChart });
+	}
+
+	function installVitalSignsFns5(ctx) {
 		function syncButtons() {
 			const chartButton = document.getElementById('btnVitalViewChart');
 			const tableButton = document.getElementById('btnVitalViewTable');
 			if (chartButton) {
 				chartButton.disabled = typeof window.Chart !== 'function';
-				chartButton.classList.toggle('active', viewMode === 'chart');
+				chartButton.classList.toggle('active', ctx.viewMode === 'chart');
 			}
-			if (tableButton) tableButton.classList.toggle('active', viewMode === 'table');
+			if (tableButton) tableButton.classList.toggle('active', ctx.viewMode === 'table');
 		}
 
 		function render() {
-			filteredData = filterData();
-			if (!filteredData.length) {
-				renderEmpty('Không có dữ liệu sinh hiệu trong khoảng thời gian này');
+			ctx.filteredData = ctx.filterData();
+			if (!ctx.filteredData.length) {
+				ctx.renderEmpty('Không có dữ liệu sinh hiệu trong khoảng thời gian này');
 				return;
 			}
-			setDisplay(document.getElementById('vitalSignsChartEmpty'), false);
-			if (viewMode === 'chart' && typeof window.Chart === 'function') {
-				setDisplay(document.getElementById('vitalSignsTableWrapper'), false);
-				setDisplay(document.getElementById('vitalSignsChartLayout'), true, 'flex');
-				renderChart(filteredData);
+			ctx.setDisplay(document.getElementById('vitalSignsChartEmpty'), false);
+			if (ctx.viewMode === 'chart' && typeof window.Chart === 'function') {
+				ctx.setDisplay(document.getElementById('vitalSignsTableWrapper'), false);
+				ctx.setDisplay(document.getElementById('vitalSignsChartLayout'), true, 'flex');
+				ctx.renderChart(ctx.filteredData);
 			} else {
-				viewMode = 'table';
-				setDisplay(document.getElementById('vitalSignsChartLayout'), false);
-				renderTable(filteredData);
+				ctx.viewMode = 'table';
+				ctx.setDisplay(document.getElementById('vitalSignsChartLayout'), false);
+				ctx.renderTable(ctx.filteredData);
 			}
 			syncButtons();
 		}
@@ -375,58 +382,79 @@
 		async function load(nextPatientId) {
 			const numericPatientId = Number(nextPatientId);
 			if (!Number.isFinite(numericPatientId) || numericPatientId <= 0) {
-				clear();
+				ctx.clear();
 				return { status: 'missingPatient' };
 			}
-			const token = requestToken + 1;
-			requestToken = token;
-			patientId = numericPatientId;
-			data = [];
-			renderEmpty('Đang tải dữ liệu sinh hiệu...');
+			const token = ctx.requestToken + 1;
+			ctx.requestToken = token;
+			ctx.patientId = numericPatientId;
+			ctx.data = [];
+			ctx.renderEmpty('Đang tải dữ liệu sinh hiệu...');
 			try {
-				const payload = await fetchVitalSigns(numericPatientId);
-				if (token !== requestToken || patientId !== numericPatientId) return { status: 'stale' };
-				data = processData(payload?.examinations);
-				if (!data.length) {
-					renderEmpty('Chưa có dữ liệu sinh hiệu');
+				const payload = await ctx.fetchVitalSigns(numericPatientId);
+				if (token !== ctx.requestToken || ctx.patientId !== numericPatientId) return { status: 'stale' };
+				ctx.data = ctx.processData(payload?.examinations);
+				if (!ctx.data.length) {
+					ctx.renderEmpty('Chưa có dữ liệu sinh hiệu');
 					return { status: 'empty' };
 				}
 				render();
-				return { status: 'ready', count: data.length };
+				return { status: 'ready', count: ctx.data.length };
 			} catch (error) {
-				if (token !== requestToken || patientId !== numericPatientId) return { status: 'stale' };
+				if (token !== ctx.requestToken || ctx.patientId !== numericPatientId) return { status: 'stale' };
 				console.error('Không tải được sinh hiệu:', error);
-				renderEmpty('Lỗi khi tải dữ liệu sinh hiệu');
+				ctx.renderEmpty('Lỗi khi tải dữ liệu sinh hiệu');
 				return { status: 'error', error };
 			}
 		}
 
+		Object.assign(ctx, { syncButtons, render, load });
+	}
+
+	function createVitalSignsController(fetchVitalSigns) {
+		const ctx = {};
+		ctx.fetchVitalSigns = fetchVitalSigns;
+		installVitalSignsFns1(ctx);
+		installVitalSignsFns2(ctx);
+		installVitalSignsFns3(ctx);
+		installVitalSignsFns4(ctx);
+		installVitalSignsFns5(ctx);
+
+		ctx.requestToken = 0;
+		ctx.patientId = null;
+		ctx.data = [];
+		ctx.filteredData = [];
+		ctx.timeRange = 'all';
+		ctx.viewMode = typeof window.Chart === 'function' ? 'chart' : 'table';
+		ctx.chart = null;
+		ctx.lastLayoutSignature = '';
+
 		document.getElementById('btnVitalViewChart')?.addEventListener('click', () => {
 			if (typeof window.Chart !== 'function') return;
-			viewMode = 'chart';
-			render();
+			ctx.viewMode = 'chart';
+			ctx.render();
 		});
 		document.getElementById('btnVitalViewTable')?.addEventListener('click', () => {
-			viewMode = 'table';
-			render();
+			ctx.viewMode = 'table';
+			ctx.render();
 		});
 		document.querySelector('.time-range-selector')?.addEventListener('click', event => {
 			const button = event.target.closest('[data-vital-time-range]');
 			if (!button) return;
-			timeRange = button.dataset.vitalTimeRange || 'all';
+			ctx.timeRange = button.dataset.vitalTimeRange || 'all';
 			document.querySelectorAll('[data-vital-time-range]').forEach(item => item.classList.toggle('active', item === button));
-			render();
+			ctx.render();
 		});
 		document.getElementById('vital-signs-tab')?.addEventListener('shown.bs.tab', () => {
-			if (viewMode === 'chart' && filteredData.length) window.setTimeout(() => chart?.resize(), 100);
+			if (ctx.viewMode === 'chart' && ctx.filteredData.length) window.setTimeout(() => ctx.chart?.resize(), 100);
 		});
 		window.addEventListener('resize', () => {
-			if (viewMode === 'table' && filteredData.length) renderTable(filteredData);
-			if (viewMode === 'chart' && chart) chart.resize();
+			if (ctx.viewMode === 'table' && ctx.filteredData.length) ctx.renderTable(ctx.filteredData);
+			if (ctx.viewMode === 'chart' && ctx.chart) ctx.chart.resize();
 		});
-		syncButtons();
+		ctx.syncButtons();
 
-		return { load, clear, render };
+		return { load: ctx.load, clear: ctx.clear, render: ctx.render };
 	}
 	function create(options = {}) {
 		const fetchers = createDataFetchers(options.apiCall);

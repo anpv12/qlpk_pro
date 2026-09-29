@@ -67,149 +67,174 @@
 		}
 	}
 
-	function attach(options) {
-		const { row, nameInput, dropdown, floatingClass, search, onSelect } = options;
-		const onQueryCleared = typeof options.onQueryCleared === 'function' ? options.onQueryCleared : () => {};
-		const onQueryChanged = typeof options.onQueryChanged === 'function' ? options.onQueryChanged : () => {};
-		const perPage = options.perPage || DEFAULT_PER_PAGE;
-		const doc = row.ownerDocument || window.document;
-		let searchTimeout = null;
-		let activeSearchToken = 0;
-		let disposed = false;
-
+	function installDropdownFns1(ctx) {
 		const clearSearchTimeout = () => {
-			if (searchTimeout) {
-				clearTimeout(searchTimeout);
-				searchTimeout = null;
+			if (ctx.searchTimeout) {
+				clearTimeout(ctx.searchTimeout);
+				ctx.searchTimeout = null;
 			}
 		};
+
 		const createSearchToken = () => {
-			activeSearchToken += 1;
-			return activeSearchToken;
+			ctx.activeSearchToken += 1;
+			return ctx.activeSearchToken;
 		};
+
 		const invalidateSearch = () => {
-			activeSearchToken += 1;
+			ctx.activeSearchToken += 1;
 			clearSearchTimeout();
 		};
-		const canRender = searchToken => !disposed && searchToken === activeSearchToken && doc.activeElement === nameInput;
+
+		const canRender = searchToken => !ctx.disposed && searchToken === ctx.activeSearchToken && ctx.doc.activeElement === ctx.nameInput;
 
 		const repositionDropdown = () => {
-			if (dropdown.dataset.visible !== 'true') return;
-			const rect = nameInput.getBoundingClientRect();
+			if (ctx.dropdown.dataset.visible !== 'true') return;
+			const rect = ctx.nameInput.getBoundingClientRect();
 			const width = Math.max(320, Math.min(520, rect.width * 1.3));
-			dropdown.style.width = `${width}px`;
-			dropdown.style.top = `${rect.bottom + 8}px`;
-			dropdown.style.left = `${rect.left}px`;
-			dropdown.classList.add(floatingClass);
+			ctx.dropdown.style.width = `${width}px`;
+			ctx.dropdown.style.top = `${rect.bottom + 8}px`;
+			ctx.dropdown.style.left = `${rect.left}px`;
+			ctx.dropdown.classList.add(ctx.floatingClass);
 		};
+
 		const handleViewportChange = () => repositionDropdown();
 
 		const showDropdown = searchToken => {
 			if (!canRender(searchToken)) return false;
-			if (dropdown.dataset.visible === 'true') return true;
-			dropdown.dataset.visible = 'true';
-			dropdown.classList.add('is-open');
+			if (ctx.dropdown.dataset.visible === 'true') return true;
+			ctx.dropdown.dataset.visible = 'true';
+			ctx.dropdown.classList.add('is-open');
 			repositionDropdown();
 			window.addEventListener('scroll', handleViewportChange, true);
 			window.addEventListener('resize', handleViewportChange);
 			return true;
 		};
+
 		const closeDropdown = () => {
-			if (dropdown.dataset.visible !== 'true') return;
-			dropdown.dataset.visible = 'false';
-			dropdown.classList.remove('is-open');
+			if (ctx.dropdown.dataset.visible !== 'true') return;
+			ctx.dropdown.dataset.visible = 'false';
+			ctx.dropdown.classList.remove('is-open');
 			window.removeEventListener('scroll', handleViewportChange, true);
 			window.removeEventListener('resize', handleViewportChange);
 		};
+
 		const hideDropdown = () => {
 			invalidateSearch();
 			closeDropdown();
 		};
+
 		const renderState = (searchToken, message) => {
 			if (!canRender(searchToken)) return false;
-			dropdown.innerHTML = stateHtml(message);
+			ctx.dropdown.innerHTML = stateHtml(message);
 			showDropdown(searchToken);
 			return true;
 		};
-		const runSearch = (query, searchToken) => search(query, dropdown, {
+
+		Object.assign(ctx, {
+			clearSearchTimeout, createSearchToken, invalidateSearch, canRender, showDropdown, closeDropdown,
+			hideDropdown, renderState
+		});
+	}
+
+	function installDropdownFns2(ctx) {
+		const runSearch = (query, searchToken) => ctx.search(query, ctx.dropdown, {
 			onSelect: patient => {
-				if (!canRender(searchToken)) return;
-				onSelect(patient);
-				hideDropdown();
+				if (!ctx.canRender(searchToken)) return;
+				ctx.onSelect(patient);
+				ctx.hideDropdown();
 			},
-			onShow: () => showDropdown(searchToken),
-			perPage,
-			shouldRender: () => canRender(searchToken)
+			onShow: () => ctx.showDropdown(searchToken),
+			perPage: ctx.perPage,
+			shouldRender: () => ctx.canRender(searchToken)
 		});
 
 		const outsideClickHandler = event => {
-			if (!row.contains(event.target) && !dropdown.contains(event.target)) hideDropdown();
+			if (!ctx.row.contains(event.target) && !ctx.dropdown.contains(event.target)) ctx.hideDropdown();
 		};
-		const focusInHandler = event => {
-			if (event.target === nameInput || dropdown.contains(event.target)) return;
-			hideDropdown();
-		};
-		let outsideClickBound = false;
-		const bindOutsideClick = () => {
-			if (disposed || outsideClickBound) return;
-			doc.addEventListener('click', outsideClickHandler);
-			outsideClickBound = true;
-		};
-		const outsideClickTimer = setTimeout(bindOutsideClick, 0);
-		row.addEventListener('focusin', focusInHandler);
 
-		nameInput.addEventListener('focus', event => {
+		const focusInHandler = event => {
+			if (event.target === ctx.nameInput || ctx.dropdown.contains(event.target)) return;
+			ctx.hideDropdown();
+		};
+
+		const bindOutsideClick = () => {
+			if (ctx.disposed || ctx.outsideClickBound) return;
+			ctx.doc.addEventListener('click', outsideClickHandler);
+			ctx.outsideClickBound = true;
+		};
+
+		const dispose = () => {
+			ctx.disposed = true;
+			ctx.invalidateSearch();
+			ctx.closeDropdown();
+			clearTimeout(ctx.outsideClickTimer);
+			if (ctx.outsideClickBound) ctx.doc.removeEventListener('click', outsideClickHandler);
+			ctx.row.removeEventListener('focusin', focusInHandler);
+		};
+
+		Object.assign(ctx, { runSearch, focusInHandler, bindOutsideClick, dispose });
+	}
+
+	function attach(options) {
+		const ctx = {};
+		installDropdownFns1(ctx);
+		installDropdownFns2(ctx);
+
+		({ row: ctx.row, nameInput: ctx.nameInput, dropdown: ctx.dropdown, floatingClass: ctx.floatingClass, search: ctx.search, onSelect: ctx.onSelect } = options);
+		const onQueryCleared = typeof options.onQueryCleared === 'function' ? options.onQueryCleared : () => {};
+		const onQueryChanged = typeof options.onQueryChanged === 'function' ? options.onQueryChanged : () => {};
+		ctx.perPage = options.perPage || DEFAULT_PER_PAGE;
+		ctx.doc = ctx.row.ownerDocument || window.document;
+		ctx.searchTimeout = null;
+		ctx.activeSearchToken = 0;
+		ctx.disposed = false;
+		ctx.outsideClickBound = false;
+		ctx.outsideClickTimer = setTimeout(ctx.bindOutsideClick, 0);
+		ctx.row.addEventListener('focusin', ctx.focusInHandler);
+
+		ctx.nameInput.addEventListener('focus', event => {
 			const query = event.target.value.trim();
-			const searchToken = createSearchToken();
+			const searchToken = ctx.createSearchToken();
 			if (query.length >= MIN_QUERY_LENGTH) {
-				clearSearchTimeout();
-				searchTimeout = setTimeout(() => runSearch(query, searchToken), FOCUS_SEARCH_DELAY_MS);
+				ctx.clearSearchTimeout();
+				ctx.searchTimeout = setTimeout(() => ctx.runSearch(query, searchToken), FOCUS_SEARCH_DELAY_MS);
 				return;
 			}
-			renderState(searchToken, 'Đang tải...');
-			runSearch('', searchToken);
+			ctx.renderState(searchToken, 'Đang tải...');
+			ctx.runSearch('', searchToken);
 		});
 
-		nameInput.addEventListener('input', event => {
+		ctx.nameInput.addEventListener('input', event => {
 			const query = event.target.value.trim();
-			invalidateSearch();
-			const searchToken = createSearchToken();
+			ctx.invalidateSearch();
+			const searchToken = ctx.createSearchToken();
 			if (query.length < MIN_QUERY_LENGTH) {
-				renderState(searchToken, 'Nhập tên để tìm kiếm...');
+				ctx.renderState(searchToken, 'Nhập tên để tìm kiếm...');
 				onQueryCleared();
 				return;
 			}
 			onQueryChanged();
-			searchTimeout = setTimeout(() => runSearch(query, searchToken), INPUT_DEBOUNCE_MS);
+			ctx.searchTimeout = setTimeout(() => ctx.runSearch(query, searchToken), INPUT_DEBOUNCE_MS);
 		});
 
-		nameInput.addEventListener('keydown', event => {
+		ctx.nameInput.addEventListener('keydown', event => {
 			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 				event.preventDefault();
-				moveActiveItem(dropdown, event.key === 'ArrowDown' ? 1 : -1);
+				moveActiveItem(ctx.dropdown, event.key === 'ArrowDown' ? 1 : -1);
 				return;
 			}
 			if (event.key === 'Enter') {
-				const activeItem = dropdown.querySelector('.relative-search-item.active');
+				const activeItem = ctx.dropdown.querySelector('.relative-search-item.active');
 				if (activeItem) {
 					event.preventDefault();
 					activeItem.click();
 				}
 				return;
 			}
-			if (event.key === 'Escape') hideDropdown();
+			if (event.key === 'Escape') ctx.hideDropdown();
 		});
 
-		const dispose = () => {
-			disposed = true;
-			invalidateSearch();
-			closeDropdown();
-			clearTimeout(outsideClickTimer);
-			if (outsideClickBound) doc.removeEventListener('click', outsideClickHandler);
-			row.removeEventListener('focusin', focusInHandler);
-		};
-
-		return { hideDropdown, dispose };
+		return { hideDropdown: ctx.hideDropdown, dispose: ctx.dispose };
 	}
 
 	window.QLPKPatientSearchDropdown = Object.freeze({ attach, renderPatientResults, stateHtml });
