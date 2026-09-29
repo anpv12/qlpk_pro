@@ -338,7 +338,7 @@
 			margin-bottom: 6px;
 		}
 
-		.text-navy { color: var(--om-muted) !important; }
+		.text-navy { color: var(--om-muted); }
 
 /* Keep the clinic's existing cards; only compose the former tabs in two columns. */
 .om-detail-layout { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(0, 3fr); align-items: stretch; gap: .75rem; }

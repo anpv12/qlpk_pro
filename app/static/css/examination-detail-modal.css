@@ -33,12 +33,12 @@
 
 /* Ẩn thanh cuộn trang chính khi modal Khám chi tiết mở */
 .modal.qlpk-examination-detail-modal {
-	overflow: hidden !important;
+	overflow: hidden;
 }
 
 /* Đảm bảo modal backdrop cũng không có scroll */
 body.examination-detail-modal-open .modal-backdrop {
-	overflow: hidden !important;
+	overflow: hidden;
 }
 
 /* Stronger, clearer table borders */

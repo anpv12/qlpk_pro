@@ -11,13 +11,13 @@ body {
 }
 
 .qlpk-shell-sidebar.col-md-2 {
-	flex: 0 0 16.66667% !important;
-	max-width: 16.66667% !important;
+	flex: 0 0 16.66667%;
+	max-width: 16.66667%;
 }
 
 .main-content.col-md-10 {
-	flex: 0 0 83.33333% !important;
-	max-width: 83.33333% !important;
+	flex: 0 0 83.33333%;
+	max-width: 83.33333%;
 }
 
 .card-wrap {

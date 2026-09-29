@@ -1067,23 +1067,23 @@
 
 .qlpk-has-app-header .sidebar-user .user-info,
 .qlpk-has-app-header .sidebar .logout-link {
-	display: none !important;
+	display: none;
 }
 
 .qlpk-has-app-header .sidebar-user {
-	padding: 5px 10px !important;
+	padding: 5px 10px;
 }
 
 .qlpk-has-app-header .sidebar-user > .d-flex {
-	justify-content: space-between !important;
-	align-items: center !important;
-	margin-bottom: 0 !important;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0;
 }
 
 .qlpk-has-app-header .sidebar-user .hamburger-btn {
-	position: static !important;
-	margin-left: auto !important;
-	flex: 0 0 auto !important;
+	position: static;
+	margin-left: auto;
+	flex: 0 0 auto;
 }
 
 @media (max-width: 1180px) {
@@ -1173,12 +1173,12 @@
 /* Workspace application shell: header owns the full width; legacy sidebar is disabled. */
 body.qlpk-workspace-shell .qlpk-shell-sidebar,
 body.qlpk-workspace-shell .qlpk-shell-sidebar-disabled {
-	display: none !important;
-	width: 0 !important;
-	max-width: 0 !important;
-	flex: 0 0 0 !important;
-	padding: 0 !important;
-	margin: 0 !important;
+	display: none;
+	width: 0;
+	max-width: 0;
+	flex: 0 0 0;
+	padding: 0;
+	margin: 0;
 }
 
 body.qlpk-workspace-shell .main-content,
@@ -1186,12 +1186,12 @@ body.qlpk-workspace-shell .main-content.col-md-10,
 body.qlpk-workspace-shell .qlpk-workspace-main {
 	display: flex;
 	flex-direction: column;
-	width: 100% !important;
-	max-width: 100% !important;
-	flex: 0 0 100% !important;
-	margin-left: 0 !important;
-	padding-left: 0 !important;
-	padding-right: 0 !important;
+	width: 100%;
+	max-width: 100%;
+	flex: 0 0 100%;
+	margin-left: 0;
+	padding-left: 0;
+	padding-right: 0;
 	height: 100vh;
 	min-height: 0;
 	overflow: hidden;
@@ -1741,18 +1741,18 @@ body:has(.qlpk-workspace-tab.is-active[data-tab-href*="doctor-examination"]) .ql
 body.qlpk-embedded-page .qlpk-shell-sidebar,
 body.qlpk-embedded-page .qlpk-shell-sidebar-disabled,
 body.qlpk-embedded-page .qlpk-app-header-host {
-	display: none !important;
+	display: none;
 }
 
 body.qlpk-embedded-page .main-content,
 body.qlpk-embedded-page .main-content.col-md-10,
 body.qlpk-embedded-page .qlpk-workspace-main {
-	width: 100% !important;
-	max-width: 100% !important;
+	width: 100%;
+	max-width: 100%;
 	flex: 0 0 100% !important;
-	margin-left: 0 !important;
-	padding-left: 0 !important;
-	padding-right: 0 !important;
+	margin-left: 0;
+	padding-left: 0;
+	padding-right: 0;
 	background: var(--qlpk-workspace-bg, var(--qlpk-color-page-bg));
 }
 

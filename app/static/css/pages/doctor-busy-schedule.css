@@ -6,13 +6,13 @@
 
 		/* Ensure Bootstrap grid works correctly with DRY sidebar */
 		.qlpk-shell-sidebar.col-md-2 {
-			flex: 0 0 16.66667% !important;
-			max-width: 16.66667% !important;
+			flex: 0 0 16.66667%;
+			max-width: 16.66667%;
 		}
 
 		.main-content.col-md-10 {
-			flex: 0 0 83.33333% !important;
-			max-width: 83.33333% !important;
+			flex: 0 0 83.33333%;
+			max-width: 83.33333%;
 		}
 
 		.main-content {
@@ -47,14 +47,14 @@
 			margin-bottom: 0;
 		}
 .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: var(--qlpk-workflow-context-header-bg) !important;
-			border-color: var(--qlpk-color-primary) !important;
-			color: var(--qlpk-color-white) !important;
+			background: var(--qlpk-workflow-context-header-bg);
+			border-color: var(--qlpk-color-primary);
+			color: var(--qlpk-color-white);
 }
 .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: var(--qlpk-palette-green-36-a) !important;
-			border-color: var(--qlpk-palette-green-36-a) !important;
-			color: var(--qlpk-color-white) !important;
+			background: var(--qlpk-palette-green-36-a);
+			border-color: var(--qlpk-palette-green-36-a);
+			color: var(--qlpk-color-white);
 }
 
 		.btn-warning {
@@ -65,17 +65,17 @@
 			color: var(--qlpk-palette-gray-20-a) !important;
 }
 .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-			color: var(--qlpk-color-primary) !important;
-			border-color: var(--qlpk-palette-gray-73) !important;
-			background: var(--qlpk-color-white) !important;
+			color: var(--qlpk-color-primary);
+			border-color: var(--qlpk-palette-gray-73);
+			background: var(--qlpk-color-white);
 }
 
 		.btn-outline-primary:hover {
 			transform: translateY(-1px);
 }
 .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: var(--qlpk-color-primary-soft) !important;
-			color: var(--qlpk-color-primary) !important;
+			background: var(--qlpk-color-primary-soft);
+			color: var(--qlpk-color-primary);
 			box-shadow: 0 2px 4px rgba(var(--qlpk-color-primary-rgb), 0.18);
 }
 
@@ -131,7 +131,7 @@
 
 		/* Card shadows */
 		.shadow-sm {
-			box-shadow: 0 0.125rem 0.25rem rgba(var(--qlpk-color-black-rgb), 0.075) !important;
+			box-shadow: 0 0.125rem 0.25rem rgba(var(--qlpk-color-black-rgb), 0.075);
 		}
 
 		/* Icon styling */

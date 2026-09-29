@@ -613,7 +613,7 @@
 	border: 1px solid var(--patient-modal-line-strong);
 	border-radius: 12px;
 	padding: 24px;
-	padding-top: 10px !important;
+	padding-top: 10px;
 	color: var(--patient-modal-text);
 	font-size: var(--qlpk-font-size-md, 14px);
 	line-height: 1.6;
@@ -1024,8 +1024,8 @@
 	position: absolute;
 	left: 0;
 	top: 0;
-	width: 100% !important;
-	height: 100% !important;
+	width: 100%;
+	height: 100%;
 	display: none;
 }
 
@@ -1095,15 +1095,15 @@
 }
 
 .vital-hidden {
-	display: none !important;
+	display: none;
 }
 
 .vital-display-flex {
-	display: flex !important;
+	display: flex;
 }
 
 .vital-display-block {
-	display: block !important;
+	display: block;
 }
 
 .vital-axis-date-header {

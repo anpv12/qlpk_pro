@@ -21,49 +21,49 @@
 
 /* Override FullCalendar styles cho ngày lễ */
 .fc-event.holiday-calendar {
-  background: transparent !important;
-  border: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-top: none !important;
-  border-bottom: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  cursor: default !important;
-  pointer-events: none !important;
+  background: transparent;
+  border: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+  pointer-events: none;
 }
 
 .fc-event.holiday-calendar .fc-event-main {
-  padding: 0 !important;
-  margin: 0 !important;
-  pointer-events: none !important;
-  border: none !important;
-  outline: none !important;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+  border: none;
+  outline: none;
 }
 
 .fc-event.holiday-calendar .fc-event-main-frame {
-  border: none !important;
-  outline: none !important;
+  border: none;
+  outline: none;
 }
 
 /* Override tất cả các border có thể có */
 .fc-event.holiday-calendar * {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 /* Override specific FullCalendar elements */
 .fc-event.holiday-calendar .fc-event-title {
-  border: none !important;
-  outline: none !important;
+  border: none;
+  outline: none;
 }
 
 .fc-event.holiday-calendar .fc-event-title-container {
-  border: none !important;
-  outline: none !important;
+  border: none;
+  outline: none;
 }
 
 .holiday-calendar .holiday-date {
@@ -71,7 +71,7 @@
   display: inline-block;
   width: auto;
   height: auto;
-  cursor: default !important;
+  cursor: default;
   pointer-events: none;
   user-select: none;
 }
@@ -83,9 +83,9 @@
   padding: 2px 6px;
   background: var(--qlpk-alpha-red-86-20);
   border-radius: 12px;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border: none;
+  outline: none;
+  box-shadow: none;
   font-size: var(--qlpk-font-size-sm, 12px);
   line-height: 1.2;
 }
@@ -136,14 +136,14 @@
 
 /* Đảm bảo ngày lễ không bị ảnh hưởng bởi CSS khác */
 .holiday-calendar .holiday-date * {
-  pointer-events: none !important;
-  cursor: default !important;
+  pointer-events: none;
+  cursor: default;
 }
 
 /* Override các class có thể conflict */
 .holiday-calendar .holiday-date.calendar-date,
 .holiday-calendar .holiday-date.appointment-date,
 .holiday-calendar .holiday-date.clickable {
-  pointer-events: none !important;
-  cursor: default !important;
+  pointer-events: none;
+  cursor: default;
 }

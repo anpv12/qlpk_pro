@@ -16,13 +16,13 @@ body {
 }
 
 .qlpk-shell-sidebar.col-md-2 {
-	flex: 0 0 16.66667% !important;
-	max-width: 16.66667% !important;
+	flex: 0 0 16.66667%;
+	max-width: 16.66667%;
 }
 
 .main-content.col-md-10 {
-	flex: 1 1 0% !important;
-	max-width: 100% !important;
+	flex: 1 1 0%;
+	max-width: 100%;
 }
 
 .doc-container {
@@ -575,7 +575,7 @@ body {
 }
 
 .doc-admin-hidden {
-	display: none !important;
+	display: none;
 }
 
 .doc-empty-cell {

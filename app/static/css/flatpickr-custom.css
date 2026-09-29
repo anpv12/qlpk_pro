@@ -2,7 +2,7 @@
 
 /* Fix z-index để Flatpickr calendar hiển thị trên modal */
 .flatpickr-calendar {
-	z-index: var(--qlpk-z-top) !important;
+	z-index: var(--qlpk-z-top);
 }
 
 .flatpickr-calendar input[type=number]::-webkit-inner-spin-button,

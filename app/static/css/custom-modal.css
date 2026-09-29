@@ -155,21 +155,21 @@
 
 /* Đảm bảo modal body vẫn có thể scroll ngay cả khi confirmed */
 .invoice-confirmed .modal-body {
-	pointer-events: auto !important;
+	pointer-events: auto;
 }
 
 .invoice-confirmed input,
 .invoice-confirmed select,
 .invoice-confirmed textarea,
 .invoice-confirmed button {
-	cursor: not-allowed !important;
+	cursor: not-allowed;
 }
 .invoice-confirmed input,
 .invoice-confirmed select,
 .invoice-confirmed textarea,
 .invoice-confirmed button:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-color-page-bg) !important;
-	color: var(--qlpk-palette-gray-46) !important;
+	background-color: var(--qlpk-color-page-bg);
+	color: var(--qlpk-palette-gray-46);
 }
 .invoice-confirmed .btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	opacity: 0.6;
@@ -201,20 +201,20 @@
 
 /* Print button always active */
 .invoice-confirmed .qlpk-print-invoice-btn {
-	pointer-events: auto !important;
+	pointer-events: auto;
 	cursor: pointer !important;
 }
 /* Print button always active */
 .invoice-confirmed .qlpk-print-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
-	opacity: 1 !important;
+	opacity: 1;
 	background-color: var(--qlpk-palette-teal-41) !important;
-	border-color: var(--qlpk-palette-teal-41) !important;
+	border-color: var(--qlpk-palette-teal-41);
 	color: white !important;
 }
 .invoice-confirmed .qlpk-print-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background-color: var(--qlpk-palette-teal-33) !important;
-	border-color: var(--qlpk-palette-teal-33) !important;
-	color: white !important;
+	border-color: var(--qlpk-palette-teal-33);
+	color: white;
 }
 
 /* Responsive */
@@ -235,16 +235,16 @@
 
 /* SweetAlert2 Danger Dialog Styles */
 .swal2-popup-danger {
-	border: 3px solid var(--qlpk-palette-red-54) !important;
-	border-radius: 12px !important;
-	box-shadow: 0 0 20px rgba(var(--qlpk-palette-red-54-rgb), 0.3), 0 10px 40px rgba(var(--qlpk-color-black-rgb), 0.2) !important;
-	animation: dangerPulse 0.5s ease-in-out !important;
+	border: 3px solid var(--qlpk-palette-red-54);
+	border-radius: 12px;
+	box-shadow: 0 0 20px rgba(var(--qlpk-palette-red-54-rgb), 0.3), 0 10px 40px rgba(var(--qlpk-color-black-rgb), 0.2);
+	animation: dangerPulse 0.5s ease-in-out;
 }
 
 .swal2-title-danger {
-	color: var(--qlpk-palette-red-54) !important;
-	font-weight: var(--qlpk-font-weight-bold, 700) !important;
-	font-size: var(--qlpk-font-size-3xl, 24px) !important;
+	color: var(--qlpk-palette-red-54);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: var(--qlpk-font-size-3xl, 24px);
 }
 
 @keyframes dangerPulse {

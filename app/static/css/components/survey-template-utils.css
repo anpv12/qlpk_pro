@@ -1,2 +1,2 @@
 /* Editor visibility is shared by the standalone page and management overlay. */
-.sc-hidden { display: none !important; }
+.sc-hidden { display: none; }

@@ -38,17 +38,17 @@
 
 /* Flatpickr size override for dashboard */
 .flatpickr-calendar {
-	font-size: var(--qlpk-font-size-sm, 12px) !important;
-	width: 240px !important;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	width: 240px;
 }
 
 .flatpickr-months .flatpickr-month {
-	height: 32px !important;
+	height: 32px;
 }
 
 .flatpickr-current-month {
-	font-size: var(--qlpk-font-size-base, 13px) !important;
-	padding-top: 6px !important;
+	font-size: var(--qlpk-font-size-base, 13px);
+	padding-top: 6px;
 }
 
 .flatpickr-current-month select {
@@ -56,7 +56,7 @@
 }
 
 .flatpickr-weekdays {
-	height: 26px !important;
+	height: 26px;
 }
 
 .flatpickr-weekday {
@@ -65,16 +65,16 @@
 
 span.flatpickr-day,
 .flatpickr-day {
-	font-size: var(--qlpk-font-size-xs, 11px) !important;
-	height: 28px !important;
-	line-height: 28px !important;
-	max-width: 28px !important;
+	font-size: var(--qlpk-font-size-xs, 11px);
+	height: 28px;
+	line-height: 28px;
+	max-width: 28px;
 }
 
 .flatpickr-days .dayContainer {
-	min-width: 220px !important;
-	max-width: 220px !important;
-	width: 220px !important;
+	min-width: 220px;
+	max-width: 220px;
+	width: 220px;
 }
 
 /* Page Title */

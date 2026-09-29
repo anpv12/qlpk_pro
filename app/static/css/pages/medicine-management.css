@@ -320,7 +320,7 @@
   background: var(--qlpk-color-page-bg);
 }
 .medicine-management-page .mm-hidden {
-  display: none !important;
+  display: none;
 }
 .medicine-management-page .mm-packaging-info-display {
   background-color: var(--qlpk-color-page-bg);

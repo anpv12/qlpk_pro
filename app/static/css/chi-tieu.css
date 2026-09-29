@@ -38,13 +38,13 @@ body {
 }
 
 .qlpk-shell-sidebar.col-md-2 {
-	flex: 0 0 16.66667% !important;
-	max-width: 16.66667% !important;
+	flex: 0 0 16.66667%;
+	max-width: 16.66667%;
 }
 
 .main-content.col-md-10 {
-	flex: 1 1 0% !important;
-	max-width: 100% !important;
+	flex: 1 1 0%;
+	max-width: 100%;
 }
 
 /* ==================== Nav Tabs ==================== */
@@ -1028,7 +1028,7 @@ body {
 
 /* ==================== Template Utilities ==================== */
 .ct-hidden {
-	display: none !important;
+	display: none;
 }
 
 .ct-tab-active {
@@ -1278,11 +1278,11 @@ body {
 }
 
 .ct-text-danger { color: var(--qlpk-feedback-error) !important; }
-.ct-text-rose { color: var(--qlpk-palette-red-50) !important; }
-.ct-text-indigo { color: var(--qlpk-color-primary) !important; }
-.ct-text-orange { color: var(--qlpk-palette-orange-48) !important; }
-.ct-text-cyan { color: var(--qlpk-palette-teal-36) !important; }
-.ct-text-purple { color: var(--qlpk-palette-violet-58) !important; }
+.ct-text-rose { color: var(--qlpk-palette-red-50); }
+.ct-text-indigo { color: var(--qlpk-color-primary); }
+.ct-text-orange { color: var(--qlpk-palette-orange-48); }
+.ct-text-cyan { color: var(--qlpk-palette-teal-36); }
+.ct-text-purple { color: var(--qlpk-palette-violet-58); }
 .ct-text-success { color: var(--qlpk-palette-green-30) !important; }
 .ct-text-blue { color: var(--qlpk-color-primary) !important; }
 .ct-text-revenue { color: var(--qlpk-color-primary) !important; }
@@ -1317,7 +1317,7 @@ body {
 }
 
 .ct-profit-negative {
-	color: var(--qlpk-feedback-error) !important;
+	color: var(--qlpk-feedback-error);
 	background: var(--qlpk-feedback-error-bg);
 }
 
@@ -1455,7 +1455,7 @@ body {
 @media (max-width: 1024px) {
 	/* Toolbar: wrap buttons */
 	.dc-header { flex-wrap: wrap; gap: 6px !important; }
-	.dc-header > div { flex-wrap: wrap; gap: 6px !important; }
+	.dc-header > div { flex-wrap: wrap; gap: 6px; }
 
 	/* Charts stack vertically */
 	.chart-section .col-md-6 { flex: 0 0 100%; max-width: 100%; }

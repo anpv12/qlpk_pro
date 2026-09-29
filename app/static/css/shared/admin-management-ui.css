@@ -106,7 +106,7 @@ body.qlpk-admin-page.qlpk-embedded-page .main-content {
 .qlpk-admin-page .catalog-card-header,
 .qlpk-admin-page .service-card-header {
 	padding: 10px 14px;
-	background: var(--admin-surface) !important;
+	background: var(--admin-surface);
 	border: 0;
 	border-bottom: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
@@ -235,37 +235,37 @@ body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
 .qlpk-admin-page .btn-add:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .catalog-dict-primary-btn:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--admin-accent) !important;
-	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: var(--qlpk-color-white) !important;
+	border-color: var(--admin-accent);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
 }
 .qlpk-admin-page .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-add:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .catalog-dict-primary-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--admin-accent-strong) !important;
-	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: var(--qlpk-color-white) !important;
+	border-color: var(--admin-accent-strong);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
 }
 .qlpk-admin-page .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--qlpk-brown-200) !important;
-	background: var(--admin-surface) !important;
+	border-color: var(--qlpk-brown-200);
+	background: var(--admin-surface);
 	color: var(--qlpk-brown-700) !important;
 }
 .qlpk-admin-page .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--qlpk-brown-300) !important;
-	background: var(--qlpk-brown-100) !important;
-	color: var(--qlpk-brown-700) !important;
+	border-color: var(--qlpk-brown-300);
+	background: var(--qlpk-brown-100);
+	color: var(--qlpk-brown-700);
 }
 .qlpk-admin-page .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--admin-success) !important;
-	background: var(--admin-success) !important;
-	color: var(--qlpk-color-white) !important;
+	border-color: var(--admin-success);
+	background: var(--admin-success);
+	color: var(--qlpk-color-white);
 }
 .qlpk-admin-page .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -437,7 +437,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 
 .qlpk-admin-page .modal-header .modal-title,
 .qlpk-admin-page .modal-header .modal-title i {
-	color: var(--qlpk-color-white) !important;
+	color: var(--qlpk-color-white);
 	font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-md, 14px));
 	font-weight: var(--qlpk-font-weight-bold, 700);
 }
@@ -489,9 +489,9 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 .qlpk-admin-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .gm-primary-action:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
-	border: 1px solid var(--admin-accent) !important;
-	background: var(--qlpk-workflow-context-header-bg) !important;
-	color: var(--qlpk-color-white) !important;
+	border: 1px solid var(--admin-accent);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
 }
 
 .qlpk-admin-page .um-btn-pill-lg,
@@ -586,7 +586,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 }
 
 .qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card:not(.modal-content) .card-body.p-0 {
-	padding: 0 !important;
+	padding: 0;
 }
 
 /* Catalog dictionary pages already use the desired compact table markup. */
@@ -619,7 +619,7 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 
 .qlpk-admin-page .catalog-dict-main .modal-header,
 .qlpk-admin-page .di-main-content .modal-header {
-	background: var(--qlpk-workflow-context-header-bg) !important;
+	background: var(--qlpk-workflow-context-header-bg);
 }
 
 /* Survey template page: retain its IDs/JS but use the same surface geometry. */
@@ -632,22 +632,22 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 
 .qlpk-admin-page .stm-main {
 	position: static;
-	width: 100% !important;
-	max-width: 100% !important;
-	flex: 0 0 100% !important;
+	width: 100%;
+	max-width: 100%;
+	flex: 0 0 100%;
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
 	min-height: 0;
-	padding: 0 !important;
+	padding: 0;
 	overflow: hidden;
 }
 
 .qlpk-admin-page .stm-main.col-md-10,
 .qlpk-admin-page .stm-main.col-lg-10 {
-	width: 100% !important;
-	max-width: 100% !important;
-	flex: 0 0 100% !important;
+	width: 100%;
+	max-width: 100%;
+	flex: 0 0 100%;
 }
 
 .qlpk-admin-page .stm-list-workspace {

@@ -2219,7 +2219,7 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 /* Force FullCalendar grid to stretch rows evenly */
 
 .appointment-fullscreen .fc-timegrid .fc-scroller {
-	overflow: auto !important;
+	overflow: auto;
 }
 
 /* FullCalendar toolbar compact */
@@ -2236,7 +2236,7 @@ body.qlpk-workspace-shell .appointment-fullscreen .qlpk-workspace-pane--native.i
 
 /* Hide sidebar */
 .qlpk-shell-sidebar {
-	display: none !important;
+	display: none;
 }
 
 /* List view */

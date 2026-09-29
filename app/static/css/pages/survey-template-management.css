@@ -50,27 +50,27 @@
 			position: relative;
 			height: 100vh;
 			overflow: hidden;
-			padding: 0 !important;
+			padding: 0;
 		}
 
 		.qlpk-shell-sidebar.col-md-2 {
-			flex: 0 0 16.66667% !important;
-			max-width: 16.66667% !important;
+			flex: 0 0 16.66667%;
+			max-width: 16.66667%;
 		}
 
 		.stm-main.col-md-10 {
-			flex: 0 0 83.33333% !important;
-			max-width: 83.33333% !important;
+			flex: 0 0 83.33333%;
+			max-width: 83.33333%;
 		}
 
 		.stm-main.col-lg-10 {
-			flex: 0 0 83.33333% !important;
-			max-width: 83.33333% !important;
+			flex: 0 0 83.33333%;
+			max-width: 83.33333%;
 		}
 
 		.stm-main.expanded {
-			flex: 0 0 100% !important;
-			max-width: 100% !important;
+			flex: 0 0 100%;
+			max-width: 100%;
 		}
 
 		.stm-card {
