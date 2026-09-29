@@ -267,6 +267,61 @@
 			}
 		];
 	}
+	function buildVitalSignsScales() {
+		return {
+			x: {
+				display: true,
+				offset: true,
+				title: {
+					display: true,
+					text: 'Ngày khám',
+					font: { family: 'Roboto', size: 11, weight: '500' }
+				},
+				grid: { display: false }
+			},
+			y: {
+				type: 'linear',
+				display: true,
+				position: 'left',
+				title: {
+					display: true,
+					text: 'Giá trị',
+					font: { family: 'Roboto', size: 11, weight: '500' }
+				},
+				grid: { color: 'rgba(0, 0, 0, 0.05)' },
+				beginAtZero: false,
+				grace: '10%'
+			},
+			y1: {
+				type: 'linear',
+				display: true,
+				position: 'right',
+				title: {
+					display: true,
+					text: 'N.độ (°C) / C.cao (cm)',
+					font: { family: 'Roboto', size: 11, weight: '500' }
+				},
+				grid: { drawOnChartArea: false },
+				beginAtZero: false,
+				grace: '10%'
+			}
+		};
+	}
+
+	function buildVitalSignsElements() {
+		return {
+			point: {
+				radius: 4,
+				hoverRadius: 6,
+				borderWidth: 2,
+				backgroundColor: 'white'
+			},
+			line: {
+				borderWidth: 2
+			}
+		};
+	}
+
 	function buildVitalSignsChartConfig(data, options = {}) {
 		const ChartCtor = options.Chart || window.Chart;
 		const updateAxes = typeof options.updateAxes === 'function' ? options.updateAxes : updateVitalSignsAxes;
@@ -307,55 +362,8 @@
 						displayColors: true
 					}
 				},
-				scales: {
-					x: {
-						display: true,
-						offset: true,
-						title: {
-							display: true,
-							text: 'Ngày khám',
-							font: { family: 'Roboto', size: 11, weight: '500' }
-						},
-						grid: { display: false }
-					},
-					y: {
-						type: 'linear',
-						display: true,
-						position: 'left',
-						title: {
-							display: true,
-							text: 'Giá trị',
-							font: { family: 'Roboto', size: 11, weight: '500' }
-						},
-						grid: { color: 'rgba(0, 0, 0, 0.05)' },
-						beginAtZero: false,
-						grace: '10%'
-					},
-					y1: {
-						type: 'linear',
-						display: true,
-						position: 'right',
-						title: {
-							display: true,
-							text: 'N.độ (°C) / C.cao (cm)',
-							font: { family: 'Roboto', size: 11, weight: '500' }
-						},
-						grid: { drawOnChartArea: false },
-						beginAtZero: false,
-						grace: '10%'
-					}
-				},
-				elements: {
-					point: {
-						radius: 4,
-						hoverRadius: 6,
-						borderWidth: 2,
-						backgroundColor: 'white'
-					},
-					line: {
-						borderWidth: 2
-					}
-				}
+				scales: buildVitalSignsScales(),
+				elements: buildVitalSignsElements()
 			}
 		};
 	}

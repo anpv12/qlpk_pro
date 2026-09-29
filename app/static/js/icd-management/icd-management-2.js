@@ -232,13 +232,9 @@ function hideImportProgressModal() {
 }
 
 // Hiển thị kết quả import
-function showImportResult(successCount, validationErrors, validationErrorList = [], serverErrors = []) {
+function buildImportResultModalHtml(successCount, validationErrors, serverErrors, allErrors) {
 	const totalErrors = validationErrors + serverErrors.length;
-	const allErrors = [...validationErrorList, ...serverErrors];
-
-	// Tạo modal kết quả nếu chưa có
-	if (!$('#importResultModal').length) {
-		$('body').append(`
+	return `
             <div class="modal fade" id="importResultModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -303,26 +299,40 @@ function showImportResult(successCount, validationErrors, validationErrorList = 
                     </div>
                 </div>
             </div>
-        `);
+        `;
+}
+
+function updateImportResultModal(successCount, validationErrors, serverErrors, allErrors) {
+	const totalErrors = validationErrors + serverErrors.length;
+	// Cập nhật nội dung modal
+	$('#importResultModal .text-success').text(successCount);
+	$('#importResultModal .text-warning').text(validationErrors);
+	$('#importResultModal .text-danger').text(serverErrors.length);
+
+	if (allErrors.length > 0) {
+		$('#importErrorList').html(allErrors.map(error => `<div class="mb-1"><small>• ${error}</small></div>`).join(''));
+		$('#importResultModal .alert-warning').show();
 	} else {
-		// Cập nhật nội dung modal
-		$('#importResultModal .text-success').text(successCount);
-		$('#importResultModal .text-warning').text(validationErrors);
-		$('#importResultModal .text-danger').text(serverErrors.length);
+		$('#importResultModal .alert-warning').hide();
+	}
 
-		if (allErrors.length > 0) {
-			$('#importErrorList').html(allErrors.map(error => `<div class="mb-1"><small>• ${error}</small></div>`).join(''));
-			$('#importResultModal .alert-warning').show();
-		} else {
-			$('#importResultModal .alert-warning').hide();
-		}
-
-		$('#importResultModal .alert-info').html(`
+	$('#importResultModal .alert-info').html(`
             <i class="bi bi-info-circle me-2"></i>
             <strong>Tổng kết:</strong>
             Import thành công <strong>${successCount}</strong> dòng,
             có <strong>${totalErrors}</strong> dòng lỗi.
         `);
+}
+
+function showImportResult(successCount, validationErrors, validationErrorList = [], serverErrors = []) {
+	const totalErrors = validationErrors + serverErrors.length;
+	const allErrors = [...validationErrorList, ...serverErrors];
+
+	// Tạo modal kết quả nếu chưa có
+	if (!$('#importResultModal').length) {
+		$('body').append(buildImportResultModalHtml(successCount, validationErrors, serverErrors, allErrors));
+	} else {
+		updateImportResultModal(successCount, validationErrors, serverErrors, allErrors);
 	}
 
 	// Hiển thị modal

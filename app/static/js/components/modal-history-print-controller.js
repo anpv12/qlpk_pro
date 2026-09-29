@@ -72,23 +72,7 @@
 		return printWindow;
 	}
 
-	function buildPrintDocument(options = {}) {
-		const version = options.assetVersion || '';
-		const typographyUrl = buildAssetUrl('/static/css/shared/typography.css', version);
-		const colorTokensUrl = buildAssetUrl('/static/css/shared/color-tokens.css', version);
-		const modalStylesUrl = buildAssetUrl('/static/css/patient-search-modal.css', version);
-
-		return `<!DOCTYPE html>
-			<html lang="vi">
-			<head>
-				<meta charset="utf-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1">
-				<title>${escapeHtml(options.title)}</title>
-				<link href="/static/vendor/pdf/bootstrap.min.css" rel="stylesheet">
-				<link rel="stylesheet" href="${escapeHtml(typographyUrl)}">
-				<link rel="stylesheet" href="${escapeHtml(colorTokensUrl)}">
-				<link rel="stylesheet" href="${escapeHtml(modalStylesUrl)}">
-				<style>
+	const PRINT_DOCUMENT_STYLE = `<style>
 					@page { size: A4; margin: 8mm; }
 					html, body { height: auto; margin: 0; background: #ffffff; }
 					body.patient-search-modal.patient-search-modal__right-column {
@@ -156,7 +140,25 @@
 						.modal-history-print-content { max-width: none; }
 						.prescription-preview__signature--avoid-break { break-inside: avoid; page-break-inside: avoid; }
 					}
-				</style>
+				</style>`;
+
+	function buildPrintDocument(options = {}) {
+		const version = options.assetVersion || '';
+		const typographyUrl = buildAssetUrl('/static/css/shared/typography.css', version);
+		const colorTokensUrl = buildAssetUrl('/static/css/shared/color-tokens.css', version);
+		const modalStylesUrl = buildAssetUrl('/static/css/patient-search-modal.css', version);
+
+		return `<!DOCTYPE html>
+			<html lang="vi">
+			<head>
+				<meta charset="utf-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1">
+				<title>${escapeHtml(options.title)}</title>
+				<link href="/static/vendor/pdf/bootstrap.min.css" rel="stylesheet">
+				<link rel="stylesheet" href="${escapeHtml(typographyUrl)}">
+				<link rel="stylesheet" href="${escapeHtml(colorTokensUrl)}">
+				<link rel="stylesheet" href="${escapeHtml(modalStylesUrl)}">
+				${PRINT_DOCUMENT_STYLE}
 			</head>
 			<body class="patient-search-modal patient-search-modal__right-column">
 				<main class="modal-history-print-content">${options.html}</main>
@@ -205,6 +207,72 @@
 			&& left.selectedIndex === right.selectedIndex;
 	}
 
+	// Runs the target renderer and rejects results that are not ready or belong to another visit.
+	async function renderPrintTarget(renderers, stateStore, target, selection) {
+		const renderer = renderers[target.rendererKey];
+		if (typeof renderer !== 'function') {
+			throw new Error(`Thiếu renderer cho ${target.label}`);
+		}
+		const result = await renderer();
+		if (!result || result.state !== 'ready') {
+			throw new Error(result?.state === 'stale'
+				? 'Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in'
+				: `Không thể tải ${target.label}`);
+		}
+		if (!isSameSelection(selection, resolveSelection(stateStore))) {
+			throw new Error('Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in');
+		}
+		return result;
+	}
+
+	async function writeRenderedTarget(doc, target, result, printWindow, prescriptionDocument) {
+		if (target.rendererKey === 'prescription') {
+			if (!result.paginationOptions) {
+				throw new Error('Thiếu dữ liệu tài liệu đơn thuốc');
+			}
+			await prescriptionDocument.render(printWindow, {
+				...result.paginationOptions,
+				assetVersion: getAssetVersion(doc),
+				title: target.title
+			});
+			return;
+		}
+		const content = doc.getElementById(target.contentId);
+		const html = content?.innerHTML?.trim();
+		if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
+		await writePrintDocument(printWindow, {
+			assetVersion: getAssetVersion(doc),
+			html,
+			title: target.title
+		});
+	}
+
+	function createPrescriptionPrintDocument(options, doc, openWindow) {
+		const factory = options.prescriptionPrintDocumentFactory
+			|| window.PrescriptionPrintDocument?.create;
+		if (typeof factory !== 'function') {
+			throw new Error('Thiếu component in đơn thuốc dùng chung');
+		}
+		return factory({
+			document: doc,
+			openWindow,
+			buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML
+		});
+	}
+
+	function markPrintButtonLoading(button) {
+		if (!button) return;
+		button.disabled = true;
+		button.setAttribute('aria-busy', 'true');
+		button.dataset.pdfPreviewState = 'loading';
+	}
+
+	function releasePrintButton(button) {
+		if (!button) return;
+		button.disabled = false;
+		button.removeAttribute('aria-busy');
+	}
+
 	function create(options = {}) {
 		const doc = options.document || document;
 		const stateStore = options.stateStore;
@@ -225,57 +293,8 @@
 				prescriptionPrintDocument = options.prescriptionPrintDocument;
 				return prescriptionPrintDocument;
 			}
-			const factory = options.prescriptionPrintDocumentFactory
-				|| window.PrescriptionPrintDocument?.create;
-			if (typeof factory !== 'function') {
-				throw new Error('Thiếu component in đơn thuốc dùng chung');
-			}
-			prescriptionPrintDocument = factory({
-				document: doc,
-				openWindow,
-				buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML
-			});
+			prescriptionPrintDocument = createPrescriptionPrintDocument(options, doc, openWindow);
 			return prescriptionPrintDocument;
-		}
-
-		// Runs the target renderer and rejects results that are not ready or belong to another visit.
-		async function renderPrintTarget(target, selection) {
-			const renderer = renderers[target.rendererKey];
-			if (typeof renderer !== 'function') {
-				throw new Error(`Thiếu renderer cho ${target.label}`);
-			}
-			const result = await renderer();
-			if (!result || result.state !== 'ready') {
-				throw new Error(result?.state === 'stale'
-					? 'Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in'
-					: `Không thể tải ${target.label}`);
-			}
-			if (!isSameSelection(selection, resolveSelection(stateStore))) {
-				throw new Error('Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in');
-			}
-			return result;
-		}
-
-		async function writeRenderedTarget(target, result, printWindow, prescriptionDocument) {
-			if (target.rendererKey === 'prescription') {
-				if (!result.paginationOptions) {
-					throw new Error('Thiếu dữ liệu tài liệu đơn thuốc');
-				}
-				await prescriptionDocument.render(printWindow, {
-					...result.paginationOptions,
-					assetVersion: getAssetVersion(doc),
-					title: target.title
-				});
-				return;
-			}
-			const content = doc.getElementById(target.contentId);
-			const html = content?.innerHTML?.trim();
-			if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
-			await writePrintDocument(printWindow, {
-				assetVersion: getAssetVersion(doc),
-				html,
-				title: target.title
-			});
 		}
 
 		async function printTarget(targetId, button) {
@@ -293,14 +312,10 @@
 				} else {
 					printWindow = openPrintWindow(target.title, openWindow);
 				}
-				if (button) {
-					button.disabled = true;
-					button.setAttribute('aria-busy', 'true');
-					button.dataset.pdfPreviewState = 'loading';
-				}
+				markPrintButtonLoading(button);
 
-				const result = await renderPrintTarget(target, selection);
-				await writeRenderedTarget(target, result, printWindow, prescriptionDocument);
+				const result = await renderPrintTarget(renderers, stateStore, target, selection);
+				await writeRenderedTarget(doc, target, result, printWindow, prescriptionDocument);
 				if (button) button.dataset.pdfPreviewState = 'ready';
 				return { status: 'ready', targetId };
 			} catch (error) {
@@ -317,10 +332,7 @@
 				showToast('error', `Không thể in ${target.label}. Vui lòng thử lại.`);
 				return { status: 'error', targetId, error };
 			} finally {
-				if (button) {
-					button.disabled = false;
-					button.removeAttribute('aria-busy');
-				}
+				releasePrintButton(button);
 			}
 		}
 

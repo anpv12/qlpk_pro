@@ -351,20 +351,15 @@ function buildChiCell(col, val, ri) {
 	}
 }
 
-function renderGrid() {
-	populateFilterOptions();
-	const filtered = getFilteredRows();
-
-	// Filter count
+function renderCtFilterCount(filtered) {
 	const countEl = document.getElementById('filterCount');
-	if (countEl) {
-		if (filtered.length < rows.length) {
-			countEl.textContent = `Hiển thị ${filtered.length}/${rows.length} khoản`;
-		} else {
-			countEl.textContent = `${rows.length} khoản`;
-		}
-	}
+	if (!countEl) return;
+	countEl.textContent = filtered.length < rows.length
+		? `Hiển thị ${filtered.length}/${rows.length} khoản`
+		: `${rows.length} khoản`;
+}
 
+function buildCtHeaderHtml() {
 	let h = '<tr><th class="row-num">#</th>';
 	for (const col of columns) {
 		const widthAttr = col.width ? ` style="width:${col.width}px;"` : '';
@@ -379,33 +374,28 @@ function renderGrid() {
 			<div class="ct-th-content">${col.name}${sortIcon}</div>
 		</th>`;
 	}
-	h += '<th class="ct-action-th"></th></tr>';
-	document.getElementById('chiHead').innerHTML = h;
+	return h + '<th class="ct-action-th"></th></tr>';
+}
 
-	let b = '';
-	let currentMonthGroup = null;
-	let currentGroupId = '';
+function toggleCtMonthGroup(groupId, el) {
+	const isCollapsed = !expandedGroups.has(groupId);
+	const icon = el.querySelector('.toggle-icon');
+	const rows = document.querySelectorAll('.' + groupId);
 
-	// Global toggle function
-	window.toggleMonthGroup = function(groupId, el) {
-		const isCollapsed = !expandedGroups.has(groupId);
-		const icon = el.querySelector('.toggle-icon');
-		const rows = document.querySelectorAll('.' + groupId);
+	if (isCollapsed) {
+		expandedGroups.add(groupId);
+		rows.forEach(r => setCtVisible(r, true));
+		if (icon) icon.classList.remove('ct-toggle-icon-collapsed');
+		el.dataset.collapsed = 'false';
+	} else {
+		expandedGroups.delete(groupId);
+		rows.forEach(r => setCtVisible(r, false));
+		if (icon) icon.classList.add('ct-toggle-icon-collapsed');
+		el.dataset.collapsed = 'true';
+	}
+}
 
-		if (isCollapsed) {
-			expandedGroups.add(groupId);
-			rows.forEach(r => setCtVisible(r, true));
-			if (icon) icon.classList.remove('ct-toggle-icon-collapsed');
-			el.dataset.collapsed = 'false';
-		} else {
-			expandedGroups.delete(groupId);
-			rows.forEach(r => setCtVisible(r, false));
-			if (icon) icon.classList.add('ct-toggle-icon-collapsed');
-			el.dataset.collapsed = 'true';
-		}
-	};
-
-	// Pre-calculate stats per group
+function buildCtGroupStats(filtered) {
 	const groupStats = {};
 	filtered.forEach(({ row }) => {
 		const { safeId } = getMonthGroupInfo(row.date || '');
@@ -415,7 +405,14 @@ function renderGrid() {
 		if (amount > 0) groupStats[safeId].count++;
 		groupStats[safeId].sum += amount;
 	});
+	return groupStats;
+}
 
+function buildCtBodyHtml(filtered) {
+	const groupStats = buildCtGroupStats(filtered);
+	let b = '';
+	let currentMonthGroup = null;
+	let currentGroupId = '';
 	filtered.forEach(({ row, idx: ri }, vi) => {
 		const { monthGroup, safeId } = getMonthGroupInfo(row.date || '');
 		if (monthGroup !== currentMonthGroup) {
@@ -431,9 +428,10 @@ function renderGrid() {
 		for (const col of columns) b += buildChiCell(col, c[col.id] ?? '', ri);
 		b += `<td class="row-actions"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" data-qlpk-call="deleteRow" data-qlpk-args='[${ri}]' title="Xóa"><i class="bi bi-trash"></i></button></td></tr>`;
 	});
-	document.getElementById('chiBody').innerHTML = b;
+	return b;
+}
 
-	// Totals - render right after header row in thead
+function buildCtTotalsHtml(filtered) {
 	const filteredRows = filtered.map(f => f.row);
 	const sumFiltered = (colId) => filteredRows.reduce((s, r) => s + (parseFloat(computeRow(r)[colId]) || 0), 0);
 
@@ -446,8 +444,23 @@ function renderGrid() {
 			f += `<td><input class="cell-input readonly" value="${validCount > 0 ? validCount + ' khoản' : ''}" readonly tabindex="-1"></td>`;
 		} else { f += '<td></td>'; }
 	}
-	f += '<td></td></tr>';
-	document.getElementById('chiHead').innerHTML = h + f;
+	return f + '<td></td></tr>';
+}
+
+function renderGrid() {
+	populateFilterOptions();
+	const filtered = getFilteredRows();
+	renderCtFilterCount(filtered);
+
+	const h = buildCtHeaderHtml();
+	document.getElementById('chiHead').innerHTML = h;
+
+	window.toggleMonthGroup = toggleCtMonthGroup;
+
+	document.getElementById('chiBody').innerHTML = buildCtBodyHtml(filtered);
+
+	// Totals - render right after header row in thead
+	document.getElementById('chiHead').innerHTML = h + buildCtTotalsHtml(filtered);
 }
 
 // ==================== EXPORT EXCEL ====================

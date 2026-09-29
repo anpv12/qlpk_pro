@@ -117,42 +117,9 @@
 		`;
 	};
 
-	class RelativeTable {
-		constructor(container, options = {}) {
-			this.container = container;
-			this.options = options;
-			this.patientId = options.patientId || null;
-			this.readOnly = !!options.readOnly;
-			this.currentAppointmentDate = options.currentAppointmentDate || null; // Ngày khám của bệnh nhân hiện tại
-			this.enablePatientLinks = options.enablePatientLinks !== false;
-			this.relationshipOptions = Array.isArray(options.relationshipOptions) && options.relationshipOptions.length
-				? options.relationshipOptions
-				: DEFAULT_RELATIONSHIP_OPTIONS;
-			this.instanceId = ++instanceCounter;
-			this.pendingRow = null;
-			this.contextToken = 0;
-			this.loadRevision = 0;
-			this.mutation = null;
-			this.rowContexts = new WeakMap();
-			this.data = [];
-			this.render();
-			this.updateActionState();
-			if (!this.patientId && this.tableBody && this.emptyState) this.renderRows([]);
-		}
-
-		setCurrentAppointmentDate(date) {
-			if (this.currentAppointmentDate === date) return;
-			this.currentAppointmentDate = date;
-			this.reload();
-		}
-
-		render() {
-			const relationshipOptionsHtml = (this.relationshipOptions || DEFAULT_RELATIONSHIP_OPTIONS)
-				.map((option) => `<option value="${this.escape(option)}"></option>`)
-				.join('');
-
-			this.container.innerHTML = `
-                <div class="relative-table-card ${this.readOnly ? 'readonly' : ''}">
+	const buildRelativeTableMarkup = (table, relationshipOptionsHtml) => {
+		return `
+                <div class="relative-table-card ${table.readOnly ? 'readonly' : ''}">
                     <div class="relative-table-header">
                         <h6><i class="bi bi-people-fill relative-table-title-icon qlpk-section-icon" aria-hidden="true"></i>Người thân liên kết</h6>
                         <div class="relative-table-actions">
@@ -193,22 +160,61 @@
                         </div>
                     </div>
                 </div>
-                <datalist id="relative-name-list-${this.instanceId}">
+                <datalist id="relative-name-list-${table.instanceId}">
                     <option value="Đặng Thị Minh An"></option>
                     <option value="Trần Quốc Huy"></option>
                     <option value="Phạm Anh Thư"></option>
                     <option value="Nguyễn Văn An"></option>
                 </datalist>
-                <datalist id="relative-relationship-list-${this.instanceId}">
+                <datalist id="relative-relationship-list-${table.instanceId}">
                     ${relationshipOptionsHtml}
                 </datalist>
             `;
+	};
+
+	class RelativeTable {
+		constructor(container, options = {}) {
+			this.container = container;
+			this.options = options;
+			this.patientId = options.patientId || null;
+			this.readOnly = !!options.readOnly;
+			this.currentAppointmentDate = options.currentAppointmentDate || null; // Ngày khám của bệnh nhân hiện tại
+			this.enablePatientLinks = options.enablePatientLinks !== false;
+			this.relationshipOptions = Array.isArray(options.relationshipOptions) && options.relationshipOptions.length
+				? options.relationshipOptions
+				: DEFAULT_RELATIONSHIP_OPTIONS;
+			this.instanceId = ++instanceCounter;
+			this.pendingRow = null;
+			this.contextToken = 0;
+			this.loadRevision = 0;
+			this.mutation = null;
+			this.rowContexts = new WeakMap();
+			this.data = [];
+			this.render();
+			this.updateActionState();
+			if (!this.patientId && this.tableBody && this.emptyState) this.renderRows([]);
+		}
+
+		setCurrentAppointmentDate(date) {
+			if (this.currentAppointmentDate === date) return;
+			this.currentAppointmentDate = date;
+			this.reload();
+		}
+
+		render() {
+			const relationshipOptionsHtml = (this.relationshipOptions || DEFAULT_RELATIONSHIP_OPTIONS)
+				.map((option) => `<option value="${this.escape(option)}"></option>`)
+				.join('');
+
+			this.container.innerHTML = buildRelativeTableMarkup(this, relationshipOptionsHtml);
 
 			this.tableBody = this.container.querySelector('tbody');
 			this.emptyState = this.container.querySelector('.relative-empty-state');
 			this.addBtn = this.container.querySelector('.btn-add-relative');
+			this.bindAddRelativeButton();
+		}
 
-
+		bindAddRelativeButton() {
 			// Use event delegation to ensure buttons work even if re-rendered
 			const header = this.container.querySelector('.relative-table-header');
 			if (header) {

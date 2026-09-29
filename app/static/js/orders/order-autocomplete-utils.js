@@ -162,13 +162,7 @@
 		return true;
 	}
 
-	function setupOrderFormAutocomplete(options = {}) {
-		const doc = options.document || document;
-		const nameInput = options.nameInput || doc.getElementById(options.nameInputId || 'orderFormNewName');
-		const dropdown = options.dropdown || doc.getElementById(options.dropdownId || 'orderFormNewNameDropdown');
-		const pathHint = options.pathHint || doc.getElementById(options.pathHintId || 'orderFormNewPathHint');
-
-		if (!nameInput || !dropdown) return null;
+	function applyOrderAutocompleteAria(nameInput, dropdown) {
 		nameInput.setAttribute('role', 'combobox');
 		nameInput.setAttribute('aria-autocomplete', 'list');
 		nameInput.setAttribute('aria-expanded', 'false');
@@ -176,6 +170,16 @@
 		if (nameInput.id) dropdown.dataset.autocompleteInputId = nameInput.id;
 		dropdown.setAttribute('role', 'listbox');
 		dropdown.setAttribute('aria-hidden', 'true');
+	}
+
+	function setupOrderFormAutocomplete(options = {}) {
+		const doc = options.document || document;
+		const nameInput = options.nameInput || doc.getElementById(options.nameInputId || 'orderFormNewName');
+		const dropdown = options.dropdown || doc.getElementById(options.dropdownId || 'orderFormNewNameDropdown');
+		const pathHint = options.pathHint || doc.getElementById(options.pathHintId || 'orderFormNewPathHint');
+
+		if (!nameInput || !dropdown) return null;
+		applyOrderAutocompleteAria(nameInput, dropdown);
 
 		let selectedIndex = -1;
 		const setSelectedIndex = (nextIndex) => {

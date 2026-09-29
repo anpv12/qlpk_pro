@@ -19,6 +19,30 @@
 		return candidate;
 	}
 
+	function buildPerTypePrescriptionData(rx, fullPrescriptionData) {
+		return {
+			medicines: rx.medicines || [],
+			prescription_code: rx.prescription_code || null,
+			prescription_type: rx.type || 'BASIC',
+			usage_instructions: fullPrescriptionData?.usage_instructions || '',
+			re_examination_date: fullPrescriptionData?.re_examination_date || null,
+			show_re_examination_date: fullPrescriptionData?.show_re_examination_date,
+			re_examination_time: fullPrescriptionData?.re_examination_time || null,
+			total_amount: rx.total_amount || 0
+		};
+	}
+
+	function normalizeTabPrescriptions(prescriptionData) {
+		return prescriptionData?.prescriptions && prescriptionData.prescriptions.length > 0
+			? prescriptionData.prescriptions
+			: [{
+				type: 'BASIC',
+				medicines: prescriptionData?.medicines || [],
+				prescription_code: prescriptionData?.prescription_code || null,
+				total_amount: prescriptionData?.total_amount || 0
+			}];
+	}
+
 	window.createPrescriptionModalPreview = function createPrescriptionModalPreview(deps = {}) {
 		let prescriptionTabPageIndex = 0;
 		let prescriptionTabData = null;
@@ -54,16 +78,7 @@
 			prescriptions.forEach(rx => {
 				const pType = rx.type || 'BASIC';
 
-				const perTypePrescriptionData = {
-					medicines: rx.medicines || [],
-					prescription_code: rx.prescription_code || null,
-					prescription_type: rx.type || 'BASIC',
-					usage_instructions: fullPrescriptionData?.usage_instructions || '',
-					re_examination_date: fullPrescriptionData?.re_examination_date || null,
-					show_re_examination_date: fullPrescriptionData?.show_re_examination_date,
-					re_examination_time: fullPrescriptionData?.re_examination_time || null,
-					total_amount: rx.total_amount || 0
-				};
+				const perTypePrescriptionData = buildPerTypePrescriptionData(rx, fullPrescriptionData);
 
 				const previewHtml = buildPrescriptionScreenHTML({
 					clinicInfo,
@@ -84,14 +99,7 @@
 		}
 
 		function setupPrescriptionTabPagination({ prescriptionData, clinicInfo, patient, history, examinationDetail, examinationDetailsBySection, relatives }) {
-			const prescriptions = prescriptionData?.prescriptions && prescriptionData.prescriptions.length > 0
-				? prescriptionData.prescriptions
-				: [{
-					type: 'BASIC',
-					medicines: prescriptionData?.medicines || [],
-					prescription_code: prescriptionData?.prescription_code || null,
-					total_amount: prescriptionData?.total_amount || 0
-				}];
+			const prescriptions = normalizeTabPrescriptions(prescriptionData);
 
 			prescriptionTabPageIndex = 0;
 			prescriptionTabData = {

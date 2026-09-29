@@ -24,19 +24,17 @@
 		};
 	}
 
+	function resolveSubForm(factory, subConfig) {
+		return factory && typeof factory.create === 'function'
+			? factory.create({ config: subConfig })
+			: factory;
+	}
+
 	function create(options = {}) {
 		let config = mergeConfig(options.config);
 		let contextToken = 0;
-		const patientInfo = options.patientInfo || (
-			window.QLPKPatientInfoForm && typeof window.QLPKPatientInfoForm.create === 'function'
-				? window.QLPKPatientInfoForm.create({ config: config.patient })
-				: window.QLPKPatientInfoForm
-		);
-		const patientVisit = options.patientVisit || (
-			window.QLPKPatientVisitInfoForm && typeof window.QLPKPatientVisitInfoForm.create === 'function'
-				? window.QLPKPatientVisitInfoForm.create({ config: config.visit })
-				: window.QLPKPatientVisitInfoForm
-		);
+		const patientInfo = options.patientInfo || resolveSubForm(window.QLPKPatientInfoForm, config.patient);
+		const patientVisit = options.patientVisit || resolveSubForm(window.QLPKPatientVisitInfoForm, config.visit);
 
 		function ensureComponents() {
 			if (!patientInfo || typeof patientInfo.populate !== 'function' || typeof patientInfo.collect !== 'function') {
