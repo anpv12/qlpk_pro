@@ -219,6 +219,18 @@ function updateFilterTypeLabel() {
 		lbl.textContent = `Loại chi (${selectedFilterTypes.length})`;
 	}
 }
+function expenseMonthKey(date) {
+	return date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}` : 'z';
+}
+
+// Descending: numbers numerically when both parse, otherwise by text.
+function compareExpenseValues(valA, valB) {
+	const numA = parseFloat(String(valA).replace(/,/g, ''));
+	const numB = parseFloat(String(valB).replace(/,/g, ''));
+	if (Number.isFinite(numA) && Number.isFinite(numB)) return numB - numA;
+	return String(valB).localeCompare(String(valA));
+}
+
 function getFilteredRows() {
 	const search = normalizeSearchText(document.getElementById('filterSearch')?.value || '');
 	const filterPayment = document.getElementById('filterPayment')?.value || '';
@@ -236,32 +248,17 @@ function getFilteredRows() {
 		// Step 1: Always group by month (newest month first)
 		const mA = parseDateStr(a.row.date);
 		const mB = parseDateStr(b.row.date);
-		const monthKeyA = mA ? `${mA.getFullYear()}-${String(mA.getMonth() + 1).padStart(2,'0')}` : 'z';
-		const monthKeyB = mB ? `${mB.getFullYear()}-${String(mB.getMonth() + 1).padStart(2,'0')}` : 'z';
+		const monthKeyA = expenseMonthKey(mA);
+		const monthKeyB = expenseMonthKey(mB);
 
 		if (monthKeyA !== monthKeyB) {
 			return monthKeyB.localeCompare(monthKeyA);
 		}
 
 		// Step 2: Within the same month, sort by chosen column
-		const valA = a.row[sortColId] ?? '';
-		const valB = b.row[sortColId] ?? '';
-		let cmp = 0;
-		if (sortColId === 'date') {
-			const tA = mA?.getTime() || 0;
-			const tB = mB?.getTime() || 0;
-			cmp = tB - tA;
-		} else {
-			const numA = parseFloat(String(valA).replace(/,/g, ''));
-			const numB = parseFloat(String(valB).replace(/,/g, ''));
-			const isNumA = !isNaN(numA) && isFinite(numA);
-			const isNumB = !isNaN(numB) && isFinite(numB);
-			if (isNumA && isNumB) {
-				cmp = numB - numA;
-			} else {
-				cmp = String(valB).localeCompare(String(valA));
-			}
-		}
+		const cmp = sortColId === 'date'
+			? (mB?.getTime() || 0) - (mA?.getTime() || 0)
+			: compareExpenseValues(a.row[sortColId] ?? '', b.row[sortColId] ?? '');
 		return sortOrder === 'asc' ? -cmp : cmp;
 	});
 }

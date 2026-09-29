@@ -293,31 +293,43 @@
 		const medicineId = inst.normalizeId(item.medicine_id || item.id);
 		const isExternal = item.is_external === undefined ? Boolean(externalFallback) : Boolean(item.is_external);
 		const usagePayload = inst.parseMedicineUsage(item.usage || '', inst.STATE.prescriptionUsageMode);
-		const batchAllocation = item.batch_allocation && typeof item.batch_allocation === 'object'
-			? JSON.parse(JSON.stringify(item.batch_allocation))
-			: null;
+		const batchAllocation = copyBatchAllocation(item.batch_allocation);
 		return {
 			uid: `rx-${inst.STATE.nextPrescriptionRowId++}`,
 			medicineId: isExternal ? null : medicineId,
-			name: inst.textOf(item.name || item.medicine_name),
-			genericName: inst.textOf(item.generic_name || item.active_ingredient),
+			...describeStoredMedicine(item),
 			quantity: normalizeStoredQuantity(item.quantity),
-			unit: inst.textOf(item.unit),
-			strength: inst.textOf(item.strength),
-			route: inst.textOf(item.route || item.administration_method),
-			usageNote: usagePayload.note || '',
-			usageNoteMode: inst.normalizeUsageNoteMode(
-				usagePayload.noteMode,
-				usagePayload.note ? inst.PRESCRIPTION_USAGE_NOTE_MODES.MANUAL : inst.PRESCRIPTION_USAGE_NOTE_MODES.GENERATED
-			),
-			schedule: usagePayload.schedule || inst.normalizeSchedulePayload({}, inst.STATE.prescriptionUsageMode),
+			...describeStoredUsage(usagePayload),
 			unitPrice: inst.toNumber(item.unit_price ?? item.price, 0),
 			currentStockQuantity: isExternal ? null : resolveStoredStockQuantity(item, batchAllocation),
 			isExternal,
-			categoryType: inst.textOf(item.category_type || 'DRUG'),
 			prescriptionType: inst.normalizePrescriptionType(item.prescription_type),
 			batchAllocation,
 			batchAllocationStale: false
+		};
+	}
+
+	function copyBatchAllocation(allocation) {
+		return allocation && typeof allocation === 'object' ? JSON.parse(JSON.stringify(allocation)) : null;
+	}
+
+	function describeStoredMedicine(item) {
+		return {
+			name: inst.textOf(item.name || item.medicine_name),
+			genericName: inst.textOf(item.generic_name || item.active_ingredient),
+			unit: inst.textOf(item.unit),
+			strength: inst.textOf(item.strength),
+			route: inst.textOf(item.route || item.administration_method),
+			categoryType: inst.textOf(item.category_type || 'DRUG')
+		};
+	}
+
+	function describeStoredUsage(usagePayload) {
+		const modes = inst.PRESCRIPTION_USAGE_NOTE_MODES;
+		return {
+			usageNote: usagePayload.note || '',
+			usageNoteMode: inst.normalizeUsageNoteMode(usagePayload.noteMode, usagePayload.note ? modes.MANUAL : modes.GENERATED),
+			schedule: usagePayload.schedule || inst.normalizeSchedulePayload({}, inst.STATE.prescriptionUsageMode)
 		};
 	}
 	function applyStockAllocationStates(states) {

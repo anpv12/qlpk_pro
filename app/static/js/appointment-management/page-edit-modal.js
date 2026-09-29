@@ -134,14 +134,17 @@
 	}
 
 	// Populate edit form
+	async function fillEditHistoryFields(appointment) {
+		const historyPatient = appointment.medical_history?.patient || {};
+		await page.setSelectedICDsFromString(historyPatient.physical_history || [], 'edit');
+		window.AppointmentManagementAllergyFormatUtils.setFieldValue($('#editAllergies'), historyPatient.allergies || []);
+		$('#editCurrentMedication').val(appointment.patient_info?.current_medication || '');
+	}
+
 	async function populateEditForm(appointment) {
 		fillEditPatientFields(appointment);
 
-		const historyPatient = appointment.medical_history?.patient || {};
-		await page.setSelectedICDsFromString(historyPatient.physical_history || [], 'edit');
-		const allergies = historyPatient.allergies || [];
-		window.AppointmentManagementAllergyFormatUtils.setFieldValue($('#editAllergies'), allergies);
-		$('#editCurrentMedication').val(appointment.patient_info?.current_medication || '');
+		await fillEditHistoryFields(appointment);
 
 		// Set doctor value - dropdown đã được tải xong
 		$('#editDoctor').val(appointment.doctor_id || '');
@@ -151,8 +154,9 @@
 		fillEditCategory(appointment.appointment_category || 'NEW');
 
 		// Intake reason and symptoms are examination-owned fields.
-		$('#editMainReason').val(appointment.examination_info?.main_reason || '');
-		$('#editSymptoms').val(appointment.examination_info?.main_symptoms || '');
+		const examinationInfo = appointment.examination_info || {};
+		$('#editMainReason').val(examinationInfo.main_reason || '');
+		$('#editSymptoms').val(examinationInfo.main_symptoms || '');
 
 		// Ưu tiên: duration từ service/package > appointment.duration_minutes > mặc định 60
 		$('#editDuration').val(getEditDurationFromSelection(appointment) || appointment.duration_minutes || 60);

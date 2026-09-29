@@ -16,6 +16,44 @@
 		inst.updatePrescriptionFooter(doc);
 		return true;
 	}
+	function runPrescriptionAction(doc, action) {
+		if (action === 're-examination-calendar') inst.openReExaminationCalendar(doc);
+		if (action === 'add-stock-row') inst.addPrescriptionRow(doc, false);
+		if (action === 'print') inst.printPrescription().catch(() => inst.showToast('error', 'Không thể in đơn thuốc. Vui lòng thử lại.'));
+	}
+
+	function reusePrescriptionVisit(doc, visit) {
+		inst.STATE.prescriptionRows = visit.prescriptions
+			.flatMap(prescription => prescription.medicines || [])
+			.map(item => inst.normalizePrescriptionRow(item));
+		inst.syncPrescriptionRowQuantities(doc);
+		inst.markPrescriptionDirty();
+		inst.renderPrescriptionRows(doc);
+		inst.setPrescriptionHistoryPanel(doc, false);
+		inst.renderPrescriptionHistory(doc);
+		inst.showToast('info', 'Đã đưa đơn cũ vào đơn hiện tại. Vui lòng kiểm tra trước khi lưu.');
+	}
+
+	function runPrescriptionHistoryAction(doc, element) {
+		const action = element.dataset.prescriptionHistoryAction;
+		if (action === 'toggle' || action === 'close') {
+			const shouldOpen = action === 'toggle' && !inst.STATE.prescriptionHistoryPanelOpen;
+			if (shouldOpen) inst.STATE.prescriptionHistorySelectedIndex = 0;
+			inst.setPrescriptionHistoryPanel(doc, shouldOpen);
+			inst.renderPrescriptionHistory(doc);
+			return;
+		}
+		const visits = inst.HISTORY.getVisits(inst.STATE.prescriptionHistory);
+		const index = Number(element.dataset.prescriptionHistoryIndex);
+		if (!Number.isInteger(index) || !visits[index]) return;
+		if (action === 'select') {
+			inst.STATE.prescriptionHistorySelectedIndex = index;
+			inst.renderPrescriptionHistory(doc);
+			return;
+		}
+		if (action === 'reuse') reusePrescriptionVisit(doc, visits[index]);
+	}
+
 	function bind(options = {}) {
 		const doc = inst.getDocument(options);
 		inst.STATE.document = doc;
@@ -35,10 +73,7 @@
 			const prescriptionAction = event.target.closest('[data-prescription-action]');
 			if (prescriptionAction) {
 				event.preventDefault();
-				const action = prescriptionAction.dataset.prescriptionAction;
-				if (action === 're-examination-calendar') inst.openReExaminationCalendar(doc);
-				if (action === 'add-stock-row') inst.addPrescriptionRow(doc, false);
-				if (action === 'print') inst.printPrescription().catch(() => inst.showToast('error', 'Không thể in đơn thuốc. Vui lòng thử lại.'));
+				runPrescriptionAction(doc, prescriptionAction.dataset.prescriptionAction);
 				return;
 			}
 
@@ -54,39 +89,7 @@
 			const prescriptionHistoryAction = event.target.closest('[data-prescription-history-action]');
 			if (prescriptionHistoryAction) {
 				event.preventDefault();
-				const action = prescriptionHistoryAction.dataset.prescriptionHistoryAction;
-				if (action === 'toggle') {
-					const shouldOpen = !inst.STATE.prescriptionHistoryPanelOpen;
-					if (shouldOpen) inst.STATE.prescriptionHistorySelectedIndex = 0;
-					inst.setPrescriptionHistoryPanel(doc, shouldOpen);
-					inst.renderPrescriptionHistory(doc);
-					return;
-				}
-				if (action === 'close') {
-					inst.setPrescriptionHistoryPanel(doc, false);
-					inst.renderPrescriptionHistory(doc);
-					return;
-				}
-				const visits = inst.HISTORY.getVisits(inst.STATE.prescriptionHistory);
-				const index = Number(prescriptionHistoryAction.dataset.prescriptionHistoryIndex);
-				if (!Number.isInteger(index) || !visits[index]) return;
-				if (action === 'select') {
-					inst.STATE.prescriptionHistorySelectedIndex = index;
-					inst.renderPrescriptionHistory(doc);
-					return;
-				}
-				if (action === 'reuse') {
-					const visit = visits[index];
-					inst.STATE.prescriptionRows = visit.prescriptions
-						.flatMap(prescription => prescription.medicines || [])
-						.map(item => inst.normalizePrescriptionRow(item));
-					inst.syncPrescriptionRowQuantities(doc);
-					inst.markPrescriptionDirty();
-					inst.renderPrescriptionRows(doc);
-					inst.setPrescriptionHistoryPanel(doc, false);
-					inst.renderPrescriptionHistory(doc);
-					inst.showToast('info', 'Đã đưa đơn cũ vào đơn hiện tại. Vui lòng kiểm tra trước khi lưu.');
-				}
+				runPrescriptionHistoryAction(doc, prescriptionHistoryAction);
 			}
 		});
 

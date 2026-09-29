@@ -425,61 +425,65 @@ async function loadAndRenderThuChi(chiRows, totalChi = 0, todayText = '', topDat
 		if (!range) return;
 
 		// 1. Group chi (expense) by day from expense rows
-		const chiByDay = {};
-		chiRows.forEach(r => {
-			const d = r.date; // dd/mm/yyyy
-			if (!d) return;
-			const parts = d.split('/');
-			const dayLabel = `${parseInt(parts[0],10)}/${parseInt(parts[1],10)}`; // "d/m"
-			chiByDay[dayLabel] = (chiByDay[dayLabel] || 0) + (parseFloat(r.amount) || 0);
+		const chiByDay = groupExpensesByDay(chiRows);
+
+		// 2. Load revenue data (already per-day from API; item.label = "d/m" e.g. "13/4")
+		const data = await apiRequest(`/api/dashboard/revenue?from_date=${range.fromISO}&to_date=${range.toISO}`);
+		const revenueItems = data && data.items ? data.items : [];
+		const thuByDay = {};
+		revenueItems.forEach(item => {
+			thuByDay[item.label] = (thuByDay[item.label] || 0) + (item.total || 0);
 		});
 
-		// 2. Load revenue data (already per-day from API)
-		const data = await apiRequest(`/api/dashboard/revenue?from_date=${range.fromISO}&to_date=${range.toISO}`);
-		const thuByDay = {};
-		if (data && data.items) {
-			data.items.forEach(item => {
-				// item.label = "d/m" e.g. "13/4"
-				thuByDay[item.label] = (thuByDay[item.label] || 0) + (item.total || 0);
-			});
-		}
-
-		// 3. Build day labels — use all days from revenue API (sorted chronologically)
-		const allDayLabels = data && data.items ? data.items.map(i => i.label) : [];
-		// Add chi-only days that might not be in revenue
+		// 3. Build day labels — use all days from revenue API (sorted chronologically), then chi-only days
+		const allDayLabels = revenueItems.map(i => i.label);
 		Object.keys(chiByDay).forEach(k => { if (!allDayLabels.includes(k)) allDayLabels.push(k); });
 
 		if (allDayLabels.length === 0) return;
 
-		const thuValues = allDayLabels.map(d => +((thuByDay[d] || 0) / 1000000).toFixed(2));
-		const chiValues = allDayLabels.map(d => +((chiByDay[d] || 0) / 1000000).toFixed(2));
+		const toMillions = byDay => allDayLabels.map(d => +((byDay[d] || 0) / 1000000).toFixed(2));
+		const thuValues = toMillions(thuByDay);
+		const chiValues = toMillions(chiByDay);
 
 		// Calculate total Thu over the retrieved period
-		let totalThu = 0;
-		if (data && data.items) {
-			data.items.forEach(item => totalThu += (item.total || 0));
-		}
+		const totalThu = revenueItems.reduce((sum, item) => sum + (item.total || 0), 0);
 
-		const profit = totalThu - totalChi;
-		const profitSign = profit >= 0 ? '+' : '';
-		const profitClass = profit >= 0 ? 'ct-profit-positive' : 'ct-profit-negative';
-
-		// Update DOM for Summary Strip's Tổng quan
-		const ssTongQuan = document.getElementById('ssTongQuan');
-		if (ssTongQuan) {
-			ssTongQuan.innerHTML = `
-				<span class="ss-item tooltip-host"><span class="ss-emoji">💰</span> Tổng thu: <span class="sv ct-summary-value ct-text-revenue">${fmtNum(totalThu)}</span></span>
-				<span class="ss-item tooltip-host"><span class="ss-emoji">💸</span> Tổng chi: <span class="sv ct-summary-value ct-text-danger">${fmtNum(totalChi)}</span></span>
-				<span class="ss-item tooltip-host"><span class="ss-emoji">📈</span> Lợi nhuận: <span class="sv ct-summary-profit ${profitClass}">${profitSign}${fmtNum(profit)}</span></span>
-				<div class="ms-3 ps-3 border-start ct-summary-extra">
-					<span class="ss-item"><span class="ss-emoji">☀️</span> Hôm nay chi: ${todayText}</span>
-					<span class="ss-item"><span class="ss-emoji">📆</span> Chi nhiều nhất: ${topDateText}</span>
-				</div>
-			`;
-		}
+		renderThuChiSummary(totalThu, totalChi, todayText, topDateText);
 
 		renderThuChiChart(allDayLabels, thuValues, chiValues);
 	} catch (e) {
 		console.error('Load thu chi error:', e);
+	}
+}
+
+function groupExpensesByDay(chiRows) {
+	const chiByDay = {};
+	chiRows.forEach(r => {
+		const d = r.date; // dd/mm/yyyy
+		if (!d) return;
+		const parts = d.split('/');
+		const dayLabel = `${parseInt(parts[0],10)}/${parseInt(parts[1],10)}`; // "d/m"
+		chiByDay[dayLabel] = (chiByDay[dayLabel] || 0) + (parseFloat(r.amount) || 0);
+	});
+	return chiByDay;
+}
+
+function renderThuChiSummary(totalThu, totalChi, todayText, topDateText) {
+	const profit = totalThu - totalChi;
+	const profitSign = profit >= 0 ? '+' : '';
+	const profitClass = profit >= 0 ? 'ct-profit-positive' : 'ct-profit-negative';
+
+	// Update DOM for Summary Strip's Tổng quan
+	const ssTongQuan = document.getElementById('ssTongQuan');
+	if (ssTongQuan) {
+		ssTongQuan.innerHTML = `
+			<span class="ss-item tooltip-host"><span class="ss-emoji">💰</span> Tổng thu: <span class="sv ct-summary-value ct-text-revenue">${fmtNum(totalThu)}</span></span>
+			<span class="ss-item tooltip-host"><span class="ss-emoji">💸</span> Tổng chi: <span class="sv ct-summary-value ct-text-danger">${fmtNum(totalChi)}</span></span>
+			<span class="ss-item tooltip-host"><span class="ss-emoji">📈</span> Lợi nhuận: <span class="sv ct-summary-profit ${profitClass}">${profitSign}${fmtNum(profit)}</span></span>
+			<div class="ms-3 ps-3 border-start ct-summary-extra">
+				<span class="ss-item"><span class="ss-emoji">☀️</span> Hôm nay chi: ${todayText}</span>
+				<span class="ss-item"><span class="ss-emoji">📆</span> Chi nhiều nhất: ${topDateText}</span>
+			</div>
+		`;
 	}
 }

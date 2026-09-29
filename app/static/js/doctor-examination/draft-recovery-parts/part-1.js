@@ -221,31 +221,38 @@
 			return '';
 		}
 	}
-	function renderBanner(doc) {
-		const banner = getBanner(doc);
-		if (!banner || !moduleState.STATE.pendingDraft) return;
+	function draftBannerCopy(restored, savedAt) {
+		const suffix = restored ? ' bản nháp chưa lưu.' : ` bản nháp chưa lưu${savedAt ? ` lúc ${savedAt}` : ''}.`;
+		return { prefix: restored ? 'Đang làm việc từ ' : 'Có ', suffix };
+	}
+
+	// Banner markup either splits the message into prefix/count/suffix parts or has one message node.
+	function writeDraftBannerMessage(banner, copy) {
 		const message = banner.querySelector('[data-doctor-draft-message]');
 		const messagePrefix = banner.querySelector('[data-doctor-draft-message-prefix]');
 		const draftCount = banner.querySelector('[data-doctor-draft-count]');
 		const messageSuffix = banner.querySelector('[data-doctor-draft-message-suffix]');
+		if (messagePrefix && draftCount && messageSuffix) {
+			messagePrefix.textContent = copy.prefix;
+			draftCount.textContent = '1';
+			messageSuffix.textContent = copy.suffix;
+		} else if (message) {
+			message.textContent = `${copy.prefix}1${copy.suffix}`;
+		}
+	}
+
+	function renderBanner(doc) {
+		const banner = getBanner(doc);
+		if (!banner || !moduleState.STATE.pendingDraft) return;
 		const restore = banner.querySelector('[data-doctor-draft-action="restore"]');
 		const discard = banner.querySelector('[data-doctor-draft-action="discard"]');
-		const savedAt = formatTimestamp(moduleState.STATE.pendingDraft.savedAt);
+		const restored = moduleState.STATE.restored;
+		const copy = draftBannerCopy(restored, formatTimestamp(moduleState.STATE.pendingDraft.savedAt));
 
 		banner.hidden = false;
-		banner.dataset.state = moduleState.STATE.restored ? 'restored' : 'available';
-		if (messagePrefix && draftCount && messageSuffix) {
-			messagePrefix.textContent = moduleState.STATE.restored ? 'Đang làm việc từ ' : 'Có ';
-			draftCount.textContent = '1';
-			messageSuffix.textContent = moduleState.STATE.restored
-				? ' bản nháp chưa lưu.'
-				: ` bản nháp chưa lưu${savedAt ? ` lúc ${savedAt}` : ''}.`;
-		} else if (message) {
-			message.textContent = moduleState.STATE.restored
-				? 'Đang làm việc từ 1 bản nháp chưa lưu.'
-				: `Có 1 bản nháp chưa lưu${savedAt ? ` lúc ${savedAt}` : ''}.`;
-		}
-		if (restore) restore.hidden = moduleState.STATE.restored;
+		banner.dataset.state = restored ? 'restored' : 'available';
+		writeDraftBannerMessage(banner, copy);
+		if (restore) restore.hidden = restored;
 		if (restore) restore.textContent = 'Khôi phục';
 		if (discard) discard.hidden = false;
 	}

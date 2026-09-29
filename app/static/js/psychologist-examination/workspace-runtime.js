@@ -167,10 +167,11 @@
 	async function loadAppointment(appointmentId, options = {}) {
 		const numericAppointmentId = Number(appointmentId);
 		if (!Number.isFinite(numericAppointmentId) || numericAppointmentId <= 0) return { status: 'missingAppointment' };
+		const doc = options.document || document;
 
 		state.contextToken += 1;
 		setLoading(true);
-		clear({ document: options.document || document });
+		clear({ document: doc });
 		// clear() increments the token deliberately; use a fresh token after reset.
 		const loadToken = state.contextToken;
 		setCurrentAppointment(numericAppointmentId);
@@ -180,13 +181,7 @@
 			const payload = await response.json();
 			if (loadToken !== state.contextToken) return { status: 'stale' };
 
-			state.payload = payload;
-			setCurrentPatient(payload.patient_info || payload.patient || null);
-			setCurrentAppointment(numericAppointmentId);
-			createComponents();
-			configureSupportRuntime();
-			const doc = options.document || document;
-			bindWorkspaceComponents(doc);
+			prepareLoadedAppointment(payload, numericAppointmentId, doc);
 
 			await populateWorkspace(payload, doc, numericAppointmentId);
 			if (loadToken !== state.contextToken) return { status: 'stale' };
@@ -201,6 +196,15 @@
 			if (loadToken !== state.contextToken) return { status: 'stale' };
 			return failAppointmentLoad(error);
 		}
+	}
+
+	function prepareLoadedAppointment(payload, appointmentId, doc) {
+		state.payload = payload;
+		setCurrentPatient(payload.patient_info || payload.patient || null);
+		setCurrentAppointment(appointmentId);
+		createComponents();
+		configureSupportRuntime();
+		bindWorkspaceComponents(doc);
 	}
 
 	function bindWorkspaceComponents(doc) {

@@ -186,6 +186,25 @@
 		return groups;
 	}
 
+	// Each stocked medicine shows its batch allocation once, on its first row.
+	function buildGroupedRowsHtml(rows, mode, options) {
+		const renderedMedicineAllocations = new Set();
+		const codesByType = options.codesByType || {};
+		const colCount = getTableColumnCount(mode);
+		const html = [];
+		groupRowsByDocumentType(rows).forEach((groupRows, type) => {
+			if (!groupRows.length) return;
+			html.push(buildGroupHeaderHtml(type, codesByType[type], colCount));
+			groupRows.forEach((row, groupIndex) => {
+				const allocationKey = row && !row.isExternal && row.medicineId ? String(row.medicineId) : '';
+				const showAllocation = Boolean(allocationKey) && !renderedMedicineAllocations.has(allocationKey);
+				if (showAllocation) renderedMedicineAllocations.add(allocationKey);
+				html.push(buildPrescriptionRowHtml(row, groupIndex, mode, options.getRowTotal, showAllocation));
+			});
+		});
+		return html.join('');
+	}
+
 	function render(options = {}) {
 		const doc = options.document || document;
 		const dom = { ...DEFAULT_DOM, ...(options.dom || {}) };
@@ -200,32 +219,9 @@
 		const mode = options.mode || PRESCRIPTION_USAGE_MODES.TIME_SLOTS;
 		body.dataset.prescriptionMode = mode;
 		if (head) head.innerHTML = buildTableHeader(mode);
-		if (!rows.length) {
-			body.innerHTML = '';
-			if (table) table.hidden = true;
-			if (empty) empty.hidden = false;
-		} else {
-			const renderedMedicineAllocations = new Set();
-			const codesByType = options.codesByType || {};
-			const colCount = getTableColumnCount(mode);
-			const groups = groupRowsByDocumentType(rows);
-			const html = [];
-			groups.forEach((groupRows, type) => {
-				if (!groupRows.length) return;
-				html.push(buildGroupHeaderHtml(type, codesByType[type], colCount));
-				groupRows.forEach((row, groupIndex) => {
-					const allocationKey = row && !row.isExternal && row.medicineId
-						? String(row.medicineId)
-						: '';
-					const showAllocation = Boolean(allocationKey) && !renderedMedicineAllocations.has(allocationKey);
-					if (showAllocation) renderedMedicineAllocations.add(allocationKey);
-					html.push(buildPrescriptionRowHtml(row, groupIndex, mode, options.getRowTotal, showAllocation));
-				});
-			});
-			body.innerHTML = html.join('');
-			if (table) table.hidden = false;
-			if (empty) empty.hidden = true;
-		}
+		body.innerHTML = rows.length ? buildGroupedRowsHtml(rows, mode, options) : '';
+		if (table) table.hidden = !rows.length;
+		if (empty) empty.hidden = Boolean(rows.length);
 		if (typeof options.afterRender === 'function') options.afterRender(doc);
 		return true;
 	}

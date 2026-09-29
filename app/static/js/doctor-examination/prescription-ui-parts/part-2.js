@@ -91,6 +91,20 @@
 		inst.STATE.reExaminationError = '';
 		inst.setPrescriptionReExamDate(doc, inst.STATE.reExaminationDateTime);
 	}
+	function normalizeLoadedRows(data) {
+		return Array.isArray(data && data.medicines) ? data.medicines.map(item => inst.normalizePrescriptionRow(item)) : [];
+	}
+
+	function hasPersistedPrescription(data, usageState) {
+		return Boolean(
+			inst.STATE.prescriptionRows.length
+			|| (data.prescriptions || []).length
+			|| data.re_examination_date
+			|| usageState.globalUsage
+			|| usageState.medicineDays
+		);
+	}
+
 	async function loadPrescription(context) {
 		const { doc, token, appointmentId } = context;
 		try {
@@ -99,9 +113,7 @@
 			const usageState = inst.parseGlobalUsageInstructions(data && data.usage_instructions, inst.STATE.prescriptionUsageMode);
 			inst.setPrescriptionUsageMode(doc, usageState.scheduleMode);
 
-			inst.STATE.prescriptionRows = Array.isArray(data && data.medicines)
-				? data.medicines.map(item => inst.normalizePrescriptionRow(item))
-				: [];
+			inst.STATE.prescriptionRows = normalizeLoadedRows(data);
 			inst.STATE.prescriptionCodesByType = buildPrescriptionCodeMap(data);
 			inst.STATE.preservedGlobalUsage = usageState.globalUsage || '';
 			inst.setValue(doc, 'doctorPrescriptionMedicineDays', usageState.medicineDays || '');
@@ -110,14 +122,8 @@
 			inst.STATE.prescriptionLoaded = true;
 			inst.syncPrescriptionReExamControls(doc);
 			inst.CHANGES.reset();
-			const hasPersistedPrescription = Boolean(
-				inst.STATE.prescriptionRows.length
-				|| (data.prescriptions || []).length
-				|| data.re_examination_date
-				|| usageState.globalUsage
-				|| usageState.medicineDays
-			);
-			inst.setPrescriptionSaveStatus(doc, hasPersistedPrescription ? 'saved' : 'idle', hasPersistedPrescription ? 'Đã lưu' : 'Chưa có thay đổi');
+			const persisted = hasPersistedPrescription(data, usageState);
+			inst.setPrescriptionSaveStatus(doc, persisted ? 'saved' : 'idle', persisted ? 'Đã lưu' : 'Chưa có thay đổi');
 			renderPrescriptionRows(doc);
 			return true;
 		} catch (error) {

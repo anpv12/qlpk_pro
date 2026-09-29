@@ -167,10 +167,15 @@
 			return { status, modules: results, failedModules, skippedModules, successMessages };
 		}
 
+		function isIndicationStateLoaded(indicationState) {
+			return Boolean(indicationState?.ordersLoaded && indicationState.surveyLoaded && indicationState.performersLoaded);
+		}
+
 		function getSaveReadiness() {
 			const prescription = getPrescriptionUi();
 			const services = getServicesForm();
 			const indications = getIndicationsForm();
+			const indicationState = indications.getState?.();
 			const modules = [
 				{
 					key: 'prescription',
@@ -188,9 +193,7 @@
 					key: 'indications',
 					label: 'Chỉ định',
 					isDirty: indications.hasUnsavedChanges(),
-					isLoaded: Boolean(indications.getState?.()?.ordersLoaded
-						&& indications.getState?.()?.surveyLoaded
-						&& indications.getState?.()?.performersLoaded)
+					isLoaded: isIndicationStateLoaded(indicationState)
 				}
 			];
 			const failures = modules
@@ -234,44 +237,29 @@
 			const services = getServicesForm();
 			const indications = getIndicationsForm();
 			const dirty = restoreOptions.dirty || {};
-			if (prescription) {
-				prescription.restoreDraftSnapshot(snapshot.prescription || {}, {
-					document: doc,
-					context: state.context,
-					dirty: Boolean(dirty.prescription)
-				});
-				if (typeof runtime.markRestoredRows === 'function') {
-					// Each prescription row renders as two <tr>s (medicine + note) with
-					// the same row id. Mark only the medicine row so the row indexes stay
-					// aligned with the prescription snapshot and restore focus can target
-					// the medicine name input rather than the note input.
-					runtime.markRestoredRows(doc, '#doctorPrescriptionWorkspace .doctor-prescription-table__body-row', runtime.changedRowIndexes(
-						restoreOptions.base?.prescription?.rows,
-						snapshot.prescription?.rows
-					));
-				}
-			}
-			services.restoreDraftSnapshot(snapshot.services || {}, {
-				document: doc,
-				context: state.context,
-				dirty: Boolean(dirty.services)
-			});
-			services.markRestoredRows(
-				doc,
-				restoreOptions.base?.services?.rows,
-				snapshot.services?.rows
-			);
-			indications.restoreDraftSnapshot(snapshot.indications || {}, {
-				document: doc,
-				context: state.context,
-				dirty: Boolean(dirty.indications)
-			});
-			indications.markRestoredRows(
-				doc,
-				restoreOptions.base?.indications?.rows,
-				snapshot.indications?.rows
-			);
+			const base = restoreOptions.base || {};
+			if (prescription) restorePrescriptionDraft(prescription, doc, snapshot, base, Boolean(dirty.prescription));
+			restoreFormDraft(services, doc, snapshot.services, base.services, Boolean(dirty.services));
+			restoreFormDraft(indications, doc, snapshot.indications, base.indications, Boolean(dirty.indications));
 			return true;
+		}
+
+		function restorePrescriptionDraft(prescription, doc, snapshot, base, dirty) {
+			prescription.restoreDraftSnapshot(snapshot.prescription || {}, { document: doc, context: state.context, dirty });
+			if (typeof runtime.markRestoredRows !== 'function') return;
+			// Each prescription row renders as two <tr>s (medicine + note) with
+			// the same row id. Mark only the medicine row so the row indexes stay
+			// aligned with the prescription snapshot and restore focus can target
+			// the medicine name input rather than the note input.
+			runtime.markRestoredRows(doc, '#doctorPrescriptionWorkspace .doctor-prescription-table__body-row', runtime.changedRowIndexes(
+				base.prescription?.rows,
+				snapshot.prescription?.rows
+			));
+		}
+
+		function restoreFormDraft(form, doc, formSnapshot, formBase, dirty) {
+			form.restoreDraftSnapshot(formSnapshot || {}, { document: doc, context: state.context, dirty });
+			form.markRestoredRows(doc, formBase?.rows, formSnapshot?.rows);
 		}
 
 		return {

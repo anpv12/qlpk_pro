@@ -334,14 +334,34 @@
 			: Promise.resolve(true);
 		return [clinicalLoad, medicalHistoryLoad, supportLoad];
 	}
-	async function renderPatientSurface(payload, loadToken, options = {}) {
+	function markExamSurfaceSelected(payload, options) {
 		const examSurface = moduleState.DOM.getElementById('doctorExamSurface');
-		if (examSurface) {
-			examSurface.classList.add('has-selected-appointment');
-			if (!options.historyView && payload && payload.id) {
-				examSurface.dataset.selectedAppointmentId = String(payload.id);
-			}
+		if (!examSurface) return null;
+		examSurface.classList.add('has-selected-appointment');
+		if (!options.historyView && payload && payload.id) {
+			examSurface.dataset.selectedAppointmentId = String(payload.id);
 		}
+		return examSurface;
+	}
+
+	function clearPatientLoadFailure(clinicalWorkspace, examSurface) {
+		moduleState.state.loadFailed = false;
+		moduleState.state.loadFailure = null;
+		if (typeof clinicalWorkspace.setLoadFailed === 'function') clinicalWorkspace.setLoadFailed(false);
+		if (examSurface) delete examSurface.dataset.loadState;
+	}
+
+	function buildDraftRecoveryContext(payload) {
+		return {
+			document: moduleState.DOM,
+			context: moduleState.COMPONENT_CONTEXT,
+			appointmentId: payload && payload.id ? payload.id : moduleState.state.currentAppointmentId,
+			patientId: getPatientIdFromPayload(payload)
+		};
+	}
+
+	async function renderPatientSurface(payload, loadToken, options = {}) {
+		const examSurface = markExamSurfaceSelected(payload, options);
 
 		const clinicalWorkspace = moduleState.getModule('clinicalWorkspace');
 		const draftRecovery = moduleState.getModule('draftRecovery');
@@ -360,19 +380,9 @@
 			const reason = `Chưa tải đủ dữ liệu: ${failedLoads.map(item => item.label).join(', ')}.`;
 			return markPatientLoadFailed(reason, `${reason} Chưa thể lưu ca khám; hãy tải lại ca để thử lại.`, { appointmentId: moduleState.state.currentAppointmentId });
 		}
-		moduleState.state.loadFailed = false;
-		moduleState.state.loadFailure = null;
-		if (clinicalWorkspace && typeof clinicalWorkspace.setLoadFailed === 'function') {
-			clinicalWorkspace.setLoadFailed(false);
-		}
-		if (examSurface) delete examSurface.dataset.loadState;
+		clearPatientLoadFailure(clinicalWorkspace, examSurface);
 		if (!options.historyView && draftRecovery && typeof draftRecovery.setContext === 'function') {
-			await draftRecovery.setContext({
-				document: moduleState.DOM,
-				context: moduleState.COMPONENT_CONTEXT,
-				appointmentId: payload && payload.id ? payload.id : moduleState.state.currentAppointmentId,
-				patientId: getPatientIdFromPayload(payload)
-			});
+			await draftRecovery.setContext(buildDraftRecoveryContext(payload));
 		}
 		moduleState.COMPONENT_CONTEXT.emit('patient:loaded', {
 			appointmentId: moduleState.state.currentAppointmentId,

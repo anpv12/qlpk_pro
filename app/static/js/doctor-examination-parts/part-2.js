@@ -8,6 +8,16 @@
 		if (options.skipUnsavedGuard || !moduleState.state.currentAppointmentId) return true;
 		return moduleParts.requestWorkspaceLeave({ reason: 'patient-switch' });
 	}
+	function reportPatientCardLoadError(error, surfaceCleared, appointmentId, options) {
+		if (!surfaceCleared) {
+			moduleState.showCustomToast('warning', options.loadFailureMessage || 'Không thể nạp lượt khám lịch sử vào form.');
+			return false;
+		}
+		return moduleParts.markPatientLoadFailed(error?.message || 'Không tải được chi tiết lịch hẹn', 'Không tải được chi tiết lịch hẹn', {
+			appointmentId
+		});
+	}
+
 	async function selectPatientCard(appointmentId, options = {}) {
 		if (!appointmentId) return;
 		const numericAppointmentId = Number(appointmentId);
@@ -34,13 +44,7 @@
 			return true;
 		} catch (error) {
 			if (token !== moduleState.state.loadToken) return false;
-			if (!surfaceCleared) {
-				moduleState.showCustomToast('warning', options.loadFailureMessage || 'Không thể nạp lượt khám lịch sử vào form.');
-				return false;
-			}
-			return moduleParts.markPatientLoadFailed(error?.message || 'Không tải được chi tiết lịch hẹn', 'Không tải được chi tiết lịch hẹn', {
-				appointmentId: numericAppointmentId
-			});
+			return reportPatientCardLoadError(error, surfaceCleared, numericAppointmentId, options);
 		} finally {
 			if (token === moduleState.state.loadToken) moduleParts.setLoadingState(false);
 		}

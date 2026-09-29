@@ -159,6 +159,31 @@
 			}
 		});
 
+		function fillShortcutForm(row) {
+			idInput.value = row.id;
+			comboInput.value = row.combo_key || '';
+			urlInput.value = row.target_url || '';
+			if (routeSelect) routeSelect.value = row.target_url || '';
+			comboPreview.textContent = row.combo_key || 'Chưa chọn';
+		}
+
+		async function deleteShortcut(id) {
+			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
+			if (!moduleState.settingsCurrent()) return;
+			try {
+				const res = await moduleParts.apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });
+				if (!moduleState.settingsCurrent()) return;
+				if (!res.ok) {
+					moduleParts.showMessage(alertBox, 'Không thể xóa phím tắt.', 'danger');
+					return;
+				}
+				moduleParts.showMessage(alertBox, 'Đã xóa phím tắt.', 'success');
+				await reloadTable();
+			} catch (err) {
+				moduleParts.showMessage(alertBox, 'Lỗi kết nối khi xóa phím tắt.', 'danger');
+			}
+		}
+
 		tbody.addEventListener('click', async function (e) {
 			if (!moduleState.settingsCurrent()) { moduleParts.clearSessionState(); return; }
 			const btn = e.target.closest('button[data-action]');
@@ -171,30 +196,11 @@
 			if (!row) return;
 
 			if (action === 'edit') {
-				idInput.value = row.id;
-				comboInput.value = row.combo_key || '';
-				urlInput.value = row.target_url || '';
-				if (routeSelect) routeSelect.value = row.target_url || '';
-				comboPreview.textContent = row.combo_key || 'Chưa chọn';
+				fillShortcutForm(row);
 				return;
 			}
 
-			if (action === 'delete') {
-				if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
-				if (!moduleState.settingsCurrent()) return;
-				try {
-					const res = await moduleParts.apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });
-					if (!moduleState.settingsCurrent()) return;
-					if (!res.ok) {
-						moduleParts.showMessage(alertBox, 'Không thể xóa phím tắt.', 'danger');
-						return;
-					}
-					moduleParts.showMessage(alertBox, 'Đã xóa phím tắt.', 'success');
-					await reloadTable();
-				} catch (err) {
-					moduleParts.showMessage(alertBox, 'Lỗi kết nối khi xóa phím tắt.', 'danger');
-				}
-			}
+			if (action === 'delete') await deleteShortcut(id);
 		});
 
 		try {

@@ -4,17 +4,14 @@
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/clinical-workspace-ui#create'] || (window.QLPKModuleParts['doctor-examination/clinical-workspace-ui#create'] = { installers: [] });
 	moduleParts.installers.push(function (inst, outer) {
+	// Collaborators a later bind() may replace; missing values keep the previous binding.
+	const BIND_STATE_KEYS = ['context', 'apiCall', 'getAppointmentId', 'isLoading', 'showToast', 'afterSave', 'afterComplete', 'onTransfer', 'canTransfer'];
+
 	function bind(options = {}) {
-		inst.STATE.context = options.context || inst.STATE.context;
 		const doc = outer.getDocument(options);
-		inst.STATE.apiCall = options.apiCall || inst.STATE.apiCall;
-		inst.STATE.getAppointmentId = options.getAppointmentId || inst.STATE.getAppointmentId;
-		inst.STATE.isLoading = options.isLoading || inst.STATE.isLoading;
-		inst.STATE.showToast = options.showToast || inst.STATE.showToast;
-		inst.STATE.afterSave = options.afterSave || inst.STATE.afterSave;
-		inst.STATE.afterComplete = options.afterComplete || inst.STATE.afterComplete;
-		inst.STATE.onTransfer = options.onTransfer || inst.STATE.onTransfer;
-		inst.STATE.canTransfer = options.canTransfer || inst.STATE.canTransfer;
+		BIND_STATE_KEYS.forEach(key => {
+			inst.STATE[key] = options[key] || inst.STATE[key];
+		});
 
 		const workspace = inst.getElement(doc, 'doctorClinicalWorkspace');
 		if (!workspace) return false;

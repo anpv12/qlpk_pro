@@ -190,6 +190,28 @@ async function closeSurveySession() {
 }
 
 // Render survey results with full UI (header + dropdown + results)
+// Drop duplicate responses (by id, else template/timestamps) and sort ALL by creation date, latest first.
+function uniqueResponsesLatestFirst(surveyResponses) {
+	const seenResponseIds = new Set();
+	const uniqueResponses = surveyResponses.filter(response => {
+		const responseId = response.id || `${response.survey_template_id}_${response.created_at}_${response.updated_at}`;
+		if (seenResponseIds.has(responseId)) return false;
+		seenResponseIds.add(responseId);
+		return true;
+	});
+	uniqueResponses.sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
+	return uniqueResponses;
+}
+
+function buildSurveyResultHeading(latestTemplate) {
+	const expires = currentOrderDetail.status !== 'completed' && currentOrderDetail.survey_expires_at
+		? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(currentOrderDetail.survey_expires_at)}</p>` : '';
+	return `
+        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
+        <p class="om-survey-helper-text">Mẫu: ${escapeHtml(latestTemplate.name || '—')}</p></div>
+        ${expires}</div>`;
+}
+
 async function renderSurveyResults(surveyResponses, templates, surveySession, appointment, isCurrent = () => true) {
 	if (!surveyResponses || surveyResponses.length === 0) {
 		renderSurveySelectionUI(null, templates, surveySession, appointment);
@@ -199,26 +221,7 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 	// Debug log
 
 
-	// Remove duplicate responses based on response ID
-	const seenResponseIds = new Set();
-	const uniqueResponses = surveyResponses.filter(response => {
-		// Use response.id if available, otherwise create unique key
-		const responseId = response.id ||
-			`${response.survey_template_id}_${response.created_at}_${response.updated_at}` ||
-			`${response.survey_template_id}_${Date.now()}_${Math.random()}`;
-		if (seenResponseIds.has(responseId)) {
-			return false; // Skip duplicate
-		}
-		seenResponseIds.add(responseId);
-		return true;
-	});
-
-	// Sort ALL responses by creation date (latest first) - không phân biệt template
-	uniqueResponses.sort((a, b) => {
-		const dateA = new Date(a.created_at || a.updated_at || 0);
-		const dateB = new Date(b.created_at || b.updated_at || 0);
-		return dateB - dateA; // Latest first
-	});
+	const uniqueResponses = uniqueResponsesLatestFirst(surveyResponses);
 	const indicationTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
 	const linkedResponses = indicationTemplateId
 		? uniqueResponses.filter(response => Number(response.survey_template_id) === indicationTemplateId)
@@ -244,10 +247,7 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 	// Debug: Log template match
 
     renderSurveyActions(latestResponse.examination_id, currentOrderDetail.patient?.id, true);
-    let html = `<div>
-        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
-        <p class="om-survey-helper-text">Mẫu: ${escapeHtml(latestTemplate.name || '—')}</p></div>
-        ${currentOrderDetail.status !== 'completed' && currentOrderDetail.survey_expires_at ? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(currentOrderDetail.survey_expires_at)}</p>` : ''}</div>`;
+    let html = `<div>${buildSurveyResultHeading(latestTemplate)}`;
 	// Render chỉ 1 card cho response mới nhất
 	const cardHtml = await renderSingleSurveyResultCard(latestTemplate, latestResponse);
     if (!isCurrent()) return;

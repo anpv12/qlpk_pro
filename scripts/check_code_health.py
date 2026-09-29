@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAX_LINES = 600
 # Size/complexity metrics stay advisory below the hard limits; every other ESLint warning is a finding.
 METRIC_RULES = {"complexity", "max-lines-per-function", "max-lines"}
-MAX_COMPLEXITY = 20
+MAX_COMPLEXITY = 16
 JS_ROOT = ROOT / "app" / "static" / "js"
 
 

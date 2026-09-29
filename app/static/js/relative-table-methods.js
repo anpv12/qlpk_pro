@@ -19,7 +19,7 @@
 			phone: trimmedValue(row, '.relative-phone-input'),
 			emergencyContact: emergencyContactCheckbox ? emergencyContactCheckbox.checked : false,
 			jointExamDate: jointExamDateInput ? jointExamDateInput.value : null,
-			relativePatientId: row.dataset.relativePatientId ? parseInt(row.dataset.relativePatientId) : null
+			relativePatientId: row.dataset.relativePatientId ? parseInt(row.dataset.relativePatientId, 10) : null
 		};
 	}
 
@@ -106,9 +106,8 @@
 			const originalRelativePatientId = item.relative_patient_id || null;
 
 			// Disable phone và id_number input nếu có relativePatientId (chọn từ hệ thống)
-			const isFromSystem = originalRelativePatientId && originalRelativePatientId > 0;
-			const phoneDisabled = isFromSystem ? 'disabled' : '';
-			const idNumberDisabled = isFromSystem ? 'disabled' : '';
+			const phoneDisabled = originalRelativePatientId > 0 ? 'disabled' : '';
+			const idNumberDisabled = phoneDisabled;
 
 			targetRow.classList.add('editing-row');
 			// Preserve current linked patient id (if any) so we can update it when saving
@@ -142,10 +141,6 @@
                 </td>
             `;
 
-			const nameInput = targetRow.querySelector('.relative-name-input');
-			const kinshipInput = targetRow.querySelector('input[list*="relative-relationship-list"]');
-			const phoneInput = targetRow.querySelector('.relative-phone-input');
-
 			// Enable autocomplete + patient search for edit row as well
 			const dropdownHandlers = this.setupNameAutocomplete(targetRow) || {};
 			const hideDropdown = dropdownHandlers.hideDropdown;
@@ -155,18 +150,7 @@
 			targetRow.querySelector('.btn-save').addEventListener('click', async () => {
 				if (this.mutation || this.readOnly || !isCurrentContext() || this.pendingRow !== targetRow) return;
 				if (hideDropdown) hideDropdown();
-				const name = nameInput.value.trim();
-				const kinship = kinshipInput.value.trim();
-				const idNumberInput = targetRow.querySelector('.relative-id-number-input');
-				const idNumber = idNumberInput ? idNumberInput.value.trim() : '';
-				const phone = phoneInput.value.trim();
-				const emergencyContactCheckbox = targetRow.querySelector('.relative-emergency-contact-checkbox');
-				const jointExamDateInput = targetRow.querySelector('.relative-date-input');
-				const emergencyContact = emergencyContactCheckbox ? emergencyContactCheckbox.checked : false;
-				const jointExamDate = jointExamDateInput ? jointExamDateInput.value : null;
-				const relativePatientId = targetRow.dataset.relativePatientId
-					? parseInt(targetRow.dataset.relativePatientId, 10)
-					: null;
+				const { name, kinship, idNumber, phone, emergencyContact, jointExamDate, relativePatientId } = readNewRelativeRow(targetRow);
 
 				if (!name || !kinship) {
 					notify('warning', 'Vui lòng nhập đầy đủ họ tên và quan hệ');
