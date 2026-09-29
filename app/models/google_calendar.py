@@ -46,3 +46,21 @@ class GoogleCalendarTransferJob(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     last_error = Column(String(80), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class GoogleCalendarSyncJob(Base):
+    """Durable request to reconcile one appointment's Google events with its current state.
+
+    Written in the caller's transaction; the worker reads the appointment at processing
+    time, so several pending requests for the same appointment collapse into one job.
+    """
+    __tablename__ = 'google_calendar_sync_jobs'
+
+    id = Column(Integer, primary_key=True)
+    appointment_id = Column(Integer, ForeignKey('appointments.id', ondelete='CASCADE'), nullable=False, index=True)
+    token = Column(String(32), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0, server_default='0')
+    next_attempt_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(String(80), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

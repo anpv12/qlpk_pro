@@ -10,6 +10,7 @@ from app.models.package import Package
 from app.models.patient import Patient
 from app.models.user import User
 from app.schemas.appointment import AppointmentCreate
+from app.modules.appointments.services.calendar_sync import enqueue_calendar_sync
 from app.modules.appointments.services.side_effects import schedule_appointment_reminder
 from app.modules.appointments.services.re_examination_metadata import (
     ReExaminationMetadataValidationError,
@@ -80,6 +81,7 @@ def create_appointment_from_payload(db, data, notification_service, calendar_syn
     db.flush()
 
     _try_create_initial_examination(db, appt, data)
+    enqueue_calendar_sync(db, appt.id)
     db.commit()
     db.refresh(appt)
 

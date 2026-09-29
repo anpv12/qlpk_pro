@@ -479,7 +479,7 @@ def test_report_http_auth_validation_and_filters(case, monkeypatch):
         yield Session(bind=connection, join_transaction_mode='create_savepoint')
     setattr_all(monkeypatch,api, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_db', scoped_db)
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, is_active=True))
     app = Flask(__name__)
     app.register_blueprint(api.medicine_router, url_prefix='/api')
     client = app.test_client()

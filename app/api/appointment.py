@@ -54,6 +54,7 @@ from app.modules.appointments.view_models import (
     build_appointment_edit_response,
 )
 from app.utils.appointment_helpers import format_appointment_response
+from app.modules.appointments.services.calendar_sync import enqueue_calendar_sync
 import logging
 # Import pandas và os trong function để tránh lỗi import
 
@@ -261,6 +262,7 @@ def update_appointment(user, appt_id):
             logger=logger,
         )
 
+        enqueue_calendar_sync(db, appt.id)
         db.commit()
         # Refresh và eager load examination để đảm bảo có dữ liệu mới nhất
         db.refresh(appt)

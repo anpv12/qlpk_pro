@@ -116,7 +116,7 @@ def test_http_live_draft_read_is_scoped_and_closed_draft_remains_visible(case, m
     own = client.get('/api/survey-sessions/draft', query_string={'session_token': session.session_token}).get_json()['data']
     assert own['responses'] == review['responses'] and not own['submitted']
     from types import SimpleNamespace
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=-1, role='doctor'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=-1, role='doctor', is_active=True))
     assert client.get(path, headers={'Authorization': 'Bearer QA'}).status_code == 403
 
 @pytest.fixture
@@ -306,7 +306,7 @@ def test_review_reads_saved_submission_after_closure_and_template_edit(case, mon
     empty = client.get(f'/api/chi-dinh/{orders[1].id}/survey-result', headers={'Authorization': 'Bearer QA'}).get_json()['data']
     assert empty['review_state'] == 'empty' and empty['responses'] == {}
     from types import SimpleNamespace
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=-1, role='doctor'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=-1, role='doctor', is_active=True))
     assert client.get(path, headers={'Authorization': 'Bearer QA'}).status_code == 403
     db.expire_all()
     assert before == (orders[0].status, result.responses, result.total_scores)
@@ -351,9 +351,9 @@ def test_http_submit_failure_rolls_back_and_reader_does_not_write(case,monkeypat
     assert client.post(f'/api/survey-sessions/close/{session.session_token}').status_code==401
     assert client.put('/api/survey-sessions/update-status-by-token',json={'session_token':session.session_token,'status':'closed'}).status_code==409
     from types import SimpleNamespace
-    monkeypatch.setattr(auth,'get_current_user',lambda token:SimpleNamespace(id=-1,role='doctor'))
+    monkeypatch.setattr(auth,'get_current_user',lambda token:SimpleNamespace(id=-1,role='doctor', is_active=True))
     assert client.post(f'/api/chi-dinh/{orders[0].id}/finish-survey',headers={'Authorization':'Bearer QA'}).status_code==403
-    monkeypatch.setattr(auth,'get_current_user',lambda token:SimpleNamespace(id=admin.id,role='staff'))
+    monkeypatch.setattr(auth,'get_current_user',lambda token:SimpleNamespace(id=admin.id,role='staff', is_active=True))
     assert client.post(f'/api/chi-dinh/{orders[0].id}/finish-survey',headers={'Authorization':'Bearer QA'}).status_code==403
     monkeypatch.setattr(auth,'get_current_user',lambda token:admin)
     assert client.post(f'/api/chi-dinh/{orders[0].id}/finish-survey',headers={'Authorization':'Bearer QA'}).status_code==200

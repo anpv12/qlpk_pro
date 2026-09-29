@@ -17,6 +17,19 @@
   schema, 0 dòng). Worker `--run` chạy thử: selected=0, completed=0, exit 0.
   Không để worker `--watch` chạy nền trên máy local; production cần supervisor.
 
+- Lát72 (29/09/2026) Calendar sync outbox: tạo/sửa/hủy/đổi bác sĩ/tái khám
+  và tạo lượt khám chỉ ghi `google_calendar_sync_jobs` trong transaction (gộp
+  job pending cùng lịch hẹn); worker `calendar_sync.py` đọc trạng thái hiện tại,
+  retry/backoff, event ID tất định. Xóa cứng gỡ event ngay rồi xóa mapping.
+  Migration `20260929_calendar_sync_jobs`; cùng CLI
+  `python scripts/process_calendar_transfers.py --run --watch` (chạy cả transfer
+  và sync). Manual sync/delete-all trên dashboard vẫn đồng bộ tức thì (có lock,
+  strict verify) vì người dùng cần kết quả ngay.
+- Mapping của chủ lịch đã ngắt kết nối (DB local 441 dòng, đều là lịch quá khứ)
+  được giữ có chủ đích để kết nối lại không tạo trùng. Xem:
+  `python scripts/report_calendar_mappings.py`; xóa có chủ đích:
+  `--purge-past --run` (đã thử trên bản sao, CHƯA chạy DB thật).
+
 - Lát64: migration adopt bảng đã tạo bởi DEBUG create_all nếu đúng cột và
   unique event_id, bổ sung index thiếu; bảng lệch schema thì dừng. Transfer
   drain ngay sau commit; worker vẫn bắt buộc cho retry. OAuth cần Flask

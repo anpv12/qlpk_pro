@@ -103,7 +103,8 @@ def test_all_catalog_writers_require_current_permission(catalog):
     actor.is_active = False
     actor.role = 'admin'
     db.flush()
-    assert client.post('/api/survey-templates', headers=HEADERS, json={}).status_code == 403
+    # require_auth rejects a deactivated account before any permission check.
+    assert client.post('/api/survey-templates', headers=HEADERS, json={}).status_code == 401
 
 
 def test_document_upload_edit_download_and_last_page(catalog):

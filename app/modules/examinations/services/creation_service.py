@@ -10,6 +10,7 @@ from app.models.package import Package
 from app.models.patient import Patient
 from app.models.service import Service
 from app.models.user import User
+from app.modules.appointments.services.calendar_sync import enqueue_calendar_sync, schedule_calendar_sync_drain
 from app.utils.medical_history_contract import normalize_physical_history
 from app.utils.allergy_contract import normalize_allergy_entries
 from app.utils.referral_source import apply_referral_source, build_referral_source_fields
@@ -39,8 +40,9 @@ def create_examination_result(db, data, logger=None):
     create_legacy_examination_row(db, patient, appointment, data, appointment_datetime)
     create_legacy_family_members(db, patient, data)
 
+    enqueue_calendar_sync(db, appointment.id)
     db.commit()
-    sync_legacy_examination_google_calendar(db, appointment, logger=logger)
+    schedule_calendar_sync_drain([appointment.id])
 
     return {
         'message': 'Thêm lượt khám thành công',
@@ -241,33 +243,3 @@ def create_legacy_family_members(db, patient, data):
                 examine_together=member_data.get('examine_together', False),
             ))
 
-def sync_legacy_examination_google_calendar(db, appointment, logger=None):
-    try:
-        from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
-        from app.services.google_calendar_service import GoogleCalendarService
-
-        calendar_connection = db.query(GoogleCalendarConnection).filter(
-            GoogleCalendarConnection.user_id == appointment.doctor_id,
-            GoogleCalendarConnection.is_active == True,
-        ).first()
-
-        if calendar_connection:
-            event_id = GoogleCalendarService.create_event(appointment, calendar_connection)
-            if event_id:
-                calendar_event = GoogleCalendarEvent(
-                    appointment_id=appointment.id,
-                    user_id=appointment.doctor_id,
-                    event_id=event_id,
-                )
-                db.add(calendar_event)
-                db.commit()
-                if logger:
-                    logger.info(f"Created Google Calendar event {event_id} for examination appointment {appointment.id}")
-    except Exception as exc:
-        if logger:
-            logger.error(f"Error syncing examination appointment to Google Calendar: {exc}")
-        try:
-            db.commit()
-        except Exception as commit_exc:
-            if logger:
-                logger.error(f"Commit sau lỗi đồng bộ Google Calendar thất bại: {commit_exc}")

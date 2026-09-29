@@ -46,7 +46,7 @@ def case(monkeypatch):
                 finally: child.close()
             monkeypatch.setattr(api, 'get_db', scoped_db)
             monkeypatch.setattr(auth, 'get_db', scoped_db)
-            monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor_id, role='admin'))
+            monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor_id, role='admin', is_active=True))
             monkeypatch.setattr(api, 'emit_examination_changed', lambda *a, **kw: None)
             monkeypatch.setattr(api, 'emit_inventory_changed', lambda *a, **kw: None)
             effects=[]

@@ -10,7 +10,9 @@ from httplib2 import Response
 from app.api import calendar as api
 from app.models.appointment import Appointment
 from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
-from app.modules.appointments.services.side_effects import sync_calendar_for_appointment
+from app.models.appointment import AppointmentStatus
+from app.models.google_calendar import GoogleCalendarSyncJob
+from app.modules.appointments.services import calendar_sync
 from app.services import google_calendar_service as google
 from test_calendar_transfer_jobs import calendar_db
 from test_transfer_access_safety import transfer_db, actor
@@ -80,50 +82,74 @@ def test_manual_sync_duplicate_does_not_orphan_remote_event(calendar_db, monkeyp
         assert database.query(GoogleCalendarEvent).count() == (2 if same_identity or deleted else 3)
 
 
+def queue_sync(state, appointment_id=1, **changes):
+    with state.factory.begin() as database:
+        appointment = database.get(Appointment, appointment_id)
+        for name, value in changes.items():
+            setattr(appointment, name, value)
+        job = calendar_sync.enqueue_calendar_sync(database, appointment_id)
+        database.flush()
+        return job.id
+
+
+def run_sync(state, job_id):
+    return calendar_sync.process_calendar_sync(job_id, state.factory, state.provider)
+
+
+def sync_job(state, job_id):
+    with state.factory() as database:
+        return database.get(GoogleCalendarSyncJob, job_id)
+
+
 @pytest.mark.parametrize('missing', [False, True])
-def test_update_failure_keeps_mapping_and_only_confirmed_missing_recreates(calendar_db, monkeypatch, missing):
+def test_update_failure_keeps_mapping_and_only_confirmed_missing_recreates(calendar_db, missing):
     state = calendar_db
-    monkeypatch.setattr(google.GoogleCalendarService, 'update_event', MagicMock(return_value=None if missing else False))
-    create = MagicMock(return_value=None)
-    monkeypatch.setattr(google.GoogleCalendarService, 'create_event', create)
+    state.provider.update_event.return_value = None if missing else False
+    state.provider.upsert_transfer_event.return_value = False
+    job_id = queue_sync(state)
+    assert not run_sync(state, job_id)
+    assert state.provider.upsert_transfer_event.call_count == (2 if missing else 0)
     with state.factory() as database:
-        assert not sync_calendar_for_appointment(database.get(Appointment, 1), database)
-    assert create.call_count == (2 if missing else 0)
-    with state.factory() as database:
-        assert database.query(GoogleCalendarEvent).count() == 2
+        # Confirmed-missing mappings are dropped only in favour of a created event; nothing was created.
+        assert database.query(GoogleCalendarEvent).count() == (0 if missing else 2)
+    job = sync_job(state, job_id)
+    assert job.completed_at is None and job.attempts == 1
+    assert job.last_error == ('create_pending' if missing else 'update_pending')
 
 
-def test_cancel_only_removes_provider_confirmed_event(calendar_db, monkeypatch):
+def test_cancel_only_removes_provider_confirmed_event(calendar_db):
     state = calendar_db
-    monkeypatch.setattr(google.GoogleCalendarService, 'delete_event', lambda mapping, connection: mapping.user_id == 7)
-    with state.factory() as database:
-        assert not sync_calendar_for_appointment(database.get(Appointment, 1), database, action='delete')
+    state.provider.delete_event.side_effect = lambda mapping, connection: mapping.user_id == 7
+    job_id = queue_sync(state, status=AppointmentStatus.CANCELLED)
+    assert not run_sync(state, job_id)
     with state.factory() as database:
         assert [row.event_id for row in database.query(GoogleCalendarEvent)] == ['old-doctor']
+    assert sync_job(state, job_id).last_error == 'delete_pending'
+    state.provider.upsert_transfer_event.assert_not_called()
 
 
-def test_cancel_retains_unknown_owner_and_disconnected_mapping(calendar_db, monkeypatch):
+def test_cancel_retains_unknown_owner_and_disconnected_mapping(calendar_db):
     state = calendar_db
     with state.factory.begin() as database:
         database.query(GoogleCalendarConnection).update({'is_active': False})
         database.add(GoogleCalendarEvent(appointment_id=1, user_id=None, event_id='legacy'))
-    remove = MagicMock(return_value=True)
-    monkeypatch.setattr(google.GoogleCalendarService, 'delete_event', remove)
-    with state.factory() as database:
-        assert not sync_calendar_for_appointment(database.get(Appointment, 1), database, action='delete')
-    remove.assert_not_called()
+    job_id = queue_sync(state, status=AppointmentStatus.CANCELLED)
+    assert run_sync(state, job_id)
+    state.provider.delete_event.assert_not_called()
     with state.factory() as database:
         assert database.query(GoogleCalendarEvent).count() == 3
+    assert sync_job(state, job_id).last_error == 'legacy_event_owner_unknown'
 
 
-def test_update_confirmed_missing_replaces_only_after_create_succeeds(calendar_db, monkeypatch):
+def test_update_confirmed_missing_replaces_only_after_create_succeeds(calendar_db):
     state = calendar_db
-    monkeypatch.setattr(google.GoogleCalendarService, 'update_event', MagicMock(return_value=None))
-    monkeypatch.setattr(google.GoogleCalendarService, 'create_event', lambda appointment, connection: f'new-{connection.user_id}')
+    state.provider.update_event.return_value = None
+    job_id = queue_sync(state)
+    assert run_sync(state, job_id)
+    token = sync_job(state, job_id).token
     with state.factory() as database:
-        assert sync_calendar_for_appointment(database.get(Appointment, 1), database)
-    with state.factory() as database:
-        assert {row.event_id for row in database.query(GoogleCalendarEvent)} == {'new-7', 'new-8'}
+        assert {row.event_id for row in database.query(GoogleCalendarEvent)} == {
+            calendar_sync.calendar_sync_event_id(token, 7), calendar_sync.calendar_sync_event_id(token, 8)}
 
 
 @pytest.mark.parametrize('status', [403, 429])

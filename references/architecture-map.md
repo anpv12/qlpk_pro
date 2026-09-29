@@ -1,5 +1,12 @@
 # QLPK Architecture Map
 
+- Lát72: calendar_sync.py + GoogleCalendarSyncJob là outbox cho mọi writer
+  Calendar tự động (appointment create/update/cancel/soft-delete, doctor change,
+  re-examination, legacy examination create). `sync_calendar_for_appointment`
+  giờ chỉ enqueue + commit + drain nền; không gọi Google trong request. Hard
+  delete dùng `retire_calendar_events_before_hard_delete`. Manual dashboard
+  sync/delete-all (calendar_part2) vẫn là writer đồng bộ có lock.
+
 - Lát63: calendar_access.py sở hữu actor DB reload/share lock, batch ID/date
   parsing, read/write scope và Appointment lock. Calendar dashboard routes
   dùng owner chung, sync/delete serialized với transfer bằng appointment lock;

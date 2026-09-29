@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.api.auth import require_auth
 from app.realtime.events import emit_appointment_changed
 from app.modules.appointments.services.calendar_transfer import schedule_calendar_transfer_drain
+from app.modules.appointments.services.calendar_sync import enqueue_calendar_sync, retire_calendar_events_before_hard_delete
 from app.modules.appointments.services import AppointmentDeletionBlocked, AppointmentDeletionNotFound, AppointmentDeletionRequiresForce, build_appointments_export_file, create_re_examination_from_payload, create_re_examination_from_prescription as create_re_examination_from_prescription_service, cancel_re_examination_appointment as cancel_re_examination_appointment_service, get_appointment_stats as get_appointment_stats_service, get_re_examination_appointment as get_re_examination_appointment_service, hard_delete_appointment_record, ReExaminationError, soft_delete_appointment, AppointmentTransferValidationError, transfer_appointments_between_roles
 from app.utils.appointment_helpers import format_appointment_response
 from app.api.appointment import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
@@ -130,6 +131,7 @@ def delete_appointment(user, appointment_id):
     try:
         force = _get_delete_force_flag()
         result = soft_delete_appointment(db, appointment_id, force=force, logger=logger)
+        enqueue_calendar_sync(db, appointment_id)
         db.commit()
 
         # Xóa event trên Google Calendar
@@ -177,7 +179,7 @@ def hard_delete_appointment(user, appt_id):
         hard_delete_appointment_record(
             db,
             appt_id,
-            calendar_syncer=sync_calendar_for_appointment,
+            calendar_syncer=retire_calendar_events_before_hard_delete,
         )
         db.commit()
         emit_appointment_changed('hard_deleted', appointment_id=appt_id)

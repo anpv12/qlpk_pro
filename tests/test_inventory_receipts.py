@@ -41,7 +41,7 @@ def case(monkeypatch):
                 monkeypatch.setattr(module, 'get_db', scoped_db)
             for module in (medicines, batches):
                 monkeypatch.setattr(module, 'emit_inventory_changed', lambda *args, **kwargs: None)
-            monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin'))
+            monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin', is_active=True))
             app = Flask(__name__)
             app.register_blueprint(medicines.medicine_router, url_prefix='/api')
             app.register_blueprint(batches.medicine_batch_router, url_prefix='/api')

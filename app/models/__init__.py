@@ -39,7 +39,7 @@ from .ward import Ward
 from .administrative_region import AdministrativeRegion
 from .administrative_unit import AdministrativeUnit
 from .chi_dinh import ChiDinh
-from .google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarTransferJob
+from .google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarSyncJob, GoogleCalendarTransferJob
 from .expense import Expense
 from .expense_column import ExpenseColumn
 from .user_shortcut import UserShortcut
@@ -104,6 +104,7 @@ __all__ = [
     "ChiDinh",
     "GoogleCalendarConnection",
     "GoogleCalendarEvent",
+    "GoogleCalendarSyncJob",
     "Expense",
     "ExpenseColumn",
     "UserShortcut",

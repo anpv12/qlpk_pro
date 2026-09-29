@@ -17,7 +17,7 @@ from alembic.operations import Operations
 
 from app.api import appointment as api
 from app.models.appointment import Appointment, AppointmentStatus
-from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarTransferJob
+from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarSyncJob, GoogleCalendarTransferJob
 from app.modules.appointments.services import calendar_transfer as worker, transfer_service
 from app.modules.appointments.services.side_effects import sync_transferred_appointment_calendar
 from app.services import google_calendar_service as google
@@ -29,7 +29,7 @@ from module_parts import setattr_all
 @pytest.fixture
 def calendar_db(transfer_db, monkeypatch):
     state = transfer_db
-    for model in [GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarTransferJob]:
+    for model in [GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarTransferJob, GoogleCalendarSyncJob]:
         model.__table__.create(state.engine)
     with state.factory.begin() as database:
         for user_id in [7, 8, 9, 10]:

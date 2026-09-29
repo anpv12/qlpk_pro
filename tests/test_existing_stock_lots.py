@@ -133,7 +133,7 @@ def test_save_api_preserves_specific_lot_error(case, monkeypatch, code):
             child.close()
     monkeypatch.setattr(api, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_db', scoped_db)
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin', is_active=True))
     detail = f'{medicine.name}: cần kiểm tra thông tin lô.'
     def fail(*args, **kwargs):
         raise PrescriptionStockValidationError([detail], code=code)
