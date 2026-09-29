@@ -2,8 +2,9 @@
 
 The workspace shell embeds pages in same-origin iframes, so framing is limited
 to the same origin instead of denied. The policy deliberately does not set
-``script-src``/``style-src`` yet: templates still use CDN scripts and inline
-event handlers, so a strict CSP would break the pages. HSTS is only sent on
+``script-src``/``style-src`` yet: third-party libraries are self-hosted under
+``/static/vendor`` and inline event handlers are gone, but inline ``<script>``
+blocks remain, so the strict policy below is still Report-Only. HSTS is only sent on
 secure requests (nginx terminates TLS and ProxyFix forwards the scheme).
 """
 
@@ -20,11 +21,11 @@ STRICT_TRANSPORT_SECURITY = 'max-age=31536000; includeSubDomains'
 # after the browser sweep reports zero violations on every page.
 REPORT_ONLY_CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
-    "script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.sheetjs.com; "
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-    "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; "
+    "script-src 'self'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "font-src 'self' data:; "
     "img-src 'self' data: blob: https:; "
-    "connect-src 'self' ws: wss: https://cdn.jsdelivr.net; "
+    "connect-src 'self' ws: wss:; "
     "frame-src 'self' blob:; worker-src 'self' blob:; "
     "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
 )
