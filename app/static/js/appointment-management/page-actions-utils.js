@@ -47,7 +47,7 @@
 		if (thirdLevel) {
 			breadcrumbHtml = `
 				<li class="breadcrumb-item"><a href="index.html">TRANG CHỦ</a></li>
-				<li class="breadcrumb-item"><a href="javascript:void(0)" data-appointment-action="close-edit-modal">KHÁM BỆNH</a></li>
+				<li class="breadcrumb-item"><a href="#" data-appointment-action="close-edit-modal">KHÁM BỆNH</a></li>
 				<li class="breadcrumb-item active" aria-current="page">${thirdLevel}</li>
 			`;
 		}

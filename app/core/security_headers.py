@@ -1,25 +1,15 @@
 """Baseline HTTP security headers for every response.
 
 The workspace shell embeds pages in same-origin iframes, so framing is limited
-to the same origin instead of denied. The policy deliberately does not set
-``script-src``/``style-src`` yet: third-party libraries are self-hosted under
-``/static/vendor`` and inline event handlers are gone, but inline ``<script>``
-blocks remain, so the strict policy below is still Report-Only. HSTS is only sent on
-secure requests (nginx terminates TLS and ProxyFix forwards the scheme).
+to the same origin instead of denied. Scripts are self-hosted under
+``/static/vendor`` and the app has no inline ``<script>`` blocks, inline event
+handlers or ``javascript:`` URLs, so the Content Security Policy is enforced
+with ``script-src 'self'``. Inline ``style`` attributes set by components remain
+allowed. HSTS is only sent on secure requests (nginx terminates TLS and ProxyFix
+forwards the scheme).
 """
 
-DEFAULT_SECURITY_HEADERS = {
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'SAMEORIGIN',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
-    'Content-Security-Policy': "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
-}
-STRICT_TRANSPORT_SECURITY = 'max-age=31536000; includeSubDomains'
-# Candidate strict policy, sent as Report-Only so violations surface in the
-# browser console without breaking pages. Promote to the enforced header only
-# after the browser sweep reports zero violations on every page.
-REPORT_ONLY_CONTENT_SECURITY_POLICY = (
+CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
     "script-src 'self'; "
     "style-src 'self' 'unsafe-inline'; "
@@ -29,16 +19,22 @@ REPORT_ONLY_CONTENT_SECURITY_POLICY = (
     "frame-src 'self' blob:; worker-src 'self' blob:; "
     "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
 )
+DEFAULT_SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+    'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+}
+STRICT_TRANSPORT_SECURITY = 'max-age=31536000; includeSubDomains'
 INSECURE_DEFAULT_SECRET_KEY = 'qlpk-production-secret-key-2024'
 
 
-def security_headers(is_secure=False, report_only_csp=True):
+def security_headers(is_secure=False):
     """Return the header map to apply; HSTS only when the request used HTTPS."""
     headers = dict(DEFAULT_SECURITY_HEADERS)
     if is_secure:
         headers['Strict-Transport-Security'] = STRICT_TRANSPORT_SECURITY
-    if report_only_csp:
-        headers['Content-Security-Policy-Report-Only'] = REPORT_ONLY_CONTENT_SECURITY_POLICY
     return headers
 
 
