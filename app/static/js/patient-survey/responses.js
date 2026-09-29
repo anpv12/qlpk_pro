@@ -1,9 +1,9 @@
 /* global allQuestions, clearSurveyResponsesFromStorage, currentQuestionIndex: writable, displaySurveyTimeInfo, getCurrentTemplateId, isSurveyCompleted: writable, isSurveyExpired: writable, loadSurveyResponsesFromStorage, restoreSavedSurveyResponses, reviewOrderId, showExpiredSurveyMessage, surveyResponses: writable, surveySessionData: writable, totalQuestions, updateNavigationButtons, updateProgress */
-/* exported loadExistingResponses, updateSessionStatus */
+/* exported loadExistingResponses, surveySessionData, updateSessionStatus */
 
 // Load existing responses
 function loadExistingResponses() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const examinationId = localStorage.getItem('current_examination_id');
         const sessionToken = localStorage.getItem('session_token');
 
@@ -29,7 +29,7 @@ function loadExistingResponses() {
                     // Then load responses from server
                     loadResponsesFromServer(examinationId, sessionCreatedAt);
                 },
-                error: function(xhr, status, error) {
+                error: function() {
                     // Load responses without timestamp check
                     loadResponsesFromServer(examinationId, null);
                 }
@@ -56,7 +56,7 @@ function loadExistingResponses() {
                 updateNavigationButtons();
                 resolve();
             },
-            error: function(xhr, status, error) {
+            error: function() {
                 // Continue with survey even if loading existing responses fails
                 surveyResponses = {};
                 currentQuestionIndex = 0; // Reset index
@@ -182,7 +182,7 @@ function updateSessionStatus(status) {
     }
 
     // Return promise để có thể chain
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         // Find session ID from token (we'll need to get this from the server)
         $.ajax({
             url: `/api/survey-sessions/update-status-by-token`,
@@ -194,7 +194,7 @@ function updateSessionStatus(status) {
                 session_token: sessionToken,
                 status: status
             }),
-            success: function(response) {
+            success: function() {
                 // Nếu update status thành công, reload session data để lấy started_at hoặc updated_at mới
                 if (status === 'in_progress' || status === 'completed') {
                     const sessionToken = localStorage.getItem('session_token');
@@ -225,7 +225,7 @@ function updateSessionStatus(status) {
                     resolve();
                 }
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 // Nếu API trả về 410 (Gone), có nghĩa là session đã expired
                 if (xhr.status === 410) {
                     isSurveyExpired = true;

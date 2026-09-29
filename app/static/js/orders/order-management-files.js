@@ -88,14 +88,14 @@ function preventDefaults(e) {
 	e.stopPropagation();
 }
 
-function highlight(e) {
+function highlight() {
 	const uploadArea = document.getElementById('resultFilesUploadArea');
 	if (uploadArea) {
 		uploadArea.classList.add('drag-over');
 	}
 }
 
-function unhighlight(e) {
+function unhighlight() {
 	const uploadArea = document.getElementById('resultFilesUploadArea');
 	if (uploadArea) {
 		uploadArea.classList.remove('drag-over');
@@ -122,13 +122,6 @@ async function handleDrop(e) {
 }
 
 // Format file size
-function formatFileSize(bytes) {
-	if (!bytes) return '0 B';
-	const k = 1024;
-	const sizes = ['B', 'KB', 'MB', 'GB'];
-	const i = Math.floor(Math.log(bytes) / Math.log(k));
-	return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
 
 function validateResultFile(file) {
 	const extension = String(file?.name || '').split('.').pop().toLowerCase();
@@ -156,6 +149,20 @@ async function handleFileSelect(event) {
 
 	await uploadResultFile(currentOrderDetail.id, file);
 	event.target.value = ''; // Reset input
+}
+
+async function refreshResultFiles(orderId) {
+	try {
+		const refreshResponse = await apiCall(`/api/chi-dinh/${orderId}`);
+		if (!refreshResponse.ok) return;
+		const order = await refreshResponse.json();
+		if (currentOrderDetail) {
+			currentOrderDetail.result_files = order.result_files || [];
+		}
+		renderResultFiles(order.result_files || []);
+	} catch (error) {
+		console.error('Error refreshing result files:', error);
+	}
 }
 
 // Upload result file
@@ -187,18 +194,7 @@ async function uploadResultFile(orderId, file) {
 			renderResultFiles(data.chi_dinh.result_files);
 		} else {
 			// Fallback: refresh lại file list từ API nếu response không có đủ dữ liệu
-			try {
-				const refreshResponse = await apiCall(`/api/chi-dinh/${orderId}`);
-				if (refreshResponse.ok) {
-					const order = await refreshResponse.json();
-					if (currentOrderDetail) {
-						currentOrderDetail.result_files = order.result_files || [];
-					}
-					renderResultFiles(order.result_files || []);
-				}
-			} catch (error) {
-				console.error('Error refreshing result files:', error);
-			}
+			await refreshResultFiles(orderId);
 		}
 
 	} catch (error) {

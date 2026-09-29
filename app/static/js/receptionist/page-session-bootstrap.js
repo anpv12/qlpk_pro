@@ -23,8 +23,8 @@
 			try {
 				const local = getLocalStorage(opts);
 				(opts.staleLocalKeys || []).forEach(key => local.removeItem(key));
-			} catch (e) { }
-		} catch (e) { }
+			} catch (e) { /* storage không khả dụng: bỏ qua */ }
+		} catch (e) { /* storage không khả dụng: bỏ qua */ }
 	}
 
 	function createDatalist(options) {

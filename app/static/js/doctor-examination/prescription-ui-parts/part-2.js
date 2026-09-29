@@ -1,9 +1,9 @@
 // doctor-examination/prescription-ui.js: phần 2/3 các hàm của create() (nạp trước prescription-ui.js).
 // Mỗi instance gọi installer: state instance qua inst, hằng/hàm cấp module qua outer.
-(function (window, document) {
+(function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/prescription-ui#create'] || (window.QLPKModuleParts['doctor-examination/prescription-ui#create'] = { installers: [] });
-	moduleParts.installers.push(function (inst, outer) {
+	moduleParts.installers.push(function (inst) {
 	function updateBatchAllocationDisplays(doc) {
 		const workspace = inst.getElement(doc, 'doctorPrescriptionWorkspace');
 		if (!workspace || typeof inst.ROWS.updateBatchAllocation !== 'function') return false;
@@ -440,4 +440,4 @@
 			syncAfterPrescriptionInput
 		});
 	});
-})(window, document);
+})(window);

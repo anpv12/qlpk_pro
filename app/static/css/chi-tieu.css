@@ -1468,6 +1468,12 @@ body {
 	.tab-bar .tab-right { flex-wrap: wrap; gap: 6px; }
 }
 
+@media (max-width: 767.98px) {
+	/* Hai cột biểu đồ xếp chồng: mỗi biểu đồ có chiều cao riêng, pane cuộn */
+	.ct-row-fill { flex: 0 0 auto; }
+	.chart-card .cc-body.ct-card-body-fill { flex: 0 0 auto; height: 300px; }
+}
+
 @media (max-width: 768px) {
 	.main-content { padding: 4px; }
 

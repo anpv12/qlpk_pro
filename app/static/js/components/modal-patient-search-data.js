@@ -105,6 +105,21 @@
 		return `/api/appointment-relatives/appointment/${appointmentId}`;
 	}
 
+	async function fetchExaminationForAppointment(appointmentId, options = {}) {
+		try {
+			const historyUi = getHistoryListUi(options);
+			const examResponse = await options.apiCall(historyUi.buildExaminationIdUrl(appointmentId));
+			if (!examResponse || !examResponse.ok) return null;
+			const examinationId = historyUi.extractExaminationId(await examResponse.json());
+			if (!examinationId) return null;
+			const examDetailResponse = await options.apiCall(historyUi.buildExaminationDetailUrl(examinationId));
+			return examDetailResponse && examDetailResponse.ok ? await examDetailResponse.json() : null;
+		} catch (examError) {
+			console.warn(options.examinationErrorMessage || 'Không thể lấy examination data:', examError);
+			return null;
+		}
+	}
+
 	async function loadLatestAppointmentContextForPatient(patientId, options = {}) {
 		let appointment = null;
 		let appointmentId = null;
@@ -122,22 +137,7 @@
 				examination = appointmentState.examination;
 
 				if (appointment && !examination) {
-					try {
-						const historyUi = getHistoryListUi(options);
-						const examResponse = await options.apiCall(historyUi.buildExaminationIdUrl(appointment.id));
-						if (examResponse && examResponse.ok) {
-							const examData = await examResponse.json();
-							const examinationId = historyUi.extractExaminationId(examData);
-							if (examinationId) {
-								const examDetailResponse = await options.apiCall(historyUi.buildExaminationDetailUrl(examinationId));
-								if (examDetailResponse && examDetailResponse.ok) {
-									examination = await examDetailResponse.json();
-								}
-							}
-						}
-					} catch (examError) {
-						console.warn(options.examinationErrorMessage || 'Không thể lấy examination data:', examError);
-					}
+					examination = await fetchExaminationForAppointment(appointment.id, options);
 				}
 			}
 		} catch (appointmentError) {

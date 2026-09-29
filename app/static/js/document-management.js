@@ -72,8 +72,8 @@ $(document).ready(function() {
     }
 
     function createTreeNode(folder) {
-        let hasChildren = folder.children && folder.children.length > 0;
-        let toggleIconClass = hasChildren ? '' : 'tree-icon-toggle-placeholder';
+        const hasChildren = folder.children && folder.children.length > 0;
+        const toggleIconClass = hasChildren ? '' : 'tree-icon-toggle-placeholder';
         
         let html = `
             <li class="tree-item" data-id="${folder.id}">
@@ -159,10 +159,10 @@ $(document).ready(function() {
         });
 
         // Delete folder
-        $('.delete-folder').off('click').on('click', function(e) {
+        $('.delete-folder').off('click').on('click', async function(e) {
             e.stopPropagation();
             const id = $(this).data('id');
-            if (confirm("Bạn có chắc chắn muốn xóa thư mục này? Thư mục phải trống (không có file hay thư mục con) mới có thể xóa.")) {
+            if (await window.QLPKConfirmationDialog.confirmDelete("Bạn có chắc chắn muốn xóa thư mục này? Thư mục phải trống (không có file hay thư mục con) mới có thể xóa.")) {
                 $.ajax({
                     url: `/api/document-folders/${id}`,
                     method: 'DELETE',
@@ -174,7 +174,7 @@ $(document).ready(function() {
                         }
                         loadFolderTree();
                     },
-                    error: function(err) {
+                    error: function() {
                         const msg = 'Không thể xóa thư mục. Vui lòng thử lại.';
                         showAlert('Lỗi', msg, 'error');
                     }
@@ -221,7 +221,7 @@ $(document).ready(function() {
                 badge = formatBytes(doc.size_bytes);
             }
 
-            let link_target = doc.type === 'link' ? `href="${doc.url}" target="_blank"` : `href="${doc.url}" target="_blank"`;
+            const link_target = doc.type === 'link' ? `href="${doc.url}" target="_blank"` : `href="${doc.url}" target="_blank"`;
 
             let html = `
                 <tr>
@@ -249,9 +249,9 @@ $(document).ready(function() {
         });
 
         // Bind delete document event
-        $('.delete-doc').on('click', function() {
+        $('.delete-doc').on('click', async function() {
             const id = $(this).data('id');
-            if (confirm("Bạn có chắc chắn muốn xóa tài liệu này? Hành động này sẽ xóa cả file trên Google Drive.")) {
+            if (await window.QLPKConfirmationDialog.confirmDelete("Bạn có chắc chắn muốn xóa tài liệu này? Hành động này sẽ xóa cả file trên Google Drive.")) {
                 $(this).html('<i class="spinner-border spinner-border-sm"></i>');
                 $.ajax({
                     url: `/api/documents/${id}`,
@@ -259,7 +259,7 @@ $(document).ready(function() {
                     success: function() {
                         loadDocuments(currentFolderId);
                     },
-                    error: function(err) {
+                    error: function() {
                         const msg = 'Không thể xóa tài liệu. Vui lòng thử lại.';
                         showAlert('Lỗi', msg, 'error');
                         loadDocuments(currentFolderId);
@@ -287,7 +287,7 @@ $(document).ready(function() {
         const name = $('#folderName').val().trim();
         
         if (!name) {
-            alert("Vui lòng nhập tên thư mục");
+            showAlert('Lỗi', 'Vui lòng nhập tên thư mục', 'warning');
             return;
         }
 
@@ -308,9 +308,9 @@ $(document).ready(function() {
                 closeDocModal('#folderModal');
                 loadFolderTree();
             },
-            error: function(err) {
+            error: function() {
                 const msg = 'Không thể lưu thư mục. Vui lòng kiểm tra lại.';
-                alert(msg);
+                showAlert('Lỗi', msg, 'error');
             },
             complete: () => {
                 $('#btnSaveFolder').html('Lưu thư mục').prop('disabled', false);
@@ -321,7 +321,7 @@ $(document).ready(function() {
     // Add Link
     $('#btnAddLink').on('click', function() {
         if (!currentFolderId) {
-            alert("Vui lòng chọn một thư mục trước");
+            showAlert('Lỗi', 'Vui lòng chọn một thư mục trước', 'warning');
             return;
         }
         $('#linkId').val('');
@@ -336,7 +336,7 @@ $(document).ready(function() {
         const url = $('#linkUrl').val().trim();
         
         if (!name || !url) {
-            alert("Vui lòng nhập đầy đủ tên và đường dẫn");
+            showAlert('Lỗi', 'Vui lòng nhập đầy đủ tên và đường dẫn', 'warning');
             return;
         }
 
@@ -356,9 +356,9 @@ $(document).ready(function() {
                 closeDocModal('#linkModal');
                 loadDocuments(currentFolderId);
             },
-            error: function(err) {
+            error: function() {
                 const msg = 'Không thể lưu liên kết. Vui lòng kiểm tra lại.';
-                alert(msg);
+                showAlert('Lỗi', msg, 'error');
             },
             complete: () => {
                 $('#btnSaveLink').html('Lưu liên kết').prop('disabled', false);
@@ -369,14 +369,14 @@ $(document).ready(function() {
     // Upload File (Button Click)
     $('#btnUploadFile').on('click', function() {
         if (!currentFolderId) {
-            alert("Vui lòng chọn một thư mục trước khi upload");
+            showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
             return;
         }
         $('#fileInputHidden').click();
     });
 
     // Handle File Selection
-    $('#fileInputHidden').on('change', function(e) {
+    $('#fileInputHidden').on('change', function() {
         if (this.files && this.files.length > 0) {
             uploadFiles(this.files);
         }
@@ -415,11 +415,11 @@ $(document).ready(function() {
     if (dropzone) {
         dropzone.addEventListener('drop', (e) => {
             if (!currentFolderId) {
-                alert("Vui lòng chọn một thư mục trước khi upload");
+                showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
                 return;
             }
-            let dt = e.dataTransfer;
-            let files = dt.files;
+            const dt = e.dataTransfer;
+            const files = dt.files;
             if (files.length > 0) {
                 uploadFiles(files);
             }
@@ -455,7 +455,7 @@ $(document).ready(function() {
                     $statusRow.remove();
                     loadDocuments(currentFolderId);
                 },
-                error: function(err) {
+                error: function() {
                     $statusRow.remove();
                     const msg = 'Không thể tải tệp lên. Vui lòng thử lại.';
                     showAlert('Lỗi', msg, 'error');
@@ -484,12 +484,8 @@ $(document).ready(function() {
     // INITIAL LOAD
     loadFolderTree();
 
-    // Helper showAlert (dùng hệ thống modal có sẵn nếu có, hoặc dùng alert tạm)
+    // Thông báo qua hệ thống phản hồi dùng chung.
     function showAlert(title, message, type) {
-        if (typeof window.showAlert === 'function') {
-            window.showAlert(title, message, type);
-        } else {
-            alert(title + ": " + message);
-        }
+        window.QLPKUserFeedback?.show(type || 'error', message);
     }
 });

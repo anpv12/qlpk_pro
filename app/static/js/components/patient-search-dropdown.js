@@ -131,11 +131,16 @@
 			showDropdown(searchToken);
 			return true;
 		};
-		const runSearch = (query, searchToken) => search(query, dropdown, patient => {
-			if (!canRender(searchToken)) return;
-			onSelect(patient);
-			hideDropdown();
-		}, () => showDropdown(searchToken), perPage, () => canRender(searchToken));
+		const runSearch = (query, searchToken) => search(query, dropdown, {
+			onSelect: patient => {
+				if (!canRender(searchToken)) return;
+				onSelect(patient);
+				hideDropdown();
+			},
+			onShow: () => showDropdown(searchToken),
+			perPage,
+			shouldRender: () => canRender(searchToken)
+		});
 
 		const outsideClickHandler = event => {
 			if (!row.contains(event.target) && !dropdown.contains(event.target)) hideDropdown();

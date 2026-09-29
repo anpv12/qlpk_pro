@@ -2,7 +2,6 @@
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/examination-action-buttons-ui'] || (window.QLPKModuleParts['components/examination-action-buttons-ui'] = { state: {} });
-	const moduleState = moduleParts.state;
 
 	window.ExaminationActionButtonsUi = {
 		buildExaminationIdUrl: moduleParts.buildExaminationIdUrl,

@@ -5,10 +5,6 @@
 		return options.window || window;
 	}
 
-	function getConsole(options = {}) {
-		return options.console || getWindow(options).console;
-	}
-
 	function getSetTimeout(options = {}) {
 		return options.setTimeout || getWindow(options).setTimeout;
 	}

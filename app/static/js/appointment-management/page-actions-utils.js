@@ -32,7 +32,7 @@
 				window.URL.revokeObjectURL(url);
 				options.showCustomToast('success', 'Xuất Excel thành công!');
 			},
-			error: function (xhr) {
+			error: function () {
 				options.showCustomToast('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
 			}
 		});
@@ -104,10 +104,10 @@
 
 				createReminder(options, appointmentId, 'email', 24, {
 					timeout: 5000,
-					success: function (response) {
+					success: function () {
 						options.showCustomToast('success', 'Đã gửi email nhắc lịch.');
 					},
-					error: function (xhr) {
+					error: function () {
 						options.showCustomToast('error', 'Không thể gửi Email nhắc lịch. Vui lòng thử lại.');
 					},
 					complete: function () {

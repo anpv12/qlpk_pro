@@ -11,7 +11,7 @@
 	}
 
 	function normalizeTimeRange(timeRange) {
-		let normalized = timeRange || 'thời gian không xác định';
+		const normalized = timeRange || 'thời gian không xác định';
 		if (!normalized.includes(' - ')) return normalized;
 
 		const parts = normalized.split(' - ');
@@ -38,7 +38,7 @@
 		let doctorName = '';
 
 		if (doctorId && appointments.length > 0) {
-			const appointment = appointments.find(item => item.doctor_id == doctorId);
+			const appointment = appointments.find(item => String(item.doctor_id) === String(doctorId));
 			if (appointment && appointment.doctor_name) {
 				doctorName = appointment.doctor_name;
 			}

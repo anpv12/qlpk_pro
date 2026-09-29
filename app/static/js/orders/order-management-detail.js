@@ -1,5 +1,5 @@
 /* global apiCall, clearSurveyRealtimeContext, currentOrderDetail: writable, currentSurveySession: writable, escapeHtml, formatDateOnly, initializeSurveyRealtimeContext, loadOrders, orderStatusChangeHandler: writable, refreshCurrentOrderStatus, renderOrderSurveyContent, renderResultFiles, renderSurveyResults, renderSurveySelectionUI, renderTimeline, saveCustomOrderNote: writable, showCustomToast, updateOrderNote */
-/* exported loadOrderDetail */
+/* exported currentSurveySession, loadOrderDetail */
 
 // Load order detail
 let detailRequestVersion = 0;
@@ -43,7 +43,7 @@ async function loadOrderDetail(orderId) {
             modalEl.addEventListener('hidden.bs.modal', modalEl._detailCloseHandler);
         }
         if (modalEl._detailClosing) {
-            await new Promise(resolve => modalEl.addEventListener('hidden.bs.modal', resolve, {once: true}));
+            await new Promise(resolve => { modalEl.addEventListener('hidden.bs.modal', resolve, {once: true}); });
             if (version !== detailRequestVersion) return;
         }
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
@@ -59,8 +59,6 @@ function renderOrderDetailModal(order) {
     document.getElementById('orderDetailName').textContent = order.order_name || 'Chỉ định';
     document.getElementById('orderSurveySection').setAttribute('aria-label', order.survey_template_id ? 'Khảo sát của chỉ định' : 'Kết quả chỉ định');
 	const patient = order.patient || {};
-	const doctor = order.doctor || {};
-	const appointment = order.appointment || {};
 
 	const birthYear = patient.date_of_birth ? new Date(patient.date_of_birth).getFullYear() : null;
 	const age = birthYear ? new Date().getFullYear() - birthYear : null;

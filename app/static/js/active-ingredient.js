@@ -1,3 +1,4 @@
+/* exported deleteItem, editItem */
 let currentData = [];
 let currentPage = 1;
 let pageSize = 10;
@@ -94,7 +95,7 @@ $(document).ready(function() {
                 // Reset file input
                 $('#ai-import-file').val('');
             },
-            error: function(err) {
+            error: function() {
                 const msg = 'Không thể nhập dữ liệu hoạt chất. Vui lòng kiểm tra tệp và thử lại.';
                 showToast(msg, 'danger');
                 $('#ai-import-file').val('');
@@ -135,7 +136,7 @@ function loadData() {
                 renderPagination();
             }
         },
-        error: function(err) {
+        error: function() {
             showToast('Lỗi khi tải dữ liệu', 'danger');
         }
     });
@@ -213,15 +214,15 @@ function saveIngredient() {
                 showToast('Không thể lưu hoạt chất. Vui lòng kiểm tra lại.', 'danger');
             }
         },
-        error: function(err) {
+        error: function() {
             const msg = 'Không thể lưu hoạt chất. Vui lòng kiểm tra lại.';
             showToast(msg, 'danger');
         }
     });
 }
 
-function deleteItem(id) {
-    if(confirm('Bạn có chắc chắn muốn xóa hoạt chất này?')) {
+async function deleteItem(id) {
+    if (await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa hoạt chất này?')) {
         $.ajax({
             url: `/api/active-ingredient/${id}`,
             method: 'DELETE',
@@ -233,7 +234,7 @@ function deleteItem(id) {
                     showToast('Không thể xóa hoạt chất. Vui lòng thử lại.', 'danger');
                 }
             },
-            error: function(err) {
+            error: function() {
                 showToast('Không thể xóa hoạt chất. Vui lòng thử lại.', 'danger');
             }
         });

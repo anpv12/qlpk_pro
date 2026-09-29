@@ -73,7 +73,18 @@
 		return 'cancel';
 	}
 
-	window.QLPKConfirmationDialog = Object.freeze({ confirm, choose });
+	// Xác nhận thao tác xóa (fail-closed: không mở được hộp thoại thì báo lỗi và trả false).
+	function confirmDelete(text, options = {}) {
+		return confirm({
+			text,
+			confirmText: 'Xóa',
+			variant: 'danger',
+			showToast: (type, message) => window.QLPKUserFeedback?.show(type, message),
+			...options
+		});
+	}
+
+	window.QLPKConfirmationDialog = Object.freeze({ confirm, choose, confirmDelete });
 	window.QLPKDoctorModuleRegistry?.register?.('confirmationDialog', window.QLPKConfirmationDialog, {
 		owner: 'shared/feedback',
 		version: 2

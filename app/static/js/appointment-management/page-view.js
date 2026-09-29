@@ -18,7 +18,7 @@
 			numericId = appointmentId.replace('appt-', '');
 		}
 
-		const appointment = state.allAppointments.find(a => a.id == numericId);
+		const appointment = state.allAppointments.find(a => String(a.id) === String(numericId));
 		if (!appointment) {
 			//   numericId: numericId,
 			//   availableIds: allAppointments.map(a => a.id)
@@ -111,7 +111,7 @@
 					callback(false, conflictInfo);
 				}
 			},
-			error: function (xhr) {
+			error: function () {
 				// Nếu API lỗi, log chi tiết và fallback
 				//   status: xhr.status,
 				//   statusText: xhr.statusText,

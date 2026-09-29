@@ -2,7 +2,6 @@
 (function () {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/address-hierarchy-utils'] || (window.QLPKModuleParts['components/address-hierarchy-utils'] = { state: {} });
-	const moduleState = moduleParts.state;
 
 	window.ClinicalAddressHierarchyUtils = {
 		callVietnamAddressAPI: moduleParts.callVietnamAddressAPI,

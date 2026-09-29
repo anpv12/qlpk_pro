@@ -48,7 +48,7 @@
 		const payload = Object.assign({}, data, { loadId });
 		try {
 			getSessionStorage(opts).setItem(opts.draftKey, JSON.stringify(payload));
-		} catch (e) { }
+		} catch (e) { /* sessionStorage không khả dụng: bỏ nháp */ }
 
 		return data;
 	}
@@ -84,7 +84,7 @@
 				element.addEventListener('input', () => {
 					try {
 						saveDraft(opts);
-					} catch (e) { }
+					} catch (e) { /* sessionStorage không khả dụng: bỏ nháp */ }
 				});
 				element._draftBound = true;
 			}

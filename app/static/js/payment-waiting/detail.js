@@ -1,5 +1,5 @@
 /* global calculateFinancials, confirmInvoice, disableInvoiceForm, escapeAttr, escapeHtml, financialSummaryCache: writable, formatCurrency, formatCurrencyInput, getSafeApiErrorMessage, isExaminationConfirmed, loadFinancialSummaryFromDB, renderPrescriptionsTable, renderServicesTable, showAddServiceModal, toVietnameseGender, toggleAllPrescriptions */
-/* exported editPayment */
+/* exported editPayment, financialSummaryCache */
 
 // Edit payment - mở modal chi tiết hóa đơn
 function editPayment(paymentId) {

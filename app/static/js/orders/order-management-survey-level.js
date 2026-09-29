@@ -1,5 +1,5 @@
 /* global apiCall, currentExaminationId: writable, currentOrderDetail, currentSurveySession: writable, initializePage, lastKnownSurveyStatus: writable, loadOrderSurvey, refreshCurrentOrderStatus, renderTimeline, showCustomToast */
-/* exported copySurveyLink, initializeSurveyRealtimeContext, loadSavedSurveyLevels, saveSurveyLevelForOrder */
+/* exported copySurveyLink, currentExaminationId, currentSurveySession, initializeSurveyRealtimeContext, loadSavedSurveyLevels, saveSurveyLevelForOrder */
 
 // Function để cập nhật alignment của input dựa trên giá trị (số thì căn phải, text thì căn trái)
 window.updateLevelInputAlignment = function (inputElement) {
@@ -9,7 +9,7 @@ window.updateLevelInputAlignment = function (inputElement) {
 
 	// Kiểm tra nếu là số (có thể parse thành số và không chứa chữ cái)
 	// Cho phép số nguyên, số thập phân, có thể có dấu + hoặc - ở đầu
-	const isNumber = /^[\+\-]?\d+(\.\d+)?$/.test(value);
+	const isNumber = /^[+-]?\d+(\.\d+)?$/.test(value);
 
 	if (isNumber && value !== '') {
 		inputElement.classList.add('number-aligned');
@@ -75,78 +75,6 @@ async function saveSurveyLevelForOrder(criteriaName, examinationId, inputElement
 }
 
 // Function để lưu mức độ ghi nhận (old format - keep for backward compatibility)
-async function saveSurveyLevel(buttonElement) {
-	const inputElement = document.getElementById('level-input-survey');
-	if (!inputElement) {
-		showCustomToast('error', 'Không tìm thấy ô nhập mức độ');
-		return;
-	}
-
-	const levelValue = inputElement.value.trim();
-	if (!levelValue) {
-		showCustomToast('error', 'Vui lòng nhập mức độ ghi nhận');
-		return;
-	}
-
-	// Lấy examination_id từ response
-	let examinationId = null;
-	if (currentOrderDetail && currentOrderDetail.appointment) {
-		const appointment = currentOrderDetail.appointment;
-		if (appointment.examinations && appointment.examinations.length > 0) {
-			examinationId = appointment.examinations[0].id;
-		}
-	}
-
-	// Nếu không có, thử lấy từ API
-	if (!examinationId && currentOrderDetail && currentOrderDetail.appointment) {
-		try {
-			const appointmentId = currentOrderDetail.appointment.id;
-			const examResponse = await apiCall(`/examinations/appointment/${appointmentId}/id`);
-			if (examResponse.ok) {
-				const examData = await examResponse.json();
-				examinationId = examData.examination_id || examData.id;
-			}
-		} catch (error) {
-			console.error('Error getting examination ID:', error);
-		}
-	}
-
-	if (!examinationId) {
-		showCustomToast('error', 'Không tìm thấy thông tin lượt khám');
-		return;
-	}
-
-	// Disable button để tránh double click
-	const button = buttonElement;
-	button.disabled = true;
-	button.textContent = 'Đang lưu...';
-
-	try {
-		const data = {
-			'survey_level': levelValue
-		};
-
-		const response = await apiCall(`/api/examination-details/${examinationId}/section/survey_levels`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(data)
-		});
-
-		if (response.ok) {
-			showCustomToast('success', `Đã lưu mức độ ghi nhận: ${levelValue}`);
-		} else {
-			showCustomToast('error', 'Không thể lưu mức độ ghi nhận. Vui lòng thử lại.');
-		}
-	} catch (error) {
-		console.error('Error saving survey level:', error);
-		showCustomToast('error', 'Không thể lưu mức độ ghi nhận. Vui lòng thử lại.');
-	} finally {
-		button.disabled = false;
-		button.textContent = 'Nhập';
-	}
-}
 
 // Function để load mức độ ghi nhận đã lưu (dynamic criteria support)
 async function loadSavedSurveyLevels(examinationId) {
@@ -164,13 +92,11 @@ async function loadSavedSurveyLevels(examinationId) {
 			if (data && data.data && Array.isArray(data.data)) {
 				// Load old format (survey_level) for backward compatibility
 				const surveyLevelItem = data.data.find(item => item.field_name === 'survey_level');
-				if (surveyLevelItem) {
-					const inputElement = document.getElementById('level-input-survey');
-					if (inputElement) {
-						inputElement.value = surveyLevelItem.field_value;
-						// Update alignment sau khi set value
-						window.updateLevelInputAlignment(inputElement);
-					}
+				const inputElement = surveyLevelItem ? document.getElementById('level-input-survey') : null;
+				if (inputElement) {
+					inputElement.value = surveyLevelItem.field_value;
+					// Update alignment sau khi set value
+					window.updateLevelInputAlignment(inputElement);
 				}
 
 				// Load all survey_level_* fields dynamically

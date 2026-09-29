@@ -88,9 +88,9 @@ $(function () {
       'cashier': 'Thu ngân'
     };
     
-    let grouped = {};
+    const grouped = {};
     filteredUsers.forEach(u => {
-      let role = u.role || 'other';
+      const role = u.role || 'other';
       if (!grouped[role]) grouped[role] = [];
       grouped[role].push(u);
     });

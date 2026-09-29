@@ -1,11 +1,10 @@
-/* global deleteBusySchedule, filterTable, formatTimeRangeReadable, getStatusIndicator, resetForm, setQuickTimeSelection, showAlert */
+/* global filterTable, formatTimeRangeReadable, getStatusIndicator, resetForm, setQuickTimeSelection, showAlert */
 /* exported currentBusySchedules, loadMyBusySchedules, normalizeSearchText */
 
 // Continued in (nạp ngay sau file này, cùng scope trang): doctor-busy-schedule/doctor-busy-schedule-2.js
 // Doctor Busy Schedule Management JavaScript
 
 let currentUser = null;
-let deleteScheduleId = null;
 let currentBusySchedules = [];
 let busyListRevision = 0;
 let busyReasonsCache = null;
@@ -104,13 +103,6 @@ function setupEventHandlers() {
 	// Quick reason suggestions
 	$('input[name="reason"]').on('focus', function () {
 		showReasonSuggestions();
-	});
-
-	// Delete confirmation
-	$('#confirmDeleteBtn').on('click', function () {
-		if (deleteScheduleId) {
-			deleteBusySchedule(deleteScheduleId);
-		}
 	});
 
 	// Reset form button
@@ -212,7 +204,7 @@ function loadBusyReasons() {
 				]);
 			}
 		},
-		error: function (xhr) {
+		error: function () {
 			// Fallback to default suggestions
 			displayReasonSuggestions([
 				'Họp định kỳ', 'Nghỉ phép', 'Khám ngoài', 'Đào tạo',
@@ -479,13 +471,6 @@ function renderBusySchedulesTable(schedules) {
 
 
 // Get status text
-function getStatusText(status) {
-	const statusMap = {
-		'active': 'Đang hoạt động',
-		'cancelled': 'Đã hủy'
-	};
-	return statusMap[status] || status;
-}
 
 // Format datetime
 function formatDateTime(date) {

@@ -1,74 +1,11 @@
 /* global currentBusySchedules, loadMyBusySchedules, normalizeSearchText */
-/* exported deleteBusySchedule, filterTable, formatTimeRangeReadable, getStatusIndicator, resetForm, setQuickTimeSelection, showAlert */
+/* exported confirmDeleteBusySchedule, deleteBusySchedule, editBusySchedule, filterTable, formatTimeRangeReadable, getStatusIndicator, resetForm, setQuickTime, setQuickTimeSelection, showAlert */
 
 // Format time range for better readability
-function formatTimeRange(startTime, endTime) {
-	const startDate = startTime.toLocaleDateString('vi-VN', {
-		day: '2-digit',
-		month: '2-digit',
-		year: 'numeric'
-	});
-
-	const startTimeStr = startTime.toLocaleTimeString('vi-VN', {
-		hour: '2-digit',
-		minute: '2-digit'
-	});
-
-	const endTimeStr = endTime.toLocaleTimeString('vi-VN', {
-		hour: '2-digit',
-		minute: '2-digit'
-	});
-
-	// Nếu cùng ngày
-	if (startTime.toDateString() === endTime.toDateString()) {
-		return `${startTimeStr} - ${endTimeStr} ${startDate}`;
-	} else {
-		// Khác ngày
-		const endDate = endTime.toLocaleDateString('vi-VN', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric'
-		});
-		return `${startTimeStr} ${startDate} - ${endTimeStr} ${endDate}`;
-	}
-}
 
 // Format date range only
-function formatDateRange(startTime, endTime) {
-	const startDate = startTime.toLocaleDateString('vi-VN', {
-		day: '2-digit',
-		month: '2-digit',
-		year: 'numeric'
-	});
-
-	// Nếu cùng ngày
-	if (startTime.toDateString() === endTime.toDateString()) {
-		return startDate;
-	} else {
-		// Khác ngày
-		const endDate = endTime.toLocaleDateString('vi-VN', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric'
-		});
-		return `${startDate} - ${endDate}`;
-	}
-}
 
 // Format time only
-function formatTimeOnly(startTime, endTime) {
-	const startTimeStr = startTime.toLocaleTimeString('vi-VN', {
-		hour: '2-digit',
-		minute: '2-digit'
-	});
-
-	const endTimeStr = endTime.toLocaleTimeString('vi-VN', {
-		hour: '2-digit',
-		minute: '2-digit'
-	});
-
-	return `${startTimeStr} - ${endTimeStr}`;
-}
 
 // Format time range in a more readable way
 function formatTimeRangeReadable(startTime, endTime) {
@@ -335,7 +272,7 @@ function deleteBusySchedule(scheduleId) {
 				showAlert('Không thể xóa lịch bận. Vui lòng thử lại.', 'error');
 			}
 		},
-		error: function (xhr) {
+		error: function () {
 			const errorMessage = 'Không thể xóa lịch bận. Vui lòng thử lại.';
 			showAlert(errorMessage, 'error');
 		}

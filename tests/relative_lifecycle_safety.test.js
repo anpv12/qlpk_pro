@@ -230,3 +230,21 @@ test('Clear phải dispose dropdown của dòng cũ', () => {
   ctx.table.clear();
   assert.equal(disposed, true);
 });
+
+test('Khởi tạo không có bệnh nhân hiện trạng thái rỗng giống clear()', () => {
+  const classes = new Set();
+  const emptyState = { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } };
+  const tableBody = { innerHTML: 'x' };
+  const container = {
+    innerHTML: '',
+    querySelector: selector => (selector === 'tbody' ? tableBody : selector === '.relative-empty-state' ? emptyState : null)
+  };
+  const document = { querySelector: () => container };
+  const window = { QLPKUserFeedback: { show() {} } };
+  runScriptFile('app/static/js/relative-table.js', vm.createContext({ window, document, console }));
+  const table = window.RelativeTableManager.init('#relatives', {});
+  assert.equal(classes.has('active'), true);
+  assert.equal(tableBody.innerHTML, '');
+  table.clear();
+  assert.equal(classes.has('active'), true);
+});

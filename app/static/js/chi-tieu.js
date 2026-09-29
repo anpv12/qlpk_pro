@@ -1,5 +1,5 @@
 /* global getRevDateRange, isInDateRange, loadAndRenderRevenue, parseDateStr, renderGrid, renderThuChiChart, updateCell */
-/* exported _thuChiChartInstance, acBlurTimer, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, normalizeSearchText, render, rows, saveColumnsToServer, setCtVisible, switchTab */
+/* exported _thuChiChartInstance, acBlurTimer, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, mountCtChart, normalizeSearchText, openAcList, render, rows, saveColumnsToServer, selectAc, setCtVisible, switchTab */
 
 // Continued in (nạp ngay sau file này, cùng scope trang): chi-tieu/chi-tieu-2.js, chi-tieu/chi-tieu-3.js, chi-tieu/chi-tieu-4.js
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
@@ -179,7 +179,6 @@ function computeRow(row) {
 	return c;
 }
 function fmtNum(v) { return (!v && v !== 0) || v === 0 ? '0' : new Intl.NumberFormat('vi-VN').format(v); }
-function sumCol(colId) { return rows.reduce((s, r) => s + (parseFloat(computeRow(r)[colId]) || 0), 0); }
 
 // ===== AUTOCOMPLETE =====
 let acBlurTimer = null;
@@ -264,9 +263,6 @@ function renderDashboard() {
 	const totalChi = validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
 	let chiCash = 0, chiTransfer = 0;
 	validRows.forEach(r => { if (r.payment === 'Tiền mặt') chiCash += (parseFloat(r.amount) || 0); else chiTransfer += (parseFloat(r.amount) || 0); });
-	const avg = validRows.length > 0 ? Math.round(totalChi / validRows.length) : 0;
-	const cashCount = validRows.filter(r => r.payment === 'Tiền mặt').length;
-	const transferCount = validRows.filter(r => r.payment === 'Chuyển khoản').length;
 	const cashPct = totalChi > 0 ? (chiCash / totalChi * 100).toFixed(1) : 0;
 	const transPct = totalChi > 0 ? (chiTransfer / totalChi * 100).toFixed(1) : 0;
 
@@ -274,7 +270,6 @@ function renderDashboard() {
 	const chiByType = {};
 	validRows.forEach(r => { const t = r.type || 'Khác'; chiByType[t] = (chiByType[t] || 0) + (parseFloat(r.amount) || 0); });
 	const topType = Object.entries(chiByType).sort((a, b) => b[1] - a[1]);
-	const topLine = topType.length > 0 ? `<b>${topType[0][0]}</b> chiếm nhiều nhất với <span class="al-highlight ct-text-danger">${fmtNum(topType[0][1])}</span>` : '';
 
 	// Chi hôm nay
 	const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -317,7 +312,6 @@ function renderDashboard() {
 		: '';
 
 	// Số ngày có chi
-	const daysWithExpense = Object.keys(byDate).length;
 
 	// Loại chi nhiều nhất (theo số lượng khoản)
 	const typeCount = {};
@@ -355,7 +349,7 @@ function renderDashboard() {
 
 	renderPieChart(totalChi, validRows);
 	loadAndRenderRevenue();
-	loadAndRenderThuChi(validRows, totalChi, daysWithExpense, todayText, topDateText);
+	loadAndRenderThuChi(validRows, totalChi, todayText, topDateText);
 }
 
 function renderPieChart(totalChi, dateRows) {
@@ -366,7 +360,9 @@ function renderPieChart(totalChi, dateRows) {
 		name, value, itemStyle: { color: getCat(name).color }
 	}));
 
-	const chart = echarts.init(document.getElementById('pieChart'));
+	const dom = document.getElementById('pieChart');
+	if (!dom) return;
+	const chart = mountCtChart(dom);
 	chart.setOption({
 		tooltip: {
 			trigger: 'item',
@@ -403,39 +399,26 @@ function renderPieChart(totalChi, dateRows) {
 			}
 		}]
 	});
-	window.addEventListener('resize', () => chart.resize());
-}
-
-function renderRankList(totalChi, dateRows) {
-	const chiByType = {};
-	dateRows.forEach(r => { const t = r.type || 'Khác'; chiByType[t] = (chiByType[t] || 0) + (parseFloat(r.amount) || 0); });
-
-	const sorted = Object.entries(chiByType).sort((a, b) => b[1] - a[1]);
-	const colors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#8b5cf6', '#64748b'];
-
-		document.getElementById('rankList').innerHTML = sorted.map(([type, amount], i) => {
-		const cat = getCat(type);
-		const pct = totalChi > 0 ? (amount / totalChi * 100).toFixed(1) : 0;
-		const rankCls = i < 3 ? `r${i + 1}` : 'r4';
-		const barColor = colors[i] || '#94a3b8';
-		return `<div class="rank-item">
-			<div class="rank-num ${rankCls}">${i + 1}</div>
-			<i class="bi ${cat.icon} rank-icon ct-rank-icon-dynamic" style="--ct-rank-color:${cat.color};"></i>
-			<div class="rank-info">
-				<div class="rank-name">${type}</div>
-				<div class="rank-bar-wrap"><div class="rank-bar ct-rank-bar-dynamic" style="--ct-rank-width:${pct}%;--ct-rank-bar-color:${barColor};"></div></div>
-			</div>
-			<div class="ct-rank-value">
-				<div class="rank-amount">${fmtNum(amount)}</div>
-				<div class="rank-pct">${pct}%</div>
-			</div>
-		</div>`;
-	}).join('');
 }
 
 // ==================== THỐNG KÊ THU CHI CHART ====================
 let _thuChiChartInstance = null;
-async function loadAndRenderThuChi(chiRows, totalChi = 0, daysWithExpense = 0, todayText = '', topDateText = '') {
+const ctChartObservers = new WeakMap();
+function mountCtChart(dom) {
+	const existing = echarts.getInstanceByDom(dom);
+	if (existing) existing.dispose();
+	const chart = echarts.init(dom);
+	if (!ctChartObservers.has(dom) && typeof ResizeObserver === 'function') {
+		const observer = new ResizeObserver(() => {
+			const current = echarts.getInstanceByDom(dom);
+			if (current) current.resize();
+		});
+		observer.observe(dom);
+		ctChartObservers.set(dom, observer);
+	}
+	return chart;
+}
+async function loadAndRenderThuChi(chiRows, totalChi = 0, todayText = '', topDateText = '') {
 	try {
 		const range = getRevDateRange();
 		if (!range) return;

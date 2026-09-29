@@ -128,7 +128,7 @@ function loadFinancialSummaryFromDB(examinationId) {
 			financialSummaryCache = { subtotalPreTax, totalDiscount, vat, total };
 			updateFinancialDisplay(subtotalPreTax, totalDiscount, vat, total);
 		},
-		error: function (xhr) {
+		error: function () {
 			// Nếu không có dữ liệu từ DB, tính từ bảng dịch vụ
 			financialSummaryCache = null;
 			calculateFromServicesTable();
@@ -212,7 +212,7 @@ function loadServiceOptions() {
 				select.append(`<option value="${safeServiceId}" data-price="${safePrice}" data-service-name="${safeServiceNameAttr}">${safeServiceName} - ${formatCurrency(price)}</option>`);
 			});
 		},
-		error: function (xhr) {
+		error: function () {
 			showCustomToast('error', 'Không thể tải danh sách dịch vụ');
 		}
 	});
@@ -272,7 +272,7 @@ function saveNewService() {
 			total_amount: totalAmount,
 			patient_id: null // Sẽ được lấy từ examination
 		}),
-		success: function (response) {
+		success: function () {
 			showCustomToast('success', 'Thêm dịch vụ thành công');
 			$('#addServiceModal').modal('hide');
 			financialSummaryCache = null;
@@ -467,7 +467,7 @@ function saveEditService(serviceId) {
 				loadServicesForModal(examinationId);
 			}, 500);
 		},
-		error: function (xhr) {
+		error: function () {
 			const errorMessage = 'Không thể cập nhật dịch vụ. Vui lòng kiểm tra lại.';
 			showCustomToast('error', errorMessage);
 		}
@@ -498,13 +498,13 @@ function deleteService(serviceId) {
 			$.ajax({
 				url: `/api/examination-detail/${examinationId}/services/${serviceId}`,
 				method: 'DELETE',
-				success: function (response) {
+				success: function () {
 					showCustomToast('success', 'Xóa dịch vụ thành công');
 					financialSummaryCache = null;
 					// Reload services table
 					loadServicesForModal(examinationId);
 				},
-				error: function (xhr) {
+				error: function () {
 					const errorMessage = 'Không thể xóa dịch vụ. Vui lòng thử lại.';
 					showCustomToast('error', errorMessage);
 				}

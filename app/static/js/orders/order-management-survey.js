@@ -34,10 +34,9 @@ function renderSurveyActions(examinationId, patientId, hasResult = false, hasLin
 }
 
 // Render survey selection UI (when no survey results yet)
-function renderSurveySelectionUI(examinationId, templates, surveySession, appointment) {
+function renderSurveySelectionUI(examinationId, templates, surveySession) {
 	const patient = currentOrderDetail.patient || {};
 	const patientId = patient.id;
-	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
 
 	// Get survey session details (URL and QR code)
 	let surveyUrl = '';
@@ -149,7 +148,7 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 }
 
 // Close survey session
-async function closeSurveySession(examinationId, patientId) {
+async function closeSurveySession() {
 	const orderId = currentOrderDetail?.id;
 	if (!orderId) return;
 	try {

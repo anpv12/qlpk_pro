@@ -1,3 +1,4 @@
+/* exported deleteTextExpansion, downloadTemplate, editTextExpansion, exportToExcel, handleSearch, importFromExcel, resetAll, saveTextExpansion, showAddModal, showImportModal, totalPages */
 // Text Expansion Management JavaScript
 
 window.QLPKApiTransport.installJQuery($);
@@ -69,7 +70,7 @@ function loadTextExpansions(page = 1) {
 				showToast('error', 'Không thể tải danh sách từ viết tắt. Vui lòng thử lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể tải danh sách từ viết tắt. Vui lòng thử lại.');
         }
     });
@@ -187,7 +188,7 @@ function editTextExpansion(id) {
 				showToast('error', 'Không thể tải từ viết tắt. Vui lòng thử lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể tải từ viết tắt. Vui lòng thử lại.');
         }
     });
@@ -234,15 +235,15 @@ function saveTextExpansion() {
 				showToast('error', 'Không thể lưu từ viết tắt. Vui lòng kiểm tra lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể lưu từ viết tắt. Vui lòng kiểm tra lại.');
         }
     });
 }
 
 // Delete text expansion
-function deleteTextExpansion(id) {
-    if (!confirm('Bạn có chắc chắn muốn xóa từ viết tắt này?')) {
+async function deleteTextExpansion(id) {
+    if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa từ viết tắt này?')) {
         return;
     }
     
@@ -262,7 +263,7 @@ function deleteTextExpansion(id) {
 				showToast('error', 'Không thể xóa từ viết tắt. Vui lòng thử lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể xóa từ viết tắt. Vui lòng thử lại.');
         }
     });
@@ -295,6 +296,7 @@ function importFromExcel() {
             if (response.success) {
                 showToast('success', 'Đã nhập từ viết tắt.');
                 if (response.errors && response.errors.length > 0) {
+                    showToast('warning', 'Một số dòng không nhập được, vui lòng kiểm tra file.');
                 }
                 $('#importModal').modal('hide');
                 loadTextExpansions(currentPage);
@@ -307,7 +309,7 @@ function importFromExcel() {
 				showToast('error', 'Không thể nhập từ viết tắt. Vui lòng kiểm tra tệp và thử lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể nhập từ viết tắt. Vui lòng kiểm tra tệp và thử lại.');
         }
     });
@@ -359,8 +361,8 @@ function downloadTemplate() {
 }
 
 // Reset all
-function resetAll() {
-    if (!confirm('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!')) {
+async function resetAll() {
+    if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!', { confirmText: 'Xóa tất cả' })) {
         return;
     }
     
@@ -380,7 +382,7 @@ function resetAll() {
 				showToast('error', 'Không thể khôi phục dữ liệu mặc định. Vui lòng thử lại.');
             }
         },
-        error: function(xhr) {
+        error: function() {
 			showToast('error', 'Không thể khôi phục dữ liệu mặc định. Vui lòng thử lại.');
         }
     });
@@ -400,6 +402,3 @@ function showToast(type, message) {
 }
 
 // Logout function
-function logout() {
-    window.QLPKAppHeader?.logout();
-}

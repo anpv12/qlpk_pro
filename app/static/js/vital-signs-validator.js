@@ -24,7 +24,7 @@
 	        tooltip.style.setProperty('--vital-tooltip-top', `${top}px`);
 	        
 	        // Kích hoạt transition opacity
-	        tooltip.offsetHeight; // Force reflow
+	        void tooltip.offsetHeight; // Force reflow
 	        tooltip.classList.add('is-visible');
         
         activeTooltip = tooltip;
@@ -80,7 +80,7 @@
         },
         bloodPressure: function(val) {
             // Định dạng SBP/DBP (ví dụ: 120/80 hoặc 120-80)
-            const parts = val.split(/[\/\-]/);
+            const parts = val.split(/[/-]/);
             if (parts.length < 2) return null;
             const sbp = parseInt(parts[0].trim(), 10);
             const dbp = parseInt(parts[1].trim(), 10);
@@ -182,7 +182,7 @@
         // (ví dụ khi gọi $('#pulse').val(80))
         if (window.jQuery) {
             const originalVal = window.jQuery.fn.val;
-            window.jQuery.fn.val = function(value) {
+            window.jQuery.fn.val = function() {
                 if (arguments.length > 0) {
                     const res = originalVal.apply(this, arguments);
                     this.each(function() {

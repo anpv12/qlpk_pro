@@ -293,8 +293,6 @@
 				body: JSON.stringify(payload)
 			});
 
-			const result = await res.json();
-
 			if (!res.ok) {
 				showToast('error', 'Không thể lưu tương tác thuốc. Vui lòng kiểm tra lại.');
 				return;
@@ -313,7 +311,7 @@
 
 	// ─── Xóa ──────────────────────────────────────────────
 	async function removeInteraction(id) {
-		if (!confirm('Bạn có chắc muốn xóa tương tác này?')) return;
+		if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa tương tác này?')) return;
 
 		try {
 			const res = await fetch(`${API_BASE}/${id}`, {
@@ -325,7 +323,6 @@
 				showToast('success', 'Đã xóa');
 				loadInteractions();
 			} else {
-				const err = await res.json();
 				showToast('error', 'Không thể xóa tương tác thuốc. Vui lòng thử lại.');
 			}
 		} catch (e) {

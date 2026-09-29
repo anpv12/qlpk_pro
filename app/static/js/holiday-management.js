@@ -29,7 +29,7 @@
 		// Render ngày lễ
 		const listPagination = window.QLPKPagination.createClient({ render: renderPage });
     function renderHolidays(holidaysToRender) { listPagination.setItems(holidaysToRender); }
-    function renderPage(holidaysToRender, offset) {
+    function renderPage(holidaysToRender) {
 			const tbody = $('#holidayTableBody');
 			tbody.empty();
 
@@ -109,7 +109,7 @@
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify(data),
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Thêm ngày lễ thành công!');
 					$('#addHolidayModal').modal('hide');
 					loadHolidays();
@@ -173,7 +173,7 @@
 					'Content-Type': 'application/json'
 				},
 				data: JSON.stringify(data),
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Cập nhật ngày lễ thành công!');
 					$('#editHolidayModal').modal('hide');
 					loadHolidays();
@@ -187,14 +187,14 @@
 		});
 
 		// Xóa ngày lễ
-		window.deleteHoliday = function (holidayId) {
-			if (!confirm('Bạn có chắc chắn muốn xóa ngày lễ này?')) return;
+		window.deleteHoliday = async function (holidayId) {
+			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa ngày lễ này?')) return;
 
 
 			$.ajax({
 				url: `/holidays/${holidayId}`,
 				method: 'DELETE',
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Xóa ngày lễ thành công!');
 					loadHolidays();
 				},

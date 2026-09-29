@@ -1,5 +1,5 @@
 /* global currentPage: writable, formatCurrency, formatDate, formatStockQuantity, getUserFacingResponseMessage, loadAllMedicines, loadMedicines, showCustomToast, showInventoryOverlay */
-/* exported openImportLedger */
+/* exported currentPage, openImportLedger */
 
 // ========== LỊCH SỬ NHẬP & LÔ (gộp vào modal Nhập kho) ==========
 let importLedgerRequestVersion = 0;

@@ -28,7 +28,7 @@ function exportPaymentData() {
 
 			showCustomToast('success', 'Xuất dữ liệu thành công');
 		},
-		error: function (xhr, status, error) {
+		error: function () {
 			showCustomToast('error', 'Có lỗi xảy ra khi xuất dữ liệu');
 		}
 	});
@@ -137,7 +137,7 @@ function formatCurrencyInput(input) {
 // Helper function to handle smart money input
 function handleSmartMoneyInput(input) {
 	if (input === null || input === undefined) return 0;
-	let value = String(input).trim();
+	const value = String(input).trim();
 	if (!value) return 0;
 
 	const lower = value.toLowerCase();

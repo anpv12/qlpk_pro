@@ -80,7 +80,7 @@
 	function clearAddressDraftCache(options = {}) {
 		try {
 			getSessionStorage(options).removeItem(getAddressDraftKey(options));
-		} catch (e) { }
+		} catch (e) { /* sessionStorage không khả dụng: bỏ qua */ }
 	}
 
 	function bindAddressDraftListeners(options = {}) {

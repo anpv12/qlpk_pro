@@ -451,7 +451,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
-		} catch (error) { }
+		} catch (error) { console.warn('Không thể lưu địa chỉ bệnh nhân:', error); }
 	}
 
 	Object.assign(moduleParts, {

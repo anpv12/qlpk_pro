@@ -153,8 +153,8 @@ function editSupplier(supplierId) {
 }
 
 // Hàm xóa nhà cung cấp
-function deleteSupplier(supplierId) {
-	if (!confirm('Bạn có chắc chắn muốn xóa nhà cung cấp này?')) {
+async function deleteSupplier(supplierId) {
+	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa nhà cung cấp này?')) {
 		return;
 	}
 

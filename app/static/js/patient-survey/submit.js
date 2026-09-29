@@ -79,7 +79,7 @@ async function submitSurvey() {
         return;
     }
 
-    submissions.forEach((submission, index) => {
+    submissions.forEach((submission) => {
 
 
         $.ajax({
@@ -121,7 +121,7 @@ async function submitSurvey() {
                     hideActionButtons();
                 }
             },
-            error: function(xhr, status, error) {
+            error: function() {
                 submitBtn.prop('disabled', false).text(originalText);
                 showAlert('error', 'Lỗi khi gửi kết quả khảo sát. Vui lòng thử lại.');
             }

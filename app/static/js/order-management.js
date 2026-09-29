@@ -4,22 +4,13 @@
 // Order Management - Quản lý chỉ định CLS
 
 // Configuration constants for DASS-21 survey
-const DASS21_CONFIG = {
-	ANSWER_MAP: {
-		'0': 'Không bao giờ',
-		'1': 'Đôi khi',
-		'2': 'Thường xuyên',
-		'3': 'Luôn luôn'
-	},
-	DEFAULT_ANSWER: 'Không trả lời'
-};
 
 // Global variables
 let currentPage = 1;
-let perPage = 50;
+const perPage = 50;
 let totalPages = 1;
 let totalOrders = 0;
-let selectedOrderIds = new Set();
+const selectedOrderIds = new Set();
 let currentOrderDetail = null;
 let saveCustomOrderNote = null;
 
@@ -91,7 +82,8 @@ async function showConfirmDialog({
 	variant = 'danger'
 } = {}) {
 	if (typeof Swal === 'undefined') {
-		return confirm(text);
+		showCustomToast('error', 'Không thể mở hộp thoại xác nhận. Thao tác đã được hủy.');
+		return false;
 	}
 
 	const allowedVariants = new Set(['danger', 'warning', 'primary', 'success']);
@@ -235,7 +227,6 @@ function renderOrdersTable(orders) {
 	tbody.innerHTML = orders.map((order, index) => {
 		const patient = order.patient || {};
 		const doctor = order.doctor || {};
-		const appointment = order.appointment || {};
 
 		const patientName = patient.full_name || '—';
 		const patientPhone = patient.phone || 'Chưa có';
@@ -244,7 +235,6 @@ function renderOrdersTable(orders) {
 		const createdDate = formatDisplayDate(order.created_at);
 		const statusBadge = getStatusBadge(order.status);
 		const orderId = order.id;
-		const isSelected = selectedOrderIds.has(orderId);
 
 		return `
             <tr data-order-id="${orderId}">

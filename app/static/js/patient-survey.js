@@ -197,7 +197,7 @@ $(document).ready(function() {
 
 // Check session status to determine if survey is closed or completed
 function checkSessionStatus(sessionToken) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         if (!sessionToken) {
             resolve(); // Continue normally if no session token
             return;
@@ -227,7 +227,7 @@ function checkSessionStatus(sessionToken) {
                 }
                 resolve(); // Luôn resolve để cho phép các hàm tải dữ liệu khác chạy
             },
-            error: function(xhr, status, error) {
+            error: function() {
                 resolve(); // Public survey status must be resolved by session token only.
             }
         });
@@ -300,7 +300,7 @@ function loadPatientInfo(patientId) {
                 showAlert('error', 'Không thể tải thông tin bệnh nhân.');
             }
         },
-        error: function(xhr, status, error) {
+        error: function() {
             showAlert('error', 'Lỗi khi tải thông tin bệnh nhân.');
         }
     });
@@ -486,7 +486,7 @@ function loadPreviewTemplate(templateId) {
                 showAlert('error', 'Không thể tải mẫu khảo sát để xem trước.');
             }
         },
-        error: function(xhr, status, error) {
+        error: function() {
             surveyLoading.hide();
             showAlert('error', 'Lỗi khi tải mẫu khảo sát để xem trước.');
         }

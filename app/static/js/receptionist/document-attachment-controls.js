@@ -100,7 +100,7 @@
 				type: d.type,
 				uploadDate: d.uploadDate
 			}))));
-		} catch (e) { }
+		} catch (e) { /* sessionStorage không khả dụng: bỏ qua */ }
 	}
 
 	function handleFileUpload(files, options = {}) {

@@ -9,7 +9,7 @@
 	function getFetch(options) {
 		return options && options.fetch ? options.fetch : window.fetch.bind(window);
 	}
-	function addButtonAnimationCSS(options = {}) {
+	function addButtonAnimationCSS() {
 		// CSS is owned by custom-animations.css; keep this function for legacy callers.
 	}
 	function ensureSession() {
@@ -121,7 +121,7 @@
 					return true;
 				}
 			}
-		} catch (e) { }
+		} catch (e) { console.warn('Không thể tải lịch hẹn của bệnh nhân:', e); }
 		return false;
 	}
 	async function resolveAppointmentIdForPatientSave(options = {}) {

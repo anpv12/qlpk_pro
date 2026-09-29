@@ -8,12 +8,12 @@
 	function openEditModal(appointmentId) {
 
 		// Try different ID formats to find the appointment
-		let appointment = state.allAppointments.find(a => a.id == appointmentId);
+		let appointment = state.allAppointments.find(a => String(a.id) === String(appointmentId));
 
 		// If not found, try without "appt-" prefix (calendar events use appt-{id} format)
 		if (!appointment && appointmentId.startsWith('appt-')) {
 			const numericId = appointmentId.replace('appt-', '');
-			appointment = state.allAppointments.find(a => a.id == numericId);
+			appointment = state.allAppointments.find(a => String(a.id) === String(numericId));
 		}
 
 		// If still not found, try string comparison
@@ -75,7 +75,7 @@
 						updateEditStatusFlag(detailed.status);
 					}, 100);
 				},
-				error: async function (xhr, status, error) {
+				error: async function () {
 					// Bỏ qua response cũ nếu user đã đóng modal hoặc mở lịch hẹn khác
 					if ($('#editAppointmentModal').data('appointmentId') !== actualAppointmentId) return;
 					// Fallback: dùng dữ liệu sẵn có nếu API lỗi
@@ -100,7 +100,7 @@
 				state.doctors = res;
 				window.AppointmentManagementDoctorControlsUtils.populateDoctorSelect($, '#editDoctor', state.doctors, 'Chọn bác sĩ');
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr) {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
@@ -198,7 +198,7 @@
 	function fillEditServiceSelection(appointment) {
 		// Set service autocomplete: tìm tên dịch vụ từ ID
 		if (appointment.service_id && state.services && state.services.length > 0) {
-			const svc = state.services.find(s => s.id == appointment.service_id);
+			const svc = state.services.find(s => String(s.id) === String(appointment.service_id));
 			$('#editService').val(svc ? svc.name : '');
 			$('#editServiceId').val(appointment.service_id);
 		} else {
@@ -228,7 +228,7 @@
 
 	function getEditDurationFromSelection(appointment) {
 		if (appointment.service_id) {
-			const selectedService = state.services.find(service => service.id == appointment.service_id);
+			const selectedService = state.services.find(service => String(service.id) === String(appointment.service_id));
 			return selectedService?.duration_minutes;
 		}
 		if (appointment.package_id) return $('#editPackage option:selected').data('duration');
@@ -357,12 +357,12 @@
 				contentType: 'application/json',
 				data: JSON.stringify(formData),
 				timeout: 30000,
-				success: function (response) {
+				success: function () {
 					page.showCustomToast('success', 'Cập nhật lịch hẹn thành công!');
 					$('#editAppointmentModal').modal('hide');
 					page.afterDataChanged();
 				},
-				error: function (xhr) {
+				error: function () {
 					const errorMessage = 'Không thể cập nhật lịch hẹn. Vui lòng kiểm tra lại.';
 					page.showCustomToast('error', errorMessage);
 				},

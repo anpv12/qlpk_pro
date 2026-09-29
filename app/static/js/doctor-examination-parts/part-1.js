@@ -1,5 +1,5 @@
 // doctor-examination.js: phần 1/2 (nạp trước doctor-examination.js). Hàm dùng chung qua moduleParts, state qua moduleState.
-(function (window, document) {
+(function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination'] || (window.QLPKModuleParts['doctor-examination'] = { state: {} });
 	const moduleState = moduleParts.state;
@@ -487,4 +487,4 @@
 		requestWorkspaceLeave,
 		isAppointmentAlreadyShown
 	});
-})(window, document);
+})(window);

@@ -223,7 +223,7 @@
 			type: 'DELETE',
 			contentType: 'application/json',
 			data: force ? JSON.stringify({ force: true }) : undefined,
-			success: function (response) {
+			success: function () {
 				showCustomToast('success', 'Đã xóa lịch hẹn thành công!');
 				page.afterDataChanged();
 			},

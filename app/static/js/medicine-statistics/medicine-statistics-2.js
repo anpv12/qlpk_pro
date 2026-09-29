@@ -1,5 +1,5 @@
 /* global currentTab: writable, expandedDoctors, hideLoading, ledgerMedicineId: writable, loadDispensingLedger, loadDispensingMedicines, loadInventory, loadPrescriptions, loadStatistics, renderMedicineDetailTable, renderMedicineSummary, renderStatusBadge */
-/* exported applyFilters, formatMoney, formatNumber, getAuthHeaders, getFilterParams, loadPrescriptionHistory, renderInventoryTable, renderPrescriptionsTable, showLoading, showToast, switchTab */
+/* exported applyFilters, formatMoney, formatNumber, getAuthHeaders, getFilterParams, ledgerMedicineId, loadPrescriptionHistory, renderInventoryTable, renderPrescriptionsTable, showLoading, showToast, switchTab, toggleMedicineDetail */
 
 function renderPrescriptionsTable(data) {
 	const tbody = document.getElementById('prescriptionsTableBody');

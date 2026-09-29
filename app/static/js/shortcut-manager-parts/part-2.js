@@ -180,7 +180,7 @@
 			}
 
 			if (action === 'delete') {
-				if (!window.confirm('Bạn có chắc muốn xóa phím tắt này?')) return;
+				if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
 				if (!moduleState.settingsCurrent()) return;
 				try {
 					const res = await moduleParts.apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });

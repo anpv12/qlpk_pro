@@ -1,5 +1,5 @@
 // doctor-examination/draft-recovery.js: phần 2/2 (nạp trước draft-recovery.js). Hàm dùng chung qua moduleParts, state qua moduleState.
-(function (window, document) {
+(function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/draft-recovery'] || (window.QLPKModuleParts['doctor-examination/draft-recovery'] = { state: {} });
 	const moduleState = moduleParts.state;
@@ -151,4 +151,4 @@
 		bind,
 		clearCurrentUserDrafts
 	});
-})(window, document);
+})(window);

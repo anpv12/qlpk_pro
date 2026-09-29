@@ -89,7 +89,7 @@
 				}
 				return json.data;
 			}
-		} catch (_) {}
+		} catch (_) { console.warn('Không thể tạo tiêu chí khảo sát:', _); }
 		return null;
 	}
 	function bindCriteriaAutocomplete(input) {
@@ -232,7 +232,12 @@
 	async function close(force = false) {
 		if (moduleState.state.saving && force !== true) return;
 		if (!force && hasUnsavedChanges()) {
-			const confirmed = await (window.CustomModal ? window.CustomModal.confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?') : Promise.resolve(window.confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?')));
+			const confirmed = await window.QLPKConfirmationDialog.confirm({
+				text: 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?',
+				confirmText: 'Đóng',
+				variant: 'warning',
+				showToast: (type, message) => window.QLPKUserFeedback?.show(type, message)
+			});
 			if (!confirmed) return;
 		}
 		const overlay = overlayEl();

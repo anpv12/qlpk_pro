@@ -1,5 +1,5 @@
 /* global FILTER_INPUT_DEBOUNCE_MS, apiCall, currentOrderDetail, currentPage: writable, filterInputTimer: writable, filterState, formatDisplayDate, getStatusBadge, loadOrders, patientInputHandler: writable, patientInputKeydownHandler: writable, selectedOrderIds, showConfirmDialog, showCustomToast */
-/* exported batchDeleteOrders, deleteOrder, refreshCurrentOrderStatus, selectOrderGroup, setupAutoFilterListeners, updateOrderNote */
+/* exported batchDeleteOrders, currentPage, deleteOrder, refreshCurrentOrderStatus, selectOrderGroup, setupAutoFilterListeners, updateOrderNote */
 
 // Render timeline
 function surveyClosureText(order) {

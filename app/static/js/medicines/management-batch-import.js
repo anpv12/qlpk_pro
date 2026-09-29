@@ -1,5 +1,5 @@
 /* global allMedicines, editMedicine, formatCurrency, formatDate, importLedgerMedicineId: writable, importLedgerSort: writable, loadMedicines, medicineSaving, medicines, normalizeSearchText, setElementVisible, showCustomToast, showInventoryOverlay, switchImportTab, updateDashboard */
-/* exported confirmBatchImport, removeBatchRow, showImportFromMedicineForm, updatePriceComparison, validateBatchNumber */
+/* exported confirmBatchImport, importLedgerMedicineId, importLedgerSort, onBatchAmountInput, onBatchPriceInput, removeBatchRow, removeBatchRowAndUpdateTotal, showImportFromMedicineForm, updatePriceComparison, validateBatchNumber */
 
 // ========== FUNCTIONS CHO NHẬP KHO THEO ĐƠN HÀNG ==========
 let batchRowCounter = 0;

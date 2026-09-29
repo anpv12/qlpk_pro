@@ -8,21 +8,21 @@
 	let channel = null;
 	try {
 		if (typeof window.BroadcastChannel === 'function') channel = new window.BroadcastChannel('qlpk:browser-session');
-	} catch {}
+	} catch { /* BroadcastChannel/storage/top khác origin: bỏ qua */ }
 	const binding = transport.useCookieSession({ channel });
 
 	for (const storage of [window.localStorage, window.sessionStorage]) {
 		try {
 			storage?.removeItem('qlpk_token');
 			storage?.removeItem('token');
-		} catch {}
+		} catch { /* BroadcastChannel/storage/top khác origin: bỏ qua */ }
 	}
 
 	function redirectToLogin() {
 		let target = window;
 		try {
 			if (window.top && window.top.location.origin === window.location.origin) target = window.top;
-		} catch {}
+		} catch { /* BroadcastChannel/storage/top khác origin: bỏ qua */ }
 		if (!['/login', '/login.html'].includes(target.location.pathname)) target.location.href = '/login';
 	}
 

@@ -287,7 +287,7 @@
             loadOptions,
             onChange: (_, {action, item}) => { if (action === 'select') choose(item); }
         });
-        window.jQuery('#medicineModal').on('hide.bs.modal', event => {
+        window.jQuery('#medicineModal').on('hide.bs.modal', () => {
             closeDropdown();
         });
         if (window.QLPKRealtimePageHooks) {

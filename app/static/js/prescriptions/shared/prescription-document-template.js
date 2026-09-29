@@ -209,12 +209,6 @@ function calculateDetailedAge(birthDateString, referenceDateString) {
  * Format tuổi cho mẫu in ấn — chỉ hiển thị số năm (ví dụ: "21 tuổi")
  * UI phần mềm vẫn dùng calculateDetailedAge().text để hiển thị đầy đủ
  */
-function formatPrintAge(birthDateString, referenceDateString) {
-	const detail = calculateDetailedAge(birthDateString, referenceDateString);
-	if (detail.years > 0) return `${detail.years} tuổi`;
-	if (detail.months > 0) return `${detail.months} tháng`;
-	return detail.text;
-}
 
 function formatGenderDisplay(value) {
 	if (!value) return '';

@@ -139,6 +139,7 @@ test('legacy logout callers all delegate to shared session owner', () => {
     for (const file of ['group-management.js', 'user-management.js', 'permission-management.js',
         'medicine-management.js', 'doctor-busy-schedule.js', 'text-expansion-management.js']) {
         const content = readScriptSource(path.join(__dirname, '../app/static/js', file));
+        if (!/function logout\(/.test(content)) continue;
         assert.match(content, /QLPKAppHeader\?\.logout\(\)/, file);
     }
     const draft = readScriptSource(path.join(__dirname, '../app/static/js/doctor-examination/draft-recovery.js'));

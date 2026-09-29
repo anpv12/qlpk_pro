@@ -28,7 +28,7 @@ function loadPaymentData() {
 			updatePagination();
 			showLoading(false);
 		},
-		error: function (xhr, status, error) {
+		error: function () {
 			showCustomToast('error', 'Có lỗi xảy ra khi tải dữ liệu');
 			showLoading(false);
 		}

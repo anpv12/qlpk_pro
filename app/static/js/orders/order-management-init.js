@@ -1,5 +1,5 @@
 /* global applyFilters, batchDeleteOrders, checkSurveyStatusUpdate, currentExaminationId, currentPage: writable, filterState, loadOrders, selectOrderGroup, selectedOrderIds, setupAutoFilterListeners, showCustomToast, updateSelectedCount */
-/* exported initializePage */
+/* exported currentPage, initializePage */
 
 // Initialize page
 function initializePage() {

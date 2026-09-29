@@ -1,5 +1,5 @@
 /* global acBlurTimer: writable, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getFilteredRows, initGlobalDateFilter, loadExpenses, normalizeSearchText, render, rows: writable, saveColumnsToServer, setCtVisible, switchTab */
-/* exported updateCell */
+/* exported acBlurTimer, addRow, appendFormulaToken, deleteCol, deleteRow, editCol, formatNumberCell, importCSV, saveCol, scheduleCloseAc, showAddCol, showRawNumberCell, toggleConfig, updateCell */
 
 function importCSV(input) {
 	const file = input.files[0];
@@ -39,7 +39,7 @@ function cleanDate(val) {
 		return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
 	}
 	// Normalize separators: dots, dashes → slashes
-	s = s.replace(/[.\-]/g, '/');
+	s = s.replace(/[.-]/g, '/');
 	const parts = s.split('/');
 	if (parts.length >= 2) {
 		const day = parts[0].padStart(2, '0');

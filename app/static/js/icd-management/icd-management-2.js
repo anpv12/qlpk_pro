@@ -1,3 +1,4 @@
+/* exported exportImportErrors, exportTemplate, importICD */
 /* global currentPage, loadICDList, showToast */
 
 // Export template

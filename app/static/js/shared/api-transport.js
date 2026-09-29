@@ -277,7 +277,7 @@
 					installJQuery(value);
 				},
 			});
-		} catch {}
+		} catch { /* storage/jQuery hook không khả dụng: bỏ qua */ }
 	}
 
 	function jqueryTransport(settings) {
@@ -321,7 +321,7 @@
 	try {
 		window.localStorage.removeItem('qlpk_password');
 		window.localStorage.removeItem('qlpk_username');
-	} catch {}
+	} catch { /* storage/jQuery hook không khả dụng: bỏ qua */ }
 
 	window.fetch = fetch;
 	watchGlobalJQuery();

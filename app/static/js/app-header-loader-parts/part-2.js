@@ -384,7 +384,7 @@
 		};
 		notifyLogout(window);
 		document.querySelectorAll('iframe.qlpk-workspace-iframe').forEach(frame => {
-			try { if (frame.contentWindow) notifyLogout(frame.contentWindow); } catch (_) {}
+			try { if (frame.contentWindow) notifyLogout(frame.contentWindow); } catch (_) { /* iframe khác origin: bỏ qua */ }
 		});
 		const results = await Promise.allSettled(pendingCleanup);
 		if (!isCurrent()) return;

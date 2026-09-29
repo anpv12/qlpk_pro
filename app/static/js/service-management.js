@@ -1,3 +1,4 @@
+/* exported exportTemplate, importServices, openImportModal */
   let categories = [];
   let services = [];
 
@@ -62,7 +63,7 @@
   // Render dịch vụ
   const listPagination = window.QLPKPagination.createClient({ render: renderPage });
     function renderServices(servicesToRender) { listPagination.setItems(servicesToRender); }
-    function renderPage(servicesToRender, offset) {
+    function renderPage(servicesToRender) {
     const tbody = $('#serviceTableBody');
     tbody.empty();
     
@@ -161,7 +162,7 @@
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(data),
-      success: function(res) {
+      success: function() {
         showToast('success', 'Thêm dịch vụ thành công!');
         $('#addServiceModal').modal('hide');
         loadServices();
@@ -240,7 +241,7 @@
       method: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
-      success: function(res) {
+      success: function() {
         showToast('success', 'Cập nhật dịch vụ thành công!');
         $('#editServiceModal').modal('hide');
         loadServices();
@@ -254,14 +255,14 @@
   });
 
   // Xóa dịch vụ
-  window.deleteService = function(serviceId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) return;
+  window.deleteService = async function(serviceId) {
+    if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa dịch vụ này?')) return;
     
     
     $.ajax({
       url: `/services/${serviceId}`,
       method: 'DELETE',
-      success: function(res) {
+      success: function() {
         showToast('success', 'Xóa dịch vụ thành công!');
         loadServices();
       },
@@ -359,7 +360,7 @@
       data: formData,
       processData: false,
       contentType: false,
-      success: function(response) {
+      success: function() {
         showToast('success', 'Import dịch vụ thành công!');
         $('#importModal').modal('hide');
         loadServices();

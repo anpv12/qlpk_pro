@@ -2,7 +2,6 @@
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/document-section-ui-utils'] || (window.QLPKModuleParts['components/document-section-ui-utils'] = { state: {} });
-	const moduleState = moduleParts.state;
 
 	window.ClinicalDocumentSectionUiUtils = {
 		updateNotesAttachmentCount: moduleParts.updateNotesAttachmentCount,

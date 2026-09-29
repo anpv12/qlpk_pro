@@ -6,10 +6,6 @@
 		edit: null
 	};
 
-	function getFieldIdForMode(mode) {
-		return mode === 'add' ? 'addMedicalHistory' : 'editMedicalHistory';
-	}
-
 	function getRoot(fieldId) {
 		const tags = document.getElementById(`${fieldId}Tags`);
 		return tags?.closest('[data-icd-autocomplete]') || null;

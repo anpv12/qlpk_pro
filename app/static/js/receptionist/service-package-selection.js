@@ -127,7 +127,7 @@
 
 	function setServiceSelection(appointment, servicesList, $) {
 		if (appointment.service_id && servicesList && servicesList.length > 0) {
-			const service = servicesList.find(item => item.id == appointment.service_id);
+			const service = servicesList.find(item => String(item.id) === String(appointment.service_id));
 			$('#serviceType').val(service ? service.name : '');
 			$('#serviceTypeId').val(appointment.service_id);
 			return true;

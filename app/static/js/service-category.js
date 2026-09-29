@@ -1,3 +1,4 @@
+/* exported exportTemplate, importCategories, openImportModal */
 		let categories = [];
 
 		function normalizeSearchText(value) {
@@ -29,7 +30,7 @@
 		// Render danh mục
 		const listPagination = window.QLPKPagination.createClient({ render: renderPage });
     function renderCategories(categoriesToRender) { listPagination.setItems(categoriesToRender); }
-    function renderPage(categoriesToRender, offset) {
+    function renderPage(categoriesToRender) {
 			const tbody = $('#categoryTableBody');
 			tbody.empty();
 
@@ -99,7 +100,7 @@
 				method: 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify(data),
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Thêm danh mục thành công!');
 					$('#addCategoryModal').modal('hide');
 					loadCategories();
@@ -152,7 +153,7 @@
 				method: 'PUT',
 				contentType: 'application/json',
 				data: JSON.stringify(data),
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Cập nhật danh mục thành công!');
 					$('#editCategoryModal').modal('hide');
 					loadCategories();
@@ -166,14 +167,14 @@
 		});
 
 		// Xóa danh mục
-		window.deleteCategory = function (categoryId) {
-			if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+		window.deleteCategory = async function (categoryId) {
+			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa danh mục này?')) return;
 
 
 			$.ajax({
 				url: `/service-categories/${categoryId}`,
 				method: 'DELETE',
-				success: function (res) {
+				success: function () {
 					showToast('success', 'Xóa danh mục thành công!');
 					loadCategories();
 				},
@@ -264,7 +265,7 @@
 				data: formData,
 				processData: false,
 				contentType: false,
-				success: function (response) {
+				success: function () {
 					showToast('success', 'Import nhóm dịch vụ thành công!');
 					$('#importModal').modal('hide');
 					loadCategories();

@@ -1,5 +1,5 @@
 /* global DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildFullAddressFromParts, buildReceptionistConfirmOptions, calculatePregnancyWeek, currentAppointmentId: writable, currentEditId: writable, currentPage, currentPatientId, currentStatus, getCurrentLoadId, highlightAppointmentDateTimeFields, isCheckingDuplicate: writable, isSubmitting, jointExamManagerInstance, loadAppointments, loadAttachmentsForCurrentPatient, loadProvinces, loadServicesForForm, loadWards, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance: writable, renderDocumentsList, saveAddressToServerIfEditing, savePatientDataInternal, savePendingJointExamList, setCurrentPatientId, setDateOfBirthAndAge, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, updateAddressSummary, updateStatusCounts, uploadFile, uploadedDocuments: writable, validateReceptionistFormData */
-/* exported cancelAppointment, collectFormData, editAppointment, getMedicalDraftOptions, getPatientPopulateOptions, initializeForm, loadSidebarUserInfo, populateSharedForms, safeSetValue, savePatientData, saveReceptionistAppointment, saveReceptionistPatient, transferAppointment, uploadReceptionistDraftDocuments */
+/* exported cancelAppointment, collectFormData, currentAppointmentId, currentEditId, editAppointment, getMedicalDraftOptions, getPatientPopulateOptions, initializeForm, loadSidebarUserInfo, populateSharedForms, safeSetValue, savePatientData, saveReceptionistAppointment, saveReceptionistPatient, transferAppointment, uploadReceptionistDraftDocuments */
 
 // Returns { patientId } on success, otherwise { status } ('stale' | 'patientError'); throws on an invalid id.
 async function saveReceptionistPatient(patientId, patientData, isCurrentContext) {
@@ -150,14 +150,6 @@ async function savePatientData() {
 }
 
 // Collect form data using DOM helpers
-// Helper function to get element value by ID
-function getElementValue(elementId, defaultValue = '') {
-	return window.ReceptionistFormDataUtils.getElementValue(elementId, defaultValue, {
-		document,
-		window,
-		console
-	});
-}
 
 function collectFormData() {
 	return window.ReceptionistFormDataUtils.collectFormData({
@@ -269,7 +261,7 @@ async function copyPatientToReceptionistFormFromGlobalSearch(payload = {}) {
 		if (window.ReceptionistAppointmentListControls && typeof window.ReceptionistAppointmentListControls.activateResponsiveWorkspacePane === 'function') {
 			window.ReceptionistAppointmentListControls.activateResponsiveWorkspacePane('main', { document, window });
 		}
-		try { await loadAttachmentsForCurrentPatient(); } catch (attachmentError) { }
+		try { await loadAttachmentsForCurrentPatient(); } catch (attachmentError) { console.warn('Không thể tải tệp đính kèm:', attachmentError); }
 		if (!isCurrentLoad()) return false;
 		receptionistLoadState.failed = false;
 		showCustomToast('success', `Đã sao chép thông tin bệnh nhân: ${patient.full_name || ''}`.trim());
@@ -472,11 +464,6 @@ async function cancelAppointment(appointmentId, force = false) {
 	// Initialize form
 	function initializeForm() {
 		window.ReceptionistFormBootstrap.initializeForm(getFormBootstrapOptions());
-	}
-
-	// Setup form event handlers
-	function setupFormEventHandlers() {
-		window.ReceptionistFormBootstrap.setupFormEventHandlers(getFormBootstrapOptions());
 	}
 
 // Load sidebar user info

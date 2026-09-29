@@ -122,7 +122,7 @@
 						options.showCustomToast('success', `Đã xóa ${response.deleted_count || 0} sự kiện đã đồng bộ.`);
 						options.loadSyncData();
 					},
-					error: function (xhr) {
+					error: function () {
 						options.showCustomToast('error', 'Không thể xóa sự kiện đã đồng bộ. Vui lòng thử lại.');
 					},
 					complete: function () {

@@ -224,8 +224,14 @@ function bindNavigationEvents() {
     });
 
     // Start over button
-    $('#start-over').off('click').on('click', function() {
-        if (confirm('Bạn có chắc muốn bắt đầu lại? Tất cả câu trả lời sẽ bị mất.')) {
+    $('#start-over').off('click').on('click', async function() {
+        const confirmed = await window.QLPKConfirmationDialog.confirm({
+            text: 'Bạn có chắc muốn bắt đầu lại? Tất cả câu trả lời sẽ bị mất.',
+            confirmText: 'Bắt đầu lại',
+            variant: 'warning',
+            showToast: (type, message) => window.QLPKUserFeedback?.show(type, message)
+        });
+        if (confirmed) {
             surveyResponses = {};
             currentQuestionIndex = 0;
             clearSurveyResponsesFromStorage();

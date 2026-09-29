@@ -453,12 +453,6 @@ window.showTransferMenu = window.ExaminationActionButtonsUi.createTransferMenuHa
  * Load ICD data from API with search query
  * Note: This function is available to shared ICD autocomplete consumers.
  */
-async function loadICDData(query = '') {
-	return window.ClinicalIcdDataLoader.loadICDData(query, {
-		getAuthHeader,
-		missingTokenMessage: 'No token found'
-	});
-}
 const copyViewLockController = window.ClinicalExaminationFormLockUtils.createWorkflowCopyViewLockController({
 	document,
 	afterApplyLockState: locked => documentSectionAdapter.setDocumentSectionLockState(locked),

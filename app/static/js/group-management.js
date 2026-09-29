@@ -95,7 +95,7 @@ $(function () {
     function renderPage(pageData) {
 		const tbody = $('#groupTable tbody');
 		tbody.empty();
-		pageData.forEach((g, i) => {
+		pageData.forEach((g) => {
 			tbody.append(`
         <tr>
           <td><input type="checkbox" class="row-check"></td>
@@ -165,7 +165,6 @@ $(function () {
 
 	// Checkbox cha/con logic
 	$(document).on('change', '.perm-parent', function () {
-		const parentId = $(this).val();
 		const checked = $(this).is(':checked');
 		$(this).closest('.tree-group').next('.tree-children').find('.perm-child').prop('checked', checked);
 	});
@@ -231,7 +230,7 @@ $(function () {
 				fetchGroups();
 				deletingGroupId = null;
 			},
-			error: function (xhr) {
+			error: function () {
 				showCustomToast('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
 			}
 		});
@@ -259,7 +258,7 @@ $(function () {
 					$('#groupModal').modal('hide');
 					fetchGroups();
 				},
-				error: function (xhr) {
+				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể cập nhật nhóm quyền. Vui lòng kiểm tra lại.');
 				}
 			});
@@ -274,7 +273,7 @@ $(function () {
 					$('#groupModal').modal('hide');
 					fetchGroups();
 				},
-				error: function (xhr) {
+				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể tạo nhóm quyền. Vui lòng kiểm tra lại.');
 				}
 			});

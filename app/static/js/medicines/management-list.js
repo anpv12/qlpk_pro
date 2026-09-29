@@ -1,5 +1,5 @@
 /* global allMedicines: writable, canReviewMedicineReference: writable, currentPage: writable, escapeHtml, formatStockDisplay, medicineListRequest: writable, medicinePageSize, medicines: writable, setElementVisible, showCustomToast, totalItems: writable, totalPages: writable, updateDashboard */
-/* exported changePage, deleteSelectedMedicines, filterMedicines, getUnitDisplay, loadAllMedicines, resetFilters, toggleMissingImportPriceFilter */
+/* exported allMedicines, changePage, deleteSelectedMedicines, filterMedicines, getUnitDisplay, loadAllMedicines, resetFilters, toggleMissingImportPriceFilter */
 
 // Load categories from API
 

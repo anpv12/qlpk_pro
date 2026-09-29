@@ -1,6 +1,6 @@
 // doctor-examination/clinical-workspace-ui.js: phần 2/2 các hàm của create() (nạp trước clinical-workspace-ui.js).
 // Mỗi instance gọi installer: state instance qua inst, hằng/hàm cấp module qua outer.
-(function (window, document) {
+(function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/clinical-workspace-ui#create'] || (window.QLPKModuleParts['doctor-examination/clinical-workspace-ui#create'] = { installers: [] });
 	moduleParts.installers.push(function (inst, outer) {
@@ -84,4 +84,4 @@
 			bind
 		});
 	});
-})(window, document);
+})(window);

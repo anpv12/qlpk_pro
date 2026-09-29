@@ -137,6 +137,7 @@
 			this.data = [];
 			this.render();
 			this.updateActionState();
+			if (!this.patientId && this.tableBody && this.emptyState) this.renderRows([]);
 		}
 
 		setCurrentAppointmentDate(date) {
@@ -535,7 +536,7 @@
 			});
 		}
 
-		async searchPatients(query, dropdown, onSelect, onShow, perPage = 10000, shouldRender) {
+		async searchPatients(query, dropdown, { onSelect, onShow, perPage = 10000, shouldRender } = {}) {
 			if (typeof onShow !== 'function' || typeof shouldRender !== 'function') {
 				throw new Error('RelativeTable.searchPatients requires autocomplete lifecycle callbacks');
 			}

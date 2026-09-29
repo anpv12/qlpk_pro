@@ -169,7 +169,6 @@
 
     if (target.dataset.medicalHistoryAction === 'allergy-keydown') {
       callAction('allergyChipKeydown', event);
-      return;
     }
   }
 

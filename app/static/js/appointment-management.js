@@ -34,9 +34,9 @@ $(function () {
 	// Khi load trang lần đầu
 	$(document).ready(function () {
 		// Initialize tooltips với cấu hình rõ ràng
-		var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-		var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-			return new bootstrap.Tooltip(tooltipTriggerEl, {
+		const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+		tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+			new bootstrap.Tooltip(tooltipTriggerEl, {
 				trigger: 'hover focus',
 				delay: { show: 500, hide: 100 }
 			});
@@ -197,6 +197,7 @@ $(function () {
 				page.updateAppointmentEditorSummary('add');
 
 			} catch (error) {
+				console.error('Không thể mở form thêm lịch hẹn:', error);
 			}
 		});
 
@@ -208,7 +209,7 @@ $(function () {
 	});
 
 	// Submit button click handler
-	$(document).off('click.appointmentManagement', '#submitForm').on('click.appointmentManagement', '#submitForm', function (e) {
+	$(document).off('click.appointmentManagement', '#submitForm').on('click.appointmentManagement', '#submitForm', function () {
 
 		// Prevent double click
 		const $submitBtn = $(this);

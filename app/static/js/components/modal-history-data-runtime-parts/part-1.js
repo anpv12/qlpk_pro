@@ -1,5 +1,5 @@
 // components/modal-history-data-runtime.js: phần 1/2 (nạp trước modal-history-data-runtime.js). Hàm dùng chung qua moduleParts, state qua moduleState.
-(function (window, document) {
+(function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/modal-history-data-runtime'] || (window.QLPKModuleParts['components/modal-history-data-runtime'] = { state: {} });
 	const moduleState = moduleParts.state;
@@ -476,4 +476,4 @@
 		buildMedicalRecordExaminationDetailHtml,
 		buildMedicalRecordExaminationHtml
 	});
-})(window, document);
+})(window);

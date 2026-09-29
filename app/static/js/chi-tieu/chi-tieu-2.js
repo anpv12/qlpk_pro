@@ -1,14 +1,13 @@
-/* global _thuChiChartInstance: writable, apiRequest, clearActivePreset, loadExpenses, render, setCtVisible, setPreset */
+/* global _thuChiChartInstance: writable, apiRequest, clearActivePreset, loadExpenses, mountCtChart, render, setCtVisible, setPreset */
 /* exported activePreset, filterDateFrom, filterDateTo, fpFrom, fpTo, getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart */
 
 function renderThuChiChart(labels, thuValues, chiValues) {
-	_thuChiExportData = { labels, thuValues, chiValues };
 	const dom = document.getElementById('thuChiChart');
 	if (!dom) return;
 
 	if (_thuChiChartInstance) { _thuChiChartInstance.dispose(); _thuChiChartInstance = null; }
 
-	const chart = echarts.init(dom);
+	const chart = mountCtChart(dom);
 	_thuChiChartInstance = chart;
 
 	chart.setOption({
@@ -70,19 +69,17 @@ function renderThuChiChart(labels, thuValues, chiValues) {
 		}]
 	});
 
-	window.addEventListener('resize', () => chart.resize());
 }
 
 // Last chart data, kept for export
-let _thuChiExportData = null;
 
 window.exportThuChiExcel = async function() {
 	try {
 		const range = getRevDateRange();
-		if (!range) { alert('Chưa có dữ liệu để xuất'); return; }
+		if (!range) { window.QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu để xuất'); return; }
 		const url = `/api/dashboard/export-thu-chi?from_date=${range.fromISO}&to_date=${range.toISO}`;
 		const response = await fetch(url);
-		if (!response.ok) { alert('Lỗi xuất Excel'); return; }
+		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
@@ -104,10 +101,10 @@ window.exportChiTieuExcel = async function() {
 	try {
 		const fromEl = document.getElementById('dateFrom');
 		const toEl = document.getElementById('dateTo');
-		if (!fromEl || !toEl || !fromEl.value || !toEl.value) { alert('Chưa có dữ liệu'); return; }
+		if (!fromEl || !toEl || !fromEl.value || !toEl.value) { window.QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu'); return; }
 		const url = `/api/expenses/export?from=${encodeURIComponent(fromEl.value)}&to=${encodeURIComponent(toEl.value)}`;
 		const response = await fetch(url);
-		if (!response.ok) { alert('Lỗi xuất Excel'); return; }
+		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
@@ -131,10 +128,6 @@ async function loadAndRenderRevenue() {
 		const toEl = document.getElementById('dateTo');
 		if (!fromEl || !toEl || !fromEl.value || !toEl.value) return;
 
-		const parseFp = (v) => {
-			const p = v.split('/');
-			return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
-		};
 		const range = getRevDateRange();
 		if (!range) return;
 
@@ -161,7 +154,7 @@ function renderRevenueChart(items) {
 	const serviceValues = items.map(i => +(i.service / 1000000).toFixed(2));
 	const medicineValues = items.map(i => +(i.medicine / 1000000).toFixed(2));
 
-	const chart = echarts.init(dom);
+	const chart = mountCtChart(dom);
 	_revenueChartInstance = chart;
 
 	chart.setOption({
@@ -222,7 +215,6 @@ function renderRevenueChart(items) {
 		}]
 	});
 
-	window.addEventListener('resize', () => chart.resize());
 
 	// Click on bar to show revenue detail
 	chart.on('click', (params) => {
@@ -242,7 +234,7 @@ function getRevDateRange() {
 	const toEl = document.getElementById('dateTo');
 	if (!fromEl || !toEl || !fromEl.value || !toEl.value) return null;
 	const parseFp = (v) => { const p = v.split('/'); return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; };
-	let fromISO = parseFp(fromEl.value);
+	const fromISO = parseFp(fromEl.value);
 	let toISO = parseFp(toEl.value);
 	const now = new Date();
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -307,7 +299,7 @@ function renderServiceChart(items, type) {
 		itemStyle: { color: COLORS[i % COLORS.length], borderRadius: 6, borderColor: '#fff', borderWidth: 1.5 }
 	}));
 
-	const chart = echarts.init(dom);
+	const chart = mountCtChart(dom);
 	_serviceChartInstance = chart;
 
 	chart.setOption({
@@ -351,7 +343,6 @@ function renderServiceChart(items, type) {
 		}]
 	});
 
-	window.addEventListener('resize', () => chart.resize());
 }
 
 // Revenue Detail Modal (click on bar chart)
@@ -431,7 +422,7 @@ window.exportRevenueExcel = async function() {
 		if (!range) return;
 		const url = `/api/dashboard/export-excel?from_date=${range.fromISO}&to_date=${range.toISO}`;
 		const response = await fetch(url);
-		if (!response.ok) { alert('L\u1ed7i xu\u1ea5t Excel'); return; }
+		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'L\u1ed7i xu\u1ea5t Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);

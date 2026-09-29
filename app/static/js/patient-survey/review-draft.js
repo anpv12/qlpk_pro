@@ -1,5 +1,5 @@
 /* global allQuestions, currentQuestionIndex: writable, displayPatientInfo, draftBlockMessage: writable, draftBlocked: writable, draftData: writable, draftRevision: writable, draftSaving: writable, draftTimer: writable, formatDateTime, isSurveyClosed: writable, isSurveyCompleted: writable, isSurveyExpired: writable, lastSavedDraft: writable, prepareQuestions, restoreSavedSurveyResponses, reviewData: writable, reviewOrderId, reviewTimer: writable, showClosedSurveyMessage, showQuestion, surveyResponses, surveyTemplates: writable */
-/* exported loadOrderSurveyResult, reviewSummary */
+/* exported loadOrderSurveyResult, reviewSummary, surveyTemplates */
 
 // Use the same question renderer for live progress and submitted results.
 async function loadOrderSurveyResult(orderId, refresh = false) {

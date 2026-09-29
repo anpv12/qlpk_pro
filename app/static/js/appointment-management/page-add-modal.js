@@ -22,6 +22,7 @@
 			initializeFormValidation();
 
 		} catch (error) {
+			console.error('Không thể khởi tạo form thêm lịch hẹn:', error);
 		}
 	}
 
@@ -70,7 +71,7 @@
 					$('#addAppointmentModal').modal('hide');
 					page.afterDataChanged();
 				},
-				error: function (xhr, status, error) {
+				error: function (xhr, status) {
 
 					let errorMsg = 'Không thể thêm lịch hẹn. Vui lòng kiểm tra lại.';
 					if (status === 'timeout') {
@@ -129,7 +130,7 @@
 							page.updateAppointmentEditorSummary('edit');
 							page.afterDataChanged();
 						},
-					error: function (xhr) {
+					error: function () {
 						page.showCustomToast('error', 'Không thể cập nhật trạng thái. Vui lòng thử lại.');
 					}
 				});

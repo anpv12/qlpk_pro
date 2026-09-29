@@ -22,7 +22,7 @@
 					page.refreshView();
 				}
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr) {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
@@ -98,7 +98,7 @@
 				updatePriceDisplay();
 				updateEditPriceDisplay();
 			},
-			error: function (xhr) {
+			error: function () {
 			}
 		});
 	}
@@ -130,7 +130,7 @@
 		return $.get('/packages/', function (res) {
 			state.packages = res;
 			window.AppointmentManagementServicePackageControlsUtils.populatePackageSelects($, state.packages);
-		}).fail(function (xhr, status, error) {
+		}).fail(function () {
 			window.AppointmentManagementServicePackageControlsUtils.renderPackageSelectError($);
 		});
 	}
@@ -173,7 +173,7 @@
 			success: function (res) {
 				deferred.resolve(res.appointments || []);
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr, status) {
 				if (status === 'abort') {
 					deferred.reject(status);
 					return;
@@ -230,7 +230,7 @@
 				state.cachedHolidays = Array.isArray(holidays) ? holidays : [];
 				deferred.resolve(state.cachedHolidays);
 			},
-			error: function (xhr, status, error) {
+			error: function () {
 				state.cachedHolidays = [];
 				deferred.resolve(state.cachedHolidays);
 			},
@@ -272,7 +272,7 @@
 					deferred.resolve([]);
 				}
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr, status) {
 				if (status === 'abort') {
 					deferred.reject(status);
 					return;

@@ -326,7 +326,7 @@
 		/**
 		 * Search patients cho joint exam
 		 */
-		async searchPatients(query, dropdown, onSelect, onShow, perPage = 10000, shouldRender) {
+		async searchPatients(query, dropdown, { onSelect, onShow, perPage = 10000, shouldRender } = {}) {
 			if (typeof onShow !== 'function' || typeof shouldRender !== 'function') {
 				throw new Error('JointExamManager.searchPatients requires autocomplete lifecycle callbacks');
 			}

@@ -183,7 +183,6 @@ function showExpansionFeedback($element, abbreviation, fullText) {
     
     // Position the feedback near the input
     const elementOffset = $element.offset();
-    const elementHeight = $element.outerHeight();
     
     feedback[0].style.setProperty('--text-expansion-feedback-top', `${elementOffset.top - 30}px`);
     feedback[0].style.setProperty('--text-expansion-feedback-left', `${elementOffset.left}px`);

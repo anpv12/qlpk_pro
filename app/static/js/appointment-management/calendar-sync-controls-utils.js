@@ -1,15 +1,6 @@
 (function (window) {
 	'use strict';
 
-	function escapeHtml(value) {
-		return String(value ?? '')
-			.replace(/&/g, '&amp;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-	}
-
 	function buildLoadingRowHtml() {
 		return `
 			<tr>
@@ -21,7 +12,7 @@
 		`;
 	}
 
-	function buildErrorRowHtml(errorMessage) {
+	function buildErrorRowHtml() {
 		return `
 			<tr>
 				<td colspan="7" class="appointment-sync-error-cell">

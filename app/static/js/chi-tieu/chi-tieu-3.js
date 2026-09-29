@@ -1,5 +1,5 @@
 /* global activePreset: writable, columns, computeRow, filterDateFrom: writable, filterDateTo: writable, fmtNum, fpFrom, fpTo, getCat, normalizeSearchText, render, rows, setCtVisible */
-/* exported clearActivePreset, getFilteredRows, isInDateRange, parseDateStr, renderGrid, setPreset */
+/* exported clearActivePreset, downloadTemplate, exportExcel, getFilteredRows, isInDateRange, parseDateStr, renderGrid, selectPresetItem, setPreset, togglePresetDD */
 
 function setPreset(preset) {
 	activePreset = preset;
@@ -56,7 +56,7 @@ let selectedYear = new Date().getFullYear();
 let selectedMonth = null;
 let selectedQuarter = null;
 
-function togglePresetDD(type, btnEl) {
+function togglePresetDD(type) {
 	const menu = document.getElementById('dd-' + type);
 	const wasOpen = menu.classList.contains('show');
 	closeAllPresetDD();
@@ -64,7 +64,6 @@ function togglePresetDD(type, btnEl) {
 
 	const now = new Date();
 	const curYear = now.getFullYear();
-	const curMonth = now.getMonth();
 	let html = '';
 
 	if (type === 'month') {
@@ -388,7 +387,6 @@ function renderGrid() {
 
 	let b = '';
 	let currentMonthGroup = null;
-	const totalCols = columns.length + 2;
 	let currentGroupId = '';
 
 	// Global toggle function

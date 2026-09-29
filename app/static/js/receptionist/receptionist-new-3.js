@@ -1,5 +1,5 @@
 /* global DOCUMENT_DRAFT_KEY, apiCall, bindAddressFieldChanges, cancelAppointment, currentAppointmentId: writable, currentEditId: writable, currentPage, currentPatientId, currentStatus: writable, editAppointment, ensureSession, getMedicalDraftOptions, getPatientPopulateOptions, initializeAutocomplete, initializeForm, loadAppointments, loadDoctorsForForm, loadProvinces, loadServicesForForm, loadSidebarUserInfo, perPage: writable, populateSharedForms, receptionistLoadState, relativeTableInstance: writable, savePatientData, setCurrentPatientId, setDefaultAppointmentDateTime, showCustomToast, totalPages, transferAppointment, updateStatusCounts, waitingListFilter: writable */
-/* exported formatDateDisplay, highlightAppointmentDateTimeFields, jointExamManagerInstance, loadAttachmentsForCurrentPatient, renderDocumentsList, resetFormToDefault, savePendingJointExamList, uploadFile, uploadedDocuments */
+/* exported currentEditId, formatDateDisplay, highlightAppointmentDateTimeFields, jointExamManagerInstance, loadAttachmentsForCurrentPatient, perPage, renderDocumentsList, resetFormToDefault, savePendingJointExamList, uploadFile, uploadedDocuments */
 
 // Load patient medical data from API
 async function loadPatientMedicalData(patientId) {
@@ -41,7 +41,7 @@ async function initializeVisibleMedicalDetails() {
 	}
 
 	// Load attachments from server
-	try { await loadAttachmentsForCurrentPatient(); } catch (e) { }
+	try { await loadAttachmentsForCurrentPatient(); } catch (e) { console.warn('Không thể tải tệp đính kèm:', e); }
 }
 
 // Document upload functions
@@ -78,14 +78,6 @@ function getDocumentAttachmentControlsOptions() {
 		setAttachmentMaxSizeMb: value => { attachmentMaxSizeMb = value; },
 		keepUploadAreaVisible: true
 	};
-}
-
-function updateAttachmentSizeHint() {
-	documentAttachmentControls.updateAttachmentSizeHint(getDocumentAttachmentControlsOptions());
-}
-
-async function loadAttachmentConfig() {
-	return documentAttachmentControls.loadAttachmentConfig(getDocumentAttachmentControlsOptions());
 }
 
 async function initializeDocumentUpload() {
@@ -139,10 +131,6 @@ function getDocumentAttachmentListOptions() {
 	};
 }
 
-function handleFileUpload(files) {
-	documentAttachmentControls.handleFileUpload(files, getDocumentAttachmentControlsOptions());
-}
-
 function renderDocumentsList() {
 	window.ReceptionistDocumentAttachmentList.renderDocumentsList(getDocumentAttachmentListOptions());
 }
@@ -151,14 +139,8 @@ async function loadAttachmentsForCurrentPatient() {
 	return documentAttachmentControls.loadAttachmentsForCurrentPatient(getDocumentAttachmentControlsOptions());
 }
 
-async function uploadAttachmentForCurrentPatient(file) {
-	return documentAttachmentControls.uploadAttachmentForCurrentPatient(file, getDocumentAttachmentControlsOptions());
-}
-
 const documentAttachmentControls = window.ReceptionistDocumentAttachmentControls;
 const documentAttachmentUtils = window.ReceptionistDocumentAttachmentUtils;
-const getFileIcon = documentAttachmentUtils.getFileIcon;
-const formatFileSize = documentAttachmentUtils.formatFileSize;
 
 function getDocumentAttachmentOptions() {
 	return {
@@ -176,16 +158,8 @@ function getDocumentAttachmentOptions() {
 	};
 }
 
-function getAttachmentUrl(attachmentId, mode = 'download') {
-	return documentAttachmentUtils.getAttachmentUrl(attachmentId, mode);
-}
-
 async function openAttachmentPreviewInNewTab(attachmentId, filename, actionOptions = {}) {
 	await documentAttachmentUtils.openAttachmentPreviewInNewTab(attachmentId, filename, { ...getDocumentAttachmentOptions(), ...actionOptions });
-}
-
-async function downloadAttachmentWithAuth(attachmentId, filename) {
-	await documentAttachmentUtils.downloadAttachmentWithAuth(attachmentId, filename, getDocumentAttachmentOptions());
 }
 
 function downloadDocument(docId) {

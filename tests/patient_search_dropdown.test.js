@@ -14,7 +14,7 @@ function setup() {
     let resolveSearch;
     const handlers = env.window.QLPKPatientSearchDropdown.attach({
         row, nameInput, dropdown, floatingClass: 'relative-search-dropdown--floating',
-        search: (query, target, onSelect, onShow, perPage, shouldRender) => {
+        search: (query, target, { onSelect, onShow, perPage, shouldRender }) => {
             calls.searches.push({ query, perPage });
             return new Promise(resolve => { resolveSearch = () => { if (shouldRender()) { target.innerHTML = 'results'; onShow(); } onSelect({ id: 7 }); resolve(); }; });
         },

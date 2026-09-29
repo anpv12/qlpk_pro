@@ -187,7 +187,7 @@ $(document).ready(function () {
 				const modal = new bootstrap.Modal(document.getElementById('userModal'));
 				modal.show();
 			},
-			error: function (xhr) {
+			error: function () {
 				showCustomToast('error', 'Không thể tải dữ liệu tài khoản. Vui lòng thử lại.');
 			}
 		});
@@ -208,7 +208,7 @@ $(document).ready(function () {
 				bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
 				fetchUsers();
 			},
-			error: function (xhr) {
+			error: function () {
 				bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
 				showCustomToast('error', 'Không thể xóa tài khoản. Vui lòng thử lại.');
 			}
@@ -262,7 +262,7 @@ $(document).ready(function () {
 					bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
 					fetchUsers();
 				},
-				error: function (xhr) {
+				error: function () {
 					$('#userFormError').removeClass('d-none').text('Không thể cập nhật tài khoản. Vui lòng kiểm tra lại.');
 				}
 			});
@@ -276,7 +276,7 @@ $(document).ready(function () {
 					bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
 					fetchUsers();
 				},
-				error: function (xhr) {
+				error: function () {
 					$('#userFormError').removeClass('d-none').text('Không thể tạo tài khoản. Vui lòng kiểm tra lại.');
 				}
 			});
@@ -309,7 +309,7 @@ $(document).ready(function () {
 				currentAvatarUrl = res.avatar;
 				showCustomToast('success', 'Tải avatar thành công');
 			},
-			error: function (xhr) {
+			error: function () {
 				showCustomToast('error', 'Không thể tải ảnh đại diện lên. Vui lòng thử lại.');
 			}
 		});
@@ -350,7 +350,7 @@ $(document).ready(function () {
 				$('#licenseCertificateFileName').text(currentLicenseCertificateFileName).attr('href', currentLicenseCertificateUrl).show();
 				showCustomToast('success', 'Tải file chứng nhận thành công');
 			},
-			error: function (xhr) {
+			error: function () {
 				showCustomToast('error', 'Không thể tải chứng nhận lên. Vui lòng thử lại.');
 				$('#licenseCertificateFile').val('');
 			}
@@ -397,7 +397,7 @@ $(document).ready(function () {
 				$('#sidebarUserRole').text(roleDisplay);
 
 			},
-			error: function (xhr) {
+			error: function () {
 				// Fallback nếu API không hoạt động
 				$('#sidebarUserName').html('ADMIN<br>QLPK');
 				$('#sidebarUserRole').text('Quản trị viên');

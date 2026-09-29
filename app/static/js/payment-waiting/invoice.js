@@ -59,7 +59,7 @@ function confirmInvoice(examinationId) {
 					amount_paid: amountPaid,
 					actual_price: actualPrice
 				}),
-				success: function (response) {
+				success: function () {
 					showCustomToast('success', 'Xác nhận hóa đơn thành công');
 
 					// Disable tất cả form fields
@@ -71,7 +71,7 @@ function confirmInvoice(examinationId) {
 					// Refresh danh sách sau khi xác nhận
 					loadPaymentData();
 				},
-				error: function (xhr) {
+				error: function () {
 					$('#exportInvoiceBtn').prop('disabled', false);
 					showCustomToast('error', 'Có lỗi xảy ra khi xác nhận hóa đơn');
 				},
@@ -248,7 +248,7 @@ function executeReturnToReceptionist(paymentId) {
 		data: JSON.stringify({
 			status: 'WAITING_TRANSFER'
 		}),
-		success: function (response) {
+		success: function () {
 			showCustomToast('success', 'Trả về lễ tân thành công!');
 			loadPaymentData(); // Reload data
 		},
@@ -272,7 +272,7 @@ function executeReturnToDoctor(paymentId) {
 		data: JSON.stringify({
 			status: 'DOCTOR_EXAM'
 		}),
-		success: function (response) {
+		success: function () {
 			showCustomToast('success', 'Trả về bác sĩ thành công!');
 			loadPaymentData(); // Reload data
 		},
@@ -296,7 +296,7 @@ function executeReturnToPsychologist(paymentId) {
 		data: JSON.stringify({
 			status: 'PSYCHOLOGIST_EXAM'
 		}),
-		success: function (response) {
+		success: function () {
 			showCustomToast('success', 'Trả về tâm lý gia thành công!');
 			loadPaymentData(); // Reload data
 		},
@@ -321,7 +321,7 @@ function executeReturnToAppointment(paymentId) {
 		data: JSON.stringify({
 			status: 'WAITING_TRANSFER'
 		}),
-		success: function (response) {
+		success: function () {
 			showCustomToast('success', 'Trả về lịch hẹn thành công!');
 			loadPaymentData(); // Reload data
 		},

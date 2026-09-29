@@ -153,7 +153,12 @@
 			button.disabled = true;
 			try {
 				const message = `Thay điểm của tất cả các hàng trong cột bằng ${Number(value)}? Điểm đã nhập sẽ bị thay thế.`;
-				const confirmed = await (window.CustomModal ? window.CustomModal.confirm(message) : Promise.resolve(window.confirm(message)));
+				const confirmed = await window.QLPKConfirmationDialog.confirm({
+					text: message,
+					confirmText: 'Thay điểm',
+					variant: 'warning',
+					showToast: (type, msg) => window.QLPKUserFeedback?.show(type, msg)
+				});
 				if (!confirmed || revision !== moduleState.state.loadRevision || moduleState.state.saving || !th.isConnected || input.value !== value) return;
 				const colIdx = [...table.querySelectorAll('thead th.sc-col-header')].indexOf(th);
 				table.querySelectorAll('tbody tr').forEach(tr => {
@@ -245,20 +250,24 @@
 		moduleParts.markDirty();
 	}
 	function validateQuestions(questions) {
-		if (!questions.length) return moduleParts.showToast('error', 'Phải có ít nhất một câu hỏi'), false;
+		const fail = message => {
+			moduleParts.showToast('error', message);
+			return false;
+		};
+		if (!questions.length) return fail('Phải có ít nhất một câu hỏi');
 		for (let i = 0; i < questions.length; i++) {
 			const q = questions[i];
 			const idx = i + 1;
-			if (!q.text) return moduleParts.showToast('error', `Vui lòng nhập nội dung cho câu ${idx}`), false;
-			if (moduleParts.isChoiceType(q.type) && !q.criteria) return moduleParts.showToast('error', `Vui lòng nhập tiêu chí cho câu ${idx}`), false;
+			if (!q.text) return fail(`Vui lòng nhập nội dung cho câu ${idx}`);
+			if (moduleParts.isChoiceType(q.type) && !q.criteria) return fail(`Vui lòng nhập tiêu chí cho câu ${idx}`);
 			if (moduleParts.isChoiceType(q.type)) {
-				if (!q.answers || q.answers.length < 2) return moduleParts.showToast('error', `Câu ${idx} cần ít nhất 2 đáp án`), false;
-				if (q.answers.some(a => !a.text)) return moduleParts.showToast('error', `Vui lòng nhập đầy đủ đáp án của câu ${idx}`), false;
+				if (!q.answers || q.answers.length < 2) return fail(`Câu ${idx} cần ít nhất 2 đáp án`);
+				if (q.answers.some(a => !a.text)) return fail(`Vui lòng nhập đầy đủ đáp án của câu ${idx}`);
 			}
 			if (moduleParts.isGridType(q.type)) {
-				if (!q.grid.columns.length || !q.grid.rows.length) return moduleParts.showToast('error', `Câu ${idx} phải có ít nhất 1 hàng và 1 cột`), false;
-				if (q.grid.columns.some(c => !c.label)) return moduleParts.showToast('error', `Vui lòng nhập đầy đủ tên cột cho câu ${idx}`), false;
-				if (q.grid.rows.some(r => !r.text || (r.score_enabled && (!r.criteria || Object.values(r.scores).some(s => s === null))))) return moduleParts.showToast('error', `Vui lòng nhập nội dung, tiêu chí và điểm các hàng tính điểm ở câu ${idx}`), false;
+				if (!q.grid.columns.length || !q.grid.rows.length) return fail(`Câu ${idx} phải có ít nhất 1 hàng và 1 cột`);
+				if (q.grid.columns.some(c => !c.label)) return fail(`Vui lòng nhập đầy đủ tên cột cho câu ${idx}`);
+				if (q.grid.rows.some(r => !r.text || (r.score_enabled && (!r.criteria || Object.values(r.scores).some(s => s === null))))) return fail(`Vui lòng nhập nội dung, tiêu chí và điểm các hàng tính điểm ở câu ${idx}`);
 			}
 		}
 		return true;
@@ -270,7 +279,10 @@
 		const desc = descEl ? descEl.value.trim() : '';
 		const performerEl = moduleParts.surveyPerformerInput();
 		const defaultPerformerId = Number(performerEl?.value) || null;
-		if (!name) return moduleParts.showToast('error', 'Vui lòng nhập tên mẫu khảo sát'), null;
+		if (!name) {
+			moduleParts.showToast('error', 'Vui lòng nhập tên mẫu khảo sát');
+			return null;
+		}
 
 		const questions = [];
 		document.querySelectorAll('#scQuestionsList .sc-q-card, #questionsList .sc-q-card').forEach((card, i) => {

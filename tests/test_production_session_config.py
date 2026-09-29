@@ -24,3 +24,11 @@ def test_app_waits_for_healthy_redis() -> None:
     assert "redis:\n        condition: service_healthy" in app_block
     redis_block = compose.split("\n  redis:\n", 1)[1]
     assert 'test: ["CMD", "redis-cli", "ping"]' in redis_block
+
+
+def test_redis_port_is_published_on_loopback_only() -> None:
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    redis_block = compose.split("\n  redis:\n", 1)[1].split("\nvolumes:\n", 1)[0]
+    published = [line.strip().strip('-" ') for line in redis_block.splitlines() if ":6379" in line and line.strip().startswith("-")]
+    assert published, redis_block
+    assert all(entry.startswith("127.0.0.1:") for entry in published), published

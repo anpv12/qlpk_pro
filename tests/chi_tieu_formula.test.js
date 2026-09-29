@@ -31,3 +31,29 @@ test('division by zero, malformed input and code are rejected as 0', () => {
 	assert.equal(engine.evaluateArithmetic(''), 0);
 	assert.equal(engine.evaluateArithmetic('2 ** 3'), 0);
 });
+
+test('biểu đồ Chỉ tiêu dựng qua mountCtChart: dispose bản cũ, resize theo khung, không cộng dồn listener', () => {
+	const pageSource = readScriptSource('app/static/js/chi-tieu.js');
+	assert.doesNotMatch(pageSource, /addEventListener\('resize'/);
+	assert.equal((pageSource.match(/= mountCtChart\(dom\)/g) || []).length, 4);
+	const source = readScriptSource('app/static/js/chi-tieu.js');
+	const start = source.indexOf('const ctChartObservers');
+	const end = source.indexOf('\n}\n', start) + 3;
+	const observed = [];
+	const disposed = [];
+	const instances = new Map();
+	const echarts = {
+		getInstanceByDom: dom => instances.get(dom),
+		init: dom => { const chart = { resized: 0, resize() { this.resized++; }, dispose() { disposed.push(dom); instances.delete(dom); } }; instances.set(dom, chart); return chart; }
+	};
+	class ResizeObserver { constructor(callback) { this.callback = callback; observed.push(this); } observe(dom) { this.dom = dom; } }
+	const context = { echarts, ResizeObserver, WeakMap };
+	vm.runInNewContext(source.slice(start, end) + '\nthis.mountCtChart = mountCtChart;', context);
+	const dom = {};
+	context.mountCtChart(dom);
+	const second = context.mountCtChart(dom);
+	assert.equal(disposed.length, 1);
+	assert.equal(observed.length, 1);
+	observed[0].callback();
+	assert.equal(second.resized, 1);
+});

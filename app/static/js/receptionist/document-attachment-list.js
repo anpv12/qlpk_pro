@@ -214,9 +214,7 @@
 
 			if (action === 'draft-download' && typeof options.downloadDraftDocument === 'function') {
 				options.downloadDraftDocument(id);
-				return;
 			}
-
 		});
 
 		list._documentAttachmentActionsBound = true;

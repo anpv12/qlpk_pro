@@ -29,7 +29,7 @@
 					if (typeof options.loadAttachments === 'function') {
 						await options.loadAttachments();
 					}
-				} catch (_) { }
+				} catch (_) { console.warn('Không thể tải lại tệp đính kèm:', _); }
 			},
 			getTotalCount: () => typeof options.getTotalCount === 'function' ? options.getTotalCount() : 0
 		});
@@ -143,7 +143,7 @@
 							type: d.type,
 							uploadDate: d.uploadDate
 						}))));
-					} catch (e) { }
+					} catch (e) { /* sessionStorage không khả dụng: bỏ qua */ }
 					if (typeof options.showInfo === 'function') {
 						options.showInfo(`Đã lưu ${files.length} tài liệu vào nháp. Sẽ upload khi lưu bệnh nhân.`);
 					}

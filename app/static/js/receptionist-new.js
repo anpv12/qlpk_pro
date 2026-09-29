@@ -77,7 +77,6 @@ async function refreshReceptionistAfterSuccessfulSave() {
 let currentEditId = null;
 let isSubmitting = false;
 let isCheckingDuplicate = false;
-let allDoctors = [];
 let allServices = [];
 
 // Token management
@@ -122,10 +121,7 @@ function buildReceptionistConfirmOptions({ title, text, icon = 'warning', confir
 function loadDoctorsForForm() {
 	return window.ReceptionistCatalogLoaders.loadDoctorsForForm({
 		window,
-		showCustomToast,
-		setDoctors: doctors => {
-			allDoctors = doctors || [];
-		}
+		showCustomToast
 	});
 }
 
@@ -150,14 +146,8 @@ function getFormCalculationOptions() {
 }
 
 // Calculate age from date of birth
-function calculateAge(dateOfBirth) {
-	return window.ReceptionistFormCalculations.calculateAge(dateOfBirth);
-}
 
 // Calculate BMI from weight and height
-function calculateBMI(weight, height) {
-	return window.ReceptionistFormCalculations.calculateBMI(weight, height);
-}
 
 // Helper function: Tạm thời tắt event listener tính tuổi
 function temporarilyDisableAgeCalculation() {
@@ -170,9 +160,6 @@ function reEnableAgeCalculation() {
 }
 
 // Helper function: Format date string to ISO format (YYYY-MM-DD)
-function formatDateToISO(dateString) {
-	return window.ReceptionistFormCalculations.formatDateToISO(dateString);
-}
 
 // Helper function: Set date of birth and calculate age (ưu tiên age từ API)
 function setDateOfBirthAndAge(dateOfBirth, ageFromAPI = null) {
@@ -240,7 +227,7 @@ async function saveAddressToServerIfEditing() {
 			body: JSON.stringify(body)
 		});
 	} catch (e) {
-
+		console.warn('Không thể lưu địa chỉ bệnh nhân:', e);
 	}
 }
 
@@ -295,9 +282,6 @@ function initializeAutocomplete() {
 }
 
 // Setup autocomplete for a field
-function setupAutocomplete(inputId, dropdownId, hiddenId, options) {
-	window.ReceptionistProfileAutocomplete.setupAutocomplete(inputId, dropdownId, hiddenId, options, { document });
-}
 
 // Load appointments
 async function loadAppointments(status = 'waiting_transfer', page = 1) {
@@ -377,13 +361,10 @@ async function updateStatusCounts() {
 }
 
 // Save patient data
-// Global variables for duplicate patient handling
-let pendingDuplicateData = null;
 let selectedDuplicatePatient = null;
 
 // Show duplicate patient modal
-function showDuplicatePatientModal(duplicatePatients, count) {
-	pendingDuplicateData = { duplicatePatients, count };
+function showDuplicatePatientModal(duplicatePatients) {
 	selectedDuplicatePatient = null;
 
 	window.ReceptionistDuplicatePatientModal.show({
@@ -422,7 +403,6 @@ function handleDuplicateChoice(action) {
 	}
 
 	// Clear pending data
-	pendingDuplicateData = null;
 	selectedDuplicatePatient = null;
 }
 

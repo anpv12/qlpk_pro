@@ -1,5 +1,5 @@
 /* global allQuestions: writable, bindQuestionEvents, currentQuestionIndex: writable, isSurveyClosed, isSurveyCompleted, isSurveyExpired, loadExistingResponses, loadSessionSurveyDraft, restoreAnswer, reviewOrderId, showAlert, showClosedSurveyMessage, showExpiredSurveyMessage, surveyTemplates: writable, totalQuestions: writable, updateNavigationButtons, updateProgress */
-/* exported loadSurveyTemplates */
+/* exported loadSurveyTemplates, totalQuestions */
 
 // Load survey templates
 function loadSurveyTemplates() {
@@ -53,7 +53,7 @@ function loadSurveyTemplates() {
                     noSurveyMessage.show();
                 }
             },
-            error: function(xhr, status, error) {
+            error: function() {
                 surveyLoading.hide();
                 showAlert('error', 'Lỗi khi tải câu hỏi khảo sát.');
             }
@@ -100,7 +100,7 @@ function loadSurveyTemplates() {
                 noSurveyMessage.show();
             }
         },
-        error: function(xhr, status, error) {
+        error: function() {
             surveyLoading.hide();
             showAlert('error', 'Lỗi khi tải câu hỏi khảo sát.');
         }
@@ -127,7 +127,7 @@ function prepareQuestions() {
     surveyTemplates.forEach(template => {
         // Handle new structure (content.questions array)
         if (template.content && template.content.questions) {
-            template.content.questions.forEach((question, index) => {
+            template.content.questions.forEach((question) => {
                 allQuestions.push({
                     ...question,
                     template_id: template.id
@@ -138,7 +138,7 @@ function prepareQuestions() {
         else if (template.questions_by_criteria) {
             Object.keys(template.questions_by_criteria).forEach(criteria => {
                 const questions = template.questions_by_criteria[criteria];
-                questions.forEach((question, index) => {
+                questions.forEach((question) => {
                     allQuestions.push({
                         ...question,
                         template_id: template.id,
@@ -149,7 +149,7 @@ function prepareQuestions() {
         }
         // Handle direct content array (like DASS-21)
         else if (Array.isArray(template.content)) {
-            template.content.forEach((question, index) => {
+            template.content.forEach((question) => {
 
                 allQuestions.push({
                     ...question,
@@ -351,7 +351,7 @@ function renderMultipleChoiceQuestion(question, questionId) {
     const answers = question.answers || question.options || [];
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
             <div class="group" role="radiogroup" aria-labelledby="${questionId}">
             ${answers.map((answer, answerIndex) => renderRadioOption(answer, questionId, answerIndex, disabledAttr)).join('')}
                 ${reviewOrderId === null ? `<div class="note">Mẹo: bấm phím <b>1–${answers.length}</b> để chọn nhanh</div>` : ''}
@@ -365,7 +365,7 @@ function renderCheckboxesQuestion(question, questionId) {
     const answers = question.answers || question.options || [];
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
         <div class="group" role="group" aria-labelledby="${questionId}">
             ${answers.map((answer, answerIndex) => renderCheckboxOption(answer, questionId, answerIndex, disabledAttr)).join('')}
         </div>
@@ -378,7 +378,7 @@ function renderDropdownQuestion(question, questionId) {
     const answers = question.answers || question.options || [];
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
         <div class="form-group">
             <select name="${questionId}"
                     id="${questionId}_select"
@@ -439,7 +439,7 @@ function renderGridQuestion(question, questionId) {
     const inputType = isCheckbox ? 'checkbox' : 'radio';
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
         <div class="grid-container">
             <table class="grid-table">
                 <thead>
@@ -490,7 +490,7 @@ function renderDateQuestion(question, questionId) {
     const placeholder = includeTime ? 'Chọn ngày và giờ' : 'Chọn ngày';
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
         <div class="form-group">
             <input type="${inputType}"
                    name="${questionId}"
@@ -507,7 +507,7 @@ function renderDateQuestion(question, questionId) {
 function renderTimeQuestion(question, questionId) {
     const disabledAttr = isSurveyClosed ? 'disabled' : '';
 
-    let html = `
+    const html = `
         <div class="form-group">
             <input type="time"
                    name="${questionId}"

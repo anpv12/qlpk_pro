@@ -40,7 +40,7 @@
 			success: function (res) {
 				window.AppointmentManagementDoctorControlsUtils.populateDoctorSelect($, '#addDoctor', res, 'Chọn bác sĩ');
 			},
-			error: function (xhr, status, error) {
+			error: function (xhr) {
 
 				// Handle authentication error
 				if (xhr.status === 401) {
@@ -179,7 +179,7 @@
 				if (appointmentId.startsWith('appt-')) {
 					numericId = appointmentId.replace('appt-', '');
 				}
-				const appointment = state.allAppointments.find(item => item.id == numericId);
+				const appointment = state.allAppointments.find(item => String(item.id) === String(numericId));
 				if (!appointment) {
 					page.showCustomToast('error', 'Không tìm thấy lịch hẹn!');
 					info.revert();
@@ -254,7 +254,7 @@
 			numericId = appointmentId.replace('appt-', '');
 		}
 
-		const appointment = state.allAppointments.find(a => a.id == numericId);
+		const appointment = state.allAppointments.find(a => String(a.id) === String(numericId));
 		if (!appointment) {
 			//   originalId: appointmentId,
 			//   numericId: numericId,
@@ -287,11 +287,11 @@
 			method: 'PUT',
 			contentType: 'application/json',
 			data: JSON.stringify(updateData),
-			success: function (response) {
+			success: function () {
 				page.showCustomToast('success', 'Đã cập nhật giờ hẹn thành công!');
 
 				// Cập nhật allAppointments
-				const index = state.allAppointments.findIndex(a => a.id == numericId);
+				const index = state.allAppointments.findIndex(a => String(a.id) === String(numericId));
 				if (index !== -1) {
 					state.allAppointments[index].appointment_date = formattedDate;
 				}
@@ -302,7 +302,7 @@
 					event.setStart(newDate);
 				}
 			},
-			error: function (xhr, status, error) {
+			error: function () {
 				//   status: status,
 				//   error: error,
 				//   responseText: xhr.responseText
@@ -329,7 +329,7 @@
 			numericId = appointmentId.replace('appt-', '');
 		}
 
-		const appointment = state.allAppointments.find(a => a.id == numericId);
+		const appointment = state.allAppointments.find(a => String(a.id) === String(numericId));
 		if (!appointment) {
 			page.showCustomToast('error', 'Không tìm thấy lịch hẹn!');
 			if (info) {
@@ -354,9 +354,9 @@
 			method: 'PUT',
 			contentType: 'application/json',
 			data: JSON.stringify(updateData),
-			success: function (response) {
+			success: function () {
 				page.showCustomToast('success', 'Đã cập nhật thời gian lịch hẹn!');
-				const index = state.allAppointments.findIndex(a => a.id == numericId);
+				const index = state.allAppointments.findIndex(a => String(a.id) === String(numericId));
 				if (index !== -1) {
 					state.allAppointments[index].duration_minutes = duration;
 				}
@@ -367,7 +367,7 @@
 					event.setEnd(newEnd);
 				}
 			},
-			error: function (xhr) {
+			error: function () {
 				page.showCustomToast('error', 'Không thể cập nhật thời gian. Vui lòng thử lại.');
 				if (info) {
 					info.revert();

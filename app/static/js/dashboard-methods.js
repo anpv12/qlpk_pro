@@ -278,7 +278,6 @@
 				const response = await fetch(url, {
 				});
 				if (!response.ok) {
-					const err = await response.json();
 					window.QLPKUserFeedback?.show('error', 'Không thể xuất danh sách ICD. Vui lòng thử lại.');
 					return;
 				}
@@ -308,7 +307,6 @@
 				const response = await fetch(url, {
 				});
 				if (!response.ok) {
-					const err = await response.json();
 					window.QLPKUserFeedback?.show('error', 'Không thể xuất nguồn giới thiệu. Vui lòng thử lại.');
 					return;
 				}

@@ -99,27 +99,6 @@ window.CustomModal = {
         }
       }, 200);
     }
-  },
-  
-  // Thay thế window.confirm
-  replaceConfirm: function() {
-    const originalConfirm = window.confirm;
-    window.confirm = function(message) {
-      return window.CustomModal.confirm(message, 'Xác nhận', 'warning');
-    };
-  },
-  
-  // Thay thế window.alert
-  replaceAlert: function() {
-    const originalAlert = window.alert;
-    window.alert = function(message) {
-      return window.CustomModal.alert(message, 'Thông báo', 'success');
-    };
   }
 };
 
-// Tự động thay thế khi load
-document.addEventListener('DOMContentLoaded', function() {
-  window.CustomModal.replaceConfirm();
-  window.CustomModal.replaceAlert();
-}); 

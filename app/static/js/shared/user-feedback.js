@@ -1,4 +1,4 @@
-(function (window, document) {
+(function (window) {
 	'use strict';
 
 	const TYPES = new Set(['success', 'info', 'warning', 'error', 'critical']);
@@ -54,15 +54,15 @@
 		const candidates = [currentWindow];
 		try {
 			if (currentWindow.parent && currentWindow.parent !== currentWindow) candidates.push(currentWindow.parent);
-		} catch (error) { }
+		} catch (error) { /* cửa sổ cha khác origin: bỏ qua */ }
 		try {
 			if (currentWindow.top && !candidates.includes(currentWindow.top)) candidates.push(currentWindow.top);
-		} catch (error) { }
+		} catch (error) { /* cửa sổ cha khác origin: bỏ qua */ }
 
 		for (const candidate of candidates) {
 			try {
 				if (candidate.document && candidate.document.getElementById('qlpkWorkspaceTabs')) return candidate;
-			} catch (error) { }
+			} catch (error) { /* cửa sổ cha khác origin: bỏ qua */ }
 		}
 		return currentWindow;
 	}
@@ -195,4 +195,4 @@
 		resolveError,
 		show
 	};
-})(window, document);
+})(window);

@@ -2,7 +2,7 @@ const browser = ['window','document','navigator','localStorage','sessionStorage'
 const globals = Object.fromEntries(browser.map(n => [n, 'readonly']));
 export default [{
   files: ['**/*.js'],
-  languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals },
+  languageOptions: { ecmaVersion: 2024, sourceType: 'script', globals },
   rules: {
     'no-undef': 'error', 'no-unused-vars': ['warn', { args: 'after-used', caughtErrors: 'none' }],
     'no-unreachable': 'error', 'no-dupe-keys': 'error', 'no-duplicate-case': 'error', 'no-redeclare': 'error',
@@ -11,15 +11,29 @@ export default [{
     'no-async-promise-executor': 'error', 'no-inner-declarations': 'off', 'no-dupe-else-if': 'error', 'no-dupe-args': 'error',
     'no-func-assign': 'error', 'no-import-assign': 'error', 'no-loss-of-precision': 'error', 'no-unsafe-negation': 'error',
     'no-unused-private-class-members': 'warn', 'no-useless-catch': 'warn', 'use-isnan': 'error', 'valid-typeof': 'error',
-    'no-var': 'warn', 'prefer-const': 'warn', 'eqeqeq': ['warn', 'smart'], 'no-implicit-globals': 'warn', 'no-shadow': 'off',
+    'no-var': 'warn', 'prefer-const': 'warn', 'eqeqeq': ['warn', 'smart'], 'no-implicit-globals': 'off', 'no-shadow': 'off',
     'complexity': ['warn', 15], 'max-lines-per-function': ['warn', { max: 80, skipBlankLines: true, skipComments: true }],
     'max-depth': ['warn', 4], 'max-params': ['warn', 5], 'max-lines': ['warn', { max: 600, skipBlankLines: true, skipComments: true }],
     'no-debugger': 'error', 'no-console': ['warn', { allow: ['warn', 'error'] }], 'no-alert': 'warn', 'no-eval': 'error', 'no-implied-eval': 'error', 'no-new-func': 'error',
     'no-param-reassign': 'off', 'no-return-await': 'off', 'require-await': 'off', 'no-await-in-loop': 'off', 'no-promise-executor-return': 'warn', 'no-template-curly-in-string': 'warn', 'no-unmodified-loop-condition': 'warn', 'no-unused-expressions': ['warn', { allowShortCircuit: true, allowTernary: true }], 'no-useless-return': 'warn', 'no-lonely-if': 'off', 'no-else-return': 'off', 'no-nested-ternary': 'warn', 'no-sequences': 'warn', 'no-throw-literal': 'warn', 'prefer-promise-reject-errors': 'warn', 'no-restricted-syntax': ['warn', { selector: "CallExpression[callee.object.name='window'][callee.property.name='confirm']", message: 'native confirm' }, { selector: "MemberExpression[object.name='window'][property.name='Swal']", message: 'window.Swal direct' }]
   }
 }, {
-  // Classic scripts sharing one page scope: cross-file names are declared with /* global */ and /* exported */ headers.
-  files: ['**/medicine-management.js', '**/medicines/management-*.js', '**/order-management.js', '**/orders/order-management-*.js', '**/payment-waiting.js', '**/payment-waiting/*.js', '**/patient-survey.js', '**/patient-survey/*.js', '**/chi-tieu.js', '**/chi-tieu/chi-tieu-2.js', '**/chi-tieu/chi-tieu-3.js', '**/chi-tieu/chi-tieu-4.js', '**/receptionist-new.js', '**/receptionist/receptionist-new-2.js', '**/receptionist/receptionist-new-3.js', '**/medicine-statistics.js', '**/medicine-statistics/medicine-statistics-2.js', '**/medicine-statistics/medicine-statistics-3.js', '**/icd-management.js', '**/icd-management/icd-management-2.js', '**/doctor-busy-schedule.js', '**/doctor-busy-schedule/doctor-busy-schedule-2.js'],
-  languageOptions: { sourceType: 'script' },
-  rules: { 'no-implicit-globals': 'off' }
+  // Only files with import/export syntax are ES modules; every other file is a classic <script> (or an IIFE
+  // imported for side effects) whose top-level names are page globals, declared with /* global */ and
+  // /* exported */ headers. Intentional page globals are the norm here, so no-implicit-globals stays off.
+  files: ['doctor-examination-entry.js', 'psychologist-examination-entry.js', 'doctor-examination/prescription-ui.js',
+    'doctor-examination/medical-history-*.js', 'doctor-examination/safety-plan.js', 'doctor-examination/re-examination-calendar.js'],
+  languageOptions: { sourceType: 'module' }
+}, {
+  // Shared owner of SweetAlert2 dialogs: the only file allowed to touch window.Swal directly.
+  files: ['shared/confirmation-dialog.js'],
+  rules: { 'no-restricted-syntax': ['warn', { selector: "CallExpression[callee.object.name='window'][callee.property.name='confirm']", message: 'native confirm' }] }
+}, {
+  // Legacy global aliases guarded with `if (typeof x === 'undefined') { var x = ... }`: `var` is required so the
+  // alias hoists into the page-wide scope shared with other classic scripts (let/const would clash across files).
+  files: ['prescriptions/shared/prescription-document-template.js'],
+  rules: { 'no-var': 'off' }
+}, {
+  // Vendored flatpickr locale (UMD build), kept byte-identical to upstream.
+  ignores: ['flatpickr-vn.js']
 }];

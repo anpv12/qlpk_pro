@@ -1,4 +1,4 @@
-/* exported currentPage, loadICDList, showToast */
+/* exported confirmDelete, currentPage, deleteICD, editICD, loadICDList, openImportModal, showToast, totalPages */
 
 // Continued in (nạp ngay sau file này, cùng scope trang): icd-management/icd-management-2.js
 // ICD Management JavaScript
@@ -201,21 +201,8 @@ function searchICD() {
 }
 
 // Clear search
-function clearSearch() {
-	$('#searchInput').val('');
-	$('#diseaseGroupFilter').val('');
-	currentSearch = '';
-	currentDiseaseGroup = '';
-	currentPage = 1;
-	loadICDList(currentPage);
-}
 
 // Open add modal
-function openAddModal() {
-	isEditMode = false;
-	currentICDId = null;
-	$('#addICDModal').modal('show');
-}
 
 // Edit ICD
 async function editICD(icdId) {
@@ -290,8 +277,6 @@ async function saveICD() {
 			throw new Error(errorData.detail || 'Lỗi khi lưu mã ICD');
 		}
 
-		const result = await response.json();
-
 		showToast(
 			editing ? 'Cập nhật mã ICD thành công' : 'Thêm mã ICD thành công',
 			'success'
@@ -348,40 +333,6 @@ async function confirmDelete() {
 }
 
 // Export ICD
-async function exportICD() {
-	try {
-		showToast('Đang xuất dữ liệu...', 'info');
-
-		const params = new URLSearchParams();
-		if (currentSearch) {
-			params.append('search', currentSearch);
-		}
-		if (currentDiseaseGroup) {
-			params.append('disease_group', currentDiseaseGroup);
-		}
-
-		const response = await fetch(`/api/icd/export?${params}`);
-
-		if (!response.ok) {
-			throw new Error('Lỗi khi xuất dữ liệu');
-		}
-
-		const blob = await response.blob();
-		const url = window.URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `icd_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-		document.body.appendChild(a);
-		a.click();
-		window.URL.revokeObjectURL(url);
-		document.body.removeChild(a);
-
-		showToast('Xuất dữ liệu thành công', 'success');
-
-	} catch (error) {
-		showToast('Lỗi khi xuất dữ liệu', 'error');
-	}
-}
 
 // Form validation
 function validateForm() {

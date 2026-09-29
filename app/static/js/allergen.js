@@ -1,3 +1,4 @@
+/* exported deleteItem, editItem */
 let currentData = [];
 let currentPage = 1;
 let pageSize = 10;
@@ -85,7 +86,7 @@ $(document).ready(function () {
                 }
                 $('#al-import-file').val('');
             },
-            error: function (err) {
+            error: function () {
 				showToast('Không thể nhập dữ liệu dị nguyên. Vui lòng kiểm tra tệp và thử lại.', 'danger');
                 $('#al-import-file').val('');
             }
@@ -196,14 +197,14 @@ function saveAllergen() {
                 showToast('Không thể lưu dị nguyên. Vui lòng kiểm tra lại.', 'danger');
             }
         },
-        error: function (err) {
+        error: function () {
 			showToast('Không thể xử lý dị nguyên. Vui lòng thử lại.', 'danger');
         }
     });
 }
 
-function deleteItem(id) {
-    if (confirm('Bạn có chắc chắn muốn xóa dị nguyên này?')) {
+async function deleteItem(id) {
+    if (await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa dị nguyên này?')) {
         $.ajax({
             url: `/api/allergen/${id}`,
             method: 'DELETE',

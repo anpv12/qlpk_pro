@@ -24,7 +24,7 @@
 			.filter(medicine => medicine?.category_type === 'DRUG');
 	}
 
-	function buildPageOptions(options, prescriptionData, type, medicines, prescriptionCode, totalAmount) {
+	function buildPageOptions(options, prescriptionData, { type, medicines, prescriptionCode, totalAmount }) {
 		return {
 			clinicInfo: options.clinicInfo || {},
 			patient: options.patient || {},
@@ -53,26 +53,22 @@
 			const medicines = filterMedicines(prescription?.medicines);
 			if (!medicines.length) return result;
 			const type = normalizePrescriptionType(prescription.type || prescription.prescription_type);
-			result.push(buildPageOptions(
-				options,
-				prescriptionData,
+			result.push(buildPageOptions(options, prescriptionData, {
 				type,
 				medicines,
-				prescription.prescription_code || codesByType[type] || prescriptionData.prescription_code,
-				prescription.total_amount
-			));
+				prescriptionCode: prescription.prescription_code || codesByType[type] || prescriptionData.prescription_code,
+				totalAmount: prescription.total_amount
+			}));
 			return result;
 		}, []);
 
 		if (pages.length) return pages;
-		return [buildPageOptions(
-			options,
-			prescriptionData,
-			'BASIC',
-			[],
-			codesByType.BASIC || prescriptionData.prescription_code,
-			prescriptionData.total_amount
-		)];
+		return [buildPageOptions(options, prescriptionData, {
+			type: 'BASIC',
+			medicines: [],
+			prescriptionCode: codesByType.BASIC || prescriptionData.prescription_code,
+			totalAmount: prescriptionData.total_amount
+		})];
 	}
 
 	function buildFlatPageModels(options, prescriptionData, codesByType) {
@@ -84,14 +80,12 @@
 		const types = Object.keys(medicinesByType).filter(type => medicinesByType[type].length);
 		if (!types.length) types.push('BASIC');
 
-		return types.map(type => buildPageOptions(
-			options,
-			prescriptionData,
+		return types.map(type => buildPageOptions(options, prescriptionData, {
 			type,
-			medicinesByType[type],
-			codesByType[type] || prescriptionData.prescription_code,
-			prescriptionData.total_amount
-		));
+			medicines: medicinesByType[type],
+			prescriptionCode: codesByType[type] || prescriptionData.prescription_code,
+			totalAmount: prescriptionData.total_amount
+		}));
 	}
 
 	function buildPageModels(options = {}) {

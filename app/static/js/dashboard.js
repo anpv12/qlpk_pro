@@ -234,7 +234,6 @@ class DashboardManager {
 		const totalDoctor = doctorCounts.reduce((s, v) => s + v, 0);
 		const totalPsych = psychCounts.reduce((s, v) => s + v, 0);
 		const total = totalDoctor + totalPsych;
-		const maxVal = Math.max(...doctorCounts, ...psychCounts, 1);
 
 		const DOCTOR_COLOR = '#0F766E';
 		const PSYCH_COLOR = '#E91E90';
