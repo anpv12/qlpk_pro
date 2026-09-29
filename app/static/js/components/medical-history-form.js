@@ -47,6 +47,28 @@
 		return sourceDocument.querySelector('[data-medical-history-root]');
 	}
 
+	function functionOrNull(value) {
+		return typeof value === 'function' ? value : null;
+	}
+
+	function buildMedicalHistoryConfig(options, root) {
+		const modeConfig = Object.keys({ ...DEFAULT_MODE_CONFIG, ...(options.modeConfig || {}) }).reduce((result, mode) => {
+			result[mode] = { ...DEFAULT_MODE_CONFIG[mode], ...(options.modeConfig?.[mode] || {}) };
+			return result;
+		}, {});
+		return {
+			root,
+			modeConfig,
+			historyModes: (Array.isArray(options.historyModes) ? options.historyModes : DEFAULT_HISTORY_MODES).slice(),
+			substanceIds: (Array.isArray(options.substanceIds) ? options.substanceIds : DEFAULT_SUBSTANCE_IDS).slice(),
+			isLoading: functionOrNull(options.isLoading),
+			onDataChanged: functionOrNull(options.onDataChanged),
+			pageRuntime: options.pageRuntime || options.runtime || null,
+			getPatientId: functionOrNull(options.getPatientId),
+			normalizePayload: functionOrNull(options.normalizePayload)
+		};
+	}
+
 	function create(options = {}) {
 		const RUNTIME = window.QLPKDoctorModuleRegistry.require('supportRuntime');
 		const sourceDocument = options.document || document;
@@ -72,21 +94,7 @@
     };
     const MANUAL_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'manualRevision', dirtyKey: 'manualDirty' });
 
-		const modeConfig = Object.keys({ ...DEFAULT_MODE_CONFIG, ...(options.modeConfig || {}) }).reduce((result, mode) => {
-			result[mode] = { ...DEFAULT_MODE_CONFIG[mode], ...(options.modeConfig?.[mode] || {}) };
-			return result;
-		}, {});
-		const config = {
-			root,
-			modeConfig,
-			historyModes: Array.isArray(options.historyModes) ? options.historyModes.slice() : DEFAULT_HISTORY_MODES.slice(),
-			substanceIds: Array.isArray(options.substanceIds) ? options.substanceIds.slice() : DEFAULT_SUBSTANCE_IDS.slice(),
-				isLoading: typeof options.isLoading === 'function' ? options.isLoading : null,
-				onDataChanged: typeof options.onDataChanged === 'function' ? options.onDataChanged : null,
-				pageRuntime: options.pageRuntime || options.runtime || null,
-				getPatientId: typeof options.getPatientId === 'function' ? options.getPatientId : null,
-				normalizePayload: typeof options.normalizePayload === 'function' ? options.normalizePayload : null
-		};
+		const config = buildMedicalHistoryConfig(options, root);
 
     const component = {
       root,

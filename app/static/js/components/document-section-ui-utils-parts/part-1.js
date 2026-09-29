@@ -156,22 +156,30 @@
 			options.setLockState(options.isLocked);
 		}
 	}
+	function resolveDraftUploadDeps(options) {
+		const noop = function () {};
+		const getUploadedDocuments = options.getUploadedDocuments || function () { return []; };
+		return {
+			getUploadedDocuments,
+			addUploadedDocument: options.addUploadedDocument || function (documentItem) {
+				getUploadedDocuments().push(documentItem);
+			},
+			validateFile: options.validateFile || function () { return true; },
+			renderDocumentsList: options.renderDocumentsList || noop,
+			showInfo: options.showInfo || noop,
+			showSuccess: options.showSuccess || noop,
+			now: options.now || function () { return Date.now(); },
+			random: options.random || Math.random,
+			createUploadDate: options.createUploadDate || function () { return new Date(); }
+		};
+	}
+
 	function handleDraftFileUpload(files, options = {}) {
 		const ensureEditingAllowed = options.ensureEditingAllowed || function () { return true; };
 		if (!ensureEditingAllowed()) return [];
 
 		const doc = getDocument(options);
-		const getUploadedDocuments = options.getUploadedDocuments || function () { return []; };
-		const addUploadedDocument = options.addUploadedDocument || function (documentItem) {
-			getUploadedDocuments().push(documentItem);
-		};
-		const validateFile = options.validateFile || function () { return true; };
-		const renderDocumentsList = options.renderDocumentsList || function () {};
-		const showInfo = options.showInfo || function () {};
-		const showSuccess = options.showSuccess || function () {};
-		const now = options.now || function () { return Date.now(); };
-		const random = options.random || Math.random;
-		const createUploadDate = options.createUploadDate || function () { return new Date(); };
+		const { getUploadedDocuments, addUploadedDocument, validateFile, renderDocumentsList, showInfo, showSuccess, now, random, createUploadDate } = resolveDraftUploadDeps(options);
 		const addedDocuments = [];
 
 		Array.from(files || []).forEach(file => {
@@ -371,25 +379,23 @@
 
 			if (!isCurrentContext()) return false;
 			if (res.ok) {
-				if (showToast && typeof options.showSuccess === 'function') {
-					options.showSuccess('Tải lên tài liệu thành công');
-				}
+				notifyUpload(options, showToast, 'showSuccess', 'Tải lên tài liệu thành công');
 				if (!isDraft && typeof options.loadAttachments === 'function') {
 					await options.loadAttachments();
 				}
 				return true;
 			}
 
-			if (showToast && typeof options.showError === 'function') {
-				options.showError('Không thể tải tài liệu lên. Vui lòng thử lại.');
-			}
+			notifyUpload(options, showToast, 'showError', 'Không thể tải tài liệu lên. Vui lòng thử lại.');
 			return false;
 		} catch (e) {
-			if (isCurrentContext() && showToast && typeof options.showError === 'function') {
-				options.showError('Tải lên gặp lỗi');
-			}
+			if (isCurrentContext()) notifyUpload(options, showToast, 'showError', 'Tải lên gặp lỗi');
 			return false;
 		}
+	}
+
+	function notifyUpload(options, enabled, method, message) {
+		if (enabled && typeof options[method] === 'function') options[method](message);
 	}
 	function persistRemainingDocumentDrafts(documents, options) {
 		try {

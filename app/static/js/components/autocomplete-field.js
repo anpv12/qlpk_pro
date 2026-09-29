@@ -214,12 +214,7 @@
 				const limit = this.currentQuery ? this.options.limit : this.options.emptyQueryLimit;
 				const page = await this.options.loadOptions(this.currentQuery, { skip, limit, signal: this.controller.signal });
 				if (!isCurrent()) return false;
-				const items = Array.isArray(page?.data) ? page.data : [];
-				this.currentItems = append ? this.currentItems.concat(items) : items;
-				this.currentSkip = skip;
-				this.pagination = page?.pagination || null;
-				if (!items.length && this.pagination) this.pagination.has_next = false;
-				this.renderOptions();
+				this.applyPage(page, skip, append);
 				return true;
 			} catch (error) {
 				if (!isCurrent() || error.name === 'AbortError') return false;
@@ -227,12 +222,23 @@
 				this.renderFooter('Chưa tải được gợi ý. Thử lại', () => this.fetchPage(skip, append));
 				return false;
 			} finally {
-				if (revision === this.requestRevision) {
-					this.loading = false;
-					this.loadingMore = false;
-					this.list.setAttribute('aria-busy', 'false');
-				}
+				if (revision === this.requestRevision) this.finishLoading();
 			}
+		}
+
+		applyPage(page, skip, append) {
+			const items = Array.isArray(page?.data) ? page.data : [];
+			this.currentItems = append ? this.currentItems.concat(items) : items;
+			this.currentSkip = skip;
+			this.pagination = page?.pagination || null;
+			if (!items.length && this.pagination) this.pagination.has_next = false;
+			this.renderOptions();
+		}
+
+		finishLoading() {
+			this.loading = false;
+			this.loadingMore = false;
+			this.list.setAttribute('aria-busy', 'false');
 		}
 
 		loadMore() {

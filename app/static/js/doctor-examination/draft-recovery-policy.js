@@ -71,17 +71,23 @@
 		);
 	}
 
-	function classifyDraftRecord(record, context, baseline, now = Date.now()) {
-		const valid = record
+	function hasObjectField(record, field) {
+		return Object.prototype.hasOwnProperty.call(record, field) && Boolean(record[field]) && typeof record[field] === 'object';
+	}
+
+	function isDraftRecordForContext(record, context, now) {
+		return Boolean(record)
 			&& record.schemaVersion === DRAFT_SCHEMA_VERSION
 			&& record.userId === context.userId
 			&& record.appointmentId === context.appointmentId
 			&& record.patientId === context.patientId
-			&& record.expiresAt > now
-			&& Object.prototype.hasOwnProperty.call(record, 'baseSnapshot')
-			&& record.baseSnapshot && typeof record.baseSnapshot === 'object'
-			&& Object.prototype.hasOwnProperty.call(record, 'snapshot')
-			&& record.snapshot && typeof record.snapshot === 'object';
+			&& record.expiresAt > now;
+	}
+
+	function classifyDraftRecord(record, context, baseline, now = Date.now()) {
+		const valid = isDraftRecordForContext(record, context, now)
+			&& hasObjectField(record, 'baseSnapshot')
+			&& hasObjectField(record, 'snapshot');
 		if (!valid) return 'invalid';
 		if (sameValue(baseline, record.snapshot)) return 'redundant';
 		if (!sameValue(baseline, record.baseSnapshot)) return 'superseded';

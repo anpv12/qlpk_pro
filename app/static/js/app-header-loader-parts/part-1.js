@@ -303,6 +303,16 @@
 		if (!response.ok) throw new Error('Failed to load current user');
 		return response.json();
 	}
+	function applyUserPermissions(permissions) {
+		if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_permissions', JSON.stringify(permissions));
+		if (typeof window.checkPermissions === 'function') {
+			window.checkPermissions();
+		}
+		const shell = window.QLPKWorkspaceShell;
+		if (shell && typeof shell.renderLauncher === 'function') shell.renderLauncher();
+		if (shell && typeof shell.renderTabs === 'function') shell.renderTabs();
+	}
+
 	async function hydrateUser() {
 		const storedUser = readStoredUser();
 		if (storedUser && Object.keys(storedUser).length > 0) {
@@ -314,18 +324,7 @@
 			if (!user) return;
 			updateUserUi(user);
 			if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_user', JSON.stringify(user));
-			if (user.permissions) {
-				if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_permissions', JSON.stringify(user.permissions));
-				if (typeof window.checkPermissions === 'function') {
-					window.checkPermissions();
-				}
-				if (window.QLPKWorkspaceShell && typeof window.QLPKWorkspaceShell.renderLauncher === 'function') {
-					window.QLPKWorkspaceShell.renderLauncher();
-				}
-				if (window.QLPKWorkspaceShell && typeof window.QLPKWorkspaceShell.renderTabs === 'function') {
-					window.QLPKWorkspaceShell.renderTabs();
-				}
-			}
+			if (user.permissions) applyUserPermissions(user.permissions);
 		} catch (error) {
 			if (!storedUser || Object.keys(storedUser).length === 0) {
 				updateUserUi({ full_name: 'Son Tam Clinic', role: 'Người dùng' });

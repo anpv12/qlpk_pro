@@ -240,6 +240,12 @@
 
 		return true;
 	}
+	function reportMissingOccupation(options) {
+		if (options.console && typeof options.console.error === 'function') {
+			options.console.error(options.missingMessage || 'Occupation elements not found!');
+		}
+	}
+
 	function initializeOccupationAutocomplete(options = {}) {
 		const doc = getDocument(options);
 		const win = options.window || window;
@@ -251,9 +257,7 @@
 		const occupationDropdown = doc.getElementById(dropdownId);
 
 		if (!occupationInput || !occupationDropdown || typeof AutocompleteCtor !== 'function') {
-			if (options.console && typeof options.console.error === 'function') {
-				options.console.error(options.missingMessage || 'Occupation elements not found!');
-			}
+			reportMissingOccupation(options);
 			return false;
 		}
 
@@ -261,15 +265,19 @@
 		win.occupationAutocomplete = new AutocompleteCtor(inputId, dropdownId);
 
 		if (jquery && typeof options.autoSaveField === 'function') {
-			jquery(`#${inputId}`).off('blur.patientAutoSave change.patientAutoSave').on('blur.patientAutoSave change.patientAutoSave', function () {
-				const value = (win.occupationAutocomplete && win.occupationAutocomplete.getValue)
-					? win.occupationAutocomplete.getValue()
-					: jquery(this).val();
-				options.autoSaveField('occupation', value);
-			});
+			bindOccupationAutoSave(jquery, win, inputId, options.autoSaveField);
 		}
 
 		return true;
+	}
+
+	function bindOccupationAutoSave(jquery, win, inputId, autoSaveField) {
+		jquery(`#${inputId}`).off('blur.patientAutoSave change.patientAutoSave').on('blur.patientAutoSave change.patientAutoSave', function () {
+			const value = (win.occupationAutocomplete && win.occupationAutocomplete.getValue)
+				? win.occupationAutocomplete.getValue()
+				: jquery(this).val();
+			autoSaveField('occupation', value);
+		});
 	}
 	function bindPatientFormAutoSaveSafely(options = {}) {
 		try {

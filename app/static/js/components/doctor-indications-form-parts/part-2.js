@@ -86,15 +86,24 @@
 				return false;
 			}
 		}
-		async function refreshCurrent(options = {}) {
-			const doc = inst.getDocument(options);
-			if (!inst.STATE.appointmentId) return false;
-			inst.STATE.realtimePending = true;
+		function hasLocalIndicationWork() {
+			return Boolean(inst.STATE.saving || inst.STATE.ordersDirty || inst.STATE.editingTempId);
+		}
+
+		function canApplyRealtimeRefresh(doc) {
 			if (!inst.STATE.ordersLoaded || inst.STATE.saving) return false;
 			if (inst.STATE.ordersDirty || inst.STATE.editingTempId) {
 				inst.setMessage(doc, 'Có cập nhật chỉ định. Lưu hoặc kết thúc chỉnh sửa để xem dữ liệu mới.', 'info');
 				return false;
 			}
+			return true;
+		}
+
+		async function refreshCurrent(options = {}) {
+			const doc = inst.getDocument(options);
+			if (!inst.STATE.appointmentId) return false;
+			inst.STATE.realtimePending = true;
+			if (!canApplyRealtimeRefresh(doc)) return false;
 			const appointmentId = inst.STATE.appointmentId;
 			const token = inst.STATE.contextToken;
 			const revision = inst.CHANGES.capture();
@@ -102,7 +111,7 @@
 			try {
 				const data = await inst.requestJson(inst.endpoint('appointment', { appointmentId }), { method: 'GET' });
 				if (!inst.currentToken(token, appointmentId) || request !== inst.STATE.realtimeRequest) return false;
-				if (inst.STATE.saving || inst.STATE.ordersDirty || inst.STATE.editingTempId || inst.CHANGES.changedSince(revision)) return false;
+				if (hasLocalIndicationWork() || inst.CHANGES.changedSince(revision)) return false;
 				inst.STATE.rows = inst.mapServerRows(data?.chi_dinh || []);
 				inst.STATE.realtimePending = false;
 				inst.renderCurrentRows(doc);
@@ -252,17 +261,25 @@
 			inst.STATE.defaultDate = '';
 			resetContextData(doc);
 		}
+		function resolveLoadIdentity(context) {
+			const appointment = context.payload || context.appointment || {};
+			return {
+				appointmentId: inst.normalizeId(context.appointmentId || appointment.id || appointment.appointment?.id),
+				patient: context.patientId || appointment.patient_id || appointment.patient_info?.id || appointment.patient?.id,
+				appointmentDate: context.appointmentDate || appointment.appointment_date || appointment.appointment?.appointment_date
+			};
+		}
+
 		function load(context = {}) {
 			const doc = inst.getDocument(context);
-			const appointment = context.payload || context.appointment || {};
-			const appointmentId = inst.normalizeId(context.appointmentId || appointment.id || appointment.appointment?.id);
-			const patient = context.patientId || appointment.patient_id || appointment.patient_info?.id || appointment.patient?.id;
+			const identity = resolveLoadIdentity(context);
+			const appointmentId = identity.appointmentId;
 			if (!appointmentId) return Promise.resolve(false);
 			inst.STATE.contextToken += 1;
 			const token = inst.STATE.contextToken;
 			inst.STATE.appointmentId = appointmentId;
-			inst.STATE.patientId = inst.normalizeId(patient);
-			inst.STATE.defaultDate = inst.normalizeDateInputValue(context.appointmentDate || appointment.appointment_date || appointment.appointment?.appointment_date);
+			inst.STATE.patientId = inst.normalizeId(identity.patient);
+			inst.STATE.defaultDate = inst.normalizeDateInputValue(identity.appointmentDate);
 			resetContextData(doc);
 			const loadTasks = [
 				loadCurrent({ doc, token, appointmentId }),

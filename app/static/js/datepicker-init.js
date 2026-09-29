@@ -50,6 +50,34 @@ function isDatepickerDisabled(el) {
 		|| el.dataset.datepickerEnabled === 'false';
 }
 
+function readDatepickerDate(value) {
+	return value === 'today' ? 'today' : (value || null);
+}
+
+function readDatepickerDisabledDates(el) {
+	if (!el.dataset.disable) return [];
+	try {
+		return JSON.parse(el.dataset.disable);
+	} catch (e) {
+		console.warn('Invalid data-disable format for datepicker:', el);
+		return [];
+	}
+}
+
+function readDatepickerConfig(el) {
+	return {
+		dateFormat: el.dataset.dateFormat || 'Y-m-d',
+		altFormat: el.dataset.altFormat || 'd/m/Y',
+		enableTime: el.dataset.enableTime === 'true',
+		noCalendar: el.dataset.noCalendar === 'true',
+		minDate: readDatepickerDate(el.dataset.minDate),
+		maxDate: readDatepickerDate(el.dataset.maxDate),
+		defaultDate: el.dataset.defaultDate === 'today' ? new Date() : (el.dataset.defaultDate || null),
+		useAltInput: readDatepickerBoolean(el, 'altInput', true),
+		disableDates: readDatepickerDisabledDates(el)
+	};
+}
+
 function readDatepickerBoolean(el, name, fallback) {
 	if (!(name in el.dataset)) {
 		return fallback;
@@ -87,23 +115,7 @@ function initDatepickers(selector) {
 		el.setAttribute('autocomplete', 'off');
 
 		// Read configuration from data attributes
-		const dateFormat = el.dataset.dateFormat || 'Y-m-d';
-		const altFormat = el.dataset.altFormat || 'd/m/Y';
-		const enableTime = el.dataset.enableTime === 'true';
-		const noCalendar = el.dataset.noCalendar === 'true';
-		const minDate = el.dataset.minDate === 'today' ? 'today' : (el.dataset.minDate || null);
-		const maxDate = el.dataset.maxDate === 'today' ? 'today' : (el.dataset.maxDate || null);
-		const defaultDate = el.dataset.defaultDate === 'today' ? new Date() : (el.dataset.defaultDate || null);
-		const useAltInput = readDatepickerBoolean(el, 'altInput', true);
-
-		let disableDates = [];
-		if (el.dataset.disable) {
-			try {
-				disableDates = JSON.parse(el.dataset.disable);
-			} catch (e) {
-				console.warn('Invalid data-disable format for datepicker:', el);
-			}
-		}
+		const { dateFormat, altFormat, enableTime, noCalendar, minDate, maxDate, defaultDate, useAltInput, disableDates } = readDatepickerConfig(el);
 
 		// Store initial value from HTML attribute (not from browser autocomplete)
 		// Use getAttribute to get only the value from HTML, not from browser cache

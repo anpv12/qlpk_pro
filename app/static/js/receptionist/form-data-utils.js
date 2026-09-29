@@ -19,10 +19,7 @@
 
 		const element = doc.getElementById(elementId);
 		if (!element) {
-			const logger = options.console || win.console;
-			if (logger && typeof logger.warn === 'function') {
-				logger.warn(`Element with ID "${elementId}" not found`);
-			}
+			warnMissingElement(elementId, options.console || win.console);
 			return defaultValue;
 		}
 
@@ -35,14 +32,22 @@
 			return checked ? checked.value : defaultValue;
 		}
 
-		if (element._flatpickr) {
-			const instance = element._flatpickr;
-			if (instance.selectedDates && instance.selectedDates.length > 0) {
-				return instance.formatDate(instance.selectedDates[0], element.dataset.dateFormat || 'Y-m-d');
-			}
-		}
+		const pickedDate = readFlatpickrDate(element);
+		if (pickedDate !== undefined) return pickedDate;
 
 		return element.value || defaultValue;
+	}
+
+	function warnMissingElement(elementId, logger) {
+		if (logger && typeof logger.warn === 'function') {
+			logger.warn(`Element with ID "${elementId}" not found`);
+		}
+	}
+
+	function readFlatpickrDate(element) {
+		const instance = element._flatpickr;
+		if (!instance || !instance.selectedDates || instance.selectedDates.length === 0) return undefined;
+		return instance.formatDate(instance.selectedDates[0], element.dataset.dateFormat || 'Y-m-d');
 	}
 
 	function safeSetValue(elementId, value, options = {}) {

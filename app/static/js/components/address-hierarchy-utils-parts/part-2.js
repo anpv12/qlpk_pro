@@ -85,6 +85,46 @@
 
 		return values;
 	}
+	function hasPregnancyWeeks(values) {
+		return values.so_tuan_thai !== null && values.so_tuan_thai !== '';
+	}
+
+	// [main form field id, modal value key]
+	const PERSONAL_DETAIL_MAIN_FIELDS = [
+		['idCard', 'id_number'], ['nationality', 'nationality'], ['religion', 'religion'], ['ethnicity', 'ethnicity'],
+		['occupation', 'occupation'], ['donViCongTac', 'don_vi_cong_tac'], ['diaChiCongTy', 'dia_chi_cong_ty'],
+		['educationLevel', 'education_level'], ['gender', 'gender'], ['sexualOrientation', 'sexual_orientation']
+	];
+
+	function copyPersonalDetailsToMainForm(values, options) {
+		PERSONAL_DETAIL_MAIN_FIELDS.forEach(([fieldId, key]) => moduleParts.setMainValue(fieldId, values[key], options));
+		moduleParts.setMainValue('mangThai', values.mang_thai ? '1' : '', options);
+		moduleParts.setMainValue('ngayDuSinh', values.expected_delivery_date || '', options);
+		moduleParts.setMainValue('soTuanThai', hasPregnancyWeeks(values) ? values.so_tuan_thai : '', options);
+	}
+
+	async function savePersonalDetails(patientId, values, options) {
+		await moduleParts.putPatientFields(patientId, {
+			occupation: values.occupation,
+			don_vi_cong_tac: values.don_vi_cong_tac,
+			dia_chi_cong_ty: values.dia_chi_cong_ty,
+			education_level: values.education_level
+		}, options);
+		await moduleParts.putPatientFields(patientId, {
+			id_number: values.id_number,
+			nationality: values.nationality,
+			religion: values.religion,
+			ethnicity: values.ethnicity
+		}, options);
+		await moduleParts.putPatientFields(patientId, {
+			gender: values.gender,
+			sexual_orientation: values.sexual_orientation,
+			mang_thai: values.mang_thai,
+			expected_delivery_date: values.expected_delivery_date || null,
+			so_tuan_thai: hasPregnancyWeeks(values) ? values.so_tuan_thai : null
+		}, options);
+	}
+
 	async function syncPersonalDetailModalToMainForm(options = {}) {
 		try {
 			const win = options.window || window;
@@ -100,44 +140,13 @@
 				moduleParts.setMainValue('address', full, options);
 			}
 
-			moduleParts.setMainValue('idCard', values.id_number, options);
-			moduleParts.setMainValue('nationality', values.nationality, options);
-			moduleParts.setMainValue('religion', values.religion, options);
-			moduleParts.setMainValue('ethnicity', values.ethnicity, options);
-			moduleParts.setMainValue('occupation', values.occupation, options);
-			moduleParts.setMainValue('donViCongTac', values.don_vi_cong_tac, options);
-			moduleParts.setMainValue('diaChiCongTy', values.dia_chi_cong_ty, options);
-			moduleParts.setMainValue('educationLevel', values.education_level, options);
-			moduleParts.setMainValue('gender', values.gender, options);
-			moduleParts.setMainValue('sexualOrientation', values.sexual_orientation, options);
-			moduleParts.setMainValue('mangThai', values.mang_thai ? '1' : '', options);
-			moduleParts.setMainValue('ngayDuSinh', values.expected_delivery_date || '', options);
-			moduleParts.setMainValue('soTuanThai', values.so_tuan_thai !== null && values.so_tuan_thai !== '' ? values.so_tuan_thai : '', options);
+			copyPersonalDetailsToMainForm(values, options);
 
 			const mainGenderSelect = moduleParts.getDocument(options).getElementById('gender');
 			if (mainGenderSelect && values.gender) mainGenderSelect.value = values.gender;
 
 			if (options.saveToDb && win.currentPatientId) {
-				const patientId = win.currentPatientId;
-				await moduleParts.putPatientFields(patientId, {
-					occupation: values.occupation,
-					don_vi_cong_tac: values.don_vi_cong_tac,
-					dia_chi_cong_ty: values.dia_chi_cong_ty,
-					education_level: values.education_level
-				}, options);
-				await moduleParts.putPatientFields(patientId, {
-					id_number: values.id_number,
-					nationality: values.nationality,
-					religion: values.religion,
-					ethnicity: values.ethnicity
-				}, options);
-				await moduleParts.putPatientFields(patientId, {
-					gender: values.gender,
-					sexual_orientation: values.sexual_orientation,
-					mang_thai: values.mang_thai,
-					expected_delivery_date: values.expected_delivery_date || null,
-					so_tuan_thai: values.so_tuan_thai !== null && values.so_tuan_thai !== '' ? values.so_tuan_thai : null
-				}, options);
+				await savePersonalDetails(win.currentPatientId, values, options);
 			}
 			return values;
 		} catch (error) {

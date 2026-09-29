@@ -75,6 +75,31 @@
 		return paginationOptions;
 	}
 
+	// Fetch with the given id, or resolve `fallback` without a request when the id is missing.
+	function fetchOr(id, fetcher, fallback) {
+		return id ? fetcher(id).catch(() => fallback) : Promise.resolve(fallback);
+	}
+
+	function buildPrescriptionTabFetches(options, history) {
+		const examinationId = history.id;
+		const appointmentId = history.appointment_id;
+		const fetches = [
+			options.fetchPatientDetail(options.patient.id).catch(() => null),
+			fetchOr(examinationId, id => options.fetchExaminationDetail(id, true), null),
+			fetchOr(examinationId, id => options.fetchSectionDetails(id, true), {}),
+			fetchOr(appointmentId, id => options.fetchPrescription(id, true), null),
+			fetchOr(appointmentId, id => options.fetchRelatives(id), { data: [] })
+		];
+		if (typeof options.fetchAppointment === 'function') {
+			fetches.push(fetchOr(appointmentId, id => options.fetchAppointment(id), null));
+		}
+		return fetches;
+	}
+
+	function resolveClinicInfo(options) {
+		return typeof options.getClinicInfoConfig === 'function' ? options.getClinicInfoConfig() : options.clinicInfo;
+	}
+
 	async function renderTab(options = {}) {
 		const tab = historyTabCore.resolveTabContext(options, renderState);
 		if (tab.done) return tab.done;
@@ -87,41 +112,14 @@
 			const requiredFetchers = ['fetchPatientDetail', 'fetchExaminationDetail', 'fetchSectionDetails', 'fetchPrescription', 'fetchRelatives'];
 			const missingFetcher = requiredFetchers.find(name => typeof options[name] !== 'function');
 			if (missingFetcher) throw new Error(`Thiếu dependency ${missingFetcher} cho tab toa thuốc`);
-			const examinationId = history.id;
-			const appointmentId = history.appointment_id;
-			const fetches = [
-				options.fetchPatientDetail(options.patient.id).catch(() => null),
-				examinationId
-					? options.fetchExaminationDetail(examinationId, true).catch(() => null)
-					: Promise.resolve(null),
-				examinationId
-					? options.fetchSectionDetails(examinationId, true).catch(() => ({}))
-					: Promise.resolve({}),
-				appointmentId
-					? options.fetchPrescription(appointmentId, true).catch(() => null)
-					: Promise.resolve(null),
-				appointmentId
-					? options.fetchRelatives(appointmentId).catch(() => ({ data: [] }))
-					: Promise.resolve({ data: [] })
-			];
-
-			if (typeof options.fetchAppointment === 'function') {
-				fetches.push(
-					appointmentId
-						? options.fetchAppointment(appointmentId).catch(() => null)
-						: Promise.resolve(null)
-				);
-			}
-
+			const fetches = buildPrescriptionTabFetches(options, history);
 			const [patientDetail, examinationDetail, examinationDetailsBySection, prescriptionData, relativesResponse, appointmentResponse] = await Promise.all(fetches);
 			if (!isCurrent(options)) return { state: 'stale' };
 			const relatives = relativesResponse?.data || [];
 			const paginationOptions = setupPreview({
 				setupPrescriptionTabPagination: options.setupPrescriptionTabPagination,
 				prescriptionData,
-				clinicInfo: typeof options.getClinicInfoConfig === 'function'
-					? options.getClinicInfoConfig()
-					: options.clinicInfo,
+				clinicInfo: resolveClinicInfo(options),
 				patient: patientDetail || options.patient,
 				history,
 				examinationDetail,
@@ -131,9 +129,7 @@
 
 			return { state: 'ready', history, index: historyState.index, paginationOptions, appointmentResponse };
 		} catch (error) {
-			if (typeof options.onError === 'function') {
-				options.onError(error);
-			}
+			if (typeof options.onError === 'function') options.onError(error);
 			renderState(contentArea, 'loadError');
 			return { state: 'loadError', history, index: historyState.index, error };
 		}

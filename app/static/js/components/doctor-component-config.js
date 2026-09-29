@@ -82,28 +82,33 @@
 		return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clone(item)]));
 	}
 
+	// Shallow-merge one config section: cloned defaults, then overrides[key] when given.
+	function mergeSection(defaults, overrides, key) {
+		return { ...clone(defaults[key]), ...((overrides && overrides[key]) || {}) };
+	}
+
 	function create(overrides = {}) {
+		const intakeOverrides = overrides.intake || {};
+		const supportOverrides = overrides.support || {};
 		return {
 			...clone(DOCTOR_CONFIG),
 			...overrides,
 			intake: {
-				...clone(DOCTOR_CONFIG.intake),
-				...(overrides.intake || {}),
-				patient: { ...clone(DOCTOR_CONFIG.intake.patient), ...(overrides.intake?.patient || {}) },
-				visit: { ...clone(DOCTOR_CONFIG.intake.visit), ...(overrides.intake?.visit || {}) },
-				relatives: { ...clone(DOCTOR_CONFIG.intake.relatives), ...(overrides.intake?.relatives || {}) },
-				documents: { ...clone(DOCTOR_CONFIG.intake.documents), ...(overrides.intake?.documents || {}) }
+				...mergeSection(DOCTOR_CONFIG, overrides, 'intake'),
+				patient: mergeSection(DOCTOR_CONFIG.intake, intakeOverrides, 'patient'),
+				visit: mergeSection(DOCTOR_CONFIG.intake, intakeOverrides, 'visit'),
+				relatives: mergeSection(DOCTOR_CONFIG.intake, intakeOverrides, 'relatives'),
+				documents: mergeSection(DOCTOR_CONFIG.intake, intakeOverrides, 'documents')
 			},
-			clinical: { ...clone(DOCTOR_CONFIG.clinical), ...(overrides.clinical || {}) },
-			workspace: { ...clone(DOCTOR_CONFIG.workspace), ...(overrides.workspace || {}) },
-			prescription: { ...clone(DOCTOR_CONFIG.prescription), ...(overrides.prescription || {}) },
+			clinical: mergeSection(DOCTOR_CONFIG, overrides, 'clinical'),
+			workspace: mergeSection(DOCTOR_CONFIG, overrides, 'workspace'),
+			prescription: mergeSection(DOCTOR_CONFIG, overrides, 'prescription'),
 			support: {
-				...clone(DOCTOR_CONFIG.support),
-				...(overrides.support || {}),
-				indications: { ...clone(DOCTOR_CONFIG.support.indications), ...(overrides.support?.indications || {}) }
+				...mergeSection(DOCTOR_CONFIG, overrides, 'support'),
+				indications: mergeSection(DOCTOR_CONFIG.support, supportOverrides, 'indications')
 			},
-			services: { ...clone(DOCTOR_CONFIG.services), ...(overrides.services || {}) },
-			history: { ...clone(DOCTOR_CONFIG.history), ...(overrides.history || {}) }
+			services: mergeSection(DOCTOR_CONFIG, overrides, 'services'),
+			history: mergeSection(DOCTOR_CONFIG, overrides, 'history')
 		};
 	}
 

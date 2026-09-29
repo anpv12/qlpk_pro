@@ -3,6 +3,17 @@
  * Dashboard V2 — Lượt khám / Lịch hẹn / Top ICD
  */
 
+function formatAppointmentCountdown(diffMinutes) {
+	if (!(diffMinutes > 0)) return '';
+	if (diffMinutes < 60) return `Còn ${diffMinutes} phút`;
+	const totalHours = Math.floor(diffMinutes / 60);
+	const remMinutes = diffMinutes % 60;
+	if (totalHours < 24) return remMinutes > 0 ? `Còn ${totalHours} giờ ${remMinutes} phút` : `Còn ${totalHours} giờ`;
+	const days = Math.floor(totalHours / 24);
+	const remHours = totalHours % 24;
+	return remHours > 0 ? `Còn ${days} ngày ${remHours} giờ` : `Còn ${days} ngày`;
+}
+
 class DashboardManager {
 	constructor() {
 		this.appointments = [];
@@ -168,32 +179,9 @@ class DashboardManager {
 			const status = (apt.status || '').toUpperCase();
 			const statusClass = status === 'CONFIRMED' ? 'confirmed' : 'pending';
 			const statusText = status === 'CONFIRMED' ? 'Đã xác nhận' : 'Chờ xác nhận';
-			const patientName = apt.patient_full_name || apt.full_name || 'Bệnh nhân';
-			const phone = apt.patient_phone || '';
-			const doctorName = apt.doctor_name || '';
-			const serviceName = apt.service_name || '';
-
-			let infoText = patientName;
-			if (phone) infoText += ` - ${phone}`;
-			if (serviceName) infoText += ` - ${serviceName}`;
-			if (doctorName) infoText += ` - ${doctorName}`;
-
-			const diffMs = aptDate - now;
-			const diffMinutes = Math.round(diffMs / 60000);
-			let countdown = '';
-			if (diffMinutes > 0) {
-				const totalHours = Math.floor(diffMinutes / 60);
-				const remMinutes = diffMinutes % 60;
-				if (diffMinutes < 60) {
-					countdown = `Còn ${diffMinutes} phút`;
-				} else if (totalHours < 24) {
-					countdown = remMinutes > 0 ? `Còn ${totalHours} giờ ${remMinutes} phút` : `Còn ${totalHours} giờ`;
-				} else {
-					const days = Math.floor(totalHours / 24);
-					const remHours = totalHours % 24;
-					countdown = remHours > 0 ? `Còn ${days} ngày ${remHours} giờ` : `Còn ${days} ngày`;
-				}
-			}
+			const infoText = [apt.patient_full_name || apt.full_name || 'Bệnh nhân', apt.patient_phone, apt.service_name, apt.doctor_name]
+				.filter(Boolean).join(' - ');
+			const countdown = formatAppointmentCountdown(Math.round((aptDate - now) / 60000));
 
 			return `
 				<div class="apt-item">

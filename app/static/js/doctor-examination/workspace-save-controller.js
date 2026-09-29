@@ -57,49 +57,40 @@
 			return (knownReasons[raw] || raw || fallback).replace(/\s+/g, ' ').trim();
 		}
 
+		// [module key or null for any, reason substrings, guidance], checked in order.
+		const FAILURE_GUIDANCE_RULES = [
+			[null, ['thay đổi trong lúc'], 'Vui lòng kiểm tra thay đổi mới và lưu lại.'],
+			[null, ['đang tải'], 'Vui lòng đợi tải xong rồi thử lại.'],
+			[null, ['đang được lưu'], 'Vui lòng đợi thao tác hiện tại hoàn tất.'],
+			[null, ['chưa chọn ca khám'], 'Vui lòng chọn ca khám rồi thử lại.'],
+			[null, ['chưa tải đủ', 'chưa tải xong'], 'Vui lòng tải lại trang trước khi tiếp tục.'],
+			['prescription', ['chọn thuốc từ kho', 'danh sách thuốc trong kho', 'medicine_id'], 'Vui lòng chọn thuốc từ danh sách trong kho hoặc bật Nhập ngoài cơ sở.'],
+			['prescription', ['tái khám'], 'Vui lòng kiểm tra thông tin tái khám rồi lưu lại.']
+		];
+		const MODULE_FAILURE_GUIDANCE = {
+			services: 'Vui lòng kiểm tra dịch vụ, số lượng và các trường bắt buộc.',
+			indications: 'Vui lòng kiểm tra chỉ định, người thực hiện và ngày thực hiện.',
+			clinical: 'Vui lòng kiểm tra các trường bắt buộc trong vùng Khám.'
+		};
+
 		function getFailureGuidance(moduleKey, reason) {
 			const normalizedReason = String(reason || '').toLowerCase();
-			if (normalizedReason.includes('thay đổi trong lúc')) {
-				return 'Vui lòng kiểm tra thay đổi mới và lưu lại.';
-			}
-			if (normalizedReason.includes('đang tải')) {
-				return 'Vui lòng đợi tải xong rồi thử lại.';
-			}
-			if (normalizedReason.includes('đang được lưu')) {
-				return 'Vui lòng đợi thao tác hiện tại hoàn tất.';
-			}
-			if (normalizedReason.includes('chưa chọn ca khám')) {
-				return 'Vui lòng chọn ca khám rồi thử lại.';
-			}
-			if (normalizedReason.includes('chưa tải đủ') || normalizedReason.includes('chưa tải xong')) {
-				return 'Vui lòng tải lại trang trước khi tiếp tục.';
-			}
-			if (moduleKey === 'prescription'
-				&& (normalizedReason.includes('chọn thuốc từ kho')
-					|| normalizedReason.includes('danh sách thuốc trong kho')
-					|| normalizedReason.includes('medicine_id'))) {
-				return 'Vui lòng chọn thuốc từ danh sách trong kho hoặc bật Nhập ngoài cơ sở.';
-			}
-			if (moduleKey === 'prescription' && normalizedReason.includes('tái khám')) {
-				return 'Vui lòng kiểm tra thông tin tái khám rồi lưu lại.';
-			}
-			if (moduleKey === 'services') {
-				return 'Vui lòng kiểm tra dịch vụ, số lượng và các trường bắt buộc.';
-			}
-			if (moduleKey === 'indications') {
-				return 'Vui lòng kiểm tra chỉ định, người thực hiện và ngày thực hiện.';
-			}
-			if (moduleKey === 'clinical') {
-				return 'Vui lòng kiểm tra các trường bắt buộc trong vùng Khám.';
-			}
-			return 'Vui lòng kiểm tra dữ liệu và thử lại.';
+			const rule = FAILURE_GUIDANCE_RULES.find(([key, needles]) => (key === null || key === moduleKey)
+				&& needles.some(needle => normalizedReason.includes(needle)));
+			if (rule) return rule[2];
+			return Object.prototype.hasOwnProperty.call(MODULE_FAILURE_GUIDANCE, moduleKey)
+				? MODULE_FAILURE_GUIDANCE[moduleKey] : 'Vui lòng kiểm tra dữ liệu và thử lại.';
+		}
+
+		function resolveFailureCode(module) {
+			return module.code || module.error?.code || module.result?.code || module.result?.error?.code || '';
 		}
 
 		function buildFailure(module = {}) {
 			const key = module.key || module.module || 'clinical';
 			const label = module.label || (key === 'clinical' ? 'Khám' : key);
 			const reason = normalizeFailureReason(module.reason || module.error || module.result?.reason);
-			const code = module.code || module.error?.code || module.result?.code || module.result?.error?.code || '';
+			const code = resolveFailureCode(module);
 			return {
 				...module,
 				code,
@@ -126,6 +117,42 @@
 				|| (reason.includes('tồn khả dụng') && reason.includes('thiếu'));
 		}
 
+		function isKnownQuantity(value) {
+			return value != null && String(value).trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+		}
+
+		function formatStockShortageDetail(shortage, otherFailures) {
+			const quantityKeys = ['requested_quantity', 'stock_quantity', 'additional_quantity', 'available_quantity', 'previous_quantity'];
+			if (!quantityKeys.every(key => isKnownQuantity(shortage[key]))) return null;
+			const quantity = value => Number(value).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+			const unit = shortage.unit || 'đơn vị';
+			const details = [];
+			if (Number(shortage.previous_quantity) > 0) {
+				details.push(`Đơn đã cấp ${quantity(shortage.previous_quantity)} ${unit}; lần này cần cấp thêm ${quantity(shortage.additional_quantity)} ${unit}.`);
+			}
+			if (Number(shortage.available_quantity) < Number(shortage.stock_quantity)) {
+				details.push(`Các lô hợp lệ chỉ có thể cấp ${quantity(shortage.available_quantity)} ${unit}.`);
+			}
+			if (otherFailures.length) details.push(`${[...new Set(otherFailures.map(failure => failure.label))].join(', ')} cũng chưa được lưu.`);
+			return {
+				title: 'Chưa lưu được đơn thuốc',
+				label: `${shortage.medicine_name}:`,
+				emphasis: `Đang bốc ${quantity(shortage.requested_quantity)} ${unit}, tồn kho ${quantity(shortage.stock_quantity)} ${unit}.`,
+				detail: details.join(' '),
+				guidance: 'Vui lòng kiểm tra kho và bổ sung thuốc trước khi lưu lại.'
+			};
+		}
+
+		function formatInventoryFailureMessage(normalizedFailures, otherFailures) {
+			const inventoryFailure = normalizedFailures.find(failure => failure.key === 'prescription'
+				&& String(failure.code).startsWith('inventory.') && Array.isArray(failure.error?.payload?.errors));
+			if (!inventoryFailure) return null;
+			const details = inventoryFailure.error.payload.errors.filter(detail => typeof detail === 'string' && detail.trim());
+			if (!details.length) return null;
+			const others = otherFailures.filter(failure => failure !== inventoryFailure).length ? ' Các phần khác cũng chưa được lưu; vui lòng kiểm tra.' : '';
+			return `Chưa lưu được đơn thuốc. ${details.join(' ')}${others}`;
+		}
+
 		function formatFailureMessage(failures) {
 			const normalizedFailures = (Array.isArray(failures) ? failures : [failures])
 				.filter(Boolean)
@@ -134,35 +161,10 @@
 			const otherFailures = normalizedFailures.filter(failure => !isPrescriptionStockShortage(failure));
 			const shortageFailure = normalizedFailures.find(failure =>
 				isPrescriptionStockShortage(failure) && failure.error?.payload?.shortage);
-			if (shortageFailure) {
-				const shortage = shortageFailure.error.payload.shortage;
-				const quantityKeys = ['requested_quantity', 'stock_quantity', 'additional_quantity', 'available_quantity', 'previous_quantity'];
-				if (quantityKeys.every(key => shortage[key] != null && String(shortage[key]).trim() !== '' && Number.isFinite(Number(shortage[key])) && Number(shortage[key]) >= 0)) {
-					const quantity = value => Number(value).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
-					const unit = shortage.unit || 'đơn vị';
-					const details = [];
-					if (Number(shortage.previous_quantity) > 0) {
-						details.push(`Đơn đã cấp ${quantity(shortage.previous_quantity)} ${unit}; lần này cần cấp thêm ${quantity(shortage.additional_quantity)} ${unit}.`);
-					}
-					if (Number(shortage.available_quantity) < Number(shortage.stock_quantity)) {
-						details.push(`Các lô hợp lệ chỉ có thể cấp ${quantity(shortage.available_quantity)} ${unit}.`);
-					}
-					if (otherFailures.length) details.push(`${[...new Set(otherFailures.map(failure => failure.label))].join(', ')} cũng chưa được lưu.`);
-					return {
-						title: 'Chưa lưu được đơn thuốc',
-						label: `${shortage.medicine_name}:`,
-						emphasis: `Đang bốc ${quantity(shortage.requested_quantity)} ${unit}, tồn kho ${quantity(shortage.stock_quantity)} ${unit}.`,
-						detail: details.join(' '),
-						guidance: 'Vui lòng kiểm tra kho và bổ sung thuốc trước khi lưu lại.'
-					};
-				}
-			}
-			const inventoryFailure = normalizedFailures.find(failure => failure.key === 'prescription'
-				&& String(failure.code).startsWith('inventory.') && Array.isArray(failure.error?.payload?.errors));
-			if (inventoryFailure) {
-				const details = inventoryFailure.error.payload.errors.filter(detail => typeof detail === 'string' && detail.trim());
-				if (details.length) return `Chưa lưu được đơn thuốc. ${details.join(' ')}${otherFailures.filter(failure => failure !== inventoryFailure).length ? ' Các phần khác cũng chưa được lưu; vui lòng kiểm tra.' : ''}`;
-			}
+			const shortageMessage = shortageFailure ? formatStockShortageDetail(shortageFailure.error.payload.shortage, otherFailures) : null;
+			if (shortageMessage) return shortageMessage;
+			const inventoryMessage = formatInventoryFailureMessage(normalizedFailures, otherFailures);
+			if (inventoryMessage) return inventoryMessage;
 			if (hasStockShortage && !otherFailures.length) return PRESCRIPTION_STOCK_SHORTAGE_MESSAGE;
 			if (hasStockShortage) {
 				const labels = [...new Set(otherFailures.map(failure => failure.label))].join(', ');
@@ -492,11 +494,8 @@
 			const doc = getDocument(options);
 			const clinicalForm = typeof getClinicalForm === 'function' ? getClinicalForm() : null;
 			const examinationId = clinicalForm?.getExaminationId?.();
-			if (!examinationId) {
-				if (typeof showToast === 'function') showToast('error', 'Chưa có lượt khám để hoàn thành');
-				return { skipped: true, reason: 'missing-examination' };
-			}
-			if (state.completing || state.workspaceSaving) return { skipped: true, reason: state.completing ? 'completing' : 'workspace-saving' };
+			const blocked = getCompletionBlocker(examinationId);
+			if (blocked) return blocked;
 			if (typeof apiCall !== 'function') throw new Error('missing-api-call');
 
 			const token = state.contextToken;
@@ -515,11 +514,23 @@
 				if (token === state.contextToken && typeof showToast === 'function') showToast('error', 'Không thể hoàn thành lượt khám. Vui lòng thử lại.');
 				throw error;
 			} finally {
-				if (token === state.contextToken) {
-					state.completing = false;
-					setBusy(doc, false);
-				}
+				if (token === state.contextToken) releaseCompletion(doc);
 			}
+		}
+
+		function getCompletionBlocker(examinationId) {
+			if (!examinationId) {
+				if (typeof showToast === 'function') showToast('error', 'Chưa có lượt khám để hoàn thành');
+				return { skipped: true, reason: 'missing-examination' };
+			}
+			if (state.completing) return { skipped: true, reason: 'completing' };
+			if (state.workspaceSaving) return { skipped: true, reason: 'workspace-saving' };
+			return null;
+		}
+
+		function releaseCompletion(doc) {
+			state.completing = false;
+			setBusy(doc, false);
 		}
 
 		return { saveNow, saveWorkspace, resolveUnsavedChanges, completeNow };

@@ -25,41 +25,38 @@ function medicalHistoryGetWorkbenchSelectedICDs() {
     : {};
 }
 
-function medicalHistoryGetCountValue(target) {
-  const selectedICDs = medicalHistoryGetWorkbenchSelectedICDs();
-  if (target === 'personal') {
-    const icdCount = Array.isArray(selectedICDs.physHistory) ? selectedICDs.physHistory.length : 0;
-    const textCount = (medicalHistoryGetComponent().getElement('physHistoryTextInput')?.value || '').trim() ? 1 : 0;
-    return icdCount + textCount;
-  }
-  if (target === 'family') {
-    const icdCount = Array.isArray(selectedICDs.famHistory) ? selectedICDs.famHistory.length : 0;
-    const textCount = (medicalHistoryGetComponent().getElement('famHistoryTextInput')?.value || '').trim() ? 1 : 0;
-    return icdCount + textCount;
-  }
-  if (target === 'allergy') {
-    return Array.from(medicalHistoryGetComponent().queryAll('#drugAllergyBody .allergy-row')).filter(row => {
-      const name = row.querySelector('.allergy-name')?.value || '';
-      const symptom = row.querySelector('.allergy-symptom')?.value || '';
-      return name.trim() || symptom.trim();
-    }).length;
-  }
-  if (target === 'substance') {
-    return medicalHistoryGetComponent().queryAll('#substanceTableWrap input[type="checkbox"]:checked').length;
-  }
-  if (target === 'suicide') {
-    return medicalHistoryGetComponent().queryAll('#suicideTableWrap input[type="checkbox"]:checked').length;
-  }
-  if (target === 'risk') {
+function medicalHistoryHasText(element) {
+  return (element?.value || '').trim() ? 1 : 0;
+}
+
+function medicalHistoryCountIcdWithText(selectedICDs, icdKey, textInputId) {
+  const icdCount = Array.isArray(selectedICDs[icdKey]) ? selectedICDs[icdKey].length : 0;
+  return icdCount + medicalHistoryHasText(medicalHistoryGetComponent().getElement(textInputId));
+}
+
+const MEDICAL_HISTORY_COUNTERS = {
+  personal: selectedICDs => medicalHistoryCountIcdWithText(selectedICDs, 'physHistory', 'physHistoryTextInput'),
+  family: selectedICDs => medicalHistoryCountIcdWithText(selectedICDs, 'famHistory', 'famHistoryTextInput'),
+  allergy: () => Array.from(medicalHistoryGetComponent().queryAll('#drugAllergyBody .allergy-row')).filter(row => {
+    const name = row.querySelector('.allergy-name')?.value || '';
+    const symptom = row.querySelector('.allergy-symptom')?.value || '';
+    return name.trim() || symptom.trim();
+  }).length,
+  substance: () => medicalHistoryGetComponent().queryAll('#substanceTableWrap input[type="checkbox"]:checked').length,
+  suicide: () => medicalHistoryGetComponent().queryAll('#suicideTableWrap input[type="checkbox"]:checked').length,
+  risk: () => {
     const checked = medicalHistoryGetComponent().queryAll('#riskAssessWrap input[type="radio"]:checked').length;
     const notes = Array.from(medicalHistoryGetComponent().queryAll('#riskAssessWrap .medical-history-sub-input')).filter(input => (input.value || '').trim()).length;
     return checked + notes;
-  }
-  if (target === 'safety') {
-    return ['safetyPlanNhanDien', 'safetyPlanCachUngPho', 'safetyPlanDongLuc', 'safetyPlanSupport1', 'safetyPlanSupport2', 'safetyPlanSupport3']
-      .filter(id => (medicalHistoryGetComponent().getElement(id)?.value || '').trim()).length;
-  }
-  return 0;
+  },
+  safety: () => ['safetyPlanNhanDien', 'safetyPlanCachUngPho', 'safetyPlanDongLuc', 'safetyPlanSupport1', 'safetyPlanSupport2', 'safetyPlanSupport3']
+    .filter(id => medicalHistoryHasText(medicalHistoryGetComponent().getElement(id))).length
+};
+
+function medicalHistoryGetCountValue(target) {
+  const selectedICDs = medicalHistoryGetWorkbenchSelectedICDs();
+  const counter = Object.prototype.hasOwnProperty.call(MEDICAL_HISTORY_COUNTERS, target) ? MEDICAL_HISTORY_COUNTERS[target] : null;
+  return counter ? counter(selectedICDs) : 0;
 }
 
 function medicalHistorySummaryText(value) {

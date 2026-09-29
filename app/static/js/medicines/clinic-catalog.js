@@ -257,15 +257,19 @@
         return {data: result.data, pagination: {per_page: limit, has_next: Boolean(result.has_more)}};
     }
 
-    function payload(data) {
-        if (existing) delete data.unit_price;
-        else data.unit_price = Number(el('medicine-unit_price').value || 0);
+    function stripLockedFields(data) {
         identityFields.forEach(field => delete data[field]);
         delete data.category_type;
         if (existing?.conversion_locked || existing?.batch_count > 0) {
             ['unit', 'packaging', 'packaging_unit', 'units_per_box'].forEach(field => delete data[field]);
         }
         for (const field of existing?.catalog_locked_fields || []) delete data[field];
+    }
+
+    function payload(data) {
+        if (existing) delete data.unit_price;
+        else data.unit_price = Number(el('medicine-unit_price').value || 0);
+        stripLockedFields(data);
         if (!existing && !selected) return 'Hãy chọn thuốc từ DAV trước khi lưu.';
         if (!existing && selected?.clinic_defaults && selected.clinic_defaults.is_imported == null && data.is_imported == null) {
             return 'DAV chưa có nước sản xuất. Hãy xác nhận thuốc Nội/Ngoại trước khi lưu.';

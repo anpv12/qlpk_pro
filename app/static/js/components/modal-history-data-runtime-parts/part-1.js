@@ -361,10 +361,21 @@
 	function buildMedicalRecordFieldLines(fields, sectionData) {
 		return fields.map(([label, key]) => `<div class="medical-record-line medical-record-line--compact">+ ${label}: ${formatMultiline(getField(sectionData, key, ''))}</div>`).join('');
 	}
+	function firstPatientValue(patient, keys) {
+		for (const key of keys) {
+			if (patient[key]) return patient[key];
+		}
+		return '';
+	}
+
 	function buildMedicalRecordAdminHtml(model) {
 		const { patient, appointment } = model;
 		const patientAddress = buildAddress(patient);
 		const age = formatAge(patient.date_of_birth, model.history.examination_date);
+		const phone = firstPatientValue(patient, ['phone', 'phone_number']);
+		const identity = firstPatientValue(patient, ['id_number', 'id_card', 'cccd']);
+		const guardian = firstPatientValue(patient, ['guardian_name', 'guardian', 'emergency_contact']);
+		const insurance = firstPatientValue(patient, ['insurance_card', 'insurance']);
 		return `
 				<div class="medical-record-section">
 					<h6 class="medical-record-section-title">I. HÀNH CHÍNH</h6>
@@ -373,7 +384,7 @@
 							<div class="medical-record-line medical-record-line--tight"><strong>Họ tên:</strong> ${escapeHtml(patient.full_name || '')}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Ngày sinh:</strong> ${formatDate(patient.date_of_birth)}${age ? ` — ${escapeHtml(age)}` : ''}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Giới tính:</strong> ${escapeHtml(formatGender(patient.gender))}</div>
-							<div class="medical-record-line medical-record-line--tight"><strong>Số điện thoại:</strong> ${escapeHtml(patient.phone || patient.phone_number || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Số điện thoại:</strong> ${escapeHtml(phone)}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Nghề nghiệp:</strong> ${escapeHtml(patient.occupation || '')}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Địa chỉ:</strong> ${escapeHtml(patientAddress)}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Tỉnh/thành phố:</strong> ${escapeHtml(patient.province || '')}</div>
@@ -381,12 +392,12 @@
 						</div>
 						<div class="medical-record-admin-side">
 							<div class="medical-record-line medical-record-line--tight"><strong>Xu hướng tính dục:</strong> ${escapeHtml(patient.sexual_orientation || '')}</div>
-							<div class="medical-record-line medical-record-line--tight"><strong>CMT/CCCD:</strong> ${escapeHtml(patient.id_number || patient.id_card || patient.cccd || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>CMT/CCCD:</strong> ${escapeHtml(identity)}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Tôn giáo:</strong> ${escapeHtml(patient.religion || '')}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Tình trạng hôn nhân:</strong> ${escapeHtml(formatMaritalStatus(patient.marital_status))}</div>
 							<div class="medical-record-line medical-record-line--tight"><strong>Học vấn:</strong> ${escapeHtml(patient.education_level || '')}</div>
-							<div class="medical-record-line medical-record-line--tight"><strong>Người giám hộ:</strong> ${escapeHtml(patient.guardian_name || patient.guardian || patient.emergency_contact || '')}</div>
-							<div class="medical-record-line medical-record-line--tight"><strong>Thẻ BHYT:</strong> ${escapeHtml(patient.insurance_card || patient.insurance || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Người giám hộ:</strong> ${escapeHtml(guardian)}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Thẻ BHYT:</strong> ${escapeHtml(insurance)}</div>
 						</div>
 					</div>
 				</div>`;

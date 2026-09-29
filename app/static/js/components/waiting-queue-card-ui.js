@@ -423,16 +423,22 @@
 		`;
 	}
 
+	function resolveCardHtmlParts(options) {
+		return {
+			patientNameHtml: options.patientNameHtml || escapeHtml(options.patientName || 'N/A'),
+			patientAfterHtml: options.patientAfterHtml || '',
+			identityHtml: options.identityHtml || buildIdentityHtml(options.identityItems || []),
+			statusHtml: options.statusHtml || renderStatusBadgeHtml(options.statusText || '', options.statusClass, options.statusBadgeClass),
+			metaHtml: options.metaHtml || buildMetaHtml(options.metaItems || []),
+			actionsHtml: options.actionsHtml || ''
+		};
+	}
+
 	function renderCard(options = {}) {
 		const variant = options.variant ? `qlpk-waiting-card--${options.variant}` : '';
 		const cardClass = joinClasses('qlpk-waiting-card', variant, options.cardClass);
 		const attrs = buildAttributes(options.attrs);
-		const patientNameHtml = options.patientNameHtml || escapeHtml(options.patientName || 'N/A');
-		const patientAfterHtml = options.patientAfterHtml || '';
-		const identityHtml = options.identityHtml || buildIdentityHtml(options.identityItems || []);
-		const statusHtml = options.statusHtml || renderStatusBadgeHtml(options.statusText || '', options.statusClass, options.statusBadgeClass);
-		const metaHtml = options.metaHtml || buildMetaHtml(options.metaItems || []);
-		const actionsHtml = options.actionsHtml || '';
+		const { patientNameHtml, patientAfterHtml, identityHtml, statusHtml, metaHtml, actionsHtml } = resolveCardHtmlParts(options);
 		const articleAttrs = attrs ? ` ${attrs}` : '';
 		const contentHtml = `
 			<header class="${joinClasses('qlpk-waiting-card__head', options.headClass)}">

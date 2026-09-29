@@ -97,7 +97,7 @@
 		}
 		return adapter.loadAppointments(status, page);
 	}
-	function initializeWaitingQueue() {
+	function validateDoctorComponents() {
 		try {
 			moduleState.REGISTRY.validateGraph?.();
 			moduleState.COMPONENT_CONTEXT.validate([
@@ -126,45 +126,39 @@
 		} catch (error) {
 			console.error('[Doctor] Component contract validation failed:', error);
 			moduleState.showCustomToast('error', 'Màn khám chưa tải đầy đủ. Vui lòng tải lại trang.');
-			return;
+			return false;
 		}
-		['clinicalWorkspace', 'supportModulesUi', 'medicalHistoryBridge', 'draftRecovery', 'workspaceLeaveGuard', 'patientHistoryModal']
-			.forEach(name => {
-				const module = name === 'patientHistoryModal' ? moduleState.patientHistoryModal : moduleState.getModule(name);
-				if (module) moduleState.COMPONENT_CONTEXT.mount(name, module);
-			});
-		const waitingUi = moduleState.requireModule('examinationWaitingListUi');
-		const queueCardUi = moduleState.requireModule('waitingQueueCardUi');
-		if (!waitingUi || !queueCardUi) {
-			moduleState.showCustomToast('error', 'Không thể tải danh sách chờ khám. Vui lòng tải lại trang.');
-			return;
-		}
-		createWaitingListAdapter();
+		return true;
+	}
+
+	function bindClinicalWorkspace() {
 		const clinicalWorkspace = moduleState.getModule('clinicalWorkspace');
-		if (clinicalWorkspace && typeof clinicalWorkspace.bind === 'function') {
-			clinicalWorkspace.bind({
-				document: moduleState.DOM,
-				context: moduleState.COMPONENT_CONTEXT,
-				apiCall: moduleState.apiCall,
-				getAppointmentId: () => moduleState.state.currentAppointmentId,
-				isLoading: () => moduleState.state.isLoadingExaminationData,
-				showToast: moduleState.showCustomToast,
-				canTransfer: moduleParts.canTransferCurrentAppointment,
-				onTransfer: moduleParts.openCurrentAppointmentTransfer,
-				afterSave: () => {
-					const draftRecovery = moduleState.getModule('draftRecovery');
-					if (draftRecovery && typeof draftRecovery.rebaseAfterSave === 'function') {
-						return draftRecovery.rebaseAfterSave();
-					}
-					return false;
-				},
-				afterComplete: () => {
-					moduleState.state.currentAppointmentId = null;
-					moduleParts.clearPatientSurface();
-					loadAppointments('doctor_exam', moduleState.state.currentPage);
+		if (!clinicalWorkspace || typeof clinicalWorkspace.bind !== 'function') return;
+		clinicalWorkspace.bind({
+			document: moduleState.DOM,
+			context: moduleState.COMPONENT_CONTEXT,
+			apiCall: moduleState.apiCall,
+			getAppointmentId: () => moduleState.state.currentAppointmentId,
+			isLoading: () => moduleState.state.isLoadingExaminationData,
+			showToast: moduleState.showCustomToast,
+			canTransfer: moduleParts.canTransferCurrentAppointment,
+			onTransfer: moduleParts.openCurrentAppointmentTransfer,
+			afterSave: () => {
+				const draftRecovery = moduleState.getModule('draftRecovery');
+				if (draftRecovery && typeof draftRecovery.rebaseAfterSave === 'function') {
+					return draftRecovery.rebaseAfterSave();
 				}
-			});
-		}
+				return false;
+			},
+			afterComplete: () => {
+				moduleState.state.currentAppointmentId = null;
+				moduleParts.clearPatientSurface();
+				loadAppointments('doctor_exam', moduleState.state.currentPage);
+			}
+		});
+	}
+
+	function bindSupportAndRecovery() {
 		const supportModulesUi = moduleState.getModule('supportModulesUi');
 		if (supportModulesUi && typeof supportModulesUi.bind === 'function') {
 			supportModulesUi.bind({
@@ -190,6 +184,24 @@
 				reloadContext: moduleParts.reloadCurrentAppointment
 			});
 		}
+	}
+
+	function initializeWaitingQueue() {
+		if (!validateDoctorComponents()) return;
+		['clinicalWorkspace', 'supportModulesUi', 'medicalHistoryBridge', 'draftRecovery', 'workspaceLeaveGuard', 'patientHistoryModal']
+			.forEach(name => {
+				const module = name === 'patientHistoryModal' ? moduleState.patientHistoryModal : moduleState.getModule(name);
+				if (module) moduleState.COMPONENT_CONTEXT.mount(name, module);
+			});
+		const waitingUi = moduleState.requireModule('examinationWaitingListUi');
+		const queueCardUi = moduleState.requireModule('waitingQueueCardUi');
+		if (!waitingUi || !queueCardUi) {
+			moduleState.showCustomToast('error', 'Không thể tải danh sách chờ khám. Vui lòng tải lại trang.');
+			return;
+		}
+		createWaitingListAdapter();
+		bindClinicalWorkspace();
+		bindSupportAndRecovery();
 
 		const workflowTwoPane = moduleState.requireModule('workflowTwoPane');
 		if (workflowTwoPane && typeof workflowTwoPane.bind === 'function') {

@@ -333,24 +333,14 @@
 			updateLocationFields(doc);
 			if (inst.STATE.realtimePending && !inst.STATE.ordersDirty) inst.refreshCurrent({ document: doc });
 		}
-		function startEdit(doc, tempId) {
-			const row = inst.STATE.rows.find(item => String(item.tempId) === String(tempId));
-			if (!row) return false;
-			if ((row.status === 'completed' || (row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status)))) {
-				inst.showToast('warning', 'Không thể sửa chỉ định đã hoàn thành trong cơ sở.');
-				return false;
-			}
-			const nameInput = el(doc, 'name');
+		function isLockedIndicationRow(row) {
+			return row.status === 'completed' || Boolean(row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status));
+		}
+
+		function fillIndicationEditFields(doc, row) {
 			const performer = el(doc, 'performer');
 			const outFacility = el(doc, 'outFacility');
 			const date = el(doc, 'date');
-			const source = sourceForRow(row);
-			clearNameSelection(doc);
-			if (source === 'survey') setSurveySelection(doc, inst.STATE.surveyIndex.get(Number(row.survey_template_id)) || row);
-			else {
-				const input = el(doc, 'name');
-				if (input) input.value = row.order_name || '';
-			}
 			if (performer) performer.value = row.in_house_unit_id ? String(row.in_house_unit_id) : '';
 			if (outFacility) outFacility.value = row.out_facility || '';
 			if (date) date.value = normalizeDateInputValue(row.scheduled_for);
@@ -359,6 +349,20 @@
 			const isOut = row.location_type === 'out';
 			if (outLocation) outLocation.checked = isOut;
 			if (inLocation) inLocation.checked = !isOut;
+		}
+
+		function startEdit(doc, tempId) {
+			const row = inst.STATE.rows.find(item => String(item.tempId) === String(tempId));
+			if (!row) return false;
+			if (isLockedIndicationRow(row)) {
+				inst.showToast('warning', 'Không thể sửa chỉ định đã hoàn thành trong cơ sở.');
+				return false;
+			}
+			const nameInput = el(doc, 'name');
+			clearNameSelection(doc);
+			if (sourceForRow(row) === 'survey') setSurveySelection(doc, inst.STATE.surveyIndex.get(Number(row.survey_template_id)) || row);
+			else if (nameInput) nameInput.value = row.order_name || '';
+			fillIndicationEditFields(doc, row);
 			inst.STATE.editingTempId = row.tempId;
 			setSubmitMode(doc, true);
 			const cancel = el(doc, 'cancelEdit');

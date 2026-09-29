@@ -4,10 +4,7 @@
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['app-header-loader'] || (window.QLPKModuleParts['app-header-loader'] = { state: {} });
 	const moduleState = moduleParts.state;
 
-	function renderGlobalSearchItem(item, flatIndex) {
-		const actions = moduleParts.itemActions(item);
-		const action = actions[0] || null;
-		const isPatient = moduleParts.isGlobalSearchPatientItem(item);
+	function createGlobalSearchRow(item, action, flatIndex) {
 		const itemType = item && item.type ? String(item.type).trim().toLowerCase() : '';
 		const row = document.createElement('div');
 		row.className = 'qlpk-app-header__global-search-item';
@@ -20,6 +17,50 @@
 			row.setAttribute('role', 'button');
 			row.tabIndex = 0;
 		}
+		return row;
+	}
+
+	function buildGlobalSearchTitle(item) {
+		const title = document.createElement('strong');
+		title.className = 'qlpk-app-header__global-search-title';
+		const titleText = document.createElement('span');
+		titleText.textContent = item.title || 'Kết quả';
+		title.appendChild(titleText);
+		[[item.badge, ''], [item.highlight_badge, ' qlpk-app-header__global-search-badge--highlight']].forEach(([text, modifier]) => {
+			if (!text) return;
+			const badge = document.createElement('span');
+			badge.className = 'qlpk-app-header__global-search-badge' + modifier;
+			badge.textContent = text;
+			title.appendChild(badge);
+		});
+		return title;
+	}
+
+	function buildGlobalSearchActions(item, actions) {
+		const actionWrap = document.createElement('span');
+		actionWrap.className = 'qlpk-app-header__global-search-actions';
+		actions.forEach((rowAction) => {
+			const actionButton = document.createElement('button');
+			actionButton.type = 'button';
+			actionButton.className = 'qlpk-app-header__global-search-action';
+			if (rowAction && rowAction.kind) {
+				actionButton.classList.add(`qlpk-app-header__global-search-action--${String(rowAction.kind).trim().toLowerCase().replace(/_/g, '-')}`);
+			}
+			actionButton.textContent = rowAction.label || 'Mở';
+			actionButton.addEventListener('click', (event) => {
+				event.stopPropagation();
+				executeGlobalSearchItem(item, rowAction);
+			});
+			actionWrap.appendChild(actionButton);
+		});
+		return actionWrap;
+	}
+
+	function renderGlobalSearchItem(item, flatIndex) {
+		const actions = moduleParts.itemActions(item);
+		const action = actions[0] || null;
+		const isPatient = moduleParts.isGlobalSearchPatientItem(item);
+		const row = createGlobalSearchRow(item, action, flatIndex);
 
 		const iconWrap = document.createElement('span');
 		iconWrap.className = 'qlpk-app-header__global-search-icon';
@@ -31,23 +72,7 @@
 		const copy = document.createElement('span');
 		copy.className = 'qlpk-app-header__global-search-copy';
 
-		const title = document.createElement('strong');
-		title.className = 'qlpk-app-header__global-search-title';
-		const titleText = document.createElement('span');
-		titleText.textContent = item.title || 'Kết quả';
-		title.appendChild(titleText);
-		if (item.badge) {
-			const badge = document.createElement('span');
-			badge.className = 'qlpk-app-header__global-search-badge';
-			badge.textContent = item.badge;
-			title.appendChild(badge);
-		}
-		if (item.highlight_badge) {
-			const highlightBadge = document.createElement('span');
-			highlightBadge.className = 'qlpk-app-header__global-search-badge qlpk-app-header__global-search-badge--highlight';
-			highlightBadge.textContent = item.highlight_badge;
-			title.appendChild(highlightBadge);
-		}
+		const title = buildGlobalSearchTitle(item);
 
 		const highlightMeta = document.createElement('span');
 		highlightMeta.className = 'qlpk-app-header__global-search-highlight-meta';
@@ -64,25 +89,7 @@
 		row.appendChild(iconWrap);
 		row.appendChild(copy);
 
-		if (actions.length) {
-			const actionWrap = document.createElement('span');
-			actionWrap.className = 'qlpk-app-header__global-search-actions';
-			actions.forEach((rowAction) => {
-				const actionButton = document.createElement('button');
-				actionButton.type = 'button';
-				actionButton.className = 'qlpk-app-header__global-search-action';
-				if (rowAction && rowAction.kind) {
-					actionButton.classList.add(`qlpk-app-header__global-search-action--${String(rowAction.kind).trim().toLowerCase().replace(/_/g, '-')}`);
-				}
-				actionButton.textContent = rowAction.label || 'Mở';
-				actionButton.addEventListener('click', (event) => {
-					event.stopPropagation();
-					executeGlobalSearchItem(item, rowAction);
-				});
-				actionWrap.appendChild(actionButton);
-			});
-			row.appendChild(actionWrap);
-		}
+		if (actions.length) row.appendChild(buildGlobalSearchActions(item, actions));
 
 		if (isPatient) {
 			row.addEventListener('click', () => selectGlobalSearchPatient(item));

@@ -37,15 +37,20 @@
 		'image/png'
 	];
 
+	// [kind, MIME substrings, extensions], checked in order.
+	const FILE_KIND_RULES = [
+		['pdf', ['pdf'], ['pdf']],
+		['word', ['word', 'document'], ['doc', 'docx']],
+		['spreadsheet', ['sheet', 'excel'], ['xls', 'xlsx']],
+		['image', ['image'], ['jpg', 'jpeg', 'png', 'gif', 'webp']],
+		['text', ['text'], ['txt']]
+	];
+
 	function getFileKind(fileType, filename) {
 		const type = String(fileType || '').toLowerCase();
 		const ext = String(filename || '').split('.').pop().toLowerCase();
-		if (type.includes('pdf') || ext === 'pdf') return 'pdf';
-		if (type.includes('word') || type.includes('document') || ext === 'doc' || ext === 'docx') return 'word';
-		if (type.includes('sheet') || type.includes('excel') || ext === 'xls' || ext === 'xlsx') return 'spreadsheet';
-		if (type.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'image';
-		if (type.includes('text') || ext === 'txt') return 'text';
-		return 'file';
+		const rule = FILE_KIND_RULES.find(([, mimeParts, extensions]) => mimeParts.some(part => type.includes(part)) || extensions.includes(ext));
+		return rule ? rule[0] : 'file';
 	}
 
 	function getFileIcon(fileType, filename) {

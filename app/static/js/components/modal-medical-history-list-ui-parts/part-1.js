@@ -336,6 +336,15 @@
 			hasAppointmentContext: Boolean(appointmentId)
 		};
 	}
+	async function runCopiedHistoryLoader(options, name, args, errorMessage) {
+		if (typeof options[name] !== 'function') return;
+		try {
+			await options[name](...args);
+		} catch (error) {
+			console.error(errorMessage, error);
+		}
+	}
+
 	async function loadCopiedHistoryWithPatient(history, patient, options = {}) {
 		const historyCopyLoadState = options.historyCopyLoadState || buildHistoryCopyLoadState(history);
 		const appointmentId = options.appointmentId || historyCopyLoadState.appointmentId;
@@ -346,29 +355,9 @@
 		}
 
 		if (hasAppointmentContext) {
-			if (typeof options.loadExaminationFormData === 'function') {
-				try {
-					await options.loadExaminationFormData(appointmentId);
-				} catch (error) {
-					console.error(options.formErrorMessage || 'Không thể tải form khám từ lịch sử:', error);
-				}
-			}
-
-			if (typeof options.loadAppointmentServices === 'function') {
-				try {
-					await options.loadAppointmentServices();
-				} catch (error) {
-					console.error(options.serviceErrorMessage || 'Không thể tải dịch vụ cho lịch sử:', error);
-				}
-			}
-
-			if (typeof options.loadPrescriptionData === 'function') {
-				try {
-					await options.loadPrescriptionData();
-				} catch (error) {
-					console.error(options.prescriptionErrorMessage || 'Không thể tải đơn thuốc cho lịch sử:', error);
-				}
-			}
+			await runCopiedHistoryLoader(options, 'loadExaminationFormData', [appointmentId], options.formErrorMessage || 'Không thể tải form khám từ lịch sử:');
+			await runCopiedHistoryLoader(options, 'loadAppointmentServices', [], options.serviceErrorMessage || 'Không thể tải dịch vụ cho lịch sử:');
+			await runCopiedHistoryLoader(options, 'loadPrescriptionData', [], options.prescriptionErrorMessage || 'Không thể tải đơn thuốc cho lịch sử:');
 		}
 
 		if (typeof options.lockForm === 'function') options.lockForm();

@@ -125,37 +125,39 @@
 		return false;
 	}
 	async function resolveAppointmentIdForPatientSave(options = {}) {
-		const appointmentId = typeof options.getCurrentAppointmentId === 'function'
-			? options.getCurrentAppointmentId()
-			: options.currentAppointmentId;
+		const appointmentId = readOption(options, 'getCurrentAppointmentId', 'currentAppointmentId');
 		if (appointmentId) return appointmentId;
 
-		const patientId = typeof options.getPatientId === 'function' ? options.getPatientId() : options.patientId;
+		const patientId = readOption(options, 'getPatientId', 'patientId');
 		if (!patientId || typeof options.apiCall !== 'function') return null;
 
 		try {
 			const response = await options.apiCall(`/api/appointments?patient_id=${patientId}&per_page=1`);
-			if (response && response.ok) {
-				const data = await response.json();
-				return data.appointments && data.appointments.length > 0 ? data.appointments[0].id : null;
-			}
+			if (response && response.ok) return firstAppointmentId(await response.json());
 		} catch (error) {
-			const logger = options.console || window.console;
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.findErrorMessage || 'Error finding appointment:', error);
-			}
+			logTo(options.console || window.console, 'error', options.findErrorMessage || 'Error finding appointment:', error);
 		}
 
 		return null;
+	}
+
+	function firstAppointmentId(data) {
+		return data.appointments && data.appointments.length > 0 ? data.appointments[0].id : null;
+	}
+
+	function logTo(logger, level, ...args) {
+		if (logger && typeof logger[level] === 'function') logger[level](...args);
+	}
+
+	function readOption(options, getterName, valueName) {
+		return typeof options[getterName] === 'function' ? options[getterName]() : options[valueName];
 	}
 	async function saveAppointmentClinicalUpdate(options = {}) {
 		const targetAppointmentId = await resolveAppointmentIdForPatientSave(options);
 		const logger = options.console || window.console;
 
 		if (!targetAppointmentId) {
-			if (logger && typeof logger.warn === 'function') {
-				logger.warn(options.missingAppointmentMessage || 'No appointment found for patient, skipping vital signs update');
-			}
+			logTo(logger, 'warn', options.missingAppointmentMessage || 'No appointment found for patient, skipping vital signs update');
 			return { status: 'missingAppointment', appointmentId: null, response: null };
 		}
 
@@ -171,16 +173,12 @@
 
 			if (!response.ok) {
 				const errorText = await response.text();
-				if (logger && typeof logger.error === 'function') {
-					logger.error(options.updateErrorMessage || 'Error updating appointment with vital signs:', response.status, errorText);
-				}
+				logTo(logger, 'error', options.updateErrorMessage || 'Error updating appointment with vital signs:', response.status, errorText);
 				return { status: 'error', appointmentId: targetAppointmentId, response, errorText };
 			}
 			return { status: 'saved', appointmentId: targetAppointmentId, response };
 		} catch (error) {
-			if (logger && typeof logger.error === 'function') {
-				logger.error(options.updateErrorMessage || 'Error updating appointment with vital signs:', error);
-			}
+			logTo(logger, 'error', options.updateErrorMessage || 'Error updating appointment with vital signs:', error);
 			return { status: 'exception', appointmentId: targetAppointmentId, error };
 		}
 	}

@@ -130,35 +130,26 @@
 			});
 		}
 	}
+	// Call owner[method] when available (keeps `this` = owner).
+	function callIfAvailable(owner, method, ...args) {
+		if (owner && typeof owner[method] === 'function') owner[method](...args);
+	}
+
 	function bindBootstrapFormControls(options, context) {
 		const { actionButtonsUi, targetWindow } = context;
-		if (typeof options.initializeForm === 'function') options.initializeForm();
-
-		const formDomUtils = options.formDomUtils || targetWindow.ClinicalFormDomUtils;
-		if (formDomUtils && typeof formDomUtils.bindAgeInputGuard === 'function') {
-			formDomUtils.bindAgeInputGuard(options.ageField || 'age');
-		}
-		if (actionButtonsUi && typeof actionButtonsUi.bindPersonalDetailEditButtons === 'function') {
-			actionButtonsUi.bindPersonalDetailEditButtons(options.personalDetailOptions || {});
-		}
-
-		const medicalHistoryModalAdapter = options.medicalHistoryModalAdapter;
-		if (medicalHistoryModalAdapter && typeof medicalHistoryModalAdapter.bindOpenButton === 'function') {
-			medicalHistoryModalAdapter.bindOpenButton({
-				isFormLocked: options.isFormLocked,
-				loadIntoModal: options.loadMedicalHistoryIntoModal
-			});
-		}
-		if (actionButtonsUi && typeof actionButtonsUi.bindSaveInfoButton === 'function') {
-			actionButtonsUi.bindSaveInfoButton(options.saveInfoButton || 'saveInfoBtn', {
-				save: options.savePatientData
-			});
-		}
-		if (actionButtonsUi && typeof actionButtonsUi.bindReExaminationSourceReset === 'function') {
-			actionButtonsUi.bindReExaminationSourceReset(options.reExaminationCheckbox || 'reExaminationCheck', {
-				originalAppointmentInput: options.originalAppointmentInput || 'originalAppointmentId'
-			});
-		}
+		callIfAvailable(options, 'initializeForm');
+		callIfAvailable(options.formDomUtils || targetWindow.ClinicalFormDomUtils, 'bindAgeInputGuard', options.ageField || 'age');
+		callIfAvailable(actionButtonsUi, 'bindPersonalDetailEditButtons', options.personalDetailOptions || {});
+		callIfAvailable(options.medicalHistoryModalAdapter, 'bindOpenButton', {
+			isFormLocked: options.isFormLocked,
+			loadIntoModal: options.loadMedicalHistoryIntoModal
+		});
+		callIfAvailable(actionButtonsUi, 'bindSaveInfoButton', options.saveInfoButton || 'saveInfoBtn', {
+			save: options.savePatientData
+		});
+		callIfAvailable(actionButtonsUi, 'bindReExaminationSourceReset', options.reExaminationCheckbox || 'reExaminationCheck', {
+			originalAppointmentInput: options.originalAppointmentInput || 'originalAppointmentId'
+		});
 	}
 	async function initializeExaminationPageBootstrap(options = {}) {
 		const doc = moduleParts.getDocument(options);

@@ -47,33 +47,35 @@
 		if (tabsUi && typeof tabsUi.renderActiveTabLoading === 'function') {
 			defaults.renderActiveTabLoading = loadingOptions => tabsUi.renderActiveTabLoading(loadingOptions);
 		}
-		if (dataRuntime) {
-			const prescriptionPreview = REGISTRY?.get?.('prescriptionModalPreview');
-			const prescriptionTemplate = REGISTRY?.get?.('prescriptionDocumentTemplate');
-			const prescriptionController = prescriptionPreview?.create
-				? prescriptionPreview.create({
-					buildPrescriptionScreenHTML: prescriptionTemplate?.buildPrescriptionScreenHTML,
-					createBarcodesInElement: dataRuntime.createBarcodesInElement
-				})
-				: prescriptionPreview?.getController?.();
-			defaults.loadVitalSigns = patientId => dataRuntime.vitalSigns?.load?.(patientId);
-			defaults.fetchPatientDetail = fetchers.fetchPatientDetail;
-			defaults.fetchExaminationDetail = fetchers.fetchExaminationDetail;
-			defaults.fetchSectionDetails = fetchers.fetchSectionDetails;
-			defaults.fetchPrescription = fetchers.fetchPrescription;
-			defaults.fetchAppointment = fetchers.fetchAppointment;
-			defaults.fetchRelatives = fetchers.fetchRelatives;
-			defaults.buildHistoryRendererOptions = () => ({
-				fetchServicesForAppointment: fetchers.fetchServicesForAppointment,
-				buildServiceInvoiceHTML: dataRuntime.buildServiceInvoiceHTML,
-				buildMedicalRecordHTML: dataRuntime.buildMedicalRecordHTML,
-				setupPrescriptionTabPagination: (...args) => prescriptionController?.setupPrescriptionTabPagination?.(...args),
-				getClinicInfoConfig: dataRuntime.getClinicInfo,
-				createBarcodesInElement: dataRuntime.createBarcodesInElement
-			});
-		}
+		if (dataRuntime) assignDataRuntimeDefaults(defaults, dataRuntime, fetchers);
 
 		return defaults;
+	}
+
+	function assignDataRuntimeDefaults(defaults, dataRuntime, fetchers) {
+		const prescriptionPreview = REGISTRY?.get?.('prescriptionModalPreview');
+		const prescriptionTemplate = REGISTRY?.get?.('prescriptionDocumentTemplate');
+		const prescriptionController = prescriptionPreview?.create
+			? prescriptionPreview.create({
+				buildPrescriptionScreenHTML: prescriptionTemplate?.buildPrescriptionScreenHTML,
+				createBarcodesInElement: dataRuntime.createBarcodesInElement
+			})
+			: prescriptionPreview?.getController?.();
+		defaults.loadVitalSigns = patientId => dataRuntime.vitalSigns?.load?.(patientId);
+		defaults.fetchPatientDetail = fetchers.fetchPatientDetail;
+		defaults.fetchExaminationDetail = fetchers.fetchExaminationDetail;
+		defaults.fetchSectionDetails = fetchers.fetchSectionDetails;
+		defaults.fetchPrescription = fetchers.fetchPrescription;
+		defaults.fetchAppointment = fetchers.fetchAppointment;
+		defaults.fetchRelatives = fetchers.fetchRelatives;
+		defaults.buildHistoryRendererOptions = () => ({
+			fetchServicesForAppointment: fetchers.fetchServicesForAppointment,
+			buildServiceInvoiceHTML: dataRuntime.buildServiceInvoiceHTML,
+			buildMedicalRecordHTML: dataRuntime.buildMedicalRecordHTML,
+			setupPrescriptionTabPagination: (...args) => prescriptionController?.setupPrescriptionTabPagination?.(...args),
+			getClinicInfoConfig: dataRuntime.getClinicInfo,
+			createBarcodesInElement: dataRuntime.createBarcodesInElement
+		});
 	}
 
 	function resolveContextOptions(options, dependencies) {

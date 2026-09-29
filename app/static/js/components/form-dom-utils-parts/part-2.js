@@ -4,6 +4,19 @@
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/form-dom-utils'] || (window.QLPKModuleParts['components/form-dom-utils'] = { state: {} });
 	const moduleState = moduleParts.state;
 
+	function resetWorkflowVisitFields(doc, options) {
+		const scope = { document: doc };
+		moduleParts.resetDomFields(options.vitalFields || ['pulse', 'bloodPressure', 'temperature', 'weight', 'height', 'bmi', 'breathing'], scope);
+		moduleParts.setDomValue(options.respiratoryRateField || 'respiratoryRate', '', scope);
+		moduleParts.setDomValue(options.notesField || 'notes', '', scope);
+		moduleParts.clearAgeField(options.ageField || 'age', scope);
+		moduleParts.setDomValue(options.appointmentTypeField || 'appointmentType', options.defaultAppointmentType || 'SERVICE', scope);
+		moduleParts.setDomValue(options.serviceTypeField || 'serviceType', '', scope);
+		moduleParts.setDomValue(options.packageField || 'packageId', '', scope);
+		moduleParts.resetDomField(doc.getElementById(options.reExaminationField || 'reExaminationCheck'));
+		moduleParts.setDomValue(options.addressSummaryField || 'addressSummary', '', scope);
+	}
+
 	function resetWorkflowFormDomState(options = {}) {
 		const doc = moduleParts.getDocument(options);
 		moduleParts.resetDomFields(options.fieldsToReset || [], { document: doc });
@@ -13,15 +26,7 @@
 			referralSourceControl.setValue('', { document: doc });
 		}
 
-		moduleParts.resetDomFields(options.vitalFields || ['pulse', 'bloodPressure', 'temperature', 'weight', 'height', 'bmi', 'breathing'], { document: doc });
-		moduleParts.setDomValue(options.respiratoryRateField || 'respiratoryRate', '', { document: doc });
-		moduleParts.setDomValue(options.notesField || 'notes', '', { document: doc });
-		moduleParts.clearAgeField(options.ageField || 'age', { document: doc });
-		moduleParts.setDomValue(options.appointmentTypeField || 'appointmentType', options.defaultAppointmentType || 'SERVICE', { document: doc });
-		moduleParts.setDomValue(options.serviceTypeField || 'serviceType', '', { document: doc });
-		moduleParts.setDomValue(options.packageField || 'packageId', '', { document: doc });
-		moduleParts.resetDomField(doc.getElementById(options.reExaminationField || 'reExaminationCheck'));
-		moduleParts.setDomValue(options.addressSummaryField || 'addressSummary', '', { document: doc });
+		resetWorkflowVisitFields(doc, options);
 		moduleParts.clearPlaceholderValues(options.placeholderFields || [], { document: doc });
 
 		const storage = options.localStorage || window.localStorage;

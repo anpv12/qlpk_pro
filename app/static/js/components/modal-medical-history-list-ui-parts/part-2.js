@@ -162,11 +162,14 @@
 	function buildDeleteExaminationCatchMessage() {
 		return 'Không thể xóa lượt khám. Vui lòng thử lại.';
 	}
+	// Call options[name] when it is a function (keeps `this` = options); otherwise undefined.
+	function callOption(options, name, ...args) {
+		return typeof options[name] === 'function' ? options[name](...args) : undefined;
+	}
+
 	async function deleteExaminationCore(examinationId, options = {}) {
 		if (!examinationId) {
-			if (typeof options.showToast === 'function') {
-				options.showToast('error', 'Không tìm thấy ID lượt khám');
-			}
+			callOption(options, 'showToast', 'error', 'Không tìm thấy ID lượt khám');
 			return { status: 'missingExaminationId' };
 		}
 
@@ -183,9 +186,7 @@
 		if (!confirmed) return { status: 'cancelled' };
 
 		try {
-			if (typeof options.showToast === 'function') {
-				options.showToast('info', 'Đang xóa lượt khám...');
-			}
+			callOption(options, 'showToast', 'info', 'Đang xóa lượt khám...');
 
 			const response = await options.apiCall(
 				buildDeleteExaminationUrl(examinationId),
@@ -197,26 +198,14 @@
 				throw new Error(resolveDeleteExaminationErrorMessage(errorData));
 			}
 
-			if (typeof options.showToast === 'function') {
-				options.showToast('success', 'Đã xóa lượt khám thành công');
-			}
-
-			if (typeof options.checkCurrentAppointment === 'function' && options.checkCurrentAppointment()) {
-				if (typeof options.onCurrentAppointmentDeleted === 'function') {
-					options.onCurrentAppointmentDeleted();
-				}
-			}
-
-			if (typeof options.onSuccess === 'function') {
-				await options.onSuccess();
-			}
+			callOption(options, 'showToast', 'success', 'Đã xóa lượt khám thành công');
+			if (callOption(options, 'checkCurrentAppointment')) callOption(options, 'onCurrentAppointmentDeleted');
+			await callOption(options, 'onSuccess');
 
 			return { status: 'success' };
 		} catch (error) {
 			console.error(options.errorLogMessage || 'Error deleting examination:', error);
-			if (typeof options.showToast === 'function') {
-				options.showToast('error', buildDeleteExaminationCatchMessage(error));
-			}
+			callOption(options, 'showToast', 'error', buildDeleteExaminationCatchMessage(error));
 			return { status: 'error', error };
 		}
 	}
@@ -383,6 +372,14 @@
 		}
 		return result;
 	}
+	async function fetchHistoryList(options, url) {
+		if (typeof options.fetchJson === 'function') return options.fetchJson(url);
+		if (typeof options.apiCall !== 'function') throw new Error('apiCall or fetchJson is required');
+		const response = await options.apiCall(url);
+		if (!response.ok) throw new Error(await response.text());
+		return response.json();
+	}
+
 	async function loadAndRenderHistoryList(options = {}) {
 		const container = moduleParts.resolveElement(options.container || 'modalMedicalHistory');
 		if (!container) return { status: 'missingContainer' };
@@ -390,22 +387,11 @@
 		if (!isCurrent()) return { status: 'stale' };
 
 		const loadStartState = moduleParts.buildHistoryLoadStartState(options.patientId);
-		if (typeof options.onLoadStart === 'function') {
-			options.onLoadStart(loadStartState);
-		}
+		callOption(options, 'onLoadStart', loadStartState);
 
 		try {
 			const url = moduleParts.buildHistoryListUrl(options.patientId, { limit: options.limit });
-			let data;
-			if (typeof options.fetchJson === 'function') {
-				data = await options.fetchJson(url);
-			} else if (typeof options.apiCall === 'function') {
-				const response = await options.apiCall(url);
-				if (!response.ok) throw new Error(await response.text());
-				data = await response.json();
-			} else {
-				throw new Error('apiCall or fetchJson is required');
-			}
+			const data = await fetchHistoryList(options, url);
 			if (!isCurrent()) return { status: 'stale' };
 
 			const examinations = moduleParts.extractHistoryExaminations(data);
@@ -418,9 +404,7 @@
 				examinations,
 				historyRenderResult.selectedIndex
 			);
-			if (typeof options.onLoadSuccess === 'function') {
-				options.onLoadSuccess(successState, historyRenderResult);
-			}
+			callOption(options, 'onLoadSuccess', successState, historyRenderResult);
 			return {
 				status: 'success',
 				data,
@@ -435,19 +419,12 @@
 			}
 			moduleParts.renderState(container, 'error');
 			const errorState = moduleParts.buildHistoryLoadErrorState();
-			if (typeof options.onLoadError === 'function') {
-				options.onLoadError(errorState, error);
-			}
+			callOption(options, 'onLoadError', errorState, error);
 			return { status: 'error', error, errorState };
 		} finally {
 			if (isCurrent()) {
-				const finishState = moduleParts.buildHistoryLoadFinishState();
-				if (typeof options.onLoadFinish === 'function') {
-					options.onLoadFinish(finishState);
-				}
-				if (typeof options.onAfterLoad === 'function') {
-					options.onAfterLoad();
-				}
+				callOption(options, 'onLoadFinish', moduleParts.buildHistoryLoadFinishState());
+				callOption(options, 'onAfterLoad');
 			}
 		}
 	}

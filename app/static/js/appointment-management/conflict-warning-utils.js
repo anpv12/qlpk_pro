@@ -32,31 +32,27 @@
 	}
 
 	function resolveDoctorName(appointmentData, options = {}) {
-		const appointments = options.appointments || [];
 		const target$ = options.$ || window.jQuery || window.$;
-		const doctorId = appointmentData.doctor_id;
-		let doctorName = '';
+		let doctorName = findAppointmentDoctorName(appointmentData.doctor_id, options.appointments || []);
 
-		if (doctorId && appointments.length > 0) {
-			const appointment = appointments.find(item => String(item.doctor_id) === String(doctorId));
-			if (appointment && appointment.doctor_name) {
-				doctorName = appointment.doctor_name;
-			}
-		}
-
-		if (!doctorName || doctorName.trim() === '' || doctorName.includes('Chọn')) {
+		if (!isUsableDoctorName(doctorName)) {
 			if (target$) {
-				doctorName = options.isEdit
-					? target$('#editDoctor option:selected').text()
-					: target$('#addDoctor option:selected').text();
+				doctorName = target$(options.isEdit ? '#editDoctor option:selected' : '#addDoctor option:selected').text();
 			}
-
-			if (!doctorName || doctorName.trim() === '' || doctorName.includes('Chọn')) {
-				doctorName = 'Bác sĩ được chọn';
-			}
+			if (!isUsableDoctorName(doctorName)) doctorName = 'Bác sĩ được chọn';
 		}
 
 		return doctorName;
+	}
+
+	function findAppointmentDoctorName(doctorId, appointments) {
+		if (!doctorId || appointments.length === 0) return '';
+		const appointment = appointments.find(item => String(item.doctor_id) === String(doctorId));
+		return (appointment && appointment.doctor_name) || '';
+	}
+
+	function isUsableDoctorName(name) {
+		return Boolean(name) && name.trim() !== '' && !name.includes('Chọn');
 	}
 
 	function buildConflictMessage(conflictInfo, appointmentData = {}, options = {}) {
