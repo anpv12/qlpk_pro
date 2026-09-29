@@ -45,15 +45,15 @@ def get_transactions(user):
             try:
                 from_date_obj = datetime.strptime(from_date, '%Y-%m-%d').date()
                 query = query.filter(MedicineTransaction.created_at >= datetime.combine(from_date_obj, datetime.min.time()))
-            except ValueError:
-                pass
+            except ValueError as exc:
+                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
         
         if to_date:
             try:
                 to_date_obj = datetime.strptime(to_date, '%Y-%m-%d').date()
                 query = query.filter(MedicineTransaction.created_at <= datetime.combine(to_date_obj, datetime.max.time()))
-            except ValueError:
-                pass
+            except ValueError as exc:
+                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
         
         # Filter theo tìm kiếm
         if search:

@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'app/static/js/app-shell/workspace-tabs.js'), 'utf8');
+const { runModuleScript } = require('../tests/helpers/module-source');
 
 class MemoryStorage {
 	constructor() {
@@ -58,7 +58,7 @@ const context = {
 	setTimeout,
 	clearTimeout,
 };
-vm.runInNewContext(source, context, { filename: 'workspace-tabs.js' });
+runModuleScript('app-shell/workspace-tabs.js', vm.createContext(context));
 
 const doctorTab = {
 	id: 'doctor-examination-html',

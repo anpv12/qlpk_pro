@@ -9,6 +9,10 @@ import re
 import subprocess
 from urllib.parse import urlsplit
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE_TEMPLATE = ROOT / "app/templates/doctor-examination.html"
@@ -132,15 +136,15 @@ class MarkupContractParser(HTMLParser):
 
 def read_markup() -> MarkupContractParser:
     parser = MarkupContractParser()
-    parser.feed(PAGE_TEMPLATE.read_text(encoding="utf-8"))
+    parser.feed(read_source(PAGE_TEMPLATE))
     for path in WORKSPACE_TEMPLATES:
-        parser.feed(path.read_text(encoding="utf-8"))
+        parser.feed(read_source(path))
     return parser
 
 
 def source_text() -> str:
     paths = sorted({path for path in (*ACTIVE_JS, ROOT / "app/static/js/doctor-examination-entry.js") if path.exists()})
-    return "\n".join(path.read_text(encoding="utf-8", errors="ignore") for path in paths)
+    return "\n".join(read_source(path) for path in paths)
 
 
 def registry_registration_count(name: str) -> int:
@@ -148,7 +152,7 @@ def registry_registration_count(name: str) -> int:
     return sum(
         text.count(marker)
         for text in (
-            path.read_text(encoding="utf-8", errors="ignore")
+            read_source(path)
             for path in ACTIVE_JS
             if path.exists()
         )
@@ -179,7 +183,7 @@ def main() -> int:
         failures.extend(f"Doctor local asset still loaded as classic script: {asset}" for asset in classic_local_assets)
 
     entry_path = ROOT / "app/static/js/doctor-examination-entry.js"
-    entry_text = entry_path.read_text(encoding="utf-8", errors="ignore") if entry_path.exists() else ""
+    entry_text = read_source(entry_path) if entry_path.exists() else ""
     required_entry_imports = (
         "./doctor-examination/module-registry.js",
         "./components/doctor-component-config.js",
@@ -242,7 +246,7 @@ def main() -> int:
     ):
         if path.name == "platform-boundaries.js" or not path.exists():
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = read_source(path)
         if registry_fallback.search(text):
             failures.append(f"Doctor module còn nhánh registry/window dự phòng: {path.relative_to(ROOT)}")
         if shared_global_read.search(text):
@@ -264,7 +268,7 @@ def main() -> int:
         "app/static/js/components/medical-history-form.js",
     ):
         path = ROOT / relative_path
-        text = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+        text = read_source(path) if path.exists() else ""
         if manual_change_tracking.search(text):
             failures.append(f"Doctor module tự tăng revision/dirty thay vì dùng createChangeTracker: {relative_path}")
 
@@ -280,7 +284,7 @@ def main() -> int:
         "app/static/css/pages/doctor-prescription.css",
     ):
         path = ROOT / relative_path
-        text = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+        text = read_source(path) if path.exists() else ""
         text = re.sub(r"/\*.*?\*/", lambda match: "\n" * match[0].count("\n"), text, flags=re.DOTALL)
         for fallback in contract_color_fallbacks:
             text = text.replace(fallback, " " * len(fallback))
@@ -290,7 +294,7 @@ def main() -> int:
 
     unpinned_cdn = re.compile(r"cdn\.jsdelivr\.net/npm/((?:@[\w.-]+/)?[\w.-]+?)(?:@(\d+))?(?=[\"'/])")
     for template in sorted((ROOT / "app/templates").rglob("*.html")):
-        source = template.read_text(encoding="utf-8", errors="ignore")
+        source = read_source(template)
         for match in unpinned_cdn.finditer(source):
             line = source.count("\n", 0, match.start()) + 1
             failures.append(
@@ -320,9 +324,7 @@ def main() -> int:
     if parser.ids.count("doctorPrescriptionUsageInstructions"):
         failures.append("retired Doctor prescription general-usage control returned")
 
-    indications_markup = (ROOT / "app/templates/partials/doctor-indications-panel.html").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    indications_markup = read_source((ROOT / "app/templates/partials/doctor-indications-panel.html"))
     for marker in (
         'id="doctorIndicationName"',
         'placeholder="Tìm khảo sát hoặc nhập tên"',
@@ -344,9 +346,7 @@ def main() -> int:
         if marker in indications_markup:
             failures.append(f"Doctor indication còn markup legacy/selector đã bỏ: {marker}")
 
-    indications_runtime = (ROOT / "app/static/js/components/doctor-indications-form.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    indications_runtime = read_source((ROOT / "app/static/js/components/doctor-indications-form.js"))
     for marker in (
         "setupOrderFormAutocomplete",
         "normalizeSearch: true",
@@ -383,9 +383,7 @@ def main() -> int:
         if marker in indications_runtime:
             failures.append(f"Doctor indication còn runtime catalog đã nghỉ: {marker}")
 
-    indications_css = (ROOT / "app/static/css/pages/doctor-indications.css").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    indications_css = read_source((ROOT / "app/static/css/pages/doctor-indications.css"))
     for marker in (
         "position: fixed;",
         "--doctor-indication-dropdown-inline-start",
@@ -409,7 +407,7 @@ def main() -> int:
             failures.append(f"retired Doctor alias still present: {alias}")
 
     attachment_runtime = "\n".join(
-        path.read_text(encoding="utf-8", errors="ignore")
+        read_source(path)
         for path in ATTACHMENT_JS
         if path.exists()
     )
@@ -426,9 +424,7 @@ def main() -> int:
         if not expected_path.exists():
             failures.append(f"registry owner file missing: {relative_path}")
 
-    support_modules = (ROOT / "app/static/js/doctor-examination/support-modules-ui.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    support_modules = read_source((ROOT / "app/static/js/doctor-examination/support-modules-ui.js"))
     if "prescriptionRows" in support_modules or "renderPrescription" in support_modules:
         failures.append("support-modules-ui.js contains prescription row/render ownership")
     if "catalogLoaded" in support_modules:
@@ -436,9 +432,7 @@ def main() -> int:
     if "surveyLoaded" not in support_modules:
         failures.append("support-modules-ui.js thiếu readiness check surveyLoaded")
 
-    orchestrator = (ROOT / "app/static/js/doctor-examination.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    orchestrator = read_source((ROOT / "app/static/js/doctor-examination.js"))
     forbidden_orchestrator_fallbacks = (
         "|| window.QLPKCurrentAppointment",
         "window.QLPKPatientModalContract ||",
@@ -448,12 +442,8 @@ def main() -> int:
         if fallback in orchestrator:
             failures.append(f"page orchestrator còn fallback global không hợp lệ: {fallback}")
 
-    draft_recovery = (ROOT / "app/static/js/doctor-examination/draft-recovery.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
-    draft_policy = (ROOT / "app/static/js/doctor-examination/draft-recovery-policy.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    draft_recovery = read_source((ROOT / "app/static/js/doctor-examination/draft-recovery.js"))
+    draft_policy = read_source((ROOT / "app/static/js/doctor-examination/draft-recovery-policy.js"))
     required_draft_policy_contracts = (
         "function classifyDraftRecord",
         "function mergeFailedSaveDraft",
@@ -483,15 +473,9 @@ def main() -> int:
         if marker in draft_recovery:
             failures.append(f"Doctor draft recovery còn conflict UX đã loại bỏ: {marker}")
 
-    prescription_ui = (ROOT / "app/static/js/doctor-examination/prescription-ui.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
-    prescription_model = (ROOT / "app/static/js/doctor-examination/prescription-model.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
-    prescription_css = (ROOT / "app/static/css/pages/doctor-prescription.css").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    prescription_ui = read_source((ROOT / "app/static/js/doctor-examination/prescription-ui.js"))
+    prescription_model = read_source((ROOT / "app/static/js/doctor-examination/prescription-model.js"))
+    prescription_css = read_source((ROOT / "app/static/css/pages/doctor-prescription.css"))
     if "doctorPrescriptionUsageInstructions" in prescription_ui or "doctorPrescriptionUsageInstructions" in draft_recovery:
         failures.append("retired Doctor prescription general-usage runtime returned")
     for marker in (
@@ -559,9 +543,7 @@ def main() -> int:
             if marker not in declarations:
                 failures.append(f"Doctor prescription centered medicine-days thiếu {selector}: {marker}")
 
-    save_controller = (ROOT / "app/static/js/doctor-examination/workspace-save-controller.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    save_controller = read_source((ROOT / "app/static/js/doctor-examination/workspace-save-controller.js"))
     after_save_call = "if (typeof afterSave === 'function') await afterSave();"
     success_return = "return noChanges ? { status: 'success', noChanges: true, ...results } : { status: 'success', ...results };"
     if (
@@ -598,15 +580,11 @@ def main() -> int:
             f"{prescription_quantity_policy_check.stdout.strip()}"
         )
 
-    context_source = (ROOT / "app/static/js/doctor-examination/component-context.js").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    context_source = read_source((ROOT / "app/static/js/doctor-examination/component-context.js"))
     if "setCurrent" not in context_source or "getCurrent" not in context_source:
         failures.append("Doctor component context thiếu current-context contract")
 
-    base_css = (ROOT / "app/static/css/components/doctor-component-base.css").read_text(
-        encoding="utf-8", errors="ignore"
-    )
+    base_css = read_source((ROOT / "app/static/css/components/doctor-component-base.css"))
     for marker in ("[data-doctor-component]", "aria-busy", "focus-visible", "data-state='empty'"):
         if marker not in base_css:
             failures.append(f"Doctor component base thiếu state/layout contract: {marker}")

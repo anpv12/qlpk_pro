@@ -8,6 +8,10 @@ to raw Bootstrap button styling.
 
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,7 +62,7 @@ def iter_files(paths):
 def scan(files, patterns, label):
     failures = []
     for path in files:
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = read_source(path)
         for line_no, line in enumerate(text.splitlines(), start=1):
             for pattern in patterns:
                 if pattern in line:

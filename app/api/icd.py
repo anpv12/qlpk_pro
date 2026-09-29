@@ -56,8 +56,8 @@ def get_icd_list(user):
                 ids = [int(x.strip()) for x in ids_str.split(',') if x.strip()]
                 if ids:
                     query = query.filter(ICD.id.in_(ids))
-            except ValueError:
-                pass
+            except ValueError as exc:
+                logger.warning("Bỏ qua danh sách ICD id không hợp lệ: %s", exc)
         
         # Lọc theo danh sách mã ICD
         codes_str = request.args.get('codes', '').strip()

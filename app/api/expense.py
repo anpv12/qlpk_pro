@@ -208,16 +208,16 @@ def export_excel(user):
                     cell.number_format = '#,##0'
                     try:
                         cell.value = float(val) if val else 0
-                    except (ValueError, TypeError):
-                        pass
+                    except (ValueError, TypeError) as exc:
+                        logger.debug("Giữ nguyên giá trị ô Excel không chuyển đổi được: %s", exc)
                 elif col_cfg.col_type == 'date':
                     cell.alignment = center
                     # Chuyển string dd/mm/yyyy → Python date để Excel nhận thật sự là ngày
                     if val and isinstance(val, str):
                         try:
                             cell.value = datetime.strptime(val, '%d/%m/%Y').date()
-                        except ValueError:
-                            pass
+                        except ValueError as exc:
+                            logger.debug("Giữ nguyên giá trị ô Excel không chuyển đổi được: %s", exc)
                     cell.number_format = 'DD/MM/YYYY'
                 else:
                     cell.alignment = left_align

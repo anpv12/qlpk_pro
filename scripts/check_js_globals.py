@@ -26,6 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "scripts" / "eslint.health.config.mjs"
 JS_ROOT = ROOT / "app" / "static" / "js"
@@ -74,7 +75,16 @@ def eslint_undefined(eslint: str) -> dict[str, set[str]]:
             name = re.search(r"'([^']+)'", message["message"])
             if name:
                 undefined[rel].add(name.group(1))
+        undefined[rel].update(declared_globals(Path(entry["filePath"])))
     return undefined
+
+
+def declared_globals(path: Path) -> set[str]:
+    """Names a classic script declares with ``/* global */``; they must still resolve on every page."""
+    names: set[str] = set()
+    for block in re.findall(r"/\*\s*global\s+([^*]*)\*/", path.read_text(encoding="utf-8", errors="ignore")):
+        names.update(item.split(":")[0].strip() for item in block.split(",") if item.strip())
+    return names
 
 
 def page_scripts(template: Path) -> list[str]:
@@ -114,6 +124,7 @@ def defines(script: str, name: str) -> bool:
         r"|window\." + re.escape(name) + r"\s*=[^=]"
         r"|^\s*(?:const|let|var|class)\s+" + re.escape(name) + r"\b"
         r"|^\s*(?:const|let|var)\s+\{[^}]*\b" + re.escape(name) + r"\b"
+        r"|^\s*(?:const|let|var)\s+(?:[\w$]+\s*(?:=\s*[^,;]*)?,\s*)+" + re.escape(name) + r"\b"
     )
     return re.search(pattern, source) is not None
 

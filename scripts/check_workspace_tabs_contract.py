@@ -6,6 +6,10 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT / "app/static/js/app-shell/workspace-tabs.js"
@@ -15,7 +19,7 @@ HEADER = ROOT / "app/static/js/app-header-loader.js"
 
 
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="ignore")
+    return read_source(path)
 
 
 def require(source: str, needle: str, message: str, failures: list[str]) -> None:
@@ -40,7 +44,7 @@ def main() -> int:
     login = read(LOGIN)
     header = read(HEADER)
 
-    require(workspace, "const WORKSPACE_STORAGE_VERSION = 2;", "Storage workspace chưa có versioned owner contract", failures)
+    require(workspace, "WORKSPACE_STORAGE_VERSION = 2;", "Storage workspace chưa có versioned owner contract", failures)
     require(workspace, "function workspaceOwnerId()", "Storage workspace chưa tách owner theo tài khoản", failures)
     require(workspace, "owners[ownerId] = value;", "Storage workspace chưa ghi state theo owner", failures)
     require(workspace, "configuredNavItem(tab.href)", "Stored tabs chưa được đối chiếu navigation config", failures)

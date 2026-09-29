@@ -9,6 +9,10 @@ from pathlib import Path
 
 from sqlalchemy import text
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SUGGESTIONS_FILE = ROOT / "app/static/js/doctor-examination/medical-history-suggestions.js"
@@ -29,9 +33,9 @@ HISTORY_RUNTIME_FILES = [
 
 def _check_frontend() -> list[str]:
     errors = []
-    suggestions = SUGGESTIONS_FILE.read_text(encoding="utf-8")
-    risk = RISK_FILE.read_text(encoding="utf-8")
-    bridge = BRIDGE_FILE.read_text(encoding="utf-8")
+    suggestions = read_source(SUGGESTIONS_FILE)
+    risk = read_source(RISK_FILE)
+    bridge = read_source(BRIDGE_FILE)
 
     if "substanceTableWrap" in suggestions:
         errors.append(
@@ -48,7 +52,7 @@ def _check_frontend() -> list[str]:
         r"|_its[A-Za-z0-9_]*"
     )
     for path in HISTORY_RUNTIME_FILES:
-        if legacy_namespace.search(path.read_text(encoding="utf-8")):
+        if legacy_namespace.search(read_source(path)):
             errors.append(f"legacy history namespace remains in {path.relative_to(ROOT)}")
     return errors
 

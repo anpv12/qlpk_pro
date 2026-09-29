@@ -4,6 +4,10 @@
 from pathlib import Path
 import sys
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SAVE_SERVICE = ROOT / "app/modules/prescriptions/services/save_service.py"
@@ -26,17 +30,17 @@ def _require(source, needle, label, errors):
 
 
 def main():
-    service = SAVE_SERVICE.read_text(encoding="utf-8")
-    stock = STOCK_SERVICE.read_text(encoding="utf-8")
-    read_service = READ_SERVICE.read_text(encoding="utf-8")
-    api = INTERNAL_API.read_text(encoding="utf-8")
-    model = TRANSACTION_MODEL.read_text(encoding="utf-8")
-    prescription_ui = PRESCRIPTION_UI.read_text(encoding="utf-8")
-    row_renderer = ROW_RENDERER.read_text(encoding="utf-8")
-    support_modules = SUPPORT_MODULES.read_text(encoding="utf-8")
-    save_controller = SAVE_CONTROLLER.read_text(encoding="utf-8")
-    prescription_css = PRESCRIPTION_CSS.read_text(encoding="utf-8")
-    smoke_checks = SMOKE_CHECKS.read_text(encoding="utf-8")
+    service = read_source(SAVE_SERVICE)
+    stock = read_source(STOCK_SERVICE)
+    read_service = read_source(READ_SERVICE)
+    api = read_source(INTERNAL_API)
+    model = read_source(TRANSACTION_MODEL)
+    prescription_ui = read_source(PRESCRIPTION_UI)
+    row_renderer = read_source(ROW_RENDERER)
+    support_modules = read_source(SUPPORT_MODULES)
+    save_controller = read_source(SAVE_CONTROLLER)
+    prescription_css = read_source(PRESCRIPTION_CSS)
+    smoke_checks = read_source(SMOKE_CHECKS)
     errors = []
 
     forbidden = (

@@ -6,6 +6,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PRINT_CSS = ROOT / "app/static/css/prescriptions/components/prescription-print-document.css"
@@ -16,7 +20,7 @@ PUBLIC_API = ROOT / "app/modules/prescriptions/api/public.py"
 
 
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="ignore")
+    return read_source(path)
 
 
 def selector_block(source: str, selector: str) -> str:

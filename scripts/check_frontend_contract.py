@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_PARTS = {"_archive", "uploads", "node_modules", "__pycache__", ".git", ".venv", "venv"}
 
@@ -112,8 +113,8 @@ METRICS = [
 		pattern=r"!important",
 		roots=("app/static/css",),
 		suffixes=(".css",),
-		max_count=438,
-		description="Legacy !important debt is locked (1543 -> 438 on 27/09/2026); do not stack new overrides.",
+		max_count=94,
+		description="!important is locked at the overrides proven necessary by cascade analysis (438 -> 94 on 29/09/2026); do not add new ones.",
 	),
 	Metric(
 		name="css_id_selector",
@@ -134,18 +135,34 @@ METRICS = [
 	),
 	Metric(
 		name="html_inline_event_handlers",
-		pattern=r"\bon(?:click|change|submit|input|keyup|keydown|load|blur|focus)\s*=",
+		pattern=r"\bon(?:click|dblclick|mousedown|mouseup|change|submit|input|keyup|keydown|load|blur|focus)\s*=",
 		roots=("app/templates", "app/static/templates"),
 		suffixes=(".html",),
-		max_count=6,
-		description="Inline event handlers block a script-src CSP; only medicine-management.html (edited in parallel) remains, migrate to data-qlpk-call.",
+		max_count=0,
+		description="Inline event handlers block a script-src CSP; use data-qlpk-call (shared/inline-actions.js).",
+	),
+	Metric(
+		name="html_external_assets",
+		pattern=r"<(?:script|link)\b[^>]*\b(?:src|href)=\"(?:https?:)?//",
+		roots=("app/templates", "app/static/templates"),
+		suffixes=(".html",),
+		max_count=0,
+		description="Third-party scripts/styles/fonts are self-hosted under /static/vendor (no CDN).",
+	),
+	Metric(
+		name="css_js_external_assets",
+		pattern=r"https?://(?:cdn\.jsdelivr\.net|code\.jquery\.com|cdnjs\.cloudflare\.com|cdn\.sheetjs\.com|unpkg\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)",
+		roots=("app/static/js", "app/static/css"),
+		suffixes=(".js", ".css"),
+		max_count=0,
+		description="Dynamic loaders and @import use /static/vendor copies, not CDNs.",
 	),
 	Metric(
 		name="js_inline_event_handlers",
-		pattern=r"\bon(?:click|change|submit|input|keyup|keydown|load|blur|focus)=[\"']",
+		pattern=r"\bon(?:click|dblclick|mousedown|mouseup|change|submit|input|keyup|keydown|load|blur|focus)=[\"']",
 		roots=("app/static/js",),
 		suffixes=(".js",),
-		max_count=30,
+		max_count=0,
 		description="Inline handlers in JS-built markup are locked; use data-action delegation.",
 	),
 	Metric(

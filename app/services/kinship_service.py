@@ -6,6 +6,9 @@ from typing import Dict, Optional
 import requests
 
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 FALLBACK_KINSHIP = "Khác"
 
@@ -59,8 +62,8 @@ def _load_kinship_data():
             data = json.load(f)
             if isinstance(data, list) and data:
                 return data
-    except (FileNotFoundError, json.JSONDecodeError):
-        pass
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        logger.warning("Không đọc được dữ liệu quan hệ họ hàng, dùng mặc định: %s", exc)
     return [
         {"kinship": value, "reverse_options": [FALLBACK_KINSHIP], "notes": ""}
         for value in DEFAULT_KINSHIP_VALUES

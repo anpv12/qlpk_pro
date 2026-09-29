@@ -6,6 +6,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_ROOT = ROOT / "app/templates"
@@ -24,7 +28,7 @@ def main() -> int:
     if not MACRO_PATH.exists():
         failures.append(f"Missing canonical ICD template: {relative(MACRO_PATH)}")
     else:
-        macro = MACRO_PATH.read_text(encoding="utf-8")
+        macro = read_source(MACRO_PATH)
         if "components/_autocomplete_field.html" not in macro or macro.count("render_autocomplete_field(") != 1:
             failures.append("ICD adapter must delegate once to the canonical autocomplete field")
         if re.search(r"<(?:div|input|button)\b", macro, re.I):
@@ -45,7 +49,7 @@ def main() -> int:
     if not SHARED_PATH.exists():
         failures.append("Missing canonical generic autocomplete template")
     else:
-        shared = SHARED_PATH.read_text(encoding="utf-8")
+        shared = read_source(SHARED_PATH)
         for marker in ("data-autocomplete-field", "data-autocomplete-control", "data-autocomplete-tags",
                        "data-autocomplete-input", "data-autocomplete-dropdown", "data-autocomplete-list"):
             if len(re.findall(rf"\b{marker}(?=[\s=>])", shared)) != 1:
@@ -58,7 +62,7 @@ def main() -> int:
     for path in TEMPLATE_ROOT.rglob("*.html"):
         if path in (MACRO_PATH, SHARED_PATH):
             continue
-        text = path.read_text(encoding="utf-8")
+        text = read_source(path)
         if re.search(r"\bdata-autocomplete-(field|control|tags|input|dropdown|list)(?=[\s=>])", text):
             failures.append(f"{relative(path)} recreates shared autocomplete markup")
         if "data-icd-autocomplete" in text:

@@ -236,8 +236,8 @@ def update_family_member(user, member_id):
             try:
                 from datetime import datetime
                 family_member.joint_exam_date = datetime.strptime(data['joint_exam_date'], '%Y-%m-%d').date()
-            except ValueError:
-                pass  # Ignore invalid date format
+            except ValueError as exc:
+                logger.warning("Bỏ qua ngày khám cùng không hợp lệ: %s", exc)
         elif 'joint_exam_date' in data and data['joint_exam_date'] is None:
             family_member.joint_exam_date = None
         
@@ -418,8 +418,8 @@ def link_relatives(user):
             try:
                 from datetime import datetime
                 joint_exam_date = datetime.strptime(data['joint_exam_date'], '%Y-%m-%d').date()
-            except ValueError:
-                pass  # Ignore invalid date format
+            except ValueError as exc:
+                logger.warning("Bỏ qua ngày khám cùng không hợp lệ: %s", exc)
         
         if not patient_id or not relative_ids:
             return jsonify({

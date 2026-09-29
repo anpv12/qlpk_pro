@@ -6,6 +6,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_PARTIAL = ROOT / "app/templates/partials/patient-search-modal.html"
@@ -21,7 +25,7 @@ CANONICAL_INCLUDE = "{% include 'partials/patient-search-modal.html' %}"
 
 
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="ignore")
+    return read_source(path)
 
 
 def relative(path: Path) -> str:

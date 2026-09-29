@@ -223,8 +223,8 @@ def _build_existing_patient_changes(patient, patient_data):
                             'old': old_value.isoformat() if old_value else None,
                             'new': value
                         }
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.warning("Bỏ qua ngày sinh không hợp lệ khi so sánh thay đổi: %s", exc)
         elif value is not None and value != '' and old_value != value:
             all_changes[key] = {
                 'old': old_value,
