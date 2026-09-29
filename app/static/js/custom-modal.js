@@ -27,14 +27,14 @@ window.CustomModal = {
       // Thêm event listener cho overlay click
       document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target.id === modalId) {
-          CustomModal.closeModal(modalId, false);
+          window.CustomModal.closeModal(modalId, false);
         }
       });
       
       // Thêm event listener cho ESC key
       const escHandler = function(e) {
         if (e.key === 'Escape') {
-          CustomModal.closeModal(modalId, false);
+          window.CustomModal.closeModal(modalId, false);
           document.removeEventListener('keydown', escHandler);
         }
       };
@@ -68,14 +68,14 @@ window.CustomModal = {
       // Thêm event listener cho overlay click
       document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target.id === modalId) {
-          CustomModal.closeModal(modalId, true);
+          window.CustomModal.closeModal(modalId, true);
         }
       });
       
       // Thêm event listener cho ESC key
       const escHandler = function(e) {
         if (e.key === 'Escape') {
-          CustomModal.closeModal(modalId, true);
+          window.CustomModal.closeModal(modalId, true);
           document.removeEventListener('keydown', escHandler);
         }
       };
@@ -105,7 +105,7 @@ window.CustomModal = {
   replaceConfirm: function() {
     const originalConfirm = window.confirm;
     window.confirm = function(message) {
-      return CustomModal.confirm(message, 'Xác nhận', 'warning');
+      return window.CustomModal.confirm(message, 'Xác nhận', 'warning');
     };
   },
   
@@ -113,13 +113,13 @@ window.CustomModal = {
   replaceAlert: function() {
     const originalAlert = window.alert;
     window.alert = function(message) {
-      return CustomModal.alert(message, 'Thông báo', 'success');
+      return window.CustomModal.alert(message, 'Thông báo', 'success');
     };
   }
 };
 
 // Tự động thay thế khi load
 document.addEventListener('DOMContentLoaded', function() {
-  CustomModal.replaceConfirm();
-  CustomModal.replaceAlert();
+  window.CustomModal.replaceConfirm();
+  window.CustomModal.replaceAlert();
 }); 

@@ -67,36 +67,8 @@
 	function createComponents() {
 		if (patientIntake && clinicalForm && servicesForm && indicationsForm) return true;
 
-		const intakeFactory = window.QLPKPatientIntakeForm;
-		if (!intakeFactory?.create) throw new Error('Thiếu component Hành chính dùng chung');
-		patientIntake = intakeFactory.create({
-			config: {
-				...(config.intake || {}),
-				patient: { ...(config.intake?.patient || {}) },
-				visit: { ...(config.intake?.visit || {}) }
-			}
-		});
-
-		const clinicalFactory = REGISTRY.get('clinicalExaminationForm');
-		if (!clinicalFactory?.create) throw new Error('Thiếu component Khám dùng chung');
-		clinicalForm = clinicalFactory.create({
-			config: {
-				rootId: config.clinical?.rootId || 'psychologistClinicalDecisionPanel',
-				mainFields: {},
-				detailFields: getClinicalFields()
-			},
-			getDocument: options => options?.document || document,
-			getElement: (doc, id) => doc.getElementById(id),
-			getValue: (doc, id) => String(doc.getElementById(id)?.value || '').trim(),
-			setValue: (doc, id, value) => {
-				const element = doc.getElementById(id);
-				if (element) element.value = value == null ? '' : String(value);
-			},
-			textOf: value => value == null ? '' : String(value).trim(),
-			hasValue: value => value !== undefined && value !== null && String(value).trim() !== '',
-			isLoading: () => state.isLoadingExaminationData,
-			apiCall
-		});
+		patientIntake = createPatientIntake();
+		clinicalForm = createClinicalForm();
 
 		const servicesFactory = REGISTRY.get('servicesForm');
 		const indicationsFactory = REGISTRY.get('indicationsForm');
@@ -109,6 +81,46 @@
 		if (!historyComponent) throw new Error('Thiếu component Tiền sử dùng chung');
 		historyComponent.init?.();
 		return true;
+	}
+
+	function createPatientIntake() {
+		const intakeFactory = window.QLPKPatientIntakeForm;
+		if (!intakeFactory?.create) throw new Error('Thiếu component Hành chính dùng chung');
+		const intake = config.intake || {};
+		return intakeFactory.create({
+			config: {
+				...intake,
+				patient: { ...(intake.patient || {}) },
+				visit: { ...(intake.visit || {}) }
+			}
+		});
+	}
+
+	function textOfValue(value) {
+		return value == null ? '' : String(value).trim();
+	}
+
+	function createClinicalForm() {
+		const clinicalFactory = REGISTRY.get('clinicalExaminationForm');
+		if (!clinicalFactory?.create) throw new Error('Thiếu component Khám dùng chung');
+		return clinicalFactory.create({
+			config: {
+				rootId: config.clinical?.rootId || 'psychologistClinicalDecisionPanel',
+				mainFields: {},
+				detailFields: getClinicalFields()
+			},
+			getDocument: options => options?.document || document,
+			getElement: (doc, id) => doc.getElementById(id),
+			getValue: (doc, id) => String(doc.getElementById(id)?.value || '').trim(),
+			setValue: (doc, id, value) => {
+				const element = doc.getElementById(id);
+				if (element) element.value = value == null ? '' : String(value);
+			},
+			textOf: textOfValue,
+			hasValue: value => value !== undefined && value !== null && String(value).trim() !== '',
+			isLoading: () => state.isLoadingExaminationData,
+			apiCall
+		});
 	}
 
 	function configureSupportRuntime() {

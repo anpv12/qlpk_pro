@@ -39,8 +39,8 @@
 		document.getElementById('bannerArea').innerHTML = '';
 
 		const patientInfo = data.patient || {};
-		const html = buildPrescriptionPreviewHTML({
-			clinicInfo: getClinicInfoConfig(),
+		const html = window.buildPrescriptionPreviewHTML({
+			clinicInfo: window.getClinicInfoConfig(),
 			patient: patientInfo,
 			history: { examination_date: data.examination_date, doctor: data.doctor },
 			examinationDetail: { diagnosis: diagnosisText, benh_kem_theo: data.benh_kem_theo, weight: data.weight, loi_dan: data.loi_dan },

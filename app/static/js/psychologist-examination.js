@@ -99,7 +99,7 @@ async function syncModalDataToMainForm(saveToDb = false) {
 
 async function handleAddressModalClose() {
 	return addressHierarchyAdapter.handlePersonalDetailModalClose({
-		buildFullAddressFromParts,
+		buildFullAddressFromParts: window.buildFullAddressFromParts,
 		fillMainAddressFieldFromModal: true,
 		clearDraftOnNew: true
 	});
@@ -133,7 +133,7 @@ const psychologistWaitingListAdapter = window.ClinicalExaminationWaitingListUi.c
 	updatePagination: () => pageCoreAdapter.updatePagination(),
 	formatDateDisplay: date => window.formatDateDisplay ? window.formatDateDisplay(date) : formatDisplayDate(date),
 	calculateAge: window.ClinicalVitalCalculationUtils.calculateAge,
-	showError: () => showCustomToast('error', 'Lỗi khi tải danh sách lịch hẹn')
+	showError: () => window.showCustomToast('error', 'Lỗi khi tải danh sách lịch hẹn')
 });
 
 async function loadAppointments(status = 'psychologist_exam', page = 1) {
@@ -173,7 +173,7 @@ async function savePatientDataInternal(formData) {
 		getCurrentAppointmentId: () => appointmentId,
 		buildAppointmentPayload: data => window.ClinicalFormDomUtils.buildAppointmentClinicalUpdatePayload(data),
 		setCurrentPatientId,
-		showToast: showCustomToast,
+		showToast: window.showCustomToast,
 		afterPatientSaved: (patientResult, patientData) => {
 			const selectedModalPatient = window.modalSelectedPatient;
 			if (selectedModalPatient) {
@@ -234,7 +234,7 @@ function initializeForm() {
 			}
 		},
 		setupMainAddressChangeHandlers: () => addressHierarchyAdapter.setupMainAddressChangeHandlers(),
-		occupationOptions: { OccupationAutocomplete },
+		occupationOptions: { OccupationAutocomplete: window.OccupationAutocomplete },
 		documentSectionAdapter,
 		getElementValue,
 		autoSaveField: autoSavePatientField
@@ -259,7 +259,7 @@ let uploadInitialized = false;
 let notesAttachmentChip = null;
 
 const documentFileAdapter = window.ClinicalDocumentFileUtils.createDocumentFileAdapter({
-	showError: message => showCustomToast('error', message)
+	showError: message => window.showCustomToast('error', message)
 });
 
 const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
@@ -274,7 +274,7 @@ const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExami
 	getFileIcon: fileType => documentFileAdapter.getFileIcon(fileType),
 	formatFileSize: bytes => documentFileAdapter.formatFileSize(bytes),
 	formatDisplayDate,
-	showToast: (type, message) => showCustomToast(type, message),
+	showToast: (type, message) => window.showCustomToast(type, message),
 	showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
 	console,
 	getIsLocked: () => isFormLocked,
@@ -309,7 +309,7 @@ function initializePage() {
 		loadAppointments,
 		currentStatus,
 		currentPage,
-		occupationOptions: { OccupationAutocomplete },
+		occupationOptions: { OccupationAutocomplete: window.OccupationAutocomplete },
 		documentSectionAdapter,
 		addressDraftAdapter,
 		saveAddressDraftToCache,
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 		document,
 		$,
 		apiCall,
-		showToast: showCustomToast,
+		showToast: window.showCustomToast,
 		showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
 		formatDisplayDate,
 		getAppointments: () => allAppointments,
@@ -439,7 +439,7 @@ async function selectPatientCard(appointmentId) {
 window.selectPatientCard = selectPatientCard;
 window.showTransferMenu = window.ExaminationActionButtonsUi.createTransferMenuHandler({
 	role: 'psychologist',
-	showToast: showCustomToast,
+	showToast: window.showCustomToast,
 	onSuccess: function () {
 		loadAppointments(currentStatus, currentPage);
 	}

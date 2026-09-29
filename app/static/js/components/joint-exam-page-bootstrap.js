@@ -1,3 +1,4 @@
+/* global currentAppointmentId */
 (function () {
 	function escapeHtml(text) {
 		if (!text) return '';

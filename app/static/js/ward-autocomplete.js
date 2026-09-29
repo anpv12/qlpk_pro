@@ -4,7 +4,7 @@
  * Load dựa trên Province đã chọn
  */
 
-class WardAutocomplete extends AutocompleteBase {
+class WardAutocomplete extends window.AutocompleteBase {
 	constructor(inputId, dropdownId) {
 		// Truyền null cho apiEndpoint vì sẽ override loadItems()
 		super(inputId, dropdownId, null);

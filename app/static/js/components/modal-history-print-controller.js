@@ -239,6 +239,46 @@
 			return prescriptionPrintDocument;
 		}
 
+		// Runs the target renderer and rejects results that are not ready or belong to another visit.
+		async function renderPrintTarget(target, selection) {
+			const renderer = renderers[target.rendererKey];
+			if (typeof renderer !== 'function') {
+				throw new Error(`Thiếu renderer cho ${target.label}`);
+			}
+			const result = await renderer();
+			if (!result || result.state !== 'ready') {
+				throw new Error(result?.state === 'stale'
+					? 'Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in'
+					: `Không thể tải ${target.label}`);
+			}
+			if (!isSameSelection(selection, resolveSelection(stateStore))) {
+				throw new Error('Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in');
+			}
+			return result;
+		}
+
+		async function writeRenderedTarget(target, result, printWindow, prescriptionDocument) {
+			if (target.rendererKey === 'prescription') {
+				if (!result.paginationOptions) {
+					throw new Error('Thiếu dữ liệu tài liệu đơn thuốc');
+				}
+				await prescriptionDocument.render(printWindow, {
+					...result.paginationOptions,
+					assetVersion: getAssetVersion(doc),
+					title: target.title
+				});
+				return;
+			}
+			const content = doc.getElementById(target.contentId);
+			const html = content?.innerHTML?.trim();
+			if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
+			await writePrintDocument(printWindow, {
+				assetVersion: getAssetVersion(doc),
+				html,
+				title: target.title
+			});
+		}
+
 		async function printTarget(targetId, button) {
 			const target = TARGETS[targetId];
 			if (!target) return { status: 'unsupportedTarget', targetId };
@@ -260,42 +300,8 @@
 					button.dataset.pdfPreviewState = 'loading';
 				}
 
-				const renderer = renderers[target.rendererKey];
-				if (typeof renderer !== 'function') {
-					throw new Error(`Thiếu renderer cho ${target.label}`);
-				}
-				const result = await renderer();
-				if (!result || result.state !== 'ready') {
-					throw new Error(result?.state === 'stale'
-						? 'Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in'
-						: `Không thể tải ${target.label}`);
-				}
-
-				const currentSelection = resolveSelection(stateStore);
-				if (!isSameSelection(selection, currentSelection)) {
-					throw new Error('Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in');
-				}
-
-				if (target.rendererKey === 'prescription') {
-					if (!result.paginationOptions) {
-						throw new Error('Thiếu dữ liệu tài liệu đơn thuốc');
-					}
-					await prescriptionDocument.render(printWindow, {
-						...result.paginationOptions,
-						assetVersion: getAssetVersion(doc),
-						title: target.title
-					});
-				} else {
-					const content = doc.getElementById(target.contentId);
-					const html = content?.innerHTML?.trim();
-					if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
-
-					await writePrintDocument(printWindow, {
-						assetVersion: getAssetVersion(doc),
-						html,
-						title: target.title
-					});
-				}
+				const result = await renderPrintTarget(target, selection);
+				await writeRenderedTarget(target, result, printWindow, prescriptionDocument);
 				if (button) button.dataset.pdfPreviewState = 'ready';
 				return { status: 'ready', targetId };
 			} catch (error) {

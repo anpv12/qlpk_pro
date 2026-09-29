@@ -2,10 +2,11 @@
 	'use strict';
 
 	const SIDEBAR_CONTAINER_ID = 'sidebar-container';
-	const APP_HEADER_LOADER_PATH = '/static/js/app-header-loader.js';
+	// Split modules: parts are loaded in order before the entry file (last item).
+	const APP_HEADER_LOADER_PATHS = ['/static/js/app-header-loader-parts/part-1.js', '/static/js/app-header-loader-parts/part-2.js', '/static/js/app-header-loader-parts/part-3.js', '/static/js/app-header-loader-parts/part-4.js', '/static/js/app-header-loader.js'];
 	const APP_HEADER_STYLESHEET_PATH = '/static/css/components/app-header.css';
 	const APP_HEADER_STYLESHEET_ID = 'qlpk-app-header-style';
-	const SHORTCUT_MANAGER_PATH = '/static/js/shortcut-manager.js';
+	const SHORTCUT_MANAGER_PATHS = ['/static/js/shortcut-manager-parts/part-1.js', '/static/js/shortcut-manager-parts/part-2.js', '/static/js/shortcut-manager.js'];
 
 	function getAppVersion() {
 		return window.APP_VERSION || localStorage.getItem('APP_VERSION') || Date.now();
@@ -57,6 +58,14 @@
 		});
 	}
 
+	function ensureScriptSequence(paths, dataAttribute, isReady) {
+		return paths.reduce((chain, path, index) => chain.then(() => ensureScriptLoaded(
+			path,
+			index === paths.length - 1 ? dataAttribute : `${dataAttribute}-part-${index + 1}`,
+			isReady
+		)), Promise.resolve());
+	}
+
 	function ensureShellStylesheet() {
 		let link = document.getElementById(APP_HEADER_STYLESHEET_ID);
 		if (!link) {
@@ -99,16 +108,16 @@
 			return Promise.resolve();
 		}
 
-		return ensureScriptLoaded(
-			APP_HEADER_LOADER_PATH,
+		return ensureScriptSequence(
+			APP_HEADER_LOADER_PATHS,
 			'app-header-loader',
 			() => !!(window.QLPKAppHeader && typeof window.QLPKAppHeader.reload === 'function')
 		);
 	}
 
 	function ensureShortcutManagerLoaded() {
-		return ensureScriptLoaded(
-			SHORTCUT_MANAGER_PATH,
+		return ensureScriptSequence(
+			SHORTCUT_MANAGER_PATHS,
 			'shortcut-manager',
 			() => !!window.ShortcutManager
 		);

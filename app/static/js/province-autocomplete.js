@@ -3,7 +3,7 @@
  * Autocomplete cho Tỉnh/Thành phố với data từ API
  */
 
-class ProvinceAutocomplete extends AutocompleteBase {
+class ProvinceAutocomplete extends window.AutocompleteBase {
 	constructor(inputId, dropdownId, onSelectCallback) {
 		// Truyền null cho apiEndpoint vì sẽ override loadItems()
 		super(inputId, dropdownId, null);

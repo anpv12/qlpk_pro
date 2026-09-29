@@ -3,7 +3,7 @@
  * Autocomplete cho tôn giáo với danh sách cố định
  */
 
-class ReligionAutocomplete extends AutocompleteBase {
+class ReligionAutocomplete extends window.AutocompleteBase {
     constructor(inputId, dropdownId) {
         // Truyền null cho apiEndpoint vì sẽ override loadItems() để dùng danh sách cố định
         super(inputId, dropdownId, null);

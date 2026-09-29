@@ -16,6 +16,21 @@
     }
   };
   const DEFAULT_HISTORY_MODES = ['physHistory', 'famHistory'];
+
+  // Defaults for every history section so populate() can hydrate a partial payload.
+  function normalizeHistoryPopulateData(data) {
+    return {
+      physicalHistory: data.physicalHistory || [],
+      familyHistory: data.familyHistory || [],
+      allergies: data.allergies || [],
+      riskAssessment: data.riskAssessment || {},
+      previousRiskAssessment: data.previousRiskAssessment || {},
+      substanceUseHistory: data.substanceUseHistory || {},
+      safetyPlan: data.safetyPlan || {},
+      supporters: Array.isArray(data.safetyPlan?.nguoi_ho_tro) ? data.safetyPlan.nguoi_ho_tro : [],
+      patientId: data.patientId
+    };
+  }
   const DEFAULT_SUBSTANCE_IDS = [
     'tobacco', 'alcohol', 'cannabis', 'cocaine', 'stimulants',
     'inhalants', 'sedatives', 'hallucinogens', 'opioids', 'other_substance'
@@ -224,38 +239,36 @@
         state.isHydrating = true;
         state.recoveryDirty = false;
         MANUAL_CHANGES.reset();
+        const values = normalizeHistoryPopulateData(data);
         try {
-          await this.callAction('restoreSelectedHistory', data.physicalHistory || [], 'physHistory', { isCurrentLoad });
+          await this.callAction('restoreSelectedHistory', values.physicalHistory, 'physHistory', { isCurrentLoad });
           if (!isCurrentLoad()) return false;
-          await this.callAction('restoreSelectedHistory', data.familyHistory || [], 'famHistory', { isCurrentLoad });
+          await this.callAction('restoreSelectedHistory', values.familyHistory, 'famHistory', { isCurrentLoad });
           if (!isCurrentLoad()) return false;
 
-          this.callAction('restoreAllergy', data.allergies || []);
-          this.callAction('restoreSuicideAndRisk', data.riskAssessment || {});
+          this.callAction('restoreAllergy', values.allergies);
+          this.callAction('restoreSuicideAndRisk', values.riskAssessment);
           this.callAction('populatePrevRiskBadge', {
             medical_history: {
-              previous_examination: { risk_assessment: data.previousRiskAssessment || {} }
+              previous_examination: { risk_assessment: values.previousRiskAssessment }
             }
           });
-          this.callAction('populateSubstanceUseFields', data.substanceUseHistory || {});
+          this.callAction('populateSubstanceUseFields', values.substanceUseHistory);
 
-          if (data.patientId) {
-            const supporters = Array.isArray(data.safetyPlan?.nguoi_ho_tro)
-              ? data.safetyPlan.nguoi_ho_tro
-              : [];
-            await this.callAction('loadFamilyMembers', data.patientId, supporters, { isCurrentLoad });
+          if (values.patientId) {
+            await this.callAction('loadFamilyMembers', values.patientId, values.supporters, { isCurrentLoad });
           }
           if (!isCurrentLoad()) return false;
-          this.callAction('populatePlan', data.safetyPlan || {});
+          this.callAction('populatePlan', values.safetyPlan);
           this.callAction('verifyPopulate', {
             medical_history: {
               patient: {
-                physical_history: data.physicalHistory || [],
-                family_history: data.familyHistory || [],
-                allergies: data.allergies || []
+                physical_history: values.physicalHistory,
+                family_history: values.familyHistory,
+                allergies: values.allergies
               },
-              examination: { risk_assessment: data.riskAssessment || {} },
-              previous_examination: { risk_assessment: data.previousRiskAssessment || {} }
+              examination: { risk_assessment: values.riskAssessment },
+              previous_examination: { risk_assessment: values.previousRiskAssessment }
             }
           });
           this.callAction('updateWorkbenchSummary');

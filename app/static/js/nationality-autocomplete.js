@@ -3,7 +3,7 @@
  * Autocomplete cho quốc tịch với danh sách cố định
  */
 
-class NationalityAutocomplete extends AutocompleteBase {
+class NationalityAutocomplete extends window.AutocompleteBase {
     constructor(inputId, dropdownId) {
         // Truyền null cho apiEndpoint vì sẽ override loadItems() để dùng danh sách cố định
         super(inputId, dropdownId, null);

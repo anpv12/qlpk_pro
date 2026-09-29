@@ -15,7 +15,7 @@
 	// bind several events with data-qlpk-on-<event>="fn" and
 	// data-qlpk-on-<event>-args='[...]' (focus/blur use focusin/focusout).
 	const CALL_ATTR = 'data-qlpk-call';
-	const EVENTS = ['click', 'change', 'input', 'keyup', 'keydown', 'submit', 'focusin', 'focusout'];
+	const EVENTS = ['click', 'mousedown', 'change', 'input', 'keyup', 'keydown', 'submit', 'focusin', 'focusout'];
 
 	function resolvePath(path) {
 		return String(path || '').split('.').reduce((owner, key) => (owner == null ? undefined : owner[key]), window);

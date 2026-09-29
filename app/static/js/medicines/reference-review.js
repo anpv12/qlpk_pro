@@ -53,15 +53,30 @@
         el('medicineReviewCancelChange').hidden = !hasLink || !choosing;
         el('medicineReviewCancelChange').disabled = saving;
         el('medicineReviewCompareSection').hidden = !action || (action === 'update' && changedCount === 0);
-        el('medicineReviewTargetTitle').textContent = showSearch ? '1. Thuốc trong kho' : hasLink ? 'Thuốc đang liên kết DAV' : 'Thuốc trong kho';
-        el('medicineReviewSearchTitle').textContent = hasLink ? '2. Chọn thuốc DAV thay thế' : '2. Chọn thuốc tương ứng trên DAV';
-        el('medicineReviewCompareTitle').textContent = action === 'update' ? 'Thông tin DAV cần cập nhật'
-            : action === 'confirm' ? 'Kiểm tra liên kết hiện tại' : '3. Kiểm tra trước khi lưu';
-        el('medicineReviewAfterTitle').textContent = action === 'change' ? 'Dự kiến sau khi đổi'
-            : action === 'update' ? 'Dự kiến sau khi cập nhật' : 'Dự kiến sau khi liên kết';
-        el('medicineReferenceReviewTitle').textContent = !savedPreview ? 'Thông tin liên kết DAV'
-            : !hasLink ? 'Liên kết thuốc trong kho với DAV' : choosing ? 'Đổi thuốc DAV' : 'Thuốc đã liên kết DAV';
+        applyTitles(action, hasLink, showSearch);
         el('medicineReferenceReviewModal').querySelectorAll('[data-bs-dismiss]').forEach(button => { button.disabled = saving; });
+    }
+
+    const COMPARE_TITLES = {update: 'Thông tin DAV cần cập nhật', confirm: 'Kiểm tra liên kết hiện tại'};
+    const AFTER_TITLES = {change: 'Dự kiến sau khi đổi', update: 'Dự kiến sau khi cập nhật'};
+
+    function targetTitle(hasLink, showSearch) {
+        if (showSearch) return '1. Thuốc trong kho';
+        return hasLink ? 'Thuốc đang liên kết DAV' : 'Thuốc trong kho';
+    }
+
+    function modalTitle(hasLink) {
+        if (!savedPreview) return 'Thông tin liên kết DAV';
+        if (!hasLink) return 'Liên kết thuốc trong kho với DAV';
+        return choosing ? 'Đổi thuốc DAV' : 'Thuốc đã liên kết DAV';
+    }
+
+    function applyTitles(action, hasLink, showSearch) {
+        el('medicineReviewTargetTitle').textContent = targetTitle(hasLink, showSearch);
+        el('medicineReviewSearchTitle').textContent = hasLink ? '2. Chọn thuốc DAV thay thế' : '2. Chọn thuốc tương ứng trên DAV';
+        el('medicineReviewCompareTitle').textContent = COMPARE_TITLES[action] || '3. Kiểm tra trước khi lưu';
+        el('medicineReviewAfterTitle').textContent = AFTER_TITLES[action] || 'Dự kiến sau khi liên kết';
+        el('medicineReferenceReviewTitle').textContent = modalTitle(hasLink);
     }
 
     function clearPreview() {
@@ -70,6 +85,33 @@
         preview = null;
         comparison(originalIdentity, null);
         controls();
+    }
+
+    const normalizeValue = value => String(value || '').trim().toLowerCase();
+
+    function sourceCellText(hasSource, sourceValue) {
+        if (!hasSource) return 'Chưa chọn thuốc';
+        return sourceValue || 'Chưa có thông tin';
+    }
+
+    function comparisonRow(label, originalValue, sourceValue, hasSource) {
+        const row = document.createElement('tr');
+        const term = document.createElement('th');
+        term.setAttribute('scope', 'row');
+        term.textContent = label;
+        const originalCell = document.createElement('td');
+        const sourceCell = document.createElement('td');
+        originalCell.textContent = originalValue || 'Chưa có thông tin';
+        sourceCell.textContent = sourceCellText(hasSource, sourceValue);
+        if (!originalValue) originalCell.classList.add('mm-review-missing');
+        if (!sourceValue) sourceCell.classList.add('mm-review-missing');
+        const changed = hasSource && normalizeValue(originalValue) !== normalizeValue(sourceValue);
+        if (changed) {
+            sourceCell.classList.add('mm-review-diff');
+            sourceCell.setAttribute('title', 'Sẽ thay đổi khi lưu liên kết');
+        }
+        row.append(term, originalCell, sourceCell);
+        return {row, changed};
     }
 
     function comparison(original, source, changes) {
@@ -87,29 +129,49 @@
         ];
         const missingFields = [];
         for (const [label, originalValue, sourceValue] of entries) {
-            const row = document.createElement('tr');
-            const term = document.createElement('th');
-            term.setAttribute('scope', 'row');
-            term.textContent = label;
-            const originalCell = document.createElement('td');
-            const sourceCell = document.createElement('td');
-            originalCell.textContent = originalValue || 'Chưa có thông tin';
-            sourceCell.textContent = source ? sourceValue || 'Chưa có thông tin' : 'Chưa chọn thuốc';
-            if (!originalValue) originalCell.classList.add('mm-review-missing');
-            if (!sourceValue) sourceCell.classList.add('mm-review-missing');
-            if (source && String(originalValue || '').trim().toLowerCase() !== String(sourceValue || '').trim().toLowerCase()) {
-                sourceCell.classList.add('mm-review-diff');
-                sourceCell.setAttribute('title', 'Sẽ thay đổi khi lưu liên kết');
+            const {row, changed} = comparisonRow(label, originalValue, sourceValue, !!source);
+            if (changed) {
                 changedCount += 1;
                 if (originalValue && !sourceValue) missingFields.push(label.toLowerCase());
             }
-            row.append(term, originalCell, sourceCell);
             parent.append(row);
         }
         if (source && missingFields.length) {
             el('medicineReviewChanges').textContent = `Lưu ý: DAV chưa có ${missingFields.join(', ')}; giá trị đang lưu sẽ bị để trống.`;
             el('medicineReviewChanges').hidden = false;
         }
+    }
+
+    function renderTarget(identity) {
+        el('medicineReviewTargetName').textContent = identity?.name || 'Chưa có tên thuốc';
+        el('medicineReviewTargetDetails').textContent = [identity?.generic_name,
+            identity?.strength, identity?.origin].filter(Boolean).join(' · ');
+    }
+
+    function linkStatusText(data) {
+        if (data.review_status === 'confirmed') {
+            const reviewedAt = data.human_review?.reviewed_at ? new Date(data.human_review.reviewed_at).toLocaleString('vi-VN') : '';
+            return `Đã liên kết DAV${reviewedAt ? ' · ' + reviewedAt : ''}.`;
+        }
+        if (data.review_status === 'stale') return 'Liên kết DAV cần kiểm tra lại.';
+        return data.reference ? 'Liên kết hiện có chưa được xác nhận.' : 'Chưa liên kết DAV.';
+    }
+
+    function actionStatusText(data, action) {
+        if (action === 'change' || action === 'link') {
+            return `Đang đối chiếu với: ${data.reference.name}. Kiểm tra thông tin bên dưới trước khi lưu.`;
+        }
+        if (action === 'update') {
+            return changedCount > 0 ? 'Nguồn DAV có thông tin cần kiểm tra trước khi cập nhật.'
+                : 'Nguồn DAV đã thay đổi; các thông tin đối chiếu không đổi. Cập nhật để ghi nhận nguồn hiện tại.';
+        }
+        if (action === 'confirm') return 'Đối chiếu thuốc thực tế trước khi xác nhận liên kết này.';
+        return choosing && data.reference ? 'Bạn đang chọn đúng thuốc đã liên kết. Không cần lưu lại.' : '';
+    }
+
+    function previewStatusText(data, action) {
+        if (data.can_apply && (action === 'change' || action === 'link')) return '';
+        return data.message || actionStatusText(data, action);
     }
 
     async function loadPreview(referenceId) {
@@ -128,26 +190,10 @@
                 choosing = !data.reference;
             }
             originalIdentity = data.current || data.original;
-            el('medicineReviewTargetName').textContent = originalIdentity?.name || 'Chưa có tên thuốc';
-            el('medicineReviewTargetDetails').textContent = [originalIdentity?.generic_name,
-                originalIdentity?.strength, originalIdentity?.origin].filter(Boolean).join(' · ');
+            renderTarget(originalIdentity);
             comparison(originalIdentity, data.reference, data.rows);
-            const review = data.human_review;
-            const reviewedAt = review?.reviewed_at ? new Date(review.reviewed_at).toLocaleString('vi-VN') : '';
-            if (referenceId == null) {
-                el('medicineReviewLinkStatus').textContent = data.review_status === 'confirmed'
-                    ? `Đã liên kết DAV${reviewedAt ? ' · ' + reviewedAt : ''}.`
-                    : data.review_status === 'stale' ? 'Liên kết DAV cần kiểm tra lại.'
-                        : data.reference ? 'Liên kết hiện có chưa được xác nhận.' : 'Chưa liên kết DAV.';
-            }
-            const action = actionKind();
-            status(data.can_apply && (action === 'change' || action === 'link') ? '' : data.message || (action === 'change' || action === 'link'
-                ? `Đang đối chiếu với: ${data.reference.name}. Kiểm tra thông tin bên dưới trước khi lưu.`
-                : action === 'update' ? changedCount > 0 ? 'Nguồn DAV có thông tin cần kiểm tra trước khi cập nhật.'
-                    : 'Nguồn DAV đã thay đổi; các thông tin đối chiếu không đổi. Cập nhật để ghi nhận nguồn hiện tại.'
-                    : action === 'confirm' ? 'Đối chiếu thuốc thực tế trước khi xác nhận liên kết này.'
-                        : choosing && data.reference ? 'Bạn đang chọn đúng thuốc đã liên kết. Không cần lưu lại.' : ''),
-            !data.can_apply && !!data.reference);
+            if (referenceId == null) el('medicineReviewLinkStatus').textContent = linkStatusText(data);
+            status(previewStatusText(data, actionKind()), !data.can_apply && !!data.reference);
             controls();
         } catch (error) {
             if (requestRevision !== revision || error.name === 'AbortError') return;

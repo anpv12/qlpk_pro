@@ -4,7 +4,7 @@
 	function ensureXlsxLibrary(documentRef) {
 		if (!window.XLSX) {
 			const script = documentRef.createElement('script');
-			script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+			script.src = '/static/vendor/xlsx@0.18.5/xlsx.full.min.js';
 			documentRef.head.appendChild(script);
 		}
 	}

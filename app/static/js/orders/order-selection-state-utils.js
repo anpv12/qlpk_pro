@@ -258,6 +258,25 @@
 		});
 	}
 
+	function callOption(options, name, ...args) {
+		if (typeof options[name] === 'function') return options[name](...args);
+		return undefined;
+	}
+
+	function logOrderLoadError(options, detail) {
+		if (options.console?.error) options.console.error('Error loading chi_dinh:', detail);
+	}
+
+	function applyLoadedServerOrders(chiDinhList, options) {
+		const selectedOrders = mapServerOrdersToSelectedOrders(chiDinhList, options.mapOptions || {});
+		callOption(options, 'setSelectedOrders', selectedOrders);
+		if (typeof options.setLastOrdersPayload === 'function') {
+			const ordersData = buildOrdersSavePayload(selectedOrders, options.savePayloadOptions || {});
+			options.setLastOrdersPayload(JSON.stringify({ chi_dinh: ordersData }));
+		}
+		callOption(options, 'renderSelectedOrders');
+	}
+
 	async function loadSelectedOrdersFromServer(options = {}) {
 		const appointmentId = typeof options.getCurrentAppointmentId === 'function'
 			? options.getCurrentAppointmentId()
@@ -269,40 +288,23 @@
 			? options.isCurrentLoad(loadToken, appointmentId)
 			: true;
 
-		if (typeof options.setLoading === 'function') options.setLoading(true);
+		callOption(options, 'setLoading', true);
 		try {
 			const response = await options.apiCall(`/api/chi-dinh/appointment/${appointmentId}`, { method: 'GET' });
 			if (!isCurrentLoad()) return false;
 
 			if (!response.ok) {
-				if (options.console?.error) {
-					options.console.error('Error loading chi_dinh:', response.status);
-				}
+				logOrderLoadError(options, response.status);
 				return false;
 			}
 
 			const data = await response.json();
 			if (!isCurrentLoad()) return false;
 
-			const chiDinhList = data.chi_dinh || [];
-			const selectedOrders = mapServerOrdersToSelectedOrders(chiDinhList, options.mapOptions || {});
-			if (typeof options.setSelectedOrders === 'function') {
-				options.setSelectedOrders(selectedOrders);
-			}
-
-			if (typeof options.setLastOrdersPayload === 'function') {
-				const ordersData = buildOrdersSavePayload(selectedOrders, options.savePayloadOptions || {});
-				options.setLastOrdersPayload(JSON.stringify({ chi_dinh: ordersData }));
-			}
-
-			if (typeof options.renderSelectedOrders === 'function') {
-				options.renderSelectedOrders();
-			}
+			applyLoadedServerOrders(data.chi_dinh || [], options);
 			return true;
 		} catch (error) {
-			if (options.console?.error) {
-				options.console.error('Error loading chi_dinh:', error);
-			}
+			logOrderLoadError(options, error);
 			return false;
 		} finally {
 			if (typeof options.setLoading === 'function' && isCurrentLoad()) {

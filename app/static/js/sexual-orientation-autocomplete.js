@@ -1,4 +1,4 @@
-class SexualOrientationAutocomplete extends AutocompleteBase {
+class SexualOrientationAutocomplete extends window.AutocompleteBase {
     constructor(inputId, dropdownId) {
         super(inputId, dropdownId, '/api/sexual-orientations/');
     }

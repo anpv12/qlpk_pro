@@ -7,10 +7,10 @@ function loadCalendarAssets() {
 	if (!calendarAssets) calendarAssets = new Promise((resolve, reject) => {
 		const css = document.createElement('link');
 		css.rel = 'stylesheet';
-		css.href = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css';
+		css.href = '/static/vendor/fullcalendar@5.11.3/main.min.css';
 		document.head.append(css);
 		const script = document.createElement('script');
-		script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js';
+		script.src = '/static/vendor/fullcalendar@5.11.3/main.min.js';
 		script.onload = resolve;
 		script.onerror = () => { script.remove(); css.remove(); calendarAssets = null; reject(new Error('Không tải được giao diện lịch. Vui lòng thử lại.')); };
 		document.head.append(script);

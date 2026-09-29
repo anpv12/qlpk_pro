@@ -180,8 +180,26 @@
 		const isTotal = currentConfig.scoring_method === 'total';
 		const isByGroup = currentConfig.scoring_method === 'by_group';
 
-		// ── Section: Scoring Method ──
-		let html = `<div class="sc-rc-section">
+		let html = buildScoringMethodSection(isTotal, isByGroup);
+		// ── Section: Calculation Type (only for total) ──
+		if (isTotal) html += buildCalculationTypeSection();
+		// ── Section: Group Tabs (only for by_group) ──
+		if (isByGroup) html += buildGroupSection(groups);
+		// ── Section: Conditions (for total mode) ──
+		if (isTotal) {
+			html += `<div class="sc-rc-section" id="scTotalConditions">
+				${buildConditionsTable(currentConfig.conditions)}
+			</div>`;
+		}
+		html += buildSpecialAlertsSection(questions);
+
+		root.innerHTML = html;
+		bindEvents();
+	}
+
+	// ── Section: Scoring Method ──
+	function buildScoringMethodSection(isTotal, isByGroup) {
+		return `<div class="sc-rc-section">
 			<h3 class="sc-rc-title">Cấu hình kết quả hiển thị khảo sát</h3>
 			<p class="sc-rc-subtitle">Thiết lập cách thức trả kết quả sau khi bệnh nhân hoàn thành khảo sát</p>
 			<div class="sc-rc-methods">
@@ -203,80 +221,73 @@
 				</label>
 			</div>
 		</div>`;
+	}
 
-		// ── Section: Calculation Type (only for total) ──
-		if (isTotal) {
-			const ct = currentConfig.calculation_type || 'sum';
-			html += `<div class="sc-rc-section" id="scCalcTypeSection">
-				<div class="sc-rc-calc-wrap">
-					<div class="sc-rc-calc-title">Chọn phương thức tính</div>
-					<div class="sc-rc-calc-options">
-						<label class="sc-rc-calc-option ${ct === 'sum' ? 'active' : ''}">
-							<input type="radio" name="scCalcType" value="sum" ${ct === 'sum' ? 'checked' : ''}> Tính tổng
-						</label>
-						<label class="sc-rc-calc-option ${ct === 'average' ? 'active' : ''}">
-							<input type="radio" name="scCalcType" value="average" ${ct === 'average' ? 'checked' : ''}> Tính trung bình
-						</label>
-						<label class="sc-rc-calc-option ${ct === 'scale_conversion' ? 'active' : ''}">
-							<input type="radio" name="scCalcType" value="scale_conversion" ${ct === 'scale_conversion' ? 'checked' : ''}> Quy đổi điểm
-						</label>
-					</div>
+	function buildCalculationTypeSection() {
+		const ct = currentConfig.calculation_type || 'sum';
+		let html = `<div class="sc-rc-section" id="scCalcTypeSection">
+			<div class="sc-rc-calc-wrap">
+				<div class="sc-rc-calc-title">Chọn phương thức tính</div>
+				<div class="sc-rc-calc-options">
+					<label class="sc-rc-calc-option ${ct === 'sum' ? 'active' : ''}">
+						<input type="radio" name="scCalcType" value="sum" ${ct === 'sum' ? 'checked' : ''}> Tính tổng
+					</label>
+					<label class="sc-rc-calc-option ${ct === 'average' ? 'active' : ''}">
+						<input type="radio" name="scCalcType" value="average" ${ct === 'average' ? 'checked' : ''}> Tính trung bình
+					</label>
+					<label class="sc-rc-calc-option ${ct === 'scale_conversion' ? 'active' : ''}">
+						<input type="radio" name="scCalcType" value="scale_conversion" ${ct === 'scale_conversion' ? 'checked' : ''}> Quy đổi điểm
+					</label>
 				</div>
-			</div>`;
-			if (ct === 'scale_conversion') html += `<div class="sc-rc-section">
-				<p>Điểm quy đổi = Tổng điểm × Hệ số + Số cộng</p>
-				<label>Hệ số <input type="number" step="any" class="sc-rc-conversion-factor" value="${currentConfig.conversion?.factor ?? ''}" required></label>
-				<label>Số cộng <input type="number" step="any" class="sc-rc-conversion-offset" value="${currentConfig.conversion?.offset ?? ''}" required></label>
-			</div>`;
+			</div>
+		</div>`;
+		if (ct === 'scale_conversion') html += `<div class="sc-rc-section">
+			<p>Điểm quy đổi = Tổng điểm × Hệ số + Số cộng</p>
+			<label>Hệ số <input type="number" step="any" class="sc-rc-conversion-factor" value="${currentConfig.conversion?.factor ?? ''}" required></label>
+			<label>Số cộng <input type="number" step="any" class="sc-rc-conversion-offset" value="${currentConfig.conversion?.offset ?? ''}" required></label>
+		</div>`;
+		return html;
+	}
+
+	function buildGroupSection(groups) {
+		if (groups.length === 0) {
+			return `<div class="sc-rc-section"><div class="sc-rc-calc-wrap">
+				<p class="sc-rc-empty-message"><i class="bi bi-info-circle me-1"></i>Không tìm thấy nhóm tiêu chí nào. Vui lòng nhập tiêu chí cho câu hỏi ở Tab 1.</p>
+			</div></div>`;
 		}
-
-		// ── Section: Group Tabs (only for by_group) ──
-		if (isByGroup) {
-			if (groups.length === 0) {
-				html += `<div class="sc-rc-section"><div class="sc-rc-calc-wrap">
-					<p class="sc-rc-empty-message"><i class="bi bi-info-circle me-1"></i>Không tìm thấy nhóm tiêu chí nào. Vui lòng nhập tiêu chí cho câu hỏi ở Tab 1.</p>
-				</div></div>`;
-			} else {
-				// Initialize group_configs for new groups
-				groups.forEach(g => {
-					if (!currentConfig.group_configs[g]) {
-						currentConfig.group_configs[g] = { conditions: [] };
-					}
-				});
-				// Remove stale groups
-				Object.keys(currentConfig.group_configs).forEach(key => {
-					if (!groups.includes(key)) delete currentConfig.group_configs[key];
-				});
-				if (!activeGroupTab || !groups.includes(activeGroupTab)) {
-					activeGroupTab = groups[0];
-				}
-
-				const tabsHtml = groups.map(g =>
-					`<button class="sc-rc-group-tab ${g === activeGroupTab ? 'active' : ''}" data-group="${escHtml(g)}">${escHtml(g)}</button>`
-				).join('');
-
-				const activeConditions = currentConfig.group_configs[activeGroupTab]?.conditions || [];
-
-				html += `<div class="sc-rc-section" id="scGroupSection">
-					<div class="sc-rc-group-wrap">
-						<div class="sc-rc-calc-title">Chọn nhóm cấu hình</div>
-						<div class="sc-rc-group-tabs">${tabsHtml}</div>
-						<div class="sc-rc-group-label">Cấu hình thang điểm cho nhóm: <strong>${escHtml(activeGroupTab)}</strong></div>
-					</div>
-					<div id="scGroupConditions">${buildConditionsTable(activeConditions)}</div>
-				</div>`;
+		// Initialize group_configs for new groups
+		groups.forEach(g => {
+			if (!currentConfig.group_configs[g]) {
+				currentConfig.group_configs[g] = { conditions: [] };
 			}
+		});
+		// Remove stale groups
+		Object.keys(currentConfig.group_configs).forEach(key => {
+			if (!groups.includes(key)) delete currentConfig.group_configs[key];
+		});
+		if (!activeGroupTab || !groups.includes(activeGroupTab)) {
+			activeGroupTab = groups[0];
 		}
 
-		// ── Section: Conditions (for total mode) ──
-		if (isTotal) {
-			html += `<div class="sc-rc-section" id="scTotalConditions">
-				${buildConditionsTable(currentConfig.conditions)}
-			</div>`;
-		}
+		const tabsHtml = groups.map(g =>
+			`<button class="sc-rc-group-tab ${g === activeGroupTab ? 'active' : ''}" data-group="${escHtml(g)}">${escHtml(g)}</button>`
+		).join('');
 
-		// ── Section: Special Alerts ──
-		html += `<div class="sc-rc-section" id="scAlertSection">
+		const activeConditions = currentConfig.group_configs[activeGroupTab]?.conditions || [];
+
+		return `<div class="sc-rc-section" id="scGroupSection">
+			<div class="sc-rc-group-wrap">
+				<div class="sc-rc-calc-title">Chọn nhóm cấu hình</div>
+				<div class="sc-rc-group-tabs">${tabsHtml}</div>
+				<div class="sc-rc-group-label">Cấu hình thang điểm cho nhóm: <strong>${escHtml(activeGroupTab)}</strong></div>
+			</div>
+			<div id="scGroupConditions">${buildConditionsTable(activeConditions)}</div>
+		</div>`;
+	}
+
+	// ── Section: Special Alerts ──
+	function buildSpecialAlertsSection(questions) {
+		return `<div class="sc-rc-section" id="scAlertSection">
 			<div class="sc-rc-alerts-header">
 				<div class="sc-rc-alerts-title"><i class="bi bi-exclamation-circle-fill"></i> Lưu ý đặc biệt</div>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-rc-add-btn sc-rc-add-alert"><i class="bi bi-plus"></i> Thêm lưu ý</button>
@@ -285,9 +296,6 @@
 				${currentConfig.special_alerts.map(a => buildAlertCard(a, questions)).join('')}
 			</div>
 		</div>`;
-
-		root.innerHTML = html;
-		bindEvents();
 	}
 
 	function createDefaultCondition() {
