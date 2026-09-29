@@ -1,4 +1,4 @@
-/* global allMedicines: writable, canReviewMedicineReference: writable, currentPage: writable, escapeHtml, formatStockDisplay, medicineListRequest: writable, medicinePageSize, medicines: writable, setElementVisible, showCustomToast, totalItems: writable, totalPages: writable, updateDashboard */
+/* global allMedicines: writable, canReviewMedicineReference: writable, currentPage: writable, escapeHtml, formatStockDisplay, getUserFacingResponseMessage, medicineListRequest: writable, medicinePageSize, medicines: writable, setElementVisible, showCustomToast, totalItems: writable, totalPages: writable, updateDashboard */
 /* exported allMedicines, changePage, deleteSelectedMedicines, filterMedicines, getUnitDisplay, loadAllMedicines, resetFilters, toggleMissingImportPriceFilter */
 
 // Load categories from API
@@ -291,24 +291,24 @@ function deleteSelectedMedicines() {
 			return;
 		}
 
-		// Delete each medicine
-		let deletedCount = 0;
-		selectedIds.forEach(id => {
-			$.ajax({
-				url: `/api/medicines/${id}`,
-				method: 'DELETE',
-				success: function () {
-					deletedCount++;
-					if (deletedCount === selectedIds.length) {
-						showCustomToast('success', `Đã xóa ${deletedCount} thuốc thành công`);
-						loadMedicines();
-						updateDashboard();
-					}
-				},
-				error: function () {
-					showCustomToast('error', 'Có lỗi xảy ra khi xóa thuốc');
-				}
-			});
+		// Xóa từng thuốc; chờ đủ kết quả rồi mới tải lại để bảng không giữ dòng đã xóa.
+		const requests = selectedIds.map(id => new Promise(resolve => {
+			$.ajax({ url: `/api/medicines/${id}`, method: 'DELETE' })
+				.done(() => resolve({ ok: true }))
+				.fail(xhr => resolve({ ok: false, xhr }));
+		}));
+		Promise.all(requests).then(results => {
+			const deletedCount = results.filter(result => result.ok).length;
+			const failed = results.filter(result => !result.ok);
+			if (deletedCount) showCustomToast('success', `Đã xóa ${deletedCount} thuốc thành công`);
+			if (failed.length) {
+				const fallback = 'Có lỗi xảy ra khi xóa thuốc';
+				showCustomToast('error', getUserFacingResponseMessage(failed[0].xhr, [409], fallback));
+			}
+			if (deletedCount) {
+				loadMedicines();
+				updateDashboard();
+			}
 		});
 	});
 }

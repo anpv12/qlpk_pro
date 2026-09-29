@@ -1,4 +1,4 @@
-/* global debounce, escapeHtml, showCustomToast, showInventoryOverlay */
+/* global debounce, escapeHtml, getUserFacingResponseMessage, showCustomToast, showInventoryOverlay */
 /* exported deleteSupplier, editSupplier, selectSupplierForBatch, showSupplierManagement */
 
 // ========== QUẢN LÝ NHÀ CUNG CẤP ==========
@@ -175,8 +175,9 @@ async function deleteSupplier(supplierId) {
 				resetSupplierForm();
 			}
 		},
-		error: function () {
-			showCustomToast('error', 'Không thể xóa nhà cung cấp. Vui lòng thử lại.');
+		error: function (xhr) {
+			// 400 = nhà cung cấp đang có lô thuốc; backend trả lý do trong `detail`.
+			showCustomToast('error', getUserFacingResponseMessage(xhr, [400], 'Không thể xóa nhà cung cấp. Vui lòng thử lại.', 'detail'));
 		}
 	});
 }

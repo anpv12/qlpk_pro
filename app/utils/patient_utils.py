@@ -1,71 +1,42 @@
+import logging
+import re
+
+from sqlalchemy import or_
+
 from app.models.patient import Patient
 from app.models.medicine import Medicine
 from sqlalchemy.orm import Session
 from datetime import date
 
+logger = logging.getLogger(__name__)
+
+_PATIENT_CODE_PATTERN = re.compile(r'^(?:HS|BN)(\d+)$')
+
+
+def _max_patient_code_number(db: Session) -> int:
+    """Số lớn nhất trong các mã dạng HS/BN + số; bỏ qua mã khác định dạng (vd. dữ liệu QA)."""
+    rows = db.query(Patient.patient_code).filter(
+        or_(Patient.patient_code.like('HS%'), Patient.patient_code.like('BN%'))
+    ).all()
+    numbers = [int(match.group(1)) for (code,) in rows if code and (match := _PATIENT_CODE_PATTERN.match(code))]
+    return max(numbers, default=0)
+
+
 def generate_patient_code(db: Session) -> str:
     """
-    Tạo mã hồ sơ tự động theo format HS + số thứ tự 5 chữ số
-    Đảm bảo mã không trùng lặp với retry logic
-    
-    Args:
-        db: Database session
-        
-    Returns:
-        Mã hồ sơ mới (ví dụ: HS00001, HS00002, ...)
+    Tạo mã hồ sơ tự động theo format HS + số thứ tự 5 chữ số.
+
+    Số tiếp theo lấy theo giá trị số lớn nhất của các mã HS/BN hiện có (không so chuỗi,
+    nên mã khác định dạng không làm lệch dãy); gặp mã đã tồn tại thì tăng tiếp.
     """
-    max_retries = 5 # Số lần thử lại tối đa
-    
-    for attempt in range(max_retries):
-        try:
-            # Tìm mã hồ sơ lớn nhất hiện tại để xác định số tiếp theo
-            # Sắp xếp giảm dần theo patient_code để lấy mã lớn nhất
-            max_patient = db.query(Patient).order_by(Patient.patient_code.desc()).first()
-            
-            if max_patient and max_patient.patient_code:
-                # Lấy phần số từ mã hiện tại (hỗ trợ cả "BN" và "HS")
-                try:
-                    code = max_patient.patient_code
-                    # Hỗ trợ cả mã cũ "BN" và mã mới "HS"
-                    if code.startswith('BN') or code.startswith('HS'):
-                        current_number = int(code[2:])  # Bỏ qua tiền tố "BN" hoặc "HS"
-                        next_number = current_number + 1
-                    else:
-                        # Nếu không phải định dạng BN/HS, đếm tổng số bệnh nhân
-                        patient_count = db.query(Patient).count()
-                        next_number = patient_count + 1
-                except (ValueError, IndexError):
-                    # Xử lý trường hợp mã hiện tại không đúng định dạng số
-                    # hoặc không có đủ ký tự sau prefix.
-                    # Trong trường hợp này, đếm tổng số bệnh nhân hiện có và bắt đầu từ đó.
-                    print(f"Warning: Could not parse patient_code '{max_patient.patient_code}'. Falling back to count.")
-                    patient_count = db.query(Patient).count()
-                    next_number = patient_count + 1
-            else:
-                # Nếu chưa có bệnh nhân nào trong DB, bắt đầu từ 1
-                next_number = 1
-            
-            # Tạo mã mới với định dạng "HS" + số thứ tự (đệm 0 để đủ 5 chữ số)
-            new_code = f"HS{str(next_number).zfill(5)}"
-            
-            # Kiểm tra xem mã mới tạo đã tồn tại trong DB chưa
-            existing = db.query(Patient).filter(Patient.patient_code == new_code).first()
-            if not existing:
-                # Nếu mã chưa tồn tại, trả về mã này
-                return new_code
-            else:
-                # Nếu mã đã tồn tại (do race condition hoặc dữ liệu cũ), in cảnh báo và thử lại
-                print(f"⚠️ Mã {new_code} đã tồn tại, thử lại lần {attempt + 1}")
-                continue # Tiếp tục vòng lặp để thử tạo mã khác
-                
-        except Exception as e:
-            # Bắt các lỗi ngoại lệ khác trong quá trình tạo mã
-            print(f"❌ Lỗi tạo mã hồ sơ lần {attempt + 1}: {e}")
-            if attempt == max_retries - 1:
-                # Nếu đã thử hết số lần cho phép mà vẫn lỗi, raise exception cuối cùng
-                raise e
-    
-    # Nếu sau tất cả các lần thử vẫn không tạo được mã duy nhất
+    max_retries = 5
+    next_number = _max_patient_code_number(db) + 1
+    for _ in range(max_retries):
+        new_code = f"HS{str(next_number).zfill(5)}"
+        if not db.query(Patient.id).filter(Patient.patient_code == new_code).first():
+            return new_code
+        logger.warning("Mã hồ sơ %s đã tồn tại, thử mã kế tiếp", new_code)
+        next_number += 1
     raise Exception("Không thể tạo mã hồ sơ duy nhất sau nhiều lần thử")
 
 
