@@ -1,6 +1,104 @@
 /* global currentTab: writable, expandedDoctors, hideLoading, ledgerMedicineId: writable, loadDispensingLedger, loadDispensingMedicines, loadInventory, loadPrescriptions, loadStatistics, renderMedicineDetailTable, renderMedicineSummary, renderStatusBadge */
 /* exported applyFilters, formatMoney, formatNumber, getAuthHeaders, getFilterParams, ledgerMedicineId, loadPrescriptionHistory, renderInventoryTable, renderPrescriptionsTable, showLoading, showToast, switchTab, toggleMedicineDetail */
 
+function buildGrandTotalRow(grandTotal) {
+	const totalRow = document.createElement('tr');
+	totalRow.className = 'row-grand-total';
+	totalRow.innerHTML = `
+		<td><strong>Tổng cộng</strong></td>
+		<td><strong>${grandTotal.examination_count} Lượt</strong></td>
+		<td></td>
+		<td><strong>${grandTotal.service_count} dịch vụ</strong></td>
+		<td>${renderMedicineSummary({
+		total: grandTotal.total_medicine_items,
+		types: grandTotal.medicine_count,
+			qty: grandTotal.total_dispensed_qty
+	})}</td>
+		<td><strong>${formatMoney(grandTotal.medicine_amount)}</strong></td>
+		<td><strong>${formatMoney(grandTotal.service_amount)}</strong></td>
+		<td><strong>${formatMoney(grandTotal.medicine_amount + grandTotal.service_amount)}</strong></td>
+		<td></td>
+	`;
+	return totalRow;
+}
+
+function buildDoctorHeaderRow(doctor, isExpanded) {
+	const headerRow = document.createElement('tr');
+	headerRow.className = 'group-header row-doctor-header';
+	headerRow.onclick = function () { toggleDoctorGroup(doctor.doctor_id); };
+	headerRow.innerHTML = `
+		<td>
+			<div class="d-flex align-items-center">
+				<i class="bi bi-caret-${isExpanded ? 'down' : 'right'}-fill me-2" id="doctorIcon${doctor.doctor_id}"></i>
+				<strong>${doctor.doctor_name}</strong>
+			</div>
+		</td>
+		<td>${doctor.examination_count} Lượt</td>
+		<td></td>
+		<td>${doctor.service_count} dịch vụ</td>
+		<td>${renderMedicineSummary({
+		total: doctor.total_medicine_items,
+		types: doctor.medicine_count,
+		qty: doctor.total_dispensed_qty
+	})}</td>
+		<td><strong>${formatMoney(doctor.medicine_amount)}</strong></td>
+		<td><strong>${formatMoney(doctor.service_amount)}</strong></td>
+		<td><strong>${formatMoney(doctor.medicine_amount + doctor.service_amount)}</strong></td>
+		<td></td>
+	`;
+	return headerRow;
+}
+
+function buildExaminationRow(doctor, exam, pres, isExpanded) {
+	const row = document.createElement('tr');
+	row.className = `prescription-row doctor-${doctor.doctor_id}`;
+	row.classList.toggle('medicine-stats-hidden', !isExpanded);
+
+	let medicineTd = '<td>-</td>';
+	let medicineAmtTd = '<td>-</td>';
+	let svcAmtTd = exam.service_amount ? `<td>${formatMoney(exam.service_amount)}</td>` : '<td>-</td>';
+	let totalAmtTd = exam.service_amount ? `<td>${formatMoney(exam.service_amount)}</td>` : '<td>-</td>';
+	let recheckTd = '<td>-</td>';
+
+	if (pres) {
+		row.dataset.prescription = pres.id;
+		medicineTd = `<td>
+			<span class="medicine-toggle" data-qlpk-call="toggleMedicineDetail" data-qlpk-args='[${pres.id}]'>
+				<span><i class="bi bi-caret-right-fill me-1" id="medIcon${pres.id}"></i><strong class="summary-qty">${pres.total_medicine_items}</strong> <small class="fw-semibold">Thuốc</small></span>
+				<span class="badge badge-type">${pres.medicine_count} Loại</span>
+			</span>
+			<div class="medicine-summary medicine-summary-nested"><strong class="summary-qty">${formatNumber(pres.total_dispensed_qty)}</strong> <small class="fw-semibold">viên</small></div>
+		</td>`;
+		const medAmt = pres.total_amount || 0;
+		const svcAmt = exam.service_amount || 0;
+		medicineAmtTd = `<td>${formatMoney(medAmt)}</td>`;
+		svcAmtTd = `<td>${formatMoney(svcAmt)}</td>`;
+		totalAmtTd = `<td><strong>${formatMoney(medAmt + svcAmt)}</strong></td>`;
+		recheckTd = `<td>${pres.recheck_date || '-'}</td>`;
+	}
+
+	row.innerHTML = `
+		<td>${exam.patient_name}</td>
+		<td>${exam.appointment_date}</td>
+		<td>${exam.appointment_time}</td>
+		<td>${exam.services || '-'}</td>
+		${medicineTd}
+		${medicineAmtTd}
+		${svcAmtTd}
+		${totalAmtTd}
+		${recheckTd}
+	`;
+	return row;
+}
+
+function buildMedicineDetailRow(pres) {
+	const detailRow = document.createElement('tr');
+	detailRow.className = 'medicine-detail-row medicine-stats-hidden';
+	detailRow.id = `medicine-detail-${pres.id}`;
+	detailRow.innerHTML = `<td colspan="9">${renderMedicineDetailTable(pres.medicines)}</td>`;
+	return detailRow;
+}
+
 function renderPrescriptionsTable(data) {
 	const tbody = document.getElementById('prescriptionsTableBody');
 	if (!tbody) return;
@@ -16,26 +114,7 @@ function renderPrescriptionsTable(data) {
 	}
 
 	// Grand Total Row
-	if (data.grand_total) {
-		const totalRow = document.createElement('tr');
-		totalRow.className = 'row-grand-total';
-		totalRow.innerHTML = `
-			<td><strong>Tổng cộng</strong></td>
-			<td><strong>${data.grand_total.examination_count} Lượt</strong></td>
-			<td></td>
-			<td><strong>${data.grand_total.service_count} dịch vụ</strong></td>
-			<td>${renderMedicineSummary({
-			total: data.grand_total.total_medicine_items,
-			types: data.grand_total.medicine_count,
-				qty: data.grand_total.total_dispensed_qty
-		})}</td>
-			<td><strong>${formatMoney(data.grand_total.medicine_amount)}</strong></td>
-			<td><strong>${formatMoney(data.grand_total.service_amount)}</strong></td>
-			<td><strong>${formatMoney(data.grand_total.medicine_amount + data.grand_total.service_amount)}</strong></td>
-			<td></td>
-		`;
-		tbody.appendChild(totalRow);
-	}
+	if (data.grand_total) tbody.appendChild(buildGrandTotalRow(data.grand_total));
 
 	// Filter BS hiện tại
 	const selectedDoctorId = document.getElementById('doctorFilter')?.value;
@@ -43,32 +122,7 @@ function renderPrescriptionsTable(data) {
 	data.doctors.forEach(doctor => {
 		if (selectedDoctorId && String(doctor.doctor_id) !== selectedDoctorId) return;
 		const isExpanded = expandedDoctors.has(doctor.doctor_id);
-
-		// Doctor Header Row
-		const headerRow = document.createElement('tr');
-		headerRow.className = 'group-header row-doctor-header';
-		headerRow.onclick = function () { toggleDoctorGroup(doctor.doctor_id); };
-		headerRow.innerHTML = `
-			<td>
-				<div class="d-flex align-items-center">
-					<i class="bi bi-caret-${isExpanded ? 'down' : 'right'}-fill me-2" id="doctorIcon${doctor.doctor_id}"></i>
-					<strong>${doctor.doctor_name}</strong>
-				</div>
-			</td>
-			<td>${doctor.examination_count} Lượt</td>
-			<td></td>
-			<td>${doctor.service_count} dịch vụ</td>
-			<td>${renderMedicineSummary({
-			total: doctor.total_medicine_items,
-			types: doctor.medicine_count,
-			qty: doctor.total_dispensed_qty
-		})}</td>
-			<td><strong>${formatMoney(doctor.medicine_amount)}</strong></td>
-			<td><strong>${formatMoney(doctor.service_amount)}</strong></td>
-			<td><strong>${formatMoney(doctor.medicine_amount + doctor.service_amount)}</strong></td>
-			<td></td>
-		`;
-		tbody.appendChild(headerRow);
+		tbody.appendChild(buildDoctorHeaderRow(doctor, isExpanded));
 
 		// Build prescription map keyed by appointment_id for this doctor
 		const presMap = {};
@@ -78,57 +132,11 @@ function renderPrescriptionsTable(data) {
 
 		// Examination rows (lượt khám thật — bao gồm cả có và không có đơn thuốc)
 		(doctor.examinations || []).forEach(exam => {
-			const row = document.createElement('tr');
-			row.className = `prescription-row doctor-${doctor.doctor_id}`;
-			row.classList.toggle('medicine-stats-hidden', !isExpanded);
-
 			// Tìm prescription tương ứng (nếu có)
 			const pres = presMap[exam.appointment_id];
-
-			let medicineTd = '<td>-</td>';
-			let medicineAmtTd = '<td>-</td>';
-			let svcAmtTd = exam.service_amount ? `<td>${formatMoney(exam.service_amount)}</td>` : '<td>-</td>';
-			let totalAmtTd = exam.service_amount ? `<td>${formatMoney(exam.service_amount)}</td>` : '<td>-</td>';
-			let recheckTd = '<td>-</td>';
-
-			if (pres) {
-				row.dataset.prescription = pres.id;
-				medicineTd = `<td>
-					<span class="medicine-toggle" data-qlpk-call="toggleMedicineDetail" data-qlpk-args='[${pres.id}]'>
-						<span><i class="bi bi-caret-right-fill me-1" id="medIcon${pres.id}"></i><strong class="summary-qty">${pres.total_medicine_items}</strong> <small class="fw-semibold">Thuốc</small></span>
-						<span class="badge badge-type">${pres.medicine_count} Loại</span>
-					</span>
-					<div class="medicine-summary medicine-summary-nested"><strong class="summary-qty">${formatNumber(pres.total_dispensed_qty)}</strong> <small class="fw-semibold">viên</small></div>
-				</td>`;
-				const medAmt = pres.total_amount || 0;
-				const svcAmt = exam.service_amount || 0;
-				medicineAmtTd = `<td>${formatMoney(medAmt)}</td>`;
-				svcAmtTd = `<td>${formatMoney(svcAmt)}</td>`;
-				totalAmtTd = `<td><strong>${formatMoney(medAmt + svcAmt)}</strong></td>`;
-				recheckTd = `<td>${pres.recheck_date || '-'}</td>`;
-			}
-
-			row.innerHTML = `
-				<td>${exam.patient_name}</td>
-				<td>${exam.appointment_date}</td>
-				<td>${exam.appointment_time}</td>
-				<td>${exam.services || '-'}</td>
-				${medicineTd}
-				${medicineAmtTd}
-				${svcAmtTd}
-				${totalAmtTd}
-				${recheckTd}
-			`;
-			tbody.appendChild(row);
-
+			tbody.appendChild(buildExaminationRow(doctor, exam, pres, isExpanded));
 			// Medicine detail row (chỉ nếu có prescription)
-			if (pres) {
-				const detailRow = document.createElement('tr');
-				detailRow.className = 'medicine-detail-row medicine-stats-hidden';
-				detailRow.id = `medicine-detail-${pres.id}`;
-				detailRow.innerHTML = `<td colspan="9">${renderMedicineDetailTable(pres.medicines)}</td>`;
-				tbody.appendChild(detailRow);
-			}
+			if (pres) tbody.appendChild(buildMedicineDetailRow(pres));
 		});
 	});
 }

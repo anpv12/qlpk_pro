@@ -69,60 +69,29 @@
 		};
 	}
 
-	function create(options = {}) {
-		const RUNTIME = window.QLPKDoctorModuleRegistry.require('supportRuntime');
-		const sourceDocument = options.document || document;
-		const configuredRoot = options.root || (options.rootId ? `#${options.rootId}` : null);
-		const root = resolveRoot(configuredRoot, sourceDocument);
-		if (!root) return null;
-
-    const state = {
-      initialized: false,
-      eventsBound: false,
-      contextToken: 0,
-      suppressHistoryEmit: false,
-      isHydrating: false,
-      recoveryDirty: false,
-      manualDirty: false,
-      manualRevision: 0,
-      components: Object.create(null),
-      features: Object.create(null),
-      icdLookup: Object.create(null),
-      safetyPlan: { familyMembers: [] },
-      actions: Object.create(null),
-      cleanups: []
-    };
-    const MANUAL_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'manualRevision', dirtyKey: 'manualDirty' });
-
-		const config = buildMedicalHistoryConfig(options, root);
-
-    const component = {
-      root,
-      state,
-      config,
-      actions: state.actions,
-
+	function buildMedicalHistoryComponentMethods1(scope) {
+		return {
 			registerActions(actions) {
-				Object.assign(state.actions, actions || {});
+				Object.assign(scope.state.actions, actions || {});
 				Object.assign(actionBlueprint, actions || {});
 				return this;
 			},
 
 			registerFeature(name, feature) {
-				if (name) state.features = state.features || Object.create(null);
+				if (name) scope.state.features = scope.state.features || Object.create(null);
 				if (name) {
-					state.features[name] = feature;
+					scope.state.features[name] = feature;
 					featureBlueprint[name] = feature;
 				}
 				return this;
 			},
 
       getFeature(name) {
-        return state.features?.[name] || null;
+        return scope.state.features?.[name] || null;
       },
 
       getAction(name) {
-        return state.actions[name];
+        return scope.state.actions[name];
       },
 
 			callAction(name, ...args) {
@@ -138,17 +107,17 @@
 
       getElement(id) {
         if (!id) return null;
-        if (root.id === id) return root;
-        return root.querySelector(`#${id}`);
+        if (scope.root.id === id) return scope.root;
+        return scope.root.querySelector(`#${id}`);
       },
 
       query(selector) {
         if (!selector) return null;
-        return root.matches(selector) ? root : root.querySelector(selector);
+        return scope.root.matches(selector) ? scope.root : scope.root.querySelector(selector);
       },
 
       queryAll(selector) {
-        return selector ? Array.from(root.querySelectorAll(selector)) : [];
+        return selector ? Array.from(scope.root.querySelectorAll(selector)) : [];
       },
 
       setElementValue(id, value) {
@@ -164,12 +133,16 @@
 					return handler(event);
 				};
 				target.addEventListener(eventName, scopedHandler, options);
-				state.cleanups.push(() => target.removeEventListener(eventName, scopedHandler, options));
+				scope.state.cleanups.push(() => target.removeEventListener(eventName, scopedHandler, options));
 				return true;
-			},
+			}
+		};
+	}
 
-		isLoading() {
-				return Boolean(config.isLoading?.() || state.isHydrating);
+	function buildMedicalHistoryComponentMethods2(scope) {
+		return {
+			isLoading() {
+				return Boolean(scope.config.isLoading?.() || scope.state.isHydrating);
       },
 
       textValue(value) {
@@ -178,20 +151,20 @@
       },
 
       markDirty() {
-        if (this.isLoading() || state.suppressHistoryEmit) return false;
-        MANUAL_CHANGES.mark();
+        if (this.isLoading() || scope.state.suppressHistoryEmit) return false;
+        scope.MANUAL_CHANGES.mark();
         return true;
       },
 
       emitChange(fieldId, apiFieldName, value) {
         this.markDirty();
-        if (typeof config.onDataChanged === 'function') {
-          config.onDataChanged({ fieldId, apiFieldName, value, component: this });
+        if (typeof scope.config.onDataChanged === 'function') {
+          scope.config.onDataChanged({ fieldId, apiFieldName, value, component: this });
         }
       },
 
       init() {
-        if (state.initialized) return true;
+        if (scope.state.initialized) return true;
         this.bind();
         this.callAction('ensureSelectedICDs');
         this.callAction('setupICDMultiSelect', 'physHistory', 'physHistory');
@@ -199,27 +172,31 @@
         this.callAction('bindHistoryFreeTextInputs');
         this.callAction('bindSubstanceUseFields');
         this.callAction('bindEvents');
-        state.initialized = true;
+        scope.state.initialized = true;
         return true;
       },
 
       bind() {
-        if (state.eventsBound) return true;
-        state.eventsBound = true;
+        if (scope.state.eventsBound) return true;
+        scope.state.eventsBound = true;
         return true;
-      },
+      }
+		};
+	}
 
-      clear() {
-        state.contextToken += 1;
-        state.isHydrating = false;
-        state.recoveryDirty = false;
-        MANUAL_CHANGES.reset();
+	function buildMedicalHistoryComponentMethods3(scope) {
+		return {
+			clear() {
+        scope.state.contextToken += 1;
+        scope.state.isHydrating = false;
+        scope.state.recoveryDirty = false;
+        scope.MANUAL_CHANGES.reset();
         this.callAction('clearMedicalHistoryTimers');
 
-        state.suppressHistoryEmit = true;
-        config.historyModes.forEach(mode => {
+        scope.state.suppressHistoryEmit = true;
+        scope.config.historyModes.forEach(mode => {
           this.callAction('clearSelectedICD', mode);
-          const modeConfig = config.modeConfig[mode];
+          const modeConfig = scope.config.modeConfig[mode];
           this.setElementValue(modeConfig?.textInputId, '');
           this.setElementValue(modeConfig?.hiddenId, '');
           this.callAction('updateSelectedICDTags', mode);
@@ -229,24 +206,28 @@
         this.callAction('resetRiskAssess');
         this.callAction('updateRiskWarningBadge');
         this.callAction('populatePrevRiskBadge', {});
-        state.suppressHistoryEmit = false;
+        scope.state.suppressHistoryEmit = false;
         this.callAction('resetPlan');
-        state.safetyPlan.familyMembers = [];
+        scope.state.safetyPlan.familyMembers = [];
         this.callAction('resetSubstanceUseFields');
 
         const allTab = this.getElement('drugAllergyTabs')?.querySelector('[data-allergy-tab="all"]');
         this.callAction('switchAllergyTab', 'all', allTab);
         this.callAction('activateWorkbenchTarget', 'personal');
         return true;
-      },
+      }
+		};
+	}
 
-      async populate(data = {}) {
-        const token = state.contextToken + 1;
-        state.contextToken = token;
-        const isCurrentLoad = () => token === state.contextToken;
-        state.isHydrating = true;
-        state.recoveryDirty = false;
-        MANUAL_CHANGES.reset();
+	function buildMedicalHistoryComponentMethods4(scope) {
+		return {
+			async populate(data = {}) {
+        const token = scope.state.contextToken + 1;
+        scope.state.contextToken = token;
+        const isCurrentLoad = () => token === scope.state.contextToken;
+        scope.state.isHydrating = true;
+        scope.state.recoveryDirty = false;
+        scope.MANUAL_CHANGES.reset();
         const values = normalizeHistoryPopulateData(data);
         try {
           await this.callAction('restoreSelectedHistory', values.physicalHistory, 'physHistory', { isCurrentLoad });
@@ -282,15 +263,15 @@
           this.callAction('updateWorkbenchSummary');
           return true;
         } finally {
-          if (isCurrentLoad()) state.isHydrating = false;
+          if (isCurrentLoad()) scope.state.isHydrating = false;
         }
       },
 
       collect() {
         this.callAction('serializeBanThan');
         this.callAction('serializeGiaDinh');
-        const physicalConfig = config.modeConfig.physHistory;
-        const familyConfig = config.modeConfig.famHistory;
+        const physicalConfig = scope.config.modeConfig.physHistory;
+        const familyConfig = scope.config.modeConfig.famHistory;
         return {
           physicalHistory: this.parseHistoryEntries(this.getElement(physicalConfig.hiddenId)?.value),
           familyHistory: this.parseHistoryEntries(this.getElement(familyConfig.hiddenId)?.value),
@@ -299,9 +280,13 @@
           substanceUseHistory: this.callAction('collectSubstanceUseHistory') || {},
           safetyPlan: this.callAction('collectPlan') || {}
         };
-      },
+      }
+		};
+	}
 
-      getSavePayload() {
+	function buildMedicalHistoryComponentMethods5(scope) {
+		return {
+			getSavePayload() {
         const snapshot = this.collect();
         return {
           physical_history: snapshot.physicalHistory,
@@ -314,18 +299,18 @@
       },
 
       hasPendingChanges() {
-        return Boolean(state.recoveryDirty || state.manualDirty);
+        return Boolean(scope.state.recoveryDirty || scope.state.manualDirty);
       },
 
       markSaved(revision) {
-        if (!MANUAL_CHANGES.settle(revision)) return false;
+        if (!scope.MANUAL_CHANGES.settle(revision)) return false;
         this.callAction('clearMedicalHistoryTimers');
-        state.recoveryDirty = false;
+        scope.state.recoveryDirty = false;
         return true;
       },
 
       getSaveRevision() {
-        return MANUAL_CHANGES.capture();
+        return scope.MANUAL_CHANGES.capture();
       },
 
       parseHistoryEntries(value) {
@@ -341,13 +326,17 @@
 
       getDraftSnapshot() {
         return this.collect();
-      },
+      }
+		};
+	}
 
-      async restoreDraftSnapshot(snapshot = {}, options = {}) {
-        const token = state.contextToken;
-        const isCurrentLoad = () => token === state.contextToken;
-        state.isHydrating = true;
-        state.suppressHistoryEmit = true;
+	function buildMedicalHistoryComponentMethods6(scope) {
+		return {
+			async restoreDraftSnapshot(snapshot = {}, options = {}) {
+        const token = scope.state.contextToken;
+        const isCurrentLoad = () => token === scope.state.contextToken;
+        scope.state.isHydrating = true;
+        scope.state.suppressHistoryEmit = true;
         this.callAction('clearMedicalHistoryTimers');
         try {
           await this.callAction('restoreSelectedHistory', snapshot.physicalHistory || [], 'physHistory', { isCurrentLoad });
@@ -359,49 +348,92 @@
           this.callAction('populateSubstanceUseFields', snapshot.substanceUseHistory || {});
           this.callAction('populatePlan', snapshot.safetyPlan || {});
           this.callAction('restoreSafetyPlanSupporters', snapshot.safetyPlan || {});
-          state.recoveryDirty = Boolean(options.dirty);
-          MANUAL_CHANGES.restore(options.dirty);
-          if (state.recoveryDirty) {
-            root.classList.add('is-draft-restored');
-            root.dataset.draftRestored = 'true';
-            root.title = 'Tiền sử này được khôi phục từ bản nháp và chưa lưu.';
+          scope.state.recoveryDirty = Boolean(options.dirty);
+          scope.MANUAL_CHANGES.restore(options.dirty);
+          if (scope.state.recoveryDirty) {
+            scope.root.classList.add('is-draft-restored');
+            scope.root.dataset.draftRestored = 'true';
+            scope.root.title = 'Tiền sử này được khôi phục từ bản nháp và chưa lưu.';
           }
           return true;
         } finally {
           if (isCurrentLoad()) {
-            state.suppressHistoryEmit = false;
-            state.isHydrating = false;
+            scope.state.suppressHistoryEmit = false;
+            scope.state.isHydrating = false;
           }
         }
       },
 
       getContextToken() {
-        return state.contextToken;
+        return scope.state.contextToken;
       },
 
 			getConfig() {
         return {
-          ...config,
-          modeConfig: { ...config.modeConfig },
-          historyModes: config.historyModes.slice(),
-					substanceIds: config.substanceIds.slice()
+          ...scope.config,
+          modeConfig: { ...scope.config.modeConfig },
+          historyModes: scope.config.historyModes.slice(),
+					substanceIds: scope.config.substanceIds.slice()
 				};
       },
 
       destroy() {
         this.callAction('clearMedicalHistoryTimers');
-        Object.values(state.components).forEach(feature => feature?.destroy?.());
-        state.cleanups.splice(0).forEach(cleanup => cleanup());
-        state.actions = Object.create(null);
-        this.actions = state.actions;
-        state.components = Object.create(null);
-        state.features = Object.create(null);
-        state.eventsBoundByFeature = false;
-        state.initialized = false;
-        state.eventsBound = false;
+        Object.values(scope.state.components).forEach(feature => feature?.destroy?.());
+        scope.state.cleanups.splice(0).forEach(cleanup => cleanup());
+        scope.state.actions = Object.create(null);
+        this.actions = scope.state.actions;
+        scope.state.components = Object.create(null);
+        scope.state.features = Object.create(null);
+        scope.state.eventsBoundByFeature = false;
+        scope.state.initialized = false;
+        scope.state.eventsBound = false;
 			if (activeInstance === this) activeInstance = null;
-				instances.delete(root);
+				instances.delete(scope.root);
 			}
+		};
+	}
+
+	function create(options = {}) {
+		const RUNTIME = window.QLPKDoctorModuleRegistry.require('supportRuntime');
+		const sourceDocument = options.document || document;
+		const configuredRoot = options.root || (options.rootId ? `#${options.rootId}` : null);
+		const root = resolveRoot(configuredRoot, sourceDocument);
+		if (!root) return null;
+
+    const state = {
+      initialized: false,
+      eventsBound: false,
+      contextToken: 0,
+      suppressHistoryEmit: false,
+      isHydrating: false,
+      recoveryDirty: false,
+      manualDirty: false,
+      manualRevision: 0,
+      components: Object.create(null),
+      features: Object.create(null),
+      icdLookup: Object.create(null),
+      safetyPlan: { familyMembers: [] },
+      actions: Object.create(null),
+      cleanups: []
+    };
+    const MANUAL_CHANGES = RUNTIME.createChangeTracker(state, { revisionKey: 'manualRevision', dirtyKey: 'manualDirty' });
+
+		const config = buildMedicalHistoryConfig(options, root);
+
+    const componentScope = { root, state, MANUAL_CHANGES, config };
+    const component = {
+      root,
+      state,
+      config,
+      actions: state.actions,
+
+			...buildMedicalHistoryComponentMethods1(componentScope),
+			...buildMedicalHistoryComponentMethods2(componentScope),
+			...buildMedicalHistoryComponentMethods3(componentScope),
+			...buildMedicalHistoryComponentMethods4(componentScope),
+			...buildMedicalHistoryComponentMethods5(componentScope),
+			...buildMedicalHistoryComponentMethods6(componentScope)
 			};
 
 		if (options.inheritBlueprint !== false) {

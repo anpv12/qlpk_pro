@@ -83,19 +83,8 @@ function loadExaminationDetailModal(paymentId) {
 	});
 }
 
-function buildExaminationDetailContentHtml(viewModel) {
-	const {
-		safeExaminationDate,
-		safeDoctorName,
-		safeExaminationTime,
-		safePatientName,
-		safePatientGender,
-		safePatientPhone,
-		safePatientBirthDate,
-		examinationType
-	} = viewModel;
+function buildExaminationVisitSectionHtml({ safeExaminationDate, safeDoctorName, safeExaminationTime, examinationType }) {
 	return `
-        <div id="invoiceDetailForm">
             <!-- Section I: Thông tin ca khám -->
             <div class="mb-3">
                 <h5 class="section-title">I. Thông tin ca khám</h5>
@@ -123,7 +112,11 @@ function buildExaminationDetailContentHtml(viewModel) {
                     </div>
                 </div>
             </div>
+	`;
+}
 
+function buildExaminationPatientSectionHtml({ safePatientName, safePatientGender, safePatientPhone, safePatientBirthDate }) {
+	return `
             <!-- Section II: Thông tin bệnh nhân -->
             <div class="mb-3">
                 <h5 class="section-title">II. Thông tin bệnh nhân</h5>
@@ -152,7 +145,10 @@ function buildExaminationDetailContentHtml(viewModel) {
                     </div>
                 </div>
             </div>
+	`;
+}
 
+const EXAMINATION_DETAIL_STATIC_SECTIONS_HTML = `
             <!-- Section III: Các dịch vụ đã sử dụng -->
             <div class="mb-3">
                 <h5 class="section-title">III. Các dịch vụ đã sử dụng</h5>
@@ -234,6 +230,14 @@ function buildExaminationDetailContentHtml(viewModel) {
                 <div class="pw-financial-row">Số tiền trả: <input type="text" id="amountPaid" class="form-control form-control-sm money-input pw-money-input" placeholder="0"></div>
                 <div class="pw-financial-row">Tiền thối: <span id="changeAmount" class="pw-financial-value">0 ₫</span></div>
             </div>
+	`;
+
+function buildExaminationDetailContentHtml(viewModel) {
+	return `
+        <div id="invoiceDetailForm">
+		${buildExaminationVisitSectionHtml(viewModel)}
+		${buildExaminationPatientSectionHtml(viewModel)}
+		${EXAMINATION_DETAIL_STATIC_SECTIONS_HTML}
         </div>
     `;
 }

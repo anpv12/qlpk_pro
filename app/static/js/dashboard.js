@@ -3,6 +3,114 @@
  * Dashboard V2 — Lượt khám / Lịch hẹn / Top ICD
  */
 
+const EXAM_STATS_DOCTOR_COLOR = '#0F766E';
+const EXAM_STATS_PSYCH_COLOR = '#E91E90';
+
+function formatExamStatsTooltip(params) {
+	let html = `<strong>${params[0].name}</strong><br/>`;
+	let dayTotal = 0;
+	params.forEach(p => {
+		html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
+		dayTotal += p.value;
+	});
+	html += `<b>Tổng: ${dayTotal}</b>`;
+	return html;
+}
+
+function buildExamStatsLineSeries(name, data, color, areaRgb, areaTopAlpha) {
+	return {
+		name,
+		type: 'line',
+		data,
+		smooth: 0.4,
+		symbol: 'circle',
+		symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...data) ? 8 : 5; },
+		lineStyle: { color, width: 2.5 },
+		itemStyle: { color, borderColor: '#fff', borderWidth: 2 },
+		areaStyle: {
+			color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+				colorStops: [
+					{ offset: 0, color: `rgba(${areaRgb},${areaTopAlpha})` },
+					{ offset: 1, color: `rgba(${areaRgb},0.02)` }
+				]
+			}
+		},
+		label: {
+			show: true,
+			position: 'top',
+			formatter: p => p.value > 0 ? p.value : '',
+			fontSize: 10, color
+		},
+		animationDuration: 800,
+		animationEasing: 'cubicOut'
+	};
+}
+
+function buildExamStatsChartOption({ labels, doctorCounts, psychCounts, total }) {
+	return {
+		tooltip: { trigger: 'axis', confine: true, formatter: formatExamStatsTooltip },
+		legend: {
+			show: true,
+			top: 4,
+			left: 'center',
+			textStyle: { fontSize: 11 },
+			data: ['Bác sĩ', 'Tâm lý gia']
+		},
+		graphic: [{
+			type: 'text', right: 16, top: 8,
+			style: {
+				text: `Tổng: ${total} lượt`,
+				font: 'bold 12px sans-serif',
+				fill: '#0F766E'
+			}
+		}],
+		grid: { left: 42, right: 16, top: 42, bottom: 28 },
+		xAxis: {
+			type: 'category', data: labels,
+			axisLabel: { fontSize: 11, color: '#64748B', interval: Math.floor(labels.length / 15) },
+			axisTick: { show: false },
+			axisLine: { lineStyle: { color: '#E5E7EB' } }
+		},
+		yAxis: {
+			type: 'value', minInterval: 1,
+			axisLabel: { fontSize: 11, color: '#94A3B8' },
+			splitLine: { lineStyle: { color: '#F1F5F9' } }
+		},
+		series: [
+			buildExamStatsLineSeries('Bác sĩ', doctorCounts, EXAM_STATS_DOCTOR_COLOR, '15,118,110', '0.22'),
+			buildExamStatsLineSeries('Tâm lý gia', psychCounts, EXAM_STATS_PSYCH_COLOR, '233,30,144', '0.18')
+		]
+	};
+}
+
+function bindExamStatsChartInteractions(chart, { items, totalDoctor, totalPsych, onDayClick }) {
+	// Cập nhật tổng khi toggle legend
+	chart.on('legendselectchanged', (params) => {
+		const sel = params.selected;
+		let filteredTotal = 0;
+		if (sel['Bác sĩ']) filteredTotal += totalDoctor;
+		if (sel['Tâm lý gia']) filteredTotal += totalPsych;
+		chart.setOption({
+			graphic: [{ style: { text: `Tổng: ${filteredTotal} lượt` } }]
+		});
+	});
+
+	// Click vào vùng grid → show chi tiết ngày
+	chart.getZr().on('click', (event) => {
+		const pt = [event.offsetX, event.offsetY];
+		if (!chart.containPixel('grid', pt)) return;
+		const idx = Math.round(chart.convertFromPixel('grid', pt)[0]);
+		if (idx >= 0 && idx < items.length) onDayClick(items[idx]);
+	});
+
+	// Cursor pointer khi vào vùng grid
+	chart.getZr().on('mousemove', (event) => {
+		const pt = [event.offsetX, event.offsetY];
+		const inGrid = chart.containPixel('grid', pt);
+		chart.getZr().setCursorStyle(inGrid ? 'pointer' : 'default');
+	});
+}
+
 function formatAppointmentCountdown(diffMinutes) {
 	if (!(diffMinutes > 0)) return '';
 	if (diffMinutes < 60) return `Còn ${diffMinutes} phút`;
@@ -223,138 +331,20 @@ class DashboardManager {
 		const totalPsych = psychCounts.reduce((s, v) => s + v, 0);
 		const total = totalDoctor + totalPsych;
 
-		const DOCTOR_COLOR = '#0F766E';
-		const PSYCH_COLOR = '#E91E90';
-
 		const chart = echarts.init(dom);
 		this.examStatsChart = chart;
 
-		chart.setOption({
-			tooltip: {
-				trigger: 'axis',
-				confine: true,
-				formatter: params => {
-					let html = `<strong>${params[0].name}</strong><br/>`;
-					let dayTotal = 0;
-					params.forEach(p => {
-						html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
-						dayTotal += p.value;
-					});
-					html += `<b>Tổng: ${dayTotal}</b>`;
-					return html;
-				}
-			},
-			legend: {
-				show: true,
-				top: 4,
-				left: 'center',
-				textStyle: { fontSize: 11 },
-				data: ['Bác sĩ', 'Tâm lý gia']
-			},
-			graphic: [{
-				type: 'text', right: 16, top: 8,
-				style: {
-					text: `Tổng: ${total} lượt`,
-					font: 'bold 12px sans-serif',
-					fill: '#0F766E'
-				}
-			}],
-			grid: { left: 42, right: 16, top: 42, bottom: 28 },
-			xAxis: {
-				type: 'category', data: labels,
-				axisLabel: { fontSize: 11, color: '#64748B', interval: Math.floor(labels.length / 15) },
-				axisTick: { show: false },
-				axisLine: { lineStyle: { color: '#E5E7EB' } }
-			},
-			yAxis: {
-				type: 'value', minInterval: 1,
-				axisLabel: { fontSize: 11, color: '#94A3B8' },
-				splitLine: { lineStyle: { color: '#F1F5F9' } }
-			},
-			series: [{
-				name: 'Bác sĩ',
-				type: 'line',
-				data: doctorCounts,
-				smooth: 0.4,
-				symbol: 'circle',
-				symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...doctorCounts) ? 8 : 5; },
-				lineStyle: { color: DOCTOR_COLOR, width: 2.5 },
-				itemStyle: { color: DOCTOR_COLOR, borderColor: '#fff', borderWidth: 2 },
-				areaStyle: {
-					color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-						colorStops: [
-							{ offset: 0, color: 'rgba(15,118,110,0.22)' },
-							{ offset: 1, color: 'rgba(15,118,110,0.02)' }
-						]
-					}
-				},
-				label: {
-					show: true,
-					position: 'top',
-					formatter: p => p.value > 0 ? p.value : '',
-					fontSize: 10, color: DOCTOR_COLOR
-				},
-				animationDuration: 800,
-				animationEasing: 'cubicOut'
-			}, {
-				name: 'Tâm lý gia',
-				type: 'line',
-				data: psychCounts,
-				smooth: 0.4,
-				symbol: 'circle',
-				symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...psychCounts) ? 8 : 5; },
-				lineStyle: { color: PSYCH_COLOR, width: 2.5 },
-				itemStyle: { color: PSYCH_COLOR, borderColor: '#fff', borderWidth: 2 },
-				areaStyle: {
-					color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-						colorStops: [
-							{ offset: 0, color: 'rgba(233,30,144,0.18)' },
-							{ offset: 1, color: 'rgba(233,30,144,0.02)' }
-						]
-					}
-				},
-				label: {
-					show: true,
-					position: 'top',
-					formatter: p => p.value > 0 ? p.value : '',
-					fontSize: 10, color: PSYCH_COLOR
-				},
-				animationDuration: 800,
-				animationEasing: 'cubicOut'
-			}]
-		});
+		chart.setOption(buildExamStatsChartOption({ labels, doctorCounts, psychCounts, total }));
 
 		window.addEventListener('resize', () => chart.resize());
-
-		// Cập nhật tổng khi toggle legend
-		chart.on('legendselectchanged', (params) => {
-			const sel = params.selected;
-			let filteredTotal = 0;
-			if (sel['Bác sĩ']) filteredTotal += totalDoctor;
-			if (sel['Tâm lý gia']) filteredTotal += totalPsych;
-			chart.setOption({
-				graphic: [{ style: { text: `Tổng: ${filteredTotal} lượt` } }]
-			});
-		});
-
-		// Click vào vùng grid → show chi tiết ngày
-		chart.getZr().on('click', (event) => {
-			const pt = [event.offsetX, event.offsetY];
-			if (!chart.containPixel('grid', pt)) return;
-			const idx = Math.round(chart.convertFromPixel('grid', pt)[0]);
-			if (idx >= 0 && idx < items.length) {
-				const item = items[idx];
-				this.showExamDetail(item.date, item.label, item.count);
-			}
-		});
-
-		// Cursor pointer khi vào vùng grid
-		chart.getZr().on('mousemove', (event) => {
-			const pt = [event.offsetX, event.offsetY];
-			const inGrid = chart.containPixel('grid', pt);
-			chart.getZr().setCursorStyle(inGrid ? 'pointer' : 'default');
+		bindExamStatsChartInteractions(chart, {
+			items,
+			totalDoctor,
+			totalPsych,
+			onDayClick: item => this.showExamDetail(item.date, item.label, item.count)
 		});
 	}
+
 
 	async showExamDetail(dateISO, dateLabel, count) {
 		const modalEl = document.getElementById('examDetailModal');
