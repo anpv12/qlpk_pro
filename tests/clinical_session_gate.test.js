@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 const runtimeFiles = [
     ['components/page-core-utils.js', 'ClinicalPageCoreUtils'],
@@ -28,7 +29,7 @@ function harness({ cookie = true, token = 'stale-token' } = {}) {
     };
     const context = vm.createContext({ window, document: window.document, Headers, URL, AbortController, console });
     for (const file of ['shared/api-transport.js', 'shared/browser-session.js', 'shared/browser-session-actions.js', ...runtimeFiles.map(item => item[0])]) {
-        vm.runInContext(fs.readFileSync(`app/static/js/${file}`, 'utf8'), context);
+        runScriptFile(`app/static/js/${file}`, context);
     }
     const transport = window.QLPKApiTransport;
     const binding = cookie ? transport.useCookieSession() : null;
@@ -131,8 +132,8 @@ test('legacy alias/storage fallback và thiếu credential dùng cùng một own
 });
 
 test('các entry page await gate, không dùng Promise như boolean', () => {
-    const doctor = fs.readFileSync('app/static/js/doctor-examination.js', 'utf8');
-    const receptionist = fs.readFileSync('app/static/js/receptionist-new.js', 'utf8');
+    const doctor = readScriptSource('app/static/js/doctor-examination.js');
+    const receptionist = readScriptSource('app/static/js/receptionist-new.js');
     const psychologist = fs.readFileSync('app/static/js/psychologist-examination.js', 'utf8');
     assert.match(doctor, /DOMContentLoaded', async \(\) => \{\s*if \(!await ensureSession\(\)\) return;/);
     assert.match(doctor, /async function loadAppointments[\s\S]*?if \(!await ensureSession\(\)\) return null;/);

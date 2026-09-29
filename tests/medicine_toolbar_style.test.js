@@ -3,16 +3,17 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
 
 test('stock receipt count uses the user-approved brand badge rather than neutral action styling', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const badge = source.match(/<button[^>]*class="badge stock-detail-badge"[^>]*>/)?.[0];
     assert.ok(badge);
     assert.doesNotMatch(badge, /data-qlpk-button/);
-    assert.match(badge, /onclick="showStockDetail/);
+    assert.match(badge, /data-qlpk-call="showStockDetail" data-qlpk-args='\[\$\{medicine\.id\}\]'/);
     assert.match(css, /\.badge\.stock-detail-badge[^{}]*\{\s*background: var\(--qlpk-workflow-context-header-bg\)/);
 });
 

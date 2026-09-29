@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/receptionist-new.js'), 'utf8');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const source = readScriptSource(path.join(__dirname, '../app/static/js/receptionist-new.js'));
 
 function deferred() {
   let resolve;
@@ -43,7 +44,7 @@ function harness() {
       ReceptionistPatientRelativesTable: { syncPatient() {} }
     }
   });
-  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'loadPatientMedicalData', 'savePatientDataInternal', 'saveAddressToServerIfEditing', 'resetFormToDefault']) {
+  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'saveAddressToServerIfEditing', 'resetFormToDefault']) {
     const ending = name === 'resetFormToDefault' ? '\\n\\t\\}' : '\\n\\}';
     const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?${ending}`));
     if (match) vm.runInContext(match[0], context);

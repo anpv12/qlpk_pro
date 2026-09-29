@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function harness(cookie = true) {
     const data = new Map([
@@ -26,7 +27,7 @@ function harness(cookie = true) {
     const context = vm.createContext({ window, document, URL, localStorage: {
         getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key)
     } });
-    vm.runInContext(fs.readFileSync('app/static/js/app-shell/workspace-tabs.js', 'utf8'), context);
+    runScriptFile('app/static/js/app-shell/workspace-tabs.js', context);
     return { shell: window.QLPKWorkspaceShell, data, window,
         change(status = 'authenticated', id = 8) { current = { revision: current.revision + 1, status, session: status === 'authenticated' ? { user: { id, role: 'doctor', permissions: [] } } : null }; },
         finishLeave: () => leave(true)

@@ -5,12 +5,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/components/document-section-ui-utils.js'), 'utf8');
+const SOURCE_FILE = path.join(__dirname, '../app/static/js/components/document-section-ui-utils.js');
 
 function createHarness(items, uploadFile) {
   const window = {};
-  vm.runInNewContext(source, { window, console });
+  runScriptFile(SOURCE_FILE, vm.createContext({ window, console }));
   let documents = items;
   const cache = new Map([['draft', JSON.stringify(items.map(({ file, ...metadata }) => metadata))]]);
   let refreshes = 0;

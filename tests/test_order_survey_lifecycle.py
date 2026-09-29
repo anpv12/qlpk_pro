@@ -15,6 +15,7 @@ from app.models.survey_response import SurveyResponse
 from app.models.user import User
 from app.modules.orders.services.survey_lifecycle import submit_order_survey, finish_order_survey, expire_due_order_surveys, SurveyLifecycleError
 from app.modules.orders.services.clinical_order_mutation import _apply_prepared_chi_dinh_payload, update_chi_dinh_fields, InvalidChiDinhPayload
+from module_parts import setattr_all
 
 pytestmark = pytest.mark.skipif(os.environ.get('QLPK_RUN_DB_TESTS') != '1', reason='Opt-in PostgreSQL rollback tests')
 
@@ -209,10 +210,10 @@ def test_generate_validates_template_and_only_repairs_empty_snapshots(case, monk
             yield child
         finally:
             child.close()
-    monkeypatch.setattr(api, 'get_db', scoped_db)
+    setattr_all(monkeypatch,api, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: admin)
-    monkeypatch.setattr(api, 'emit_order_changed', lambda *args, **kwargs: None)
-    monkeypatch.setattr(api, 'emit_survey_changed', lambda *args, **kwargs: None)
+    setattr_all(monkeypatch,api, 'emit_order_changed', lambda *args, **kwargs: None)
+    setattr_all(monkeypatch,api, 'emit_survey_changed', lambda *args, **kwargs: None)
     app = Flask(__name__)
     app.register_blueprint(api.survey_sessions, url_prefix='/api')
     result = app.test_client().post('/api/survey-sessions/generate', headers={'Authorization': 'Bearer QA'}, json={
@@ -326,7 +327,7 @@ def test_http_submit_failure_rolls_back_and_reader_does_not_write(case,monkeypat
         finally: child.close()
     for module in (responses,sessions,orders_api): monkeypatch.setattr(module,'get_db',scoped_db)
     monkeypatch.setattr(auth,'get_current_user',lambda token:admin)
-    monkeypatch.setattr(sessions,'_emit_survey_completion_notifications',lambda *args:None)
+    setattr_all(monkeypatch,sessions,'_emit_survey_completion_notifications',lambda *args:None)
     app=Flask(__name__)
     app.register_blueprint(responses.survey_responses_router,url_prefix='/api')
     app.register_blueprint(sessions.survey_sessions,url_prefix='/api')
@@ -447,10 +448,10 @@ def test_session_status_restores_link_and_qr_without_generation_cache(case, monk
             yield child
         finally:
             child.close()
-    monkeypatch.setattr(sessions, 'get_db', scoped_db)
+    setattr_all(monkeypatch,sessions, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: admin)
-    monkeypatch.setattr(sessions, 'emit_order_changed', lambda *args, **kwargs: None)
-    monkeypatch.setattr(sessions, 'emit_survey_changed', lambda *args, **kwargs: None)
+    setattr_all(monkeypatch,sessions, 'emit_order_changed', lambda *args, **kwargs: None)
+    setattr_all(monkeypatch,sessions, 'emit_survey_changed', lambda *args, **kwargs: None)
     app = Flask(__name__)
     app.register_blueprint(sessions.survey_sessions, url_prefix='/api')
     client = app.test_client()

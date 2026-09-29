@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 from app.api import medicine
 from app.models.medicine import Medicine
 from app.models.prescription import PrescriptionItem
+from module_parts import setattr_all
 
 
 def batch(identifier, imported, price, **extra):
@@ -56,7 +57,7 @@ def test_inventory_report_preserves_fractional_stock_and_latest_price(monkeypatc
         return result
 
     database.query.side_effect = query
-    monkeypatch.setattr(medicine, 'get_db', lambda: iter([database]))
+    setattr_all(monkeypatch,medicine, 'get_db', lambda: iter([database]))
     application = Flask(__name__)
     with application.test_request_context('/'):
         if excel:

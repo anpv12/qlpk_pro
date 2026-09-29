@@ -16,14 +16,15 @@ from app.services import google_calendar_service as google
 from test_calendar_transfer_jobs import calendar_db
 from test_transfer_access_safety import transfer_db, actor
 from test_account_session_lifecycle import isolated_postgres, wait_for_database_lock
+from module_parts import setattr_all
 
 
 @pytest.fixture
 def calendar_api(calendar_db, monkeypatch):
     state = calendar_db
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
     state.emitted = MagicMock()
-    monkeypatch.setattr(api, 'emit_appointment_changed', state.emitted)
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', state.emitted)
     state.verify = MagicMock(return_value=True)
     state.create = MagicMock(return_value='qa-created')
     monkeypatch.setattr(google.GoogleCalendarService, 'verify_event', state.verify)
@@ -209,7 +210,7 @@ def test_bulk_delete_rechecks_ownership_when_transfer_commits(calendar_api, monk
         process_ids.append(database.execute(text('SELECT pg_backend_pid()')).scalar())
         ready.set()
         return iter([database])
-    monkeypatch.setattr(api, 'get_db', get_database)
+    setattr_all(monkeypatch,api, 'get_db', get_database)
     client = MagicMock()
     monkeypatch.setattr('googleapiclient.discovery.build', lambda *args, **kwargs: client)
     with state.factory() as first, ThreadPoolExecutor(max_workers=1) as pool:

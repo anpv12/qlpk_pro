@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function deferred() {
   let resolve;
@@ -17,7 +18,7 @@ function harness() {
   const container = { querySelector: () => null };
   const document = { querySelector: () => container };
   const window = { QLPKUserFeedback: { show: (...args) => messages.push(args) }, QLPKConfirmationDialog: { confirm: () => confirmation.promise } };
-  vm.runInNewContext(fs.readFileSync('app/static/js/relative-table.js', 'utf8'), { window, document, console });
+  runScriptFile('app/static/js/relative-table.js', vm.createContext({ window, document, console }));
   const table = window.RelativeTableManager.init('#relatives', { patientId: 10 });
   const requests = [];
   const rendered = [];

@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function setup() {
     const listeners = {}, requests = [], navigations = [];
@@ -21,7 +22,7 @@ function setup() {
         localStorage: { getItem: () => '{"id":99,"role":"admin"}' },
         fetch: (url, options) => { requests.push({ url, options }); return new Promise(accept => { resolve = accept; }); }
     });
-    vm.runInContext(fs.readFileSync('app/static/js/shortcut-manager.js', 'utf8'), context);
+    runScriptFile('app/static/js/shortcut-manager.js', context);
     return { window, listeners, requests, navigations,
         respond: () => resolve({ ok: true, json: async () => [{ combo_key: 'Ctrl+K', target_url: '/doctor-examination.html', is_active: true }] }),
         change: () => { current = { status: 'changed', revision: 2, session: null }; subscriber(current); },
@@ -67,6 +68,6 @@ test('logout clears keyboard shortcuts even before server owner invalidation', a
 });
 
 test('shortcut owner no longer parses or attaches bearer credentials', () => {
-    const source = fs.readFileSync('app/static/js/shortcut-manager.js', 'utf8');
+    const source = readScriptSource('app/static/js/shortcut-manager.js');
     assert.doesNotMatch(source, /getAuthHeader|Authorization|Bearer |localStorage\.getItem\('(?:qlpk_token|token)'\)/);
 });

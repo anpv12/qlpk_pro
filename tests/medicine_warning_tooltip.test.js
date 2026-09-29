@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+const source = readMedicineManagementSource();
 
 function setup() {
     const badges = [], instances = new Map(), events = [], created = [];

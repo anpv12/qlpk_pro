@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync('app/static/js/patient-survey.js', 'utf8');
+const source = require('./helpers/page-script-source').readPageScripts('patient-survey.html', ['patient-survey.js', 'patient-survey/']);
 const start = source.indexOf('function hasSurveyAnswer(');
 const end = source.indexOf('// Handle grid question response', start);
 const context = vm.createContext({});

@@ -15,11 +15,14 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from module_source import read_source  # noqa: E402
 APP = ROOT / "app"
 
 
 def read(relative_path: str) -> str:
-    return (ROOT / relative_path).read_text(encoding="utf-8")
+    """File text; split JS modules include their parts (plain form, see scripts/module_source.py)."""
+    return read_source(ROOT / relative_path)
 
 
 def run_script(relative_path: str, *args: str) -> subprocess.CompletedProcess[str]:
@@ -124,13 +127,20 @@ def test_survey_order_performer_and_source_contract() -> None:
     assert "doctor-indications-source-badge" not in read("app/static/css/pages/doctor-indications.css")
 
 
+
+def read_order_management() -> str:
+    """Order page JS: entry plus classic slices, in template load order."""
+    template = read("app/templates/order-management.html")
+    scripts = re.findall(r'<script src="/static/js/((?:order-management|orders/order-management-[\w-]+)\.js)', template)
+    return "\n".join(read(f"app/static/js/{script}") for script in scripts)
+
 def test_clinical_order_scope_and_validation_contract() -> None:
     order_api = read("app/modules/orders/api/chi_dinh.py")
     order_mutation = read("app/modules/orders/services/clinical_order_mutation.py")
     order_query = read("app/modules/orders/services/clinical_order_query.py")
     result_files = read("app/modules/orders/services/result_file_service.py")
     survey_sessions = read("app/api/survey_sessions.py")
-    order_management = read("app/static/js/order-management.js")
+    order_management = read_order_management()
 
     assert "def _get_accessible_chi_dinh" in order_api
     assert order_api.count("_get_accessible_chi_dinh(db, user, chi_dinh_id)") >= 5
@@ -147,7 +157,7 @@ def test_clinical_order_scope_and_validation_contract() -> None:
 
 
 def test_order_management_survey_completion_contract() -> None:
-    order_management = read("app/static/js/order-management.js")
+    order_management = read_order_management()
     survey_templates = read("app/api/survey_templates.py")
     survey_sessions = read("app/api/survey_sessions.py")
     notifications = read("app/services/notification_service.py")

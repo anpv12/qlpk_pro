@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup() {
     const nodes = new Map(), requests = [];
@@ -34,8 +35,8 @@ function setup() {
     });
     Object.defineProperty(context, 'fetch', {get: () => window.fetch});
     window.localStorage = context.localStorage;
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/shared/api-transport.js'), 'utf8'), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/icd-management.js'), 'utf8'), context);
+    runScriptFile(path.join(__dirname, '../app/static/js/shared/api-transport.js'), context);
+    runScriptFile(path.join(__dirname, '../app/static/js/icd-management.js'), context);
     context.pager = {update(value) { this.value = value; }};
     vm.runInContext('listPagination = pager;', context);
     const respond = (request, data, status = 200) => request.resolve({ok: status < 400, status, json: async () => data});

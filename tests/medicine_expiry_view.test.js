@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -73,7 +74,7 @@ function setup() {
     const trigger = get('medicine-expiry_date'); edit.append(trigger); trigger.isConnected=true; trigger.focus();
     const input = get('unsaved-price'); input.value='9500'; edit.append(input);
     document.body.classList.add('modal-open'); document.body.style.overflow='hidden'; document.body.style.paddingRight='15px';
-    const source = fs.readFileSync('app/static/js/medicine-management.js','utf8');
+    const source = readMedicineManagementSource();
     vm.runInContext(source.slice(source.indexOf('function showInventoryOverlay'),source.indexOf('function showImportFromMedicineForm')),context);
     return {context,get,edit,imp,trigger,input,instance,requests,shown,ledgerCalls,importCalls,document};
 }

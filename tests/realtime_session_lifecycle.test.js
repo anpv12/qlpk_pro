@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness() {
     const handlers = new Map();
@@ -48,8 +49,8 @@ function harness() {
         localStorage: { getItem: () => token },
         CustomEvent: class { constructor(name, options) { this.detail = options.detail; } }
     });
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/realtime-client.js'), 'utf8'), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/static/js/shared/browser-session.js'), 'utf8'), context);
+    runScriptFile(path.join(__dirname, '../app/static/js/realtime-client.js'), context);
+    runScriptFile(path.join(__dirname, '../app/static/js/shared/browser-session.js'), context);
     const owner = window.QLPKBrowserSession.create({ fetch: async () => { throw new Error('Unexpected fetch'); },
         origin: 'http://qa.invalid', baseURI: 'http://qa.invalid/' });
     return { handlers, emitted, dispatched, window, owner, connections,

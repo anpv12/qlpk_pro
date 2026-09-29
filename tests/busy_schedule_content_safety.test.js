@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness() {
     const html = new Map();
@@ -13,8 +14,8 @@ function harness() {
             append(value) { html.set(target, value); },
         }),
     });
-    vm.runInContext(fs.readFileSync('app/static/js/utils.js', 'utf8'), context);
-    vm.runInContext(fs.readFileSync('app/static/js/doctor-busy-schedule.js', 'utf8'), context);
+    runScriptFile('app/static/js/utils.js', context);
+    runScriptFile('app/static/js/doctor-busy-schedule.js', context);
     return { context, html };
 }
 

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { RUNTIME_FILES } = require('./helpers/doctor-registry');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 // In-memory replacement for the IndexedDB owner: the orchestrator only sees the
 // draftRecoveryStore contract, so its state machine is exercised without a browser.
@@ -47,7 +48,7 @@ function setup({ store = memoryStore(), initial } = {}) {
     };
     const { doc, banner, workspace } = fakeDocument();
     const context = vm.createContext({ window, document: doc, console, IDBKeyRange: {} });
-    for (const file of RUNTIME_FILES) vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+    for (const file of RUNTIME_FILES) runScriptFile(file, context);
     const registry = window.QLPKDoctorModuleRegistry;
     const owners = {
         workspace: { snapshot: initial?.clinical || { controls: { doctorClinicalReason: 'DB' } }, dirty: false, restored: [], hasUnsavedChanges() { return this.dirty; }, getDraftSnapshot() { return JSON.parse(JSON.stringify(this.snapshot)); }, async restoreDraftSnapshot(data) { this.restored.push(data); this.snapshot = data; } },
@@ -57,9 +58,9 @@ function setup({ store = memoryStore(), initial } = {}) {
     registry.register('clinicalWorkspace', owners.workspace);
     registry.register('supportModulesUi', owners.support);
     registry.register('medicalHistoryBridge', owners.history);
-    vm.runInContext(fs.readFileSync('app/static/js/doctor-examination/draft-recovery-policy.js', 'utf8'), context);
+    runScriptFile('app/static/js/doctor-examination/draft-recovery-policy.js', context);
     registry.register('draftRecoveryStore', store);
-    vm.runInContext(fs.readFileSync('app/static/js/doctor-examination/draft-recovery.js', 'utf8'), context);
+    runScriptFile('app/static/js/doctor-examination/draft-recovery.js', context);
     const draft = registry.get('draftRecovery');
     const toasts = [];
     let reloads = 0;

@@ -5,9 +5,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/app-header-loader.js'), 'utf8');
-const logoutSource = source.slice(source.indexOf('\tlet logoutPending ='), source.indexOf('\n\tfunction bindLogout()'));
+const source = readScriptSource(path.join(__dirname, '../app/static/js/app-header-loader.js'));
+// Logout state lives in the split entry; the functions come from its parts.
+const logoutSource = 'let logoutPending = false;\nlet confirmedLogoutCleanup = null;\n'
+    + source.slice(source.indexOf('\tasync function clearConfirmedLogout('), source.indexOf('\n\tfunction bindLogout()'));
 
 function harness() {
     const storage = new Map([['qlpk_token', 'qa-token'], ['token', 'old-alias'], ['qlpk_user', 'qa-user']]);
@@ -135,10 +138,10 @@ test('logout awaits asynchronous draft cleanup while user identity still exists'
 test('legacy logout callers all delegate to shared session owner', () => {
     for (const file of ['group-management.js', 'user-management.js', 'permission-management.js',
         'medicine-management.js', 'doctor-busy-schedule.js', 'text-expansion-management.js']) {
-        const content = fs.readFileSync(path.join(__dirname, '../app/static/js', file), 'utf8');
+        const content = readScriptSource(path.join(__dirname, '../app/static/js', file));
         assert.match(content, /QLPKAppHeader\?\.logout\(\)/, file);
     }
-    const draft = fs.readFileSync(path.join(__dirname, '../app/static/js/doctor-examination/draft-recovery.js'), 'utf8');
+    const draft = readScriptSource(path.join(__dirname, '../app/static/js/doctor-examination/draft-recovery.js'));
     assert.match(draft, /addEventListener\('qlpk:logout:confirmed'/);
     assert.doesNotMatch(draft, /closest\('#logoutBtn/);
 });

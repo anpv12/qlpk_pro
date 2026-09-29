@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function payload(letter = 'a') {
     return { token_type: 'cookie', session_id: letter.repeat(32), csrf_token: letter.repeat(64),
@@ -22,7 +23,7 @@ function harness() {
         } };
     const context = vm.createContext({ window, document: window.document, Headers, URL, AbortController });
     for (const file of ['api-transport', 'browser-session', 'browser-session-actions']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/shared/${file}.js`, 'utf8'), context);
+        runScriptFile(`app/static/js/shared/${file}.js`, context);
     }
     const session = window.QLPKApiTransport.useCookieSession();
     const authenticate = (letter = 'a') => session.owner.replace(payload(letter), session.owner.snapshot().revision);

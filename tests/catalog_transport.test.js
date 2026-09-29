@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 const files = ['autocomplete-base', 'occupation-autocomplete', 'province-autocomplete', 'ward-autocomplete', 'components/icd-data-loader'];
 
@@ -19,7 +20,7 @@ function harness(cookie) {
     window.document = document;
     const context = vm.createContext({ window, document, Headers, URL, Event, console: { error() {} } });
     for (const file of ['shared/api-transport', 'shared/browser-session', 'shared/browser-session-actions']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/${file}.js`, 'utf8'), context);
+        runScriptFile(`app/static/js/${file}.js`, context);
     }
     if (cookie) {
         const session = window.QLPKApiTransport.useCookieSession();
@@ -27,7 +28,7 @@ function harness(cookie) {
             user: { id: 7, username: 'qa', role: 'doctor', permissions: [] } }, 0);
     }
     context.fetch = window.fetch;
-    for (const file of files) vm.runInContext(fs.readFileSync(`app/static/js/${file}.js`, 'utf8'), context);
+    for (const file of files) runScriptFile(`app/static/js/${file}.js`, context);
     return { window, requests };
 }
 

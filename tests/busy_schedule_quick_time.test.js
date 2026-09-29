@@ -2,8 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync('app/static/js/doctor-busy-schedule.js', 'utf8');
+const source = readScriptSource('app/static/js/doctor-busy-schedule.js');
 const quickTime = source.slice(source.indexOf('function setQuickTime('), source.indexOf('// Filter table based on search and status'));
 const template = fs.readFileSync('app/templates/doctor-busy-schedule.html', 'utf8');
 

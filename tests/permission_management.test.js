@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup() {
   const nodes = new Map(), requests = [], saves = [], messages = [];
@@ -36,7 +37,7 @@ function setup() {
   const context = vm.createContext({$, document, window: {
     QLPKUserFeedback: {show: (...args) => messages.push(args)}
   }});
-  vm.runInContext(fs.readFileSync('app/static/js/permission-management.js', 'utf8'), context);
+  runScriptFile('app/static/js/permission-management.js', context);
   requests.shift().success([{id: 1, full_name: 'Tên trùng', username: 'one'},
     {id: 2, full_name: 'Tên trùng', username: 'two'}]);
   requests.shift().success([{id: 7, name: 'Nhóm 7', code: 'G7'}, {id: 8, name: 'Nhóm 8', code: 'G8'}]);

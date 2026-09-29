@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { createEnvironment } = require('./helpers/autocomplete-dom');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function setup() {
     const env = createEnvironment();
@@ -115,7 +116,7 @@ test('result rendering escapes values and reports empty results', () => {
 
 test('relative and joint-exam components delegate the autocomplete lifecycle to the shared owner', () => {
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {
-        const source = fs.readFileSync(`app/static/js/${file}`, 'utf8');
+        const source = readScriptSource(`app/static/js/${file}`);
         assert.match(source, /QLPKPatientSearchDropdown\.attach\(/);
         assert.doesNotMatch(source, /activeSearchToken|handleViewportChange|ArrowDown/);
     }

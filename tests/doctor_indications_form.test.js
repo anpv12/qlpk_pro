@@ -5,11 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { loadSupportRuntime } = require('./helpers/doctor-registry');
+const { runScriptFile } = require('./helpers/module-source');
 
-const source = fs.readFileSync(
-  path.join(__dirname, '..', 'app/static/js/components/doctor-indications-form.js'),
-  'utf8'
-);
+const SOURCE_FILE = path.join(__dirname, '..', 'app/static/js/components/doctor-indications-form.js');
 
 function createElement(id) {
   return {
@@ -125,7 +123,7 @@ function createHarness() {
     const utilsPath = path.join(__dirname, '..', 'app/static/js/orders', file);
     vm.runInNewContext(fs.readFileSync(utilsPath, 'utf8'), { window, console });
   }
-  vm.runInNewContext(source, { window, document, console });
+  runScriptFile(SOURCE_FILE, vm.createContext({ window, document, console }));
   return {
     document,
     runtime,

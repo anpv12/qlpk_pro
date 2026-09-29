@@ -5,8 +5,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/app-header-loader.js'), 'utf8');
+const source = readScriptSource(path.join(__dirname, '../app/static/js/app-header-loader.js'));
 const submitSource = source.slice(source.indexOf('\tasync function submitPasswordChange('), source.indexOf('\n\tasync function fetchCurrentUser('));
 
 function harness() {

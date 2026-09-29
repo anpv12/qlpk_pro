@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { moduleFiles } = require('./helpers/module-source');
 
 test('loading legacy options preserves answer identities, text and scores in editor HTML', async () => {
     const original = [{ id: 1, question: 'Câu hỏi cũ', type: 'multiple_choice',
@@ -18,15 +19,20 @@ test('loading legacy options preserves answer identities, text and scores in edi
         } }) })
     });
     // Capture the real renderer HTML while skipping event binding and the unrelated performer request.
-    const source = fs.readFileSync('app/static/js/survey-template-create.js', 'utf8')
-        .replace('window.surveyCreateModal = { open, close, refreshCriteriaCache };', `
+    // The editor is split into parts; overrides go into the part that owns loadTemplate and the renderer.
+    for (const file of moduleFiles('survey-template-create.js')) {
+        let source = fs.readFileSync(`app/static/js/${file}`, 'utf8');
+        if (source.includes('\tasync function loadTemplate(')) {
+            source = source.replace('\tObject.assign(moduleParts, {', `
             window.rendered = [];
-            renderQuestionCard = q => window.rendered.push(buildCardHTML(q, state.questionCounter));
+            renderQuestionCard = q => window.rendered.push(buildCardHTML(q, moduleState.state.questionCounter));
             loadPerformers = async () => {};
             renderPerformerOptions = () => {};
             window.loadTemplateForTest = loadTemplate;
-        `);
-    vm.runInContext(source, context);
+            Object.assign(moduleParts, {`);
+        }
+        vm.runInContext(source, context);
+    }
     await context.window.loadTemplateForTest(20);
     assert.equal(context.window.rendered.length, 1);
     const html = context.window.rendered[0];

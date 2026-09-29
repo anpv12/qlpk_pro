@@ -16,6 +16,7 @@ from app.models.user import User
 from app.services import auth, access_sessions as sessions
 from app.services import google_calendar_service as google
 from test_account_session_lifecycle import isolated_postgres
+from module_parts import setattr_all
 
 
 @pytest.fixture
@@ -32,8 +33,8 @@ def oauth(isolated_postgres, monkeypatch):
     identity_db = MagicMock()
     identity_db.query.return_value.filter.return_value.first.return_value = account
     monkeypatch.setattr(auth_api, 'get_db', lambda: iter([identity_db]))
-    monkeypatch.setattr(api, 'get_db', lambda: iter([factory()]))
-    monkeypatch.setattr(api, 'emit_appointment_changed', MagicMock())
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([factory()]))
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', MagicMock())
     monkeypatch.setattr(google.GoogleCalendarService, 'get_authorization_url',
                         lambda uri, state: (f'https://accounts.example/auth?state={state}', 'v' * 64))
     exchange = MagicMock(return_value={'access_token': 'qa-access', 'refresh_token': 'qa-refresh', 'expires_at': None})

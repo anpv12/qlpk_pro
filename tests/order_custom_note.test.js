@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const source = fs.readFileSync('app/static/js/order-management.js', 'utf8');
+const { readOrderManagementSource } = require('./helpers/order-management-source');
+const source = readOrderManagementSource();
 const noteSource = source.slice(source.indexOf('function renderCustomOrderNote('), source.indexOf('// Load survey content directly'));
 
 function setup(note = '') {

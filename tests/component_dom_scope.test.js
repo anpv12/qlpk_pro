@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function fakeDocument(rootId, elements) {
     const byId = new Map(Object.entries(elements));
@@ -13,7 +14,7 @@ function loadContext(files) {
     const window = {};
     const document = fakeDocument('visitRoot', { mainReason: { value: '' }, mainSymptoms: { value: '' }, problemStartTime: { value: '' }, severityLevel: { value: '' }, symptomProgression: { value: '' }, currentBehavior: { value: '' } });
     const context = vm.createContext({ window, document, console });
-    for (const file of files) vm.runInContext(fs.readFileSync(`app/static/js/components/${file}`, 'utf8'), context, { filename: file });
+    for (const file of files) runScriptFile(`app/static/js/components/${file}`, context);
     return { window, document };
 }
 

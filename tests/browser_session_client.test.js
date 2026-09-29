@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function deferred() {
     let resolve, reject;
@@ -24,7 +25,7 @@ function harness() {
     const window = { console, location: { origin: 'https://clinic.test' }, document: { baseURI: 'https://clinic.test/page' },
         fetch(input, init) { const result = deferred(); requests.push({ input, init, ...result }); return result.promise; } };
     const context = vm.createContext({ window, URL, Headers, Promise, console });
-    vm.runInContext(fs.readFileSync('app/static/js/shared/browser-session.js', 'utf8'), context);
+    runScriptFile('app/static/js/shared/browser-session.js', context);
     const client = window.QLPKBrowserSession.create({ channel });
     return { client, requests, messages, handlers, window };
 }

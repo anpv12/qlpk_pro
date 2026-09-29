@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 const ROOT = path.join(__dirname, '..');
 const FORM_DOM_UTILS = path.join(ROOT, 'app/static/js/components/form-dom-utils.js');
@@ -109,7 +110,7 @@ function loadScript(file) {
   const win = { console, setTimeout: () => null, localStorage: null };
   win.window = win;
   const context = vm.createContext(win);
-  new vm.Script(fs.readFileSync(file, 'utf8'), { filename: file }).runInContext(context);
+  runScriptFile(file, context);
   return win;
 }
 

@@ -2,13 +2,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 const root = path.resolve(__dirname, '..');
 const context = vm.createContext({ window: { location: { origin: 'http://localhost' } }, console });
-vm.runInContext(fs.readFileSync(path.join(root,
-    'app/static/js/prescriptions/shared/prescription-document-template.js'), 'utf8'), context);
-vm.runInContext(fs.readFileSync(path.join(root,
-    'app/static/js/prescriptions/pages/doctor-prescription-print.js'), 'utf8'), context);
+runScriptFile(path.join(root,
+    'app/static/js/prescriptions/shared/prescription-document-template.js'), context);
+runScriptFile(path.join(root,
+    'app/static/js/prescriptions/pages/doctor-prescription-print.js'), context);
 
 function render(data, renderContext = 'print') {
     return context.buildPrescriptionPreviewHTML({
@@ -46,8 +47,8 @@ async function main() {
 
     const content = { innerHTML: '' };
     context.document = { getElementById: () => content };
-    vm.runInContext(fs.readFileSync(path.join(root,
-        'app/static/js/prescriptions/components/prescription-modal-preview.js'), 'utf8'), context);
+    runScriptFile(path.join(root,
+        'app/static/js/prescriptions/components/prescription-modal-preview.js'), context);
     const preview = context.window.createPrescriptionModalPreview({
         buildPrescriptionScreenHTML: context.buildPrescriptionScreenHTML,
         createBarcodesInElement: () => {},

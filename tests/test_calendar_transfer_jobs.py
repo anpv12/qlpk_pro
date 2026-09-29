@@ -23,6 +23,7 @@ from app.modules.appointments.services.side_effects import sync_transferred_appo
 from app.services import google_calendar_service as google
 from test_transfer_access_safety import transfer_db, actor, payload
 from test_account_session_lifecycle import isolated_postgres, wait_for_database_lock
+from module_parts import setattr_all
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def calendar_db(transfer_db, monkeypatch):
         database.add(GoogleCalendarEvent(appointment_id=1, user_id=7, event_id='staff-event'))
     monkeypatch.setattr(transfer_service, 'sync_transferred_appointment_calendar', sync_transferred_appointment_calendar)
     state.drain = MagicMock()
-    monkeypatch.setattr(api, 'schedule_calendar_transfer_drain', state.drain)
+    setattr_all(monkeypatch,api, 'schedule_calendar_transfer_drain', state.drain)
     state.provider = MagicMock()
     state.provider.delete_event.return_value = True
     state.provider.update_event.return_value = True
@@ -182,10 +183,10 @@ def test_unknown_legacy_owner_never_deleted_or_marked_complete(calendar_db):
 def test_transfer_route_commit_failure_rolls_back_outbox(calendar_db, monkeypatch):
     state = calendar_db
     database = state.factory()
-    monkeypatch.setattr(api, 'get_db', lambda: iter([database]))
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([database]))
     monkeypatch.setattr(database, 'commit', MagicMock(side_effect=RuntimeError('commit unavailable')))
     emitted = MagicMock()
-    monkeypatch.setattr(api, 'emit_appointment_changed', emitted)
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', emitted)
     with Flask(__name__).test_request_context('/transfer', method='POST', json=payload()):
         assert inspect.unwrap(api.transfer_appointments)(actor())[1] == 500
     with state.factory() as verification:
@@ -320,8 +321,8 @@ def test_migration_refuses_unexpected_existing_table(transfer_db):
 
 def test_route_drains_only_committed_calendar_jobs(calendar_db, monkeypatch):
     state = calendar_db
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
-    monkeypatch.setattr(api, 'emit_appointment_changed', MagicMock())
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', MagicMock())
     monkeypatch.setattr(api.notification_service, 'create_transfer_notifications', MagicMock())
     endpoint = inspect.unwrap(api.transfer_appointments)
     with Flask(__name__).test_request_context('/transfer', method='POST', json=payload([1, 3])):

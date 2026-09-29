@@ -5,8 +5,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/components/address-hierarchy-utils.js'), 'utf8');
+const SOURCE_FILE = path.join(__dirname, '../app/static/js/components/address-hierarchy-utils.js');
 const province = 'Thành phố Hồ Chí Minh';
 const district = 'Quận 1';
 const ward = 'Phường Bến Nghé';
@@ -37,7 +38,7 @@ function createHarness(routeResponse) {
     }
   };
   const window = { document, URLSearchParams, encodeURIComponent, console: options.console };
-  vm.runInNewContext(source, { window });
+  runScriptFile(SOURCE_FILE, vm.createContext({ window }));
   return { api: window.ClinicalAddressHierarchyUtils, options, calls, errors, elements };
 }
 

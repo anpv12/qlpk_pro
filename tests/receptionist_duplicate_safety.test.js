@@ -3,7 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync('app/static/js/receptionist-new.js', 'utf8');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const source = readScriptSource('app/static/js/receptionist-new.js');
 function harness() {
   const data = { full_name: 'QA', gender: 'Nam', doctor_id: 1, service_id: 2, appointment_date: '2026-09-27', appointment_time: '10:00' };
   const state = { calls: 0, saves: 0, notices: [], modals: 0 };

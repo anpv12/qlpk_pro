@@ -2,15 +2,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function loadUi() {
     const window = { QLPKModalHistoryListUi: { resolveAppointmentById: (list, id) => list.find(item => item.id === id) || null } };
     const document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() {} };
     const context = { window, document, console, setTimeout, clearTimeout, URLSearchParams };
-    vm.runInNewContext(fs.readFileSync('app/static/js/components/modal-patient-search-data.js', 'utf8'), context);
-    vm.runInNewContext(fs.readFileSync('app/static/js/components/modal-patient-search-dom.js', 'utf8'), context);
-    vm.runInNewContext(fs.readFileSync('app/static/js/components/modal-patient-search-state.js', 'utf8'), context);
-    vm.runInNewContext(fs.readFileSync('app/static/js/components/modal-patient-search-ui.js', 'utf8'), context);
+    runScriptFile('app/static/js/components/modal-patient-search-data.js', vm.createContext(context));
+    runScriptFile('app/static/js/components/modal-patient-search-dom.js', vm.createContext(context));
+    runScriptFile('app/static/js/components/modal-patient-search-state.js', vm.createContext(context));
+    runScriptFile('app/static/js/components/modal-patient-search-ui.js', vm.createContext(context));
     return window.ModalPatientSearchUi;
 }
 

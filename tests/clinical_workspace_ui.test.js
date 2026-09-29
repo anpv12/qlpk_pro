@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 // Minimal DOM: enough for header text, section toggling, dirty tracking and the
 // workspace click delegation. Layout-dependent behaviour is covered by browser QA.
@@ -89,7 +90,7 @@ function setup() {
     REGISTRY.register('workspaceSaveController', { create: options => { calls.saveController.push(options); return { saveNow: async o => ({ status: 'success', options: o }), saveWorkspace: async o => { calls.saveController.push(['saveWorkspace', o.applyDetailDefaults]); return { status: 'success' }; }, completeNow: async () => ({ status: 'success' }), resolveUnsavedChanges: async () => 'confirm' }; } });
     const supportDirty = { value: false };
     REGISTRY.register('supportModulesUi', { hasUnsavedChanges: () => supportDirty.value });
-    vm.runInContext(fs.readFileSync('app/static/js/doctor-examination/clinical-workspace-ui.js', 'utf8'), context, { filename: 'clinical-workspace-ui.js' });
+    runScriptFile('app/static/js/doctor-examination/clinical-workspace-ui.js', context);
     const api = REGISTRY.get('clinicalWorkspace');
     return { api, document, workspace, heading, code, latest, sections, nav, reason, saveButton, transferButton, calls, setClinicalDirty: v => { clinicalDirty = v; syncDirtyState(); }, supportDirty };
 }

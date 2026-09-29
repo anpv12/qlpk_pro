@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness(cookie = true) {
     const requests = [], responses = [], messages = [], applied = [];
@@ -21,7 +22,7 @@ function harness(cookie = true) {
     };
     const context = vm.createContext({ window, document, Headers, URL, AbortController, console });
     for (const file of ['shared/api-transport', 'shared/browser-session', 'shared/browser-session-actions', 'receptionist/catalog-loaders']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/${file}.js`, 'utf8'), context);
+        runScriptFile(`app/static/js/${file}.js`, context);
     }
     const binding = cookie ? window.QLPKApiTransport.useCookieSession() : null;
     if (binding) binding.owner.replace({ token_type: 'cookie', session_id: 'a'.repeat(32), csrf_token: 'b'.repeat(64),

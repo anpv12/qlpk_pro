@@ -2,8 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-const source = fs.readFileSync('app/static/js/app-header-loader.js', 'utf8');
+const source = readScriptSource('app/static/js/app-header-loader.js');
 function segment(start, end) { return source.slice(source.indexOf(start), source.indexOf(end)); }
 
 function harness() {

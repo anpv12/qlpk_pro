@@ -4,6 +4,7 @@ const test = require('node:test');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -178,7 +179,7 @@ test('original form stays visible; DAV selection unlocks settings and source val
 
 
 test('editing waits for the latest medicine load and ignores stale responses', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const code = source.slice(source.indexOf('let medicineEditRevision ='), source.indexOf('// Populate medicine form with data'));
     const requests = [], calls = [];
     const context = vm.createContext({localStorage:{getItem:()=> 'test'}, resetForm(){}, showCustomToast(){},

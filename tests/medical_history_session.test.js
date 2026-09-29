@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness(cookie = true) {
     const requests = [], responses = [], opened = [], messages = [];
@@ -35,7 +36,7 @@ function harness(cookie = true) {
     const context = vm.createContext({ window, document: window.document, console, Headers, URL, AbortController, FormData,
         setTimeout: () => 1, fetch: (...args) => window.fetch(...args) });
     for (const file of ['shared/api-transport', 'shared/browser-session', 'shared/browser-session-actions', 'doctor-examination/page-runtime']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/${file}.js`, 'utf8'), context);
+        runScriptFile(`app/static/js/${file}.js`, context);
     }
     component.config.pageRuntime = window.QLPKDoctorPageRuntime;
     const binding = cookie ? window.QLPKApiTransport.useCookieSession() : null;

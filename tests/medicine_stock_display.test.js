@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
-const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+const source = readMedicineManagementSource();
 const context = vm.createContext({});
 for (const name of ['escapeHtml', 'getUnitDisplay', 'formatStockQuantity', 'formatStockDisplay']) {
     const start = source.indexOf('function ' + name + '(');

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const root = path.join(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const css = read('app/static/css/shared/button-actions.css');
@@ -57,8 +58,8 @@ test('secondary buttons stay neutral on hover and no decorative borders return',
 });
 
 test('medicine buttons keep non-action badges and navigation outside action colors', () => {
-    const source = read('app/static/js/medicine-management.js');
-    const stockBadge = source.match(/<button\b[^>]*onclick="showStockDetail\([^>]*>/)?.[0];
+    const source = readMedicineManagementSource();
+    const stockBadge = source.match(/<button\b[^>]*data-qlpk-call="showStockDetail"[^>]*>/)?.[0];
     assert.ok(stockBadge);
     assert.match(stockBadge, /type="button"/);
     assert.match(stockBadge, /class="badge stock-detail-badge"/);

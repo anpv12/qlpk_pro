@@ -5,8 +5,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const root = path.join(__dirname, '../app/static/js');
-const page = fs.readFileSync(path.join(root, 'receptionist-new.js'), 'utf8');
+const page = readScriptSource(path.join(root, 'receptionist-new.js'));
 
 function deferred() {
   let resolve;
@@ -38,10 +39,10 @@ function harness() {
     $: () => ({ focus() {} })
   });
   for (const filename of ['receptionist/appointment-submit.js', 'components/document-section-ui-utils.js']) {
-    vm.runInContext(fs.readFileSync(path.join(root, filename), 'utf8'), context);
+    runScriptFile(path.join(root, filename), context);
   }
-  for (const name of ['saveReceptionistAppointment', 'savePatientDataInternal']) {
-    const match = page.match(new RegExp(`async function ${name}\\([^]*?\\n\\}`));
+  for (const name of ['saveReceptionistAppointment', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments']) {
+    const match = page.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
     if (match) vm.runInContext(match[0], context);
   }
   return { context, calls, toasts, cache, data, save: () => context.savePatientDataInternal({ ...data }) };

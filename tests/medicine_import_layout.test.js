@@ -4,12 +4,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
 const actions = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/button-actions.css'), 'utf8');
 test('missing-price action keeps edit semantics with approved red tokens and standard font size', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     assert.match(source, /supplement\.dataset\.qlpkButton = 'edit'/);
     assert.match(source, /supplement\.dataset\.qlpkButtonVariant = 'solid'/);
     const badge = css.match(/\.mm-missing-price-badge:is\(:hover, :focus-visible, :active\)\s*\{([^}]+)\}/)?.[1];
@@ -137,7 +138,7 @@ test('note and lot boxes share height, padding and scrolling without independent
 });
 
 test('quantity unit stays inline with its input and rows align on one middle axis', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const renderer = source.slice(source.indexOf('function addBatchImportRow('), source.indexOf('function validateBatchNumber('));
     assert.match(renderer, /mm-import-qty">\s*<input[^>]*batch-quantity[^>]*>\s*<small class="batch-unit">/);
     assert.match(importStyles, /\.mm-import-qty\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center/);
@@ -178,7 +179,7 @@ test('import workspace has a bounded white table surface, balanced columns and o
 });
 
 test('existing calculation writer still updates the single footer total and separate lot breakdown', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const outputs = new Map(['batchTotalValue', 'batchLotBreakdown'].map(id => [id, {}]));
     const rows = Array.from({length: 20}, (_, index) => {
         const fields = {
@@ -212,19 +213,21 @@ test('existing calculation writer still updates the single footer total and sepa
 });
 
 test('dynamic import rows expose accessible controls without changing calculation or remove bindings', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const renderer = source.slice(source.indexOf('function addBatchImportRow('), source.indexOf('function validateBatchNumber('));
     for (const label of ['Tên thuốc', 'Số lô', 'Hạn dùng', 'Số lượng', 'Đơn giá nhập trên một đơn vị', 'Xóa dòng thuốc']) {
         assert.ok(renderer.includes(`aria-label="${label}"`));
     }
-    assert.match(renderer, /mm-import-remove[^]*onclick="removeBatchRow\('\$\{rowId\}'\); updateBatchTotal\(\)"/);
-    assert.equal((renderer.match(/oninput="calculateBatchRowTotal/g) || []).length, 2);
+    assert.match(renderer, /mm-import-remove[^]*data-qlpk-call="removeBatchRowAndUpdateTotal" data-qlpk-args='\["\$\{rowId\}"\]'/);
+    assert.match(renderer, /batch-quantity[^]*data-qlpk-call="onBatchAmountInput" data-qlpk-on="input"/);
+    assert.match(renderer, /batch-price[^]*data-qlpk-call="onBatchPriceInput" data-qlpk-on="input"/);
+    assert.match(source, /function onBatchPriceInput\(rowId\) \{\n\tcalculateBatchRowTotal\(rowId\);\n\tupdateBatchTotal\(\);\n\tupdatePriceComparison\(rowId\);/);
 });
 
 test('Nhập kho modal has two tabs and no longer has the old Chi tiết tồn kho / Lịch sử giao dịch modals', () => {
     assert.doesNotMatch(template, /id="stockDetailModal"/);
     assert.doesNotMatch(template, /id="transactionHistoryModal"/);
-    assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8'),
+    assert.doesNotMatch(readMedicineManagementSource(),
         /stockDetailModal|transactionHistoryModal|renderStockDetail|loadTransactionHistory|importLedgerToggle|importLedgerBody/);
     assert.match(importMarkup, /class="mm-import-tabs" role="tablist"/);
     assert.match(importMarkup, /id="importTabOrder" role="tab"[^]*aria-selected="true" aria-controls="importOrderPane"/);

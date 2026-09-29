@@ -18,6 +18,7 @@ from app.modules.prescriptions.services.stock_service import PrescriptionStockVa
 from app.modules.prescriptions.services.ledger_service import visit_ledger_payload
 from app.modules.prescriptions.services.ledger_report import build_ledger_report
 from app.modules.prescriptions.services.read_service import build_patient_prescription_history_payload
+from module_parts import setattr_all
 
 pytestmark = pytest.mark.skipif(os.getenv('QLPK_RUN_DB_TESTS') != '1', reason='Opt-in rollback tests')
 
@@ -476,7 +477,7 @@ def test_report_http_auth_validation_and_filters(case, monkeypatch):
     connection = db.connection()
     def scoped_db():
         yield Session(bind=connection, join_transaction_mode='create_savepoint')
-    monkeypatch.setattr(api, 'get_db', scoped_db)
+    setattr_all(monkeypatch,api, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor))
     app = Flask(__name__)

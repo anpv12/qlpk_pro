@@ -15,11 +15,12 @@ from app.services import google_calendar_service as google
 from test_calendar_transfer_jobs import calendar_db
 from test_transfer_access_safety import transfer_db, actor
 from test_account_session_lifecycle import isolated_postgres
+from module_parts import setattr_all
 
 
 def endpoint(state, monkeypatch, function, method='POST', data=None):
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
-    monkeypatch.setattr(api, 'emit_appointment_changed', MagicMock())
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', MagicMock())
     default_data = {'from_date': '2026-09-28', 'to_date': '2026-09-28'} if method == 'DELETE' else {'appointment_ids': [1]}
     with Flask(__name__).test_request_context('/calendar', method=method, json=data or default_data):
         result = inspect.unwrap(function)(actor(7, 'staff'))

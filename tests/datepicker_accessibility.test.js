@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function initialize({ attributes = {}, labels = [], placeholder = '', altAttributes = {}, presetValue } = {}) {
     class Element {
@@ -73,7 +74,7 @@ test('initDatepickerWithValue writes the date-only value before Flatpickr initia
     assert.deepEqual(initialize({ presetValue: '2026-06-09' }).initialized, ['2026-06-09']);
     assert.deepEqual(initialize({ presetValue: null }).initialized, [undefined], 'empty values leave the input untouched');
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {
-        const source = fs.readFileSync(`app/static/js/${file}`, 'utf8');
+        const source = readScriptSource(`app/static/js/${file}`);
         assert.doesNotMatch(source, /includes\('T'\)/, `${file} must not split datetimes before initialising a datepicker`);
         assert.match(source, /window\.initDatepickerWithValue\?\.\(/);
     }

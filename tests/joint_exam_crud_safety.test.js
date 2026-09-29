@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function deferred() {
   let resolve;
@@ -25,7 +26,7 @@ function harness() {
   };
   const document = { querySelector: () => row };
   const window = { QLPKConfirmationDialog: { confirm: () => confirmation.promise } };
-  vm.runInNewContext(fs.readFileSync('app/static/js/joint-exam-manager.js', 'utf8'), { window, document, console });
+  runScriptFile('app/static/js/joint-exam-manager.js', vm.createContext({ window, document, console }));
   const manager = new window.JointExamManager({
     getAppointmentId: () => state.appointment, getContextToken: () => state.token,
     showToast: (...args) => state.toasts.push(args),

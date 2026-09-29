@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -37,7 +38,7 @@ function setup() {
     get('importLedgerPane').hidden = true;
     get('importTabOrder').classList.add('is-active');
 
-    const source = fs.readFileSync('app/static/js/medicine-management.js', 'utf8');
+    const source = readMedicineManagementSource();
     const slice = source.slice(source.indexOf('// ========== LỊCH SỬ NHẬP & LÔ'));
     vm.runInContext(slice, context);
 
@@ -93,7 +94,7 @@ test('missing-price filter clears stale search, resets page and can be removed',
     let search = 'Zopinox';
     h.context.$ = () => ({val: value => { search = value; }});
     h.context.loadMedicines = () => {};
-    const source = fs.readFileSync('app/static/js/medicine-management.js', 'utf8');
+    const source = readMedicineManagementSource();
     vm.runInContext('let currentPage = 3;\n' + source.slice(source.indexOf('let missingImportPriceOnly'), source.indexOf('function loadMedicines()')), h.context);
     h.context.toggleMissingImportPriceFilter();
     assert.equal(search, '');
@@ -178,7 +179,7 @@ test('loading and failure states span the nine receipt columns', async () => {
 });
 
 test('receipt history uses a separate modal, not an inline expander', () => {
-    const source = fs.readFileSync('app/static/js/medicine-management.js', 'utf8');
+    const source = readMedicineManagementSource();
     const template = fs.readFileSync('app/templates/medicine-management.html', 'utf8');
     const css = fs.readFileSync('app/static/css/pages/medicine-management.css', 'utf8');
     for (const content of [source, template, css]) {
@@ -187,8 +188,8 @@ test('receipt history uses a separate modal, not an inline expander', () => {
     const header = template.match(/class="table table-sm mm-import-ledger-table"[\s\S]*?<thead>([\s\S]*?)<\/thead>/)[1];
     assert.equal((header.match(/<th\s/g) || []).length, 9);
     assert.match(template, /id="receiptDispensingModal"/);
-    assert.match(template, /onclick="showStockDetail|onclick="showMedicineExpiry/);
-    assert.match(source, /onclick="showStockDetail/);
+    assert.match(template, /data-qlpk-call="showMedicineExpiry"/);
+    assert.match(source, /data-qlpk-call="showStockDetail"/);
     assert.match(source, /function showStockDetail\(medicineId\)[\s\S]*?openImportLedger\(\{medicineId, search: medicineName\}\)/);
     assert.match(source, /function showMedicineExpiry\(\)[\s\S]*?showStockDetail\(medicineId\)/);
 });

@@ -2,9 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function loadFormulaEngine() {
-	const source = fs.readFileSync('app/static/js/chi-tieu.js', 'utf8');
+	const source = readScriptSource('app/static/js/chi-tieu.js');
 	const start = source.indexOf('const FORMULA_TOKEN');
 	const end = source.indexOf('function computeRow(');
 	const context = { columns: [{ id: 'c1', name: 'Thu' }, { id: 'c2', name: 'Chi' }] };

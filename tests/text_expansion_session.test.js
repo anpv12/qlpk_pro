@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup() {
     const requests = [], listeners = {};
@@ -16,7 +17,7 @@ function setup() {
     const document = { readyState: 'loading', addEventListener: (name, callback) => { listeners[name] = callback; } };
     const context = vm.createContext({ window, document, console: { warn() {}, error() {} },
         fetch: (url, options) => new Promise(resolve => requests.push({ url, options, resolve })) });
-    vm.runInContext(fs.readFileSync('app/static/js/text-expansion.js', 'utf8'), context);
+    runScriptFile('app/static/js/text-expansion.js', context);
     return { window, context, requests, listeners,
         complete(index, data = { bt: 'bình thường' }) { requests[index].resolve({ ok: true, json: async () => ({ success: true, data }) }); },
         change(status = 'changed') { current = { status, revision: current.revision + 1 }; subscriber(current); }

@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function deferred() {
   let resolve, reject;
@@ -18,7 +19,7 @@ function harness() {
   const window = { document };
   const context = vm.createContext({ window, document, console });
   for (const name of ['receptionist/document-attachment-controls.js', 'components/document-section-ui-utils.js', 'receptionist/patient-vitals-history.js']) {
-    vm.runInContext(fs.readFileSync(`app/static/js/${name}`, 'utf8'), context);
+    runScriptFile(`app/static/js/${name}`, context);
   }
   const requests = [];
   const state = { patientId: 1, token: 1, attachments: [{ id: 'old' }], drafts: [] };

@@ -4,9 +4,10 @@ const test = require('node:test');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 function setup() {
-    const source = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+    const source = readMedicineManagementSource();
     const requests = [], messages = [], changes = [];
     const values = {'#importedTypeValue':'false', '#prescriptionTypeValue':'BASIC', '#unitsPerBox':'30',
         '#packagingUnit':'hộp', '#saleUnitValue':'viên', '#saleUnit':'viên'};

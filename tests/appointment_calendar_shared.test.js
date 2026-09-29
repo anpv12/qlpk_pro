@@ -56,7 +56,8 @@ test('both templates load one shared stylesheet and retire the old event rendere
     }
     assert.equal(fs.existsSync('app/static/js/appointment-management/calendar-event-content-utils.js'), false);
     const doctor = fs.readFileSync('app/static/js/doctor-examination/re-examination-calendar.js', 'utf8');
-    const appointments = fs.readFileSync('app/static/js/appointment-management.js', 'utf8');
+    const appointments = ['appointment-management.js', ...fs.readdirSync('app/static/js/appointment-management').filter(name => name.startsWith('page-') && !name.endsWith('-utils.js')).map(name => `appointment-management/${name}`)]
+        .map(file => fs.readFileSync(`app/static/js/${file}`, 'utf8')).join('\n');
     assert.doesNotMatch(doctor, /new window.FullCalendar.Calendar|backgroundColor: statuses/);
     assert.doesNotMatch(appointments, /new FullCalendar.Calendar/);
 });

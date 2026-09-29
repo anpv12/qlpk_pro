@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 test('download action forwards context guard across patient switch', async () => {
   const ctx = harness();
@@ -30,7 +31,7 @@ function harness() {
   const window = { document };
   const context = vm.createContext({ window, document, console, FormData: class { append() {} } });
   for (const name of ['receptionist/document-attachment-utils.js', 'receptionist/document-attachment-controls.js', 'receptionist/document-attachment-list.js', 'components/document-section-ui-utils.js']) {
-    vm.runInContext(fs.readFileSync(`app/static/js/${name}`, 'utf8'), context);
+    runScriptFile(`app/static/js/${name}`, context);
   }
   const state = { patient: 1, token: 1, documents: [], attachments: [{ id: 10 }], toasts: [], calls: 0, loads: 0 };
   const confirmation = deferred();

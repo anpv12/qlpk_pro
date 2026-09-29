@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function harness(result, missingOwner = false) {
     const calls = [], messages = [], requests = [];
@@ -16,7 +17,7 @@ function harness(result, missingOwner = false) {
     const container = { querySelector: () => null };
     const context = vm.createContext({ window, document: { querySelector: () => container }, console });
     for (const file of ['shared/confirmation-dialog.js', 'components/patient-search-dropdown.js', 'joint-exam-manager.js', 'relative-table.js']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/${file}`, 'utf8'), context);
+        runScriptFile(`app/static/js/${file}`, context);
     }
     if (missingOwner) delete window.QLPKConfirmationDialog;
     const joint = new window.JointExamManager({
@@ -72,14 +73,14 @@ test('confirmed deletions retain original endpoints and delete only the selected
 
 test('shared relative and transfer components never open native dialogs or SweetAlert directly', () => {
     for (const file of ['relative-table.js', 'joint-exam-manager.js', 'transfer-modal-dry.js']) {
-        const source = fs.readFileSync(`app/static/js/${file}`, 'utf8');
+        const source = readScriptSource(`app/static/js/${file}`);
         assert.doesNotMatch(source, /\bSwal\b|\balert\s*\(|\bwindow\.confirm\s*\(/);
     }
 });
 
 test('relative create/edit templates label every dynamic input', () => {
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {
-        const source = fs.readFileSync(`app/static/js/${file}`, 'utf8');
+        const source = readScriptSource(`app/static/js/${file}`);
         const inputs = source.match(/<input\b[^>]*(?:>|$)/gm);
         assert.ok(inputs.length >= 12);
         for (const input of inputs) assert.match(input, /aria-label="[^"]+"/);

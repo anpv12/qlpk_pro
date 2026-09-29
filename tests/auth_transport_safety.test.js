@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness(baseURI = 'https://clinic.test/page') {
     const requests = [], hooks = {}, startup = [];
@@ -20,8 +21,8 @@ function harness(baseURI = 'https://clinic.test/page') {
     } });
     function $(target) { return jquery(target); }
     window.localStorage = context.localStorage;
-    vm.runInContext(fs.readFileSync('app/static/js/shared/api-transport.js', 'utf8'), context);
-    vm.runInContext(fs.readFileSync('app/static/js/utils.js', 'utf8'), context);
+    runScriptFile('app/static/js/shared/api-transport.js', context);
+    runScriptFile('app/static/js/utils.js', context);
     return { window, document, hooks, startup, stored, requests, context };
 }
 
@@ -111,7 +112,8 @@ test('late 401 cannot retry under another account or overwrite its token', async
 });
 
 test('appointment callers no longer attempt password-based background login', () => {
-    const source = fs.readFileSync('app/static/js/appointment-management.js', 'utf8');
+    const source = ['appointment-management.js', ...fs.readdirSync('app/static/js/appointment-management').filter(name => name.startsWith('page-') && !name.endsWith('-utils.js')).map(name => `appointment-management/${name}`)]
+        .map(file => fs.readFileSync(`app/static/js/${file}`, 'utf8')).join('\n');
     assert.doesNotMatch(source, /autoLogin|token\/refresh/);
     assert.match(source, /deferred\.reject\('unauthorized'\)/);
 });
@@ -158,7 +160,7 @@ test('late JSON and cloned blob responses cannot cross account switches', async 
             json: () => new Promise(resolve => { finish = resolve; }),
             clone: () => new Response('protected document') }) };
     const context = vm.createContext({ window, document: { baseURI: window.location.href }, Headers, URL });
-    vm.runInContext(fs.readFileSync('app/static/js/shared/api-transport.js', 'utf8'), context);
+    runScriptFile('app/static/js/shared/api-transport.js', context);
     const response = await window.fetch('/api/document');
     const clone = response.clone();
     const json = response.json();
@@ -173,7 +175,7 @@ test('native response accessors and body consumption retain their brand', async 
         localStorage: { getItem: () => 'token', removeItem() {} },
         fetch: async () => new Response('{"ok":true}', { headers: { 'Content-Type': 'application/json' } }) };
     const context = vm.createContext({ window, document: { baseURI: window.location.href }, Headers, URL });
-    vm.runInContext(fs.readFileSync('app/static/js/shared/api-transport.js', 'utf8'), context);
+    runScriptFile('app/static/js/shared/api-transport.js', context);
     const response = await window.fetch('/api/test');
     assert.equal(response.ok, true);
     assert.equal(response.bodyUsed, false);

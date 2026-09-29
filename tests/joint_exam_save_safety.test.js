@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function deferred() {
   let resolve;
@@ -13,7 +14,7 @@ function deferred() {
 
 function harness() {
   const window = {};
-  vm.runInNewContext(fs.readFileSync('app/static/js/joint-exam-manager.js', 'utf8'), { window, console, document: {} });
+  runScriptFile('app/static/js/joint-exam-manager.js', vm.createContext({ window, console, document: {} }));
   let appointmentId = 70;
   const calls = [];
   const manager = new window.JointExamManager({

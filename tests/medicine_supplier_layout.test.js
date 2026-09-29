@@ -3,10 +3,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
-const script = fs.readFileSync(path.join(__dirname, '../app/static/js/medicine-management.js'), 'utf8');
+const script = readMedicineManagementSource();
 const supplierMarkup = template.slice(template.indexOf('id="supplierManagementModal"'), template.indexOf('<!-- Flatpickr JS -->'));
 
 test('supplier modal owns full available height and no longer uses a fixed table height deduction', () => {

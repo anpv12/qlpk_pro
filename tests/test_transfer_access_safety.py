@@ -19,6 +19,7 @@ from app.models.service import Service
 from app.models.package import Package
 from app.modules.appointments.services import transfer_service as service
 from test_account_session_lifecycle import isolated_postgres, wait_for_database_lock
+from module_parts import setattr_all
 
 
 def payload(ids=None, role='doctor', recipient=9):
@@ -60,7 +61,7 @@ def transfer_db(isolated_postgres, monkeypatch):
                 appointment_id=identity, doctor_id=doctor, examination_date=datetime(2026, 9, 28), status=ExaminationStatus.DOCTOR_EXAM))
     sync = MagicMock()
     monkeypatch.setattr(service, 'sync_transferred_appointment_calendar', sync)
-    monkeypatch.setattr(api, 'schedule_calendar_transfer_drain', MagicMock())
+    setattr_all(monkeypatch,api, 'schedule_calendar_transfer_drain', MagicMock())
     return SimpleNamespace(factory=factory, engine=engine, sync=sync)
 
 
@@ -201,10 +202,10 @@ def test_disabled_recipient_rechecked_after_user_lock(transfer_db):
 def test_endpoint_rolls_back_rejected_batch_and_only_notifies_committed_ids(transfer_db, monkeypatch):
     state = transfer_db
     application = Flask(__name__)
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
     emitted = MagicMock()
     notified = MagicMock()
-    monkeypatch.setattr(api, 'emit_appointment_changed', emitted)
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', emitted)
     monkeypatch.setattr(api.notification_service, 'create_transfer_notifications', notified)
     endpoint = inspect.unwrap(api.transfer_appointments)
     for data, status in [(payload([1, 2]), 403), (payload([1, 999]), 404), (None, 400)]:
@@ -262,10 +263,10 @@ def test_examination_status_rechecked_after_real_row_lock(transfer_db):
 def test_unexpected_mid_batch_failure_rolls_back_database_and_never_notifies(transfer_db, monkeypatch):
     state = transfer_db
     application = Flask(__name__)
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
     emitted = MagicMock()
     notified = MagicMock()
-    monkeypatch.setattr(api, 'emit_appointment_changed', emitted)
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', emitted)
     monkeypatch.setattr(api.notification_service, 'create_transfer_notifications', notified)
     state.sync.side_effect = [True, RuntimeError('isolated failure')]
     with application.test_request_context('/api/appointments/transfer', method='POST', json=payload([1, 3])):
@@ -283,12 +284,12 @@ def test_authenticated_route_enforces_batch_scope_and_ignores_spoofed_actor_role
     state = transfer_db
     application = Flask(__name__)
     application.register_blueprint(api.router, url_prefix='/api/appointments')
-    monkeypatch.setattr(api, 'get_db', lambda: iter([state.factory()]))
+    setattr_all(monkeypatch,api, 'get_db', lambda: iter([state.factory()]))
     monkeypatch.setattr(auth_api, 'get_db', lambda: iter([state.factory()]))
     monkeypatch.setattr(auth_api, 'get_current_user', lambda token: actor(8, 'admin'))
     emitted = MagicMock()
     notified = MagicMock()
-    monkeypatch.setattr(api, 'emit_appointment_changed', emitted)
+    setattr_all(monkeypatch,api, 'emit_appointment_changed', emitted)
     monkeypatch.setattr(api.notification_service, 'create_transfer_notifications', notified)
     client = application.test_client()
     headers = {'Authorization': 'Bearer isolated-transfer-qa'}

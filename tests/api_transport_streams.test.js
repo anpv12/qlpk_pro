@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness(cookie = false) {
     let controller;
@@ -23,7 +24,7 @@ function harness(cookie = false) {
     const context = vm.createContext({ window, document: { baseURI: window.location.href },
         Headers, URL, ReadableStream, AbortController });
     for (const name of ['api-transport', 'browser-session', 'browser-session-actions']) {
-        vm.runInContext(fs.readFileSync(`app/static/js/shared/${name}.js`, 'utf8'), context);
+        runScriptFile(`app/static/js/shared/${name}.js`, context);
     }
     let session;
     if (cookie) {

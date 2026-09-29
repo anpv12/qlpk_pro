@@ -21,7 +21,7 @@ function scripts(directory, prefix = '') {
 
 test('only session owners read stored credentials or build Authorization headers', () => {
     const pattern = /qlpk_token|localStorage\.getItem\(\s*['"](?:token|access_token)['"]|Authorization|Bearer/;
-    const offenders = scripts(root).filter(file => !owners.has(file)
+    const offenders = scripts(root).filter(file => !owners.has(file) && !owners.has(file.replace(/-parts\/part-\d+\.js$/, '.js'))
         && pattern.test(fs.readFileSync(path.join(root, file), 'utf8')));
     assert.deepEqual(offenders, []);
 });

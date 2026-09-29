@@ -1,11 +1,12 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 let root = null;
 const context = vm.createContext({ window: {}, structuredClone,
     document: { getElementById: () => root } });
-vm.runInContext(fs.readFileSync('app/static/js/survey-result-config.js', 'utf8'), context);
+runScriptFile('app/static/js/survey-result-config.js', context);
 const editor = context.window._scResultConfig;
 const saved = { conditions: [{ operator: 'between', min_score: 0, max_score: 10,
     conclusion: 'Original' }], group_configs: { A: { conditions: [

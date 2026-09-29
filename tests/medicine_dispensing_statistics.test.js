@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup() {
     const elements = new Map();
@@ -28,7 +29,7 @@ function setup() {
         sessionStorage: { setItem() {} },
         fetch(url) { return new Promise(resolve => requests.push({ url, resolve })); }
     });
-    vm.runInContext(fs.readFileSync('app/static/js/medicine-statistics.js', 'utf8'), context);
+    runScriptFile('app/static/js/medicine-statistics.js', context);
     return { document, requests, context, run: code => vm.runInContext(code, context) };
 }
 

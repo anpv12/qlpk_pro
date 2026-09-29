@@ -2,7 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const source = fs.readFileSync('app/static/js/order-management.js', 'utf8');
+const { readOrderManagementSource } = require('./helpers/order-management-source');
+const source = readOrderManagementSource();
 const start = source.indexOf('function resolveSurveyAnswerText(');
 const end = source.indexOf('// Render single survey result card', start);
 const helperStart = source.indexOf('function attrJson(');
@@ -34,7 +35,7 @@ const noPrefixMatch = context.summarizePatientAnswersForOrderManagement(template
 assert.equal(noPrefixMatch.criteria.A.length, 0);
 console.log('Survey result identity, missing-score and real-zero checks passed');
 
-const patientSource = fs.readFileSync('app/static/js/patient-survey.js', 'utf8');
+const patientSource = require('./helpers/page-script-source').readPageScripts('patient-survey.html', ['patient-survey.js', 'patient-survey/']);
 const optionStart = patientSource.indexOf('function surveyOptionId(');
 const optionEnd = patientSource.indexOf('function renderRadioOption(', optionStart);
 vm.runInContext(patientSource.slice(optionStart, optionEnd), context);

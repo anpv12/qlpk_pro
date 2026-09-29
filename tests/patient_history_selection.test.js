@@ -5,9 +5,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const root = path.join(__dirname, '..');
 const read = filename => fs.readFileSync(path.join(root, filename), 'utf8');
-const source = read('app/static/js/components/modal-medical-history-list-ui.js');
+const SOURCE_FILE = path.join(root, 'app/static/js/components/modal-medical-history-list-ui.js');
 
 test('only explicit clicks mark one history row, not the default preview', async () => {
     const marker = 'modal-history-item-user-selected';
@@ -27,7 +28,7 @@ test('only explicit clicks mark one history row, not the default preview', async
         querySelectorAll() { return rows; },
         querySelector(selector) { return rows[Number(selector.match(/data-index="(\d+)"/)[1])]; }
     } };
-    vm.runInNewContext(source, context);
+    runScriptFile(SOURCE_FILE, vm.createContext(context));
     const api = context.window.ModalMedicalHistoryListUi;
     const result = api.renderHistoryListWithActiveRow({ container, histories: [
         { id: 1, appointment_id: 11, status: 'EXAMINING' },
