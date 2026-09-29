@@ -4,7 +4,7 @@ function showCustomToast(type, message) {
 }
 
 (function () {
-function installGroupPageFns1(ctx) {
+function installGroupPage1(ctx) {
 	// Fetch group list from API
 	function fetchGroups(callback) {
 		$.get('/groups/', function (data) {
@@ -65,7 +65,7 @@ function installGroupPageFns1(ctx) {
 	Object.assign(ctx, { fetchGroups, renderTable, renderPage });
 }
 
-function installGroupPageFns2(ctx) {
+function installGroupPage2(ctx) {
 	// Tree quyền (checkbox cha/con, expand/collapse)
 	function renderPermTree(container, checked = [], readonly = false) {
 		container.empty();
@@ -115,12 +115,9 @@ function installGroupPageFns2(ctx) {
 	Object.assign(ctx, { renderPermTree, registerRealtimeHooks });
 }
 
-function runGroupPageSetup1(closureCtx) {
-	closureCtx.ctx = {};
-	installGroupPageFns1(closureCtx.ctx);
-	installGroupPageFns2(closureCtx.ctx);
+function runGroupPage1(ctx) {
 	// Danh sách màn hình thực tế từ hệ thống
-	closureCtx.ctx.PERMISSIONS = [
+	ctx.PERMISSIONS = [
 		{
 			id: 'dashboard', label: 'Trang chủ', icon: 'bi bi-house-door', color: 'badge-dashboard', children: []
 		},
@@ -175,22 +172,22 @@ function runGroupPageSetup1(closureCtx) {
 			]
 		}
 	];
-	closureCtx.ctx.groupList = [];
-	closureCtx.editingGroupId = null;
-	closureCtx.deletingGroupId = null;
+	ctx.groupList = [];
+	ctx.editingGroupId = null;
+	ctx.deletingGroupId = null;
 	// Render table nhóm quyền
-	closureCtx.ctx.listPagination = window.QLPKPagination.createClient({ render: closureCtx.ctx.renderPage });
+	ctx.listPagination = window.QLPKPagination.createClient({ render: ctx.renderPage });
 	$('#groupFilterForm').on('submit', function (event) {
         event.preventDefault();
-        closureCtx.ctx.renderTable();
+        ctx.renderTable();
+    });
+	$('#resetBtn').on('click', function () {
+        $('#searchInput').val('');
+        ctx.renderTable();
     });
 }
 
-function runGroupPageSetup2(closureCtx) {
-	$('#resetBtn').on('click', function () {
-        $('#searchInput').val('');
-        closureCtx.ctx.renderTable();
-    });
+function runGroupPage2(ctx) {
 	// Checkbox cha/con logic
 	$(document).on('change', '.perm-parent', function () {
 		const checked = $(this).is(':checked');
@@ -206,53 +203,53 @@ function runGroupPageSetup2(closureCtx) {
 	});
 	// Thêm mới nhóm quyền
 	$('#addGroupBtn').on('click', function () {
-		closureCtx.editingGroupId = null;
+		ctx.editingGroupId = null;
 		$('#groupModalLabel').text('Thêm mới nhóm quyền');
 		$('#groupForm')[0].reset();
-		closureCtx.ctx.renderPermTree($('#permTreeEdit'), [], false);
+		ctx.renderPermTree($('#permTreeEdit'), [], false);
 		$('#groupFormError').addClass('d-none').text('');
 		$('#groupModal').modal('show');
 	});
 	// Sửa nhóm quyền
 	$('#groupTable').on('click', '.edit-btn', function () {
 		const id = $(this).data('id');
-		const group = closureCtx.ctx.groupList.find(g => g.id === id);
+		const group = ctx.groupList.find(g => g.id === id);
 		if (!group) return;
-		closureCtx.editingGroupId = id;
+		ctx.editingGroupId = id;
 		$('#groupModalLabel').text('Cập nhật nhóm quyền');
 		$('#groupForm')[0].reset();
 		$('#groupForm [name="code"]').val(group.code);
 		$('#groupForm [name="name"]').val(group.name);
 		$('#groupForm [name="desc"]').val(group.desc);
-		closureCtx.ctx.renderPermTree($('#permTreeEdit'), group.permissions, false);
+		ctx.renderPermTree($('#permTreeEdit'), group.permissions, false);
 		$('#groupFormError').addClass('d-none').text('');
 		$('#groupModal').modal('show');
 	});
 	// Xem chi tiết nhóm quyền
 	$('#groupTable').on('click', '.view-btn', function () {
 		const id = $(this).data('id');
-		const group = closureCtx.ctx.groupList.find(g => g.id === id);
+		const group = ctx.groupList.find(g => g.id === id);
 		if (!group) return;
 		$('#viewGroupModal [name="code"]').val(group.code);
 		$('#viewGroupModal [name="name"]').val(group.name);
 		$('#viewGroupModal [name="desc"]').val(group.desc);
-		closureCtx.ctx.renderPermTree($('#permTreeView'), group.permissions, true);
+		ctx.renderPermTree($('#permTreeView'), group.permissions, true);
 		$('#viewGroupModal').modal('show');
 	});
 	// Xoá nhóm quyền
 	$('#groupTable').on('click', '.delete-btn', function () {
-		closureCtx.deletingGroupId = $(this).data('id');
+		ctx.deletingGroupId = $(this).data('id');
 		$('#confirmDeleteGroupModal').modal('show');
 	});
 	$('#confirmDeleteGroupBtn').on('click', function () {
-		if (!closureCtx.deletingGroupId) return;
+		if (!ctx.deletingGroupId) return;
 		$.ajax({
-			url: `/groups/${closureCtx.deletingGroupId}`,
+			url: `/groups/${ctx.deletingGroupId}`,
 			type: 'DELETE',
 			success: function () {
 				$('#confirmDeleteGroupModal').modal('hide');
-				closureCtx.ctx.fetchGroups();
-				closureCtx.deletingGroupId = null;
+				ctx.fetchGroups();
+				ctx.deletingGroupId = null;
 			},
 			error: function () {
 				showCustomToast('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
@@ -261,7 +258,7 @@ function runGroupPageSetup2(closureCtx) {
 	});
 }
 
-function runGroupPageSetup3(closureCtx) {
+function runGroupPage3(ctx) {
 	// Lưu nhóm quyền (thêm/sửa)
 	$('#groupForm').on('submit', function (e) {
 		e.preventDefault();
@@ -273,16 +270,16 @@ function runGroupPageSetup3(closureCtx) {
 			$('#groupFormError').removeClass('d-none').text('Vui lòng nhập đầy đủ thông tin bắt buộc và chọn ít nhất 1 quyền.');
 			return;
 		}
-		if (closureCtx.editingGroupId) {
+		if (ctx.editingGroupId) {
 			// Update
 			$.ajax({
-				url: `/groups/${closureCtx.editingGroupId}`,
+				url: `/groups/${ctx.editingGroupId}`,
 				type: 'PUT',
 				contentType: 'application/json',
 				data: JSON.stringify({ code, name, desc, permissions: perms }),
 				success: function () {
 					$('#groupModal').modal('hide');
-					closureCtx.ctx.fetchGroups();
+					ctx.fetchGroups();
 				},
 				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể cập nhật nhóm quyền. Vui lòng kiểm tra lại.');
@@ -297,7 +294,7 @@ function runGroupPageSetup3(closureCtx) {
 				data: JSON.stringify({ code, name, desc, permissions: perms }),
 				success: function () {
 					$('#groupModal').modal('hide');
-					closureCtx.ctx.fetchGroups();
+					ctx.fetchGroups();
 				},
 				error: function () {
 					$('#groupFormError').removeClass('d-none').text('Không thể tạo nhóm quyền. Vui lòng kiểm tra lại.');
@@ -310,14 +307,16 @@ function runGroupPageSetup3(closureCtx) {
 		window.QLPKAppHeader?.logout();
 	});
 	// Khởi tạo
-	closureCtx.ctx.registerRealtimeHooks();
-	closureCtx.ctx.fetchGroups();
+	ctx.registerRealtimeHooks();
+	ctx.fetchGroups();
 }
 
 $(function () {
-	const closureCtx = {};
-	runGroupPageSetup1(closureCtx);
-	runGroupPageSetup2(closureCtx);
-	runGroupPageSetup3(closureCtx);
+	const ctx = {};
+	installGroupPage1(ctx);
+	installGroupPage2(ctx);
+	runGroupPage1(ctx);
+	runGroupPage2(ctx);
+	runGroupPage3(ctx);
 });
 })(); 

@@ -3,7 +3,8 @@
 
 - Every app Python/JS source file (vendor/minified excluded) stays at or under MAX_LINES.
 - ESLint (scripts/eslint.health.config.mjs) reports 0 errors, 0 warnings outside the
-  size/complexity metrics, and no function with complexity >= MAX_COMPLEXITY.
+  size/complexity metrics, no function with complexity >= MAX_COMPLEXITY and no function
+  longer than the max-lines-per-function limit (80) outside FUNCTION_LENGTH_BASELINE.
   Skipped with a notice when ESLint is unavailable.
 """
 
@@ -21,6 +22,11 @@ MAX_LINES = 600
 # Size/complexity metrics stay advisory below the hard limits; every other ESLint warning is a finding.
 METRIC_RULES = {"complexity", "max-lines-per-function", "max-lines"}
 MAX_COMPLEXITY = 16
+# Files still carrying an over-long function; remove an entry once that file is split. Do not add new ones.
+FUNCTION_LENGTH_BASELINE = {
+    "app/static/js/appointment-management.js",
+    "app/static/js/appointment-management/page-calendar.js",
+}
 JS_ROOT = ROOT / "app" / "static" / "js"
 
 
@@ -57,6 +63,8 @@ def eslint_findings() -> list[str] | None:
                 value = int(re.search(r"complexity of (\d+)", message["message"]).group(1))
                 if value >= MAX_COMPLEXITY:
                     findings.append(f"{rel}:{message.get('line')}: complexity {value} (>= {MAX_COMPLEXITY})")
+            elif message.get("ruleId") == "max-lines-per-function" and str(rel) not in FUNCTION_LENGTH_BASELINE:
+                findings.append(f"{rel}:{message.get('line')}: {message['message']}")
     return findings
 
 

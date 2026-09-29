@@ -1715,8 +1715,18 @@ pyflakes 163.
   hóa đơn đã xác nhận đo trên trạng thái thật, 3 chỗ trang xác thực đơn (không
   có phần tử). 43 còn lại: 35 đổi giá trị trên trang thật, còn lại ghi đè
   utility `!important` của Bootstrap hoặc trang nhúng iframe.
-- Không làm: gom `moduleParts` theo domain (chỉ là gợi ý); refactor 152 hàm
-  vượt ngưỡng tư vấn (cần QA từng màn).
+- Tiếp lát72 (30/09/2026): complexity ≤15 toàn bộ; hàm >80 dòng 65 → 2 (chỉ
+  còn `appointment-management.js` và `appointment-management/page-calendar.js`,
+  file của dev khác đang sửa). Cách tách: helper thuần; installer `moduleParts`
+  chia nhiều installer; closure lớn thành `installXxxN(ctx)` + `runXxxN(ctx)` giữ
+  đúng thứ tự lệnh, biến dùng chung chuyển lên `ctx`. `check_code_health.py`
+  fail với mọi hàm >80 dòng ngoài `FUNCTION_LENGTH_BASELINE` (2 file trên).
+  Sửa thêm: xóa thư mục tài liệu còn dữ liệu hiện đúng lý do backend.
+- QA lát72 tiếp: so sánh code gốc `58ad060` với code mới trên cùng bản sao DB,
+  17 màn (DOM, request API, lỗi console) khớp hoàn toàn; kê đơn trừ/hoàn kho,
+  lưu khám, lễ tân tạo BN + lịch, lịch bận, xác nhận/in hóa đơn, file chỉ
+  định, xóa danh mục đều đạt; CSP 32 màn 0 vi phạm; đăng nhập thật đạt.
+- Không làm: gom `moduleParts` theo domain (chỉ là gợi ý).
 
 ## Tech debt toàn dự án — 6 nhóm, 29/09/2026 (lát71)
 

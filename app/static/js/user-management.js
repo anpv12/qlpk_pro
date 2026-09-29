@@ -4,7 +4,7 @@ function showCustomToast(type, message) {
 }
 
 (function () {
-function installUserPageFns1(ctx) {
+function installUserPage1(ctx) {
 	function fetchUsers(params = {
 		search: $('#searchInput').val(),
 		role: $('#roleFilter').val(),
@@ -70,7 +70,7 @@ function installUserPageFns1(ctx) {
 	Object.assign(ctx, { fetchUsers, renderPage });
 }
 
-function installUserPageFns2(ctx) {
+function installUserPage2(ctx) {
 	// Function map role từ frontend sang backend enum
 	function mapRoleToBackend(frontendRole) {
 		const roleMap = {
@@ -150,27 +150,21 @@ function installUserPageFns2(ctx) {
 	Object.assign(ctx, { mapRoleToBackend, loadCurrentUserInfo, registerRealtimeHooks });
 }
 
-function runUserPageSetup1(closureCtx) {
-	closureCtx.ctx = {};
-	installUserPageFns1(closureCtx.ctx);
-	installUserPageFns2(closureCtx.ctx);
-}
-
-function runUserPageSetup2(closureCtx) {
+function runUserPage1(ctx) {
 	$('#logoutBtn').on('click', function () {
 		window.QLPKAppHeader?.logout();
 	});
 	$('#addUserBtn').on('click', function () {
 		$('#userModal').modal('show');
 	});
-	closureCtx.ctx.users = [];
-	closureCtx.editingUserId = null;
-	closureCtx.userIdToDelete = null;
-	closureCtx.currentAvatarUrl = '';
-	closureCtx.currentLicenseCertificateUrl = '';
-	closureCtx.currentLicenseCertificateFileName = '';
-	closureCtx.ctx.usersRequestRevision = 0;
-	closureCtx.ctx.listPagination = window.QLPKPagination.createClient({ render: closureCtx.ctx.renderPage });
+	ctx.users = [];
+	ctx.editingUserId = null;
+	ctx.userIdToDelete = null;
+	ctx.currentAvatarUrl = '';
+	ctx.currentLicenseCertificateUrl = '';
+	ctx.currentLicenseCertificateFileName = '';
+	ctx.usersRequestRevision = 0;
+	ctx.listPagination = window.QLPKPagination.createClient({ render: ctx.renderPage });
 	// Filter form
 	$('#filterForm').on('submit', function (e) {
 		e.preventDefault();
@@ -179,23 +173,23 @@ function runUserPageSetup2(closureCtx) {
 			role: $('#roleFilter').val(),
 			status: $('#statusFilter').val()
 		};
-		closureCtx.ctx.fetchUsers(params);
+		ctx.fetchUsers(params);
 	});
 	$('#resetBtn').on('click', function () {
 		$('#filterForm')[0].reset();
-		closureCtx.ctx.fetchUsers();
+		ctx.fetchUsers();
 	});
 	// Open modal for add
 	$('[data-bs-target="#userModal"]').on('click', function () {
-		closureCtx.editingUserId = null;
+		ctx.editingUserId = null;
 		$('#userModalLabel').text('THÊM TÀI KHOẢN');
 		$('#userForm')[0].reset();
 		$('#isActiveSwitch').prop('checked', true);
 		$('#canViewAllPatientsSwitch').prop('checked', false);
 		$('#userFormError').addClass('d-none').text('');
-		closureCtx.currentAvatarUrl = '';
-		closureCtx.currentLicenseCertificateUrl = '';
-		closureCtx.currentLicenseCertificateFileName = '';
+		ctx.currentAvatarUrl = '';
+		ctx.currentLicenseCertificateUrl = '';
+		ctx.currentLicenseCertificateFileName = '';
 		$('#licenseCertificateFileName').hide();
 		$('#avatarPreview').attr('src', '/static/assets/images_doctor.jpg');
 		$("input[name='username']").prop('readonly', false);
@@ -209,11 +203,11 @@ function runUserPageSetup2(closureCtx) {
 	});
 }
 
-function runUserPageSetup3(closureCtx) {
+function runUserPage2(ctx) {
 	// Edit user
 	$('#userTable').on('click', '.edit-btn', function () {
 		const id = $(this).data('id');
-		closureCtx.editingUserId = id;
+		ctx.editingUserId = id;
 		$('#userModalLabel').text('CẬP NHẬT TÀI KHOẢN');
 		$('#userForm')[0].reset();
 		$('#userFormError').addClass('d-none').text('');
@@ -237,12 +231,12 @@ function runUserPageSetup3(closureCtx) {
 				$("input[name='username']").val(user.username).prop('readonly', true);
 				$("input[name='email']").val(user.email);
 				$("input[name='license_number']").val(user.license_number || '');
-				closureCtx.currentLicenseCertificateUrl = user.license_certificate_file || '';
-				closureCtx.currentLicenseCertificateFileName = user.license_certificate_original_filename || '';
-				if (closureCtx.currentLicenseCertificateUrl) {
+				ctx.currentLicenseCertificateUrl = user.license_certificate_file || '';
+				ctx.currentLicenseCertificateFileName = user.license_certificate_original_filename || '';
+				if (ctx.currentLicenseCertificateUrl) {
 					// Sử dụng tên file gốc nếu có, nếu không thì lấy từ URL
-					const fileName = closureCtx.currentLicenseCertificateFileName || closureCtx.currentLicenseCertificateUrl.split('/').pop() || 'File chứng nhận';
-					$('#licenseCertificateFileName').text(fileName).attr('href', closureCtx.currentLicenseCertificateUrl).show();
+					const fileName = ctx.currentLicenseCertificateFileName || ctx.currentLicenseCertificateUrl.split('/').pop() || 'File chứng nhận';
+					$('#licenseCertificateFileName').text(fileName).attr('href', ctx.currentLicenseCertificateUrl).show();
 				} else {
 					$('#licenseCertificateFileName').hide();
 				}
@@ -251,9 +245,9 @@ function runUserPageSetup3(closureCtx) {
 				} else {
 					$("input[name='license_issue_date']").val('');
 				}
-				closureCtx.currentAvatarUrl = user.avatar || '';
+				ctx.currentAvatarUrl = user.avatar || '';
 				if ($('#avatarPreview').length) {
-					$('#avatarPreview').attr('src', closureCtx.currentAvatarUrl || '/static/assets/images_doctor.jpg');
+					$('#avatarPreview').attr('src', ctx.currentAvatarUrl || '/static/assets/images_doctor.jpg');
 				}
 				$("input[name='password']").val('********').prop('required', false).attr('placeholder', 'Nhập mật khẩu mới nếu muốn đổi');
 				$('#passwordRequired').hide();
@@ -279,39 +273,39 @@ function runUserPageSetup3(closureCtx) {
 	});
 }
 
-function runUserPageSetup4(closureCtx) {
+function runUserPage3(ctx) {
 	// Delete user (custom modal)
 	$('#userTable').on('click', '.delete-btn', function () {
-		closureCtx.userIdToDelete = $(this).data('id');
+		ctx.userIdToDelete = $(this).data('id');
 		const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
 		modal.show();
 	});
 	$('#confirmDeleteBtn').on('click', function () {
-		if (!closureCtx.userIdToDelete) return;
+		if (!ctx.userIdToDelete) return;
 		$.ajax({
-			url: `/users/${closureCtx.userIdToDelete}`,
+			url: `/users/${ctx.userIdToDelete}`,
 			type: 'DELETE',
 			success: function () {
 				bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
-				closureCtx.ctx.fetchUsers();
+				ctx.fetchUsers();
 			},
 			error: function () {
 				bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
 				showCustomToast('error', 'Không thể xóa tài khoản. Vui lòng thử lại.');
 			}
 		});
-		closureCtx.userIdToDelete = null;
+		ctx.userIdToDelete = null;
 	});
 }
 
-function runUserPageSetup5(closureCtx) {
+function runUserPage4(ctx) {
 	// Add/Edit user submit
 	$('#userForm').on('submit', function (e) {
 		e.preventDefault();
 		const form = $(this);
 		// Map role để đảm bảo đúng format backend enum
 		const roleValue = form.find("[name='role']").val();
-		const mappedRole = closureCtx.ctx.mapRoleToBackend(roleValue);
+		const mappedRole = ctx.mapRoleToBackend(roleValue);
 
 		const data = {
 			full_name: form.find("[name='full_name']").val(),
@@ -334,22 +328,22 @@ function runUserPageSetup5(closureCtx) {
 		if (licenseNumber) data.license_number = licenseNumber;
 		const licenseIssueDate = form.find("[name='license_issue_date']").val();
 		if (licenseIssueDate) data.license_issue_date = licenseIssueDate;
-		if (closureCtx.currentAvatarUrl) data.avatar = closureCtx.currentAvatarUrl;
+		if (ctx.currentAvatarUrl) data.avatar = ctx.currentAvatarUrl;
 		const password = form.find("[name='password']").val();
 		// Chỉ gửi password nếu có giá trị và không phải là các dấu sao (mật khẩu giả)
 		if (password && password.trim() !== '' && !/^\*+$/.test(password)) {
 			data.password = password;
 		}
 		$('#userFormError').addClass('d-none').text('');
-		if (closureCtx.editingUserId) {
+		if (ctx.editingUserId) {
 			$.ajax({
-				url: `/users/${closureCtx.editingUserId}`,
+				url: `/users/${ctx.editingUserId}`,
 				type: 'PUT',
 				contentType: 'application/json',
 				data: JSON.stringify(data),
 				success: function () {
 					bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-					closureCtx.ctx.fetchUsers();
+					ctx.fetchUsers();
 				},
 				error: function () {
 					$('#userFormError').removeClass('d-none').text('Không thể cập nhật tài khoản. Vui lòng kiểm tra lại.');
@@ -363,7 +357,7 @@ function runUserPageSetup5(closureCtx) {
 				data: JSON.stringify(data),
 				success: function () {
 					bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-					closureCtx.ctx.fetchUsers();
+					ctx.fetchUsers();
 				},
 				error: function () {
 					$('#userFormError').removeClass('d-none').text('Không thể tạo tài khoản. Vui lòng kiểm tra lại.');
@@ -373,7 +367,7 @@ function runUserPageSetup5(closureCtx) {
 	});
 }
 
-function runUserPageSetup6(closureCtx) {
+function runUserPage5(ctx) {
 	// Avatar upload handler
 	$(document).on('change', '#avatarFile', function () {
 		const file = this.files && this.files[0];
@@ -384,20 +378,20 @@ function runUserPageSetup6(closureCtx) {
 		reader.readAsDataURL(file);
 
 		// Upload
-		if (!closureCtx.editingUserId) {
+		if (!ctx.editingUserId) {
 			showCustomToast('warning', 'Hãy lưu tài khoản trước khi upload avatar');
 			return;
 		}
 		const formData = new FormData();
 		formData.append('file', file);
 		$.ajax({
-			url: `/users/${closureCtx.editingUserId}/avatar`,
+			url: `/users/${ctx.editingUserId}/avatar`,
 			method: 'POST',
 			data: formData,
 			processData: false,
 			contentType: false,
 			success: function (res) {
-				closureCtx.currentAvatarUrl = res.avatar;
+				ctx.currentAvatarUrl = res.avatar;
 				showCustomToast('success', 'Tải avatar thành công');
 			},
 			error: function () {
@@ -420,7 +414,7 @@ function runUserPageSetup6(closureCtx) {
 		}
 
 		// Upload
-		if (!closureCtx.editingUserId) {
+		if (!ctx.editingUserId) {
 			showCustomToast('warning', 'Hãy lưu tài khoản trước khi upload file chứng nhận');
 			$(this).val('');
 			return;
@@ -428,16 +422,16 @@ function runUserPageSetup6(closureCtx) {
 		const formData = new FormData();
 		formData.append('file', file);
 		$.ajax({
-			url: `/users/${closureCtx.editingUserId}/license-certificate`,
+			url: `/users/${ctx.editingUserId}/license-certificate`,
 			method: 'POST',
 			data: formData,
 			processData: false,
 			contentType: false,
 			success: function (res) {
-				closureCtx.currentLicenseCertificateUrl = res.license_certificate_file;
+				ctx.currentLicenseCertificateUrl = res.license_certificate_file;
 				// Sử dụng tên file gốc từ response
-				closureCtx.currentLicenseCertificateFileName = res.license_certificate_original_filename || file.name;
-				$('#licenseCertificateFileName').text(closureCtx.currentLicenseCertificateFileName).attr('href', closureCtx.currentLicenseCertificateUrl).show();
+				ctx.currentLicenseCertificateFileName = res.license_certificate_original_filename || file.name;
+				$('#licenseCertificateFileName').text(ctx.currentLicenseCertificateFileName).attr('href', ctx.currentLicenseCertificateUrl).show();
 				showCustomToast('success', 'Tải file chứng nhận thành công');
 			},
 			error: function () {
@@ -454,7 +448,7 @@ function runUserPageSetup6(closureCtx) {
 	});
 }
 
-function runUserPageSetup7(closureCtx) {
+function runUserPage6(ctx) {
 	// Calendar color swatch handlers
 	$('#clearCalendarColor').on('click', function () {
 		$('#calendarColorPicker').val('');
@@ -469,24 +463,25 @@ function runUserPageSetup7(closureCtx) {
 		$('#calendarColorPicker').data('cleared', false);
 	});
 	// Initial load
-	closureCtx.ctx.registerRealtimeHooks();
-	closureCtx.ctx.loadCurrentUserInfo();
+	ctx.registerRealtimeHooks();
+	ctx.loadCurrentUserInfo();
 	// Load thông tin user trước
-	closureCtx.ctx.fetchUsers();
+	ctx.fetchUsers();
 }
 
 $(document).ready(function () {
-	const closureCtx = {};
-	runUserPageSetup1(closureCtx);
+	const ctx = {};
+	installUserPage1(ctx);
+	installUserPage2(ctx);
 	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = '/login.html';
 		return;
 	}
-	runUserPageSetup2(closureCtx);
-	runUserPageSetup3(closureCtx);
-	runUserPageSetup4(closureCtx);
-	runUserPageSetup5(closureCtx);
-	runUserPageSetup6(closureCtx);
-	runUserPageSetup7(closureCtx);
+	runUserPage1(ctx);
+	runUserPage2(ctx);
+	runUserPage3(ctx);
+	runUserPage4(ctx);
+	runUserPage5(ctx);
+	runUserPage6(ctx);
 });
 })(); 

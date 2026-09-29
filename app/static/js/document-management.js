@@ -1,5 +1,5 @@
 (function () {
-function installDocumentPageFns1(ctx) {
+function installDocumentPage1(ctx) {
 	// --- UTILS ---
 	function formatBytes(bytes, decimals = 2) {
 	    if (!+bytes) return '0 Bytes';
@@ -65,7 +65,7 @@ function installDocumentPageFns1(ctx) {
 	Object.assign(ctx, { formatBytes, getFileIcon, openDocModal, closeDocModal, loadFolderTree });
 }
 
-function installDocumentPageFns2(ctx) {
+function installDocumentPage2(ctx) {
 	function createTreeNode(folder) {
 	    const hasChildren = folder.children && folder.children.length > 0;
 	    const toggleIconClass = hasChildren ? '' : 'tree-icon-toggle-placeholder';
@@ -110,7 +110,7 @@ function installDocumentPageFns2(ctx) {
 	Object.assign(ctx, { createTreeNode });
 }
 
-function installDocumentPageFns3(ctx) {
+function installDocumentPage3(ctx) {
 	function bindTreeEvents() {
 	    // Toggle collapse/expand and select folder
 	    $('.tree-node').off('click').on('click', function(e) {
@@ -173,8 +173,9 @@ function installDocumentPageFns3(ctx) {
 	                    }
 	                    ctx.loadFolderTree();
 	                },
-	                error: function() {
-	                    const msg = 'Không thể xóa thư mục. Vui lòng thử lại.';
+	                error: function(xhr) {
+	                    const reason = xhr.status === 400 ? xhr.responseJSON?.error : '';
+	                    const msg = reason || 'Không thể xóa thư mục. Vui lòng thử lại.';
 	                    ctx.showAlert('Lỗi', msg, 'error');
 	                }
 	            });
@@ -192,7 +193,7 @@ function installDocumentPageFns3(ctx) {
 	Object.assign(ctx, { bindTreeEvents });
 }
 
-function installDocumentPageFns4(ctx) {
+function installDocumentPage4(ctx) {
 	function loadDocuments(folderId) {
 	    $.ajax({
 	        url: `/api/documents?folder_id=${folderId}`,
@@ -210,7 +211,7 @@ function installDocumentPageFns4(ctx) {
 	Object.assign(ctx, { loadDocuments });
 }
 
-function installDocumentPageFns5(ctx) {
+function installDocumentPage5(ctx) {
 	function renderDocuments(docs) {
 	    const $tbody = $('#documentTableBody');
 	    $tbody.empty();
@@ -284,7 +285,7 @@ function installDocumentPageFns5(ctx) {
 	Object.assign(ctx, { renderDocuments, preventDefaults });
 }
 
-function installDocumentPageFns6(ctx) {
+function installDocumentPage6(ctx) {
 	function uploadFiles(files) {
 	    // Upload từng file một
 	    Array.from(files).forEach(file => {
@@ -334,23 +335,16 @@ function installDocumentPageFns6(ctx) {
 	Object.assign(ctx, { uploadFiles, showAlert });
 }
 
-function runDocumentPageSetup1(closureCtx) {
-	closureCtx.ctx = {};
-	installDocumentPageFns1(closureCtx.ctx);
-	installDocumentPageFns2(closureCtx.ctx);
-	installDocumentPageFns3(closureCtx.ctx);
-	installDocumentPageFns4(closureCtx.ctx);
-	installDocumentPageFns5(closureCtx.ctx);
-	installDocumentPageFns6(closureCtx.ctx);
+function runDocumentPage1(ctx) {
 	window.QLPKApiTransport.installJQuery($);
-	closureCtx.ctx.currentFolderId = null;
-	closureCtx.ctx.isUserAdmin = false;
+	ctx.currentFolderId = null;
+	ctx.isUserAdmin = false;
 	$('.admin-only-btn, .admin-only-col').addClass('doc-admin-hidden');
 	window.QLPKApiTransport.currentUser().then(user => {
-	    closureCtx.ctx.isUserAdmin = user.role === 'admin';
-	    $('.admin-only-btn, .admin-only-col').toggleClass('doc-admin-hidden', !closureCtx.ctx.isUserAdmin);
+	    ctx.isUserAdmin = user.role === 'admin';
+	    $('.admin-only-btn, .admin-only-col').toggleClass('doc-admin-hidden', !ctx.isUserAdmin);
 	});
-	window.closeDocModal = closureCtx.ctx.closeDocModal;
+	window.closeDocModal = ctx.closeDocModal;
 	// --- EVENT LISTENERS ---
 
 	// Create Root Folder
@@ -359,7 +353,7 @@ function runDocumentPageSetup1(closureCtx) {
 	    $('#folderId').val('');
 	    $('#folderName').val('');
 	    $('#folderModalTitle').html('<i class="bi bi-folder-plus me-2"></i>Thêm Thư Mục Gốc');
-	    closureCtx.ctx.openDocModal('#folderModal');
+	    ctx.openDocModal('#folderModal');
 	});
 	// Save Folder Form
 	$('#btnSaveFolder').on('click', function() {
@@ -368,7 +362,7 @@ function runDocumentPageSetup1(closureCtx) {
 	    const name = $('#folderName').val().trim();
 	    
 	    if (!name) {
-	        closureCtx.ctx.showAlert('Lỗi', 'Vui lòng nhập tên thư mục', 'warning');
+	        ctx.showAlert('Lỗi', 'Vui lòng nhập tên thư mục', 'warning');
 	        return;
 	    }
 
@@ -386,12 +380,12 @@ function runDocumentPageSetup1(closureCtx) {
 	        contentType: 'application/json',
 	        data: JSON.stringify(payload),
 	        success: function() {
-	            closureCtx.ctx.closeDocModal('#folderModal');
-	            closureCtx.ctx.loadFolderTree();
+	            ctx.closeDocModal('#folderModal');
+	            ctx.loadFolderTree();
 	        },
 	        error: function() {
 	            const msg = 'Không thể lưu thư mục. Vui lòng kiểm tra lại.';
-	            closureCtx.ctx.showAlert('Lỗi', msg, 'error');
+	            ctx.showAlert('Lỗi', msg, 'error');
 	        },
 	        complete: () => {
 	            $('#btnSaveFolder').html('Lưu thư mục').prop('disabled', false);
@@ -400,25 +394,25 @@ function runDocumentPageSetup1(closureCtx) {
 	});
 	// Add Link
 	$('#btnAddLink').on('click', function() {
-	    if (!closureCtx.ctx.currentFolderId) {
-	        closureCtx.ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước', 'warning');
+	    if (!ctx.currentFolderId) {
+	        ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước', 'warning');
 	        return;
 	    }
 	    $('#linkId').val('');
 	    $('#linkName').val('');
 	    $('#linkUrl').val('');
-	    closureCtx.ctx.openDocModal('#linkModal');
+	    ctx.openDocModal('#linkModal');
 	});
 }
 
-function runDocumentPageSetup2(closureCtx) {
+function runDocumentPage2(ctx) {
 	// Save Link Form
 	$('#btnSaveLink').on('click', function() {
 	    const name = $('#linkName').val().trim();
 	    const url = $('#linkUrl').val().trim();
 	    
 	    if (!name || !url) {
-	        closureCtx.ctx.showAlert('Lỗi', 'Vui lòng nhập đầy đủ tên và đường dẫn', 'warning');
+	        ctx.showAlert('Lỗi', 'Vui lòng nhập đầy đủ tên và đường dẫn', 'warning');
 	        return;
 	    }
 
@@ -430,17 +424,17 @@ function runDocumentPageSetup2(closureCtx) {
 	        method: 'POST',
 	        contentType: 'application/json',
 	        data: JSON.stringify({
-	            folder_id: closureCtx.ctx.currentFolderId,
+	            folder_id: ctx.currentFolderId,
 	            name: name,
 	            url: url
 	        }),
 	        success: function() {
-	            closureCtx.ctx.closeDocModal('#linkModal');
-	            closureCtx.ctx.loadDocuments(closureCtx.ctx.currentFolderId);
+	            ctx.closeDocModal('#linkModal');
+	            ctx.loadDocuments(ctx.currentFolderId);
 	        },
 	        error: function() {
 	            const msg = 'Không thể lưu liên kết. Vui lòng kiểm tra lại.';
-	            closureCtx.ctx.showAlert('Lỗi', msg, 'error');
+	            ctx.showAlert('Lỗi', msg, 'error');
 	        },
 	        complete: () => {
 	            $('#btnSaveLink').html('Lưu liên kết').prop('disabled', false);
@@ -449,8 +443,8 @@ function runDocumentPageSetup2(closureCtx) {
 	});
 	// Upload File (Button Click)
 	$('#btnUploadFile').on('click', function() {
-	    if (!closureCtx.ctx.currentFolderId) {
-	        closureCtx.ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
+	    if (!ctx.currentFolderId) {
+	        ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
 	        return;
 	    }
 	    $('#fileInputHidden').click();
@@ -458,43 +452,43 @@ function runDocumentPageSetup2(closureCtx) {
 	// Handle File Selection
 	$('#fileInputHidden').on('change', function() {
 	    if (this.files && this.files.length > 0) {
-	        closureCtx.ctx.uploadFiles(this.files);
+	        ctx.uploadFiles(this.files);
 	    }
 	});
 	// Dropzone Drag & Drop Events
-	closureCtx.dropzone = document.getElementById('uploadDropzone');
+	ctx.dropzone = document.getElementById('uploadDropzone');
 	// Ngăn chặn hành vi mặc định
 	['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-	    if (closureCtx.dropzone) closureCtx.dropzone.addEventListener(eventName, closureCtx.ctx.preventDefaults, false);
+	    if (ctx.dropzone) ctx.dropzone.addEventListener(eventName, ctx.preventDefaults, false);
 	});
 	// Thêm class khi drag over
 	['dragenter', 'dragover'].forEach(eventName => {
-	    if (closureCtx.dropzone) closureCtx.dropzone.addEventListener(eventName, () => {
-	        closureCtx.dropzone.classList.add('bg-light');
-	        closureCtx.dropzone.classList.add('doc-dropzone-dragover');
+	    if (ctx.dropzone) ctx.dropzone.addEventListener(eventName, () => {
+	        ctx.dropzone.classList.add('bg-light');
+	        ctx.dropzone.classList.add('doc-dropzone-dragover');
 	    }, false);
 	});
 	// Xóa class khi drag leave hoặc drop
 	['dragleave', 'drop'].forEach(eventName => {
-	    if (closureCtx.dropzone) closureCtx.dropzone.addEventListener(eventName, () => {
-	        closureCtx.dropzone.classList.remove('bg-light');
-	        closureCtx.dropzone.classList.remove('doc-dropzone-dragover');
+	    if (ctx.dropzone) ctx.dropzone.addEventListener(eventName, () => {
+	        ctx.dropzone.classList.remove('bg-light');
+	        ctx.dropzone.classList.remove('doc-dropzone-dragover');
 	    }, false);
 	});
 }
 
-function runDocumentPageSetup3(closureCtx) {
+function runDocumentPage3(ctx) {
 	// Xử lý drop
-	if (closureCtx.dropzone) {
-	    closureCtx.dropzone.addEventListener('drop', (e) => {
-	        if (!closureCtx.ctx.currentFolderId) {
-	            closureCtx.ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
+	if (ctx.dropzone) {
+	    ctx.dropzone.addEventListener('drop', (e) => {
+	        if (!ctx.currentFolderId) {
+	            ctx.showAlert('Lỗi', 'Vui lòng chọn một thư mục trước khi upload', 'warning');
 	            return;
 	        }
 	        const dt = e.dataTransfer;
 	        const files = dt.files;
 	        if (files.length > 0) {
-	            closureCtx.ctx.uploadFiles(files);
+	            ctx.uploadFiles(files);
 	        }
 	    }, false);
 	}
@@ -503,22 +497,28 @@ function runDocumentPageSetup3(closureCtx) {
 	        types: ['document.changed'],
 	        debounceMs: 500,
 	        handler: function (event) {
-	            closureCtx.ctx.loadFolderTree();
+	            ctx.loadFolderTree();
 	            const folderId = event && event.payload ? event.payload.folder_id : null;
-	            if (closureCtx.ctx.currentFolderId && (!folderId || Number(folderId) === Number(closureCtx.ctx.currentFolderId))) {
-	                closureCtx.ctx.loadDocuments(closureCtx.ctx.currentFolderId);
+	            if (ctx.currentFolderId && (!folderId || Number(folderId) === Number(ctx.currentFolderId))) {
+	                ctx.loadDocuments(ctx.currentFolderId);
 	            }
 	        }
 	    });
 	}
 	// INITIAL LOAD
-	closureCtx.ctx.loadFolderTree();
+	ctx.loadFolderTree();
 }
 
 $(document).ready(function() {
-    const closureCtx = {};
-    runDocumentPageSetup1(closureCtx);
-    runDocumentPageSetup2(closureCtx);
-    runDocumentPageSetup3(closureCtx);
+    const ctx = {};
+    installDocumentPage1(ctx);
+    installDocumentPage2(ctx);
+    installDocumentPage3(ctx);
+    installDocumentPage4(ctx);
+    installDocumentPage5(ctx);
+    installDocumentPage6(ctx);
+    runDocumentPage1(ctx);
+    runDocumentPage2(ctx);
+    runDocumentPage3(ctx);
 });
 })();
