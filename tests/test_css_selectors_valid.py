@@ -27,6 +27,6 @@ def test_selectors_have_balanced_brackets():
         for prelude in preludes(path.read_text(encoding='utf-8')):
             if not prelude or prelude.startswith('@') or re.fullmatch(r'[\d.%\s,fromto]+', prelude):
                 continue
-            if prelude.count('(') != prelude.count(')') or prelude.count('[') != prelude.count(']') or prelude[0] in ')]*,':
+            if prelude.count('(') != prelude.count(')') or prelude.count('[') != prelude.count(']') or prelude[0] in ')],' or prelude.startswith('[data-qlpk-button] *)'):
                 broken.append(f'{path.relative_to(ROOT)}: {prelude[:80]}')
     assert broken == []
