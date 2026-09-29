@@ -6,7 +6,8 @@
   Deploy cùng backend hiện tại; người dùng đăng nhập lại một lần (token cũ bị
   xóa). Yêu cầu HTTPS (ProxyFix + X-Forwarded-Proto đã có) hoặc localhost;
   truy cập http qua IP LAN sẽ bị chặn đăng nhập vì thiếu Web Locks/cookie Secure.
-- Production cần SESSION_REDIS_URL/REALTIME_REDIS_URL dùng chung mọi worker.
+- Production cần SESSION_REDIS_URL/REALTIME_REDIS_URL dùng chung mọi worker; docker-compose đã khai báo cả hai (redis db 0) và app chờ Redis healthy. Kiểm: `python scripts/check_security_config.py --compose docker-compose.yml`.
+- Thư viện frontend tự host ở `app/static/vendor/<lib>@<ver>/` (không CDN); nâng version phải thay file + SRI/LICENSE và cập nhật template.
 - Trang public khai báo `{% set qlpk_public_page = true %}` trước include partial.
 
 ## Calendar transfer consumer (2026-09-28, lát60)

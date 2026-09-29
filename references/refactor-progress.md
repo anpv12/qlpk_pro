@@ -1676,6 +1676,173 @@ Số liệu lịch sử sau lát 1 (không phải hiện tại): ESLint `no-unde
 inline, `personal-detail-modal-dry.js` (1.202 dòng, TLG), 61 `except…pass`,
 pyflakes 163.
 
+## Tech debt toàn dự án — 6 nhóm, 29/09/2026 (lát71)
+
+Đo trước: 70 lỗi ESLint, 20 hàm complexity ≥20, 37 file >600 dòng (27 JS,
+10 Python), 44 `except … pass`, 438 `!important`, 94 thẻ CDN, 13+ handler
+inline, production gate FAIL (thiếu Redis session).
+- ESLint: 70 → 0 lỗi (tham chiếu `window.X`, `/* global */` cho biến lexical
+  của trang, `XLSX`/`Sortable`/`IDBKeyRange` vào globals thư viện).
+- Complexity ≥20: 20 → 0 (tách helper, giữ thứ tự bước/await).
+- File >600 dòng: 37 → 0; `scripts/check_code_health.py` + `tests/test_code_health.py`
+  khóa ≤600 dòng, 0 lỗi ESLint, không hàm ≥20. Cách tách (đều kiểm đảo ngược
+  bằng AST: hàm/câu lệnh khớp nguyên văn sau khi bỏ tiền tố):
+  - IIFE → `<file>-parts/part-N.js` (hàm qua `moduleParts`, state qua
+    `moduleState`); entry ghi `// Parts (nạp trước file này): …`.
+  - Factory lớn (`doctor-indications-form`, `clinical-workspace-ui`,
+    `prescription-ui`) → installer theo instance (`inst`/`outer`).
+  - Classic script → file tiếp theo cùng scope trang; entry ghi
+    `// Continued in (nạp ngay sau file này, cùng scope trang): …`.
+  - Class (`JointExamManager`, `RelativeTable`, `DashboardManager`) → method
+    gắn prototype ở `<file>-methods.js` (non-enumerable như method class).
+  - Python API → `<module>_partN.py`, module gốc import lại ở cuối (đăng ký
+    route, giữ tên cũ); `NotificationService` → mixin `_workflows` + `_helpers`.
+  Template/`doctor-examination-entry.js`/loader động (`sidebar-dry-loader`,
+  `app-header-loader`) nạp part trước entry. Test/gate đọc qua
+  `tests/helpers/module-source.js`, `scripts/module_source.py`; patch module
+  Python tách qua `tests/module_parts.py::setattr_all`.
+- `except … pass`: 44 → 0, thay bằng log cảnh báo (hành vi giữ nguyên);
+  `tests/test_no_silent_except.py` khóa. `next(db_gen, None)` bỏ try thừa.
+- Handler inline: 18 (`onclick/onchange/oninput/onblur/onmousedown`) → 0, dùng
+  `data-qlpk-call` (thêm `mousedown` vào `shared/inline-actions.js`); gate 0.
+- CDN: 94 thẻ + 4 loader động + `@import` Google Fonts → 0; 20 file self-host ở
+  `app/static/vendor/<lib>@<ver>/` (SRI khớp 100% bản CDN cũ) + font icon/Roboto
+  + LICENSE. CSP Report-Only bỏ host CDN. Gate `html_external_assets`,
+  `css_js_external_assets` = 0.
+- `!important`: 438 → 94. Phân tích cascade trong Chrome trên DB thật chỉ đọc
+  (30 trang × 1440/760 px, mở từng modal, :hover/:focus xét cả hai nhánh,
+  phần tử dựng giả theo tổ hợp class có thật trong markup, hiểu cả shorthand
+  dùng `var()`): 344 chỗ bỏ không đổi giá trị thắng cascade; kiểm lại khi bỏ
+  đồng thời: 0 xung đột (vòng đầu bỏ sót shorthand `var()` → A/B phát hiện
+  nền modal-header/badge đổi, đã hoàn nguyên và làm lại). 94 còn lại là
+  override cần thiết hoặc selector động chưa kiểm chứng được. Gate khóa 94.
+- Production: `docker-compose.yml` khai báo `SESSION_REDIS_URL` (cùng db 0 với
+  realtime, không mất phiên khi deploy), app chờ Redis healthy;
+  `check_security_config.py --compose docker-compose.yml` PASS,
+  `tests/test_production_session_config.py`. Chạy local DEBUG vẫn báo thiếu
+  Redis (không sửa `.env`).
+- QA: 752 Node, 915 Python/324 skip opt-in; 16 gate (code health, feedback,
+  Doctor, frontend, smoke, JS globals, brand, receptionist, workspace tabs +
+  runtime, patient history, prescription stock/print, ICD, medical history,
+  API auth, schema) đạt; `check_security_config --compose` PASS.
+  A/B Chrome trên DB thật chỉ đọc giữa HEAD (worktree 02e01b2) và bản mới:
+  30 trang × 2 khổ, 220 view (trang + từng modal) so DOM, box và 50 thuộc tính
+  computed style; request GET/ghi; lỗi JS. Bản mới: 0 lỗi JS, 0 request ra
+  ngoài. Khác biệt còn lại đều do nhịp tải: Lễ tân (khối “Chưa có người thân”
+  hiện ngay vì bảng người thân khởi tạo trước reset form) và Chỉ tiêu (chiều
+  cao biểu đồ Chart.js, bản mới chạy 2 lần cũng lệch nhau); làm chậm
+  `/auth/session` 400–900 ms thì HEAD cho kết quả giống hệt bản mới. Tích hợp
+  A/B (chặn ghi, so body request): Tủ thuốc, Lịch hẹn ×2, Thu ngân ×2, Chỉ định
+  giống nhau (Lịch hẹn: số request verify-events khác 1 lần, chạy lại khớp).
+  Đăng nhập thật `hienngvo` ở 8000: Doctor mở ca, tải lại giữ phiên, đăng xuất
+  về login; 8 màn mở được, 0 request ngoài. Chưa kiểm: trạng thái hover/animation
+  thực tế của 94 `!important` còn lại, luồng ghi thật (DB copy).
+
+## Tech debt theo màn — Thu ngân, ĐÓNG 28/09/2026 (lát70)
+
+- `payment-waiting.js` 1.966 dòng → lõi 323 dòng (state, helper, ready,
+  bindEvents, `showCustomToast`) + classic script `payment-waiting/{list,
+  detail,services,invoice,output}.js` (≤514 dòng), nạp đúng thứ tự cũ, chỉ
+  khai báo top-level; cùng mẫu header global/exported và ESLint
+  `sourceType: script` như Tủ thuốc/Chỉ định.
+- 5 lỗi ESLint `CustomModal` → `window.CustomModal`. Complexity cao nhất 18
+  (không có hàm ≥20 từ trước). Toàn dự án lỗi ESLint 75 → 70.
+- Thêm `payment_waiting_modules.test.js` (thứ tự, ≤600 dòng, top-level, tên
+  không trùng). Trước đó màn này không có test đọc nguồn.
+- QA: 752 Node; JS globals 31 trang 0 unresolved; feedback/frontend contract
+  đạt. A/B Chrome DB thật chỉ đọc (admin, chặn ghi) HEAD vs mới: danh sách,
+  3 bộ lọc trạng thái, tìm, số dòng/trang, trang 2, mở 5 hóa đơn (dịch vụ,
+  đơn thuốc, tổng tiền), nhập tiền/nút xóa, sửa/thêm/xóa dịch vụ, xác nhận
+  hóa đơn thiếu tiền, 4 luồng trả về (lễ tân/bác sĩ/tâm lý gia/lịch hẹn) qua
+  2 bước xác nhận, in hóa đơn/in danh sách, xuất bảng → DOM, GET, request ghi
+  và số cửa sổ bật lên giống hệt (`/tmp/qlpk-pay-ab.cjs`, `-ab2.cjs`). Đăng
+  nhập thật `hienngvo` ở 8000 mở được màn (10 dòng). Chưa kiểm nội dung trang
+  in hóa đơn thật (bị chặn/ghi, cửa sổ in đóng ngay trong QA).
+
+## Tech debt theo màn — Chỉ định, ĐÓNG 28/09/2026 (lát69)
+
+- Phạm vi: JS màn `order-management.html` (`order-management.js`,
+  `orders/order-status-utils.js`). `orders/order-selection-state-utils.js` và
+  `order-autocomplete-utils.js` thuộc Doctor (shared), không nạp ở màn này nên
+  không sửa (`loadSelectedOrdersFromServer` 22 vẫn còn).
+- Complexity: `loadOrderSurvey` 52 → tách 5 bước; `checkSurveyStatusUpdate`
+  23 → `applySurveyStatusUpdate`; `resolveSurveyAnswerText` 20 → helper id/
+  nhãn/giá trị. Cao nhất còn 17.
+- 6 lỗi ESLint: `QLPKIconSystem` → `window.QLPKIconSystem`,
+  `updateLevelInputAlignment` → `window.updateLevelInputAlignment` (cùng đối
+  tượng, vốn gán qua `window.`). Toàn dự án 81 → 75 lỗi.
+- `order-management.js` 2.157 dòng → lõi + 7 slice (≤341 dòng), cùng mẫu
+  classic script như Tủ thuốc (ESLint `sourceType: script`, header global/
+  exported); `order_management_modules.test.js` khóa thứ tự, top-level và tên.
+- QA: 749 Node; `test_workflow_contracts.py` 15 đạt; JS globals 31 trang 0
+  unresolved; feedback/frontend/Doctor contract đạt. A/B Chrome DB thật chỉ
+  đọc (admin, chặn ghi) HEAD vs mới: tab đang thực hiện/đã hoàn thành, mở 8
+  chỉ định (kết quả GAD-7, chưa tạo link, ghi chú nhập tay, mẫu 404 → báo lỗi),
+  lọc tên, chọn dòng, xóa có xác nhận → DOM giống hệt, GET và request ghi
+  giống nhau (lần chạy đầu bản mới dư 2 GET poll trạng thái; chạy lại khớp
+  53/53, do nhịp thời gian). Đăng nhập thật `hienngvo` ở 8000 mở được màn.
+  Chưa kiểm: nhánh “chưa có lịch khám” (examination id qua API 404), upload/
+  xóa file kết quả thật, lưu mức độ khảo sát.
+
+## Tech debt theo màn — Lịch hẹn, ĐÓNG 28/09/2026 (lát68)
+
+- `appointment-management.js` 2.253 dòng (một closure `$(function)` 1.686 dòng
+  lint) → entry 374 dòng + 7 slice `appointment-management/page-*.js` (≤391
+  dòng). Tách bằng script AST (espree + eslint-scope): 105 hàm chuyển sang
+  slice theo khoảng dòng, 27 biến closure thành `page.state`, 262 tham chiếu
+  đổi thành `state.X`/`page.X`; hàm cùng slice vẫn gọi trực tiếp. 30 câu lệnh
+  bind/init giữ ở entry đúng thứ tự cũ. Kiểm đảo ngược (bỏ `state.`/`page.`):
+  105/105 hàm và 30/30 câu lệnh khớp nguyên văn bản gốc. Không có hàm dùng
+  `this`/`arguments` ở cấp closure nên đổi sang `page.fn()` không đổi ngữ cảnh.
+- `populateEditForm` complexity 44 → 16 (tách điền bệnh nhân, dịch vụ/gói,
+  loại khám, thời lượng; giữ thứ tự và bước `await` ICD). Cao nhất trên màn 17.
+- 5 lỗi ESLint `CustomModal` không khai báo → `window.CustomModal` (cùng đối
+  tượng global). Màn Lịch hẹn 0 lỗi ESLint; toàn dự án 86 → 81 lỗi.
+- Test đọc nguồn (`auth_transport_safety`, `appointment_calendar_shared`) đọc
+  entry + slice; thêm `appointment_management_modules.test.js`.
+- QA: 746 Node; JS globals 31 trang 0 unresolved; feedback/frontend contract
+  đạt. A/B Chrome trên DB thật chỉ đọc (admin, chặn ghi) giữa HEAD và bản mới:
+  tháng/tuần/tháng trước, tìm kiếm, lọc bác sĩ, mở sửa 2 lịch hẹn (dịch vụ,
+  loại khám, tóm tắt), lưu sửa, modal thêm (validation rỗng, chọn gói), đồng
+  bộ Google Calendar, kéo thả event, đổi trạng thái có xác nhận, xóa có xác
+  nhận → kết quả giống hệt, request ghi giống nhau và đều bị chặn
+  (`/tmp/qlpk-appt-ab.cjs`, `/tmp/qlpk-appt-ab2.cjs`). Đăng nhập thật
+  `hienngvo` ở 8000: lịch hiện 2 lịch hẹn, mở modal sửa đúng bệnh nhân/bác sĩ.
+  Chưa kiểm: kéo giãn thời lượng event, xuất Excel (thư viện CDN).
+
+## Tech debt theo màn — Quản lý thuốc, ĐÓNG 28/09/2026 (lát67)
+
+Mục tiêu đang mở: Quản lý thuốc → Lịch hẹn → Chỉ định → Thu ngân; làm xong
+màn nào đóng màn đó. Tiêu chí: JS của màn không còn hàm complexity ≥20, 0 lỗi
+ESLint, file ≈≤600 dòng, không đổi hành vi, test/gate xanh, QA trình duyệt.
+- Complexity: `populateMedicineForm` 32 và `updateStockQuantityHint` 23 tách
+  helper; `reference-review.js` `controls` 34, `comparison` 24, `loadPreview`
+  22 chuyển sang hàm tiêu đề/trạng thái/dòng so sánh. Cao nhất còn 19.
+- `medicine-management.js` 2.837 dòng → lõi 281 dòng (helper, state, ready,
+  bindEvents, `showCustomToast`) + 7 classic script `medicines/management-
+  {list,form,stock,batch-import,suppliers,overview,import-ledger}.js`
+  (≤469 dòng), nạp theo đúng thứ tự cũ. Các file chỉ khai báo top-level nên
+  thứ tự nạp không đổi runtime; hàm vẫn là global cho `onclick` inline.
+- Tham chiếu chéo khai báo bằng header `/* global */` (`: writable` khi gán) và
+  `/* exported */`; ESLint health lint các file này ở `sourceType: script`.
+  `check_js_globals.py` vẫn kiểm các tên trong `/* global */` phải có nơi định
+  nghĩa trên trang. Gỡ 8 khai báo chết không còn ai gọi.
+- Sửa lỗi có sẵn: nút “Xóa đã chọn” dùng `$.show()` nhưng `.mm-hidden` là
+  `display:none !important` nên không bao giờ hiện; nay dùng `setElementVisible`.
+- Test đọc nguồn dùng `tests/helpers/medicine-management-source.js` (ghép file
+  theo thứ tự template); `medicine_management_modules.test.js` khóa thứ tự nạp,
+  ≤600 dòng, chỉ khai báo top-level, không trùng tên, nút xóa hàng loạt.
+- QA: 742 Node, 911 Python/324 skip opt-in; feedback, Doctor, frontend
+  contract, smoke, JS globals (31 trang, 0 unresolved) đạt. ESLint màn Thuốc
+  0 lỗi, cảnh báo ~66 → 22; toàn dự án lỗi giữ 86, cảnh báo 733 → 673.
+  A/B Chrome trên DB thật chỉ đọc (admin, chặn mọi request ghi): bản HEAD và
+  bản mới cho kết quả giống hệt ở danh sách/tìm/lọc thiếu giá/sắp xếp/trang 2,
+  sửa 5 thuốc, thêm mới, chi tiết tồn, nhập kho + lịch sử, nhà cung cấp, liên
+  kết DAV, lưu bị chặn hiện thông báo (`/tmp/qlpk-medicine-ab.cjs`). Phần gợi ý
+  quy đổi tồn so 128 tổ hợp đầu vào cũ/mới: 0 khác. Xóa một thuốc và xóa hàng
+  loạt gửi đúng DELETE (bị chặn). `hienngvo` (bác sĩ) không có quyền màn này
+  nên không QA đăng nhập thật ở 8000 cho màn Thuốc.
+
 ## Doctor health — xử lý 11 mục, ĐÓNG 28/09/2026 (lát66)
 
 Đo lại 28/09 trên 100 file JS mà Doctor nạp (template + ES module graph):

@@ -1,5 +1,33 @@
 # QLPK Smoke Checks
 
+## Code health toàn dự án (2026-09-29, lát71)
+
+- [ ] `scripts/check_code_health.py` OK (≤600 dòng mỗi file app, 0 lỗi ESLint,
+  không hàm complexity ≥20); `pytest tests/test_code_health.py
+  tests/test_no_silent_except.py tests/test_production_session_config.py`.
+- [ ] Sửa file có `// Parts …` hoặc `// Continued in …`: sửa trong part, giữ
+  thứ tự nạp ở template/entry/loader; test đọc qua `tests/helpers/module-source.js`.
+- [ ] Browser: 0 request ra ngoài (vendor tự host), 0 lỗi JS, icon/font hiển thị.
+- [ ] Thêm `!important`/handler inline/CDN mới sẽ fail frontend contract.
+
+## Tech debt theo màn (2026-09-28, lát67–70)
+
+- [ ] Tủ thuốc: xem mục Clinic Medicine Inventory (lõi + 7 file
+  `medicines/management-*.js`, nút “Xóa đã chọn” hiện khi tick).
+- [ ] Lịch hẹn: `node --test tests/appointment_management_modules.test.js`
+  đạt (thứ tự nạp slice, mọi `page.X`/`state.X` có nơi cài/khởi tạo). Thêm hàm
+  mới vào slice phải liệt kê trong `Object.assign(page, …)`; state mới khai báo
+  ở `Object.assign(state, …)` của entry. Browser: lịch tải, đổi view, tìm,
+  lọc bác sĩ, mở sửa (dịch vụ/gói, loại khám, tóm tắt), thêm, kéo thả, đổi
+  trạng thái/xóa có xác nhận, modal đồng bộ Google Calendar; 0 lỗi JS.
+- [ ] Chỉ định: `node --test tests/order_management_modules.test.js
+  tests/order_*.test.js` và `pytest tests/test_workflow_contracts.py` đạt.
+  Browser: hai tab danh sách, mở chỉ định có kết quả khảo sát / chưa tạo link /
+  ghi chú nhập tay / mẫu lỗi, lọc tên, chọn dòng, xóa có xác nhận; 0 lỗi JS.
+- [ ] Thu ngân: `node --test tests/payment_waiting_modules.test.js` đạt.
+  Browser: lọc trạng thái/tìm/phân trang, mở hóa đơn, nhập tiền, sửa/thêm/xóa
+  dịch vụ, xác nhận hóa đơn, 4 luồng trả về có 2 bước xác nhận, in; 0 lỗi JS.
+
 ## Dữ liệu thật local, chỉ đọc (2026-09-28)
 
 - [x] Luồng ghi trên BẢN SAO DB local (pg_dump → cụm PostgreSQL tạm /tmp, Google/
@@ -1302,6 +1330,13 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 
 Áp dụng khi sửa danh mục thuốc, nhập lô, lịch sử giao dịch hoặc
 prescription stock integration.
+
+- [ ] JS màn Tủ thuốc là lõi `medicine-management.js` + 7 file
+  `medicines/management-*.js` nạp đúng thứ tự template; thêm file mới phải
+  cập nhật header `/* global */`/`/* exported */`, chạy
+  `node --test tests/medicine_management_modules.test.js` và
+  `scripts/check_js_globals.py` (0 unresolved). Tick một dòng phải hiện nút
+  “Xóa đã chọn”, bỏ tick thì ẩn.
 
 - [ ] Tooltip icon cảnh báo thuốc: hover/focus hiện sau120ms, không hiện
   thêm tooltip native; Tab đọc được nhãn, Escape đóng. Đổi trang/tìm kiếm

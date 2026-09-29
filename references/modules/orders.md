@@ -1,5 +1,18 @@
 # Orders Module Context
 
+### Màn Quản lý chỉ định tách file (2026-09-28, lát69)
+
+- `order-management.js` là lõi (config DASS, state, `apiCall`, dialog, bảng
+  danh sách); phần còn lại là classic script `orders/order-management-{detail,
+  survey,survey-results,files,actions,init,survey-level}.js`, nạp đúng thứ tự
+  template, chỉ khai báo top-level; bootstrap `initializePage` ở slice cuối.
+  Tham chiếu chéo khai báo bằng `/* global */`/`/* exported */`.
+- `loadOrderSurvey` tách: `loadOrderSurveyForTemplate` → `resolveSurveyExaminationId`
+  → `loadIndicationSurveyTemplates` → `loadSurveySessionStatus` →
+  `loadExaminationSurveyResponses`; giữ thứ tự request và kiểm `isCurrent()`.
+- Test đọc nguồn qua `tests/helpers/order-management-source.js` (JS) và
+  `read_order_management()` (Python contract).
+
 ### Bỏ lịch sử riêng trong Tạo chỉ định (2026-09-21)
 
 - Shared panel Doctor/Tâm lý gia chỉ còn chỉ định của lượt khám hiện tại.
