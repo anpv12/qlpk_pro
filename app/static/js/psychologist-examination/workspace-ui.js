@@ -190,11 +190,7 @@
 			const modalTrigger = event.target.closest('[data-psychologist-open-modal]');
 			if (!modalTrigger || !root.contains(modalTrigger)) return;
 			event.preventDefault();
-			const modalId = modalTrigger.dataset.psychologistOpenModal === 'service'
-				? 'serviceModal'
-				: modalTrigger.dataset.psychologistOpenModal === 'order'
-					? 'orderModal'
-					: '';
+			const modalId = ({ service: 'serviceModal', order: 'orderModal' })[modalTrigger.dataset.psychologistOpenModal] || '';
 			if (modalId) openModal(modalId, { document: doc });
 		});
 

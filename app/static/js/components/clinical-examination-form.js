@@ -334,12 +334,9 @@
 			const doc = getDocument(options);
 			return Object.values(config.mainFields).reduce((payload, field) => {
 				if (!field.payloadKey) return payload;
-				const value = field.kind === 'icd'
-					? serializeIcdField(doc, field.hiddenControlId)
-					: field.kind === 'medication'
-						? serializeMedicationInput(getValue(doc, field.controlId))
-						: getValue(doc, field.controlId);
-				payload[field.payloadKey] = value;
+				if (field.kind === 'icd') payload[field.payloadKey] = serializeIcdField(doc, field.hiddenControlId);
+				else if (field.kind === 'medication') payload[field.payloadKey] = serializeMedicationInput(getValue(doc, field.controlId));
+				else payload[field.payloadKey] = getValue(doc, field.controlId);
 				return payload;
 			}, {});
 		}
@@ -352,9 +349,8 @@
 				if (!controlId) return;
 				const control = getElement(doc, controlId);
 				if (!control) return;
-				controls[controlId] = field.kind === 'icd'
-					? serializeIcdDraftValue(doc, field)
-					: control.type === 'checkbox' ? Boolean(control.checked) : textOf(control.value);
+				if (field.kind === 'icd') controls[controlId] = serializeIcdDraftValue(doc, field);
+				else controls[controlId] = control.type === 'checkbox' ? Boolean(control.checked) : textOf(control.value);
 			});
 			return { controls };
 		}

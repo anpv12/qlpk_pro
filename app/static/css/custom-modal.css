@@ -181,7 +181,7 @@
 .invoice-confirmed textarea:disabled {
 	background-color: var(--qlpk-palette-gray-93) !important;
 	border-color: var(--qlpk-palette-gray-83) !important;
-	color: var(--qlpk-palette-gray-46) !important;
+	color: var(--qlpk-palette-gray-46);
 }
 /* Success button state */
 .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -202,17 +202,17 @@
 /* Print button always active */
 .invoice-confirmed .qlpk-print-invoice-btn {
 	pointer-events: auto;
-	cursor: pointer !important;
+	cursor: pointer;
 }
 /* Print button always active */
 .invoice-confirmed .qlpk-print-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	opacity: 1;
-	background-color: var(--qlpk-palette-teal-41) !important;
+	background-color: var(--qlpk-palette-teal-41);
 	border-color: var(--qlpk-palette-teal-41);
-	color: white !important;
+	color: white;
 }
 .invoice-confirmed .qlpk-print-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-palette-teal-33) !important;
+	background-color: var(--qlpk-palette-teal-33);
 	border-color: var(--qlpk-palette-teal-33);
 	color: white;
 }

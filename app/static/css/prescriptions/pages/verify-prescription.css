@@ -69,14 +69,14 @@ body {
 
 	.qlpk-prescription-preview-area img,
 	.qlpk-prescription-preview-area svg {
-		max-width: 100% !important;
-		height: auto !important;
+		max-width: 100%;
+		height: auto;
 	}
 }
 
 .qlpk-prescription-preview-area .barcode-svg,
 .qlpk-prescription-preview-area .patient-code {
-	display: none !important;
+	display: none;
 }
 
 .verify-prescription-loading {

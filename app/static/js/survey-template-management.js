@@ -240,7 +240,7 @@ class SurveyTemplateManager {
 		const performer = this.escapeHtml(template.default_performer_name || 'Chưa gán');
 		const createdDate = this.formatDate(template.created_at);
 		const documentOnly = template.template_kind === 'document';
-		const badgeClass = template.readiness === 'needs_configuration' ? 'warning' : template.readiness === 'ready' ? 'active' : 'neutral';
+		const badgeClass = ({ needs_configuration: 'warning', ready: 'active' })[template.readiness] || 'neutral';
 		const statusBadge = `<span class="qlpk-status stm-badge stm-badge--${badgeClass}" title="${this.escapeAttr(template.readiness_message || '')}">${this.escapeHtml(template.readiness_label || 'Cần cấu hình')}</span>`;
 
 		return `
@@ -326,9 +326,8 @@ class SurveyTemplateManager {
 				$('#uploadModal').modal('hide');
 				this.loadTemplates();
 			} else {
-				this.showToast('error', result.code === 'SURVEY_MANAGEMENT_FORBIDDEN'
-					? 'Bạn không có quyền quản lý mẫu khảo sát.'
-					: editing ? 'Không thể cập nhật tài liệu. Vui lòng kiểm tra thông tin và thử lại.' : 'Không thể tải tài liệu lên. Vui lòng kiểm tra tên và tệp.');
+				const failure = editing ? 'Không thể cập nhật tài liệu. Vui lòng kiểm tra thông tin và thử lại.' : 'Không thể tải tài liệu lên. Vui lòng kiểm tra tên và tệp.';
+				this.showToast('error', result.code === 'SURVEY_MANAGEMENT_FORBIDDEN' ? 'Bạn không có quyền quản lý mẫu khảo sát.' : failure);
 			}
 		} catch (error) {
 			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');

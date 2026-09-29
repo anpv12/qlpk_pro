@@ -182,9 +182,9 @@ function updateStockQuantitySummaryDisplay({ total }) {
 
 	// Không định dạng nhóm nghìn trong input number; chỉ cắt bớt phần thập phân thừa
 	// Đảm bảo hiển thị "0" khi total = 0
-	const rawTotal = Number.isFinite(total)
-		? (total === 0 ? '0' : total.toFixed(3).replace(/\.?0+$/, ''))
-		: '';
+	let rawTotal = '';
+	if (total === 0) rawTotal = '0';
+	else if (Number.isFinite(total)) rawTotal = total.toFixed(3).replace(/\.?0+$/, '');
 	summaryInput.value = rawTotal;
 }
 

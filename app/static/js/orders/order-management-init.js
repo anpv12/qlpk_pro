@@ -9,7 +9,8 @@ function initializePage() {
 		button.addEventListener('keydown', event => {
 			if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
 			event.preventDefault();
-			const next = event.key === 'Home' ? 0 : event.key === 'End' ? groupTabs.length - 1 : (index + 1) % groupTabs.length;
+			const keyTargets = { Home: 0, End: groupTabs.length - 1 };
+		const next = event.key in keyTargets ? keyTargets[event.key] : (index + 1) % groupTabs.length;
 			groupTabs[next].focus();
 			selectOrderGroup(groupTabs[next].dataset.statusGroup);
 		});

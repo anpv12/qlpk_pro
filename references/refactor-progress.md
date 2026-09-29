@@ -1676,6 +1676,48 @@ Số liệu lịch sử sau lát 1 (không phải hiện tại): ESLint `no-unde
 inline, `personal-detail-modal-dry.js` (1.202 dòng, TLG), 61 `except…pass`,
 pyflakes 163.
 
+## Việc còn lại sau lát71 — xử lý toàn bộ, 29/09/2026 (lát72)
+
+- Commit 320 file lát67–71 thành 6 commit theo nhóm (chưa push).
+- Lỗi nhịp tải: bảng người thân tự hiện trạng thái rỗng khi khởi tạo;
+  biểu đồ Chỉ tiêu dựng qua `mountCtChart` (dispose + ResizeObserver, không cộng
+  dồn listener resize) và ≤767px mỗi biểu đồ có chiều cao riêng 300px. Đo trễ
+  0/600/1200ms cho cùng kết quả.
+- Lỗi thật tìm thấy khi QA ghi trên bản sao DB (`/tmp/qlpk-writeqa`, mạng ra
+  ngoài bị chặn): `custom-modal.js` thay `window.confirm` bằng Promise nên nút
+  xóa thư mục/tài liệu chạy KHÔNG hỏi → 13 màn chuyển sang
+  `QLPKConfirmationDialog.confirmDelete` (fail-closed), gỡ ghi đè global;
+  tạo bệnh nhân mới luôn 500 vì mã `QA-CLS-20260905` làm lệch sinh mã HS (so
+  chuỗi) → sinh theo số lớn nhất; xóa nhiều thuốc báo lỗi chung và không tải
+  lại → chờ đủ kết quả, hiện lý do backend; xóa NCC hiện lý do "đang có lô".
+  Trang xác thực đơn QR và khảo sát công khai bị chặn vì lớp phiên đòi đăng
+  nhập (lỗi có từ `02e01b2`) → trang public gửi API không kèm phiên.
+- QA ghi trên bản sao: xóa 9 màn danh mục (Hủy = 0 request, Xóa = 200), Tủ
+  thuốc nhập kho (tồn 360→370, lô mới đúng), sửa thuốc, xóa 1/nhiều, tạo/xóa
+  NCC; kéo giãn lịch hẹn 90 phút; 15 file Excel mở được; upload/tải/xóa file
+  kết quả chỉ định; in hóa đơn thật ra PDF đúng nội dung; xác nhận thanh toán;
+  Bác sĩ lưu lý do khám + kê đơn (trừ kho 370→360, xóa thuốc hoàn 370); Lễ tân
+  tạo bệnh nhân + lịch hẹn; tạo/xóa lịch bận. Test DB opt-in chạy trên bản sao:
+  64 lỗi cũ do fixture thiếu `is_active` → 185/185 đạt.
+- Redis compose chỉ publish `127.0.0.1`. CSP bắt buộc `script-src 'self'`
+  (quét 32 trang + mọi modal: 0 vi phạm; test khóa không inline script/handler/
+  `javascript:`).
+- Calendar: outbox `google_calendar_sync_jobs` cho mọi writer tự động (xem
+  architecture-map lát72); 441 mapping của chủ lịch đã ngắt giữ có chủ đích,
+  có `scripts/report_calendar_mappings.py`.
+- ESLint: lint classic script đúng `sourceType: script`; 633 → 152 cảnh báo, chỉ
+  còn `complexity` 15–19 (87) và hàm >80 dòng (65). Gate code-health fail với
+  mọi cảnh báo khác.
+- `!important`: 94 → 43 khai báo. Bỏ 19 chỗ sau phân tích cascade kết hợp (0
+  khác biệt), 4 rule selector hỏng từ `d4d5def` (trình duyệt vốn bỏ qua; thêm
+  test selector hợp lệ), các chỗ trong CSS chết (modal chi tiết cá nhân không
+  được nạp, trang gói dịch vụ redirect, nút có `data-qlpk-button`), 2 chỗ
+  hóa đơn đã xác nhận đo trên trạng thái thật, 3 chỗ trang xác thực đơn (không
+  có phần tử). 43 còn lại: 35 đổi giá trị trên trang thật, còn lại ghi đè
+  utility `!important` của Bootstrap hoặc trang nhúng iframe.
+- Không làm: gom `moduleParts` theo domain (chỉ là gợi ý); refactor 152 hàm
+  vượt ngưỡng tư vấn (cần QA từng màn).
+
 ## Tech debt toàn dự án — 6 nhóm, 29/09/2026 (lát71)
 
 Đo trước: 70 lỗi ESLint, 20 hàm complexity ≥20, 37 file >600 dòng (27 JS,

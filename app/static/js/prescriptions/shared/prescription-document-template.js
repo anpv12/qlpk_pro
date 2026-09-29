@@ -227,6 +227,12 @@ function prescriptionFormEscape(value) {
 	})[char]);
 }
 
+function readUnitDigit(one, ten, digits) {
+	if (one === 1 && ten > 1) return 'mốt';
+	if (one === 5 && ten) return 'lăm';
+	return digits[one];
+}
+
 function prescriptionQuantityWords(value) {
 	const digits = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
 	const number = Number(value);
@@ -242,7 +248,7 @@ function prescriptionQuantityWords(value) {
 			if (ten > 1) parts.push(digits[ten], 'mươi');
 			else if (ten === 1) parts.push('mười');
 			else if (one && (hundred || full)) parts.push('lẻ');
-			if (one) parts.push(one === 1 && ten > 1 ? 'mốt' : one === 5 && ten ? 'lăm' : digits[one]);
+			if (one) parts.push(readUnitDigit(one, ten, digits));
 			return parts.join(' ');
 		};
 		const groups = [];

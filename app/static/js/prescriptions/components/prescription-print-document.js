@@ -113,9 +113,8 @@
 	function create(options = {}) {
 		const hostDocument = options.document || document;
 		const hostWindow = hostDocument.defaultView || window;
-		const openWindow = typeof options.openWindow === 'function'
-			? options.openWindow
-			: (typeof window.open === 'function' ? window.open.bind(window) : null);
+		const defaultOpenWindow = typeof window.open === 'function' ? window.open.bind(window) : null;
+		const openWindow = typeof options.openWindow === 'function' ? options.openWindow : defaultOpenWindow;
 		const activeDocumentUrls = new WeakMap();
 
 		function getDocumentBaseUrl() {

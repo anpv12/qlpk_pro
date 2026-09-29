@@ -88,10 +88,10 @@ async function loadICDList(page = 1) {
 		const response = await fetch(`/api/icd/?${params}`);
 		if (revision !== listRevision) return;
 		if (!response.ok) {
-			const message = response.status === 401
-				? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
-				: response.status === 403 ? 'Bạn không có quyền xem danh mục ICD.'
-				: 'Không tải được danh sách ICD. Vui lòng thử lại.';
+			const message = ({
+				401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+				403: 'Bạn không có quyền xem danh mục ICD.'
+			})[response.status] || 'Không tải được danh sách ICD. Vui lòng thử lại.';
 			renderICDState(message, response.status !== 401 && response.status !== 403);
 			return;
 		}

@@ -16,12 +16,17 @@
         el('medicineFormError').textContent = '';
     }
 
+    function importedTypeLabel(isImported) {
+        if (isImported === true) return 'Ngoại';
+        return isImported === false ? 'Nội' : '';
+    }
+
     function fillMappedFields(defaults = {}) {
         const route = defaults.administration_method || defaults.suggested_administration_method || '';
         const values = {
             administrationMethod: route,
             administrationMethodValue: route,
-            importedType: defaults.is_imported === true ? 'Ngoại' : defaults.is_imported === false ? 'Nội' : '',
+            importedType: importedTypeLabel(defaults.is_imported),
             importedTypeValue: defaults.is_imported == null ? '' : String(defaults.is_imported),
             saleUnit: defaults.unit || '', saleUnitValue: defaults.unit || '',
             packagingUnit: defaults.packaging_unit || '', unitsPerBox: defaults.units_per_box || ''
@@ -34,7 +39,8 @@
     function setSourceLocks(fields = []) {
         for (const [field, id] of [['administration_method', 'administrationMethod'], ['is_imported', 'importedType']]) {
             el(id).disabled = fields.includes(field);
-            el(id).placeholder = fields.includes(field) ? 'Chưa có' : id === 'administrationMethod' ? 'Chọn đường dùng' : 'Chọn Nội/Ngoại';
+            const emptyPlaceholder = id === 'administrationMethod' ? 'Chọn đường dùng' : 'Chọn Nội/Ngoại';
+            el(id).placeholder = fields.includes(field) ? 'Chưa có' : emptyPlaceholder;
             el(id + 'Dropdown').classList.add('mm-hidden');
         }
     }

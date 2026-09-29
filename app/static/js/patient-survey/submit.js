@@ -161,18 +161,25 @@ function closeAlert(button) {
 }
 
 // Hide action buttons and show completion state
+function completionCopy() {
+    if (reviewOrderId !== null) return reviewSummary();
+    if (isSurveyCompleted) return { title: 'Nộp bài thành công!', text: 'Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.' };
+    return { title: 'Khảo sát đã kết thúc', text: 'Các câu trả lời đã lưu được giữ lại. Khảo sát không nhận thêm thay đổi.' };
+}
+
 function hideActionButtons() {
     // Hide all action buttons
     $('.btn-start-over, .btn-previous, .btn-next, .btn-submit').hide();
 
     // Show completion message
+    const completion = completionCopy();
     const completionHtml = `
         <div class="completion-message">
             <div class="completion-content">
                 <div class="completion-icon ${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? 'completion-icon--pending' : ''}">${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? '…' : '✓'}</div>
                 <div class="completion-text">
-                    <h4>${reviewOrderId !== null ? reviewSummary().title : isSurveyCompleted ? 'Nộp bài thành công!' : 'Khảo sát đã kết thúc'}</h4>
-                    <p>${reviewOrderId !== null ? reviewSummary().text : isSurveyCompleted ? 'Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.' : 'Các câu trả lời đã lưu được giữ lại. Khảo sát không nhận thêm thay đổi.'}</p>
+                    <h4>${completion.title}</h4>
+                    <p>${completion.text}</p>
                 </div>
             </div>
             <div class="completion-buttons">

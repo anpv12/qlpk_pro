@@ -2,8 +2,9 @@
 """Code-health gate: file size, ESLint errors and function complexity.
 
 - Every app Python/JS source file (vendor/minified excluded) stays at or under MAX_LINES.
-- ESLint (scripts/eslint.health.config.mjs) reports 0 errors and no function with
-  complexity >= MAX_COMPLEXITY. Skipped with a notice when ESLint is unavailable.
+- ESLint (scripts/eslint.health.config.mjs) reports 0 errors, 0 warnings outside the
+  size/complexity metrics, and no function with complexity >= MAX_COMPLEXITY.
+  Skipped with a notice when ESLint is unavailable.
 """
 
 from __future__ import annotations
@@ -17,6 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_LINES = 600
+# Size/complexity metrics stay advisory below the hard limits; every other ESLint warning is a finding.
+METRIC_RULES = {"complexity", "max-lines-per-function", "max-lines"}
 MAX_COMPLEXITY = 20
 JS_ROOT = ROOT / "app" / "static" / "js"
 
@@ -48,6 +51,8 @@ def eslint_findings() -> list[str] | None:
         for message in entry["messages"]:
             if message["severity"] == 2:
                 findings.append(f"{rel}:{message.get('line')}: {message['message']}")
+            elif message.get("ruleId") not in METRIC_RULES:
+                findings.append(f"{rel}:{message.get('line')}: {message.get('ruleId')}: {message['message']}")
             elif message.get("ruleId") == "complexity":
                 value = int(re.search(r"complexity of (\d+)", message["message"]).group(1))
                 if value >= MAX_COMPLEXITY:

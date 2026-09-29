@@ -29,7 +29,7 @@
                 control.textContent = label;
                 control.dataset.page = String(target);
                 control.disabled = disabled;
-                control.setAttribute('aria-label', label === '‹' ? 'Trang trước' : label === '›' ? 'Trang sau' : `Trang ${target}`);
+                control.setAttribute('aria-label', ({ '‹': 'Trang trước', '›': 'Trang sau' })[label] || `Trang ${target}`);
                 if (active) control.setAttribute('aria-current', 'page');
                 li.append(control);
                 links.append(li);

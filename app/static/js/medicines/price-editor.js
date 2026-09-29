@@ -8,8 +8,8 @@
         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
     }) : 'Đang áp dụng';
     function period(row = null) {
-        el('medicinePriceFrom').textContent = row?.effective_from ? time(row.effective_from)
-            : medicine ? 'Khi xác nhận giá mới' : 'Khi lưu thuốc thành công';
+        const pendingFrom = medicine ? 'Khi xác nhận giá mới' : 'Khi lưu thuốc thành công';
+        el('medicinePriceFrom').textContent = row?.effective_from ? time(row.effective_from) : pendingFrom;
         el('medicinePriceTo').textContent = row?.effective_from ? time(row.effective_to)
             : 'Chưa xác định — đến lần đổi giá tiếp theo';
     }
@@ -67,7 +67,7 @@
             const delta = row.difference == null ? 0 : Number(row.difference);
             for (const [value, name] of [[money(row.old_price)], [money(row.new_price)],
                 [row.difference == null ? '—' : (delta > 0 ? '+' : '') + money(row.difference),
-                    delta > 0 ? 'mm-price-delta-up' : delta < 0 ? 'mm-price-delta-down' : ''],
+                    ({ 1: 'mm-price-delta-up', '-1': 'mm-price-delta-down' })[Math.sign(delta)] || ''],
                 [time(row.effective_from)]]) {
                 const td = document.createElement('td');
                 if (name) td.className = name;

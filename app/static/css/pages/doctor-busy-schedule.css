@@ -22,7 +22,7 @@
 
 		/* Header and other styles */
 		.header-bar {
-			background: var(--qlpk-color-white) !important;
+			background: var(--qlpk-color-white);
 			border-bottom: 1px solid var(--qlpk-palette-gray-88);
 			padding: 8px 0 4px 0;
 			margin-bottom: 8px;
@@ -61,8 +61,8 @@
 			border: none;
 }
 .btn-warning:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: var(--qlpk-palette-amber-75) !important;
-			color: var(--qlpk-palette-gray-20-a) !important;
+			background: var(--qlpk-palette-amber-75);
+			color: var(--qlpk-palette-gray-20-a);
 }
 .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 			color: var(--qlpk-color-primary);
@@ -88,11 +88,11 @@
 
 		/* Gradient backgrounds */
 		.bg-gradient-primary {
-			background: var(--qlpk-workflow-context-header-bg) !important;
+			background: var(--qlpk-workflow-context-header-bg);
 		}
 
 		.bg-gradient-success {
-			background: var(--qlpk-workflow-context-header-bg) !important;
+			background: var(--qlpk-workflow-context-header-bg);
 		}
 
 		/* Custom input styling */

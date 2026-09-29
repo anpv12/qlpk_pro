@@ -289,7 +289,7 @@ class DashboardManager {
 				data: doctorCounts,
 				smooth: 0.4,
 				symbol: 'circle',
-				symbolSize: d => d === Math.max(...doctorCounts) && d > 0 ? 8 : (d > 0 ? 5 : 0),
+				symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...doctorCounts) ? 8 : 5; },
 				lineStyle: { color: DOCTOR_COLOR, width: 2.5 },
 				itemStyle: { color: DOCTOR_COLOR, borderColor: '#fff', borderWidth: 2 },
 				areaStyle: {
@@ -314,7 +314,7 @@ class DashboardManager {
 				data: psychCounts,
 				smooth: 0.4,
 				symbol: 'circle',
-				symbolSize: d => d === Math.max(...psychCounts) && d > 0 ? 8 : (d > 0 ? 5 : 0),
+				symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...psychCounts) ? 8 : 5; },
 				lineStyle: { color: PSYCH_COLOR, width: 2.5 },
 				itemStyle: { color: PSYCH_COLOR, borderColor: '#fff', borderWidth: 2 },
 				areaStyle: {
@@ -397,7 +397,8 @@ class DashboardManager {
 			const tbody = document.getElementById('examDetailTableBody');
 			tbody.innerHTML = items.map((it, i) => {
 				const isPsych = (it.doctor_role || '').toUpperCase() === 'PSYCHOLOGIST';
-				const rowClass = isPsych ? 'dashboard-row-psych' : (i % 2 === 0 ? '' : 'dashboard-row-alt');
+				const altClass = i % 2 === 0 ? '' : 'dashboard-row-alt';
+			const rowClass = isPsych ? 'dashboard-row-psych' : altClass;
 				const timeClass = isPsych ? 'dashboard-cell-psych dashboard-cell-psych-marker' : 'dashboard-cell-accent dashboard-cell-accent-marker';
 				return `<tr class="${rowClass}">
 					<td class="ps-3 py-2 text-center fw-semibold ${timeClass}">${it.time}</td>

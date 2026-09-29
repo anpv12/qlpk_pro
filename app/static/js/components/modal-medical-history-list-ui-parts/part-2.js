@@ -249,9 +249,8 @@
 		}
 	}
 	function getDisplayDate(exam) {
-		return exam.appointment_date
-			? new Date(exam.appointment_date)
-			: (exam.examination_date ? new Date(exam.examination_date) : null);
+		const value = exam.appointment_date || exam.examination_date;
+		return value ? new Date(value) : null;
 	}
 	function isSameDate(firstDate, secondDate) {
 		return firstDate && secondDate &&

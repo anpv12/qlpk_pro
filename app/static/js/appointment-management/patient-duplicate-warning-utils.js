@@ -52,10 +52,10 @@
 		}
 	}
 
+	const DUPLICATE_APPOINTMENT_STATUS_TEXT = { CONFIRMED: 'Đã xác nhận', NO_SHOW: 'Không đến', CANCELLED: 'Đã hủy' };
+
 	function getDuplicateAppointmentStatusText(status) {
-		return status === 'CONFIRMED' ? 'Đã xác nhận' :
-			status === 'NO_SHOW' ? 'Không đến' :
-				status === 'CANCELLED' ? 'Đã hủy' : 'Chờ xác nhận';
+		return DUPLICATE_APPOINTMENT_STATUS_TEXT[status] || 'Chờ xác nhận';
 	}
 
 	function buildExistingAppointmentsHtml(existingPatient) {

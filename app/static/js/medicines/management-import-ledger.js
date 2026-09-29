@@ -242,9 +242,9 @@ function renderReceiptDispensingRows(rows) {
     rows.forEach(item => {
         const row = document.createElement('tr');
         const quantity = value => value == null ? 'Chưa ghi nhận' : formatStockQuantity(value, item.unit);
-        const change = item.quantity == null ? 'Chưa ghi nhận'
-            : item.quantity === 0 ? 'Không đổi'
-                : `${item.quantity > 0 ? '+' : '−'}${quantity(Math.abs(item.quantity))}`;
+        let change = 'Chưa ghi nhận';
+        if (item.quantity === 0) change = 'Không đổi';
+        else if (item.quantity != null) change = `${item.quantity > 0 ? '+' : '−'}${quantity(Math.abs(item.quantity))}`;
         const values = [
             [formatDispensingTime(item.created_at)],
             [labels[item.type] || 'Loại chưa xác định'],

@@ -98,6 +98,7 @@
 		}
 
 		const toastType = normalizeType(type);
+		const defaultDuration = structured ? 12000 : 3000;
 		host.classList.toggle('qlpk-workspace-toast-host--detailed', Boolean(structured));
 		positionHost(host, hostWindow);
 		hostWindow.setTimeout(() => positionHost(host, hostWindow), 250);
@@ -129,7 +130,7 @@
 			host._qlpkToastHideTimer = hostWindow.setTimeout(() => {
 				host.innerHTML = '';
 			}, 180);
-		}, Number(options.duration) > 0 ? Number(options.duration) : structured ? 12000 : 3000);
+		}, Number(options.duration) > 0 ? Number(options.duration) : defaultDuration);
 		return true;
 	}
 

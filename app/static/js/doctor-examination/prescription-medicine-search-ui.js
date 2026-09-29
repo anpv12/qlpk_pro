@@ -101,7 +101,7 @@
 			const optionKey = `${row.uid}:${medicine.id}`;
 			state.options.set(optionKey, medicine);
 			const rxType = normalizePrescriptionType(medicine.prescription_type);
-			const rxLabel = rxType === 'H' ? 'Đơn hướng thần (H)' : rxType === 'N' ? 'Đơn gây nghiện (N)' : '';
+			const rxLabel = ({ H: 'Đơn hướng thần (H)', N: 'Đơn gây nghiện (N)' })[rxType] || '';
 			const rxClass = rxLabel ? ` doctor-support-dropdown__item--rx-${rxType.toLowerCase()}` : '';
 			const rxFlag = rxLabel
 				? `<span class="doctor-support-dropdown__flag" title="${escapeAttr(rxLabel)}" aria-label="${escapeAttr(rxLabel)}">${escapeHtml(rxType)}</span>`
@@ -172,9 +172,8 @@
 				event.preventDefault();
 				const direction = event.key === 'ArrowDown' ? 1 : -1;
 				const current = state.activeIndex;
-				setActive(doc, current < 0
-					? (direction > 0 ? 0 : optionElements.length - 1)
-					: current + direction);
+				const firstIndex = direction > 0 ? 0 : optionElements.length - 1;
+				setActive(doc, current < 0 ? firstIndex : current + direction);
 				return null;
 			}
 			if (event.key === 'Enter' && state.activeIndex >= 0) {

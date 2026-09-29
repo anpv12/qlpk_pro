@@ -130,8 +130,16 @@
 		}
 		const owner = window.QLPKBrowserSession.create({ fetch: nativeFetch, channel: options.channel });
 		const actions = window.QLPKBrowserSessionActions.create({ owner, fetch: nativeFetch, locks: options.locks });
-		cookieSession = Object.freeze({ owner, actions });
+		// Public pages (login, QR verify, patient survey) call public APIs without a signed-in session.
+		cookieSession = Object.freeze({ owner, actions, allowAnonymous: options.allowAnonymous === true });
 		return cookieSession;
+	}
+
+	async function hasAuthenticatedSession(owner) {
+		if (['unknown', 'loading'].includes(owner.snapshot().status)) {
+			try { await owner.bootstrap(); } catch { /* chưa đăng nhập: gọi API công khai không kèm phiên */ }
+		}
+		return owner.snapshot().status === 'authenticated';
 	}
 
 	async function cookieRequest(input, init = {}) {
@@ -147,6 +155,9 @@
 			return nativeFetch(input, init);
 		}
 		const { owner } = cookieSession;
+		if (cookieSession.allowAnonymous && !(await hasAuthenticatedSession(owner))) {
+			return nativeFetch(input, { ...init, credentials: 'same-origin' });
+		}
 		const result = await owner.request(input, init);
 		return protectResponse(result.response, () => {
 			const current = owner.snapshot();
@@ -297,9 +308,8 @@
 					credentials: settings.xhrFields?.withCredentials ? 'include' : 'same-origin',
 				}).then(async response => {
 					const binary = settings.xhrFields?.responseType;
-					const payload = binary === 'blob' ? await response.blob()
-						: binary === 'arraybuffer' ? await response.arrayBuffer()
-							: binary === 'json' ? await response.json() : await response.text();
+					const reader = ({ blob: 'blob', arraybuffer: 'arrayBuffer', json: 'json' })[binary] || 'text';
+					const payload = await response[reader]();
 					const responseHeaders = new Headers(response.headers);
 					if (settings.mimeType) responseHeaders.set('Content-Type', settings.mimeType);
 					const rawHeaders = Array.from(responseHeaders, ([name, value]) => `${name}: ${value}`).join('\r\n');

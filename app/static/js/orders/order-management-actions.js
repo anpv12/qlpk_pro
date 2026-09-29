@@ -3,8 +3,15 @@
 
 // Render timeline
 function surveyClosureText(order) {
-    const reason = order.completion_reason === 'expired' ? 'Hết thời hạn khảo sát' : order.completion_reason === 'doctor' ? 'Bác sĩ kết thúc khảo sát' : 'Khảo sát đã kết thúc';
+    const reason = ({ expired: 'Hết thời hạn khảo sát', doctor: 'Bác sĩ kết thúc khảo sát' })[order.completion_reason] || 'Khảo sát đã kết thúc';
     return `${reason}${order.completed_at ? ` · ${formatDisplayDate(order.completed_at)}` : ''}`;
+}
+
+function timelineStepDetail(order, value, timestamps) {
+    if (value === 'completed' && order.status === 'completed') return surveyClosureText(order);
+    if (timestamps[value]) return formatDisplayDate(timestamps[value]);
+    if (order.status === 'completed' && value === 'has_result') return 'Chưa ghi nhận bài nộp hợp lệ';
+    return '';
 }
 
 function renderTimeline(order) {
@@ -17,8 +24,9 @@ function renderTimeline(order) {
     const timestamps = {sent: order.created_at, survey_sent: order.survey_sent_at, has_result: order.result_at, completed: order.completed_at};
     target.innerHTML = states.map((value, index) => {
         const label = window.ClinicalOrderStatusUtils.getOrderStatusConfig(value).label;
-        const state = timestamps[value] ? (index === current && value !== 'completed' ? 'active' : 'done') : 'pending';
-        const detail = value === 'completed' && order.status === 'completed' ? surveyClosureText(order) : timestamps[value] ? formatDisplayDate(timestamps[value]) : order.status === 'completed' && value === 'has_result' ? 'Chưa ghi nhận bài nộp hợp lệ' : '';
+        const reached = index === current && value !== 'completed' ? 'active' : 'done';
+        const state = timestamps[value] ? reached : 'pending';
+        const detail = timelineStepDetail(order, value, timestamps);
         return `<div class="timeline-item ${state}"><div class="fw-semibold om-timeline-step-title">${label}</div>${detail ? `<div class="om-timeline-step-sub">${detail}</div>` : ''}</div>`;
     }).join('');
 }

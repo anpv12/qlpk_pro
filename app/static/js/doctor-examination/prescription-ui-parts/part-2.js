@@ -186,9 +186,9 @@
 		const enabled = Boolean(inst.STATE.reExaminationDraftDateTime);
 		const parsed = inst.parseDateTimeInputValue(inst.STATE.reExaminationDraftDateTime);
 		const when = new Date(`${parsed.date || ''}T${parsed.time || '09:00'}`);
-		const message = inst.isReExaminationLocked() ? inst.reExaminationLockReason()
-			: enabled && (!Number.isFinite(when.getTime()) || when <= new Date())
-			? 'Ngày giờ tái khám mới phải nằm trong tương lai.' : '';
+		let message = '';
+		if (inst.isReExaminationLocked()) message = inst.reExaminationLockReason();
+		else if (enabled && (!Number.isFinite(when.getTime()) || when <= new Date())) message = 'Ngày giờ tái khám mới phải nằm trong tương lai.';
 		if (!message) return true;
 		inst.showReExaminationError(doc, message);
 		const error = new Error(message);

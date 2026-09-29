@@ -11,11 +11,16 @@
 		return tags?.closest('[data-icd-autocomplete]') || null;
 	}
 
+	function resolveIcdLimit(limit, query) {
+		if (Number.isFinite(limit)) return limit;
+		return query ? 100 : 30;
+	}
+
 	function loadICDData(query = '', options = {}) {
 		const loader = window.ClinicalIcdDataLoader?.loadICDData;
 		if (typeof loader !== 'function') return Promise.resolve([]);
 		return loader(query, {
-				limit: Number.isFinite(options.limit) ? options.limit : (query ? 100 : 30),
+				limit: resolveIcdLimit(options.limit, query),
 		});
 	}
 

@@ -108,7 +108,8 @@
 
 	function syncVisibility(options) {
 		const value = getValue(options);
-		const selectedSource = isStandardSource(value) ? value : (value ? OTHER_VALUE : '');
+		const customSource = value ? OTHER_VALUE : '';
+		const selectedSource = isStandardSource(value) ? value : customSource;
 		const { input } = getElements(options);
 		if (input) {
 			input.disabled = selectedSource !== OTHER_VALUE;

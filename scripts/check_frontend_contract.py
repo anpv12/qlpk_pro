@@ -113,8 +113,8 @@ METRICS = [
 		pattern=r"!important",
 		roots=("app/static/css",),
 		suffixes=(".css",),
-		max_count=94,
-		description="!important is locked at the overrides proven necessary by cascade analysis (438 -> 94 on 29/09/2026); do not add new ones.",
+		max_count=45,
+		description="!important is locked at the overrides proven necessary by cascade analysis (438 -> 94 -> 43 declarations on 29/09/2026; the count includes 2 comment mentions); do not add new ones.",
 	),
 	Metric(
 		name="css_id_selector",

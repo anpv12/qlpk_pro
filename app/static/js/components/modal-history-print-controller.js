@@ -210,9 +210,8 @@
 		const stateStore = options.stateStore;
 		const renderers = options.renderers || {};
 		const showToast = typeof options.showToast === 'function' ? options.showToast : function () {};
-		const openWindow = typeof options.openWindow === 'function'
-			? options.openWindow
-			: (typeof window.open === 'function' ? window.open.bind(window) : null);
+		const defaultOpenWindow = typeof window.open === 'function' ? window.open.bind(window) : null;
+		const openWindow = typeof options.openWindow === 'function' ? options.openWindow : defaultOpenWindow;
 
 		if (!stateStore || typeof stateStore.getState !== 'function') {
 			throw new Error('Modal history stateStore is required');

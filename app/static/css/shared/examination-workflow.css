@@ -28,18 +28,7 @@
 	font-size: var(--qlpk-control-font-size, var(--qlpk-font-size-base, 13px));
 	font-weight: var(--qlpk-control-font-weight, var(--qlpk-font-weight-medium, 500));
 }
- [data-qlpk-button] *), [data-qlpk-button] *), [data-qlpk-button] *) {
-	border: none !important;
-	background: none !important;
-} [data-qlpk-button] *), [data-qlpk-button] *), [data-qlpk-button] *) {
-	background: none !important;
-}
 
- [data-qlpk-button] *)::after, [data-qlpk-button] *)::after, [data-qlpk-button] *)::after {
-	background: var(--qlpk-palette-green-41);
-	border: 2px solid white;
-	box-shadow: 0 0 0 1px var(--qlpk-alpha-green-41-30);
-}
 
 @keyframes pulse-badge {
 	0%,
@@ -52,9 +41,6 @@
 		opacity: 0.7;
 		transform: scale(1.1);
 	}
-}
- [data-qlpk-button] *), [data-qlpk-button] *), [data-qlpk-button] *) {
-	background: var(--qlpk-alpha-teal-23-10) !important;
 }
 
 .text-uppercase {

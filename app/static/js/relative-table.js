@@ -377,6 +377,7 @@
 			this.emptyState.classList.remove('active');
 			rows.forEach((item, index) => {
 				const tr = document.createElement('tr');
+				const jointExamDate = item.joint_exam_date || this.currentAppointmentDate;
 				tr.dataset.memberId = item.id || '';
 				const nameContent = this.enablePatientLinks && item.relative_patient_id
 					? `<a href="#" class="relative-name-link" data-relative-patient="${item.relative_patient_id}">${this.escape(item.name)}</a>`
@@ -394,7 +395,7 @@
 						<td class="relative-table-center">
 							${item.emergency_contact ? '<i class="bi bi-check-circle-fill relative-table-emergency-icon" aria-hidden="true"></i>' : ''}
                     </td>
-					<td>${item.joint_exam_date ? formatDateDisplay(item.joint_exam_date) : (this.currentAppointmentDate ? formatDateDisplay(this.currentAppointmentDate) : '')}</td>
+					<td>${jointExamDate ? formatDateDisplay(jointExamDate) : ''}</td>
 					<td>
 						<div class="relative-row-actions">
 							${this.readOnly ? '' : `

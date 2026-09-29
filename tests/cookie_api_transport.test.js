@@ -9,7 +9,7 @@ function payload(letter = 'a') {
         user: { id: 7, username: 'qa', role: 'doctor', permissions: [] } };
 }
 
-function harness() {
+function harness(options = {}) {
     const requests = [], queue = [];
     const storage = new Map([['qlpk_token', 'legacy-token']]);
     const window = { console, document: { baseURI: 'https://qa.test/' }, location: { origin: 'https://qa.test', href: 'https://qa.test/' },
@@ -25,7 +25,7 @@ function harness() {
     for (const file of ['api-transport', 'browser-session', 'browser-session-actions']) {
         runScriptFile(`app/static/js/shared/${file}.js`, context);
     }
-    const session = window.QLPKApiTransport.useCookieSession();
+    const session = window.QLPKApiTransport.useCookieSession(options);
     const authenticate = (letter = 'a') => session.owner.replace(payload(letter), session.owner.snapshot().revision);
     return { window, requests, queue, storage, session, authenticate };
 }
@@ -139,4 +139,32 @@ test('logout and password rotation use locked actions with native fetch, not rec
     assert.equal(state.session.owner.snapshot().status, 'anonymous');
     assert.equal(state.requests.length, 4);
     assert.equal(state.requests[3].init.headers.get('X-CSRF-Token'), 'b'.repeat(64));
+});
+
+test('public page sends anonymous requests without session headers when nobody is signed in', async () => {
+    const state = harness({ allowAnonymous: true });
+    state.queue.push(new Response('{}', { status: 401 }), Response.json({ success: true }));
+    const response = await state.window.fetch('/api/public/prescription/RX-1');
+    assert.deepEqual(await response.json(), { success: true });
+    assert.equal(state.requests.length, 2);
+    const sent = new Headers(state.requests[1].init.headers);
+    assert.equal(sent.has('X-QLPK-Session-Id'), false);
+    assert.equal(sent.has('Authorization'), false);
+    assert.equal(state.requests[1].init.credentials, 'same-origin');
+});
+
+test('public page still attaches the session when a user is signed in', async () => {
+    const state = harness({ allowAnonymous: true });
+    state.queue.push(Response.json(payload()), Response.json({ ok: 1 }));
+    await state.window.fetch('/api/survey-responses/public', { method: 'POST', body: '{}' });
+    const sent = new Headers(state.requests[1].init.headers);
+    assert.equal(sent.get('X-QLPK-Session-Id'), 'a'.repeat(32));
+    assert.equal(sent.get('X-CSRF-Token'), 'a'.repeat(64));
+});
+
+test('non-public pages keep failing closed without a session', async () => {
+    const state = harness();
+    state.queue.push(new Response('{}', { status: 401 }));
+    await assert.rejects(state.window.fetch('/api/public/prescription/RX-1'), error => error.code === 'session.required');
+    assert.equal(state.requests.length, 1);
 });

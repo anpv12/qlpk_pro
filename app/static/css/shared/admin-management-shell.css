@@ -99,8 +99,8 @@ body {
 	border: none;
 }
 .btn-warning:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-palette-amber-75) !important;
-	color: var(--qlpk-palette-gray-20-a) !important;
+	background: var(--qlpk-palette-amber-75);
+	color: var(--qlpk-palette-gray-20-a);
 }
 .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 	color: var(--qlpk-color-primary);
@@ -116,7 +116,7 @@ body {
 }
 
 .rounded-4 {
-	border-radius: 1.2rem !important;
+	border-radius: 1.2rem;
 }
 
 .shadow-sm {

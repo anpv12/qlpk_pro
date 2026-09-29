@@ -365,7 +365,8 @@
 
 			container.innerHTML = items.map(s => {
 				const dotClass = s.is_online ? 'online' : 'offline';
-				const statusText = s.is_online ? 'Đang hoạt động' : (s.last_login ? this.timeAgo(s.last_login) : 'Chưa đăng nhập');
+				let statusText = 'Đang hoạt động';
+			if (!s.is_online) statusText = s.last_login ? this.timeAgo(s.last_login) : 'Chưa đăng nhập';
 				const initials = (s.full_name || '').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
 				const avatarHtml = s.avatar
 					? `<img class="staff-avatar staff-avatar-img" src="${s.avatar}" alt="${s.full_name}">`

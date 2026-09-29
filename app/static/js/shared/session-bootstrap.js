@@ -9,7 +9,7 @@
 	try {
 		if (typeof window.BroadcastChannel === 'function') channel = new window.BroadcastChannel('qlpk:browser-session');
 	} catch { /* BroadcastChannel/storage/top khác origin: bỏ qua */ }
-	const binding = transport.useCookieSession({ channel });
+	const binding = transport.useCookieSession({ channel, allowAnonymous: publicPage });
 
 	for (const storage of [window.localStorage, window.sessionStorage]) {
 		try {

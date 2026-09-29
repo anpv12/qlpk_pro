@@ -10,10 +10,11 @@
 				limit: 100,
 				emptyQueryLimit: 30,
 				getLabel: label,
-				getKey: item => options.getKey ? options.getKey(item)
-					: options.selectionKey === 'code'
-						? text(item?.icd_code).toUpperCase() || text(item?.id)
-						: text(item?.id),
+				getKey: item => {
+					if (options.getKey) return options.getKey(item);
+					if (options.selectionKey === 'code') return text(item?.icd_code).toUpperCase() || text(item?.id);
+					return text(item?.id);
+				},
 				loadOptions: (query, page) => window.ClinicalIcdDataLoader.loadICDPage(query, {
 					...page,
 					getAuthHeader: options.getAuthHeader,

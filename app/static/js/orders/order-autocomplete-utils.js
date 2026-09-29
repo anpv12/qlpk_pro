@@ -277,9 +277,9 @@
 			const isEmpty = !query || String(query).trim() === '';
 			if (isEmpty) {
 				if (searchOptions.showAllIfEmpty) {
-					const matches = typeof options.getEmptyMatches === 'function'
-						? options.getEmptyMatches(query, searchOptions)
-						: (typeof options.search === 'function' ? options.search('', searchOptions) : []);
+					let matches = [];
+					if (typeof options.getEmptyMatches === 'function') matches = options.getEmptyMatches(query, searchOptions);
+					else if (typeof options.search === 'function') matches = options.search('', searchOptions);
 					if (typeof options.render === 'function') options.render(matches || []);
 				} else if (typeof options.hide === 'function') {
 					options.hide();

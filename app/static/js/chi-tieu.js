@@ -144,7 +144,8 @@ function evaluateArithmetic(expr) {
 			const operator = next();
 			const right = parsePrimary();
 			if (operator === '*') value *= right;
-			else value = right === 0 ? 0 : (operator === '/' ? value / right : value % right);
+			else if (right === 0) value = 0;
+			else value = operator === '/' ? value / right : value % right;
 		}
 		return value;
 	}

@@ -535,9 +535,9 @@ function restoreSavedSurveyResponses(answers) {
             if (Object.keys(gridResponses).length) surveyResponses[key] = {grid_responses: gridResponses};
         } else if (Object.prototype.hasOwnProperty.call(answers, String(question.id))) {
             const value = answers[String(question.id)];
-            const field = ['short_answer', 'paragraph'].includes(question.type) ? 'answer_text'
-                : ['date', 'time'].includes(question.type) ? 'answer_value'
-                : Array.isArray(value) ? 'answer_ids' : 'answer_id';
+            let field = Array.isArray(value) ? 'answer_ids' : 'answer_id';
+            if (['short_answer', 'paragraph'].includes(question.type)) field = 'answer_text';
+            else if (['date', 'time'].includes(question.type)) field = 'answer_value';
             surveyResponses[key] = {[field]: value};
         }
     });

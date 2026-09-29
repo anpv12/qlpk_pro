@@ -330,7 +330,7 @@ function medicalHistoryPopulatePrevRiskBadge(appointmentData) {
 
     fields.forEach(field => {
         const label = field.label;
-        const val = field.value === 'thap' ? 'Thấp' : field.value === 'trung_binh' ? 'Trung bình' : field.value === 'cao' ? 'Cao' : field.value;
+        const val = ({ thap: 'Thấp', trung_binh: 'Trung bình', cao: 'Cao' })[field.value] || field.value;
         const note = field.note;
         if (label === 'Mức độ nguy cơ') foundLevel = levelCfg[field.value] || null;
 

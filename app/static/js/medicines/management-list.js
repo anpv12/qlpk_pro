@@ -6,6 +6,8 @@
 // Load medicines from API
 let missingImportPriceOnly = false;
 
+const REFERENCE_REVIEW_LABELS = { confirmed: 'Đã xác nhận DAV', unlinked: 'Chọn thuốc từ DAV' };
+
 function toggleMissingImportPriceFilter() {
 	missingImportPriceOnly = !missingImportPriceOnly;
 	$('#searchInput').val('');
@@ -222,7 +224,7 @@ function renderMedicineTable() {
                     <div class="medicine-stock-display ${stockDisplayClass}">${formatStockDisplay(medicine)}</div>
                 </td>
                 <td class="mm-reference-column">
-                    ${canReviewMedicineReference ? `<button type="button" class="stock-detail-badge mm-reference-button ${medicine.reference_review_status === 'confirmed' ? 'text-success' : ''}" title="Xem hoặc đổi liên kết DAV" data-qlpk-call="openMedicineReferenceReview" data-qlpk-args='[${medicine.id}]'>${medicine.reference_review_status === 'confirmed' ? 'Đã xác nhận DAV' : medicine.reference_review_status === 'unlinked' ? 'Chọn thuốc từ DAV' : 'Cần xác nhận DAV'}</button>` : '—'}
+                    ${canReviewMedicineReference ? `<button type="button" class="stock-detail-badge mm-reference-button ${medicine.reference_review_status === 'confirmed' ? 'text-success' : ''}" title="Xem hoặc đổi liên kết DAV" data-qlpk-call="openMedicineReferenceReview" data-qlpk-args='[${medicine.id}]'>${REFERENCE_REVIEW_LABELS[medicine.reference_review_status] || 'Cần xác nhận DAV'}</button>` : '—'}
                 </td>
                 <td>
                     <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn" data-qlpk-call="editMedicine" data-qlpk-args='[${medicine.id}]' title="Sửa">

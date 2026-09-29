@@ -190,8 +190,8 @@
 		}
 
 		const attrHtml = buildAttributes(Object.assign({ type: 'button', title, 'aria-label': title }, attrs));
-		const fallbackIcon = action === 'delete' ? 'bi-trash' : action === 'edit' ? 'bi-pencil-square' : 'bi-arrow-right-circle';
-		const buttonRole = action === 'delete' ? 'danger' : action === 'edit' ? 'edit' : 'execute';
+		const fallbackIcon = ({ delete: 'bi-trash', edit: 'bi-pencil-square' })[action] || 'bi-arrow-right-circle';
+		const buttonRole = ({ delete: 'danger', edit: 'edit' })[action] || 'execute';
 		return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" class="${escapeHtml(buttonClass)}"${attrHtml ? ` ${attrHtml}` : ''}><i class="bi ${fallbackIcon}" aria-hidden="true"></i></button>`;
 	}
 

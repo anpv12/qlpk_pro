@@ -1479,7 +1479,7 @@ body {
 
 	/* Tab bar compact */
 	.tab-bar { padding: 8px 10px; }
-	.tab-bar .flatpickr-input { width: 100px !important; font-size: var(--qlpk-font-size-xs, 11px); }
+	.tab-bar .flatpickr-input { width: 100px; font-size: var(--qlpk-font-size-xs, 11px); }
 	.preset-btn { padding: 3px 8px; font-size: var(--qlpk-font-size-xs, 11px); }
 
 	/* Toolbar compact */

@@ -104,7 +104,8 @@
 		const saveLabel = saveButton && saveButton.querySelector('[data-doctor-workspace-save-label]');
 		if (saveButton) saveButton.classList.toggle('is-saving', Boolean(isBusy));
 		if (saveIcon) saveIcon.className = isBusy ? 'bi bi-arrow-repeat doctor-workspace-button__spinner' : 'bi bi-floppy';
-		if (saveLabel) saveLabel.textContent = isBusy ? (phase === 'complete' ? 'Đang hoàn tất...' : 'Đang lưu...') : 'Lưu';
+		const busyLabel = phase === 'complete' ? 'Đang hoàn tất...' : 'Đang lưu...';
+			if (saveLabel) saveLabel.textContent = isBusy ? busyLabel : 'Lưu';
 
 		const status = getElement(doc, 'doctorWorkspaceSaveStatus');
 		if (status) status.textContent = isBusy ? getWorkspaceSaveStatusText(phase) : '';
