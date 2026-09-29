@@ -44,7 +44,7 @@ function harness() {
       ReceptionistPatientRelativesTable: { syncPatient() {} }
     }
   });
-  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'saveAddressToServerIfEditing', 'resetFormToDefault']) {
+  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'fetchPatientForCopy', 'resetFormForCopiedPatient', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'saveAddressToServerIfEditing', 'resetFormToDefault']) {
     const ending = name === 'resetFormToDefault' ? '\\n\\t\\}' : '\\n\\}';
     const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?${ending}`));
     if (match) vm.runInContext(match[0], context);

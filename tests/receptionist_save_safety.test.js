@@ -41,7 +41,7 @@ function harness() {
   for (const filename of ['receptionist/appointment-submit.js', 'components/document-section-ui-utils.js']) {
     runScriptFile(path.join(root, filename), context);
   }
-  for (const name of ['saveReceptionistAppointment', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments']) {
+  for (const name of ['saveReceptionistAppointment', 'reportAppointmentSaveError', 'verifiedAppointmentId', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments']) {
     const match = page.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
     if (match) vm.runInContext(match[0], context);
   }

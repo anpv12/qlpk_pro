@@ -186,10 +186,7 @@
 			createComponents();
 			configureSupportRuntime();
 			const doc = options.document || document;
-			patientIntake.bind({ document: doc, apiCall });
-			clinicalForm.bind({ document: doc, isLoading: () => state.isLoadingExaminationData });
-			servicesForm.bind({ document: doc, apiCall, isLoading: () => state.isLoadingExaminationData });
-			indicationsForm.bind({ document: doc, apiCall, isLoading: () => state.isLoadingExaminationData });
+			bindWorkspaceComponents(doc);
 
 			await populateWorkspace(payload, doc, numericAppointmentId);
 			if (loadToken !== state.contextToken) return { status: 'stale' };
@@ -202,12 +199,24 @@
 			return { status: 'loaded', payload };
 		} catch (error) {
 			if (loadToken !== state.contextToken) return { status: 'stale' };
-			state.loadFailed = true;
-			setLoading(false);
-			showToast('error', 'Không thể tải đầy đủ dữ liệu lượt khám. Vui lòng thử lại.');
-			console.error('[Psychologist] workspace load failed:', error);
-			return { status: 'error', error };
+			return failAppointmentLoad(error);
 		}
+	}
+
+	function bindWorkspaceComponents(doc) {
+		const isLoading = () => state.isLoadingExaminationData;
+		patientIntake.bind({ document: doc, apiCall });
+		clinicalForm.bind({ document: doc, isLoading });
+		servicesForm.bind({ document: doc, apiCall, isLoading });
+		indicationsForm.bind({ document: doc, apiCall, isLoading });
+	}
+
+	function failAppointmentLoad(error) {
+		state.loadFailed = true;
+		setLoading(false);
+		showToast('error', 'Không thể tải đầy đủ dữ liệu lượt khám. Vui lòng thử lại.');
+		console.error('[Psychologist] workspace load failed:', error);
+		return { status: 'error', error };
 	}
 
 	async function saveHistory() {
@@ -258,20 +267,32 @@
 		return { status: 'success', modules: settled.map(result => result.value) };
 	}
 
+	function saveSkipReason() {
+		if (!state.currentAppointmentId || state.isLoadingExaminationData || state.loadFailed) return 'not-ready';
+		return state.saving ? 'saving' : '';
+	}
+
+	function runBaseSave(options) {
+		const baseSave = options.baseSave || window.QLPKPsychologistSaveBase;
+		if (typeof baseSave !== 'function') throw new Error('base-save-unavailable');
+		return baseSave();
+	}
+
+	// A base save that reported its own status is returned as-is; anything else is incomplete.
+	function unsuccessfulBaseResult(baseResult) {
+		if (baseResult?.status && !['saved', 'success'].includes(baseResult.status)) return baseResult;
+		throw new Error('base-save-incomplete');
+	}
+
 	async function save(options = {}) {
-		if (!state.currentAppointmentId || state.isLoadingExaminationData || state.loadFailed) return { status: 'skipped', reason: 'not-ready' };
-		if (state.saving) return { status: 'skipped', reason: 'saving' };
+		const skipped = saveSkipReason();
+		if (skipped) return { status: 'skipped', reason: skipped };
 		const contextToken = state.contextToken;
 		state.saving = true;
 		try {
-			const baseSave = options.baseSave || window.QLPKPsychologistSaveBase;
-			if (typeof baseSave !== 'function') throw new Error('base-save-unavailable');
-			const baseResult = await baseSave();
+			const baseResult = await runBaseSave(options);
 			if (contextToken !== state.contextToken) return { status: 'stale' };
-			if (!isSuccessfulSave(baseResult)) {
-				if (baseResult?.status && !['saved', 'success'].includes(baseResult.status)) return baseResult;
-				throw new Error('base-save-incomplete');
-			}
+			if (!isSuccessfulSave(baseResult)) return unsuccessfulBaseResult(baseResult);
 			const settled = await Promise.allSettled([saveHistory(), saveClinicalDetails(), saveSupport()]);
 			if (contextToken !== state.contextToken) return { status: 'stale' };
 			const failed = settled.find(result => result.status === 'rejected');

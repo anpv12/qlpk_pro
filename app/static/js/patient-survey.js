@@ -375,68 +375,48 @@ function displaySurveyTimeInfo() {
     if (oldExpiresTime) oldExpiresTime.remove();
     if (oldDurationTime) oldDurationTime.remove();
     
-    // Hiển thị thời gian bắt đầu (nếu có)
+    // Hiển thị thời gian bắt đầu (nếu chưa có started_at, dùng created_at)
     if (surveySessionData.started_at) {
-        const startedTimeDiv = document.createElement('div');
-        startedTimeDiv.id = 'survey-started-time';
-        startedTimeDiv.className = 'time-info survey-time-info';
-        startedTimeDiv.innerHTML = `🕐 Bắt đầu: <span class="survey-time-value">${formatDateTime(surveySessionData.started_at)}</span>`;
-        userInfoDiv.appendChild(startedTimeDiv);
+        appendSurveyTimeInfo(userInfoDiv, 'survey-started-time', 'time-info survey-time-info', `🕐 Bắt đầu: <span class="survey-time-value">${formatDateTime(surveySessionData.started_at)}</span>`);
     } else if (surveySessionData.created_at) {
-        // Nếu chưa có started_at, dùng created_at
-        const startedTimeDiv = document.createElement('div');
-        startedTimeDiv.id = 'survey-started-time';
-        startedTimeDiv.className = 'time-info survey-time-info';
-        startedTimeDiv.innerHTML = `🕐 Tạo lúc: <span class="survey-time-value">${formatDateTime(surveySessionData.created_at)}</span>`;
-        userInfoDiv.appendChild(startedTimeDiv);
+        appendSurveyTimeInfo(userInfoDiv, 'survey-started-time', 'time-info survey-time-info', `🕐 Tạo lúc: <span class="survey-time-value">${formatDateTime(surveySessionData.created_at)}</span>`);
     }
     
     // Hiển thị thời gian hết hạn
     if (surveySessionData.expires_at) {
-        const expiresTimeDiv = document.createElement('div');
-        expiresTimeDiv.id = 'survey-expires-time';
-        expiresTimeDiv.className = 'time-info survey-time-info survey-time-info--expires';
-        
-        // Check nếu đã hết hạn (so sánh ở UTC, convert sang GMT+7 để hiển thị)
-        let expiresDateUTC = new Date(surveySessionData.expires_at);
-        // Nếu date string không có timezone info, assume là UTC
-        if (!surveySessionData.expires_at.includes('Z') && !surveySessionData.expires_at.includes('+') && !surveySessionData.expires_at.includes('-', 10)) {
-            expiresDateUTC = new Date(surveySessionData.expires_at + 'Z');
-        }
-        
-        // So sánh ở UTC
-        const nowUTC = new Date();
-        const isExpired = nowUTC > expiresDateUTC;
-        const timeRemaining = expiresDateUTC - nowUTC;
-        const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
-        const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-        
-        let expiresText = '';
-        if (isExpired) {
-            expiresText = `<span class="survey-time-warning">⏰ Đã hết hạn: ${formatDateTime(surveySessionData.expires_at)}</span>`;
-        } else if (hoursRemaining < 1) {
-            expiresText = `<span class="survey-time-warning">⏰ Còn ${minutesRemaining} phút: ${formatDateTime(surveySessionData.expires_at)}</span>`;
-        } else if (hoursRemaining < 6) {
-            expiresText = `<span class="survey-time-warning">⏰ Còn ${hoursRemaining} giờ: ${formatDateTime(surveySessionData.expires_at)}</span>`;
-        } else {
-            expiresText = `⏰ Hết hạn: <span class="survey-time-value">${formatDateTime(surveySessionData.expires_at)}</span>`;
-        }
-        
-        expiresTimeDiv.innerHTML = expiresText;
-        userInfoDiv.appendChild(expiresTimeDiv);
+        appendSurveyTimeInfo(userInfoDiv, 'survey-expires-time', 'time-info survey-time-info survey-time-info--expires', buildSurveyExpiresText(surveySessionData.expires_at));
     }
     
     // Hiển thị thời gian hoàn thành (duration) nếu đã completed
-    if (isSurveyCompleted && surveySessionData.started_at && surveySessionData.updated_at) {
-        const duration = formatDuration(surveySessionData.started_at, surveySessionData.updated_at);
-        if (duration) {
-            const durationTimeDiv = document.createElement('div');
-            durationTimeDiv.id = 'survey-duration-time';
-            durationTimeDiv.className = 'time-info survey-time-info';
-            durationTimeDiv.innerHTML = `✅ Hoàn thành trong: <span class="survey-time-success">${duration}</span>`;
-            userInfoDiv.appendChild(durationTimeDiv);
-        }
+    const duration = isSurveyCompleted && surveySessionData.started_at && surveySessionData.updated_at
+        ? formatDuration(surveySessionData.started_at, surveySessionData.updated_at) : '';
+    if (duration) {
+        appendSurveyTimeInfo(userInfoDiv, 'survey-duration-time', 'time-info survey-time-info', `✅ Hoàn thành trong: <span class="survey-time-success">${duration}</span>`);
     }
+}
+
+function appendSurveyTimeInfo(parent, id, className, html) {
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = className;
+    div.innerHTML = html;
+    parent.appendChild(div);
+}
+
+function buildSurveyExpiresText(expiresAt) {
+    // Check nếu đã hết hạn (so sánh ở UTC, convert sang GMT+7 để hiển thị)
+    // Nếu date string không có timezone info, assume là UTC
+    const hasZone = expiresAt.includes('Z') || expiresAt.includes('+') || expiresAt.includes('-', 10);
+    const expiresDateUTC = new Date(hasZone ? expiresAt : expiresAt + 'Z');
+    const nowUTC = new Date();
+    const timeRemaining = expiresDateUTC - nowUTC;
+    const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+    const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const when = formatDateTime(expiresAt);
+    if (nowUTC > expiresDateUTC) return `<span class="survey-time-warning">⏰ Đã hết hạn: ${when}</span>`;
+    if (hoursRemaining < 1) return `<span class="survey-time-warning">⏰ Còn ${minutesRemaining} phút: ${when}</span>`;
+    if (hoursRemaining < 6) return `<span class="survey-time-warning">⏰ Còn ${hoursRemaining} giờ: ${when}</span>`;
+    return `⏰ Hết hạn: <span class="survey-time-value">${when}</span>`;
 }
 
 // Load preview template

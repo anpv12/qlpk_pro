@@ -160,16 +160,21 @@
 		});
 	}
 
-	async function refreshSelectedOrderStatusesBeforeSave(options = {}) {
+	function resolveRefreshAccessors(options) {
 		const appointmentId = typeof options.getCurrentAppointmentId === 'function'
 			? options.getCurrentAppointmentId()
 			: options.appointmentId;
-		const getSelectedOrders = typeof options.getSelectedOrders === 'function'
-			? options.getSelectedOrders
-			: () => options.selectedOrders || [];
-		const isCurrentSave = () => typeof options.isCurrentSave === 'function'
-			? options.isCurrentSave(appointmentId)
-			: true;
+		return {
+			appointmentId,
+			getSelectedOrders: typeof options.getSelectedOrders === 'function'
+				? options.getSelectedOrders
+				: () => options.selectedOrders || [],
+			isCurrentSave: () => (typeof options.isCurrentSave === 'function' ? options.isCurrentSave(appointmentId) : true)
+		};
+	}
+
+	async function refreshSelectedOrderStatusesBeforeSave(options = {}) {
+		const { appointmentId, getSelectedOrders, isCurrentSave } = resolveRefreshAccessors(options);
 
 		if (!appointmentId) return { skipped: true, canceled: false, orders: getSelectedOrders() };
 

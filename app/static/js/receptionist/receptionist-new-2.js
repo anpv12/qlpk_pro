@@ -35,6 +35,25 @@ async function uploadReceptionistDraftDocuments(patientId, isCurrentContext) {
 	});
 }
 
+async function reportAppointmentSaveError(appointmentResponse, appointmentSubmit, isCurrentContext) {
+	const errorText = await appointmentResponse.text();
+	if (!isCurrentContext()) return { status: 'stale' };
+	console.error('savePatientDataInternal: Appointment API Error:', appointmentResponse.status, errorText);
+	const errorMessage = appointmentSubmit.parseAppointmentErrorMessage(errorText);
+	if (appointmentSubmit.isDuplicateAppointmentError(errorMessage)) {
+		highlightAppointmentDateTimeFields();
+	}
+	showCustomToast('error', 'Đã lưu bệnh nhân nhưng chưa lưu được lịch hẹn. Vui lòng kiểm tra và thử lại.');
+	return { status: 'appointmentError' };
+}
+
+function verifiedAppointmentId(appointmentResult, appointmentId) {
+	const savedAppointmentId = Number(appointmentResult.id);
+	if (!Number.isSafeInteger(savedAppointmentId) || savedAppointmentId <= 0) throw new Error('missing-appointment-id');
+	if (appointmentId && Number(appointmentId) !== savedAppointmentId) throw new Error('appointment-id-mismatch');
+	return savedAppointmentId;
+}
+
 async function saveReceptionistAppointment(appointmentData, appointmentId, isCurrentContext, hasNewChanges) {
 	if (!isCurrentContext()) return { status: 'stale' };
 	const appointmentSubmit = window.ReceptionistAppointmentSubmit;
@@ -45,23 +64,11 @@ async function saveReceptionistAppointment(appointmentData, appointmentId, isCur
 		body: JSON.stringify(appointmentData)
 	});
 	if (!isCurrentContext()) return { status: 'stale' };
-	if (!appointmentResponse.ok) {
-		const errorText = await appointmentResponse.text();
-		if (!isCurrentContext()) return { status: 'stale' };
-		console.error('savePatientDataInternal: Appointment API Error:', appointmentResponse.status, errorText);
-		const errorMessage = appointmentSubmit.parseAppointmentErrorMessage(errorText);
-		if (appointmentSubmit.isDuplicateAppointmentError(errorMessage)) {
-			highlightAppointmentDateTimeFields();
-		}
-		showCustomToast('error', 'Đã lưu bệnh nhân nhưng chưa lưu được lịch hẹn. Vui lòng kiểm tra và thử lại.');
-		return { status: 'appointmentError' };
-	}
+	if (!appointmentResponse.ok) return reportAppointmentSaveError(appointmentResponse, appointmentSubmit, isCurrentContext);
 
 	const appointmentResult = await appointmentResponse.json();
 	if (!isCurrentContext()) return { status: 'stale' };
-	const savedAppointmentId = Number(appointmentResult.id);
-	if (!Number.isSafeInteger(savedAppointmentId) || savedAppointmentId <= 0) throw new Error('missing-appointment-id');
-	if (appointmentId && Number(appointmentId) !== savedAppointmentId) throw new Error('appointment-id-mismatch');
+	const savedAppointmentId = verifiedAppointmentId(appointmentResult, appointmentId);
 	if (!appointmentId) {
 		currentAppointmentId = savedAppointmentId;
 	}
@@ -225,6 +232,31 @@ function getMedicalDraftOptions() {
 	};
 }
 
+// The patient record to copy, or null when a newer load replaced this one.
+async function fetchPatientForCopy(patientId, isCurrentLoad) {
+	const response = await apiCall(`/api/patients/${patientId}`);
+	if (!isCurrentLoad()) return null;
+	if (!response.ok) throw new Error(await response.text());
+	const responseData = await response.json();
+	if (!isCurrentLoad()) return null;
+	const patient = responseData.data || responseData;
+	if (!patient || !patient.id) throw new Error('Không có dữ liệu bệnh nhân');
+	return patient;
+}
+
+function resetFormForCopiedPatient() {
+	window.ReceptionistFormResetUtils.clearFormForCopy({
+		document,
+		window,
+		setupAgeCalculation,
+		setCurrentPatientId
+	});
+	currentEditId = null;
+	currentAppointmentId = null;
+	window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
+	localStorage.removeItem('currentEditId');
+}
+
 async function copyPatientToReceptionistFormFromGlobalSearch(payload = {}) {
 	const patientId = payload.patient_id;
 	if (!patientId) {
@@ -234,33 +266,17 @@ async function copyPatientToReceptionistFormFromGlobalSearch(payload = {}) {
 
 	const isCurrentLoad = beginReceptionistLoad();
 	try {
-		const response = await apiCall(`/api/patients/${patientId}`);
-		if (!isCurrentLoad()) return false;
-		if (!response.ok) throw new Error(await response.text());
-		const responseData = await response.json();
-		if (!isCurrentLoad()) return false;
-		const patient = responseData.data || responseData;
-		if (!patient || !patient.id) throw new Error('Không có dữ liệu bệnh nhân');
+		const patient = await fetchPatientForCopy(patientId, isCurrentLoad);
+		if (!patient) return false;
 
-		window.ReceptionistFormResetUtils.clearFormForCopy({
-			document,
-			window,
-			setupAgeCalculation,
-			setCurrentPatientId
-		});
-		currentEditId = null;
-		currentAppointmentId = null;
-		window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
-		localStorage.removeItem('currentEditId');
+		resetFormForCopiedPatient();
 
 		const populated = await populateSharedForms({ patient }, { isCurrentLoad });
 		if (!isCurrentLoad()) return false;
 		if (populated === false) throw new Error('patient-load-incomplete');
 
 		setCurrentPatientId(patient.id);
-		if (window.ReceptionistAppointmentListControls && typeof window.ReceptionistAppointmentListControls.activateResponsiveWorkspacePane === 'function') {
-			window.ReceptionistAppointmentListControls.activateResponsiveWorkspacePane('main', { document, window });
-		}
+		window.ReceptionistAppointmentListControls?.activateResponsiveWorkspacePane?.('main', { document, window });
 		try { await loadAttachmentsForCurrentPatient(); } catch (attachmentError) { console.warn('Không thể tải tệp đính kèm:', attachmentError); }
 		if (!isCurrentLoad()) return false;
 		receptionistLoadState.failed = false;

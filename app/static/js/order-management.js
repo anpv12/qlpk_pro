@@ -152,51 +152,60 @@ function getStatusBadge(status) {
     return `<span class="qlpk-status status-pill ${config.className} ${escapeHtml(status)}">${escapeHtml(config.label)}</span>`;
 }
 
+function buildOrdersQuery() {
+	const params = new URLSearchParams();
+	if (filterState.patient_name) params.append('patient_name', filterState.patient_name);
+	if (filterState.from_date) params.append('from_date', filterState.from_date);
+	if (filterState.to_date) params.append('to_date', filterState.to_date);
+	params.append('status_group', filterState.status_group);
+	if (filterState.location_type) params.append('location_type', filterState.location_type);
+	params.append('page', currentPage);
+	params.append('per_page', perPage);
+	return params;
+}
+
+async function readOrdersError(response) {
+	const errorText = await response.text();
+	console.error('API Error Response:', response.status, errorText);
+	let error;
+	try {
+		error = JSON.parse(errorText);
+	} catch (e) {
+		error = { detail: errorText || 'Lỗi không xác định' };
+	}
+	return new Error(error.detail || 'Lỗi khi tải danh sách chỉ định');
+}
+
+function applyOrdersPage(data) {
+	totalOrders = data.total || 0;
+	totalPages = data.total_pages || 1;
+	currentPage = data.page || 1;
+	document.getElementById('ordersActiveCount').textContent = data.group_counts.active;
+	document.getElementById('ordersCompletedCount').textContent = data.group_counts.completed;
+}
+
+function scheduleOrderExpiryRefresh(nextExpiryAt) {
+	clearTimeout(expiryRefreshTimer);
+	if (!nextExpiryAt) return;
+	const delay = Math.max(100, Math.min(2147483647, new Date(nextExpiryAt).getTime() - Date.now() + 100));
+	expiryRefreshTimer = setTimeout(async () => {
+		await loadOrders();
+		if (currentExaminationId) await checkSurveyStatusUpdate(currentExaminationId);
+	}, delay);
+}
+
 async function loadOrders() {
 	const version = ++ordersRequestVersion;
 	try {
-		// Build query params
-		const params = new URLSearchParams();
-		if (filterState.patient_name) params.append('patient_name', filterState.patient_name);
-		if (filterState.from_date) params.append('from_date', filterState.from_date);
-		if (filterState.to_date) params.append('to_date', filterState.to_date);
-		params.append('status_group', filterState.status_group);
-		if (filterState.location_type) params.append('location_type', filterState.location_type);
-		params.append('page', currentPage);
-		params.append('per_page', perPage);
-
-		const response = await apiCall(`/api/chi-dinh?${params.toString()}`);
-
-		if (!response.ok) {
-			const errorText = await response.text();
-			console.error('API Error Response:', response.status, errorText);
-			let error;
-			try {
-				error = JSON.parse(errorText);
-			} catch (e) {
-				error = { detail: errorText || 'Lỗi không xác định' };
-			}
-			throw new Error(error.detail || 'Lỗi khi tải danh sách chỉ định');
-		}
+		const response = await apiCall(`/api/chi-dinh?${buildOrdersQuery().toString()}`);
+		if (!response.ok) throw await readOrdersError(response);
 
 		const data = await response.json();
 		if (version !== ordersRequestVersion) return;
-		const orders = data.chi_dinh || [];
-		totalOrders = data.total || 0;
-		totalPages = data.total_pages || 1;
-		currentPage = data.page || 1;
-		document.getElementById('ordersActiveCount').textContent = data.group_counts.active;
-		document.getElementById('ordersCompletedCount').textContent = data.group_counts.completed;
-		clearTimeout(expiryRefreshTimer);
-		if (data.next_expiry_at) {
-			const delay = Math.max(100, Math.min(2147483647, new Date(data.next_expiry_at).getTime() - Date.now() + 100));
-			expiryRefreshTimer = setTimeout(async () => {
-				await loadOrders();
-				if (currentExaminationId) await checkSurveyStatusUpdate(currentExaminationId);
-			}, delay);
-		}
+		applyOrdersPage(data);
+		scheduleOrderExpiryRefresh(data.next_expiry_at);
 
-		renderOrdersTable(orders);
+		renderOrdersTable(data.chi_dinh || []);
 		updateSelectedCount();
 
 	} catch (error) {

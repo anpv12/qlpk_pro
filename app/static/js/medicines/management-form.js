@@ -164,45 +164,16 @@ function saveMedicine() {
 	delete medicineData.expiry_date;
 
 	// Ép kiểu số - xử lý chuỗi rỗng thành null
-	const numericFields = ['low_stock_threshold', 'expiry_warning_days', 'units_per_box', 'pills_per_unit'];
-	numericFields.forEach(f => {
-		if (medicineData[f] !== undefined && medicineData[f] !== '') {
-			medicineData[f] = Number(medicineData[f]);
-		} else {
-			// Nếu field trống, set thành null thay vì chuỗi rỗng
-			medicineData[f] = null;
-		}
-	});
+	coerceMedicineNumbers(medicineData);
 
 	// Validation
 	// Lấy đơn vị tính từ hidden value hoặc từ input hiển thị (đã là tiếng Việt)
-	let selectedSaleUnit = $('#saleUnitValue').val();
-	if (!selectedSaleUnit) {
-		// Nếu không có giá trị trong hidden input, lấy từ input hiển thị
-		const displayUnit = $('#saleUnit').val();
-		if (displayUnit) {
-			selectedSaleUnit = displayUnit; // Lưu trực tiếp tiếng Việt
-			$('#saleUnitValue').val(selectedSaleUnit); // Cập nhật hidden input
-		}
-	}
+	const selectedSaleUnit = resolveSelectedSaleUnit();
 	if (selectedSaleUnit) {
 		medicineData.unit = selectedSaleUnit; // Lưu trực tiếp tiếng Việt vào database
 	}
 
-	// Validate prescription_type
-	const validPrescriptionTypes = ['BASIC', 'H', 'N'];
-	if (!medicineData.prescription_type || !validPrescriptionTypes.includes(medicineData.prescription_type)) {
-		showCustomToast('error', 'Vui lòng chọn "Loại đơn thuốc" (Cơ bản, Thuốc H, Thuốc N)');
-		$('#prescriptionType').focus();
-		return;
-	}
-
-	// Validate các trường bắt buộc khác
-	// Cho phép đơn giá vốn nhập = 0 và tồn kho = 0
-	if (!medicineData.name || !medicineData.unit) {
-		showCustomToast('error', 'Hãy chọn thuốc DAV và đơn vị quản lý trước khi lưu.');
-		return;
-	}
+	if (!validateMedicineRequiredFields(medicineData)) return;
 	// Mã thuốc duy nhất (khuyến nghị có) - đã bỏ validation bắt buộc
 
 	const hasSession = window.QLPKApiTransport.hasSession();
@@ -251,6 +222,40 @@ function saveMedicine() {
 			if (saveRevision === medicineEditRevision) $('#medicineSaveButton').prop('disabled', false);
 		}
 	});
+}
+
+function coerceMedicineNumbers(medicineData) {
+	const numericFields = ['low_stock_threshold', 'expiry_warning_days', 'units_per_box', 'pills_per_unit'];
+	numericFields.forEach(f => {
+		// Nếu field trống, set thành null thay vì chuỗi rỗng
+		medicineData[f] = medicineData[f] !== undefined && medicineData[f] !== '' ? Number(medicineData[f]) : null;
+	});
+}
+
+function resolveSelectedSaleUnit() {
+	const selectedSaleUnit = $('#saleUnitValue').val();
+	if (selectedSaleUnit) return selectedSaleUnit;
+	// Nếu không có giá trị trong hidden input, lấy từ input hiển thị
+	const displayUnit = $('#saleUnit').val();
+	if (displayUnit) $('#saleUnitValue').val(displayUnit); // Cập nhật hidden input
+	return displayUnit || selectedSaleUnit;
+}
+
+function validateMedicineRequiredFields(medicineData) {
+	// Validate prescription_type
+	const validPrescriptionTypes = ['BASIC', 'H', 'N'];
+	if (!medicineData.prescription_type || !validPrescriptionTypes.includes(medicineData.prescription_type)) {
+		showCustomToast('error', 'Vui lòng chọn "Loại đơn thuốc" (Cơ bản, Thuốc H, Thuốc N)');
+		$('#prescriptionType').focus();
+		return false;
+	}
+	// Validate các trường bắt buộc khác
+	// Cho phép đơn giá vốn nhập = 0 và tồn kho = 0
+	if (!medicineData.name || !medicineData.unit) {
+		showCustomToast('error', 'Hãy chọn thuốc DAV và đơn vị quản lý trước khi lưu.');
+		return false;
+	}
+	return true;
 }
 
 // Confirm delete

@@ -92,17 +92,20 @@ function renderSurveySelectionUI(examinationId, templates, surveySession) {
 }
 
 // Send survey link
+function surveyTemplateError(templateId) {
+	if (!templateId) return 'Vui lòng chọn mẫu khảo sát';
+	const linkedTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
+	if (linkedTemplateId && Number(templateId) !== linkedTemplateId) return 'Mẫu khảo sát không khớp với chỉ định.';
+	return '';
+}
+
 async function sendSurveyLink(examinationId, patientId, templateId) {
     const orderId = currentOrderDetail?.id;
     if (!orderId) return;
 	try {
-		if (!templateId) {
-			showCustomToast('error', 'Vui lòng chọn mẫu khảo sát');
-			return;
-		}
-		const linkedTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
-		if (linkedTemplateId && Number(templateId) !== linkedTemplateId) {
-			showCustomToast('error', 'Mẫu khảo sát không khớp với chỉ định.');
+		const templateError = surveyTemplateError(templateId);
+		if (templateError) {
+			showCustomToast('error', templateError);
 			return;
 		}
 
@@ -129,13 +132,7 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 		}
 
 		const data = await response.json();
-		if (data.success && data.data) {
-			showCustomToast('success', 'Link khảo sát đã sẵn sàng.');
-
-
-		} else {
-			showCustomToast('success', 'Đã tạo link khảo sát thành công');
-		}
+		showCustomToast('success', data.success && data.data ? 'Link khảo sát đã sẵn sàng.' : 'Đã tạo link khảo sát thành công');
 
 		// Clear any previous response data and reload survey content
 		// This ensures the section shows the selection UI instead of results

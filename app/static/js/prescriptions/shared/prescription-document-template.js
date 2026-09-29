@@ -89,21 +89,15 @@ if (typeof buildPrescriptionDocumentViewModel === 'undefined') {
 			prescriptionData.benh_kem_theo
 		);
 
-		if (diagnosisText) {
-			examinationDetail.diagnosis = diagnosisText;
-			history.diagnosis = diagnosisText;
-		} else {
-			if (isRawPrescriptionIcdValue(examinationDetail.diagnosis)) examinationDetail.diagnosis = '';
-			if (isRawPrescriptionIcdValue(history.diagnosis)) history.diagnosis = '';
+		// Use the resolved display text; otherwise blank out raw ICD values.
+		function applyDisplayText(field, text) {
+			[examinationDetail, history].forEach(target => {
+				if (text) target[field] = text;
+				else if (isRawPrescriptionIcdValue(target[field])) target[field] = '';
+			});
 		}
-
-		if (benhKemTheoText) {
-			examinationDetail.benh_kem_theo = benhKemTheoText;
-			history.benh_kem_theo = benhKemTheoText;
-		} else {
-			if (isRawPrescriptionIcdValue(examinationDetail.benh_kem_theo)) examinationDetail.benh_kem_theo = '';
-			if (isRawPrescriptionIcdValue(history.benh_kem_theo)) history.benh_kem_theo = '';
-		}
+		applyDisplayText('diagnosis', diagnosisText);
+		applyDisplayText('benh_kem_theo', benhKemTheoText);
 
 		return {
 			...data,
@@ -472,6 +466,19 @@ function buildMohContactHtml(ctx, controlled) {
 		(controlled ? mohLine('Căn cước công dân của người nhận thuốc:', '', 'moh-recipient') : '');
 }
 
+function resolvePreviewRenderContext(renderContext, isPrint) {
+	return renderContext || (isPrint ? 'print' : 'screen');
+}
+
+function buildVerificationQrUrl(prescriptionCode, showVerificationQr) {
+	return showVerificationQr !== false && prescriptionCode
+		? `/api/public/prescription/${encodeURIComponent(prescriptionCode)}/verification-qr.png` : '';
+}
+
+function prescriptionMedicineList(prescriptionData) {
+	return Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [];
+}
+
 function buildPrescriptionPreviewHTML({
 	clinicInfo, patient, history, examinationDetail, examinationDetailsBySection,
 	prescriptionData, relatives = [], overridePrescriptionType = null,
@@ -485,12 +492,11 @@ function buildPrescriptionPreviewHTML({
 	const type = resolvePrescriptionFormType(overridePrescriptionType, prescriptionData, examinationDetailsBySection);
 	const controlled = type === 'H' || type === 'N';
 	const title = controlled ? 'ĐƠN THUỐC “' + type + '”' : 'ĐƠN THUỐC';
-	const context = renderContext || (isPrint ? 'print' : 'screen');
+	const context = resolvePreviewRenderContext(renderContext, isPrint);
 	const prescriptionCode = prescriptionData.prescription_code || '';
-	const qr = showVerificationQr !== false && prescriptionCode
-		? `/api/public/prescription/${encodeURIComponent(prescriptionCode)}/verification-qr.png` : '';
+	const qr = buildVerificationQrUrl(prescriptionCode, showVerificationQr);
 	const ctx = buildMohPatientContext(patient, history, examinationDetail, relatives);
-	const rows = buildMohMedicineRows(Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [], type);
+	const rows = buildMohMedicineRows(prescriptionMedicineList(prescriptionData), type);
 	const advice = resolvePrescriptionAdvice(examinationDetail, history, prescriptionData);
 	const reExamDate = resolvePrescriptionReExamDate(prescriptionData);
 	return '<div class="prescription-preview prescription-preview--rx prescription-preview--moh' +

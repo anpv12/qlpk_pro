@@ -5,11 +5,7 @@
 	async function loadCatalog(kind, url, apply, options) {
 		const pageWindow = options.window || window;
 		const doc = options.document || pageWindow.document;
-		let state = loads.get(doc);
-		if (!state) {
-			state = {};
-			loads.set(doc, state);
-		}
+		const state = catalogLoadState(doc);
 		const revision = (state[kind] || 0) + 1;
 		state[kind] = revision;
 		try {
@@ -24,13 +20,22 @@
 			return true;
 		} catch (error) {
 			if (state[kind] !== revision) return false;
-			const message = kind === 'doctors'
-				? 'Không thể tải danh sách người khám. Vui lòng tải lại trang.'
-				: 'Không thể tải danh sách dịch vụ. Vui lòng tải lại trang.';
-			const showToast = options.showCustomToast || pageWindow.QLPKUserFeedback?.show;
-			showToast?.('error', message);
+			reportCatalogFailure(kind, options, pageWindow);
 			return false;
 		}
+	}
+
+	function catalogLoadState(doc) {
+		if (!loads.has(doc)) loads.set(doc, {});
+		return loads.get(doc);
+	}
+
+	function reportCatalogFailure(kind, options, pageWindow) {
+		const message = kind === 'doctors'
+			? 'Không thể tải danh sách người khám. Vui lòng tải lại trang.'
+			: 'Không thể tải danh sách dịch vụ. Vui lòng tải lại trang.';
+		const showToast = options.showCustomToast || pageWindow.QLPKUserFeedback?.show;
+		showToast?.('error', message);
 	}
 
 	function loadDoctorsForForm(options = {}) {

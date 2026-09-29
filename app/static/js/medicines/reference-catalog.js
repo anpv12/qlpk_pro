@@ -211,10 +211,8 @@
         listController = controller;
         activeListKey = key;
         const button = document.getElementById('referenceSearchButton');
-        button.disabled = true;
-        button.textContent = 'Đang tìm…';
         const tbody = document.getElementById('referenceTableBody');
-        tbody.setAttribute('aria-busy', 'true');
+        setSearchBusy(button, tbody, true);
         showListMessage('Đang tìm thuốc DAV…');
         document.getElementById('clinicPagination').classList.add('d-none');
         const deadline = window.setTimeout(() => controller.abort(), 15000);
@@ -225,13 +223,7 @@
             if (!response.ok || !result.success) {
                 throw new Error(result.message || 'Không tải được danh mục thuốc');
             }
-            totalItems = result.total || 0;
-            const lastPage = Math.max(1, Math.ceil(totalItems / pageSize));
-            if (currentPage > lastPage) { currentPage = lastPage; return loadData(); }
-            if (result.summary) { updateSummary(result.summary); summaryLoaded = true; }
-            renderTable(result.data || []);
-            updatePagination();
-            document.getElementById('clinicPagination').classList.remove('d-none');
+            if (!applyReferencePage(result)) return loadData();
         } catch (error) {
             if (revision !== listRevision) return;
             showListMessage(error.name === 'AbortError'
@@ -243,11 +235,27 @@
             if (revision === listRevision) {
                 listController = null;
                 activeListKey = '';
-                tbody.setAttribute('aria-busy', 'false');
-                button.disabled = false;
-                button.textContent = 'Tìm kiếm';
+                setSearchBusy(button, tbody, false);
             }
         }
+    }
+
+    function setSearchBusy(button, tbody, busy) {
+        tbody.setAttribute('aria-busy', busy ? 'true' : 'false');
+        button.disabled = busy;
+        button.textContent = busy ? 'Đang tìm…' : 'Tìm kiếm';
+    }
+
+    // Render one result page; returns false when the current page is past the end (caller reloads).
+    function applyReferencePage(result) {
+        totalItems = result.total || 0;
+        const lastPage = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (currentPage > lastPage) { currentPage = lastPage; return false; }
+        if (result.summary) { updateSummary(result.summary); summaryLoaded = true; }
+        renderTable(result.data || []);
+        updatePagination();
+        document.getElementById('clinicPagination').classList.remove('d-none');
+        return true;
     }
 
     async function exportDavCatalog() {

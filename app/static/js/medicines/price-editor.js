@@ -23,17 +23,22 @@
         el('medicinePriceMessage').textContent = text;
         el('medicinePriceMessage').classList.toggle('text-danger', error);
     }
+    function renderPriceDifference(diff) {
+        const difference = el('medicinePriceDifference');
+        difference.textContent = diff == null ? '—' : (diff > 0 ? '+' : '') + money(diff / 100);
+        difference.classList.toggle('mm-price-delta-up', diff != null && diff > 0);
+        difference.classList.toggle('mm-price-delta-down', diff != null && diff < 0);
+    }
+
     function controls() {
         const closed = !opened;
         const value = cents(el('medicinePriceNew').value);
         const old = snapshot ? cents(snapshot.current_price) : null;
         const diff = value == null || old == null ? null : value - old;
-        const difference = el('medicinePriceDifference');
-        difference.textContent = diff == null ? '—' : (diff > 0 ? '+' : '') + money(diff / 100);
-        difference.classList.toggle('mm-price-delta-up', diff != null && diff > 0);
-        difference.classList.toggle('mm-price-delta-down', diff != null && diff < 0);
-        el('medicinePriceConfirm').disabled = closed || saving || loading || !snapshot || value == null || value === old;
-        el('medicinePriceNew').disabled = closed || saving || loading || !snapshot;
+        renderPriceDifference(diff);
+        const blocked = closed || saving || loading || !snapshot;
+        el('medicinePriceConfirm').disabled = blocked || value == null || value === old;
+        el('medicinePriceNew').disabled = blocked;
         el('medicinePriceCancel').disabled = saving;
         el('medicinePriceClose').disabled = saving;
         el('medicinePriceOpen').disabled = saving;

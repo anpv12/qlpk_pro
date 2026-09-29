@@ -75,15 +75,9 @@ function restoreLocalSurveyProgress(examinationId) {
     const currentTemplateId = getCurrentTemplateId();
     const storedTemplateId = examinationId ? localStorage.getItem(`survey_template_id_${examinationId}`) : null;
 
-    let shouldReset = false;
-
-    if (currentTemplateId && storedTemplateId && storedTemplateId !== currentTemplateId) {
-        // Template changed, clear old responses
-        if (examinationId) {
-            clearSurveyResponsesFromStorage();
-        }
-        shouldReset = true;
-    }
+    const shouldReset = Boolean(currentTemplateId && storedTemplateId && storedTemplateId !== currentTemplateId);
+    // Template changed, clear old responses
+    if (shouldReset && examinationId) clearSurveyResponsesFromStorage();
 
     // First, try to load from localStorage (for unsaved progress)
     // This function now checks template ID internally
@@ -95,9 +89,10 @@ function restoreLocalSurveyProgress(examinationId) {
         currentQuestionIndex = 0;
     }
 
-    // Validate currentQuestionIndex after loading from localStorage
-    if (hasLocalData && currentQuestionIndex >= allQuestions.length && allQuestions.length > 0) {
+    if (!hasLocalData) return false;
 
+    // Validate currentQuestionIndex after loading from localStorage
+    if (isQuestionIndexOutOfRange()) {
         currentQuestionIndex = 0;
         // Clear the corrupted saved index
         if (examinationId) {
@@ -105,23 +100,26 @@ function restoreLocalSurveyProgress(examinationId) {
         }
     }
 
-    if (hasLocalData) {
-        // Double-check: if surveyResponses has data but doesn't match current template, clear it
-        const currentTemplateId = getCurrentTemplateId();
-        const storedTemplateId = examinationId ? localStorage.getItem(`survey_template_id_${examinationId}`) : null;
-        if (Object.keys(surveyResponses).length > 0 && currentTemplateId && storedTemplateId !== currentTemplateId) {
-            surveyResponses = {};
-            currentQuestionIndex = 0;
-            clearSurveyResponsesFromStorage();
-        }
+    discardResponsesFromOtherTemplate(examinationId);
 
-        // Final validation before updateProgress
-        if (currentQuestionIndex >= allQuestions.length && allQuestions.length > 0) {
-            currentQuestionIndex = 0;
-        }
-        return true;
+    // Final validation before updateProgress
+    if (isQuestionIndexOutOfRange()) currentQuestionIndex = 0;
+    return true;
+}
+
+function isQuestionIndexOutOfRange() {
+    return currentQuestionIndex >= allQuestions.length && allQuestions.length > 0;
+}
+
+// Double-check: if surveyResponses has data but doesn't match current template, clear it
+function discardResponsesFromOtherTemplate(examinationId) {
+    const currentTemplateId = getCurrentTemplateId();
+    const storedTemplateId = examinationId ? localStorage.getItem(`survey_template_id_${examinationId}`) : null;
+    if (Object.keys(surveyResponses).length > 0 && currentTemplateId && storedTemplateId !== currentTemplateId) {
+        surveyResponses = {};
+        currentQuestionIndex = 0;
+        clearSurveyResponsesFromStorage();
     }
-    return false;
 }
 
 function applyServerSurveyResponses(response, sessionCreatedAt) {

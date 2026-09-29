@@ -121,22 +121,17 @@ async function loadTextExpansions() {
 }
 
 // Handle text expansion on keydown
+// Tab without modifiers, in an ordinary field, with a loaded expansion cache.
+function canExpandText(e, $element) {
+    if (e.key !== 'Tab' && e.keyCode !== 9) return false;
+    if (e.ctrlKey || e.altKey || e.shiftKey) return false;
+    if ($element.hasClass('code-editor') || $element.attr('data-no-expand') === 'true') return false;
+    return isExpansionCacheCurrent() && Boolean(textExpansions) && Object.keys(textExpansions).length > 0;
+}
+
 function handleTextExpansion(e, $element) {
-    // Only handle Tab key for now
-    if (e.key !== 'Tab' && e.keyCode !== 9) return;
-    
-    // Don't expand if Ctrl, Alt, or Shift is pressed
-    if (e.ctrlKey || e.altKey || e.shiftKey) return;
-    
-    // Don't expand in code editors or special inputs
-    if ($element.hasClass('code-editor') || $element.attr('data-no-expand') === 'true') {
-        return;
-    }
-    
-    // Check if textExpansions is loaded and not empty
-    if (!isExpansionCacheCurrent() || !textExpansions || Object.keys(textExpansions).length === 0) {
-        return;
-    }
+    // Only handle Tab key, without Ctrl/Alt/Shift, outside code editors, once expansions are loaded
+    if (!canExpandText(e, $element)) return;
     
     const currentValue = $element.val() || '';
     if (!currentValue) return;

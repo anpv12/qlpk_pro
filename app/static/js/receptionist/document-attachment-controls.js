@@ -150,6 +150,12 @@
 		}
 	}
 
+	function attachmentContextGuard(options, loadOwner, requestToken, patientId) {
+		const contextToken = options.getContextToken?.();
+		return () => attachmentLoads.get(loadOwner) === requestToken
+			&& patientId === getCurrentPatientId(options) && contextToken === options.getContextToken?.();
+	}
+
 	async function loadAttachmentsForCurrentPatient(options = {}) {
 		const doc = getDocument(options);
 		const list = doc.getElementById('documentsList');
@@ -157,9 +163,7 @@
 		const loadOwner = list || doc;
 		const requestToken = {};
 		attachmentLoads.set(loadOwner, requestToken);
-		const contextToken = options.getContextToken?.();
-		const isCurrentContext = () => attachmentLoads.get(loadOwner) === requestToken
-			&& patientId === getCurrentPatientId(options) && contextToken === options.getContextToken?.();
+		const isCurrentContext = attachmentContextGuard(options, loadOwner, requestToken, patientId);
 		setAttachments(options, []);
 		options.renderDocumentsList?.();
 
@@ -172,18 +176,23 @@
 		try {
 			const res = await options.apiCall(`/attachments/patients/${patientId}/attachments`);
 			if (!isCurrentContext()) return false;
-			if (res.ok) {
-				const data = await res.json();
-				if (!isCurrentContext()) return false;
-				setAttachments(options, Array.isArray(data) ? data : (data.attachments || []));
-				options.renderDocumentsList?.();
-			} else {
-				if (list) list.innerHTML = '<div class="text-danger py-3">Không tải được danh sách tài liệu.</div>';
+			if (!res.ok) {
+				showAttachmentListError(list, 'Không tải được danh sách tài liệu.');
+				return undefined;
 			}
+			const data = await res.json();
+			if (!isCurrentContext()) return false;
+			setAttachments(options, Array.isArray(data) ? data : (data.attachments || []));
+			options.renderDocumentsList?.();
 		} catch (e) {
 			if (!isCurrentContext()) return false;
-			if (list) list.innerHTML = '<div class="text-danger py-3">Lỗi khi tải danh sách tài liệu.</div>';
+			showAttachmentListError(list, 'Lỗi khi tải danh sách tài liệu.');
 		}
+		return undefined;
+	}
+
+	function showAttachmentListError(list, message) {
+		if (list) list.innerHTML = `<div class="text-danger py-3">${message}</div>`;
 	}
 
 	function createContextGuard(options = {}) {

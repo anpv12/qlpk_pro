@@ -10,6 +10,29 @@ function formatStockQuantity(quantity, unit = 'viên') {
 }
 
 // Cập nhật thông tin quy cách đóng gói
+function buildPackagingValue(packagingUnit, unitsPerBox, saleUnit) {
+	if (!packagingUnit) return '';
+	return unitsPerBox > 0 && saleUnit ? `1 ${packagingUnit} = ${unitsPerBox} ${saleUnit}` : `1 ${packagingUnit}`;
+}
+
+function capitalizeFirst(text) {
+	return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function renderPackagingInfoText(packagingInfoText, packagingUnit, unitsPerBox, saleUnit) {
+	if (packagingUnit && unitsPerBox > 0 && saleUnit) {
+		// Ví dụ: "1 Lọ = 20 Gói" thay vì hard code "1 Hộp = 20 Gói"
+		packagingInfoText.textContent = `1 ${capitalizeFirst(packagingUnit)} = ${unitsPerBox} ${capitalizeFirst(saleUnit)}`;
+		setPackagingInfoActive(packagingInfoText, true);
+	} else if (packagingUnit && saleUnit) {
+		packagingInfoText.textContent = `Chưa xác định số ${saleUnit} trong 1 ${packagingUnit}`;
+		setPackagingInfoActive(packagingInfoText, true);
+	} else {
+		packagingInfoText.textContent = 'Nhập đơn vị đóng gói và số đơn vị';
+		setPackagingInfoActive(packagingInfoText, false);
+	}
+}
+
 function updatePackagingInfo() {
 	const packagingUnit = document.getElementById('packagingUnit')?.value || '';
 	const unitsPerBox = parseFloat(document.getElementById('unitsPerBox')?.value || 0);
@@ -20,30 +43,10 @@ function updatePackagingInfo() {
 	if (!packagingDisplay) return;
 
 	// Cập nhật hidden field để lưu vào database
-	if (packagingUnit) {
-		if (unitsPerBox > 0 && saleUnit) {
-			packagingDisplay.value = `1 ${packagingUnit} = ${unitsPerBox} ${saleUnit}`;
-		} else {
-			packagingDisplay.value = `1 ${packagingUnit}`;
-		}
-	} else {
-		packagingDisplay.value = '';
-	}
+	packagingDisplay.value = buildPackagingValue(packagingUnit, unitsPerBox, saleUnit);
 
 	// Cập nhật text hiển thị quy cách: "1 [Đơn vị đóng gói] = [Số đơn vị] [Đơn vị dùng]"
-	if (packagingInfoText) {
-		if (packagingUnit && unitsPerBox > 0 && saleUnit) {
-			// Ví dụ: "1 Lọ = 20 Gói" thay vì hard code "1 Hộp = 20 Gói"
-			packagingInfoText.textContent = `1 ${packagingUnit.charAt(0).toUpperCase() + packagingUnit.slice(1)} = ${unitsPerBox} ${saleUnit.charAt(0).toUpperCase() + saleUnit.slice(1)}`;
-			setPackagingInfoActive(packagingInfoText, true);
-		} else if (packagingUnit && saleUnit) {
-			packagingInfoText.textContent = `Chưa xác định số ${saleUnit} trong 1 ${packagingUnit}`;
-			setPackagingInfoActive(packagingInfoText, true);
-		} else {
-			packagingInfoText.textContent = 'Nhập đơn vị đóng gói và số đơn vị';
-			setPackagingInfoActive(packagingInfoText, false);
-		}
-	}
+	if (packagingInfoText) renderPackagingInfoText(packagingInfoText, packagingUnit, unitsPerBox, saleUnit);
 
 	// Cập nhật hint cho số lượng tồn
 	updateStockQuantityHint();
@@ -117,31 +120,36 @@ function updateBoxesInputFromStockQuantity(value) {
 
 // Cập nhật hint tóm tắt tồn kho và ô tổng (đơn vị cơ bản: saleUnit)
 // Tính từ 2 field: stockQuantityBoxes (đơn vị đóng gói đầy) và stockQuantityRemaining (đơn vị lẻ)
+function stockFieldValue(id) {
+	return document.getElementById(id)?.value;
+}
+
+function showStockConvertText(convertElement, convertTextElement, convertText) {
+	if (!convertText) {
+		setElementVisible(convertElement, false);
+		return;
+	}
+	convertTextElement.innerHTML = `<i class="bi bi-calculator"></i> ${convertText}`;
+	setElementVisible(convertElement, true);
+	convertElement.classList.remove('alert-info');
+	convertElement.classList.add('alert-success');
+}
+
 function updateStockQuantityHint() {
-	const boxesInput = document.getElementById('stockQuantityBoxes');
-	const remainingInput = document.getElementById('stockQuantityRemaining');
-	const unitsPerBox = parseFloat(document.getElementById('unitsPerBox')?.value || 0);
-	const packagingUnit = document.getElementById('packagingUnit')?.value || 'vỉ';
-	const saleUnit = document.getElementById('saleUnit')?.value || 'viên';
+	const unitsPerBox = parseFloat(stockFieldValue('unitsPerBox') || 0);
+	const packagingUnit = stockFieldValue('packagingUnit') || 'vỉ';
+	const saleUnit = stockFieldValue('saleUnit') || 'viên';
 	const convertElement = document.getElementById('stockQuantityConvert');
 	const convertTextElement = document.getElementById('stockQuantityConvertText');
 
 	if (!convertElement || !convertTextElement) return;
 
-	const boxes = parseFloat(boxesInput?.value || 0);
-	const remaining = parseFloat(remainingInput?.value || 0);
+	const boxes = parseFloat(stockFieldValue('stockQuantityBoxes') || 0);
+	const remaining = parseFloat(stockFieldValue('stockQuantityRemaining') || 0);
 
 	if (unitsPerBox > 0 && (boxes > 0 || remaining > 0)) {
 		const total = boxes * unitsPerBox + remaining;
-		const convertText = buildStockConvertText({ boxes, remaining, total, packagingUnit, saleUnit });
-		if (convertText) {
-			convertTextElement.innerHTML = `<i class="bi bi-calculator"></i> ${convertText}`;
-			setElementVisible(convertElement, true);
-			convertElement.classList.remove('alert-info');
-			convertElement.classList.add('alert-success');
-		} else {
-			setElementVisible(convertElement, false);
-		}
+		showStockConvertText(convertElement, convertTextElement, buildStockConvertText({ boxes, remaining, total, packagingUnit, saleUnit }));
 		updateStockQuantitySummaryDisplay({ total });
 	} else {
 		setElementVisible(convertElement, false);

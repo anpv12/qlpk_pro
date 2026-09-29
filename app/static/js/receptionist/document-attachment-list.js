@@ -169,6 +169,24 @@
 	`;
 	}
 
+	async function runAttachmentDelete(state, action, id, isCurrentContext) {
+		const options = state.options;
+		const key = `${action}:${id}`;
+		if (state.pending.has(key)) return;
+		state.pending.add(key);
+		try {
+			if (action === 'delete') {
+				await deleteServerDocument(id, options, isCurrentContext);
+			} else {
+				await options.deleteDraftDocument?.(id, { isCurrentContext });
+			}
+		} catch (error) {
+			if (isCurrentContext()) options.showToast?.('error', 'Xoá tài liệu gặp lỗi');
+		} finally {
+			state.pending.delete(key);
+		}
+	}
+
 	function bindDocumentActions(list) {
 		if (list._documentAttachmentActionsBound) return;
 
@@ -195,20 +213,7 @@
 			}
 
 			if (isDelete) {
-				const key = `${action}:${id}`;
-				if (state.pending.has(key)) return;
-				state.pending.add(key);
-				try {
-					if (action === 'delete') {
-						await deleteServerDocument(id, options, isCurrentContext);
-					} else {
-						await options.deleteDraftDocument?.(id, { isCurrentContext });
-					}
-				} catch (error) {
-					if (isCurrentContext()) options.showToast?.('error', 'Xoá tài liệu gặp lỗi');
-				} finally {
-					state.pending.delete(key);
-				}
+				await runAttachmentDelete(state, action, id, isCurrentContext);
 				return;
 			}
 

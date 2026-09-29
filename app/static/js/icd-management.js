@@ -75,6 +75,21 @@ function renderICDState(message, retry = false) {
 	</td></tr>`);
 }
 
+function buildICDListParams(page) {
+	const params = new URLSearchParams({ skip: (page - 1) * pageSize, limit: pageSize });
+	if (currentSearch) params.set('search', currentSearch);
+	if (currentDiseaseGroup) params.set('disease_group', currentDiseaseGroup);
+	return params;
+}
+
+function renderICDLoadError(status) {
+	const message = ({
+		401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+		403: 'Bạn không có quyền xem danh mục ICD.'
+	})[status] || 'Không tải được danh sách ICD. Vui lòng thử lại.';
+	renderICDState(message, status !== 401 && status !== 403);
+}
+
 async function loadICDList(page = 1) {
 	const revision = ++listRevision;
 	currentPage = page;
@@ -82,17 +97,10 @@ async function loadICDList(page = 1) {
 	$('#clinicPagination').hide();
 	renderICDState('Đang tải danh sách ICD…');
 	try {
-		const params = new URLSearchParams({ skip: (page - 1) * pageSize, limit: pageSize });
-		if (currentSearch) params.set('search', currentSearch);
-		if (currentDiseaseGroup) params.set('disease_group', currentDiseaseGroup);
-		const response = await fetch(`/api/icd/?${params}`);
+		const response = await fetch(`/api/icd/?${buildICDListParams(page)}`);
 		if (revision !== listRevision) return;
 		if (!response.ok) {
-			const message = ({
-				401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-				403: 'Bạn không có quyền xem danh mục ICD.'
-			})[response.status] || 'Không tải được danh sách ICD. Vui lòng thử lại.';
-			renderICDState(message, response.status !== 401 && response.status !== 403);
+			renderICDLoadError(response.status);
 			return;
 		}
 		const data = await response.json();

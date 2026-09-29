@@ -82,27 +82,37 @@
 
 	function render(type, message, options = {}) {
 		const structured = message && typeof message === 'object' && typeof message.title === 'string';
-		const text = structured
-			? [message.title, message.label, message.emphasis, message.detail, message.guidance].filter(Boolean).join(' ')
-			: String(message || '').trim();
+		const text = toastText(message, structured);
 		if (!text) return false;
 
 		const hostWindow = getHostWindow(options);
-		const documentRef = hostWindow.document;
-		let host = documentRef.getElementById('qlpkWorkspaceToastHost');
-		if (!host) {
-			host = documentRef.createElement('div');
-			host.id = 'qlpkWorkspaceToastHost';
-			host.className = 'qlpk-workspace-toast-host';
-			documentRef.body.appendChild(host);
-		}
+		const host = ensureToastHost(hostWindow.document);
 
 		const toastType = normalizeType(type);
 		const defaultDuration = structured ? 12000 : 3000;
 		host.classList.toggle('qlpk-workspace-toast-host--detailed', Boolean(structured));
 		positionHost(host, hostWindow);
 		hostWindow.setTimeout(() => positionHost(host, hostWindow), 250);
-		host.innerHTML = `
+		host.innerHTML = buildToastHtml(toastType, structured, message, text);
+
+		hostWindow.clearTimeout(host._qlpkToastTimer);
+		hostWindow.clearTimeout(host._qlpkToastHideTimer);
+		if (structured) {
+			host.querySelector('.qlpk-toast__close').addEventListener('click', () => { host.innerHTML = ''; });
+		}
+		const duration = Number(options.duration) > 0 ? Number(options.duration) : defaultDuration;
+		host._qlpkToastTimer = hostWindow.setTimeout(() => hideToast(host, hostWindow), duration);
+		return true;
+	}
+
+	function toastText(message, structured) {
+		return structured
+			? [message.title, message.label, message.emphasis, message.detail, message.guidance].filter(Boolean).join(' ')
+			: String(message || '').trim();
+	}
+
+	function buildToastHtml(toastType, structured, message, text) {
+		return `
 			<div class="qlpk-workspace-toast qlpk-toast qlpk-toast--${toastType}${structured ? ' qlpk-toast--detailed' : ''}" role="status" aria-live="polite">
 				<span class="qlpk-toast__icon" aria-hidden="true"><i class="bi ${ICONS[toastType]}"></i></span>
 				${structured ? `<div class="qlpk-toast__content">
@@ -114,24 +124,29 @@
 				: `<span class="qlpk-toast__title" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`}
 			</div>
 		`;
+	}
 
-		hostWindow.clearTimeout(host._qlpkToastTimer);
-		hostWindow.clearTimeout(host._qlpkToastHideTimer);
-		if (structured) {
-			host.querySelector('.qlpk-toast__close').addEventListener('click', () => { host.innerHTML = ''; });
+	function ensureToastHost(documentRef) {
+		let host = documentRef.getElementById('qlpkWorkspaceToastHost');
+		if (!host) {
+			host = documentRef.createElement('div');
+			host.id = 'qlpkWorkspaceToastHost';
+			host.className = 'qlpk-workspace-toast-host';
+			documentRef.body.appendChild(host);
 		}
-		host._qlpkToastTimer = hostWindow.setTimeout(() => {
-			const toast = host.querySelector('.qlpk-workspace-toast');
-			if (!toast) {
-				host.innerHTML = '';
-				return;
-			}
-			toast.classList.add('is-hiding');
-			host._qlpkToastHideTimer = hostWindow.setTimeout(() => {
-				host.innerHTML = '';
-			}, 180);
-		}, Number(options.duration) > 0 ? Number(options.duration) : defaultDuration);
-		return true;
+		return host;
+	}
+
+	function hideToast(host, hostWindow) {
+		const toast = host.querySelector('.qlpk-workspace-toast');
+		if (!toast) {
+			host.innerHTML = '';
+			return;
+		}
+		toast.classList.add('is-hiding');
+		host._qlpkToastHideTimer = hostWindow.setTimeout(() => {
+			host.innerHTML = '';
+		}, 180);
 	}
 
 	function statusOf(error) {

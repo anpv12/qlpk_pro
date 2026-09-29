@@ -541,20 +541,30 @@
 		if (root) root.innerHTML = '';
 	}
 
+	function validateConditionGroup(name, conditions) {
+		for (const [index, condition] of conditions.entries()) {
+			const between = condition.operator === 'between';
+			if (!Number.isFinite(condition.min_score) || (between && !Number.isFinite(condition.max_score)))
+				return `Vui lòng nhập đủ ngưỡng điểm cho điều kiện ${index + 1} (${name}).`;
+			if (between && condition.min_score > condition.max_score)
+				return `Ngưỡng từ phải nhỏ hơn hoặc bằng ngưỡng đến ở điều kiện ${index + 1} (${name}).`;
+		}
+		return null;
+	}
+
+	function needsConversionValues(config) {
+		return config.scoring_method === 'total' && config.calculation_type === 'scale_conversion'
+			&& (!Number.isFinite(config.conversion?.factor) || !Number.isFinite(config.conversion?.offset));
+	}
+
 	function validateConfig() {
 		const config = currentConfig;
 		const groups = [['điểm tổng', config.conditions], ...Object.entries(config.group_configs).map(([name, group]) => [name, group.conditions || []])];
 		for (const [name, conditions] of groups) {
-			for (const [index, condition] of conditions.entries()) {
-				if (!Number.isFinite(condition.min_score) || (condition.operator === 'between' && !Number.isFinite(condition.max_score)))
-					return `Vui lòng nhập đủ ngưỡng điểm cho điều kiện ${index + 1} (${name}).`;
-				if (condition.operator === 'between' && condition.min_score > condition.max_score)
-					return `Ngưỡng từ phải nhỏ hơn hoặc bằng ngưỡng đến ở điều kiện ${index + 1} (${name}).`;
-			}
+			const error = validateConditionGroup(name, conditions);
+			if (error) return error;
 		}
-		if (config.scoring_method === 'total' && config.calculation_type === 'scale_conversion' &&
-			(!Number.isFinite(config.conversion?.factor) || !Number.isFinite(config.conversion?.offset)))
-			return 'Vui lòng nhập hệ số và số cộng để quy đổi điểm.';
+		if (needsConversionValues(config)) return 'Vui lòng nhập hệ số và số cộng để quy đổi điểm.';
 		for (const [index, alert] of config.special_alerts.entries()) {
 			if (!alert.question_id || !Number.isFinite(alert.threshold))
 				return `Vui lòng chọn câu hỏi và nhập ngưỡng điểm cho lưu ý ${index + 1}.`;

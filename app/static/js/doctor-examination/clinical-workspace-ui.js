@@ -49,6 +49,33 @@
 		bmi: 'bmi'
 	};
 
+	function buildWorkspaceComponentConfig(supplied) {
+		return {
+			...DEFAULT_CONFIG,
+			...supplied,
+			dom: { ...DEFAULT_DOM, ...(supplied.dom || {}) },
+			intake: { ...(supplied.intake || {}) },
+			clinical: { ...(supplied.clinical || {}) }
+		};
+	}
+
+	function assignWorkspaceCollaborators(inst, options) {
+		inst.patientIntakeFactory = options.patientIntakeForm || REGISTRY.require('patientIntakeForm');
+		inst.patientIntakeForm = inst.patientIntakeFactory
+			&& typeof inst.patientIntakeFactory.create === 'function'
+			? inst.patientIntakeFactory.create({ config: inst.COMPONENT_CONFIG.intake || {} })
+			: inst.patientIntakeFactory;
+		inst.getPrescriptionUiInstance = options.getPrescriptionUi || (() => REGISTRY.get('prescriptionForm')?.getOrCreate?.());
+		inst.getSupportModulesInstance = options.getSupportModulesUi || (() => REGISTRY.get('supportModulesUi') || null);
+		inst.getMedicalHistoryInstance = options.getMedicalHistoryBridge || (() => REGISTRY.get('medicalHistoryBridge') || null);
+	}
+
+	function resolveSaveControllerFactory(options, componentConfig) {
+		return options.saveControllerFactory
+			|| componentConfig.saveControllerFactory
+			|| REGISTRY.get('workspaceSaveController');
+	}
+
 	function create(options = {}) {
 		// Functions of create() live in clinical-workspace-ui-parts/ (installed per instance, like the original closures).
 		const inst = {};
@@ -56,13 +83,7 @@
 		const outer = { getDocument, hasValue, runtimeGetValue, runtimeSetText, runtimeSetValue, textOf };
 		moduleParts.installers.forEach(install => install(inst, outer));
 		inst.suppliedConfig = options.config || {};
-		inst.COMPONENT_CONFIG = {
-			...DEFAULT_CONFIG,
-			...inst.suppliedConfig,
-			dom: { ...DEFAULT_DOM, ...(inst.suppliedConfig.dom || {}) },
-			intake: { ...(inst.suppliedConfig.intake || {}) },
-			clinical: { ...(inst.suppliedConfig.clinical || {}) }
-		};
+		inst.COMPONENT_CONFIG = buildWorkspaceComponentConfig(inst.suppliedConfig);
 		inst.dom = inst.COMPONENT_CONFIG.dom;
 		inst.DEFAULT_SECTION_ID = inst.COMPONENT_CONFIG.defaultSectionId;
 		inst.STATE = {
@@ -93,14 +114,7 @@
 		inst.MAIN_CHANGES = RUNTIME.createChangeTracker(inst.STATE, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
 		inst.clinicalForm = null;
 
-	inst.patientIntakeFactory = options.patientIntakeForm || REGISTRY.require('patientIntakeForm');
-	inst.patientIntakeForm = inst.patientIntakeFactory
-		&& typeof inst.patientIntakeFactory.create === 'function'
-		? inst.patientIntakeFactory.create({ config: inst.COMPONENT_CONFIG.intake || {} })
-		: inst.patientIntakeFactory;
-	inst.getPrescriptionUiInstance = options.getPrescriptionUi || (() => REGISTRY.get('prescriptionForm')?.getOrCreate?.());
-	inst.getSupportModulesInstance = options.getSupportModulesUi || (() => REGISTRY.get('supportModulesUi') || null);
-	inst.getMedicalHistoryInstance = options.getMedicalHistoryBridge || (() => REGISTRY.get('medicalHistoryBridge') || null);
+	assignWorkspaceCollaborators(inst, options);
 
 		inst.clinicalForm = REGISTRY.get('clinicalExaminationForm').create({
 		config: inst.COMPONENT_CONFIG.clinical || {},
@@ -115,9 +129,7 @@
 		apiCall: (...args) => inst.STATE.apiCall(...args)
 	});
 
-	inst.saveControllerFactory = options.saveControllerFactory
-		|| inst.COMPONENT_CONFIG.saveControllerFactory
-		|| REGISTRY.get('workspaceSaveController');
+	inst.saveControllerFactory = resolveSaveControllerFactory(options, inst.COMPONENT_CONFIG);
 	if (!inst.saveControllerFactory || typeof inst.saveControllerFactory.create !== 'function') {
 		throw new Error('Thiếu workspace save controller');
 	}

@@ -171,6 +171,16 @@ function deleteDocument(docId, options = {}) {
 }
 
 // Initialize page
+
+function refreshRelativesAfterPatientChange(payload) {
+	const handledRelativeUpdate = typeof relativeTableInstance.applyPatientChanged === 'function'
+		? relativeTableInstance.applyPatientChanged(payload)
+		: false;
+	if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof relativeTableInstance.reload === 'function') {
+		relativeTableInstance.reload();
+	}
+}
+
 function initializePage() {
 
 		// Reset form to default values
@@ -295,22 +305,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 					loadServicesForForm();
 				}
 
+				const isCurrentPatient = Boolean(eventPatientId && currentPatientId && eventPatientId === Number(currentPatientId));
 				if (event.type === 'document.changed') {
-					if (eventPatientId && currentPatientId && eventPatientId === Number(currentPatientId)) {
-						loadAttachmentsForCurrentPatient();
-					}
+					if (isCurrentPatient) loadAttachmentsForCurrentPatient();
 					return;
 				}
 
-				if (eventPatientId && currentPatientId && eventPatientId === Number(currentPatientId)) {
-					if (event.type === 'patient.changed' && relativeTableInstance) {
-						const handledRelativeUpdate = typeof relativeTableInstance.applyPatientChanged === 'function'
-							? relativeTableInstance.applyPatientChanged(payload)
-							: false;
-						if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof relativeTableInstance.reload === 'function') {
-							relativeTableInstance.reload();
-						}
-					}
+				if (isCurrentPatient && event.type === 'patient.changed' && relativeTableInstance) {
+					refreshRelativesAfterPatientChange(payload);
 				}
 
 				loadAppointments(currentStatus, currentPage);

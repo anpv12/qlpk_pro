@@ -4,6 +4,25 @@
 	'use strict';
 	const parts = window.QLPKModuleParts['relative-table'];
 	const { notify, toInputDate, API_BASE, renderRelativeActionButton } = parts;
+	function trimmedValue(row, selector) {
+		const input = row.querySelector(selector);
+		return input ? input.value.trim() : '';
+	}
+
+	function readNewRelativeRow(row) {
+		const emergencyContactCheckbox = row.querySelector('.relative-emergency-contact-checkbox');
+		const jointExamDateInput = row.querySelector('.relative-date-input');
+		return {
+			name: trimmedValue(row, '.relative-name-input'),
+			kinship: trimmedValue(row, 'input[list*="relative-relationship-list"]'),
+			idNumber: trimmedValue(row, '.relative-id-number-input'),
+			phone: trimmedValue(row, '.relative-phone-input'),
+			emergencyContact: emergencyContactCheckbox ? emergencyContactCheckbox.checked : false,
+			jointExamDate: jointExamDateInput ? jointExamDateInput.value : null,
+			relativePatientId: row.dataset.relativePatientId ? parseInt(row.dataset.relativePatientId) : null
+		};
+	}
+
 	const methods = {
 		fillPatientData(row, patient) {
 			if (this.readOnly || this.mutation || this.rowContexts.get(row)?.() === false) return;
@@ -49,20 +68,7 @@
 
 		async saveNewRelative(row) {
 			if (this.readOnly || this.mutation || this.rowContexts.get(row)?.() === false) return false;
-			const nameInput = row.querySelector('.relative-name-input');
-			const kinshipInput = row.querySelector('input[list*="relative-relationship-list"]');
-			const idNumberInput = row.querySelector('.relative-id-number-input');
-			const phoneInput = row.querySelector('.relative-phone-input');
-			const emergencyContactCheckbox = row.querySelector('.relative-emergency-contact-checkbox');
-			const jointExamDateInput = row.querySelector('.relative-date-input');
-
-			const name = nameInput ? nameInput.value.trim() : '';
-			const kinship = kinshipInput ? kinshipInput.value.trim() : '';
-			const idNumber = idNumberInput ? idNumberInput.value.trim() : '';
-			const phone = phoneInput ? phoneInput.value.trim() : '';
-			const emergencyContact = emergencyContactCheckbox ? emergencyContactCheckbox.checked : false;
-			const jointExamDate = jointExamDateInput ? jointExamDateInput.value : null;
-			const relativePatientId = row.dataset.relativePatientId ? parseInt(row.dataset.relativePatientId) : null;
+			const { name, kinship, idNumber, phone, emergencyContact, jointExamDate, relativePatientId } = readNewRelativeRow(row);
 
 			if (!name || !kinship) {
 				notify('warning', 'Vui lòng nhập đầy đủ họ tên và quan hệ');

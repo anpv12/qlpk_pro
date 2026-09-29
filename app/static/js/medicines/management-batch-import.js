@@ -383,6 +383,54 @@ function updatePriceComparison(rowId) {
 
 // Xác nhận nhập kho theo đơn hàng
 let isImportingBatch = false;
+function isValidBatchQuantity(value) {
+	return Number.isFinite(value) && value > 0;
+}
+
+// One import line from a table row, or null when any required field is missing or invalid.
+function batchRowValue(row, selector) {
+	return row.querySelector(selector)?.value;
+}
+
+function isValidBatchPrice(raw, price) {
+	return Boolean(raw?.trim()) && Number.isFinite(price) && price >= 0;
+}
+
+function readBatchImportRow(row, note) {
+	const medicineId = batchRowValue(row, '.batch-medicine-id');
+	const batchNumber = batchRowValue(row, '.batch-number-display')?.trim();
+	const expiryDate = batchRowValue(row, '.batch-expiry-date');
+	const quantity = parseFloat(batchRowValue(row, '.batch-quantity') || 0);
+	const importPriceRaw = batchRowValue(row, '.batch-price');
+	const importPrice = Number(importPriceRaw);
+	const controlsValid = Array.from(row.querySelectorAll('input')).every(input => input.checkValidity());
+	const fieldsPresent = Boolean(medicineId && batchNumber && expiryDate);
+	if (!controlsValid || !fieldsPresent || !isValidBatchQuantity(quantity) || !isValidBatchPrice(importPriceRaw, importPrice)) return null;
+	return {
+		medicine_id: parseInt(medicineId),
+		batch_number: batchNumber || null,
+		expiry_date: expiryDate,
+		quantity: quantity,
+		import_price: importPrice,
+		notes: note
+	};
+}
+
+function refreshAfterBatchImport() {
+	// Đóng modal
+	const modal = bootstrap.Modal.getInstance(document.getElementById('importBatchModal'));
+	if (modal) modal.hide();
+
+	// Reload danh sách thuốc
+	loadMedicines();
+	updateDashboard();
+
+	if (importFormMedicineId && $('#medicineForm').data('medicine-id') === importFormMedicineId
+		&& document.getElementById('medicineModal').classList.contains('show')) {
+		editMedicine(importFormMedicineId);
+	}
+}
+
 async function confirmBatchImport() {
 	if (isImportingBatch) return;
 	const supplierIdValue = document.getElementById('batchSupplierId')?.value || '';
@@ -410,27 +458,9 @@ async function confirmBatchImport() {
 	let hasError = false;
 
 	rows.forEach((row) => {
-		const medicineId = row.querySelector('.batch-medicine-id')?.value;
-		const batchNumber = row.querySelector('.batch-number-display')?.value?.trim();
-		const expiryDate = row.querySelector('.batch-expiry-date')?.value;
-		const quantity = parseFloat(row.querySelector('.batch-quantity')?.value || 0);
-		const importPriceRaw = row.querySelector('.batch-price')?.value;
-
-        const importPrice = Number(importPriceRaw);
-        const controlsValid = Array.from(row.querySelectorAll('input')).every(input => input.checkValidity());
-        if (!controlsValid || !medicineId || !batchNumber || !expiryDate || !Number.isFinite(quantity) || quantity <= 0 || !importPriceRaw?.trim() || !Number.isFinite(importPrice) || importPrice < 0) {
-            hasError = true;
-            return;
-        }
-
-		items.push({
-			medicine_id: parseInt(medicineId),
-			batch_number: batchNumber || null,
-			expiry_date: expiryDate,
-			quantity: quantity,
-			import_price: importPrice,
-			notes: note
-		});
+		const item = readBatchImportRow(row, note);
+		if (item) items.push(item);
+		else hasError = true;
 	});
 
 	if (hasError || items.length === 0) {
@@ -458,18 +488,7 @@ async function confirmBatchImport() {
 			})
 		});
 
-		// Đóng modal
-		const modal = bootstrap.Modal.getInstance(document.getElementById('importBatchModal'));
-		if (modal) modal.hide();
-
-		// Reload danh sách thuốc
-		loadMedicines();
-		updateDashboard();
-
-		if (importFormMedicineId && $('#medicineForm').data('medicine-id') === importFormMedicineId
-			&& document.getElementById('medicineModal').classList.contains('show')) {
-			editMedicine(importFormMedicineId);
-		}
+		refreshAfterBatchImport();
 
 		// Hiển thị thông báo thành công
 		showCustomToast('success', `Nhập kho thành công! Đã lưu ${response.total_batches} dòng nhập và đơn giá riêng.`);

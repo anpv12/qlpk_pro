@@ -136,9 +136,24 @@
 			return true;
 		},
 
-		async savePendingList(appointmentId, options = {}) {
+		pendingSaveBlocker() {
 			if (this.pendingSaving || this.mutation) return { status: 'skipped', reason: 'saving' };
 			if (this.pendingJointExamRow) return { status: 'error', reason: 'unfinished-row' };
+			return null;
+		},
+
+		// Save each pending row in order; false as soon as the context goes stale.
+		async savePendingRows(appointmentId, isCurrentContext) {
+			for (const item of [...this.pendingJointExamList]) {
+				if (!isCurrentContext()) return false;
+				if (!await this.savePendingRow(item, appointmentId, isCurrentContext)) return false;
+			}
+			return true;
+		},
+
+		async savePendingList(appointmentId, options = {}) {
+			const blocked = this.pendingSaveBlocker();
+			if (blocked) return blocked;
 			const token = this.pendingSaveToken;
 			const isCurrentContext = () => token === this.pendingSaveToken
 				&& appointmentId === this.getAppointmentId() && options.isCurrentContext?.() !== false;
@@ -147,10 +162,7 @@
 			if (!this.pendingJointExamList.length) return { status: 'saved' };
 			this.pendingSaving = true;
 			try {
-				for (const item of [...this.pendingJointExamList]) {
-					if (!isCurrentContext()) return { status: 'stale' };
-					if (!await this.savePendingRow(item, appointmentId, isCurrentContext)) return { status: 'stale' };
-				}
+				if (!await this.savePendingRows(appointmentId, isCurrentContext)) return { status: 'stale' };
 				if (this.pendingJointExamList.length) throw new Error('joint-exam-new-drafts');
 				await this.load({ isCurrentContext });
 				if (this.pendingJointExamList.length && isCurrentContext()) throw new Error('joint-exam-new-drafts');

@@ -249,40 +249,21 @@ function renderSingleQuestion(question, index, questionNumber = null) {
             </h2>
     `;
 
-    // Render based on question type
-    switch (questionType) {
-        case 'short_answer':
-            questionHtml += renderShortAnswerQuestion(question, questionId);
-            break;
-        case 'paragraph':
-            questionHtml += renderParagraphQuestion(question, questionId);
-            break;
-        case 'multiple_choice':
-            questionHtml += renderMultipleChoiceQuestion(question, questionId);
-            break;
-        case 'checkboxes':
-            questionHtml += renderCheckboxesQuestion(question, questionId);
-            break;
-        case 'dropdown':
-            questionHtml += renderDropdownQuestion(question, questionId);
-            break;
-        case 'linear_scale':
-            questionHtml += renderLinearScaleQuestion(question, questionId);
-            break;
-        case 'multiple_choice_grid':
-        case 'checkbox_grid':
-            questionHtml += renderGridQuestion(question, questionId);
-            break;
-        case 'date':
-            questionHtml += renderDateQuestion(question, questionId);
-            break;
-        case 'time':
-            questionHtml += renderTimeQuestion(question, questionId);
-            break;
-        default:
-            // Fallback to multiple choice for unknown types
-            questionHtml += renderMultipleChoiceQuestion(question, questionId);
-    }
+    // Render based on question type (unknown types fall back to multiple choice)
+    const renderers = {
+        short_answer: renderShortAnswerQuestion,
+        paragraph: renderParagraphQuestion,
+        multiple_choice: renderMultipleChoiceQuestion,
+        checkboxes: renderCheckboxesQuestion,
+        dropdown: renderDropdownQuestion,
+        linear_scale: renderLinearScaleQuestion,
+        multiple_choice_grid: renderGridQuestion,
+        checkbox_grid: renderGridQuestion,
+        date: renderDateQuestion,
+        time: renderTimeQuestion
+    };
+    const render = Object.prototype.hasOwnProperty.call(renderers, questionType) ? renderers[questionType] : renderMultipleChoiceQuestion;
+    questionHtml += render(question, questionId);
 
     questionHtml += '</section>';
     return questionHtml;

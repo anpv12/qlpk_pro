@@ -1,6 +1,18 @@
 (function (window) {
 	'use strict';
 
+	function buildLoadedRecordOptions(options, selectedPatient) {
+		return {
+			clinicInfo: options.getClinicInfoConfig(),
+			patient: selectedPatient,
+			history: { ...(window.currentLoadedHistory || {}), ...(window.currentLoadedExaminationDetail || {}) },
+			examinationDetailsBySection: window.currentLoadedExaminationDetailsBySection || {},
+			prescriptionData: window.currentLoadedPrescriptionData || null,
+			relatives: window.currentLoadedRelatives || [],
+			appointment: window.currentLoadedAppointment || null
+		};
+	}
+
 	function updateMedicalRecordTab(options = {}) {
 		const documentRef = options.document || window.document;
 		const logger = options.console || window.console;
@@ -13,20 +25,7 @@
 		if (!selectedPatient) return false;
 
 		try {
-			const loadedHistory = window.currentLoadedHistory || {};
-			const loadedDetail = window.currentLoadedExaminationDetail || {};
-			const loadedSections = window.currentLoadedExaminationDetailsBySection || {};
-			const historyWithDetail = { ...loadedHistory, ...loadedDetail };
-
-			const medicalRecordHtml = options.buildMedicalRecordHTML({
-				clinicInfo: options.getClinicInfoConfig(),
-				patient: selectedPatient,
-				history: historyWithDetail,
-				examinationDetailsBySection: loadedSections,
-				prescriptionData: window.currentLoadedPrescriptionData || null,
-				relatives: window.currentLoadedRelatives || [],
-				appointment: window.currentLoadedAppointment || null
-			});
+			const medicalRecordHtml = options.buildMedicalRecordHTML(buildLoadedRecordOptions(options, selectedPatient));
 
 			medicalRecordTab.innerHTML = medicalRecordHtml;
 			if (typeof options.createBarcodesInElement === 'function') {

@@ -239,27 +239,24 @@ function buildExaminationDetailContentHtml(viewModel) {
 }
 
 // Render examination detail content
+function buildExaminationDetailViewModel(data) {
+	const patient = data.patient || {};
+	return {
+		safeExaminationDate: escapeAttr(data.examination_date?.split('T')[0] || ''),
+		safeDoctorName: escapeAttr(data.doctor?.full_name || ''),
+		safeExaminationTime: escapeAttr(data.examination_time || ''),
+		safePatientName: escapeAttr(patient.full_name || ''),
+		safePatientGender: escapeAttr(toVietnameseGender(patient.gender) || ''),
+		safePatientPhone: escapeAttr(patient.phone_number || ''),
+		safePatientBirthDate: escapeAttr(patient.date_of_birth?.split('T')[0] || ''),
+		examinationType: data.examination_type
+	};
+}
+
 function renderExaminationDetailContent(data, examinationId) {
 	// Kiểm tra trạng thái examination/payment để khóa form
 	const isConfirmed = isExaminationConfirmed(data);
-	const safeExaminationDate = escapeAttr(data.examination_date?.split('T')[0] || '');
-	const safeDoctorName = escapeAttr(data.doctor?.full_name || '');
-	const safeExaminationTime = escapeAttr(data.examination_time || '');
-	const safePatientName = escapeAttr(data.patient?.full_name || '');
-	const safePatientGender = escapeAttr(toVietnameseGender(data.patient?.gender) || '');
-	const safePatientPhone = escapeAttr(data.patient?.phone_number || '');
-	const safePatientBirthDate = escapeAttr(data.patient?.date_of_birth?.split('T')[0] || '');
-
-	const content = buildExaminationDetailContentHtml({
-		safeExaminationDate,
-		safeDoctorName,
-		safeExaminationTime,
-		safePatientName,
-		safePatientGender,
-		safePatientPhone,
-		safePatientBirthDate,
-		examinationType: data.examination_type
-	});
+	const content = buildExaminationDetailContentHtml(buildExaminationDetailViewModel(data));
 
 	$('#examinationDetailContent').html(content);
 
@@ -293,34 +290,35 @@ function renderExaminationDetailContent(data, examinationId) {
 	}
 
 	// ===== KHỞI TẠO FLATPICKR SAU KHI RENDER HTML XONG =====
-	setTimeout(function () {
-		const birthDateInput = document.getElementById('patientBirthDate');
+	setTimeout(initDetailBirthDatePicker, 150);
 
-		if (birthDateInput) {
-			// Destroy Flatpickr cũ nếu có
-			if (birthDateInput._flatpickr) {
-				birthDateInput._flatpickr.destroy();
-			}
+}
 
-			// Lưu giá trị hiện tại
-			const currentValue = birthDateInput.value;
+function initDetailBirthDatePicker() {
+	const birthDateInput = document.getElementById('patientBirthDate');
+	if (!birthDateInput) return;
 
-			// Khởi tạo Flatpickr mới
-			flatpickr(birthDateInput, {
-				dateFormat: 'Y-m-d',
-				altInput: true,
-				altFormat: 'd/m/Y',
-				locale: 'vi',
-				allowInput: true
-			});
+	// Destroy Flatpickr cũ nếu có
+	if (birthDateInput._flatpickr) {
+		birthDateInput._flatpickr.destroy();
+	}
 
-			// Set lại giá trị sau khi khởi tạo
-			if (currentValue && birthDateInput._flatpickr) {
-				birthDateInput._flatpickr.setDate(currentValue, true);
-			}
-		}
-	}, 150);
+	// Lưu giá trị hiện tại
+	const currentValue = birthDateInput.value;
 
+	// Khởi tạo Flatpickr mới
+	flatpickr(birthDateInput, {
+		dateFormat: 'Y-m-d',
+		altInput: true,
+		altFormat: 'd/m/Y',
+		locale: 'vi',
+		allowInput: true
+	});
+
+	// Set lại giá trị sau khi khởi tạo
+	if (currentValue && birthDateInput._flatpickr) {
+		birthDateInput._flatpickr.setDate(currentValue, true);
+	}
 }
 
 // Load services for modal

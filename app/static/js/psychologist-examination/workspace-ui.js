@@ -96,18 +96,18 @@
 		const heading = doc.getElementById('psychologistClinicalHeading');
 		const code = doc.getElementById('psychologistPatientCode');
 		const latestVisit = doc.getElementById('psychologistPatientLatestVisit');
-		const patientName = patient.full_name || patient.name || 'Chưa chọn bệnh nhân';
-		const patientCode = patient.patient_code || patient.medical_record_number || patient.ma_ho_so || '';
-		if (heading) heading.textContent = patientName;
+		if (heading) heading.textContent = patient.full_name || patient.name || 'Chưa chọn bệnh nhân';
 		if (code) {
+			const patientCode = patient.patient_code || patient.medical_record_number || patient.ma_ho_so || '';
 			code.textContent = patientCode;
 			code.hidden = !patientCode;
 		}
-		if (latestVisit) {
-			latestVisit.textContent = options.latestVisit || (options.appointmentId || window.currentAppointmentId
-				? 'Lượt khám Tâm lý gia đang mở'
-				: 'Chưa chọn lượt khám');
-		}
+		if (latestVisit) latestVisit.textContent = latestVisitLabel(options);
+	}
+
+	function latestVisitLabel(options) {
+		if (options.latestVisit) return options.latestVisit;
+		return options.appointmentId || window.currentAppointmentId ? 'Lượt khám Tâm lý gia đang mở' : 'Chưa chọn lượt khám';
 	}
 
 	function activateSection(targetId = DEFAULT_SECTION_ID, options = {}) {
