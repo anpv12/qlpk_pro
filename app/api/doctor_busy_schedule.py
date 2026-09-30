@@ -82,6 +82,79 @@ def get_doctor_busy_schedules(current_user):
     finally:
         db.close()
 
+def _notify_staff_of_busy_schedule(busy_schedule):
+    from app.models.notification import Notification
+    from app.models.user import User
+
+    # Tạo session mới cho notification
+    notification_db = next(get_db())
+
+    # Lấy danh sách lễ tân (role = 'staff' trong database)
+    receptionists = notification_db.query(User).filter(User.role == 'staff').all()
+
+    for receptionist in receptionists:
+        notification = Notification(
+            user_id=receptionist.id,
+            title='Bác sĩ báo lịch bận',
+            message=f'Bác sĩ {busy_schedule.doctor.full_name} đã báo lịch bận từ {busy_schedule.start_datetime.strftime("%d/%m/%Y %H:%M")} đến {busy_schedule.end_datetime.strftime("%d/%m/%Y %H:%M")}',
+            type='doctor_busy_schedule',
+            data={
+                'busy_schedule_id': busy_schedule.id,
+                'doctor_id': busy_schedule.doctor_id,
+                'doctor_name': busy_schedule.doctor.full_name,
+                'start_datetime': busy_schedule.start_datetime.isoformat(),
+                'end_datetime': busy_schedule.end_datetime.isoformat(),
+                'reason': busy_schedule.reason
+            }
+        )
+        notification_db.add(notification)
+
+    notification_db.commit()
+    notification_db.close()
+    emit_notification_changed('created', role='staff', extra={
+        'type': 'doctor_busy_schedule',
+        'busy_schedule_id': busy_schedule.id,
+        'doctor_id': busy_schedule.doctor_id,
+    })
+    logger.info("Successfully created notifications")
+
+
+def _busy_schedule_conflict_response(data, db, end_datetime, start_datetime):
+    # Kiểm tra xung đột với lịch hẹn hiện có
+    conflict_appointment = find_appointment_overlap(
+        db,
+        data['doctor_id'],
+        start_datetime,
+        end_datetime,
+    )
+
+    if conflict_appointment:
+        return jsonify({
+            'error': 'Xung đột với lịch hẹn hiện có',
+            'conflicts': [{
+                'id': conflict_appointment.id,
+                'patient_name': conflict_appointment.patient.full_name if conflict_appointment.patient else 'N/A',
+                'appointment_date': conflict_appointment.appointment_date.isoformat(),
+                'status': conflict_appointment.status.value if hasattr(conflict_appointment.status, 'value') else conflict_appointment.status
+            }]
+        }), 409
+
+    # Kiểm tra xung đột với lịch bận khác
+    existing_busy = find_busy_schedule_overlap(
+        db,
+        data['doctor_id'],
+        start_datetime,
+        end_datetime,
+    )
+
+    if existing_busy:
+        return jsonify({
+            'error': 'Xung đột với lịch bận khác',
+            'conflict_schedule': existing_busy.to_dict()
+        }), 409
+    return None
+
+
 # Tạo lịch bận mới
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules', methods=['POST'])
 @require_auth
@@ -113,38 +186,9 @@ def create_doctor_busy_schedule(current_user):
         if start_datetime >= end_datetime:
             return jsonify({'error': 'Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc'}), 400
         
-        # Kiểm tra xung đột với lịch hẹn hiện có
-        conflict_appointment = find_appointment_overlap(
-            db,
-            data['doctor_id'],
-            start_datetime,
-            end_datetime,
-        )
-
-        if conflict_appointment:
-            return jsonify({
-                'error': 'Xung đột với lịch hẹn hiện có',
-                'conflicts': [{
-                    'id': conflict_appointment.id,
-                    'patient_name': conflict_appointment.patient.full_name if conflict_appointment.patient else 'N/A',
-                    'appointment_date': conflict_appointment.appointment_date.isoformat(),
-                    'status': conflict_appointment.status.value if hasattr(conflict_appointment.status, 'value') else conflict_appointment.status
-                }]
-            }), 409
-        
-        # Kiểm tra xung đột với lịch bận khác
-        existing_busy = find_busy_schedule_overlap(
-            db,
-            data['doctor_id'],
-            start_datetime,
-            end_datetime,
-        )
-        
-        if existing_busy:
-            return jsonify({
-                'error': 'Xung đột với lịch bận khác',
-                'conflict_schedule': existing_busy.to_dict()
-            }), 409
+        error_response = _busy_schedule_conflict_response(data, db, end_datetime, start_datetime)
+        if error_response is not None:
+            return error_response
         
         # Tạo lịch bận mới
         logger.info(f"Creating DoctorBusySchedule with doctor_id: {data['doctor_id']}")
@@ -165,40 +209,7 @@ def create_doctor_busy_schedule(current_user):
         
         # Tạo notification cho lễ tân (sử dụng session mới)
         try:
-            from app.models.notification import Notification
-            from app.models.user import User
-            
-            # Tạo session mới cho notification
-            notification_db = next(get_db())
-            
-            # Lấy danh sách lễ tân (role = 'staff' trong database)
-            receptionists = notification_db.query(User).filter(User.role == 'staff').all()
-            
-            for receptionist in receptionists:
-                notification = Notification(
-                    user_id=receptionist.id,
-                    title='Bác sĩ báo lịch bận',
-                    message=f'Bác sĩ {busy_schedule.doctor.full_name} đã báo lịch bận từ {busy_schedule.start_datetime.strftime("%d/%m/%Y %H:%M")} đến {busy_schedule.end_datetime.strftime("%d/%m/%Y %H:%M")}',
-                    type='doctor_busy_schedule',
-                    data={
-                        'busy_schedule_id': busy_schedule.id,
-                        'doctor_id': busy_schedule.doctor_id,
-                        'doctor_name': busy_schedule.doctor.full_name,
-                        'start_datetime': busy_schedule.start_datetime.isoformat(),
-                        'end_datetime': busy_schedule.end_datetime.isoformat(),
-                        'reason': busy_schedule.reason
-                    }
-                )
-                notification_db.add(notification)
-            
-            notification_db.commit()
-            notification_db.close()
-            emit_notification_changed('created', role='staff', extra={
-                'type': 'doctor_busy_schedule',
-                'busy_schedule_id': busy_schedule.id,
-                'doctor_id': busy_schedule.doctor_id,
-            })
-            logger.info("Successfully created notifications")
+            _notify_staff_of_busy_schedule(busy_schedule)
         except Exception as e:
             logger.warning(f"Could not create notifications: {e}")
             # Không rollback nếu notification lỗi
