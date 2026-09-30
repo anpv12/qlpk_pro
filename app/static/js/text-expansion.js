@@ -28,63 +28,20 @@ window.addEventListener('storage', event => {
 });
 document.addEventListener('qlpk:logout:confirmed', clearExpansionCache);
 
-// Initialize text expansion functionality
+const EXPANDABLE_FIELDS = 'textarea, input[type="text"], input[type="email"], input[type="search"]';
+
+// One delegated Tab listener for every current and future text field.
 function initializeTextExpansion() {
-    // Apply text expansion to all text inputs and textareas
-    $(document).on('keydown', 'textarea, input[type="text"], input[type="email"], input[type="search"]', function(e) {
-        handleTextExpansion(e, $(this));
+    document.addEventListener('keydown', event => {
+        if (event.target instanceof Element && event.target.matches(EXPANDABLE_FIELDS)) handleTextExpansion(event, event.target);
     });
-    
-    // Also apply to dynamically added elements
-    $(document).on('keydown', '.form-control', function(e) {
-        if ($(this).is('textarea, input[type="text"], input[type="email"], input[type="search"]')) {
-            handleTextExpansion(e, $(this));
-        }
-    });
+    if (!isLoaded) setTimeout(loadTextExpansions, 500);
 }
 
-// Load data immediately when script loads (don't wait for jQuery)
+// Load data immediately when script loads
 loadTextExpansions();
-
-// Initialize event handlers when jQuery is ready
-if (typeof jQuery !== 'undefined') {
-    $(document).ready(function() {
-        initializeTextExpansion();
-        // Also try loading again in case first attempt failed
-        if (!isLoaded) {
-            setTimeout(function() {
-                loadTextExpansions();
-            }, 500);
-        }
-    });
-} else {
-    // Wait for jQuery to load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                if (typeof jQuery !== 'undefined') {
-                    $(document).ready(function() {
-                        initializeTextExpansion();
-                        if (!isLoaded) {
-                            loadTextExpansions();
-                        }
-                    });
-                }
-            }, 100);
-        });
-    } else {
-        setTimeout(function() {
-            if (typeof jQuery !== 'undefined') {
-                $(document).ready(function() {
-                    initializeTextExpansion();
-                    if (!isLoaded) {
-                        loadTextExpansions();
-                    }
-                });
-            }
-        }, 100);
-    }
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeTextExpansion);
+else initializeTextExpansion();
 
 // Load text expansions from server
 async function loadTextExpansions() {
@@ -122,21 +79,21 @@ async function loadTextExpansions() {
 
 // Handle text expansion on keydown
 // Tab without modifiers, in an ordinary field, with a loaded expansion cache.
-function canExpandText(e, $element) {
+function canExpandText(e, element) {
     if (e.key !== 'Tab' && e.keyCode !== 9) return false;
     if (e.ctrlKey || e.altKey || e.shiftKey) return false;
-    if ($element.hasClass('code-editor') || $element.attr('data-no-expand') === 'true') return false;
+    if (element.classList.contains('code-editor') || element.getAttribute('data-no-expand') === 'true') return false;
     return isExpansionCacheCurrent() && Boolean(textExpansions) && Object.keys(textExpansions).length > 0;
 }
 
-function handleTextExpansion(e, $element) {
+function handleTextExpansion(e, element) {
     // Only handle Tab key, without Ctrl/Alt/Shift, outside code editors, once expansions are loaded
-    if (!canExpandText(e, $element)) return;
+    if (!canExpandText(e, element)) return;
     
-    const currentValue = $element.val() || '';
+    const currentValue = element.value || '';
     if (!currentValue) return;
     
-    const cursorPosition = $element[0].selectionStart || 0;
+    const cursorPosition = element.selectionStart || 0;
     
     // Find the word before cursor
     const textBeforeCursor = currentValue.substring(0, cursorPosition);
@@ -154,55 +111,40 @@ function handleTextExpansion(e, $element) {
         const newText = textBeforeCursor.replace(new RegExp(lastWord + '$'), textExpansions[lastWord]);
         const newValue = newText + currentValue.substring(cursorPosition);
         
-        $element.val(newValue);
+        element.value = newValue;
         
         // Set cursor position after the expanded text
         const newCursorPosition = newText.length;
-        $element[0].setSelectionRange(newCursorPosition, newCursorPosition);
+        element.setSelectionRange(newCursorPosition, newCursorPosition);
         
         // Show visual feedback
-        showExpansionFeedback($element, lastWord, textExpansions[lastWord]);
+        showExpansionFeedback(element, lastWord, textExpansions[lastWord]);
         
         return false;
     }
 }
 
 // Show visual feedback when text is expanded
-function showExpansionFeedback($element, abbreviation, fullText) {
-    // Create a temporary tooltip-like element
-    const feedback = $(`
-        <div class="text-expansion-feedback">
-            ${window.QLPKHtml.escape(abbreviation)} → ${window.QLPKHtml.escape(fullText)}
-        </div>
-    `);
-    
-    // Position the feedback near the input
-    const elementOffset = $element.offset();
-    
-    feedback[0].style.setProperty('--text-expansion-feedback-top', `${elementOffset.top - 30}px`);
-    feedback[0].style.setProperty('--text-expansion-feedback-left', `${elementOffset.left}px`);
-    
-    $('body').append(feedback);
-    
-    // Animate in
+function showExpansionFeedback(element, abbreviation, fullText) {
+    const feedback = document.createElement('div');
+    feedback.className = 'text-expansion-feedback';
+    feedback.textContent = `${abbreviation} → ${fullText}`;
+    const rect = element.getBoundingClientRect();
+    feedback.style.setProperty('--text-expansion-feedback-top', `${rect.top + window.pageYOffset - 30}px`);
+    feedback.style.setProperty('--text-expansion-feedback-left', `${rect.left + window.pageXOffset}px`);
+    document.body.appendChild(feedback);
+    setTimeout(() => feedback.classList.add('is-visible'), 10);
     setTimeout(() => {
-        feedback.addClass('is-visible');
-    }, 10);
-    
-    // Animate out and remove
-    setTimeout(() => {
-        feedback.removeClass('is-visible');
-        setTimeout(() => {
-            feedback.remove();
-        }, 300);
+        feedback.classList.remove('is-visible');
+        setTimeout(() => feedback.remove(), 300);
     }, 1500);
 }
 
 // Manual text expansion function (can be called programmatically)
-function expandText($element) {
+function expandText(element) {
     if (!isExpansionCacheCurrent()) return false;
-    const currentValue = $element.val();
-    const cursorPosition = $element[0].selectionStart;
+    const currentValue = element.value;
+    const cursorPosition = element.selectionStart;
     
     const textBeforeCursor = currentValue.substring(0, cursorPosition);
     const words = textBeforeCursor.split(/\s+/);
@@ -212,12 +154,12 @@ function expandText($element) {
         const newText = textBeforeCursor.replace(new RegExp(lastWord + '$'), textExpansions[lastWord]);
         const newValue = newText + currentValue.substring(cursorPosition);
         
-        $element.val(newValue);
+        element.value = newValue;
         
         const newCursorPosition = newText.length;
-        $element[0].setSelectionRange(newCursorPosition, newCursorPosition);
+        element.setSelectionRange(newCursorPosition, newCursorPosition);
         
-        showExpansionFeedback($element, lastWord, textExpansions[lastWord]);
+        showExpansionFeedback(element, lastWord, textExpansions[lastWord]);
         return true;
     }
     

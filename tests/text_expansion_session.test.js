@@ -87,6 +87,7 @@ test('management and PDF use shared auth and export fetch rather than direct nav
         assert.doesNotMatch(source, /Authorization|Bearer |localStorage\.getItem/);
     }
     const source = fs.readFileSync('app/static/js/text-expansion-management.js', 'utf8');
-    assert.match(source, /QLPKApiTransport\.installJQuery\(\$\)/);
+    assert.match(source, /import \{ requestJson \} from '\.\/shared\/http-json\.js'/);
+    assert.doesNotMatch(source, /\$\(|\$\.ajax|jQuery/);
     assert.match(source, /await fetch\('\/api\/text-expansions\/export'\)/);
 });

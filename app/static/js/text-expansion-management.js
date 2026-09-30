@@ -1,404 +1,208 @@
-/* exported deleteTextExpansion, downloadTemplate, editTextExpansion, exportToExcel, handleSearch, importFromExcel, resetAll, saveTextExpansion, showAddModal, showImportModal, totalPages */
-// Text Expansion Management JavaScript
+// Text expansion (abbreviation) catalog: filtered server-paged list, stats, add/edit modal, delete,
+// Excel import/export/template and reset. Every change refreshes the page's live expansion cache.
+import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
+import { requestJson } from './shared/http-json.js';
 
-window.QLPKApiTransport.installJQuery($);
+const state = { page: 1, pageSize: 10, revision: 0 };
+const CATEGORY_LABELS = { medical: 'Y tế', psychological: 'Tâm lý', general: 'Chung' };
+const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+const refreshLiveCache = () => window.textExpansion?.refreshTextExpansions?.();
 
-let currentPage = 1;
-let totalPages = 1;
-let searchTimeout;
-let pageSize = 10;
-let listPagination;
-let listRevision = 0;
-
-// Initialize page
-$(document).ready(function() {
-    listPagination = window.QLPKPagination.create({ onChange(page, size) {
-        pageSize = size;
-        loadTextExpansions(page);
-    } });
-    registerRealtimeHooks();
-    loadTextExpansions();
-    loadStats();
-});
-
-function registerRealtimeHooks() {
-    if (!window.QLPKRealtimePageHooks) return;
-    window.QLPKRealtimePageHooks.register({
-        types: ['catalog.changed'],
-        filter: function(event) {
-            return event && event.payload && event.payload.entity === 'text_expansion';
-        },
-        handler: function() {
-            loadTextExpansions(currentPage);
-            loadStats();
-            if (window.textExpansion && window.textExpansion.refreshTextExpansions) {
-                window.textExpansion.refreshTextExpansions();
-            }
-        },
-        debounceMs: 350,
-    });
+function categoryBadge(category) {
+	const known = Object.hasOwn(CATEGORY_LABELS, category);
+	return el('span', { class: `category-badge category-${known ? category : 'general'}` }, known ? CATEGORY_LABELS[category] : category);
 }
 
-// Load text expansions with filters
-function loadTextExpansions(page = 1) {
-    const revision = ++listRevision;
-    const category = $('#categoryFilter').val();
-    const status = $('#statusFilter').val();
-    const search = $('#searchInput').val();
-    
-    const params = new URLSearchParams({
-        page: page,
-        per_page: pageSize,
-        ...(category && category !== 'all' && { category }),
-        ...(status && { is_active: status }),
-        ...(search && { search })
-    });
-    
-    $.ajax({
-        url: `/api/text-expansions/?${params}`,
-        method: 'GET',
-        success: function(response) {
-            if (revision !== listRevision) return;
-            if (response.success) {
-                const lastPage = Math.max(1, response.pagination.pages);
-                if (page > lastPage) { loadTextExpansions(lastPage); return; }
-                displayTextExpansions(response.data);
-                updatePagination(response.pagination);
-                currentPage = response.pagination.page;
-                totalPages = response.pagination.pages;
-            } else {
-				showToast('error', 'Không thể tải danh sách từ viết tắt. Vui lòng thử lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể tải danh sách từ viết tắt. Vui lòng thử lại.');
-        }
-    });
+function actionButton(kind, title, iconName, id) {
+	return el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: 'btn btn-sm', dataset: { teAction: kind, teId: id }, title }, icon(iconName));
 }
 
-// Display text expansions in table
-function displayTextExpansions(data) {
-    const tbody = $('#textExpansionsTableBody');
-    tbody.empty();
-    
-    if (data.length === 0) {
-        tbody.append(`
-            <tr>
-                <td colspan="6" class="text-center py-4">
-                    <i class="bi bi-inbox text-muted text-expansion-empty-icon"></i>
-                    <div class="text-muted mt-2">Không có dữ liệu</div>
-                </td>
-            </tr>
-        `);
-        return;
-    }
-    
-    data.forEach(item => {
-        const statusBadge = item.is_active 
-            ? '<span class="qlpk-status qlpk-status--success">Đang hoạt động</span>'
-            : '<span class="qlpk-status qlpk-status--neutral">Không hoạt động</span>';
-        
-        const categoryBadge = getCategoryBadge(item.category);
-        
-        const row = `
-            <tr>
-                <td><strong>${item.abbreviation}</strong></td>
-                <td>${window.QLPKHtml.escape(item.full_text)}</td>
-                <td>${categoryBadge}</td>
-                <td>${window.QLPKHtml.escape(item.description || '-')}</td>
-                <td>${statusBadge}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="editTextExpansion" data-qlpk-args='[${item.id}]' title="Sửa">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="deleteTextExpansion" data-qlpk-args='[${item.id}]' title="Xóa">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-        tbody.append(row);
-    });
+function renderRows(items) {
+	const body = byId('textExpansionsTableBody');
+	if (!items.length) {
+		replace(body, el('tr', {}, el('td', { colspan: 6, class: 'text-center py-4' },
+			icon('bi-inbox', 'text-muted text-expansion-empty-icon'), el('div', { class: 'text-muted mt-2' }, 'Không có dữ liệu'))));
+		return;
+	}
+	replace(body, items.map(item => el('tr', {},
+		el('td', {}, el('strong', {}, item.abbreviation)),
+		el('td', {}, item.full_text),
+		el('td', {}, categoryBadge(item.category)),
+		el('td', {}, item.description || '-'),
+		el('td', {}, item.is_active ? el('span', { class: 'qlpk-status qlpk-status--success' }, 'Đang hoạt động') : el('span', { class: 'qlpk-status qlpk-status--neutral' }, 'Không hoạt động')),
+		el('td', {}, el('div', { class: 'action-buttons' }, actionButton('edit', 'Sửa', 'bi-pencil', item.id), ' ', actionButton('danger', 'Xóa', 'bi-trash', item.id))))));
 }
 
-// Get category badge HTML
-function getCategoryBadge(category) {
-    const badges = {
-        'medical': '<span class="category-badge category-medical">Y tế</span>',
-        'psychological': '<span class="category-badge category-psychological">Tâm lý</span>',
-        'general': '<span class="category-badge category-general">Chung</span>'
-    };
-    return badges[category] || `<span class="category-badge category-general">${window.QLPKHtml.escape(category)}</span>`;
+async function loadTextExpansions(page = 1) {
+	const revision = ++state.revision;
+	const category = byId('categoryFilter').value;
+	const status = byId('statusFilter').value;
+	const search = byId('searchInput').value;
+	const params = new URLSearchParams({ page, per_page: state.pageSize, ...(category && category !== 'all' && { category }), ...(status && { is_active: status }), ...(search && { search }) });
+	try {
+		const response = await requestJson(`/api/text-expansions/?${params}`);
+		if (revision !== state.revision) return;
+		if (!response.success) throw new Error('list rejected');
+		const lastPage = Math.max(1, response.pagination.pages);
+		if (page > lastPage) {
+			loadTextExpansions(lastPage);
+			return;
+		}
+		renderRows(response.data);
+		state.pagination.update({ page: response.pagination.page, pageSize: state.pageSize, total: response.pagination.total });
+		state.page = response.pagination.page;
+	} catch {
+		toast('error', 'Không thể tải danh sách từ viết tắt. Vui lòng thử lại.');
+	}
 }
 
-// Update pagination
-function updatePagination(pagination) {
-    listPagination.update({ page: pagination.page, pageSize, total: pagination.total });
+async function loadStats() {
+	try {
+		const response = await requestJson('/api/text-expansions/');
+		if (!response.success) return;
+		const total = response.pagination.total;
+		const active = response.data.filter(item => item.is_active).length;
+		byId('totalCount').textContent = total;
+		byId('activeCount').textContent = active;
+		byId('inactiveCount').textContent = total - active;
+		byId('categoryCount').textContent = new Set(response.data.map(item => item.category)).size;
+	} catch { /* thống kê là phụ: giữ số cũ khi lỗi */ }
 }
 
-// Load statistics
-function loadStats() {
-    $.ajax({
-        url: '/api/text-expansions/',
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                const total = response.pagination.total;
-                const active = response.data.filter(item => item.is_active).length;
-                const inactive = total - active;
-                const categories = [...new Set(response.data.map(item => item.category))].length;
-                
-                $('#totalCount').text(total);
-                $('#activeCount').text(active);
-                $('#inactiveCount').text(inactive);
-                $('#categoryCount').text(categories);
-            }
-        }
-    });
+function afterChange(page = state.page) {
+	loadTextExpansions(page);
+	loadStats();
+	refreshLiveCache();
 }
 
-// Show add modal
+// Runs a request whose JSON reports { success }; any failure shows the same message.
+async function mutate(request, done, failed) {
+	try {
+		const response = await request();
+		if (!response.success) throw new Error('rejected');
+		done(response);
+	} catch {
+		toast('error', failed);
+	}
+}
+
 function showAddModal() {
-    $('#modalTitle').text('Thêm từ viết tắt');
-    $('#textExpansionForm')[0].reset();
-    $('#expansionId').val('');
-    $('#isActive').prop('checked', true);
-    $('#textExpansionModal').modal('show');
+	byId('modalTitle').textContent = 'Thêm từ viết tắt';
+	byId('textExpansionForm').reset();
+	byId('expansionId').value = '';
+	byId('isActive').checked = true;
+	modal('textExpansionModal').show();
 }
 
-// Edit text expansion
 function editTextExpansion(id) {
-    $.ajax({
-        url: `/api/text-expansions/${id}`,
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                const data = response.data;
-                $('#modalTitle').text('Sửa từ viết tắt');
-                $('#expansionId').val(data.id);
-                $('#abbreviation').val(data.abbreviation);
-                $('#fullText').val(data.full_text);
-                $('#category').val(data.category);
-                $('#description').val(data.description || '');
-                $('#isActive').prop('checked', data.is_active);
-                $('#textExpansionModal').modal('show');
-            } else {
-				showToast('error', 'Không thể tải từ viết tắt. Vui lòng thử lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể tải từ viết tắt. Vui lòng thử lại.');
-        }
-    });
+	mutate(() => requestJson(`/api/text-expansions/${id}`), ({ data }) => {
+		byId('modalTitle').textContent = 'Sửa từ viết tắt';
+		byId('expansionId').value = data.id;
+		byId('abbreviation').value = data.abbreviation;
+		byId('fullText').value = data.full_text;
+		byId('category').value = data.category;
+		byId('description').value = data.description || '';
+		byId('isActive').checked = Boolean(data.is_active);
+		modal('textExpansionModal').show();
+	}, 'Không thể tải từ viết tắt. Vui lòng thử lại.');
 }
 
-// Save text expansion
 function saveTextExpansion() {
-    const form = $('#textExpansionForm')[0];
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-    
-    const data = {
-        abbreviation: $('#abbreviation').val().trim(),
-        full_text: $('#fullText').val().trim(),
-        category: $('#category').val(),
-        description: $('#description').val().trim(),
-        is_active: $('#isActive').is(':checked')
-    };
-    
-    const id = $('#expansionId').val();
-    const url = id ? `/api/text-expansions/${id}` : '/api/text-expansions/';
-    const method = id ? 'PUT' : 'POST';
-    
-    $.ajax({
-        url: url,
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        data: JSON.stringify(data),
-        success: function(response) {
-            if (response.success) {
-                showToast('success', id ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                $('#textExpansionModal').modal('hide');
-                loadTextExpansions(currentPage);
-                loadStats();
-                // Refresh text expansions for active use
-                if (window.textExpansion && window.textExpansion.refreshTextExpansions) {
-                    window.textExpansion.refreshTextExpansions();
-                }
-            } else {
-				showToast('error', 'Không thể lưu từ viết tắt. Vui lòng kiểm tra lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể lưu từ viết tắt. Vui lòng kiểm tra lại.');
-        }
-    });
+	const form = byId('textExpansionForm');
+	if (!form.checkValidity()) {
+		form.reportValidity();
+		return;
+	}
+	const data = { abbreviation: byId('abbreviation').value.trim(), full_text: byId('fullText').value.trim(), category: byId('category').value,
+		description: byId('description').value.trim(), is_active: byId('isActive').checked };
+	const id = byId('expansionId').value;
+	mutate(() => requestJson(id ? `/api/text-expansions/${id}` : '/api/text-expansions/', { method: id ? 'PUT' : 'POST', json: data }), () => {
+		toast('success', id ? 'Cập nhật thành công' : 'Thêm mới thành công');
+		modal('textExpansionModal').hide();
+		afterChange();
+	}, 'Không thể lưu từ viết tắt. Vui lòng kiểm tra lại.');
 }
 
-// Delete text expansion
 async function deleteTextExpansion(id) {
-    if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa từ viết tắt này?')) {
-        return;
-    }
-    
-    $.ajax({
-        url: `/api/text-expansions/${id}`,
-        method: 'DELETE',
-        success: function(response) {
-            if (response.success) {
-                showToast('success', 'Xóa thành công');
-                loadTextExpansions(currentPage);
-                loadStats();
-                // Refresh text expansions for active use
-                if (window.textExpansion && window.textExpansion.refreshTextExpansions) {
-                    window.textExpansion.refreshTextExpansions();
-                }
-            } else {
-				showToast('error', 'Không thể xóa từ viết tắt. Vui lòng thử lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể xóa từ viết tắt. Vui lòng thử lại.');
-        }
-    });
+	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa từ viết tắt này?')) return;
+	mutate(() => requestJson(`/api/text-expansions/${id}`, { method: 'DELETE' }), () => {
+		toast('success', 'Xóa thành công');
+		afterChange();
+	}, 'Không thể xóa từ viết tắt. Vui lòng thử lại.');
 }
 
-// Show import modal
 function showImportModal() {
-    $('#importFile').val('');
-    $('#importModal').modal('show');
+	byId('importFile').value = '';
+	modal('importModal').show();
 }
 
-// Import from Excel
 function importFromExcel() {
-    const fileInput = $('#importFile')[0];
-    if (!fileInput.files.length) {
-        showToast('error', 'Vui lòng chọn file Excel');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    
-    $.ajax({
-        url: '/api/text-expansions/import',
-        method: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            if (response.success) {
-                showToast('success', 'Đã nhập từ viết tắt.');
-                if (response.errors && response.errors.length > 0) {
-                    showToast('warning', 'Một số dòng không nhập được, vui lòng kiểm tra file.');
-                }
-                $('#importModal').modal('hide');
-                loadTextExpansions(currentPage);
-                loadStats();
-                // Refresh text expansions for active use
-                if (window.textExpansion && window.textExpansion.refreshTextExpansions) {
-                    window.textExpansion.refreshTextExpansions();
-                }
-            } else {
-				showToast('error', 'Không thể nhập từ viết tắt. Vui lòng kiểm tra tệp và thử lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể nhập từ viết tắt. Vui lòng kiểm tra tệp và thử lại.');
-        }
-    });
+	const input = byId('importFile');
+	if (!input.files.length) {
+		toast('error', 'Vui lòng chọn file Excel');
+		return;
+	}
+	const formData = new FormData();
+	formData.append('file', input.files[0]);
+	mutate(() => requestJson('/api/text-expansions/import', { method: 'POST', body: formData }), response => {
+		toast('success', 'Đã nhập từ viết tắt.');
+		if (response.errors && response.errors.length > 0) toast('warning', 'Một số dòng không nhập được, vui lòng kiểm tra file.');
+		modal('importModal').hide();
+		afterChange();
+	}, 'Không thể nhập từ viết tắt. Vui lòng kiểm tra tệp và thử lại.');
 }
 
-// Export to Excel
 async function exportToExcel() {
-    try {
-        const response = await fetch('/api/text-expansions/export');
-        if (!response.ok) throw new Error('Export failed');
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = 'text_expansions.xlsx';
-        document.body.appendChild(anchor);
-        try { anchor.click(); } finally {
-            anchor.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
-    } catch (error) {
-        showToast('error', 'Không thể xuất từ viết tắt. Vui lòng thử lại.');
-    }
+	try {
+		const response = await fetch('/api/text-expansions/export');
+		if (!response.ok) throw new Error('Export failed');
+		const url = URL.createObjectURL(await response.blob());
+		const anchor = el('a', { href: url, download: 'text_expansions.xlsx' });
+		document.body.appendChild(anchor);
+		try { anchor.click(); } finally {
+			anchor.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 1000);
+		}
+	} catch {
+		toast('error', 'Không thể xuất từ viết tắt. Vui lòng thử lại.');
+	}
 }
 
-// Download template
 function downloadTemplate() {
-    const templateData = [
-        {
-            abbreviation: 'bt',
-            full_text: 'bình thường',
-            category: 'general',
-            description: 'Từ viết tắt cho bình thường',
-            is_active: true
-        },
-        {
-            abbreviation: 'tt',
-            full_text: 'tình trạng',
-            category: 'general',
-            description: 'Từ viết tắt cho tình trạng',
-            is_active: true
-        }
-    ];
-    
-    const ws = XLSX.utils.json_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, 'text_expansions_template.xlsx');
+	const rows = [
+		{ abbreviation: 'bt', full_text: 'bình thường', category: 'general', description: 'Từ viết tắt cho bình thường', is_active: true },
+		{ abbreviation: 'tt', full_text: 'tình trạng', category: 'general', description: 'Từ viết tắt cho tình trạng', is_active: true },
+	];
+	const workbook = window.XLSX.utils.book_new();
+	window.XLSX.utils.book_append_sheet(workbook, window.XLSX.utils.json_to_sheet(rows), 'Template');
+	window.XLSX.writeFile(workbook, 'text_expansions_template.xlsx');
 }
 
-// Reset all
 async function resetAll() {
-    if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!', { confirmText: 'Xóa tất cả' })) {
-        return;
-    }
-    
-    $.ajax({
-        url: '/api/text-expansions/reset',
-        method: 'POST',
-        success: function(response) {
-            if (response.success) {
-                showToast('success', 'Reset thành công');
-                loadTextExpansions(1);
-                loadStats();
-                // Refresh text expansions for active use
-                if (window.textExpansion && window.textExpansion.refreshTextExpansions) {
-                    window.textExpansion.refreshTextExpansions();
-                }
-            } else {
-				showToast('error', 'Không thể khôi phục dữ liệu mặc định. Vui lòng thử lại.');
-            }
-        },
-        error: function() {
-			showToast('error', 'Không thể khôi phục dữ liệu mặc định. Vui lòng thử lại.');
-        }
-    });
+	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!', { confirmText: 'Xóa tất cả' })) return;
+	mutate(() => requestJson('/api/text-expansions/reset', { method: 'POST' }), () => {
+		toast('success', 'Reset thành công');
+		afterChange(1);
+	}, 'Không thể khôi phục dữ liệu mặc định. Vui lòng thử lại.');
 }
 
-// Handle search with debounce
-function handleSearch() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        loadTextExpansions(1);
-    }, 500);
-}
+const PAGE_ACTIONS = { 'show-add': showAddModal, 'show-import': showImportModal, export: exportToExcel, reset: resetAll, save: saveTextExpansion,
+	template: downloadTemplate, import: importFromExcel, edit: id => editTextExpansion(id), danger: id => deleteTextExpansion(id) };
 
-// Show toast notification
-function showToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
-}
-
-// Logout function
+delegate(document, 'click', '[data-te-action]', (event, button) => PAGE_ACTIONS[button.dataset.teAction]?.(Number(button.dataset.teId)));
+on(byId('categoryFilter'), 'change', () => loadTextExpansions());
+on(byId('statusFilter'), 'change', () => loadTextExpansions());
+on(byId('searchInput'), 'keyup', debounce(() => loadTextExpansions(1), 500));
+state.pagination = window.QLPKPagination.create({ onChange(page, size) {
+	state.pageSize = size;
+	loadTextExpansions(page);
+} });
+window.QLPKRealtimePageHooks?.register({
+	types: ['catalog.changed'],
+	filter: event => event && event.payload && event.payload.entity === 'text_expansion',
+	handler: () => afterChange(),
+	debounceMs: 350,
+});
+loadTextExpansions();
+loadStats();
