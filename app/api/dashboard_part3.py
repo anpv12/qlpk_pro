@@ -84,6 +84,107 @@ def get_referral_source_detail(user):
         db.close()
 
 
+def _write_referral_detail_sheet(detail_hdr_fill, group_fill, grouped_cases, mk_border, period, w_fill, wb, z_fill):
+    from openpyxl.styles import Font, Alignment
+    ws2 = wb.create_sheet('Chi tiết')
+    ws2.append([f'Chi tiết lượt khám theo nguồn giới thiệu — {period}'])
+    ws2['A1'].font = Font(bold=True, size=13, color='0F766E')
+    ws2.append([])
+
+    row_num = 3
+    detail_headers = ['STT', 'Bệnh nhân', 'Điện thoại', 'Ngày khám', 'Giờ', 'Lý do khám', 'Nguồn nhập']
+    for cfg in REFERRAL_SOURCE_CONFIG:
+        source_cases = grouped_cases[cfg['key']]
+        group_title = f"{cfg['label']} — {len(source_cases)} lượt khám"
+        for col in range(1, 8):
+            cell = ws2.cell(row=row_num, column=col, value=group_title if col == 1 else '')
+            cell.font = Font(bold=True, size=11, color='0F766E')
+            cell.fill = group_fill
+            cell.border = mk_border()
+            cell.alignment = Alignment(vertical='center')
+        ws2.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=7)
+        row_num += 1
+
+        for col, value in enumerate(detail_headers, 1):
+            cell = ws2.cell(row=row_num, column=col, value=value)
+            cell.font = Font(bold=True, size=10, color='64748B')
+            cell.fill = detail_hdr_fill
+            cell.border = mk_border()
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        row_num += 1
+
+        if source_cases:
+            for index, case in enumerate(source_cases, 1):
+                fill = z_fill if index % 2 == 0 else w_fill
+                row_values = [
+                    index,
+                    case['patient_name'],
+                    case['phone'],
+                    case['exam_date'],
+                    case['exam_time'],
+                    case['main_reason'] or '—',
+                    case['source_value'] or case['source_label'],
+                ]
+                for col, value in enumerate(row_values, 1):
+                    cell = ws2.cell(row=row_num, column=col, value=value)
+                    cell.border = mk_border()
+                    cell.fill = fill
+                    cell.alignment = Alignment(vertical='top', wrap_text=col in (6, 7))
+                row_num += 1
+        else:
+            for col in range(1, 8):
+                cell = ws2.cell(row=row_num, column=col, value='Không có dữ liệu' if col == 2 else '')
+                cell.border = mk_border()
+                cell.fill = w_fill
+                cell.alignment = Alignment(vertical='center')
+            row_num += 1
+
+        row_num += 1
+
+    for col, width in [('A', 8), ('B', 26), ('C', 16), ('D', 14), ('E', 10), ('F', 44), ('G', 30)]:
+        ws2.column_dimensions[col].width = width
+
+
+def _write_referral_summary_sheet(counts, hdr_fill, mk_border, pct_base, period, total, w_fill, wb, z_fill):
+    from openpyxl.styles import Font, Alignment
+    ws = wb.active
+    ws.title = 'Tổng hợp'
+    ws.append([f'Thống kê nguồn giới thiệu — {period}'])
+    ws['A1'].font = Font(bold=True, size=13, color='0F766E')
+    ws.append([])
+    ws.append(['STT', 'Nguồn giới thiệu', 'Số lượt khám', 'Tỷ lệ %'])
+
+    for col in range(1, 5):
+        cell = ws.cell(row=3, column=col)
+        cell.font = Font(bold=True, color='FFFFFF', size=11)
+        cell.fill = hdr_fill
+        cell.border = mk_border()
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    for index, cfg in enumerate(REFERRAL_SOURCE_CONFIG, 1):
+        row_idx = index + 3
+        count = counts[cfg['key']]
+        percentage = round(count / pct_base * 100, 1)
+        fill = z_fill if index % 2 == 0 else w_fill
+        for col, value in enumerate([index, cfg['label'], count, percentage], 1):
+            cell = ws.cell(row=row_idx, column=col, value=value)
+            cell.border = mk_border()
+            cell.fill = fill
+            cell.alignment = Alignment(vertical='center')
+        ws.cell(row=row_idx, column=3).number_format = '#,##0'
+        ws.cell(row=row_idx, column=4).number_format = '0.0'
+
+    total_row = len(REFERRAL_SOURCE_CONFIG) + 4
+    ws.cell(row=total_row, column=2, value='TỔNG CỘNG').font = Font(bold=True)
+    ws.cell(row=total_row, column=3, value=total).font = Font(bold=True)
+    ws.cell(row=total_row, column=3).number_format = '#,##0'
+    for col in range(1, 5):
+        ws.cell(row=total_row, column=col).border = mk_border()
+
+    for col, width in [('A', 8), ('B', 34), ('C', 14), ('D', 12)]:
+        ws.column_dimensions[col].width = width
+
+
 @dashboard_bp.route('/api/dashboard/export-referral-source-excel', methods=['GET'])
 @require_auth
 def export_referral_source_excel(user):
@@ -92,7 +193,7 @@ def export_referral_source_excel(user):
     from datetime import datetime as dt
     try:
         import openpyxl
-        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.styles import PatternFill, Border, Side
         from flask import send_file
     except ImportError:
         return jsonify({'error': 'openpyxl chưa được cài đặt'}), 500
@@ -123,100 +224,9 @@ def export_referral_source_excel(user):
         z_fill = PatternFill('solid', fgColor='F8FAFC')
         w_fill = PatternFill('solid', fgColor='FFFFFF')
 
-        ws = wb.active
-        ws.title = 'Tổng hợp'
-        ws.append([f'Thống kê nguồn giới thiệu — {period}'])
-        ws['A1'].font = Font(bold=True, size=13, color='0F766E')
-        ws.append([])
-        ws.append(['STT', 'Nguồn giới thiệu', 'Số lượt khám', 'Tỷ lệ %'])
+        _write_referral_summary_sheet(counts, hdr_fill, mk_border, pct_base, period, total, w_fill, wb, z_fill)
 
-        for col in range(1, 5):
-            cell = ws.cell(row=3, column=col)
-            cell.font = Font(bold=True, color='FFFFFF', size=11)
-            cell.fill = hdr_fill
-            cell.border = mk_border()
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-
-        for index, cfg in enumerate(REFERRAL_SOURCE_CONFIG, 1):
-            row_idx = index + 3
-            count = counts[cfg['key']]
-            percentage = round(count / pct_base * 100, 1)
-            fill = z_fill if index % 2 == 0 else w_fill
-            for col, value in enumerate([index, cfg['label'], count, percentage], 1):
-                cell = ws.cell(row=row_idx, column=col, value=value)
-                cell.border = mk_border()
-                cell.fill = fill
-                cell.alignment = Alignment(vertical='center')
-            ws.cell(row=row_idx, column=3).number_format = '#,##0'
-            ws.cell(row=row_idx, column=4).number_format = '0.0'
-
-        total_row = len(REFERRAL_SOURCE_CONFIG) + 4
-        ws.cell(row=total_row, column=2, value='TỔNG CỘNG').font = Font(bold=True)
-        ws.cell(row=total_row, column=3, value=total).font = Font(bold=True)
-        ws.cell(row=total_row, column=3).number_format = '#,##0'
-        for col in range(1, 5):
-            ws.cell(row=total_row, column=col).border = mk_border()
-
-        for col, width in [('A', 8), ('B', 34), ('C', 14), ('D', 12)]:
-            ws.column_dimensions[col].width = width
-
-        ws2 = wb.create_sheet('Chi tiết')
-        ws2.append([f'Chi tiết lượt khám theo nguồn giới thiệu — {period}'])
-        ws2['A1'].font = Font(bold=True, size=13, color='0F766E')
-        ws2.append([])
-
-        row_num = 3
-        detail_headers = ['STT', 'Bệnh nhân', 'Điện thoại', 'Ngày khám', 'Giờ', 'Lý do khám', 'Nguồn nhập']
-        for cfg in REFERRAL_SOURCE_CONFIG:
-            source_cases = grouped_cases[cfg['key']]
-            group_title = f"{cfg['label']} — {len(source_cases)} lượt khám"
-            for col in range(1, 8):
-                cell = ws2.cell(row=row_num, column=col, value=group_title if col == 1 else '')
-                cell.font = Font(bold=True, size=11, color='0F766E')
-                cell.fill = group_fill
-                cell.border = mk_border()
-                cell.alignment = Alignment(vertical='center')
-            ws2.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=7)
-            row_num += 1
-
-            for col, value in enumerate(detail_headers, 1):
-                cell = ws2.cell(row=row_num, column=col, value=value)
-                cell.font = Font(bold=True, size=10, color='64748B')
-                cell.fill = detail_hdr_fill
-                cell.border = mk_border()
-                cell.alignment = Alignment(horizontal='center', vertical='center')
-            row_num += 1
-
-            if source_cases:
-                for index, case in enumerate(source_cases, 1):
-                    fill = z_fill if index % 2 == 0 else w_fill
-                    row_values = [
-                        index,
-                        case['patient_name'],
-                        case['phone'],
-                        case['exam_date'],
-                        case['exam_time'],
-                        case['main_reason'] or '—',
-                        case['source_value'] or case['source_label'],
-                    ]
-                    for col, value in enumerate(row_values, 1):
-                        cell = ws2.cell(row=row_num, column=col, value=value)
-                        cell.border = mk_border()
-                        cell.fill = fill
-                        cell.alignment = Alignment(vertical='top', wrap_text=col in (6, 7))
-                    row_num += 1
-            else:
-                for col in range(1, 8):
-                    cell = ws2.cell(row=row_num, column=col, value='Không có dữ liệu' if col == 2 else '')
-                    cell.border = mk_border()
-                    cell.fill = w_fill
-                    cell.alignment = Alignment(vertical='center')
-                row_num += 1
-
-            row_num += 1
-
-        for col, width in [('A', 8), ('B', 26), ('C', 16), ('D', 14), ('E', 10), ('F', 44), ('G', 30)]:
-            ws2.column_dimensions[col].width = width
+        _write_referral_detail_sheet(detail_hdr_fill, group_fill, grouped_cases, mk_border, period, w_fill, wb, z_fill)
 
         output = io.BytesIO()
         wb.save(output)

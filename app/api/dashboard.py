@@ -163,6 +163,129 @@ def get_service_summary(user):
     finally:
         db.close()
 
+def _write_icd_case_groups(detail_hdr_fill, grouped, grp_fill, mk_border, row_num, sorted_codes, w_fill, ws2, z_fill):
+    from openpyxl.styles import Font, Alignment
+    for code in sorted_codes:
+        grp = grouped[code]
+        case_count = len(grp['cases'])
+
+        # Group header row
+        for c, v in enumerate([f"{code} — {grp['name']}", '', '', f"{case_count} ca", ''], 1):
+            cell = ws2.cell(row=row_num, column=c, value=v)
+            cell.font = Font(bold=True, size=11, color="5B21B6")
+            cell.fill = grp_fill
+            cell.border = mk_border()
+        ws2.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=3)
+        row_num += 1
+
+        # Detail header
+        for c, v in enumerate(["STT", "Bệnh nhân", "Bác sĩ", "Ngày khám", "Giờ"], 1):
+            cell = ws2.cell(row=row_num, column=c, value=v)
+            cell.font = Font(bold=True, size=10, color="64748B")
+            cell.fill = detail_hdr_fill
+            cell.border = mk_border()
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        row_num += 1
+
+        # Detail rows
+        for j, case in enumerate(grp['cases'], 1):
+            fill = z_fill if j % 2 == 0 else w_fill
+            for c, v in enumerate([j, case['patient'], case['doctor'], case['date'], case['time']], 1):
+                cell = ws2.cell(row=row_num, column=c, value=v)
+                cell.border = mk_border()
+                cell.fill = fill
+                cell.alignment = Alignment(vertical='center')
+            row_num += 1
+
+        row_num += 1  # blank row between groups
+
+
+def _group_icd_cases(db, end, start):
+    from app.models.icd import ICD
+    from app.models.patient import Patient
+    from app.models.user import User
+    all_exams = db.query(
+        Examination, Patient, User, Appointment
+    ).join(Appointment, Examination.appointment_id == Appointment.id)\
+     .join(Patient, Examination.patient_id == Patient.id)\
+     .join(User, Examination.doctor_id == User.id)\
+     .filter(
+        Examination.diagnosis.isnot(None), 
+        Examination.diagnosis != text("'[]'::jsonb"),
+        Appointment.appointment_date >= start, Appointment.appointment_date <= end
+     ).order_by(Appointment.appointment_date.desc()).all()
+
+    icd_all = db.query(ICD).filter(ICD.is_deleted == False).all()
+    icd_map = {icd.id: icd for icd in icd_all}
+
+    # Group exams by ICD code
+    grouped = {}
+    for exam, patient, doctor, appt in all_exams:
+        if not exam.diagnosis or not isinstance(exam.diagnosis, list):
+            continue
+        for icd_id in exam.diagnosis:
+            if icd_id not in icd_map:
+                continue
+            icd = icd_map[icd_id]
+            code = icd.icd_code
+            name = icd.disease_name
+            if code not in grouped:
+                grouped[code] = {'name': name, 'cases': []}
+            grouped[code]['cases'].append({
+                'patient': patient.full_name,
+                'doctor': doctor.full_name,
+                'date': appt.appointment_date.strftime('%d/%m/%Y') if appt.appointment_date else '',
+                'time': exam.examination_date.strftime('%H:%M') if exam.examination_date else ''
+            })
+
+    # Sort by count desc (match sheet 1 order)
+    sorted_codes = sorted(grouped.keys(), key=lambda c: len(grouped[c]['cases']), reverse=True)
+    return grouped, sorted_codes
+
+
+def _write_icd_summary_sheet(from_str, items, mk_border, to_str, total, ws):
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from datetime import datetime as dt
+    period = f"{dt.strptime(from_str,'%Y-%m-%d').strftime('%d/%m/%Y')} – {dt.strptime(to_str,'%Y-%m-%d').strftime('%d/%m/%Y')}"
+    ws.append([f"Thống kê bệnh theo ICD — {period}"])
+    ws['A1'].font = Font(bold=True, size=13, color="1D4ED8")
+    ws.append([])
+    ws.append(["STT", "Mã ICD", "Tên bệnh", "Số ca", "Tỷ lệ %"])
+
+    hdr_fill = PatternFill("solid", fgColor="1D4ED8")
+    for c in range(1, 6):
+        cell = ws.cell(row=3, column=c)
+        cell.font = Font(bold=True, color="FFFFFF", size=11)
+        cell.fill = hdr_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = mk_border()
+    ws.row_dimensions[3].height = 22
+
+    z_fill = PatternFill("solid", fgColor="F8FAFC")
+    w_fill = PatternFill("solid", fgColor="FFFFFF")
+    for i, item in enumerate(items, 1):
+        row_i = i + 3
+        pct = round(item['count'] / total * 100, 1)
+        row_data = [i, item['code'], item['name'], item['count'], pct]
+        fill = z_fill if i % 2 == 0 else w_fill
+        for c, v in enumerate(row_data, 1):
+            cell = ws.cell(row=row_i, column=c, value=v)
+            cell.border = mk_border()
+            cell.fill = fill
+            cell.alignment = Alignment(vertical='center')
+        ws.cell(row=row_i, column=4).number_format = '#,##0'
+        ws.cell(row=row_i, column=5).number_format = '0.0'
+
+    tr = len(items) + 4
+    ws.cell(row=tr, column=3, value="TỔNG CỘNG").font = Font(bold=True)
+    ws.cell(row=tr, column=4, value=sum(i['count'] for i in items)).font = Font(bold=True)
+    ws.cell(row=tr, column=4).number_format = '#,##0'
+
+    for col, w in [('A',6),('B',12),('C',40),('D',10),('E',10)]:
+        ws.column_dimensions[col].width = w
+    return period, w_fill, z_fill
+
+
 @dashboard_bp.route('/api/dashboard/export-icd-excel', methods=['GET'])
 @require_auth
 def export_icd_excel(user):
@@ -171,14 +294,13 @@ def export_icd_excel(user):
     from datetime import date, timedelta, datetime as dt
     try:
         import openpyxl
-        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.styles import Font, PatternFill, Border, Side
         from flask import send_file
     except ImportError:
         return jsonify({'error': 'openpyxl chưa được cài đặt'}), 500
 
     db = next(get_db())
     try:
-        from app.models.icd import ICD
         today = date.today()
         from_str = request.args.get('from_date', (today - timedelta(days=6)).isoformat())
         to_str = request.args.get('to_date', today.isoformat())
@@ -224,84 +346,11 @@ def export_icd_excel(user):
         ws = wb.active
         ws.title = "Tổng hợp"
 
-        period = f"{dt.strptime(from_str,'%Y-%m-%d').strftime('%d/%m/%Y')} – {dt.strptime(to_str,'%Y-%m-%d').strftime('%d/%m/%Y')}"
-        ws.append([f"Thống kê bệnh theo ICD — {period}"])
-        ws['A1'].font = Font(bold=True, size=13, color="1D4ED8")
-        ws.append([])
-        ws.append(["STT", "Mã ICD", "Tên bệnh", "Số ca", "Tỷ lệ %"])
-
-        hdr_fill = PatternFill("solid", fgColor="1D4ED8")
-        for c in range(1, 6):
-            cell = ws.cell(row=3, column=c)
-            cell.font = Font(bold=True, color="FFFFFF", size=11)
-            cell.fill = hdr_fill
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.border = mk_border()
-        ws.row_dimensions[3].height = 22
-
-        z_fill = PatternFill("solid", fgColor="F8FAFC")
-        w_fill = PatternFill("solid", fgColor="FFFFFF")
-        for i, item in enumerate(items, 1):
-            row_i = i + 3
-            pct = round(item['count'] / total * 100, 1)
-            row_data = [i, item['code'], item['name'], item['count'], pct]
-            fill = z_fill if i % 2 == 0 else w_fill
-            for c, v in enumerate(row_data, 1):
-                cell = ws.cell(row=row_i, column=c, value=v)
-                cell.border = mk_border()
-                cell.fill = fill
-                cell.alignment = Alignment(vertical='center')
-            ws.cell(row=row_i, column=4).number_format = '#,##0'
-            ws.cell(row=row_i, column=5).number_format = '0.0'
-
-        tr = len(items) + 4
-        ws.cell(row=tr, column=3, value="TỔNG CỘNG").font = Font(bold=True)
-        ws.cell(row=tr, column=4, value=sum(i['count'] for i in items)).font = Font(bold=True)
-        ws.cell(row=tr, column=4).number_format = '#,##0'
-
-        for col, w in [('A',6),('B',12),('C',40),('D',10),('E',10)]:
-            ws.column_dimensions[col].width = w
+        period, w_fill, z_fill = _write_icd_summary_sheet(from_str, items, mk_border, to_str, total, ws)
 
         # ===== Sheet 2: Chi tiết ca khám nhóm theo ICD =====
-        from app.models.patient import Patient
-        from app.models.user import User
 
-        all_exams = db.query(
-            Examination, Patient, User, Appointment
-        ).join(Appointment, Examination.appointment_id == Appointment.id)\
-         .join(Patient, Examination.patient_id == Patient.id)\
-         .join(User, Examination.doctor_id == User.id)\
-         .filter(
-            Examination.diagnosis.isnot(None), 
-            Examination.diagnosis != text("'[]'::jsonb"),
-            Appointment.appointment_date >= start, Appointment.appointment_date <= end
-         ).order_by(Appointment.appointment_date.desc()).all()
-
-        icd_all = db.query(ICD).filter(ICD.is_deleted == False).all()
-        icd_map = {icd.id: icd for icd in icd_all}
-
-        # Group exams by ICD code
-        grouped = {}
-        for exam, patient, doctor, appt in all_exams:
-            if not exam.diagnosis or not isinstance(exam.diagnosis, list):
-                continue
-            for icd_id in exam.diagnosis:
-                if icd_id not in icd_map:
-                    continue
-                icd = icd_map[icd_id]
-                code = icd.icd_code
-                name = icd.disease_name
-                if code not in grouped:
-                    grouped[code] = {'name': name, 'cases': []}
-                grouped[code]['cases'].append({
-                    'patient': patient.full_name,
-                    'doctor': doctor.full_name,
-                    'date': appt.appointment_date.strftime('%d/%m/%Y') if appt.appointment_date else '',
-                    'time': exam.examination_date.strftime('%H:%M') if exam.examination_date else ''
-                })
-
-        # Sort by count desc (match sheet 1 order)
-        sorted_codes = sorted(grouped.keys(), key=lambda c: len(grouped[c]['cases']), reverse=True)
+        grouped, sorted_codes = _group_icd_cases(db, end, start)
 
         ws2 = wb.create_sheet("Chi tiết ca khám")
         ws2.append([f"Chi tiết ca khám theo ICD — {period}"])
@@ -312,39 +361,7 @@ def export_icd_excel(user):
         grp_fill = PatternFill("solid", fgColor="EDE9FE")
         detail_hdr_fill = PatternFill("solid", fgColor="F5F3FF")
 
-        for code in sorted_codes:
-            grp = grouped[code]
-            case_count = len(grp['cases'])
-
-            # Group header row
-            for c, v in enumerate([f"{code} — {grp['name']}", '', '', f"{case_count} ca", ''], 1):
-                cell = ws2.cell(row=row_num, column=c, value=v)
-                cell.font = Font(bold=True, size=11, color="5B21B6")
-                cell.fill = grp_fill
-                cell.border = mk_border()
-            ws2.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=3)
-            row_num += 1
-
-            # Detail header
-            for c, v in enumerate(["STT", "Bệnh nhân", "Bác sĩ", "Ngày khám", "Giờ"], 1):
-                cell = ws2.cell(row=row_num, column=c, value=v)
-                cell.font = Font(bold=True, size=10, color="64748B")
-                cell.fill = detail_hdr_fill
-                cell.border = mk_border()
-                cell.alignment = Alignment(horizontal='center', vertical='center')
-            row_num += 1
-
-            # Detail rows
-            for j, case in enumerate(grp['cases'], 1):
-                fill = z_fill if j % 2 == 0 else w_fill
-                for c, v in enumerate([j, case['patient'], case['doctor'], case['date'], case['time']], 1):
-                    cell = ws2.cell(row=row_num, column=c, value=v)
-                    cell.border = mk_border()
-                    cell.fill = fill
-                    cell.alignment = Alignment(vertical='center')
-                row_num += 1
-
-            row_num += 1  # blank row between groups
+        _write_icd_case_groups(detail_hdr_fill, grouped, grp_fill, mk_border, row_num, sorted_codes, w_fill, ws2, z_fill)
 
         for col, w in [('A',6),('B',25),('C',30),('D',12),('E',8)]:
             ws2.column_dimensions[col].width = w

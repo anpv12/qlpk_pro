@@ -13,14 +13,98 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
 )
 
 
+def _write_medicine_revenue_sheet(db, end, make_header, period_label, start, wb, write_row):
+    from openpyxl.styles import Font
+    from app.models.prescription import Prescription, PrescriptionItem
+    # ===== Sheet 2: Thuốc =====
+    medicine_group_key = func.coalesce(cast(PrescriptionItem.medicine_id, String), PrescriptionItem.medicine_name)
+    med_rows = db.query(
+        func.coalesce(func.max(Medicine.name), func.max(PrescriptionItem.medicine_name)).label('name'),
+        func.sum(PrescriptionItem.quantity).label('cnt'),
+        func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).label('rev')
+    ).join(Prescription, PrescriptionItem.prescription_id == Prescription.id)\
+     .join(Appointment, Prescription.appointment_id == Appointment.id)\
+     .outerjoin(Medicine, PrescriptionItem.medicine_id == Medicine.id)\
+     .filter(Appointment.appointment_date >= start, Appointment.appointment_date <= end)\
+     .group_by(medicine_group_key)\
+     .order_by(func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).desc()).all()
+
+    ws2 = wb.create_sheet("Thuốc")
+    ws2.append([f"Doanh thu thuốc — {period_label}"])
+    ws2['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
+    ws2.append([])
+    ws2.append(["STT", "Tên thuốc", "Số lượng", "Doanh thu (đ)", "Tỷ lệ %"])
+    make_header(ws2, ["STT", "Tên thuốc", "Số lượng", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
+
+    total_med = sum(float(r.rev or 0) for r in med_rows)
+    for i, r in enumerate(med_rows, 1):
+        rev = float(r.rev or 0)
+        pct = round(rev / total_med * 100, 2) if total_med else 0
+        row_i = i + 3
+        write_row(ws2, row_i, [i, r.name, float(r.cnt), rev, pct])
+        ws2.cell(row=row_i, column=4).number_format = '#,##0'
+        ws2.cell(row=row_i, column=5).number_format = '0.00'
+    tr2 = len(med_rows) + 4
+    ws2.cell(row=tr2, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True)
+    ws2.cell(row=tr2, column=4, value=total_med).font = Font(name='Arial', bold=True)
+    ws2.cell(row=tr2, column=4).number_format = '#,##0'
+    for col, w in [('A',6),('B',36),('C',12),('D',18),('E',10)]:
+        ws2.column_dimensions[col].width = w
+    ws2.row_dimensions[3].height = 22
+
+
+def _write_service_revenue_sheet(db, end, make_header, period_label, start, wb, write_row):
+    from openpyxl.styles import Font
+    from app.models.service import Service
+    # ===== Sheet 1: Dịch vụ =====
+    svc_rows = db.query(
+        Service.name, func.count(Appointment.id).label('cnt'),
+        func.sum(Service.default_price).label('rev')
+    ).join(Appointment, Appointment.service_id == Service.id)\
+     .filter(Appointment.appointment_date >= start, Appointment.appointment_date <= end,
+             Appointment.status == 'CONFIRMED', Appointment.is_deleted == False)\
+     .group_by(Service.name).order_by(func.sum(Service.default_price).desc()).all()
+
+    ws1 = wb.active
+    ws1.title = "Dịch vụ"
+    ws1['A1'] = f"Doanh thu dịch vụ — {period_label}"
+    ws1['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
+    ws1.insert_rows(1)  # push header down then rebuild
+    ws1.delete_rows(1)
+    # Row 1 = title, row 2 = blank, row 3 = column header
+    ws1.append([f"Doanh thu dịch vụ — {period_label}"])
+    ws1['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
+    ws1.append([])
+
+    make_header(ws1, ["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
+    # We override row 3 because append wrote to rows 1,2 already; need to write row 3 headers:
+    ws1.delete_rows(3)
+    ws1.append(["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"])
+    make_header(ws1, ["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
+
+    total_svc = sum(float(r.rev or 0) for r in svc_rows)
+    for i, r in enumerate(svc_rows, 1):
+        rev = float(r.rev or 0)
+        pct = round(rev / total_svc * 100, 2) if total_svc else 0
+        row_i = i + 3
+        write_row(ws1, row_i, [i, r.name, int(r.cnt), rev, pct])
+        ws1.cell(row=row_i, column=4).number_format = '#,##0'
+        ws1.cell(row=row_i, column=5).number_format = '0.00'
+    tr = len(svc_rows) + 4
+    ws1.cell(row=tr, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True)
+    ws1.cell(row=tr, column=4, value=total_svc).font = Font(name='Arial', bold=True)
+    ws1.cell(row=tr, column=4).number_format = '#,##0'
+    for col, w in [('A',6),('B',32),('C',10),('D',18),('E',10)]:
+        ws1.column_dimensions[col].width = w
+    ws1.row_dimensions[3].height = 22
+
+
 @dashboard_bp.route('/api/dashboard/export-excel', methods=['GET'])
 @require_auth
 def export_dashboard_excel(user):
     """Xuất Excel tổng hợp doanh thu dịch vụ và thuốc"""
     import io
     from datetime import date, timedelta, datetime as dt
-    from app.models.service import Service
-    from app.models.prescription import Prescription, PrescriptionItem
     try:
         import openpyxl
         from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -74,83 +158,9 @@ def export_dashboard_excel(user):
 
         wb = openpyxl.Workbook()
 
-        # ===== Sheet 1: Dịch vụ =====
-        svc_rows = db.query(
-            Service.name, func.count(Appointment.id).label('cnt'),
-            func.sum(Service.default_price).label('rev')
-        ).join(Appointment, Appointment.service_id == Service.id)\
-         .filter(Appointment.appointment_date >= start, Appointment.appointment_date <= end,
-                 Appointment.status == 'CONFIRMED', Appointment.is_deleted == False)\
-         .group_by(Service.name).order_by(func.sum(Service.default_price).desc()).all()
+        _write_service_revenue_sheet(db, end, make_header, period_label, start, wb, write_row)
 
-        ws1 = wb.active
-        ws1.title = "Dịch vụ"
-        ws1['A1'] = f"Doanh thu dịch vụ — {period_label}"
-        ws1['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
-        ws1.insert_rows(1)  # push header down then rebuild
-        ws1.delete_rows(1)
-        # Row 1 = title, row 2 = blank, row 3 = column header
-        ws1.append([f"Doanh thu dịch vụ — {period_label}"])
-        ws1['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
-        ws1.append([])
-
-        make_header(ws1, ["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
-        # We override row 3 because append wrote to rows 1,2 already; need to write row 3 headers:
-        ws1.delete_rows(3)
-        ws1.append(["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"])
-        make_header(ws1, ["STT", "Tên dịch vụ", "Số ca", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
-
-        total_svc = sum(float(r.rev or 0) for r in svc_rows)
-        for i, r in enumerate(svc_rows, 1):
-            rev = float(r.rev or 0)
-            pct = round(rev / total_svc * 100, 2) if total_svc else 0
-            row_i = i + 3
-            write_row(ws1, row_i, [i, r.name, int(r.cnt), rev, pct])
-            ws1.cell(row=row_i, column=4).number_format = '#,##0'
-            ws1.cell(row=row_i, column=5).number_format = '0.00'
-        tr = len(svc_rows) + 4
-        ws1.cell(row=tr, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True)
-        ws1.cell(row=tr, column=4, value=total_svc).font = Font(name='Arial', bold=True)
-        ws1.cell(row=tr, column=4).number_format = '#,##0'
-        for col, w in [('A',6),('B',32),('C',10),('D',18),('E',10)]:
-            ws1.column_dimensions[col].width = w
-        ws1.row_dimensions[3].height = 22
-
-        # ===== Sheet 2: Thuốc =====
-        medicine_group_key = func.coalesce(cast(PrescriptionItem.medicine_id, String), PrescriptionItem.medicine_name)
-        med_rows = db.query(
-            func.coalesce(func.max(Medicine.name), func.max(PrescriptionItem.medicine_name)).label('name'),
-            func.sum(PrescriptionItem.quantity).label('cnt'),
-            func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).label('rev')
-        ).join(Prescription, PrescriptionItem.prescription_id == Prescription.id)\
-         .join(Appointment, Prescription.appointment_id == Appointment.id)\
-         .outerjoin(Medicine, PrescriptionItem.medicine_id == Medicine.id)\
-         .filter(Appointment.appointment_date >= start, Appointment.appointment_date <= end)\
-         .group_by(medicine_group_key)\
-         .order_by(func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).desc()).all()
-
-        ws2 = wb.create_sheet("Thuốc")
-        ws2.append([f"Doanh thu thuốc — {period_label}"])
-        ws2['A1'].font = Font(name='Arial', bold=True, size=13, color="0F766E")
-        ws2.append([])
-        ws2.append(["STT", "Tên thuốc", "Số lượng", "Doanh thu (đ)", "Tỷ lệ %"])
-        make_header(ws2, ["STT", "Tên thuốc", "Số lượng", "Doanh thu (đ)", "Tỷ lệ %"], "0F766E")
-
-        total_med = sum(float(r.rev or 0) for r in med_rows)
-        for i, r in enumerate(med_rows, 1):
-            rev = float(r.rev or 0)
-            pct = round(rev / total_med * 100, 2) if total_med else 0
-            row_i = i + 3
-            write_row(ws2, row_i, [i, r.name, float(r.cnt), rev, pct])
-            ws2.cell(row=row_i, column=4).number_format = '#,##0'
-            ws2.cell(row=row_i, column=5).number_format = '0.00'
-        tr2 = len(med_rows) + 4
-        ws2.cell(row=tr2, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True)
-        ws2.cell(row=tr2, column=4, value=total_med).font = Font(name='Arial', bold=True)
-        ws2.cell(row=tr2, column=4).number_format = '#,##0'
-        for col, w in [('A',6),('B',36),('C',12),('D',18),('E',10)]:
-            ws2.column_dimensions[col].width = w
-        ws2.row_dimensions[3].height = 22
+        _write_medicine_revenue_sheet(db, end, make_header, period_label, start, wb, write_row)
 
         output = io.BytesIO()
         wb.save(output)
@@ -167,124 +177,137 @@ def export_dashboard_excel(user):
         db.close()
 
 
+def _revenue_detail_items(db, end, rev_type, start):
+    from app.models.prescription import Prescription, PrescriptionItem
+    from app.models.service import Service
+    items = []
+    total_sum = 0
+
+    # 2. Query Data based on rev_type
+    if rev_type == 'service':
+        results = db.query(
+            Service.name.label('name'),
+            func.count(Appointment.id).label('quantity'),
+            func.sum(Service.default_price).label('total_amount')
+        ).join(
+            Appointment, Appointment.service_id == Service.id
+        ).filter(
+            Appointment.appointment_date >= start,
+            Appointment.appointment_date <= end,
+            Appointment.status == 'CONFIRMED',
+            Appointment.is_deleted == False
+        ).group_by(
+            Service.name
+        ).order_by(
+            func.sum(Service.default_price).desc()
+        ).all()
+
+        for r in results:
+            items.append({
+                'name': r.name,
+                'quantity': r.quantity,
+                'total_amount': float(r.total_amount)
+            })
+            total_sum += float(r.total_amount)
+
+    elif rev_type == 'medicine':
+        medicine_group_key = func.coalesce(cast(PrescriptionItem.medicine_id, String), PrescriptionItem.medicine_name)
+        results = db.query(
+            func.coalesce(func.max(Medicine.name), func.max(PrescriptionItem.medicine_name)).label('name'),
+            func.sum(PrescriptionItem.quantity).label('quantity'),
+            func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).label('total_amount'),
+            func.max(PrescriptionItem.unit).label('unit')
+        ).join(
+            Prescription, PrescriptionItem.prescription_id == Prescription.id
+        ).join(
+            Appointment, Prescription.appointment_id == Appointment.id
+        ).outerjoin(
+            Medicine, PrescriptionItem.medicine_id == Medicine.id
+        ).filter(
+            Appointment.appointment_date >= start,
+            Appointment.appointment_date <= end
+        ).group_by(
+            medicine_group_key
+        ).order_by(
+            func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).desc()
+        ).all()
+
+        for r in results:
+            items.append({
+                'name': r.name,
+                'quantity': float(r.quantity),
+                'unit': r.unit or 'Viên',
+                'total_amount': float(r.total_amount)
+            })
+            total_sum += float(r.total_amount)
+
+    else:
+        return (jsonify({'error': 'Invalid type parameter'}), 400), None, None
+    return None, items, total_sum
+
+
+def _revenue_detail_range(date_key, mode, year_str):
+    from datetime import date, timedelta, datetime as dt
+    # 1. Parse date_key to start and end datetime bounds
+    start = None
+    end = None
+
+    if mode == 'month':
+        # date_key comes as "Tháng 3"
+        target_year = int(year_str) if year_str else date.today().year
+        try:
+            m = int(date_key.replace('Tháng ', '').strip())
+        except ValueError:
+            return (jsonify({'error': 'Invalid date_key format'}), 400), None, None
+
+        if m < 12:
+            start = dt(target_year, m, 1)
+            end = dt(target_year, m + 1, 1) - timedelta(seconds=1)
+        else:
+            start = dt(target_year, 12, 1)
+            end = dt(target_year, 12, 31, 23, 59, 59)
+
+    else: # week mode
+        # date_key comes as "8/3"
+        try:
+            parts = date_key.split('/')
+            day = int(parts[0])
+            month = int(parts[1])
+            target_year = date.today().year
+
+            # Handling year wrap-around for 'week' mode if viewing late Dec / early Jan
+            today = date.today()
+            if today.month == 1 and month == 12:
+                target_year -= 1
+            elif today.month == 12 and month == 1:
+                target_year += 1
+
+            target_date = date(target_year, month, day)
+            start = dt.combine(target_date, dt.min.time())
+            end = dt.combine(target_date, dt.max.time())
+        except (ValueError, IndexError):
+            return (jsonify({'error': 'Invalid date_key format'}), 400), None, None
+    return None, end, start
+
+
 @dashboard_bp.route('/api/dashboard/revenue/detail', methods=['GET'])
 @require_auth
 def get_revenue_detail(user):
     """Trích xuất chi tiết doanh thu theo dịch vụ hoặc thuốc cho 1 ngày/tháng"""
     db = next(get_db())
     try:
-        from datetime import date, timedelta, datetime as dt
-        from app.models.service import Service
-        from app.models.prescription import Prescription, PrescriptionItem
-
         mode = request.args.get('mode', 'week')
         rev_type = request.args.get('type', 'service')
         date_key = request.args.get('date_key', '')
         year_str = request.args.get('year', '')
 
-        # 1. Parse date_key to start and end datetime bounds
-        start = None
-        end = None
+        early_response, end, start = _revenue_detail_range(date_key, mode, year_str)
+        if early_response is not None:
+            return early_response
 
-        if mode == 'month':
-            # date_key comes as "Tháng 3"
-            target_year = int(year_str) if year_str else date.today().year
-            try:
-                m = int(date_key.replace('Tháng ', '').strip())
-            except ValueError:
-                return jsonify({'error': 'Invalid date_key format'}), 400
-
-            if m < 12:
-                start = dt(target_year, m, 1)
-                end = dt(target_year, m + 1, 1) - timedelta(seconds=1)
-            else:
-                start = dt(target_year, 12, 1)
-                end = dt(target_year, 12, 31, 23, 59, 59)
-
-        else: # week mode
-            # date_key comes as "8/3"
-            try:
-                parts = date_key.split('/')
-                day = int(parts[0])
-                month = int(parts[1])
-                target_year = date.today().year
-
-                # Handling year wrap-around for 'week' mode if viewing late Dec / early Jan
-                today = date.today()
-                if today.month == 1 and month == 12:
-                    target_year -= 1
-                elif today.month == 12 and month == 1:
-                    target_year += 1
-
-                target_date = date(target_year, month, day)
-                start = dt.combine(target_date, dt.min.time())
-                end = dt.combine(target_date, dt.max.time())
-            except (ValueError, IndexError):
-                return jsonify({'error': 'Invalid date_key format'}), 400
-
-        items = []
-        total_sum = 0
-
-        # 2. Query Data based on rev_type
-        if rev_type == 'service':
-            results = db.query(
-                Service.name.label('name'),
-                func.count(Appointment.id).label('quantity'),
-                func.sum(Service.default_price).label('total_amount')
-            ).join(
-                Appointment, Appointment.service_id == Service.id
-            ).filter(
-                Appointment.appointment_date >= start,
-                Appointment.appointment_date <= end,
-                Appointment.status == 'CONFIRMED',
-                Appointment.is_deleted == False
-            ).group_by(
-                Service.name
-            ).order_by(
-                func.sum(Service.default_price).desc()
-            ).all()
-
-            for r in results:
-                items.append({
-                    'name': r.name,
-                    'quantity': r.quantity,
-                    'total_amount': float(r.total_amount)
-                })
-                total_sum += float(r.total_amount)
-
-        elif rev_type == 'medicine':
-            medicine_group_key = func.coalesce(cast(PrescriptionItem.medicine_id, String), PrescriptionItem.medicine_name)
-            results = db.query(
-                func.coalesce(func.max(Medicine.name), func.max(PrescriptionItem.medicine_name)).label('name'),
-                func.sum(PrescriptionItem.quantity).label('quantity'),
-                func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).label('total_amount'),
-                func.max(PrescriptionItem.unit).label('unit')
-            ).join(
-                Prescription, PrescriptionItem.prescription_id == Prescription.id
-            ).join(
-                Appointment, Prescription.appointment_id == Appointment.id
-            ).outerjoin(
-                Medicine, PrescriptionItem.medicine_id == Medicine.id
-            ).filter(
-                Appointment.appointment_date >= start,
-                Appointment.appointment_date <= end
-            ).group_by(
-                medicine_group_key
-            ).order_by(
-                func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity).desc()
-            ).all()
-
-            for r in results:
-                items.append({
-                    'name': r.name,
-                    'quantity': float(r.quantity),
-                    'unit': r.unit or 'Viên',
-                    'total_amount': float(r.total_amount)
-                })
-                total_sum += float(r.total_amount)
-
-        else:
-            return jsonify({'error': 'Invalid type parameter'}), 400
+        error_response, items, total_sum = _revenue_detail_items(db, end, rev_type, start)
+        if error_response is not None:
+            return error_response
 
         return jsonify({
             'mode': mode,
