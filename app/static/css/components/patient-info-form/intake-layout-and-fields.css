@@ -250,7 +250,7 @@
 .qlpk-patient-info-card .receptionist-patient-fields .form-control:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-patient-info-card .receptionist-patient-fields .form-select {
 	border-color: var(--qlpk-alpha-brown-34-34);
-	background: transparent;
+	background: var(--qlpk-control-state-bg, transparent);
 	color: var(--qlpk-patient-info-text);
 	box-shadow: none;
 }

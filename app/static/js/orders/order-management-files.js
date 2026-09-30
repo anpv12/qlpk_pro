@@ -16,16 +16,16 @@ function renderResultFiles(files) {
 	} else {
 		const filesList = files.map(file => {
             const ext = (file.original_filename || file.filename || '').split('.').pop().toUpperCase();
-            let badgeClass = 'bg-secondary';
-            if (ext === 'PDF') badgeClass = 'bg-danger';
-            if (ext === 'DOC' || ext === 'DOCX') badgeClass = 'bg-primary';
-            if (ext === 'JPG' || ext === 'PNG') badgeClass = 'bg-success';
+            let badgeClass = 'qlpk-status--neutral';
+            if (ext === 'PDF') badgeClass = 'qlpk-status--error';
+            if (ext === 'DOC' || ext === 'DOCX') badgeClass = 'bg-primary bg-opacity-25 text-dark';
+            if (ext === 'JPG' || ext === 'PNG') badgeClass = 'qlpk-status--success';
 
             return `
             <li class="om-file-row">
                 <span class="fw-semibold text-dark om-file-name">${escapeHtml(file.original_filename || file.filename)}</span>
                 <div class="om-file-meta">
-                    <span class="badge ${badgeClass} bg-opacity-25 text-dark border om-file-type-badge">${escapeHtml(ext)}</span>
+                    <span class="badge ${badgeClass} border om-file-type-badge">${escapeHtml(ext)}</span>
                     <span>Ngày tải: ${formatDateOnly(file.created_at)}</span>
                     <div class="om-actions">
                         ${window.QLPKIconSystem.renderActionButton({ action: 'download', label: 'Tải xuống', className: 'result-file-download', attrs: { 'data-file-id': file.id } })}

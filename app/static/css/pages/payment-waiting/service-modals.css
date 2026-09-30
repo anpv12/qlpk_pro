@@ -271,7 +271,7 @@
 
 		html,
 		body {
-			overflow: auto !important;
+			overflow: auto;
 		}
 
 		.pw-page .pw-main {

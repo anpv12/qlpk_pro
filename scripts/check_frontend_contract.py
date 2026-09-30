@@ -113,8 +113,8 @@ METRICS = [
 		pattern=r"!important",
 		roots=("app/static/css",),
 		suffixes=(".css",),
-		max_count=45,
-		description="!important is locked at the overrides proven necessary by cascade analysis (438 -> 94 -> 43 declarations on 29/09/2026; the count includes 2 comment mentions); do not add new ones.",
+		max_count=0,
+		description="No !important (438 -> 43 -> 0 on 30/09/2026): out-rank by selector, feed Bootstrap utility variables (--bs-*), or drop the utility class from markup.",
 	),
 	Metric(
 		name="css_id_selector",

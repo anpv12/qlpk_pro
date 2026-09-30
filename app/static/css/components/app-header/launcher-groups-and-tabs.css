@@ -296,7 +296,7 @@ body.qlpk-embedded-page .main-content.col-md-10,
 body.qlpk-embedded-page .qlpk-workspace-main {
 	width: 100%;
 	max-width: 100%;
-	flex: 0 0 100% !important;
+	flex: 0 0 100%;
 	margin-left: 0;
 	padding-left: 0;
 	padding-right: 0;

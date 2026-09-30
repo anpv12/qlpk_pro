@@ -319,15 +319,6 @@
 			border-color: transparent transparent var(--om-brand) transparent;
 		}
 
-		/* Patient info card in modal */
-		.modal.qlpk-order-detail-modal .bg-info {
-			background: var(--om-page-bg) !important;
-			color: var(--om-text) !important;
-			border: 0.0625rem solid var(--om-border);
-			border-radius: 0.5rem;
-			padding: 0.75rem;
-			font-size: var(--qlpk-font-size-base);
-		}
 
 		/* Modal field labels */
 		.view-field-label {

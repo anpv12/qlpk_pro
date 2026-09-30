@@ -41,12 +41,12 @@ const AppointmentUtils = {
 	// Hàm lấy status badge HTML
 	getStatusBadge: function (status, className = '') {
 		const statusMap = {
-			scheduled: '<span class="badge bg-warning ' + className + '">Chờ xác nhận</span>',
-			confirmed: '<span class="badge bg-success ' + className + '">Đã xác nhận</span>',
-			in_progress: '<span class="badge bg-info ' + className + '">Đang khám</span>',
-			completed: '<span class="badge bg-success ' + className + '">Đã khám</span>',
-			cancelled: '<span class="badge bg-danger ' + className + '">Hủy</span>',
-			no_show: '<span class="badge bg-dark ' + className + '">Không đến</span>'
+			scheduled: '<span class="badge qlpk-status--warning ' + className + '">Chờ xác nhận</span>',
+			confirmed: '<span class="badge qlpk-status--success ' + className + '">Đã xác nhận</span>',
+			in_progress: '<span class="badge qlpk-status--info ' + className + '">Đang khám</span>',
+			completed: '<span class="badge qlpk-status--success ' + className + '">Đã khám</span>',
+			cancelled: '<span class="badge qlpk-status--error ' + className + '">Hủy</span>',
+			no_show: '<span class="badge qlpk-status--neutral ' + className + '">Không đến</span>'
 		};
 		return statusMap[status] || statusMap.scheduled;
 	},
@@ -93,12 +93,12 @@ const AppointmentUtils = {
 	// Hàm lấy status badge class
 	getStatusBadgeClass: function (status) {
 		const classMap = {
-			scheduled: 'bg-warning',
-			confirmed: 'bg-success',
-			completed: 'bg-success',
-			cancelled: 'bg-danger',
-			in_progress: 'bg-info',
-			no_show: 'bg-dark'
+			scheduled: 'qlpk-status--warning',
+			confirmed: 'qlpk-status--success',
+			completed: 'qlpk-status--success',
+			cancelled: 'qlpk-status--error',
+			in_progress: 'qlpk-status--info',
+			no_show: 'qlpk-status--neutral'
 		};
 		return classMap[status] || classMap.scheduled;
 	},

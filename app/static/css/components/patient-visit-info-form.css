@@ -113,7 +113,7 @@
 .qlpk-patient-visit-card .receptionist-paper-field .form-control:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-patient-visit-card .receptionist-paper-field .form-select {
 	border-color: var(--qlpk-patient-visit-line-strong);
-	background-color: transparent;
+	background-color: var(--qlpk-control-state-bg, transparent);
 	color: var(--qlpk-patient-visit-text);
 	box-shadow: none;
 }

@@ -88,7 +88,7 @@
           <td>${formatPrice(service.default_price)}</td>
           <td>${service.duration_minutes || 60}</td>
           <td>
-            <span class="badge ${service.is_active ? 'bg-success' : 'bg-secondary'}">
+            <span class="badge ${service.is_active ? 'qlpk-status--success' : 'qlpk-status--neutral'}">
               ${service.is_active ? 'Kích hoạt' : 'Không kích hoạt'}
             </span>
           </td>

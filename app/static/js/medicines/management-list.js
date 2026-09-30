@@ -116,7 +116,7 @@ function getMedicineWarnings(medicine) {
 		warnings.push({
 			type: 'out_of_stock',
 			icon: 'bi-x-circle-fill',
-			color: 'danger',
+			color: 'error',
 			text: 'Hết tồn kho'
 		});
 	}
@@ -150,7 +150,7 @@ function getMedicineWarnings(medicine) {
 function renderWarningBadges(warnings) {
 	if (!warnings || warnings.length === 0) return '';
 	return warnings.map(warning =>
-		`<span class="badge bg-${warning.color} ms-1 medicine-warning-badge" tabindex="0" role="img" aria-label="${escapeHtml(warning.text)}">
+		`<span class="badge qlpk-status--${warning.color} ms-1 medicine-warning-badge" tabindex="0" role="img" aria-label="${escapeHtml(warning.text)}">
             <i class="bi ${warning.icon}" aria-hidden="true"></i>
         </span>`
 	).join('');

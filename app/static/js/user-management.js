@@ -41,7 +41,7 @@ function installUserPage1(ctx) {
         <td>${roleLabel(u.role)}</td>
         <td>${window.QLPKHtml.escape(u.address || '')}</td>
         <td>${window.QLPKHtml.escape(u.phone || '')}</td>
-          <td>${u.is_active ? '<span class="badge bg-success">Hoạt động</span>' : '<span class="badge bg-secondary">Không hoạt động</span>'}</td>
+          <td>${u.is_active ? '<span class="badge qlpk-status--success">Hoạt động</span>' : '<span class="badge qlpk-status--neutral">Không hoạt động</span>'}</td>
         <td>
             <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${u.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
             <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${u.id}" title="Xoá"><i class="bi bi-trash"></i></button>

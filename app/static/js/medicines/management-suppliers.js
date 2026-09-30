@@ -67,7 +67,7 @@ function renderSuppliersTable(suppliersList) {
             <td>${escapeHtml(supplier.contact_person || '-')}</td>
             <td>${escapeHtml(supplier.address || '-')}</td>
             <td class="mm-supplier-status-cell">
-                <span class="badge ${supplier.is_active === 1 ? 'bg-success' : 'bg-secondary'}">
+                <span class="badge ${supplier.is_active === 1 ? 'qlpk-status--success' : 'qlpk-status--neutral'}">
                     ${supplier.is_active === 1 ? 'Đang hoạt động' : 'Ngừng hoạt động'}
                 </span>
             </td>

@@ -18,11 +18,11 @@
  * hooks for JS, but make the rendered controls follow the compact catalog
  * contract. */
 .qlpk-admin-page .rounded-4 {
-	border-radius: var(--clinic-surface-radius, var(--admin-radius)) !important;
+	--bs-border-radius-xl: var(--clinic-surface-radius, var(--admin-radius));
 }
 
 .qlpk-admin-page .shadow-sm {
-	box-shadow: 0 1px 3px var(--qlpk-alpha-blue-11-04-b) !important;
+	--bs-box-shadow-sm: 0 1px 3px var(--qlpk-alpha-blue-11-04-b);
 }
 
 .qlpk-admin-page .um-btn-primary-pill-lg,
@@ -31,9 +31,9 @@
 .qlpk-admin-page .save-btn {
 	border-width: 1px;
 	border-style: solid;
-	border-radius: var(--clinic-control-radius, 0.5625rem) !important;
-	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px)) !important;
-	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 .qlpk-admin-page .um-btn-primary-pill-lg:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *),
@@ -48,9 +48,9 @@
 .qlpk-admin-page .um-btn-pill-md,
 .qlpk-admin-page .gm-pill-btn,
 .qlpk-admin-page .gm-pill-btn-sm {
-	border-radius: var(--clinic-control-radius, 0.5625rem) !important;
-	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px)) !important;
-	font-weight: var(--qlpk-font-weight-semibold, 600) !important;
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 
 .qlpk-admin-page .modal-footer .btn {
@@ -92,9 +92,8 @@
 
 .qlpk-admin-actions { gap: 0.5rem; }
 
-.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mt-4,
-.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4 {
-	margin: 12px 20px 0 !important;
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-section {
+	margin: 12px 20px 0;
 }
 
 .qlpk-admin-page .permission-section-title {
@@ -122,12 +121,8 @@
 	padding: 12px 14px;
 }
 
-.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4 {
-	margin-bottom: 0 !important;
-}
-
-.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-3 {
-	margin: 12px 20px 0 !important;
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-filter-section {
+	margin: 12px 20px 0;
 	padding: 10px;
 	border: 1px solid var(--admin-border);
 	border-radius: var(--admin-radius);
@@ -259,11 +254,6 @@
 	height: auto;
 }
 
-.qlpk-admin-page .stm-table-wrap table thead th {
-	background: var(--qlpk-color-brown-soft);
-	color: var(--admin-muted-strong);
-}
-
 /* Long admin tables scroll inside their own surface on narrow screens. A
  * minimum reading width prevents names/addresses/statuses from collapsing
  * into one-character columns while preserving the page viewport. */
@@ -316,8 +306,8 @@
 }
 
 /* Empty/placeholder states remain readable without adding a second card. */
-.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .mt-5 {
-	margin: 12px 20px 0 !important;
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-empty-section {
+	margin: 12px 20px 0;
 	padding: 42px 20px;
 	border: 1px dashed var(--admin-border-strong);
 	border-radius: var(--admin-radius);
@@ -325,11 +315,17 @@
 	color: var(--admin-muted);
 }
 
+/* Admin page header rows (formerly the align-items-center utility). */
+.qlpk-admin-page .header-bar > .d-flex,
+.qlpk-admin-page .qlpk-admin-page-header > .d-flex {
+	align-items: center;
+}
+
 @media (max-width: 900px) {
 	.qlpk-admin-page .qlpk-admin-table-surface,
 	.qlpk-admin-page .header-bar > .d-flex,
 	.qlpk-admin-page .qlpk-admin-page-header > .d-flex {
-		align-items: flex-start !important;
+		align-items: flex-start;
 		flex-direction: column;
 		gap: 8px;
 	}
@@ -349,12 +345,11 @@
 	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-surface,
 	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .import-export-section,
 	.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .stm-card,
-		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mt-4,
-		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-4,
-		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .row.mb-3,
-		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .mt-5 {
-		margin-right: 12px !important;
-		margin-left: 12px !important;
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-section,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-filter-section,
+		.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-empty-section {
+		margin-right: 12px;
+		margin-left: 12px;
 	}
 
 	.qlpk-admin-page .catalog-dict-main,

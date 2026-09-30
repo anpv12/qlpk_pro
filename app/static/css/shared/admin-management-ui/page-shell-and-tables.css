@@ -310,8 +310,8 @@ body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
 .qlpk-admin-page .qlpk-survey-table thead th {
 	padding: 9px 10px;
 	border: 1px solid var(--admin-border);
-	background: var(--qlpk-brown-150) !important;
-	color: var(--qlpk-brown-700) !important;
+	background: var(--qlpk-brown-150);
+	color: var(--qlpk-brown-700);
 	font-size: var(--qlpk-font-size-base, 13px);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	text-align: left;
@@ -338,7 +338,7 @@ body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
 
 .qlpk-admin-page .table .text-muted,
 .qlpk-admin-page .text-muted {
-	color: var(--admin-muted) !important;
+	--bs-secondary-color: var(--admin-muted);
 }
 
 .qlpk-admin-page .table a,
@@ -431,8 +431,13 @@ body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [da
 	border: 0;
 	border-bottom: 1px solid rgba(var(--qlpk-color-white-rgb), 0.2);
 	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
-	background: var(--qlpk-workflow-context-header-bg) !important;
+	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--qlpk-color-white);
+}
+
+/* The account password modal (app header) keeps the admin header surface on admin pages. */
+.qlpk-admin-page .qlpk-password-modal .modal-header {
+	background: var(--qlpk-workflow-context-header-bg);
 }
 
 .qlpk-admin-page .modal-header .modal-title,

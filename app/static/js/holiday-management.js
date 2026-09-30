@@ -53,7 +53,7 @@
           <td>${new Date(holiday.date).toLocaleDateString('vi-VN')}</td>
           <td>${holiday.description ? window.QLPKHtml.escape(holiday.description) : '<span class="text-muted">Không có mô tả</span>'}</td>
           <td>
-            <span class="badge ${holiday.is_recurring ? 'bg-success' : 'bg-secondary'}">
+            <span class="badge ${holiday.is_recurring ? 'qlpk-status--success' : 'qlpk-status--neutral'}">
               ${holiday.is_recurring ? 'Có' : 'Không'}
             </span>
           </td>

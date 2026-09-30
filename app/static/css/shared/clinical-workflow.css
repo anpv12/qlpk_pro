@@ -50,9 +50,6 @@ textarea.form-control {
 	font-size: var(--qlpk-control-font-size-sm, var(--qlpk-font-size-sm, 0.75rem));
 }
 
-.mb-4 {
-	margin-bottom: 0.5rem !important;
-}
 .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select:focus {
 	border-color: var(--qlpk-clinical);
@@ -69,9 +66,10 @@ textarea.form-control {
 .form-control:disabled:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select[readonly],
 .form-select:disabled {
-	/* !important: the shared form owners set a transparent background on the same
-	 * controls; disabled/readonly fields must keep the muted surface on every page. */
-	background-color: var(--qlpk-palette-brown-93) !important;
+	/* Shared form owners paint their controls with var(--qlpk-control-state-bg, ...),
+	 * so disabled/readonly fields keep the muted surface on every page. */
+	--qlpk-control-state-bg: var(--qlpk-palette-brown-93);
+	background-color: var(--qlpk-palette-brown-93);
 	color: var(--qlpk-muted);
 }
 

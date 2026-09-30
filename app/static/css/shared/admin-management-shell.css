@@ -17,9 +17,10 @@ body {
 	max-width: 83.33333%;
 }
 
-.header-padding {
-	padding-left: 1.25rem !important;
-	padding-right: 1.25rem !important;
+.header-padding,
+.qlpk-clinic-page .qlpk-clinic-header.header-padding {
+	padding-left: 1.25rem;
+	padding-right: 1.25rem;
 }
 
 .breadcrumb {

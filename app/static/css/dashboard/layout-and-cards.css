@@ -51,16 +51,16 @@
 	padding-top: 0.375rem;
 }
 
-.flatpickr-current-month select {
-	font-size: var(--qlpk-font-size-sm, 0.75rem) !important;
+.flatpickr-current-month select.flatpickr-monthDropdown-months {
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 }
 
 .flatpickr-weekdays {
 	height: 1.625rem;
 }
 
-.flatpickr-weekday {
-	font-size: var(--qlpk-font-size-xs, 0.6875rem) !important;
+.flatpickr-weekdays span.flatpickr-weekday {
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 }
 
 span.flatpickr-day,

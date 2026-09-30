@@ -33,7 +33,7 @@
 /* One presentation owner for operational status labels. Pages only map their
  * existing state classes/data attributes to --qlpk-status-color. */
 .qlpk-status,
-.badge:is(.bg-success, .bg-info, .bg-warning, .bg-danger, .bg-secondary, .bg-dark) {
+.badge:is(.qlpk-status--success, .qlpk-status--info, .qlpk-status--warning, .qlpk-status--error, .qlpk-status--critical, .qlpk-status--neutral) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -52,7 +52,7 @@
 /* One presentation owner for operational status labels. Pages only map their
  * existing state classes/data attributes to --qlpk-status-color. */
 .qlpk-status,
-.badge:is(.bg-success, .bg-info, .bg-warning, .bg-danger, .bg-secondary, .bg-dark):not([data-qlpk-button], [data-qlpk-button] *) {
+.badge:is(.qlpk-status--success, .qlpk-status--info, .qlpk-status--warning, .qlpk-status--error, .qlpk-status--critical, .qlpk-status--neutral):not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-status-color, var(--qlpk-feedback-neutral));
 	color: var(--qlpk-status-text);
 }
@@ -63,19 +63,12 @@
 	line-height: 1;
 }
 
-.qlpk-status--success, .badge.bg-success { --qlpk-status-color: var(--qlpk-feedback-success); }
-.qlpk-status--info, .badge.bg-info { --qlpk-status-color: var(--qlpk-feedback-info); }
-.qlpk-status--warning, .badge.bg-warning { --qlpk-status-color: var(--qlpk-feedback-warning); }
-.qlpk-status--error, .badge.bg-danger { --qlpk-status-color: var(--qlpk-feedback-error); }
+.qlpk-status--success { --qlpk-status-color: var(--qlpk-feedback-success); }
+.qlpk-status--info { --qlpk-status-color: var(--qlpk-feedback-info); }
+.qlpk-status--warning { --qlpk-status-color: var(--qlpk-feedback-warning); }
+.qlpk-status--error { --qlpk-status-color: var(--qlpk-feedback-error); }
 .qlpk-status--critical { --qlpk-status-color: var(--qlpk-feedback-critical); }
-.qlpk-status--neutral, .badge.bg-secondary, .badge.bg-dark { --qlpk-status-color: var(--qlpk-feedback-neutral); }
-/* Bootstrap utilities set background/text with !important. Keep legacy
- * semantic badges on the same solid palette,
-including text-dark/opacity. */
-.badge:is(.bg-success, .bg-info, .bg-warning, .bg-danger, .bg-secondary, .bg-dark):not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-status-color) !important;
-	color: var(--qlpk-status-text) !important;
-}
+.qlpk-status--neutral { --qlpk-status-color: var(--qlpk-feedback-neutral); }
 
 /* Neutral metadata (for example, where an order is performed). Operational
  * states use .qlpk-status instead of a second soft-status renderer. */

@@ -12,7 +12,7 @@
 .form-control:not([data-qlpk-button], [data-qlpk-button] *),
 .form-select {
 	border: 0.0625rem solid var(--qlpk-palette-gray-85);
-	background-color: var(--qlpk-color-white);
+	background-color: var(--qlpk-control-state-bg, var(--qlpk-color-white));
 	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 

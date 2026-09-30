@@ -135,17 +135,17 @@
 		}
 
 		/* Icon styling */
-		.fs-4 {
-			font-size: var(--qlpk-font-size-3xl, 1.5rem) !important;
+		.bi.dbs-header-icon {
+			font-size: var(--qlpk-font-size-3xl, 1.5rem);
 		}
 
 		/* Header icon effects */
-		.card-header i.fs-4 {
+		.card-header i.dbs-header-icon {
 			opacity: 0.9;
 			transition: all 0.3s ease;
 		}
 
-		.card-header:hover i.fs-4 {
+		.card-header:hover i.dbs-header-icon {
 			opacity: 1;
 			transform: scale(1.05);
 		}

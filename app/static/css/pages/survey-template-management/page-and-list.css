@@ -330,8 +330,8 @@
 		@media (max-width: 768px) {
 
 			html,
-			body {
-				overflow: auto !important;
+			body.qlpk-admin-page.stm-page {
+				overflow: auto;
 			}
 
 			.stm-page .stm-main {

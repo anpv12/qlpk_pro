@@ -47,15 +47,15 @@ function getStatusIndicator(startTime, endTime, status) {
 	const now = new Date();
 
 	if (status === 'cancelled') {
-		return '<span class="badge bg-secondary" title="Đã hủy">❌</span>';
+		return '<span class="badge qlpk-status--neutral" title="Đã hủy">❌</span>';
 	}
 
 	if (endTime < now) {
-		return '<span class="badge bg-secondary" title="Đã kết thúc">⏰</span>';
+		return '<span class="badge qlpk-status--neutral" title="Đã kết thúc">⏰</span>';
 	} else if (startTime <= now && endTime >= now) {
-		return '<span class="badge bg-danger" title="Đang diễn ra">🔴</span>';
+		return '<span class="badge qlpk-status--error" title="Đang diễn ra">🔴</span>';
 	} else {
-		return '<span class="badge bg-warning" title="Sắp diễn ra">⏳</span>';
+		return '<span class="badge qlpk-status--warning" title="Sắp diễn ra">⏳</span>';
 	}
 }
 
