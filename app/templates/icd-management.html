@@ -16,10 +16,8 @@
   <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/icd-management.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
-	<script src="/static/js/utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
@@ -36,10 +34,10 @@
 						<div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title page-title">Danh mục ICD</h1>
 <p class="qlpk-clinic-subtitle">Tra cứu và quản lý mã chẩn đoán</p></div>
 						<div class="d-flex gap-2">
-							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" data-qlpk-call="exportTemplate">
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" data-icd-import="template">
 								<i class="bi bi-download me-2"></i>Xuất mẫu
 							</button>
-							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn" data-qlpk-call="openImportModal">
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn" data-icd-import="open">
 								<i class="bi bi-upload me-2"></i>Import
 							</button>
 							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary add-btn" data-bs-toggle="modal"
@@ -197,7 +195,7 @@
 				</div>
 				<div class="modal-footer">
 					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-					<button data-qlpk-button="danger" data-qlpk-button-variant="solid" type="button" class="btn btn-danger" id="confirmDeleteBtn" data-qlpk-call="confirmDelete">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="solid" type="button" class="btn btn-danger" id="confirmDeleteBtn">
 						<span id="deleteSpinner" class="spinner-border spinner-border-sm d-none me-1"
 							role="status"></span>
 						<i id="deleteIcon" class="bi bi-trash me-1"></i>Xóa
@@ -238,14 +236,13 @@
 				</div>
 				<div class="modal-footer">
 					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="importICD">Import</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-icd-import="import">Import</button>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<script src="/static/js/icd-management.js?v={{ app_version }}"></script>
-	<script src="/static/js/icd-management/import-export.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/icd-management.js?v={{ app_version }}"></script>
 </body>
 
 </html>

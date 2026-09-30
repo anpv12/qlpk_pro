@@ -350,13 +350,23 @@ function createWindow({ html = '', url = 'http://clinic.test/' } = {}) {
     location.assign = href => { location.href = href; };
     Object.assign(window, { document, location, localStorage: storage(), sessionStorage: storage(), setTimeout, clearTimeout, Event, CustomEvent: Event });
     document.defaultView = window;
+    document.baseURI = url;
     return window;
 }
 
 // Installs window/document globals for a module under test; returns the window.
 function installDom(options) {
     const window = createWindow(options);
-    Object.assign(globalThis, { window, document: window.document, Node, Element, Text, Event, CustomEvent: Event, localStorage: window.localStorage, sessionStorage: window.sessionStorage });
+    function Option(text = '', value, defaultSelected = false, selected = false) {
+        const option = window.document.createElement('option');
+        option.textContent = text;
+        if (value !== undefined) option.setAttribute('value', value);
+        if (defaultSelected) option.setAttribute('selected', '');
+        if (selected) option.selected = true;
+        return option;
+    }
+    window.Option = Option;
+    Object.assign(globalThis, { Option, window, document: window.document, Node, Element, Text, Event, CustomEvent: Event, localStorage: window.localStorage, sessionStorage: window.sessionStorage });
     return window;
 }
 

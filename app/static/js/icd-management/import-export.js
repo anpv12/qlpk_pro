@@ -1,392 +1,201 @@
-/* exported exportImportErrors, exportTemplate, importICD */
-/* global currentPage, loadICDList, showToast */
+// ICD Excel template, client-side import (read, validate, post) with progress and result dialogs,
+// and export of the import error list. Page callbacks (toast, reload) are passed in by icd-management.js.
+import { byId, delegate, el, icon, replace } from '../shared/dom.js';
 
-// Export template
+const TEMPLATE_ROWS = [
+	['Mã ICD', 'Tên bệnh', 'Mô tả', 'Nhóm bệnh'],
+	['A00', 'Tả', 'Bệnh tả', 'Bệnh truyền nhiễm'],
+	['A01', 'Thương hàn', 'Bệnh thương hàn', 'Bệnh truyền nhiễm'],
+	['A02', 'Nhiễm khuẩn Salmonella khác', 'Nhiễm khuẩn Salmonella', 'Bệnh truyền nhiễm'],
+	['B00', 'Nhiễm virus herpes simplex', 'Nhiễm virus herpes', 'Bệnh do virus'],
+	['B01', 'Thủy đậu', 'Bệnh thủy đậu', 'Bệnh do virus'],
+];
+let page = null;
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+
 function exportTemplate() {
-	// Tạo template Excel
-	const template = [
-		['Mã ICD', 'Tên bệnh', 'Mô tả', 'Nhóm bệnh'],
-		['A00', 'Tả', 'Bệnh tả', 'Bệnh truyền nhiễm'],
-		['A01', 'Thương hàn', 'Bệnh thương hàn', 'Bệnh truyền nhiễm'],
-		['A02', 'Nhiễm khuẩn Salmonella khác', 'Nhiễm khuẩn Salmonella', 'Bệnh truyền nhiễm'],
-		['B00', 'Nhiễm virus herpes simplex', 'Nhiễm virus herpes', 'Bệnh do virus'],
-		['B01', 'Thủy đậu', 'Bệnh thủy đậu', 'Bệnh do virus']
-	];
-
-	// Tạo workbook
-	const wb = XLSX.utils.book_new();
-	const ws = XLSX.utils.aoa_to_sheet(template);
-
-	// Set column widths
-	ws['!cols'] = [
-		{ width: 15 }, // Mã ICD
-		{ width: 30 }, // Tên bệnh
-		{ width: 40 }, // Mô tả
-		{ width: 25 }  // Nhóm bệnh
-	];
-
-	XLSX.utils.book_append_sheet(wb, ws, 'Mẫu ICD');
-
-	// Xuất file
-	XLSX.writeFile(wb, 'mau_icd.xlsx');
+	const workbook = window.XLSX.utils.book_new();
+	const sheet = window.XLSX.utils.aoa_to_sheet(TEMPLATE_ROWS);
+	sheet['!cols'] = [{ width: 15 }, { width: 30 }, { width: 40 }, { width: 25 }];
+	window.XLSX.utils.book_append_sheet(workbook, sheet, 'Mẫu ICD');
+	window.XLSX.writeFile(workbook, 'mau_icd.xlsx');
 }
 
-// Import ICD data
-function importICD() {
-	const fileInput = document.getElementById('importFile');
-	const file = fileInput.files[0];
-
-	if (!file) {
-		showToast('Vui lòng chọn file để import', 'error');
-		return;
-	}
-
-	if (!file.name.match(/\.(xlsx|xls)$/)) {
-		showToast('Vui lòng chọn file Excel (.xlsx hoặc .xls)', 'error');
-		return;
-	}
-
-	// Hiển thị modal import progress
-	showImportProgressModal();
-
-	const reader = new FileReader();
-	reader.onload = function (e) {
-		try {
-			updateImportProgress('Đang đọc file Excel...', 10);
-
-			const data = new Uint8Array(e.target.result);
-			const workbook = XLSX.read(data, { type: 'array' });
-			const sheetName = workbook.SheetNames[0];
-			const worksheet = workbook.Sheets[sheetName];
-			const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-			updateImportProgress('Đang xử lý dữ liệu...', 30);
-
-			// Bỏ qua header row
-			const rows = jsonData.slice(1);
-
-			if (rows.length === 0) {
-				hideImportProgressModal();
-				showToast('File không có dữ liệu', 'error');
-				return;
-			}
-
-			updateImportProgress(`Đã đọc ${rows.length} dòng dữ liệu. Đang validate...`, 50);
-
-			// Validate và import data
-			importICDData(rows);
-
-		} catch (error) {
-			hideImportProgressModal();
-			showToast('Lỗi khi đọc file Excel', 'error');
-		}
-	};
-
-	reader.readAsArrayBuffer(file);
+function setProgressBar(percent) {
+	const bar = byId('importProgressBar');
+	if (!bar) return;
+	bar.style.width = `${percent}%`;
+	bar.setAttribute('aria-valuenow', percent);
 }
 
-// Import ICD data to server
+function updateImportProgress(text, percent, details = '') {
+	byId('importProgressText').textContent = text;
+	setProgressBar(percent);
+	byId('importProgressPercent').textContent = `${Math.round(percent)}%`;
+	if (details) byId('importProgressDetails').textContent = details;
+}
+
+function progressModal() {
+	return el('div', { class: 'modal fade qlpk-import-progress-modal', id: 'importProgressModal', tabindex: '-1', 'data-bs-backdrop': 'static', 'data-bs-keyboard': 'false' },
+		el('div', { class: 'modal-dialog modal-dialog-centered' }, el('div', { class: 'modal-content' },
+			el('div', { class: 'modal-header' }, el('h5', { class: 'modal-title' }, icon('bi-upload', 'me-2'), 'Đang import dữ liệu ICD')),
+			el('div', { class: 'modal-body text-center' },
+				el('div', { class: 'mb-3' }, el('div', { class: 'spinner-border text-primary', role: 'status' }, el('span', { class: 'visually-hidden' }, 'Loading...'))),
+				el('div', { id: 'importProgressText', class: 'mb-3' }, 'Đang bắt đầu...'),
+				el('div', { class: 'progress mb-3 icd-import-progress' }, el('div', { id: 'importProgressBar', class: 'progress-bar progress-bar-striped progress-bar-animated',
+					role: 'progressbar', 'aria-valuenow': '0', 'aria-valuemin': '0', 'aria-valuemax': '100' }, el('span', { id: 'importProgressPercent' }, '0%'))),
+				el('div', { id: 'importProgressDetails', class: 'text-muted small' })))));
+}
+
+function showImportProgressModal() {
+	if (!byId('importProgressModal')) document.body.appendChild(progressModal());
+	setProgressBar(0);
+	byId('importProgressPercent').textContent = '0%';
+	byId('importProgressText').textContent = 'Đang bắt đầu...';
+	byId('importProgressDetails').textContent = '';
+	modal('importProgressModal').show();
+}
+const hideImportProgressModal = () => modal('importProgressModal').hide();
+
+const errorLines = errors => errors.map(error => el('div', { class: 'mb-1' }, el('small', {}, `• ${error}`)));
+const summary = (successCount, totalErrors) => [icon('bi-info-circle', 'me-2'), ' ', el('strong', {}, 'Tổng kết:'), ' Import thành công ', el('strong', {}, successCount), ' dòng, có ', el('strong', {}, totalErrors), ' dòng lỗi.'];
+
+function countCard(tone, value, label) {
+	return el('div', { class: 'col-md-4' }, el('div', { class: `card text-center border-${tone}` }, el('div', { class: 'card-body' }, el('h3', { class: `text-${tone}` }, value), el('p', { class: 'mb-0' }, label))));
+}
+
+function resultModal(successCount, validationErrors, serverErrors, allErrors) {
+	const errorsBox = el('div', { class: 'alert alert-warning' }, el('h6', {}, icon('bi-exclamation-triangle', 'me-2'), 'Chi tiết lỗi:'),
+		el('div', { id: 'importErrorList', class: 'qlpk-import-error-list' }, errorLines(allErrors)));
+	if (!allErrors.length) errorsBox.style.display = 'none';
+	return el('div', { class: 'modal fade', id: 'importResultModal', tabindex: '-1' }, el('div', { class: 'modal-dialog modal-lg' }, el('div', { class: 'modal-content' },
+		el('div', { class: 'modal-header' }, el('h5', { class: 'modal-title' }, icon('bi-check-circle-fill', 'text-success me-2'), 'Kết quả import'), el('button', { type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' })),
+		el('div', { class: 'modal-body' },
+			el('div', { class: 'row mb-3' }, countCard('success', successCount, 'Thành công'), countCard('warning', validationErrors, 'Lỗi validation'), countCard('danger', serverErrors.length, 'Lỗi server')),
+			errorsBox, el('div', { class: 'alert alert-info' }, summary(successCount, validationErrors + serverErrors.length))),
+		el('div', { class: 'modal-footer' }, el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }, 'Đóng'),
+			allErrors.length ? el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'btn btn-warning', 'data-icd-import': 'export-errors' }, icon('bi-download', 'me-2'), 'Xuất danh sách lỗi') : null))));
+}
+
+function showImportResult(successCount, validationErrors, validationErrorList = [], serverErrors = []) {
+	const allErrors = [...validationErrorList, ...serverErrors];
+	const totalErrors = validationErrors + serverErrors.length;
+	const existing = byId('importResultModal');
+	if (!existing) {
+		document.body.appendChild(resultModal(successCount, validationErrors, serverErrors, allErrors));
+	} else {
+		existing.querySelector('.text-success').textContent = successCount;
+		existing.querySelector('.text-warning').textContent = validationErrors;
+		existing.querySelector('.text-danger').textContent = serverErrors.length;
+		if (allErrors.length) replace(byId('importErrorList'), errorLines(allErrors));
+		existing.querySelector('.alert-warning').style.display = allErrors.length ? '' : 'none';
+		replace(existing.querySelector('.alert-info'), summary(successCount, totalErrors));
+	}
+	modal('importResultModal').show();
+	if (successCount > 0) page.showToast(`Import thành công ${successCount} mã ICD`, 'success');
+	if (totalErrors > 0) page.showToast(`Có ${totalErrors} dòng lỗi trong quá trình import`, 'warning');
+}
+
+function parseICDImportRow(row, rowNumber) {
+	if (!(row.length >= 2 && row[0] && row[1])) return { error: `Dòng ${rowNumber}: Thiếu mã ICD hoặc tên bệnh` };
+	const icdCode = row[0]?.toString().trim() || '';
+	const diseaseName = row[1]?.toString().trim() || '';
+	if (!/^[A-Z0-9.†*+-]+$/i.test(icdCode)) return { error: `Dòng ${rowNumber}: Mã ICD không hợp lệ "${icdCode}"`, skipProgress: true };
+	if (diseaseName.length < 2) return { error: `Dòng ${rowNumber}: Tên bệnh quá ngắn "${diseaseName}"`, skipProgress: true };
+	return { item: { icd_code: icdCode, disease_name: diseaseName, description: row[2]?.toString().trim() || '', disease_group: row[3]?.toString().trim() || '' } };
+}
+
+// Validates the data rows (row 1 of the sheet is the header); errors carry the sheet row number.
+export function validateICDImportRows(rows) {
+	const icdData = [];
+	const errors = [];
+	rows.forEach((row, index) => {
+		const result = parseICDImportRow(row, index + 2);
+		if (result.error) errors.push(result.error);
+		else icdData.push(result.item);
+		if (!result.skipProgress && index % 100 === 0) updateImportProgress(`Đang validate... ${index + 1}/${rows.length} dòng`, 60 + (index / rows.length) * 10);
+	});
+	return { icdData, validRows: icdData.length, invalidRows: errors.length, errors };
+}
+
 async function importICDData(rows) {
 	try {
 		updateImportProgress('Đang validate dữ liệu...', 60);
 		const { icdData, validRows, invalidRows, errors } = validateICDImportRows(rows);
-
 		updateImportProgress(`Validation hoàn tất: ${validRows} hợp lệ, ${invalidRows} lỗi`, 70);
-
-		if (icdData.length === 0) {
+		if (!icdData.length) {
 			hideImportProgressModal();
 			showImportResult(0, invalidRows, errors);
 			return;
 		}
-
 		updateImportProgress(`Đang gửi ${icdData.length} dòng dữ liệu lên server...`, 80);
-
-		// Gửi dữ liệu lên server
-		const response = await fetch('/api/icd/import', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ icd_list: icdData })
-		});
-
+		const response = await fetch('/api/icd/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icd_list: icdData }) });
 		if (!response.ok) throw new Error('ICD import failed');
 		const result = await response.json();
 		hideImportProgressModal();
 		showImportResult(result.success_count ?? icdData.length, invalidRows, errors, result.errors || []);
-
-		// Đóng modal import và reload data
-		$('#importModal').modal('hide');
-		$('#importFile').val('');
-		loadICDList(currentPage);
-
-	} catch (error) {
+		modal('importModal').hide();
+		byId('importFile').value = '';
+		page.reload();
+	} catch {
 		hideImportProgressModal();
-		showToast('Không thể nhập dữ liệu ICD. Vui lòng kiểm tra tệp và thử lại.', 'error');
+		page.showToast('Không thể nhập dữ liệu ICD. Vui lòng kiểm tra tệp và thử lại.', 'error');
 	}
 }
 
-// Validate từng dòng Excel (dòng 1 là header); trả về dữ liệu hợp lệ và lỗi theo số dòng.
-function validateICDImportRows(rows) {
-	const icdData = [];
-	const errors = [];
-	for (let i = 0; i < rows.length; i++) {
-		const rowNumber = i + 2; // +2 vì bỏ qua header và index bắt đầu từ 0
-		const result = parseICDImportRow(rows[i], rowNumber);
-		if (result.error) errors.push(result.error);
-		else icdData.push(result.item);
-		if (result.skipProgress) continue;
-
-		// Update progress mỗi 100 dòng
-		if (i % 100 === 0) {
-			updateImportProgress(`Đang validate... ${i + 1}/${rows.length} dòng`, 60 + (i / rows.length) * 10);
-		}
-	}
-	return { icdData, validRows: icdData.length, invalidRows: errors.length, errors };
-}
-
-function parseICDImportRow(row, rowNumber) {
-	if (!(row.length >= 2 && row[0] && row[1])) { // Ít nhất có mã ICD và tên bệnh
-		return { error: `Dòng ${rowNumber}: Thiếu mã ICD hoặc tên bệnh` };
-	}
-	const icdCode = row[0]?.toString().trim() || '';
-	const diseaseName = row[1]?.toString().trim() || '';
-	// Validate mã ICD (cho phép chữ, số, dấu chấm, dấu gạch ngang, ký tự đặc biệt ICD)
-	if (!/^[A-Z0-9.†*+-]+$/i.test(icdCode)) return { error: `Dòng ${rowNumber}: Mã ICD không hợp lệ "${icdCode}"`, skipProgress: true };
-	// Validate tên bệnh không được rỗng
-	if (diseaseName.length < 2) return { error: `Dòng ${rowNumber}: Tên bệnh quá ngắn "${diseaseName}"`, skipProgress: true };
-	return { item: {
-		icd_code: icdCode,
-		disease_name: diseaseName,
-		description: row[2]?.toString().trim() || '',
-		disease_group: row[3]?.toString().trim() || ''
-	} };
-}
-
-// Hiển thị modal import progress
-function showImportProgressModal() {
-	// Tạo modal nếu chưa có
-	if (!$('#importProgressModal').length) {
-		$('body').append(`
-            <div class="modal fade qlpk-import-progress-modal" id="importProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="bi bi-upload me-2"></i>Đang import dữ liệu ICD
-                            </h5>
-                        </div>
-                        <div class="modal-body text-center">
-                            <div class="mb-3">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                            <div id="importProgressText" class="mb-3">Đang bắt đầu...</div>
-                            <div class="progress mb-3 icd-import-progress">
-                                <div id="importProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
-                                     role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                    <span id="importProgressPercent">0%</span>
-                                </div>
-                            </div>
-                            <div id="importProgressDetails" class="text-muted small"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-	}
-
-	// Reset progress
-	setImportProgressBar(0);
-	$('#importProgressPercent').text('0%');
-	$('#importProgressText').text('Đang bắt đầu...');
-	$('#importProgressDetails').text('');
-
-	// Hiển thị modal
-	$('#importProgressModal').modal('show');
-}
-
-function setImportProgressBar(percent) {
-	const progressBar = document.getElementById('importProgressBar');
-	if (!progressBar) {
+function importICD() {
+	const file = byId('importFile').files[0];
+	if (!file) {
+		page.showToast('Vui lòng chọn file để import', 'error');
 		return;
 	}
-	progressBar.style.width = `${percent}%`;
-	progressBar.setAttribute('aria-valuenow', percent);
-}
-
-// Cập nhật progress
-function updateImportProgress(text, percent, details = '') {
-	$('#importProgressText').text(text);
-	setImportProgressBar(percent);
-	$('#importProgressPercent').text(`${Math.round(percent)}%`);
-	if (details) {
-		$('#importProgressDetails').text(details);
+	if (!file.name.match(/\.(xlsx|xls)$/)) {
+		page.showToast('Vui lòng chọn file Excel (.xlsx hoặc .xls)', 'error');
+		return;
 	}
+	showImportProgressModal();
+	const reader = new FileReader();
+	reader.onload = event => {
+		try {
+			updateImportProgress('Đang đọc file Excel...', 10);
+			const workbook = window.XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
+			const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 }).slice(1);
+			updateImportProgress('Đang xử lý dữ liệu...', 30);
+			if (!rows.length) {
+				hideImportProgressModal();
+				page.showToast('File không có dữ liệu', 'error');
+				return;
+			}
+			updateImportProgress(`Đã đọc ${rows.length} dòng dữ liệu. Đang validate...`, 50);
+			importICDData(rows);
+		} catch {
+			hideImportProgressModal();
+			page.showToast('Lỗi khi đọc file Excel', 'error');
+		}
+	};
+	reader.readAsArrayBuffer(file);
 }
 
-// Ẩn modal progress
-function hideImportProgressModal() {
-	$('#importProgressModal').modal('hide');
-}
-
-// Hiển thị kết quả import
-function buildImportResultModalHtml(successCount, validationErrors, serverErrors, allErrors) {
-	const totalErrors = validationErrors + serverErrors.length;
-	return `
-            <div class="modal fade" id="importResultModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>Kết quả import
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <div class="card text-center border-success">
-                                        <div class="card-body">
-                                            <h3 class="text-success">${successCount}</h3>
-                                            <p class="mb-0">Thành công</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card text-center border-warning">
-                                        <div class="card-body">
-                                            <h3 class="text-warning">${validationErrors}</h3>
-                                            <p class="mb-0">Lỗi validation</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card text-center border-danger">
-                                        <div class="card-body">
-                                            <h3 class="text-danger">${serverErrors.length}</h3>
-                                            <p class="mb-0">Lỗi server</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            ${allErrors.length > 0 ? `
-                                <div class="alert alert-warning">
-                                    <h6><i class="bi bi-exclamation-triangle me-2"></i>Chi tiết lỗi:</h6>
-                                    <div id="importErrorList" class="qlpk-import-error-list">
-                                        ${allErrors.map(error => `<div class="mb-1"><small>• ${error}</small></div>`).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>Tổng kết:</strong>
-                                Import thành công <strong>${successCount}</strong> dòng,
-                                có <strong>${totalErrors}</strong> dòng lỗi.
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                            ${allErrors.length > 0 ? `
-                                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-warning" data-qlpk-call="exportImportErrors">
-                                    <i class="bi bi-download me-2"></i>Xuất danh sách lỗi
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-}
-
-function updateImportResultModal(successCount, validationErrors, serverErrors, allErrors) {
-	const totalErrors = validationErrors + serverErrors.length;
-	// Cập nhật nội dung modal
-	$('#importResultModal .text-success').text(successCount);
-	$('#importResultModal .text-warning').text(validationErrors);
-	$('#importResultModal .text-danger').text(serverErrors.length);
-
-	if (allErrors.length > 0) {
-		$('#importErrorList').html(allErrors.map(error => `<div class="mb-1"><small>• ${error}</small></div>`).join(''));
-		$('#importResultModal .alert-warning').show();
-	} else {
-		$('#importResultModal .alert-warning').hide();
-	}
-
-	$('#importResultModal .alert-info').html(`
-            <i class="bi bi-info-circle me-2"></i>
-            <strong>Tổng kết:</strong>
-            Import thành công <strong>${successCount}</strong> dòng,
-            có <strong>${totalErrors}</strong> dòng lỗi.
-        `);
-}
-
-function showImportResult(successCount, validationErrors, validationErrorList = [], serverErrors = []) {
-	const totalErrors = validationErrors + serverErrors.length;
-	const allErrors = [...validationErrorList, ...serverErrors];
-
-	// Tạo modal kết quả nếu chưa có
-	if (!$('#importResultModal').length) {
-		$('body').append(buildImportResultModalHtml(successCount, validationErrors, serverErrors, allErrors));
-	} else {
-		updateImportResultModal(successCount, validationErrors, serverErrors, allErrors);
-	}
-
-	// Hiển thị modal
-	$('#importResultModal').modal('show');
-
-	// Hiển thị toast thông báo
-	if (successCount > 0) {
-		showToast(`Import thành công ${successCount} mã ICD`, 'success');
-	}
-	if (totalErrors > 0) {
-		showToast(`Có ${totalErrors} dòng lỗi trong quá trình import`, 'warning');
-	}
-}
-
-// Xuất danh sách lỗi
 function exportImportErrors() {
 	try {
-		// Lấy danh sách lỗi từ modal
-		const errorList = $('#importErrorList').find('small').map(function () {
-			return $(this).text().replace('• ', '');
-		}).get();
-
-		if (errorList.length === 0) {
-			showToast('Không có lỗi để xuất', 'warning');
+		const errors = [...(byId('importErrorList')?.querySelectorAll('small') || [])].map(node => node.textContent.replace('• ', ''));
+		if (!errors.length) {
+			page.showToast('Không có lỗi để xuất', 'warning');
 			return;
 		}
-
-		// Tạo workbook
-		const wb = XLSX.utils.book_new();
-
-		// Tạo worksheet với dữ liệu lỗi
-		const wsData = [
-			['STT', 'Chi tiết lỗi'],
-			...errorList.map((error, index) => [index + 1, error])
-		];
-
-		const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-		// Định dạng header
-		ws['!cols'] = [
-			{ width: 10 }, // STT
-			{ width: 80 }  // Chi tiết lỗi
-		];
-
-		// Thêm worksheet vào workbook
-		XLSX.utils.book_append_sheet(wb, ws, 'Danh sách lỗi import');
-
-		// Xuất file
-		const fileName = `icd_import_errors_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
-		XLSX.writeFile(wb, fileName);
-
-		showToast('Đã xuất danh sách lỗi thành công', 'success');
-
-	} catch (error) {
-		showToast('Lỗi khi xuất danh sách lỗi', 'error');
+		const workbook = window.XLSX.utils.book_new();
+		const sheet = window.XLSX.utils.aoa_to_sheet([['STT', 'Chi tiết lỗi'], ...errors.map((error, index) => [index + 1, error])]);
+		sheet['!cols'] = [{ width: 10 }, { width: 80 }];
+		window.XLSX.utils.book_append_sheet(workbook, sheet, 'Danh sách lỗi import');
+		window.XLSX.writeFile(workbook, `icd_import_errors_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`);
+		page.showToast('Đã xuất danh sách lỗi thành công', 'success');
+	} catch {
+		page.showToast('Lỗi khi xuất danh sách lỗi', 'error');
 	}
+}
+
+export function bindImportExport(callbacks) {
+	page = callbacks;
+	const actions = { template: exportTemplate, open: () => modal('importModal').show(), import: importICD, 'export-errors': exportImportErrors };
+	delegate(document, 'click', '[data-icd-import]', (event, button) => actions[button.dataset.icdImport]?.());
 }

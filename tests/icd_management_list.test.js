@@ -1,136 +1,134 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const vm = require('node:vm');
 const path = require('node:path');
-const { runScriptFile } = require('./helpers/module-source');
+const { loadPage, flush, Event } = require('./helpers/esm-page');
 
-function setup() {
-    const nodes = new Map(), requests = [];
-    function $(selector) {
-        if (!nodes.has(selector)) nodes.set(selector, {
-            visible: true, htmlValue: '', value: '', attributes: {},
-            ready() { return this; }, ajaxSend() { return this; }, ajaxError() { return this; },
-            on() { return this; }, find() { return this; }, not() { return this; }, remove() { return this; },
-            empty() { this.htmlValue = ''; return this; },
-            html(value) { this.htmlValue = value; return this; },
-            append(value) { this.htmlValue += value; return this; },
-            show() { this.visible = true; return this; }, hide() { this.visible = false; return this; },
-            attr(key, value) { if (value === undefined) return this.attributes[key]; this.attributes[key] = value; return this; },
-            prop(key, value) { if (value === undefined) return this.attributes[key]; this.attributes[key] = value; return this; },
-            addClass() { return this; }, removeClass() { return this; },
-            siblings() { return this; },
-            val(value) { if (value === undefined) return this.value; this.value = value; return this; },
-            text(value) { this.textValue = value; return this; }
-        });
-        return nodes.get(selector);
-    }
-    const window = {
-        location: { href: 'https://clinic.test/icd-management.html', origin: 'https://clinic.test' },
-        QLPKSharedUtils: { escapeHtml: value => String(value).replace(/</g, '&lt;') },
-        QLPKHtml: require('./helpers/html-escape').QLPKHtml,
-        fetch(url, options) { return new Promise(resolve => requests.push({url, options, resolve})); }
-    };
-    const context = vm.createContext({window, document: {}, $, Headers, URL, URLSearchParams, setTimeout,
-        localStorage: {getItem: key => key === 'qlpk_token' ? 'active-qa-session' : 'stale-legacy-session'}
-    });
-    Object.defineProperty(context, 'fetch', {get: () => window.fetch});
-    window.localStorage = context.localStorage;
-    runScriptFile(path.join(__dirname, '../app/static/js/shared/api-transport.js'), context);
-    runScriptFile(path.join(__dirname, '../app/static/js/icd-management.js'), context);
-    context.pager = {update(value) { this.value = value; }};
-    vm.runInContext('listPagination = pager;', context);
-    const respond = (request, data, status = 200) => request.resolve({ok: status < 400, status, json: async () => data});
-    const payload = (page, rows, total = 21) => ({data: rows, pagination: {
-        current_page: page, per_page: 10, total_count: total, total_pages: Math.ceil(total / 10)
-    }});
-    return {context, $, requests, respond, payload};
+const template = fs.readFileSync(path.join(__dirname, '../app/templates/icd-management.html'), 'utf8');
+const BODY = template.slice(template.indexOf('<body'), template.lastIndexOf('</body>')).replace(/<script[\s\S]*?<\/script>/g, '').replace(/^<body[^>]*>/, '')
+    .replace("{% include 'partials/clinic-pagination.html' %}", fs.readFileSync(path.join(__dirname, '../app/templates/partials/clinic-pagination.html'), 'utf8'));
+const transport = fs.readFileSync(path.join(__dirname, '../app/static/js/shared/api-transport.js'), 'utf8');
+
+async function setup() {
+    let pager;
+    const page = await loadPage('icd-management.js', { html: BODY, url: 'https://clinic.test/icd-management.html', before(window) {
+        window.localStorage.setItem('qlpk_token', 'active-qa-session');
+        new Function('window', 'document', 'localStorage', transport)(window, window.document, window.localStorage);
+        globalThis.fetch = window.fetch;
+        window.QLPKPagination = { create: () => (pager = { update(value) { this.value = value; } }) };
+        window.QLPKUserFeedback = { show() {} };
+        window.bootstrap = { Modal: { getOrCreateInstance: () => ({ show() {}, hide() {} }) } };
+    } });
+    const $ = selector => page.document.querySelector(selector);
+    const payload = (current, rows, total = 21) => ({ data: rows, pagination: { current_page: current, per_page: 10, total_count: total, total_pages: Math.ceil(total / 10) } });
+    const list = () => page.requests.filter(request => request.url.startsWith('/api/icd/?'));
+    return { ...page, $, payload, list, pager: () => pager, visible: () => $('#clinicPagination').style.display !== 'none' };
 }
 
 test('ICD uses the real shared auth wrapper and sends server pagination/search', async () => {
-    const h = setup();
-    const load = h.context.loadICDList(2);
-    assert.equal(h.requests[0].options.headers.get('Authorization'), 'Bearer active-qa-session');
-    assert.match(h.requests[0].url, /skip=10&limit=10/);
-    assert.equal(h.$('#clinicPagination').visible, false);
-    h.respond(h.requests[0], h.payload(2, [{id: 11, icd_code: 'A01', disease_name: 'Tên bệnh', created_at: null}]));
+    const h = await setup();
+    const load = h.module.loadICDList(2);
+    const request = h.list().at(-1);
+    assert.equal(request.headers.get('Authorization'), 'Bearer active-qa-session');
+    assert.match(request.url, /skip=10&limit=10/);
+    assert.equal(h.visible(), false);
+    request.respond(200, h.payload(2, [{ id: 11, icd_code: 'A01', disease_name: 'Tên bệnh', created_at: null }]));
     await load;
-    assert.match(h.$('#icdTableBody').htmlValue, /A01/);
-    assert.equal(h.context.pager.value.page, 2);
-    assert.equal(h.$('#clinicPagination').visible, true);
-    h.$('#searchInput').val('bệnh'); h.$('#diseaseGroupFilter').val('Nhóm');
-    h.context.searchICD();
-    const query = new URL(h.requests[1].url, 'http://localhost').searchParams;
-    assert.equal(query.get('skip'), '0'); assert.equal(query.get('search'), 'bệnh');
+    assert.match(h.$('#icdTableBody').textContent, /A01/);
+    assert.equal(h.pager().value.page, 2);
+    assert.equal(h.visible(), true);
+    h.$('#searchInput').value = 'bệnh';
+    const option = h.document.createElement('option');
+    option.setAttribute('value', 'Nhóm');
+    h.$('#diseaseGroupFilter').append(option);
+    h.$('#diseaseGroupFilter').value = 'Nhóm';
+    h.$('#icdSearchForm').dispatchEvent(new Event('submit'));
+    const query = new URL(h.list().at(-1).url, 'http://localhost').searchParams;
+    assert.equal(query.get('skip'), '0');
+    assert.equal(query.get('search'), 'bệnh');
     assert.equal(query.get('disease_group'), 'Nhóm');
 });
 
 test('failed requests show retry, not empty data or a misleading zero pager', async () => {
-    const h = setup(); const load = h.context.loadICDList();
-    h.respond(h.requests[0], {}, 500); await load;
-    assert.match(h.$('#icdTableBody').htmlValue, /retryICDList/);
-    assert.equal(h.$('#clinicPagination').visible, false);
-    assert.equal(h.$('#icdTableBody').attributes['aria-busy'], 'false');
-    const retry = h.context.loadICDList();
-    h.respond(h.requests[1], h.payload(1, [], 0)); await retry;
-    assert.match(h.$('#icdTableBody').htmlValue, /Không tìm thấy/);
-    assert.equal(h.$('#clinicPagination').visible, true);
+    const h = await setup();
+    const load = h.module.loadICDList();
+    h.list().at(-1).respond(500, {});
+    await load;
+    assert.ok(h.$('#icdTableBody #retryICDList'));
+    assert.equal(h.visible(), false);
+    assert.equal(h.$('#icdTableBody').getAttribute('aria-busy'), 'false');
+    h.$('#retryICDList').click();
+    h.list().at(-1).respond(200, h.payload(1, [], 0));
+    await flush();
+    assert.match(h.$('#icdTableBody').textContent, /Không tìm thấy/);
+    assert.equal(h.visible(), true);
 });
 
 test('late responses cannot replace the newer result or clear its loading state', async () => {
-    const h = setup(); const first = h.context.loadICDList(1), second = h.context.loadICDList(2);
-    h.respond(h.requests[0], h.payload(1, [])); await first;
-    assert.equal(h.$('#icdTableBody').attributes['aria-busy'], 'true');
-    h.respond(h.requests[1], h.payload(2, [{id: 2, icd_code: 'NEW', disease_name: 'Mới'}])); await second;
-    assert.match(h.$('#icdTableBody').htmlValue, /NEW/);
-    assert.equal(h.context.pager.value.page, 2);
+    const h = await setup();
+    const first = h.module.loadICDList(1);
+    const firstRequest = h.list().at(-1);
+    const second = h.module.loadICDList(2);
+    const secondRequest = h.list().at(-1);
+    firstRequest.respond(200, h.payload(1, []));
+    await first;
+    assert.equal(h.$('#icdTableBody').getAttribute('aria-busy'), 'true');
+    secondRequest.respond(200, h.payload(2, [{ id: 2, icd_code: 'NEW', disease_name: 'Mới' }]));
+    await second;
+    assert.match(h.$('#icdTableBody').textContent, /NEW/);
+    assert.equal(h.pager().value.page, 2);
 });
 
 test('a deleted last-page row returns the list to the last valid server page', async () => {
-    const h = setup(); const load = h.context.loadICDList(3);
-    h.respond(h.requests[0], h.payload(3, [], 11));
-    await new Promise(resolve => setImmediate(resolve));
-    assert.match(h.requests[1].url, /skip=10/);
-    h.respond(h.requests[1], h.payload(2, [{id: 11, icd_code: 'LAST', disease_name: 'Cuối'}], 11));
-    await load; assert.equal(h.context.pager.value.page, 2);
+    const h = await setup();
+    const load = h.module.loadICDList(3);
+    h.list().at(-1).respond(200, h.payload(3, [], 11));
+    await flush();
+    assert.match(h.list().at(-1).url, /skip=10/);
+    h.list().at(-1).respond(200, h.payload(2, [{ id: 11, icd_code: 'LAST', disease_name: 'Cuối' }], 11));
+    await load;
+    assert.equal(h.pager().value.page, 2);
 });
 
 test('ICD ignores repeated saves while pending and unlocks the real form buttons on failure', async () => {
-    const h = setup();
-    const template = fs.readFileSync(path.join(__dirname, '../app/templates/icd-management.html'), 'utf8');
-    for (const formId of ['addICDForm', 'editICDForm']) {
-        const form = template.match(new RegExp(`<form id="${formId}">([\\s\\S]*?)</form>`));
-        assert.ok(form && /<button\b[^>]*type="submit"/.test(form[1]), 'The selector must target an actual submit button');
-    }
-    h.context.validateForm = () => true;
-    const buttons = h.$('#addICDForm button[type="submit"], #editICDForm button[type="submit"]');
-    const first = h.context.saveICD();
-    await h.context.saveICD();
-    assert.equal(h.requests.length, 1);
-    assert.equal(buttons.attributes.disabled, true);
-    assert.equal(buttons.attributes['aria-busy'], 'true');
-    h.respond(h.requests[0], {}, 500);
+    const h = await setup();
+    const buttons = [...h.document.querySelectorAll('#addICDForm button[type="submit"], #editICDForm button[type="submit"]')];
+    assert.equal(buttons.length, 2);
+    h.$('#icdCode').value = 'A00';
+    h.$('#diseaseName').value = 'Tả';
+    const saves = () => h.requests.filter(request => request.init.method === 'POST');
+    const first = h.module.saveICD();
+    await h.module.saveICD();
+    assert.equal(saves().length, 1);
+    assert.ok(buttons.every(button => button.disabled && button.getAttribute('aria-busy') === 'true'));
+    saves()[0].respond(500, {});
     await first;
-    assert.equal(buttons.attributes.disabled, false);
-    assert.equal(buttons.attributes['aria-busy'], 'false');
-    const retry = h.context.saveICD();
-    assert.equal(h.requests.length, 2);
-    h.respond(h.requests[1], {}, 500);
+    assert.ok(buttons.every(button => !button.disabled && button.getAttribute('aria-busy') === 'false'));
+    const retry = h.module.saveICD();
+    assert.equal(saves().length, 2);
+    saves()[1].respond(500, {});
     await retry;
 });
 
-test('ICD format validation is wired to both actual template inputs', () => {
-    const h = setup();
-    const template = fs.readFileSync(path.join(__dirname, '../app/templates/icd-management.html'), 'utf8');
+test('ICD format validation is wired to both actual template inputs', async () => {
+    const h = await setup();
     for (const id of ['icdCode', 'editICDCode']) {
-        const input = template.match(new RegExp(`<input[^>]*id="${id}"[^>]*>`))[0];
         const field = h.$('#' + id);
-        field.attr('name', input.match(/name="([^"]+)"/)?.[1]);
-        field.prop('required', /\brequired\b/.test(input));
-        field.val('A00 invalid!');
-        assert.equal(h.context.validateField(field), false);
-        assert.match(field.textValue, /Mã ICD chỉ được chứa/);
-        field.val('A00.0');
-        assert.equal(h.context.validateField(field), true);
+        field.value = 'A00 invalid!';
+        field.dispatchEvent(new Event('blur', { bubbles: false }));
+        assert.ok(field.classList.contains('is-invalid'));
+        assert.match(field.parentElement.querySelector('.invalid-feedback').textContent, /Mã ICD chỉ được chứa/);
+        field.value = 'A00.0';
+        assert.equal(h.module.validateField(field), true);
+        assert.ok(field.classList.contains('is-valid'));
     }
+});
+
+test('ICD rows render codes and names as text', async () => {
+    const h = await setup();
+    const load = h.module.loadICDList(1);
+    h.list().at(-1).respond(200, h.payload(1, [{ id: 5, icd_code: '<b>X</b>', disease_name: '<img src=x>', created_at: null }], 1));
+    await load;
+    assert.equal(h.$('#icdTableBody img, #icdTableBody b'), null);
+    assert.equal(h.$('#icdTableBody [data-icd-action="delete"]').dataset.icdCode, '<b>X</b>');
 });
