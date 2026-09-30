@@ -1,14 +1,15 @@
 // JSON requests through the app transport (window.fetch is wrapped by shared/api-transport.js,
 // which adds the session header/cookie and blocks responses that cross an account switch).
 // Resolves with the parsed body for 2xx; rejects with HttpError (status + parsed body) otherwise,
-// matching the success/error split the pages previously got from $.ajax.
+// matching the success/error split the pages previously got from jQuery ajax.
 
 export class HttpError extends Error {
-	constructor(status, data) {
+	constructor(status, data, headers = null) {
 		super(`HTTP ${status}`);
 		this.name = 'HttpError';
 		this.status = status;
 		this.data = data;
+		this.headers = headers;
 	}
 }
 
@@ -22,8 +23,8 @@ async function readBody(response) {
 	}
 }
 
-export async function requestJson(url, { method = 'GET', json, body, signal } = {}) {
-	const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+export async function requestJson(url, { method = 'GET', json, body, signal, headers: extraHeaders } = {}) {
+	const headers = { 'X-Requested-With': 'XMLHttpRequest', ...extraHeaders };
 	let payload = body;
 	if (json !== undefined) {
 		headers['Content-Type'] = 'application/json';
@@ -31,7 +32,7 @@ export async function requestJson(url, { method = 'GET', json, body, signal } = 
 	}
 	const response = await window.fetch(url, { method, headers, body: payload, signal, credentials: 'same-origin' });
 	const data = await readBody(response);
-	if (!response.ok) throw new HttpError(response.status, data);
+	if (!response.ok) throw new HttpError(response.status, data, response.headers);
 	return data;
 }
 

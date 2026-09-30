@@ -48,8 +48,8 @@ test('semantic button palette stays shared and loading keeps its existing DOM', 
     const script = fs.readFileSync('app/static/js/login.js', 'utf8');
     assert.match(template, /data-qlpk-button="execute" data-qlpk-button-variant="solid"/);
     assert.doesNotMatch(css, /\.btn-login[^{}]*\{[^}]*background:/);
-    assert.doesNotMatch(script, /\.html\(/);
-    assert.match(script, /setLoginPending\(submitBtn, true\)/);
-    assert.match(script, /setLoginPending\(submitBtn, false\)/);
+    assert.doesNotMatch(script, /\.html\(|innerHTML/);
+    assert.match(script, /view\.setPending\(true\)/);
+    assert.match(script, /view\.setPending\(false\)/);
     assert.match(css, /prefers-reduced-motion: reduce/);
 });
