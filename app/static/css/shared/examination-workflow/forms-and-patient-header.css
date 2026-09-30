@@ -29,7 +29,6 @@
 	font-weight: var(--qlpk-control-font-weight, var(--qlpk-font-weight-medium, 500));
 }
 
-
 @keyframes pulse-badge {
 	0%,
 	100% {
@@ -207,17 +206,6 @@ textarea.examination-input:disabled {
 		font-size: var(--qlpk-font-size-md, 0.875rem);
 		line-height: 1.4;
 	}
-}
-
-.card-header .btn-outline-primary {
-	border-radius: 0.5rem;
-	font-size: var(--qlpk-font-size-md, 0.875rem);
-}
-.card-header .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--qlpk-palette-blue-89-d);
-	color: var(--qlpk-color-primary);
-	background: var(--qlpk-color-white);
-	transition: all 0.2s ease;
 }
 
 .card-header h5 {

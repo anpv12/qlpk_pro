@@ -64,7 +64,7 @@
 			documentsList.querySelectorAll('button').forEach(btn => {
 				const action = btn.getAttribute('data-action');
 				const role = btn.getAttribute('data-role');
-				const isDeleteButton = action === 'delete' || action === 'server-delete' || action === 'draft-delete' || role === 'draft-delete' || btn.classList.contains('btn-outline-danger');
+				const isDeleteButton = action === 'delete' || action === 'server-delete' || action === 'draft-delete' || role === 'draft-delete';
 				if (isDeleteButton) {
 					btn.disabled = locked;
 					btn.style.pointerEvents = locked ? 'none' : '';

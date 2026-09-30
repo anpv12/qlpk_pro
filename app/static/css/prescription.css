@@ -196,15 +196,7 @@
     box-shadow: 0 0 0 0.2rem var(--qlpk-alpha-blue-26-25);
 }
 /* Button styles matching Figma design */
-.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-    border-color: var(--qlpk-color-primary);
-    color: var(--qlpk-color-primary);
-}
-.btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background: var(--qlpk-workflow-context-header-bg);
-    border-color: var(--qlpk-color-primary);
-    color: white;
-}
+
 .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
     background: var(--qlpk-workflow-context-header-bg);
     border-color: var(--qlpk-color-primary);
@@ -212,16 +204,6 @@
 .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
     background-color: var(--qlpk-palette-blue-20-c);
     border-color: var(--qlpk-palette-blue-20-c);
-}
-
-.btn-outline-danger:not([data-qlpk-button], [data-qlpk-button] *) {
-    border-color: var(--qlpk-palette-red-54);
-    color: var(--qlpk-palette-red-54);
-}
-.btn-outline-danger:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-    background-color: var(--qlpk-palette-red-54);
-    border-color: var(--qlpk-palette-red-54);
-    color: white;
 }
 
 /* Responsive design */

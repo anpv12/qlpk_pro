@@ -66,7 +66,7 @@ function confirmInvoice(examinationId) {
 					disableInvoiceForm();
 
 					// Đổi text nút thành "Đã xác nhận"
-					$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+					$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true);
 
 					// Refresh danh sách sau khi xác nhận
 					loadPaymentData();

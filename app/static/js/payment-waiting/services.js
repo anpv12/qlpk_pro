@@ -41,7 +41,7 @@ function renderServicesTable(services) {
                 <td class="text-end pw-invoice-col-price">${formatCurrency(totalAmount)}</td>
                 <td class="text-center pw-invoice-col-actions">
                     <div class="d-flex gap-1 justify-content-center">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary js-edit-service" data-service-id="${safeServiceId}" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm js-edit-service" data-service-id="${safeServiceId}" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-danger js-delete-service" data-service-id="${safeServiceId}" title="Xóa dịch vụ">

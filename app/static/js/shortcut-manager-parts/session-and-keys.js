@@ -246,13 +246,13 @@
 
 			const tdAction = document.createElement('td');
 			const editBtn = document.createElement('button');
-			editBtn.className = 'btn btn-sm btn-outline-primary';
+			editBtn.className = 'btn btn-sm';
 			editBtn.dataset.qlpkButton = 'edit';
 			editBtn.dataset.qlpkButtonVariant = 'soft';
 			editBtn.dataset.action = 'edit';
 			editBtn.textContent = 'Sửa';
 			const delBtn = document.createElement('button');
-			delBtn.className = 'btn btn-sm btn-outline-danger';
+			delBtn.className = 'btn btn-sm';
 			delBtn.dataset.qlpkButton = 'danger';
 			delBtn.dataset.qlpkButtonVariant = 'soft';
 			delBtn.dataset.action = 'delete';

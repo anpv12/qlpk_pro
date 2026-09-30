@@ -248,24 +248,19 @@ body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
 	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--qlpk-color-white);
 }
-.qlpk-admin-page .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
+
 .qlpk-admin-page .btn-outline:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-success:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--qlpk-brown-200);
 	background: var(--admin-surface);
 	color: var(--qlpk-brown-700);
 }
-.qlpk-admin-page .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+
 .qlpk-admin-page .btn-outline:hover:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	border-color: var(--qlpk-brown-300);
 	background: var(--qlpk-brown-100);
 	color: var(--qlpk-brown-700);
-}
-.qlpk-admin-page .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	border-color: var(--admin-success);
-	background: var(--admin-success);
-	color: var(--qlpk-color-white);
 }
 .qlpk-admin-page .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *),
 .qlpk-admin-page .btn-outline-secondary:not([data-qlpk-button], [data-qlpk-button] *) {

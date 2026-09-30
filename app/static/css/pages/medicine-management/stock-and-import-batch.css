@@ -201,7 +201,7 @@
   --bs-btn-focus-box-shadow: var(--mm-import-focus-shadow);
   box-shadow: none;
 }
-.medicine-management-page .modal.qlpk-import-batch-modal :is(.btn-outline-primary, .btn-outline-secondary):not([data-qlpk-button], [data-qlpk-button] *) {
+.medicine-management-page .modal.qlpk-import-batch-modal :is(.btn-outline-secondary):not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-color: var(--mm-import-control-text);
   --bs-btn-bg: var(--qlpk-color-surface);
   --bs-btn-border-color: var(--qlpk-color-border);
@@ -219,20 +219,6 @@
   outline: .125rem solid var(--qlpk-color-primary);
   outline-offset: .125rem;
   box-shadow: var(--mm-import-focus-shadow);
-}
-.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-  transition-property: border-color, box-shadow;
-  --bs-btn-hover-color: var(--qlpk-color-white);
-  --bs-btn-hover-bg: var(--qlpk-color-primary);
-  --bs-btn-hover-border-color: var(--qlpk-color-primary);
-  --bs-btn-active-color: var(--qlpk-color-white);
-  --bs-btn-active-bg: var(--qlpk-color-primary);
-  --bs-btn-active-border-color: var(--qlpk-color-primary);
-}
-.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-primary:not(:disabled):not(.disabled):is(:hover, :focus-visible, :active, .active):not([data-qlpk-button], [data-qlpk-button] *) {
-  color: var(--qlpk-color-white);
-  background: var(--qlpk-workflow-context-header-bg);
-  border-color: var(--qlpk-color-primary);
 }
 .medicine-management-page .modal.qlpk-import-batch-modal .mm-receipt-history-button:not([data-qlpk-button], [data-qlpk-button] *) {
   --bs-btn-color: var(--qlpk-color-primary);
@@ -256,16 +242,6 @@
 .medicine-management-page .modal.qlpk-import-batch-modal .mm-missing-price-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
   outline: 0.125rem solid var(--mm-import-danger);
   outline-offset: 0.125rem;
-}
-.medicine-management-page .modal.qlpk-import-batch-modal .btn-outline-danger:not([data-qlpk-button], [data-qlpk-button] *) {
-  --bs-btn-color: var(--mm-import-danger);
-  --bs-btn-border-color: var(--mm-import-danger);
-  --bs-btn-hover-color: var(--qlpk-color-surface);
-  --bs-btn-hover-bg: var(--mm-import-danger);
-  --bs-btn-hover-border-color: var(--mm-import-danger);
-  --bs-btn-active-color: var(--qlpk-color-surface);
-  --bs-btn-active-bg: var(--mm-import-danger);
-  --bs-btn-active-border-color: var(--mm-import-danger);
 }
 .medicine-management-page .modal.qlpk-import-batch-modal .batch-price-diff {
   --bs-danger-rgb: var(--qlpk-feedback-neutral-rgb);

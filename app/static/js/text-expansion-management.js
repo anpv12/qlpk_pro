@@ -109,10 +109,10 @@ function displayTextExpansions(data) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" data-qlpk-call="editTextExpansion" data-qlpk-args='[${item.id}]' title="Sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="editTextExpansion" data-qlpk-args='[${item.id}]' title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-qlpk-call="deleteTextExpansion" data-qlpk-args='[${item.id}]' title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="deleteTextExpansion" data-qlpk-args='[${item.id}]' title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

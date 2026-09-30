@@ -39,9 +39,7 @@ function loadExaminationDetailModal(paymentId) {
 	// Reset trạng thái nút "Xác nhận hoá đơn" về mặc định khi mở modal mới
 	$('#exportInvoiceBtn')
 		.text('Xác nhận hoá đơn')
-		.prop('disabled', false)
-		.removeClass('btn-secondary')
-		.addClass('btn-success');
+		.prop('disabled', false);
 
 	$('#examinationDetailModal').modal('show');
 
@@ -73,7 +71,7 @@ function loadExaminationDetailModal(paymentId) {
                         <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary me-2 js-retry-load-invoice" data-payment-id="${Number(paymentId) || 0}">
                             <i class="bi bi-arrow-clockwise me-2"></i>Thử lại
                         </button>
-                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-outline-primary js-go-login">
+                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn js-go-login">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập lại
                         </button>
                     </div>
@@ -290,7 +288,7 @@ function renderExaminationDetailContent(data, examinationId) {
 	// Nếu đã xác nhận, disable form (sau khi load data)
 	if (isConfirmed) {
 		disableInvoiceForm();
-		$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+		$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true);
 	}
 
 	// ===== KHỞI TẠO FLATPICKR SAU KHI RENDER HTML XONG =====

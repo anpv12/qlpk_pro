@@ -20,8 +20,7 @@
 	--bs-border-color: var(--qlpk-color-border);
 	--bs-tertiary-bg: var(--qlpk-color-brown-soft);
 }
-.btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
-.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+.btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 	--bs-btn-border-color: var(--qlpk-color-primary);
 	--bs-btn-hover-bg: var(--qlpk-color-primary-strong);
 	--bs-btn-hover-border-color: var(--qlpk-color-primary-strong);
@@ -38,16 +37,7 @@
 	--bs-btn-disabled-bg: var(--qlpk-color-primary);
 	--bs-btn-disabled-color: var(--qlpk-color-white);
 }
-.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	--bs-btn-color: var(--qlpk-color-primary);
-	--bs-btn-disabled-color: var(--qlpk-color-primary);
-}
 .btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
-.btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
-.btn-outline-primary:active:not([data-qlpk-button], [data-qlpk-button] *),
-.btn-outline-primary.active:not([data-qlpk-button], [data-qlpk-button] *),
-.btn-check:checked + .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
-.show > .btn-outline-primary.dropdown-toggle:not([data-qlpk-button], [data-qlpk-button] *),
 .bg-primary,
 .text-bg-primary,
 .nav-pills .nav-link.active,

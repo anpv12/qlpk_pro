@@ -101,8 +101,8 @@
 				<td>
 					<div class="d-flex gap-1">
 						<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-secondary" title="Xem" data-qlpk-call="DrugInteraction.view" data-qlpk-args='[${item.id}]'><i class="bi bi-eye"></i></button>
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary" title="Sửa" data-qlpk-call="DrugInteraction.edit" data-qlpk-args='[${item.id}]'><i class="bi bi-pencil"></i></button>
-						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" title="Xóa" data-qlpk-call="DrugInteraction.remove" data-qlpk-args='[${item.id}]'><i class="bi bi-trash"></i></button>
+						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm" title="Sửa" data-qlpk-call="DrugInteraction.edit" data-qlpk-args='[${item.id}]'><i class="bi bi-pencil"></i></button>
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" title="Xóa" data-qlpk-call="DrugInteraction.remove" data-qlpk-args='[${item.id}]'><i class="bi bi-trash"></i></button>
 					</div>
 				</td>
 			</tr>`;

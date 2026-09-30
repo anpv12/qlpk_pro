@@ -71,10 +71,10 @@ function renderPaymentTable() {
                 <td>${getStatusBadge(payment)}</td>
                 <td class="text-center">
                     <div class="d-flex gap-1 justify-content-center">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary js-edit-payment" data-payment-id="${safeId}" title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm js-edit-payment" data-payment-id="${safeId}" title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger js-delete-payment" data-payment-id="${safeId}" title="Trả lại">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm js-delete-payment" data-payment-id="${safeId}" title="Trả lại">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

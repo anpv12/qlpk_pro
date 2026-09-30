@@ -93,10 +93,10 @@
             </span>
           </td>
           <td>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" data-qlpk-call="editService" data-qlpk-args='[${service.id}]' aria-label="Sửa dịch vụ" title="Sửa dịch vụ">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm me-1" data-qlpk-call="editService" data-qlpk-args='[${service.id}]' aria-label="Sửa dịch vụ" title="Sửa dịch vụ">
               <i class="bi bi-pencil"></i>
             </button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-qlpk-call="deleteService" data-qlpk-args='[${service.id}]' aria-label="Xóa dịch vụ" title="Xóa dịch vụ">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="deleteService" data-qlpk-args='[${service.id}]' aria-label="Xóa dịch vụ" title="Xóa dịch vụ">
               <i class="bi bi-trash"></i>
             </button>
           </td>

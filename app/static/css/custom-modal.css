@@ -184,20 +184,6 @@
 	color: var(--qlpk-palette-gray-46);
 }
 /* Success button state */
-.btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-palette-green-41);
-	border-color: var(--qlpk-palette-green-41);
-	color: white;
-}
-.btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-palette-green-33);
-	border-color: var(--qlpk-palette-green-31);
-}
-.btn-success:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-palette-gray-46);
-	border-color: var(--qlpk-palette-gray-46);
-	opacity: 0.6;
-}
 
 /* Print button always active */
 .invoice-confirmed .qlpk-print-invoice-btn {

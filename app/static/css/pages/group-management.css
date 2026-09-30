@@ -98,14 +98,6 @@
 .modal-footer .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
 			background: var(--qlpk-workflow-context-header-bg);
 }
-.modal-footer .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-			color: var(--qlpk-color-primary);
-			border-color: var(--qlpk-color-primary);
-}
-.modal-footer .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-			background: var(--qlpk-workflow-context-header-bg);
-			color: var(--qlpk-color-white);
-}
 
 .gm-filter-search {
 	flex: 1;

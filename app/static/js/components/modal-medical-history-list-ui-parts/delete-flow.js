@@ -292,7 +292,7 @@
 		}
 		if (options.showDeleteAction !== false) {
 			actionButtons.push(`
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
                             <i class="bi bi-trash"></i>
                         </button>
                     `);

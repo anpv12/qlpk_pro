@@ -105,8 +105,8 @@ METRICS = [
         pattern=r"\bbtn-(?:outline-primary|outline-danger|success)\b",
         roots=("app/templates", "app/static/templates", "app/static/js", "app/static/css"),
         suffixes=(".html", ".js", ".css"),
-        max_count=210,
-        description="Legacy raw Bootstrap action styling is locked; use QLPKIconSystem for new repeated actions.",
+        max_count=0,
+        description="Raw Bootstrap action classes are gone (97 -> 0 on 30/09/2026); actions use data-qlpk-button (+ variant).",
     ),
 	Metric(
 		name="css_important",

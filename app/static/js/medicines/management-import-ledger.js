@@ -110,7 +110,7 @@ function buildImportLedgerRow(batch) {
     const actionCell = textCell('', 'text-center');
     const action = document.createElement('button');
     action.type = 'button';
-    action.className = 'btn btn-sm btn-outline-primary mm-receipt-history-button';
+    action.className = 'btn btn-sm mm-receipt-history-button';
     action.dataset.qlpkButton = 'view';
     action.dataset.qlpkButtonVariant = 'soft';
     action.textContent = 'Lịch sử kê đơn';

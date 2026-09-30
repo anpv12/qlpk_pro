@@ -72,7 +72,7 @@ function renderSuppliersTable(suppliersList) {
                 </span>
             </td>
             <td class="mm-supplier-actions-cell">
-                <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-sm btn-success me-1" data-qlpk-call="selectSupplierForBatch" data-qlpk-args='[${supplier.id}]' title="Chọn cho đơn nhập kho">
+                <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-sm me-1" data-qlpk-call="selectSupplierForBatch" data-qlpk-args='[${supplier.id}]' title="Chọn cho đơn nhập kho">
                     <i class="bi bi-check-circle"></i>
                 </button>
                 <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-primary me-1" data-qlpk-call="editSupplier" data-qlpk-args='[${supplier.id}]' title="Sửa">

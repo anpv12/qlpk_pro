@@ -43,9 +43,9 @@
           <div class="qlpk-admin-toolbar-top">
             <div class="qlpk-admin-actions">
               <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="showAddModal"><i class="bi bi-plus-circle me-2"></i>Thêm từ viết tắt</button>
-              <button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-qlpk-call="showImportModal"><i class="bi bi-upload me-1"></i>Import Excel</button>
-              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-qlpk-call="exportToExcel"><i class="bi bi-download me-1"></i>Export Excel</button>
-              <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-danger" data-qlpk-call="resetAll"><i class="bi bi-arrow-clockwise me-1"></i>Reset toàn bộ</button>
+              <button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn" data-qlpk-call="showImportModal"><i class="bi bi-upload me-1"></i>Import Excel</button>
+              <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn" data-qlpk-call="exportToExcel"><i class="bi bi-download me-1"></i>Export Excel</button>
+              <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn" data-qlpk-call="resetAll"><i class="bi bi-arrow-clockwise me-1"></i>Reset toàn bộ</button>
             </div>
             <div class="qlpk-clinic-summary" role="group" aria-label="Tổng quan từ viết tắt"><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Tổng từ viết tắt</span><span class="qlpk-clinic-summary__value" id="totalCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Đang hoạt động</span><span class="qlpk-clinic-summary__value" id="activeCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Không hoạt động</span><span class="qlpk-clinic-summary__value" id="inactiveCount">0</span></div><div class="qlpk-clinic-summary__item"><span class="qlpk-clinic-summary__label">Phân loại</span><span class="qlpk-clinic-summary__value" id="categoryCount">0</span></div></div>
           </div>
@@ -171,7 +171,7 @@
             <strong>Lưu ý:</strong> File Excel phải có các cột: abbreviation, full_text, category (tùy chọn), description (tùy chọn), is_active (tùy chọn)
           </div>
           <div class="mb-3">
-            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary btn-sm" data-qlpk-call="downloadTemplate">
+            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm" data-qlpk-call="downloadTemplate">
               <i class="bi bi-download me-1"></i>Tải file mẫu
             </button>
           </div>

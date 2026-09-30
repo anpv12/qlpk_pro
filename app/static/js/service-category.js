@@ -59,10 +59,10 @@
           </td>
           <td>${new Date(category.created_at).toLocaleDateString('vi-VN')}</td>
           <td>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-primary me-1" data-qlpk-call="editCategory" data-qlpk-args='[${category.id}]' aria-label="Sửa danh mục" title="Sửa danh mục">
+            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm me-1" data-qlpk-call="editCategory" data-qlpk-args='[${category.id}]' aria-label="Sửa danh mục" title="Sửa danh mục">
               <i class="bi bi-pencil"></i>
             </button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-danger" data-qlpk-call="deleteCategory" data-qlpk-args='[${category.id}]' aria-label="Xóa danh mục" title="Xóa danh mục">
+            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="deleteCategory" data-qlpk-args='[${category.id}]' aria-label="Xóa danh mục" title="Xóa danh mục">
               <i class="bi bi-trash"></i>
             </button>
           </td>

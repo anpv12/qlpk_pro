@@ -117,7 +117,7 @@ function addBatchImportRow() {
 	        <span class="batch-row-total fw-bold">0 ₫</span>
       </td>
       <td>
-        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-danger mm-import-remove" aria-label="Xóa dòng thuốc" title="Xóa dòng thuốc" data-qlpk-call="removeBatchRowAndUpdateTotal" data-qlpk-args='["${rowId}"]'>
+        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-sm mm-import-remove" aria-label="Xóa dòng thuốc" title="Xóa dòng thuốc" data-qlpk-call="removeBatchRowAndUpdateTotal" data-qlpk-args='["${rowId}"]'>
           <i class="bi bi-trash" aria-hidden="true"></i>
         </button>
       </td>

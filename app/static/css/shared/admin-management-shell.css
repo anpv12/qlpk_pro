@@ -72,14 +72,6 @@ body {
 .filter-bar .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-workflow-context-header-bg);
 }
-.filter-bar .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	color: var(--qlpk-color-primary);
-	border-color: var(--qlpk-color-primary);
-}
-.filter-bar .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-workflow-context-header-bg);
-	color: var(--qlpk-color-white);
-}
 
 .card {
 	background: var(--qlpk-color-white);
@@ -90,11 +82,6 @@ body {
 	border-color: var(--qlpk-color-primary);
 	color: var(--qlpk-color-white);
 }
-.btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-palette-green-36-a);
-	border-color: var(--qlpk-palette-green-36-a);
-	color: var(--qlpk-color-white);
-}
 
 .btn-warning {
 	border: none;
@@ -102,15 +89,6 @@ body {
 .btn-warning:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-palette-amber-75);
 	color: var(--qlpk-palette-gray-20-a);
-}
-.btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *) {
-	color: var(--qlpk-color-primary);
-	border-color: var(--qlpk-palette-gray-73);
-	background: var(--qlpk-color-white);
-}
-.btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background: var(--qlpk-color-primary-soft);
-	color: var(--qlpk-color-primary);
 }
 .add-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	box-shadow: 0 0.125rem 0.5rem 0 rgba(var(--qlpk-color-primary-rgb), 0.08);

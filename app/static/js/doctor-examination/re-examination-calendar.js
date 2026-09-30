@@ -147,10 +147,10 @@ function installReExamCalendarFns3(ctx) {
 				<main class="doctor-reexam-calendar__main"><div class="doctor-reexam-calendar__notice" data-reexam="loading" role="status"></div><div data-reexam="calendar"></div></main>
 			</div>
 			<footer class="doctor-reexam-calendar__footer"><div><strong data-reexam="selection"></strong><div><small>Bấm Lưu ở màn khám để lưu thay đổi.</small></div><p data-reexam="error" role="alert" hidden></p></div><div class="doctor-reexam-calendar__actions">
-				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" data-reexam="clear" class="btn btn-outline-danger btn-sm">Bỏ hẹn tái khám</button>
+				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" data-reexam="clear" class="btn btn-sm">Bỏ hẹn tái khám</button>
 				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="retry" class="btn btn-outline-secondary btn-sm" hidden>Thử lại</button>
 				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close" class="btn btn-outline-secondary btn-sm">Đóng</button>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" data-reexam="confirm" class="btn btn-success btn-sm">✓ Xác nhận lịch tái khám</button>
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" data-reexam="confirm" class="btn btn-sm">✓ Xác nhận lịch tái khám</button>
 			</div></footer>
 			<dialog class="doctor-reexam-calendar__detail" data-reexam="detail" aria-labelledby="doctorReexamDetailTitle">
 				<h3 id="doctorReexamDetailTitle">Lịch hẹn trong ngày</h3><div data-reexam="detail-content"></div>

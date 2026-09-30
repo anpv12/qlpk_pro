@@ -113,7 +113,7 @@
                     <div class="muted-line mt-1">Đến: ${escapeHtml(formatDate(item.registration_expiry_date))}</div>
                 </td>
                 <td>
-                    <button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary reference-detail-btn" data-id="${item.id}" title="Xem chi tiết">
+                    <button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-sm reference-detail-btn" data-id="${item.id}" title="Xem chi tiết">
                         <i class="bi bi-eye"></i>
                     </button>
                 </td>

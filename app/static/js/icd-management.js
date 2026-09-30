@@ -71,7 +71,7 @@ function setupEventListeners() {
 function renderICDState(message, retry = false) {
 	$('#icdTableBody').html(`<tr><td colspan="6" class="text-center py-4">
 		<div role="status">${window.QLPKSharedUtils.escapeHtml(message)}</div>
-		${retry ? '<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="retryICDList" class="btn btn-outline-primary mt-2">Thử lại</button>' : ''}
+		${retry ? '<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="retryICDList" class="btn mt-2">Thử lại</button>' : ''}
 	</td></tr>`);
 }
 
@@ -153,10 +153,10 @@ function renderICDList(icdList) {
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-primary" data-qlpk-call="editICD" data-qlpk-args='[${icd.id}]' title="Chỉnh sửa">
+                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn" data-qlpk-call="editICD" data-qlpk-args='[${icd.id}]' title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" data-qlpk-call="deleteICD" data-qlpk-args='[${icd.id}, "${window.QLPKHtml.escape(icd.icd_code)}"]' title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn" data-qlpk-call="deleteICD" data-qlpk-args='[${icd.id}, "${window.QLPKHtml.escape(icd.icd_code)}"]' title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

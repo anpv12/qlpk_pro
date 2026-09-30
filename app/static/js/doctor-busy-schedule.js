@@ -452,7 +452,7 @@ function renderBusySchedulesTable(schedules) {
                             <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-warning btn-sm" data-qlpk-call="editBusySchedule" data-qlpk-args='[${schedule.id}]' title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger btn-sm" data-qlpk-call="confirmDeleteBusySchedule" data-qlpk-args='[${schedule.id}]' title="Xóa">
+                            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="confirmDeleteBusySchedule" data-qlpk-args='[${schedule.id}]' title="Xóa">
                                 <i class="bi bi-trash"></i>
                             </button>
                         ` : `

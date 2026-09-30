@@ -92,14 +92,6 @@ textarea.form-control {
 .btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	transition: all 0.15s ease-in-out;
 }
-.btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-olive);
-	border-color: var(--qlpk-olive);
-}
-.btn-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	background-color: var(--qlpk-palette-green-34);
-	border-color: var(--qlpk-palette-green-34);
-}
 
 .autocomplete-dropdown {
 	position: absolute;

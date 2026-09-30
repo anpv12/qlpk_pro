@@ -48,12 +48,6 @@
 }
 
 /* Success animation */
-.btn-success-animation {
-	animation: successPulse 0.6s ease-out;
-	background: linear-gradient(45deg, var(--qlpk-palette-green-41), var(--qlpk-palette-green-46));
-	border: none;
-	color: white;
-}
 
 @keyframes successPulse {
 	0% {
