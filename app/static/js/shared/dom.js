@@ -64,3 +64,11 @@ export function debounce(fn, wait) {
 export function setVisible(node, visible) {
 	if (node) node.hidden = !visible;
 }
+
+// The one sanctioned HTML-string sink: documents produced by the shared print builders
+// (prescriptions/shared/prescription-document-template.js), which escape their data fields with
+// prescriptionFormEscape and emit one markup for screen, print window and PDF. Page data must use el()/replace().
+export function renderDocumentMarkup(node, documentHtml) {
+	node.innerHTML = documentHtml;
+	return node;
+}
