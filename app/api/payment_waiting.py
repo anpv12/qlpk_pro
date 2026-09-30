@@ -187,9 +187,6 @@ def get_payment_waiting_list(user):
             diagnosis_contract = build_icd_display_contract(db, exam.diagnosis)
             diagnosis = diagnosis_contract['text']
             
-            # Tính tổng tiền (có thể lấy từ service details)
-            total_amount = 0  # TODO: Tính toán từ service details
-            
             # Map examination status to frontend status
             status_mapping = {
                 'WAITING_TRANSFER': 'waiting_transfer',
@@ -205,10 +202,8 @@ def get_payment_waiting_list(user):
                 'phone_number': patient.phone if patient else None,
                 'examination_date': exam.created_at.isoformat() if exam.created_at else None,
                 'doctor_name': exam.appointment.doctor.full_name if exam.appointment.doctor else 'N/A',
-                'service_count': '1',  # TODO: Tính toán từ service details
                 'diagnosis': diagnosis,
                 'diagnosis_ids': diagnosis_contract['ids'],
-                'total_amount': total_amount,
                 'status': status_mapping.get(exam.status.value, 'pending'),
                 'payment_status': exam.payment_status,
                 'created_at': exam.created_at.isoformat() if exam.created_at else None,
@@ -436,7 +431,6 @@ def export_payment_data(user):
 
 # Route/hàm còn lại nằm ở payment_waiting_part2.py; import để đăng ký route và giữ tên cũ trên module này.
 from app.api.payment_waiting_part2 import (  # noqa: E402,F401
-    print_invoices,
     render_invoice,
     get_payment_stats,
 )

@@ -20,42 +20,6 @@ from app.api.payment_waiting import (  # noqa: E402 — module gốc đã khởi
 )
 
 
-@payment_waiting_bp.route('/api/payment-waiting/print', methods=['POST'])
-@require_auth
-def print_invoices(user):
-    """In hóa đơn"""
-    db = next(get_db())
-    try:
-        data = request.get_json()
-        payment_ids = data.get('payment_ids', [])
-
-        if not payment_ids:
-            return jsonify({'detail': 'Không có ID nào được chọn'}), 400
-
-        # Lấy các lượt khám được chọn
-        examinations = db.query(Examination).filter(
-            Examination.id.in_(payment_ids),
-            Examination.status == ExaminationStatus.WAITING_PAYMENT
-        ).join(Appointment).join(Patient).all()
-
-        # TODO: Tạo file PDF và trả về print URL
-        # Hiện tại chỉ trả về thông báo thành công
-        print_url = f"/print/invoices_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-
-        return jsonify({
-            'message': 'Tạo file in thành công',
-            'print_url': print_url,
-            'print_count': len(examinations)
-        }), 200
-
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi in hóa đơn: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi in hóa đơn'}), 500
-    finally:
-        db.close()
-
-
 @payment_waiting_bp.route('/payment-waiting/invoice/<int:examination_id>', methods=['GET'])
 @require_auth
 def render_invoice(user, examination_id):

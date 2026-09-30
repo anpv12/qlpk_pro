@@ -218,7 +218,7 @@ def create_medicine_batch(user):
         try:
             import_date = datetime.strptime(data['import_date'], '%Y-%m-%d').date()
             expiry_date = datetime.strptime(data['expiry_date'], '%Y-%m-%d').date()
-        except:
+        except (KeyError, TypeError, ValueError):
             return jsonify({'detail': 'Định dạng ngày không hợp lệ (YYYY-MM-DD)'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
         if 'remaining_quantity' in data:
@@ -405,7 +405,7 @@ def import_order(user):
         
         try:
             import_date = datetime.strptime(data['import_date'], '%Y-%m-%d').date()
-        except:
+        except (KeyError, TypeError, ValueError):
             return jsonify({'detail': 'Định dạng ngày nhập không hợp lệ (YYYY-MM-DD)'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
         supplier_id = data.get('supplier_id')
