@@ -192,6 +192,83 @@ def get_connection_status(user: User):
         db.close()
 
 
+def _validate_calendar_connections(connections, email_map, invalidated, validated, warnings):
+    from datetime import datetime, timezone
+    from app.services.google_calendar_service import GoogleCalendarService
+    from googleapiclient.discovery import build
+    for conn in connections:
+        try:
+            # Lấy valid credentials
+            credentials = GoogleCalendarService.get_valid_credentials(conn)
+            if not credentials:
+                reason = GoogleCalendarService.get_connection_credential_error(conn) or 'invalid_token'
+                item = {
+                    'user_id': conn.user_id,
+                    'reason': reason
+                }
+                if GoogleCalendarService.is_terminal_connection_credential_error(conn):
+                    conn.is_active = False
+                    invalidated.append(item)
+                else:
+                    warnings.append(item)
+                continue
+
+            # Dùng Calendar API để lấy email (không cần thêm scope)
+            # calendarList.get('primary') trả về calendar info với 'id' là email
+            service = build('calendar', 'v3', credentials=credentials)
+            calendar_info = service.calendarList().get(calendarId='primary').execute()
+            google_email = calendar_info.get('id')  # Calendar ID chính là email
+
+            if google_email:
+                conn.google_email = google_email
+                conn.last_verified_at = datetime.now(timezone.utc)
+
+                # Track email để detect trùng
+                if google_email not in email_map:
+                    email_map[google_email] = []
+                email_map[google_email].append(conn)
+
+                validated.append({
+                    'user_id': conn.user_id,
+                    'email': google_email
+                })
+            else:
+                warnings.append({
+                    'user_id': conn.user_id,
+                    'reason': 'no_email'
+                })
+
+        except Exception as e:
+            logger.error(f"Error validating connection for user {conn.user_id}: {e}")
+            warnings.append({
+                'user_id': conn.user_id,
+                'reason': str(e)
+            })
+
+
+def _find_duplicate_calendar_emails(email_map):
+    from datetime import datetime, timezone
+    # Xử lý trùng email: chỉ giữ connection mới nhất (updated_at hoặc created_at)
+    duplicates = []
+    for email, conns in email_map.items():
+        if len(conns) > 1:
+            # Sort theo thời gian mới nhất (updated hoặc created)
+            sorted_conns = sorted(
+                conns, 
+                key=lambda c: c.updated_at or c.created_at or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True
+            )
+            # Giữ connection đầu tiên (mới nhất), vô hiệu hóa các cái khác
+            for old_conn in sorted_conns[1:]:
+                old_conn.is_active = False
+                duplicates.append({
+                    'user_id': old_conn.user_id,
+                    'email': email,
+                    'reason': 'duplicate_email'
+                })
+    return duplicates
+
+
 @calendar_bp.route('/validate-connections', methods=['POST'])
 @require_auth
 def validate_connections(user: User):
@@ -199,9 +276,6 @@ def validate_connections(user: User):
     Validate tất cả connections, lấy email từ Google, xử lý trùng email.
     Gọi API này khi mở modal Sync để đảm bảo data integrity.
     """
-    from datetime import datetime, timezone
-    from app.services.google_calendar_service import GoogleCalendarService
-    from googleapiclient.discovery import build
     
     db = next(get_db())
     try:
@@ -219,73 +293,9 @@ def validate_connections(user: User):
         warnings = []
         email_map = {}  # email -> [connections] để detect trùng
         
-        for conn in connections:
-            try:
-                # Lấy valid credentials
-                credentials = GoogleCalendarService.get_valid_credentials(conn)
-                if not credentials:
-                    reason = GoogleCalendarService.get_connection_credential_error(conn) or 'invalid_token'
-                    item = {
-                        'user_id': conn.user_id,
-                        'reason': reason
-                    }
-                    if GoogleCalendarService.is_terminal_connection_credential_error(conn):
-                        conn.is_active = False
-                        invalidated.append(item)
-                    else:
-                        warnings.append(item)
-                    continue
-                
-                # Dùng Calendar API để lấy email (không cần thêm scope)
-                # calendarList.get('primary') trả về calendar info với 'id' là email
-                service = build('calendar', 'v3', credentials=credentials)
-                calendar_info = service.calendarList().get(calendarId='primary').execute()
-                google_email = calendar_info.get('id')  # Calendar ID chính là email
-                
-                if google_email:
-                    conn.google_email = google_email
-                    conn.last_verified_at = datetime.now(timezone.utc)
-                    
-                    # Track email để detect trùng
-                    if google_email not in email_map:
-                        email_map[google_email] = []
-                    email_map[google_email].append(conn)
-                    
-                    validated.append({
-                        'user_id': conn.user_id,
-                        'email': google_email
-                    })
-                else:
-                    warnings.append({
-                        'user_id': conn.user_id,
-                        'reason': 'no_email'
-                    })
-                    
-            except Exception as e:
-                logger.error(f"Error validating connection for user {conn.user_id}: {e}")
-                warnings.append({
-                    'user_id': conn.user_id,
-                    'reason': str(e)
-                })
+        _validate_calendar_connections(connections, email_map, invalidated, validated, warnings)
         
-        # Xử lý trùng email: chỉ giữ connection mới nhất (updated_at hoặc created_at)
-        duplicates = []
-        for email, conns in email_map.items():
-            if len(conns) > 1:
-                # Sort theo thời gian mới nhất (updated hoặc created)
-                sorted_conns = sorted(
-                    conns, 
-                    key=lambda c: c.updated_at or c.created_at or datetime.min.replace(tzinfo=timezone.utc),
-                    reverse=True
-                )
-                # Giữ connection đầu tiên (mới nhất), vô hiệu hóa các cái khác
-                for old_conn in sorted_conns[1:]:
-                    old_conn.is_active = False
-                    duplicates.append({
-                        'user_id': old_conn.user_id,
-                        'email': email,
-                        'reason': 'duplicate_email'
-                    })
+        duplicates = _find_duplicate_calendar_emails(email_map)
         
         db.commit()
         emit_appointment_changed('calendar_connections_validated', extra={
@@ -320,6 +330,106 @@ def validate_connections(user: User):
 # =====================================================
 # SYNC DASHBOARD ENDPOINTS (Thêm mới - không sửa code cũ)
 # =====================================================
+
+def _calendar_status_rows(appointments, calendar_events, connected_doctors, connected_staff):
+    # Build response
+    result = []
+    synced_count = 0
+    missing_count = 0
+    error_count = 0
+
+    for appt in appointments:
+        events = calendar_events.get(appt.id, [])
+
+        # Kiểm tra doctor có kết nối và có event
+        doctor_connected = appt.doctor_id in connected_doctors if appt.doctor_id else False
+        doctor_event = any(e.user_id == appt.doctor_id for e in events) if doctor_connected else None
+
+        # Kiểm tra có BẤT KỲ staff nào có event cho lịch này (vì sync broadcast cho tất cả staff)
+        staff_has_event = any(e.user_id in connected_staff for e in events) if connected_staff else None
+
+        # Xác định trạng thái - synced chỉ khi đủ cho các người đã kết nối
+        # - Nếu doctor kết nối: cần có doctor event
+        # - Nếu có staff kết nối: cần có staff event
+        if doctor_connected and len(connected_staff) > 0:
+            # Cả doctor và staff đều cần có event
+            if doctor_event and staff_has_event:
+                sync_status = 'synced'
+                synced_count += 1
+            else:
+                sync_status = 'missing'
+                missing_count += 1
+        elif doctor_connected:
+            # Chỉ cần doctor có event
+            if doctor_event:
+                sync_status = 'synced'
+                synced_count += 1
+            else:
+                sync_status = 'missing'
+                missing_count += 1
+        elif len(connected_staff) > 0:
+            # Chỉ cần staff có event
+            if staff_has_event:
+                sync_status = 'synced'
+                synced_count += 1
+            else:
+                sync_status = 'missing'
+                missing_count += 1
+        else:
+            # Không có ai kết nối
+            sync_status = 'missing'
+            missing_count += 1
+
+        result.append({
+            'id': appt.id,
+            'time': appt.appointment_date.strftime('%H:%M') if appt.appointment_date else '',
+            'date_key': appt.appointment_date.strftime('%d/%m/%Y') if appt.appointment_date else '',
+            'datetime': appt.appointment_date.strftime('%H:%M %d/%m/%Y') if appt.appointment_date else '',
+            'duration': appt.duration_minutes or 60,
+            'patient_name': appt.patient.full_name if appt.patient else 'N/A',
+            'doctor_name': appt.doctor.full_name if appt.doctor else 'N/A',
+            'doctor_id': appt.doctor_id,
+            'doctor_has_calendar': appt.doctor_id in connected_doctors if appt.doctor_id else False,
+            'sync_status': sync_status,
+            'event_count': len(events)
+        })
+    return error_count, missing_count, result, synced_count
+
+
+def _calendar_status_context(appointments, db):
+    # Lấy danh sách doctor_ids đã liên kết Google Calendar
+    doctor_ids = list(set([a.doctor_id for a in appointments if a.doctor_id]))
+    connected_doctors = set()
+    if doctor_ids:
+        connections = db.query(GoogleCalendarConnection).filter(
+            GoogleCalendarConnection.user_id.in_(doctor_ids),
+            GoogleCalendarConnection.is_active == True
+        ).all()
+        connected_doctors = set([c.user_id for c in connections])
+
+    # Lấy danh sách staff đã kết nối Google Calendar (để biết event cần sync cho ai)
+    from app.models.user import User as UserModel, UserRole
+    staff_connections = db.query(GoogleCalendarConnection).join(
+        UserModel, GoogleCalendarConnection.user_id == UserModel.id
+    ).filter(
+        UserModel.role == UserRole.STAFF,
+        GoogleCalendarConnection.is_active == True
+    ).all()
+    connected_staff = set([c.user_id for c in staff_connections])
+
+    # Get all calendar events for these appointments
+    appt_ids = [a.id for a in appointments]
+    calendar_events = {}
+    if appt_ids:
+        events = db.query(GoogleCalendarEvent).filter(
+            GoogleCalendarEvent.appointment_id.in_(appt_ids)
+        ).all()
+        for e in events:
+            if e.appointment_id not in calendar_events:
+                calendar_events[e.appointment_id] = []
+            calendar_events[e.appointment_id].append(e)
+    return calendar_events, connected_doctors, connected_staff
+
 
 @calendar_bp.route('/sync-status', methods=['GET'])
 @require_auth
@@ -356,99 +466,9 @@ def get_sync_status(user: User):
         )
         appointments = scope_calendar_query(query, actor).order_by(Appointment.appointment_date.asc()).all()
         
-        # Lấy danh sách doctor_ids đã liên kết Google Calendar
-        doctor_ids = list(set([a.doctor_id for a in appointments if a.doctor_id]))
-        connected_doctors = set()
-        if doctor_ids:
-            connections = db.query(GoogleCalendarConnection).filter(
-                GoogleCalendarConnection.user_id.in_(doctor_ids),
-                GoogleCalendarConnection.is_active == True
-            ).all()
-            connected_doctors = set([c.user_id for c in connections])
+        calendar_events, connected_doctors, connected_staff = _calendar_status_context(appointments, db)
         
-        # Lấy danh sách staff đã kết nối Google Calendar (để biết event cần sync cho ai)
-        from app.models.user import User as UserModel, UserRole
-        staff_connections = db.query(GoogleCalendarConnection).join(
-            UserModel, GoogleCalendarConnection.user_id == UserModel.id
-        ).filter(
-            UserModel.role == UserRole.STAFF,
-            GoogleCalendarConnection.is_active == True
-        ).all()
-        connected_staff = set([c.user_id for c in staff_connections])
-        
-        # Get all calendar events for these appointments
-        appt_ids = [a.id for a in appointments]
-        calendar_events = {}
-        if appt_ids:
-            events = db.query(GoogleCalendarEvent).filter(
-                GoogleCalendarEvent.appointment_id.in_(appt_ids)
-            ).all()
-            for e in events:
-                if e.appointment_id not in calendar_events:
-                    calendar_events[e.appointment_id] = []
-                calendar_events[e.appointment_id].append(e)
-        
-        # Build response
-        result = []
-        synced_count = 0
-        missing_count = 0
-        error_count = 0
-        
-        for appt in appointments:
-            events = calendar_events.get(appt.id, [])
-            
-            # Kiểm tra doctor có kết nối và có event
-            doctor_connected = appt.doctor_id in connected_doctors if appt.doctor_id else False
-            doctor_event = any(e.user_id == appt.doctor_id for e in events) if doctor_connected else None
-            
-            # Kiểm tra có BẤT KỲ staff nào có event cho lịch này (vì sync broadcast cho tất cả staff)
-            staff_has_event = any(e.user_id in connected_staff for e in events) if connected_staff else None
-            
-            # Xác định trạng thái - synced chỉ khi đủ cho các người đã kết nối
-            # - Nếu doctor kết nối: cần có doctor event
-            # - Nếu có staff kết nối: cần có staff event
-            if doctor_connected and len(connected_staff) > 0:
-                # Cả doctor và staff đều cần có event
-                if doctor_event and staff_has_event:
-                    sync_status = 'synced'
-                    synced_count += 1
-                else:
-                    sync_status = 'missing'
-                    missing_count += 1
-            elif doctor_connected:
-                # Chỉ cần doctor có event
-                if doctor_event:
-                    sync_status = 'synced'
-                    synced_count += 1
-                else:
-                    sync_status = 'missing'
-                    missing_count += 1
-            elif len(connected_staff) > 0:
-                # Chỉ cần staff có event
-                if staff_has_event:
-                    sync_status = 'synced'
-                    synced_count += 1
-                else:
-                    sync_status = 'missing'
-                    missing_count += 1
-            else:
-                # Không có ai kết nối
-                sync_status = 'missing'
-                missing_count += 1
-            
-            result.append({
-                'id': appt.id,
-                'time': appt.appointment_date.strftime('%H:%M') if appt.appointment_date else '',
-                'date_key': appt.appointment_date.strftime('%d/%m/%Y') if appt.appointment_date else '',
-                'datetime': appt.appointment_date.strftime('%H:%M %d/%m/%Y') if appt.appointment_date else '',
-                'duration': appt.duration_minutes or 60,
-                'patient_name': appt.patient.full_name if appt.patient else 'N/A',
-                'doctor_name': appt.doctor.full_name if appt.doctor else 'N/A',
-                'doctor_id': appt.doctor_id,
-                'doctor_has_calendar': appt.doctor_id in connected_doctors if appt.doctor_id else False,
-                'sync_status': sync_status,
-                'event_count': len(events)
-            })
+        error_count, missing_count, result, synced_count = _calendar_status_rows(appointments, calendar_events, connected_doctors, connected_staff)
         
         return jsonify({
             'total': len(result),

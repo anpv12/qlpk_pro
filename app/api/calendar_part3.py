@@ -15,6 +15,116 @@ from app.api.calendar import (  # noqa: E402 — module gốc đã khởi tạo 
 )
 
 
+def _delete_calendar_events_parallel(db, event_data, events):
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    # Hàm xóa 1 event trên Google Calendar với retry
+    def delete_single_event(data, max_retries=3):
+        """Xóa 1 event từ Google Calendar, trả về (db_event_id, success, error)
+        Có retry logic cho rate limit errors
+        """
+        import time
+
+        if not data['access_token']:
+            return (data['db_event_id'], False, 'Chưa có kết nối Google hoạt động; giữ liên kết để thử lại')
+
+        for attempt in range(max_retries):
+            try:
+                from google.oauth2.credentials import Credentials
+                from googleapiclient.discovery import build
+                from app.core.config import settings
+
+                creds = Credentials(
+                    token=data['access_token'],
+                    refresh_token=data['refresh_token'],
+                    token_uri='https://oauth2.googleapis.com/token',
+                    client_id=settings.GOOGLE_CLIENT_ID,
+                    client_secret=settings.GOOGLE_CLIENT_SECRET
+                )
+                service = build('calendar', 'v3', credentials=creds)
+
+                service.events().delete(
+                    calendarId='primary',
+                    eventId=data['event_id']
+                ).execute()
+
+                return (data['db_event_id'], True, None)
+            except Exception as e:
+                from googleapiclient.errors import HttpError
+                status = e.resp.status if isinstance(e, HttpError) else None
+                # 410 = đã xóa rồi, 404 = không tồn tại -> coi như thành công
+                if status in (410, 404):
+                    return (data['db_event_id'], True, None)
+
+                # Rate limit -> retry với exponential backoff
+                if status == 429 or (status == 403 and 'rateLimitExceeded' in str(e)):
+                    if attempt < max_retries - 1:
+                        wait_time = (2 ** attempt) * 1  # 1s, 2s, 4s
+                        time.sleep(wait_time)
+                        continue
+
+                logger.warning('Could not delete Google event %s', data['event_id'])
+
+                return (data['db_event_id'], False, 'Chưa xóa được lịch Google; giữ liên kết để thử lại')
+
+        return (data['db_event_id'], False, "Max retries exceeded")
+
+    # Xóa song song với ThreadPoolExecutor (5 workers để tránh rate limit)
+    successfully_deleted_ids = []
+    failed_events = []
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(delete_single_event, ed): ed for ed in event_data}
+
+        for future in as_completed(futures):
+            db_event_id, success, error = future.result()
+            if success:
+                successfully_deleted_ids.append(db_event_id)
+            else:
+                failed_events.append({'id': db_event_id, 'error': error})
+
+    # Xóa DB records chỉ cho những events đã xóa Google thành công
+    deleted_count = 0
+    for event in events:
+        if event.id in successfully_deleted_ids:
+            db.delete(event)
+            deleted_count += 1
+    return deleted_count, failed_events
+
+
+def _build_event_delete_payloads(db, events):
+    # Pre-cache tất cả connections (1 query thay vì N queries)
+    user_ids = list(set([e.user_id for e in events]))
+    connections = db.query(GoogleCalendarConnection).filter(
+        GoogleCalendarConnection.user_id.in_(user_ids),
+        GoogleCalendarConnection.is_active == True
+    ).all()
+    conn_map = {c.user_id: c for c in connections}
+
+    # Chuẩn bị data cho threads (tránh truy cập DB từ threads)
+    event_data = []
+    for event in events:
+        conn = conn_map.get(event.user_id)
+        if conn:
+            event_data.append({
+                'event_id': event.event_id,
+                'db_event_id': event.id,
+                'access_token': conn.access_token,
+                'refresh_token': conn.refresh_token,
+                'token_expires_at': conn.token_expires_at,
+                'user_id': event.user_id
+            })
+        else:
+            event_data.append({
+                'event_id': event.event_id,
+                'db_event_id': event.id,
+                'access_token': None,
+                'refresh_token': None,
+                'token_expires_at': None,
+                'user_id': event.user_id
+            })
+    return event_data
+
+
 @calendar_bp.route('/delete-all', methods=['DELETE'])
 @require_auth
 def delete_all_calendar_events(user: User):
@@ -22,7 +132,6 @@ def delete_all_calendar_events(user: User):
     Tối ưu: Sử dụng ThreadPoolExecutor để xóa song song trên Google Calendar
     """
     from app.models.appointment import Appointment
-    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     db = next(get_db())
     try:
@@ -52,108 +161,9 @@ def delete_all_calendar_events(user: User):
                 'message': 'Không có sự kiện nào để xóa'
             })
 
-        # Pre-cache tất cả connections (1 query thay vì N queries)
-        user_ids = list(set([e.user_id for e in events]))
-        connections = db.query(GoogleCalendarConnection).filter(
-            GoogleCalendarConnection.user_id.in_(user_ids),
-            GoogleCalendarConnection.is_active == True
-        ).all()
-        conn_map = {c.user_id: c for c in connections}
+        event_data = _build_event_delete_payloads(db, events)
 
-        # Chuẩn bị data cho threads (tránh truy cập DB từ threads)
-        event_data = []
-        for event in events:
-            conn = conn_map.get(event.user_id)
-            if conn:
-                event_data.append({
-                    'event_id': event.event_id,
-                    'db_event_id': event.id,
-                    'access_token': conn.access_token,
-                    'refresh_token': conn.refresh_token,
-                    'token_expires_at': conn.token_expires_at,
-                    'user_id': event.user_id
-                })
-            else:
-                event_data.append({
-                    'event_id': event.event_id,
-                    'db_event_id': event.id,
-                    'access_token': None,
-                    'refresh_token': None,
-                    'token_expires_at': None,
-                    'user_id': event.user_id
-                })
-
-        # Hàm xóa 1 event trên Google Calendar với retry
-        def delete_single_event(data, max_retries=3):
-            """Xóa 1 event từ Google Calendar, trả về (db_event_id, success, error)
-            Có retry logic cho rate limit errors
-            """
-            import time
-
-            if not data['access_token']:
-                return (data['db_event_id'], False, 'Chưa có kết nối Google hoạt động; giữ liên kết để thử lại')
-
-            for attempt in range(max_retries):
-                try:
-                    from google.oauth2.credentials import Credentials
-                    from googleapiclient.discovery import build
-                    from app.core.config import settings
-
-                    creds = Credentials(
-                        token=data['access_token'],
-                        refresh_token=data['refresh_token'],
-                        token_uri='https://oauth2.googleapis.com/token',
-                        client_id=settings.GOOGLE_CLIENT_ID,
-                        client_secret=settings.GOOGLE_CLIENT_SECRET
-                    )
-                    service = build('calendar', 'v3', credentials=creds)
-
-                    service.events().delete(
-                        calendarId='primary',
-                        eventId=data['event_id']
-                    ).execute()
-
-                    return (data['db_event_id'], True, None)
-                except Exception as e:
-                    from googleapiclient.errors import HttpError
-                    status = e.resp.status if isinstance(e, HttpError) else None
-                    # 410 = đã xóa rồi, 404 = không tồn tại -> coi như thành công
-                    if status in (410, 404):
-                        return (data['db_event_id'], True, None)
-
-                    # Rate limit -> retry với exponential backoff
-                    if status == 429 or (status == 403 and 'rateLimitExceeded' in str(e)):
-                        if attempt < max_retries - 1:
-                            wait_time = (2 ** attempt) * 1  # 1s, 2s, 4s
-                            time.sleep(wait_time)
-                            continue
-
-                    logger.warning('Could not delete Google event %s', data['event_id'])
-
-                    return (data['db_event_id'], False, 'Chưa xóa được lịch Google; giữ liên kết để thử lại')
-
-            return (data['db_event_id'], False, "Max retries exceeded")
-
-        # Xóa song song với ThreadPoolExecutor (5 workers để tránh rate limit)
-        successfully_deleted_ids = []
-        failed_events = []
-
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {executor.submit(delete_single_event, ed): ed for ed in event_data}
-
-            for future in as_completed(futures):
-                db_event_id, success, error = future.result()
-                if success:
-                    successfully_deleted_ids.append(db_event_id)
-                else:
-                    failed_events.append({'id': db_event_id, 'error': error})
-
-        # Xóa DB records chỉ cho những events đã xóa Google thành công
-        deleted_count = 0
-        for event in events:
-            if event.id in successfully_deleted_ids:
-                db.delete(event)
-                deleted_count += 1
+        deleted_count, failed_events = _delete_calendar_events_parallel(db, event_data, events)
 
         db.commit()
         emit_appointment_changed('calendar_events_deleted', extra={'deleted_count': deleted_count})
