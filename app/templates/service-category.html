@@ -18,8 +18,6 @@
   <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/service-category.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
-	<script src="/static/js/utils.js?v={{ app_version }}"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
@@ -38,10 +36,10 @@
 						<div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title page-title">Nhóm dịch vụ</h1>
 <p class="qlpk-clinic-subtitle">Quản lý danh mục nhóm dịch vụ của phòng khám</p></div>
 						<div class="d-flex gap-2">
-							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" data-qlpk-call="exportTemplate">
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" data-crud-action="export-template">
 								<i class="bi bi-download me-2"></i>Xuất mẫu
 							</button>
-							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn" data-qlpk-call="openImportModal">
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn" data-crud-action="open-import">
 								<i class="bi bi-upload me-2"></i>Import
 							</button>
 							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary add-btn" data-bs-toggle="modal"
@@ -166,7 +164,7 @@
 		</div>
 	</div>
 
-	<script src="/static/js/service-category.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/service-category.js?v={{ app_version }}"></script>
 
 	<!-- Modal Import -->
 	<div class="modal fade" id="importModal" tabindex="-1">
@@ -196,7 +194,7 @@
 				</div>
 				<div class="modal-footer">
 					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-qlpk-call="importCategories">Import</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-crud-action="import">Import</button>
 				</div>
 			</div>
 		</div>
