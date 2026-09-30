@@ -20,7 +20,6 @@
 	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 
 	<!-- Flatpickr JS -->
@@ -63,31 +62,31 @@
 								<div class="row g-1">
 									<div class="col-md-2 col-6">
 										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm w-100"
-										 data-qlpk-call="setQuickTime" data-qlpk-args='["morning", "$this"]' aria-pressed="false">
+										 data-quick-time="morning" aria-pressed="false">
 											<i class="bi bi-sunrise me-1"></i>Sáng<br><small>8:00-12:00</small>
 										</button>
 									</div>
 									<div class="col-md-2 col-6">
 										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm w-100"
-										 data-qlpk-call="setQuickTime" data-qlpk-args='["afternoon", "$this"]' aria-pressed="false">
+										 data-quick-time="afternoon" aria-pressed="false">
 											<i class="bi bi-sun me-1"></i>Chiều<br><small>13:00-17:00</small>
 										</button>
 									</div>
 									<div class="col-md-2 col-6">
 										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm w-100"
-										 data-qlpk-call="setQuickTime" data-qlpk-args='["evening", "$this"]' aria-pressed="false">
+										 data-quick-time="evening" aria-pressed="false">
 											<i class="bi bi-moon me-1"></i>Tối<br><small>18:00-22:00</small>
 										</button>
 									</div>
 									<div class="col-md-2 col-6">
 										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm w-100"
-										 data-qlpk-call="setQuickTime" data-qlpk-args='["allday", "$this"]' aria-pressed="false">
+										 data-quick-time="allday" aria-pressed="false">
 											<i class="bi bi-calendar-day me-1"></i>Cả ngày<br><small>8:00-24:00</small>
 										</button>
 									</div>
 									<div class="col-md-2 col-6">
 										<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm w-100"
-										 data-qlpk-call="setQuickTime" data-qlpk-args='["2hours", "$this"]' aria-pressed="false">
+										 data-quick-time="2hours" aria-pressed="false">
 											<i class="bi bi-clock me-1"></i>2 giờ<br><small>Từ bây giờ</small>
 										</button>
 									</div>
@@ -155,7 +154,7 @@
 
 							<!-- Action Buttons -->
 							<div class="d-flex gap-2 justify-content-end">
-								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-secondary btn-sm" data-qlpk-call="resetForm">
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-secondary btn-sm" data-busy-action="reset">
 									<i class="bi bi-arrow-clockwise me-1"></i>Làm mới
 								</button>
 								<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-primary btn-sm">
@@ -192,7 +191,7 @@
 									<option value="cancelled" class="text-dark">Đã hủy</option>
 									<option value="all" class="text-dark">Tất cả</option>
 								</select>
-								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary btn-sm" data-qlpk-call="loadMyBusySchedules"
+								<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary btn-sm" data-busy-action="reload"
 									title="Làm mới">
 									<i class="bi bi-arrow-clockwise"></i>
 								</button>
@@ -229,12 +228,10 @@
 		</div>
 	</div>
 
-	<script src="/static/js/utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-	<script src="/static/js/doctor-busy-schedule.js?v={{ app_version }}"></script>
-	<script src="/static/js/doctor-busy-schedule/list-and-form.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/doctor-busy-schedule.js?v={{ app_version }}"></script>
 
 </body>
 
