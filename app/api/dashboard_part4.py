@@ -13,14 +13,159 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
 )
 
 
+def _write_thu_chi_total_row(brd, daily_data, right_align, total_chi, total_diff, total_fill, total_med, total_svc, total_thu, ws):
+    from openpyxl.styles import Font, Alignment
+    # Total row
+    tr = len(daily_data) + 4
+    ws.cell(row=tr, column=1, value="")
+    ws.cell(row=tr, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True, size=11, color="0F766E")
+    for c, v in enumerate([total_svc, total_med, total_thu, total_chi, total_diff], 3):
+        cell = ws.cell(row=tr, column=c, value=v)
+        cell.font = Font(name='Arial', bold=True, size=11, color="0F766E")
+        cell.number_format = '#,##0'
+        cell.alignment = right_align
+        cell.border = brd
+        cell.fill = total_fill
+    ws.cell(row=tr, column=2).fill = total_fill
+    ws.cell(row=tr, column=2).border = brd
+    ws.cell(row=tr, column=2).alignment = Alignment(vertical='center')
+    ws.cell(row=tr, column=1).fill = total_fill
+    ws.cell(row=tr, column=1).border = brd
+
+    # Diff total color
+    diff_total_cell = ws.cell(row=tr, column=7)
+    diff_total_cell.font = Font(name='Arial', bold=True, size=11, color="059669" if total_diff >= 0 else "DC2626")
+
+
+def _write_thu_chi_daily_rows(brd, center_align, daily_data, data_font, right_align, ws):
+    from openpyxl.styles import Font, Alignment
+    # Data rows
+    total_svc = total_med = total_thu = total_chi = total_diff = 0
+    for i, row in enumerate(daily_data, 1):
+        r = i + 3
+        data = [
+            i,
+            row['date'].strftime('%d/%m/%Y'),
+            row['service'],
+            row['medicine'],
+            row['thu'],
+            row['chi'],
+            row['diff']
+        ]
+        for c, v in enumerate(data, 1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.border = brd
+            cell.font = data_font
+            cell.alignment = Alignment(vertical='center')
+            if c >= 3:
+                cell.number_format = '#,##0'
+                cell.alignment = right_align
+            if c == 1:
+                cell.alignment = center_align
+            if c == 2:
+                cell.alignment = center_align
+
+        # Color the diff column
+        diff_cell = ws.cell(row=r, column=7)
+        if row['diff'] >= 0:
+            diff_cell.font = Font(name='Arial', color="059669", bold=True)
+        else:
+            diff_cell.font = Font(name='Arial', color="DC2626", bold=True)
+
+        total_svc += row['service']
+        total_med += row['medicine']
+        total_thu += row['thu']
+        total_chi += row['chi']
+        total_diff += row['diff']
+    return total_chi, total_diff, total_med, total_svc, total_thu
+
+
+def _collect_thu_chi_daily(db, end_date, start_date):
+    from datetime import timedelta, datetime as dt
+    from app.models.prescription import Prescription, PrescriptionItem
+    from app.models.expense import Expense
+    # --- Query revenue per day ---
+    def get_service_revenue_daily(d):
+        from app.models.service import Service
+        s = dt.combine(d, dt.min.time())
+        e = dt.combine(d, dt.max.time())
+        result = db.query(func.coalesce(func.sum(Service.default_price), 0))\
+            .join(Appointment, Appointment.service_id == Service.id)\
+            .filter(Appointment.appointment_date >= s, Appointment.appointment_date <= e,
+                    Appointment.status == 'CONFIRMED', Appointment.is_deleted == False).scalar() or 0
+        return float(result)
+
+    def get_medicine_revenue_daily(d):
+        s = dt.combine(d, dt.min.time())
+        e = dt.combine(d, dt.max.time())
+        result = db.query(func.coalesce(func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity), 0))\
+            .join(Prescription, PrescriptionItem.prescription_id == Prescription.id)\
+            .join(Appointment, Prescription.appointment_id == Appointment.id)\
+            .filter(Appointment.appointment_date >= s, Appointment.appointment_date <= e).scalar() or 0
+        return float(result)
+
+    # --- Query expense per day ---
+    expense_rows = db.query(
+        Expense.date,
+        func.sum(Expense.amount).label('total')
+    ).filter(
+        Expense.date >= start_date,
+        Expense.date <= end_date
+    ).group_by(Expense.date).all()
+
+    chi_by_date = {r.date: float(r.total or 0) for r in expense_rows}
+
+    # --- Build daily data ---
+    daily_data = []
+    d = start_date
+    while d <= end_date:
+        svc = get_service_revenue_daily(d)
+        med = get_medicine_revenue_daily(d)
+        thu = svc + med
+        chi = chi_by_date.get(d, 0)
+        if thu > 0 or chi > 0:
+            daily_data.append({
+                'date': d,
+                'service': svc,
+                'medicine': med,
+                'thu': thu,
+                'chi': chi,
+                'diff': thu - chi
+            })
+        d += timedelta(days=1)
+    return daily_data
+
+
+def _write_thu_chi_header(brd, center_align, header_fill_blue, header_font, period_label, ws):
+    from openpyxl.styles import Font, Alignment
+    # Title
+    ws.merge_cells('A1:G1')
+    title_cell = ws['A1']
+    title_cell.value = f"THỐNG KÊ THU CHI — {period_label}"
+    title_cell.font = Font(name='Arial', bold=True, size=14, color="0F766E")
+    title_cell.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 30
+
+    # Blank row
+    ws.append([])
+
+    # Headers row 3
+    headers = ["STT", "Ngày", "Dịch vụ (đ)", "Thuốc (đ)", "Tổng thu (đ)", "Chi tiêu (đ)", "Chênh lệch (đ)"]
+    for c, v in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=c, value=v)
+        cell.font = header_font
+        cell.fill = header_fill_blue
+        cell.alignment = center_align
+        cell.border = brd
+    ws.row_dimensions[3].height = 24
+
+
 @dashboard_bp.route('/api/dashboard/export-thu-chi', methods=['GET'])
 @require_auth
 def export_thu_chi_excel(user):
     """Xuất Excel thống kê thu chi theo ngày"""
     import io
     from datetime import date, timedelta, datetime as dt
-    from app.models.prescription import Prescription, PrescriptionItem
-    from app.models.expense import Expense
     try:
         import openpyxl
         from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -57,141 +202,18 @@ def export_thu_chi_excel(user):
         right_align = Alignment(horizontal='right', vertical='center')
         total_fill = PatternFill("solid", fgColor="F0FDF4")
 
-        # --- Query revenue per day ---
-        def get_service_revenue_daily(d):
-            from app.models.service import Service
-            s = dt.combine(d, dt.min.time())
-            e = dt.combine(d, dt.max.time())
-            result = db.query(func.coalesce(func.sum(Service.default_price), 0))\
-                .join(Appointment, Appointment.service_id == Service.id)\
-                .filter(Appointment.appointment_date >= s, Appointment.appointment_date <= e,
-                        Appointment.status == 'CONFIRMED', Appointment.is_deleted == False).scalar() or 0
-            return float(result)
-
-        def get_medicine_revenue_daily(d):
-            s = dt.combine(d, dt.min.time())
-            e = dt.combine(d, dt.max.time())
-            result = db.query(func.coalesce(func.sum(PrescriptionItem.unit_price * PrescriptionItem.quantity), 0))\
-                .join(Prescription, PrescriptionItem.prescription_id == Prescription.id)\
-                .join(Appointment, Prescription.appointment_id == Appointment.id)\
-                .filter(Appointment.appointment_date >= s, Appointment.appointment_date <= e).scalar() or 0
-            return float(result)
-
-        # --- Query expense per day ---
-        expense_rows = db.query(
-            Expense.date,
-            func.sum(Expense.amount).label('total')
-        ).filter(
-            Expense.date >= start_date,
-            Expense.date <= end_date
-        ).group_by(Expense.date).all()
-
-        chi_by_date = {r.date: float(r.total or 0) for r in expense_rows}
-
-        # --- Build daily data ---
-        daily_data = []
-        d = start_date
-        while d <= end_date:
-            svc = get_service_revenue_daily(d)
-            med = get_medicine_revenue_daily(d)
-            thu = svc + med
-            chi = chi_by_date.get(d, 0)
-            if thu > 0 or chi > 0:
-                daily_data.append({
-                    'date': d,
-                    'service': svc,
-                    'medicine': med,
-                    'thu': thu,
-                    'chi': chi,
-                    'diff': thu - chi
-                })
-            d += timedelta(days=1)
+        daily_data = _collect_thu_chi_daily(db, end_date, start_date)
 
         # --- Build workbook ---
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Thu Chi"
 
-        # Title
-        ws.merge_cells('A1:G1')
-        title_cell = ws['A1']
-        title_cell.value = f"THỐNG KÊ THU CHI — {period_label}"
-        title_cell.font = Font(name='Arial', bold=True, size=14, color="0F766E")
-        title_cell.alignment = Alignment(horizontal='center', vertical='center')
-        ws.row_dimensions[1].height = 30
+        _write_thu_chi_header(brd, center_align, header_fill_blue, header_font, period_label, ws)
 
-        # Blank row
-        ws.append([])
+        total_chi, total_diff, total_med, total_svc, total_thu = _write_thu_chi_daily_rows(brd, center_align, daily_data, data_font, right_align, ws)
 
-        # Headers row 3
-        headers = ["STT", "Ngày", "Dịch vụ (đ)", "Thuốc (đ)", "Tổng thu (đ)", "Chi tiêu (đ)", "Chênh lệch (đ)"]
-        for c, v in enumerate(headers, 1):
-            cell = ws.cell(row=3, column=c, value=v)
-            cell.font = header_font
-            cell.fill = header_fill_blue
-            cell.alignment = center_align
-            cell.border = brd
-        ws.row_dimensions[3].height = 24
-
-        # Data rows
-        total_svc = total_med = total_thu = total_chi = total_diff = 0
-        for i, row in enumerate(daily_data, 1):
-            r = i + 3
-            data = [
-                i,
-                row['date'].strftime('%d/%m/%Y'),
-                row['service'],
-                row['medicine'],
-                row['thu'],
-                row['chi'],
-                row['diff']
-            ]
-            for c, v in enumerate(data, 1):
-                cell = ws.cell(row=r, column=c, value=v)
-                cell.border = brd
-                cell.font = data_font
-                cell.alignment = Alignment(vertical='center')
-                if c >= 3:
-                    cell.number_format = '#,##0'
-                    cell.alignment = right_align
-                if c == 1:
-                    cell.alignment = center_align
-                if c == 2:
-                    cell.alignment = center_align
-
-            # Color the diff column
-            diff_cell = ws.cell(row=r, column=7)
-            if row['diff'] >= 0:
-                diff_cell.font = Font(name='Arial', color="059669", bold=True)
-            else:
-                diff_cell.font = Font(name='Arial', color="DC2626", bold=True)
-
-            total_svc += row['service']
-            total_med += row['medicine']
-            total_thu += row['thu']
-            total_chi += row['chi']
-            total_diff += row['diff']
-
-        # Total row
-        tr = len(daily_data) + 4
-        ws.cell(row=tr, column=1, value="")
-        ws.cell(row=tr, column=2, value="TỔNG CỘNG").font = Font(name='Arial', bold=True, size=11, color="0F766E")
-        for c, v in enumerate([total_svc, total_med, total_thu, total_chi, total_diff], 3):
-            cell = ws.cell(row=tr, column=c, value=v)
-            cell.font = Font(name='Arial', bold=True, size=11, color="0F766E")
-            cell.number_format = '#,##0'
-            cell.alignment = right_align
-            cell.border = brd
-            cell.fill = total_fill
-        ws.cell(row=tr, column=2).fill = total_fill
-        ws.cell(row=tr, column=2).border = brd
-        ws.cell(row=tr, column=2).alignment = Alignment(vertical='center')
-        ws.cell(row=tr, column=1).fill = total_fill
-        ws.cell(row=tr, column=1).border = brd
-
-        # Diff total color
-        diff_total_cell = ws.cell(row=tr, column=7)
-        diff_total_cell.font = Font(name='Arial', bold=True, size=11, color="059669" if total_diff >= 0 else "DC2626")
+        _write_thu_chi_total_row(brd, daily_data, right_align, total_chi, total_diff, total_fill, total_med, total_svc, total_thu, ws)
 
         # Column widths
         for col, w in [('A', 6), ('B', 14), ('C', 16), ('D', 16), ('E', 18), ('F', 16), ('G', 18)]:
