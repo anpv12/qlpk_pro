@@ -163,7 +163,7 @@ function showValidationMessage(fieldName, message, type) {
 		const msgClass = type === 'error' ? 'text-danger' : 'text-success';
 		const icon = type === 'error' ? 'bi-exclamation-triangle' : 'bi-check-circle';
 
-		field.after(`<div class="validation-message small ${msgClass} mt-1"><i class="bi ${icon}"></i> ${message}</div>`);
+		field.after(`<div class="validation-message small ${msgClass} mt-1"><i class="bi ${icon}"></i> ${window.QLPKHtml.escape(message)}</div>`);
 	}
 }
 

@@ -107,10 +107,10 @@
 			: '<i class="bi bi-google appointment-google-link-icon appointment-google-link-icon--disconnected" title="Chưa liên kết Google Calendar"></i>';
 
 		return `
-					<tr data-appt-id="${appointment.id}" data-sync-status="${appointment.sync_status}" data-date-key="${dateKey}">
+					<tr data-appt-id="${appointment.id}" data-sync-status="${window.QLPKHtml.escape(appointment.sync_status)}" data-date-key="${dateKey}">
 						<td><input type="checkbox" class="form-check-input sync-checkbox" data-appt-id="${appointment.id}"></td>
 						<td><strong>${appointment.time || appointment.datetime.split(' ')[0]}</strong></td>
-						<td>${appointment.duration || appointment.service_duration || '-'} phút</td>
+						<td>${window.QLPKHtml.escape(appointment.duration || appointment.service_duration || '-')} phút</td>
 						<td>
 							${escapeHtml(appointment.doctor_name)}
 							${googleIcon}

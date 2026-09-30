@@ -48,7 +48,7 @@
 	}
 
 	function renderOrderAutocompleteDropdownHtml(matches = [], options = {}) {
-		const escapeHtml = options.escapeHtml || ((value = '') => String(value));
+		const escapeHtml = options.escapeHtml || window.QLPKHtml.escape;
 		const formatCurrency = options.formatCurrency || ((value) => value);
 		const selectedIndex = Number.isInteger(options.selectedIndex) ? options.selectedIndex : -1;
 

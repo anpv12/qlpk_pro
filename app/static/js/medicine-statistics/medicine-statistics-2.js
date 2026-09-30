@@ -30,7 +30,7 @@ function buildDoctorHeaderRow(doctor, isExpanded) {
 		<td>
 			<div class="d-flex align-items-center">
 				<i class="bi bi-caret-${isExpanded ? 'down' : 'right'}-fill me-2" id="doctorIcon${doctor.doctor_id}"></i>
-				<strong>${doctor.doctor_name}</strong>
+				<strong>${window.QLPKHtml.escape(doctor.doctor_name)}</strong>
 			</div>
 		</td>
 		<td>${doctor.examination_count} Lượt</td>
@@ -78,10 +78,10 @@ function buildExaminationRow(doctor, exam, pres, isExpanded) {
 	}
 
 	row.innerHTML = `
-		<td>${exam.patient_name}</td>
+		<td>${window.QLPKHtml.escape(exam.patient_name)}</td>
 		<td>${exam.appointment_date}</td>
 		<td>${exam.appointment_time}</td>
-		<td>${exam.services || '-'}</td>
+		<td>${window.QLPKHtml.escape(exam.services || '-')}</td>
 		${medicineTd}
 		${medicineAmtTd}
 		${svcAmtTd}
@@ -167,8 +167,8 @@ function renderInventoryTable(data) {
 		const row = document.createElement('tr');
 		row.innerHTML = `
 			<td>${index + 1}</td>
-			<td>${med.name}</td>
-			<td>${med.medicine_type}</td>
+			<td>${window.QLPKHtml.escape(med.name)}</td>
+			<td>${window.QLPKHtml.escape(med.medicine_type)}</td>
 			<td>${formatMoney(med.import_price)}</td>
 			<td>${formatMoney(med.unit_price)}</td>
 			<td>${med.export_quantity}</td>
@@ -343,9 +343,9 @@ function renderPrescriptionHistoryTable(medicines) {
 		row.classList.add('medicine-stats-clickable-row');
 		row.onclick = function () { selectMedicineHistory(idx); };
 		row.innerHTML = `
-			<td><strong>${med.medicine_name}</strong></td>
-			<td class="text-muted">${med.generic_name || ''}</td>
-			<td>${med.medicine_type}</td>
+			<td><strong>${window.QLPKHtml.escape(med.medicine_name)}</strong></td>
+			<td class="text-muted">${window.QLPKHtml.escape(med.generic_name || '')}</td>
+			<td>${window.QLPKHtml.escape(med.medicine_type)}</td>
 			<td class="text-center">${formatNumber(med.total_prescriptions)}</td>
 			<td class="text-end"><strong>${formatNumber(med.total_quantity)}</strong></td>
 			<td class="text-end"><strong>${formatMoney(med.total_amount)}</strong></td>
@@ -402,7 +402,7 @@ function selectMedicineHistory(idx) {
 			<td>
 				<div class="d-flex align-items-center">
 					<i class="bi bi-caret-down-fill me-2"></i>
-					<strong>${doc.doctor_name}</strong>
+					<strong>${window.QLPKHtml.escape(doc.doctor_name)}</strong>
 				</div>
 			</td>
 			<td></td>
@@ -421,8 +421,8 @@ function selectMedicineHistory(idx) {
 			itemRow.innerHTML = `
 				<td></td>
 				<td>${item.date}</td>
-				<td>${item.patient_name}</td>
-				<td>${item.prescription_code}</td>
+				<td>${window.QLPKHtml.escape(item.patient_name)}</td>
+				<td>${window.QLPKHtml.escape(item.prescription_code)}</td>
 				<td class="text-end">${item.quantity}</td>
 				<td>${item.source}</td>
 				<td class="text-end">${formatMoney(item.amount)}</td>

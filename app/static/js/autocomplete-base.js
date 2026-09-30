@@ -124,8 +124,8 @@ class AutocompleteBase {
             if (this.input.value.trim()) {
                 // Có text input -> hiển thị nút "Tạo mới"
                 html = `
-                    <div class="occupation-item new-occupation" data-new="true" data-name="${this.input.value}">
-                        <i class="bi bi-plus-circle me-2"></i>Tạo mới: "${this.input.value}"
+                    <div class="occupation-item new-occupation" data-new="true" data-name="${window.QLPKHtml.escape(this.input.value)}">
+                        <i class="bi bi-plus-circle me-2"></i>Tạo mới: "${window.QLPKHtml.escape(this.input.value)}"
                     </div>
                 `;
             } else {
@@ -136,8 +136,8 @@ class AutocompleteBase {
             // Có kết quả search -> hiển thị danh sách
             this.filteredItems.forEach((item, index) => {
                 html += `
-                    <div class="occupation-item" data-index="${index}" data-id="${item.id}" data-name="${item.name}">
-                        ${item.name}
+                    <div class="occupation-item" data-index="${index}" data-id="${item.id}" data-name="${window.QLPKHtml.escape(item.name)}">
+                        ${window.QLPKHtml.escape(item.name)}
                     </div>
                 `;
             });

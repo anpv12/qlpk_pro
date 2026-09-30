@@ -123,7 +123,7 @@ function installPermissionPageFns2(ctx) {
 	    const checked = ctx.selectedGroupIds.includes(g.id + '') ? 'checked' : '';
 	    groupTree.append(`<div class="form-check group-checkbox mb-2">
 	      <input class="form-check-input group-checkbox-input" type="checkbox" value="${g.id}" id="group_${g.id}" ${checked} ${ctx.permissionsReady ? '' : 'disabled'}>
-	      <label class="form-check-label" for="group_${g.id}">${g.name || g.desc || g.code} (${g.code})</label>
+	      <label class="form-check-label" for="group_${g.id}">${window.QLPKHtml.escape(g.name || g.desc || g.code)} (${window.QLPKHtml.escape(g.code)})</label>
 	    </div>`);
 	  });
 	}

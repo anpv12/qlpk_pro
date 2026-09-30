@@ -3,7 +3,7 @@
 		document.getElementById('bannerArea').innerHTML = `
 			<div class="verify-banner invalid">
 				<span class="icon">❌</span><span class="text">Không tìm thấy đơn thuốc</span>
-				<div class="sub">Mã đơn thuốc "${prescriptionCode}" không tồn tại hoặc đã bị thu hồi.</div>
+				<div class="sub">Mã đơn thuốc "${window.QLPKHtml.escape(prescriptionCode)}" không tồn tại hoặc đã bị thu hồi.</div>
 			</div>
 		`;
 		document.getElementById('prescriptionPreviewArea').innerHTML = `
@@ -30,7 +30,7 @@
 		const licenseNumber = prescriptionData.doctor?.license_number || '';
 		const validationBadge = document.createElement('div');
 		validationBadge.className = 'verify-prescription-badge';
-		validationBadge.innerHTML = `Đơn thuốc được kê bởi <strong>${doctorName}</strong> tại Phòng khám Sơn Tâm.${licenseNumber ? `<br>Chứng chỉ hành nghề: <strong>${licenseNumber}</strong>` : ''}`;
+		validationBadge.innerHTML = `Đơn thuốc được kê bởi <strong>${window.QLPKHtml.escape(doctorName)}</strong> tại Phòng khám Sơn Tâm.${licenseNumber ? `<br>Chứng chỉ hành nghề: <strong>${licenseNumber}</strong>` : ''}`;
 		previewContainer.appendChild(validationBadge);
 	}
 

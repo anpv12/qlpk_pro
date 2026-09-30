@@ -103,9 +103,9 @@ function displayTextExpansions(data) {
         const row = `
             <tr>
                 <td><strong>${item.abbreviation}</strong></td>
-                <td>${item.full_text}</td>
+                <td>${window.QLPKHtml.escape(item.full_text)}</td>
                 <td>${categoryBadge}</td>
-                <td>${item.description || '-'}</td>
+                <td>${window.QLPKHtml.escape(item.description || '-')}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
@@ -130,7 +130,7 @@ function getCategoryBadge(category) {
         'psychological': '<span class="category-badge category-psychological">Tâm lý</span>',
         'general': '<span class="category-badge category-general">Chung</span>'
     };
-    return badges[category] || `<span class="category-badge category-general">${category}</span>`;
+    return badges[category] || `<span class="category-badge category-general">${window.QLPKHtml.escape(category)}</span>`;
 }
 
 // Update pagination

@@ -184,16 +184,16 @@
             <div class="row border-bottom py-2 align-items-center modal-patient-item${isActive ? ' modal-patient-item-active' : ''}"
              data-index="${index}">
             <div class="col-2 text-center patient-search-modal__patient-code">
-                ${patient.patient_code || ''}
+                ${window.QLPKHtml.escape(patient.patient_code || '')}
             </div>
 			<div class="col-4 text-center patient-search-modal__patient-name">
-				${patient.full_name || ''}
+				${window.QLPKHtml.escape(patient.full_name || '')}
 			</div>
 			<div class="${dateColumnClass} text-center">
 				${patient.date_of_birth ? formatDate(patient.date_of_birth) : ''}
 			</div>
 			<div class="${phoneColumnClass} text-center">
-				${patient.phone || ''}
+				${window.QLPKHtml.escape(patient.phone || '')}
 			</div>
 			${actionColumn}
 	        </div>

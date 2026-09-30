@@ -24,7 +24,7 @@ test('only explicit clicks mark one history row, not the default preview', async
         addEventListener(name, listener) { handler = listener; },
         querySelectorAll() { return rows.filter(row => row.classes.has(marker)); }
     };
-    const context = { window: {}, document: {
+    const context = { window: { QLPKHtml: require('./helpers/html-escape').QLPKHtml }, document: {
         querySelectorAll() { return rows; },
         querySelector(selector) { return rows[Number(selector.match(/data-index="(\d+)"/)[1])]; }
     } };

@@ -20,7 +20,7 @@ const AppointmentUtils = {
 			selectElement.empty();
 			selectElement.append('<option value="">Chọn bác sĩ</option>');
 			doctors.forEach(d => {
-				selectElement.append(`<option value="${d.id}">${d.full_name || d.username}</option>`);
+				selectElement.append(`<option value="${d.id}">${window.QLPKHtml.escape(d.full_name || d.username)}</option>`);
 			});
 			if (typeof callback === 'function') callback();
 		});

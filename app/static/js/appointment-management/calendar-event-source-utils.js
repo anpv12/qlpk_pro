@@ -5,7 +5,7 @@
 		const appointmentCategory = appointment.appointment_category || 'NEW';
 		const categoryText = appointmentCategory === 'RE_EXAMINATION' ? '(Tái khám)' : '';
 		const patientName = appointment.patient_full_name || appointment.full_name;
-		return categoryText ? `${patientName}<br>${categoryText}` : `${patientName}`;
+		return categoryText ? `${window.QLPKHtml.escape(patientName)}<br>${window.QLPKHtml.escape(categoryText)}` : `${window.QLPKHtml.escape(patientName)}`;
 	}
 
 	function getAppointmentTimeRange(appointment) {

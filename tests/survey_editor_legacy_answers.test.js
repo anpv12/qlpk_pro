@@ -11,7 +11,7 @@ test('loading legacy options preserves answer identities, text and scores in edi
     const elements = new Map(['scSurveyName', 'scSurveyDesc', 'scSaveBtn', 'scQuestionsList']
         .map(id => [id, { value: '', children: [1] }]));
     const context = vm.createContext({
-        window: {}, structuredClone,
+        window: { QLPKHtml: require('./helpers/html-escape').QLPKHtml }, structuredClone,
         document: { getElementById: id => elements.get(id), addEventListener() {} },
         localStorage: { getItem: () => 'test-only' },
         fetch: async () => ({ json: async () => ({ success: true, data: {

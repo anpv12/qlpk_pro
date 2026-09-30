@@ -347,10 +347,10 @@ function renderMedicineDetailTable(medicines) {
 	const rows = medicines.map(med => `
 		<tr>
 			<td>${med.stt}</td>
-			<td>${med.name}</td>
+			<td>${window.QLPKHtml.escape(med.name)}</td>
 			<td>${med.purchase_location}</td>
-			<td>${med.medicine_type}</td>
-			<td>${med.quantity} ${med.unit || ''}</td>
+			<td>${window.QLPKHtml.escape(med.medicine_type)}</td>
+			<td>${med.quantity} ${window.QLPKHtml.escape(med.unit || '')}</td>
 			<td>${formatMoney(med.unit_price)}</td>
 			<td>${formatMoney(med.total_price)}</td>
 		</tr>

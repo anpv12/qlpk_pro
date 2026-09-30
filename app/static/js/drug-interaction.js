@@ -150,9 +150,9 @@
 				opt.className = 'ac-item';
 				if (m.isNew) {
 					opt.classList.add('ac-item-new');
-					opt.innerHTML = `<span class="ac-new-label"><i class="bi bi-plus-circle me-1"></i> ${m.displayLabel}</span>`;
+					opt.innerHTML = `<span class="ac-new-label"><i class="bi bi-plus-circle me-1"></i> ${window.QLPKHtml.escape(m.displayLabel)}</span>`;
 				} else {
-					opt.innerHTML = `<strong>${m.label}</strong>`;
+					opt.innerHTML = `<strong>${window.QLPKHtml.escape(m.label)}</strong>`;
 				}
 
 				opt.addEventListener('click', () => {

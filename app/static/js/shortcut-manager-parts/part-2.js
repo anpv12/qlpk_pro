@@ -22,7 +22,7 @@
 				moduleState.userNameById[u.id] = name;
 			});
 			ctx.userSelect.innerHTML = '<option value="">-- Chọn user --</option>' + (users || [])
-				.map(u => `<option value="${u.id}">${u.full_name || u.username || ('User #' + u.id)}</option>`).join('');
+				.map(u => `<option value="${u.id}">${window.QLPKHtml.escape(u.full_name || u.username || ('User #' + u.id))}</option>`).join('');
 		};
 
 		const fetchRowsForDisplay = async () => {

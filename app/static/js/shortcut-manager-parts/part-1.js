@@ -287,7 +287,7 @@
 	function initRouteOptions(routeSelect) {
 		if (!routeSelect) return;
 		routeSelect.innerHTML = '<option value="">-- Chọn màn hình --</option>';
-		routeSelect.innerHTML += moduleState.ROUTE_OPTIONS.map(r => `<option value="${r.url}">${r.label}</option>`).join('');
+		routeSelect.innerHTML += moduleState.ROUTE_OPTIONS.map(r => `<option value="${window.QLPKHtml.escape(r.url)}">${window.QLPKHtml.escape(r.label)}</option>`).join('');
 	}
 	function isAdminUser() {
 		const role = String(currentUser().role || '').toLowerCase();

@@ -26,7 +26,7 @@
 		$('#editStatusFlag')
 			.removeClass('appointment-status-flag--scheduled appointment-status-flag--confirmed appointment-status-flag--no-show appointment-status-flag--cancelled')
 			.addClass(`appointment-status-flag--${String(status || '').toLowerCase().replace(/_/g, '-')}`)
-			.html(`<i class="bi ${statusIcon} me-1"></i>${statusText}`);
+			.html(`<i class="bi ${statusIcon} me-1"></i>${window.QLPKHtml.escape(statusText)}`);
 	}
 
 	function initializeEditFormValidation(options) {

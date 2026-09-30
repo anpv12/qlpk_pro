@@ -330,7 +330,7 @@
                         ${statusBadge}
                     </div>
                     <div class="col-5 text-start col-history-diagnosis">
-                        <span class="d-block text-truncate" title="${description}">${description}</span>
+                        <span class="d-block text-truncate" title="${window.QLPKHtml.escape(description)}">${window.QLPKHtml.escape(description)}</span>
 					</div>
 					<div class="col-2 text-center col-history-payment">
 						<span class="qlpk-status patient-search-modal__exam-status-badge${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">

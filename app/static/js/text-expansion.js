@@ -172,7 +172,7 @@ function showExpansionFeedback($element, abbreviation, fullText) {
     // Create a temporary tooltip-like element
     const feedback = $(`
         <div class="text-expansion-feedback">
-            ${abbreviation} → ${fullText}
+            ${window.QLPKHtml.escape(abbreviation)} → ${window.QLPKHtml.escape(fullText)}
         </div>
     `);
     

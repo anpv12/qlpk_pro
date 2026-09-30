@@ -244,7 +244,7 @@ function renderSingleQuestion(question, index, questionNumber = null) {
         <section class="card survey-question-card" aria-labelledby="${questionId}">
             <h2 id="${questionId}" class="survey-question-title">
                 <span class="survey-question-number">Câu ${qNumber}</span><br>
-                <span class="survey-question-text">${questionText}</span>
+                <span class="survey-question-text">${window.QLPKHtml.escape(questionText)}</span>
                 ${required ? '<span class="survey-required-mark">*</span>' : ''}
             </h2>
     `;
@@ -369,7 +369,7 @@ function renderDropdownQuestion(question, questionId) {
                 ${answers.map((answer, answerIndex) => {
                     const answerId = surveyOptionId(answer, answerIndex);
                     const answerText = answer.text || '';
-                    return `<option value="${answerId}">${answerText}</option>`;
+                    return `<option value="${answerId}">${window.QLPKHtml.escape(answerText)}</option>`;
                 }).join('')}
             </select>
         </div>
@@ -387,8 +387,8 @@ function renderLinearScaleQuestion(question, questionId) {
     let html = `
         <div class="linear-scale-container">
             <div class="scale-labels">
-                <span class="scale-label-text">${lowLabel}</span>
-                <span class="scale-label-text">${highLabel}</span>
+                <span class="scale-label-text">${window.QLPKHtml.escape(lowLabel)}</span>
+                <span class="scale-label-text">${window.QLPKHtml.escape(highLabel)}</span>
             </div>
             <div class="scale-options">
     `;
@@ -428,7 +428,7 @@ function renderGridQuestion(question, questionId) {
                         <th class="grid-row-header"></th>
                         ${grid.columns.map(col => `
                             <th class="grid-column-header">
-                                ${col.text || col.label || col}
+                                ${window.QLPKHtml.escape(col.text || col.label || col)}
                             </th>
                         `).join('')}
                     </tr>
@@ -437,7 +437,7 @@ function renderGridQuestion(question, questionId) {
                     ${grid.rows.map((row, rowIndex) => `
                         <tr>
                             <td class="grid-row-label">
-                                ${row.text || row}
+                                ${window.QLPKHtml.escape(row.text || row)}
                             </td>
                             ${grid.columns.map((col, colIndex) => {
                                 const cellId = `${questionId}_row_${rowIndex}_col_${colIndex}`;
@@ -477,7 +477,7 @@ function renderDateQuestion(question, questionId) {
                    name="${questionId}"
                    id="${questionId}_date"
                    class="form-control"
-                   placeholder="${placeholder}"
+                   placeholder="${window.QLPKHtml.escape(placeholder)}"
                    ${disabledAttr}>
         </div>
     `;
@@ -514,10 +514,10 @@ function renderRadioOption(answer, questionId, index, disabledAttr) {
 
     return `
         <div class="opt">
-            <input type="radio" name="${questionId}" id="${optionId}" value="${answerId}" data-score="${answerScore}" ${disabledAttr} />
+            <input type="radio" name="${questionId}" id="${optionId}" value="${answerId}" data-score="${window.QLPKHtml.escape(answerScore)}" ${disabledAttr} />
             <label for="${optionId}">
                 <span class="bullet"><i></i></span>
-                ${answerText}
+                ${window.QLPKHtml.escape(answerText)}
             </label>
         </div>
     `;
@@ -532,10 +532,10 @@ function renderCheckboxOption(answer, questionId, index, disabledAttr) {
 
     return `
         <div class="opt">
-            <input type="checkbox" name="${questionId}[]" id="${optionId}" value="${answerId}" data-score="${answerScore}" ${disabledAttr} />
+            <input type="checkbox" name="${questionId}[]" id="${optionId}" value="${answerId}" data-score="${window.QLPKHtml.escape(answerScore)}" ${disabledAttr} />
             <label for="${optionId}">
                 <span class="bullet"><i></i></span>
-                ${answerText}
+                ${window.QLPKHtml.escape(answerText)}
             </label>
         </div>
     `;

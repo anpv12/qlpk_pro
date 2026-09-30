@@ -7,7 +7,7 @@ const EXAM_STATS_DOCTOR_COLOR = '#0F766E';
 const EXAM_STATS_PSYCH_COLOR = '#E91E90';
 
 function formatExamStatsTooltip(params) {
-	let html = `<strong>${params[0].name}</strong><br/>`;
+	let html = `<strong>${window.QLPKHtml.escape(params[0].name)}</strong><br/>`;
 	let dayTotal = 0;
 	params.forEach(p => {
 		html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
@@ -296,10 +296,10 @@ class DashboardManager {
 					<div class="apt-time">${timeStr}</div>
 					<div class="apt-dot ${statusClass}"></div>
 					<div class="apt-info">
-						${infoText}
+						${window.QLPKHtml.escape(infoText)}
 						${countdown ? `<div class="apt-countdown">${countdown}</div>` : ''}
 					</div>
-					<div class="apt-status ${statusClass}">${statusText}</div>
+					<div class="apt-status ${statusClass}">${window.QLPKHtml.escape(statusText)}</div>
 				</div>
 			`;
 		}).join('');
@@ -380,12 +380,12 @@ class DashboardManager {
 				const timeClass = isPsych ? 'dashboard-cell-psych dashboard-cell-psych-marker' : 'dashboard-cell-accent dashboard-cell-accent-marker';
 				return `<tr class="${rowClass}">
 					<td class="ps-3 py-2 text-center fw-semibold ${timeClass}">${it.time}</td>
-					<td class="py-2 fw-semibold">${it.patient_name}</td>
-					<td class="py-2 dashboard-cell-muted">${it.phone}</td>
-					<td class="py-2">${it.doctor_name}</td>
-					<td class="py-2 dashboard-cell-muted">${it.service || '—'}</td>
+					<td class="py-2 fw-semibold">${window.QLPKHtml.escape(it.patient_name)}</td>
+					<td class="py-2 dashboard-cell-muted">${window.QLPKHtml.escape(it.phone)}</td>
+					<td class="py-2">${window.QLPKHtml.escape(it.doctor_name)}</td>
+					<td class="py-2 dashboard-cell-muted">${window.QLPKHtml.escape(it.service || '—')}</td>
 					<td class="pe-3 py-2 text-center">
-						<span class="qlpk-status dashboard-status-pill ${this.getExamStatusClass(it.status)}">${it.status}</span>
+						<span class="qlpk-status dashboard-status-pill ${this.getExamStatusClass(it.status)}">${window.QLPKHtml.escape(it.status)}</span>
 					</td>
 				</tr>`;
 			}).join('');

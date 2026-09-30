@@ -169,12 +169,12 @@ function formatStockDecimal(num) {
 
 // Ví dụ: "9 vỉ + 70 viên = 970 viên tồn"
 function buildStockConvertText({ boxes, remaining, total, packagingUnit, saleUnit }) {
-	const totalText = `<strong>${formatStockDecimal(total)} ${saleUnit} tồn</strong>`;
+	const totalText = `<strong>${formatStockDecimal(total)} ${window.QLPKHtml.escape(saleUnit)} tồn</strong>`;
 	if (boxes > 0 && remaining > 0) {
-		return `<strong>${formatStockNumber(boxes)} ${packagingUnit}</strong> + <strong>${formatStockDecimal(remaining)} ${saleUnit}</strong> = ${totalText}`;
+		return `<strong>${formatStockNumber(boxes)} ${window.QLPKHtml.escape(packagingUnit)}</strong> + <strong>${formatStockDecimal(remaining)} ${window.QLPKHtml.escape(saleUnit)}</strong> = ${totalText}`;
 	}
-	if (boxes > 0 && remaining === 0) return `<strong>${formatStockNumber(boxes)} ${packagingUnit}</strong> = ${totalText}`;
-	if (boxes === 0 && remaining > 0) return `<strong>${formatStockDecimal(remaining)} ${saleUnit} tồn</strong>`;
+	if (boxes > 0 && remaining === 0) return `<strong>${formatStockNumber(boxes)} ${window.QLPKHtml.escape(packagingUnit)}</strong> = ${totalText}`;
+	if (boxes === 0 && remaining > 0) return `<strong>${formatStockDecimal(remaining)} ${window.QLPKHtml.escape(saleUnit)} tồn</strong>`;
 	return '';
 }
 

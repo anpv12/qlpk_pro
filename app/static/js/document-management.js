@@ -75,14 +75,14 @@ function installDocumentPage2(ctx) {
 	            <div class="tree-node ${folder.id === ctx.currentFolderId ? 'active expanded' : ''}">
 	                <i class="bi bi-chevron-right tree-icon-toggle ${toggleIconClass}"></i>
 	                <i class="bi bi-folder-fill tree-icon-folder"></i>
-	                <span class="folder-name">${folder.name}</span>
+	                <span class="folder-name">${window.QLPKHtml.escape(folder.name)}</span>
 	    `;
 	    
 	    if (ctx.isUserAdmin) {
 	        html += `
 	                <div class="tree-actions">
 	                    <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="tree-action-btn add-subfolder" title="Thêm mục con" data-id="${folder.id}"><i class="bi bi-plus"></i></button>
-	                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="tree-action-btn edit-folder" title="Sửa tên" data-id="${folder.id}" data-name="${folder.name}"><i class="bi bi-pencil"></i></button>
+	                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="tree-action-btn edit-folder" title="Sửa tên" data-id="${folder.id}" data-name="${window.QLPKHtml.escape(folder.name)}"><i class="bi bi-pencil"></i></button>
 	                    <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="tree-action-btn delete-folder text-danger border-danger" title="Xóa" data-id="${folder.id}"><i class="bi bi-trash"></i></button>
 	                </div>
 	        `;
@@ -186,7 +186,7 @@ function installDocumentPage3(ctx) {
 	// --- DOCUMENTS ---
 	function selectFolder(folderId, folderName) {
 	    ctx.currentFolderId = folderId;
-	    $('#folderBreadcrumb').html(`<span>${folderName}</span>`);
+	    $('#folderBreadcrumb').html(`<span>${window.QLPKHtml.escape(folderName)}</span>`);
 	    ctx.loadDocuments(folderId);
 	}
 
@@ -235,7 +235,7 @@ function installDocumentPage5(ctx) {
 	            <tr>
 	                <td>
 	                    ${ctx.getFileIcon(doc.mime_type, doc.type)}
-	                    <a ${link_target} class="doc-file-link">${doc.name}</a>
+	                    <a ${link_target} class="doc-file-link">${window.QLPKHtml.escape(doc.name)}</a>
 	                </td>
 	                <td>${badge}</td>
 	                <td class="doc-muted-cell">${doc.updated_at}</td>
@@ -298,7 +298,7 @@ function installDocumentPage6(ctx) {
 	            <tr class="uploading-row">
 	                <td>
 	                    <i class="spinner-border spinner-border-sm me-2 text-primary"></i> 
-	                    <span class="doc-uploading-name">Đang tải lên: ${file.name}...</span>
+	                    <span class="doc-uploading-name">Đang tải lên: ${window.QLPKHtml.escape(file.name)}...</span>
 	                </td>
 	                <td colspan="${ctx.isUserAdmin ? 3 : 2}"></td>
 	            </tr>

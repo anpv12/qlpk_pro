@@ -130,7 +130,7 @@ function showAlert(type, message) {
     const alertClass = type === 'error' ? 'error' : '';
     const alertHtml = `
         <div class="custom-alert ${alertClass}" role="alert">
-            <div class="alert-message">${message}</div>
+            <div class="alert-message">${window.QLPKHtml.escape(message)}</div>
             <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="alert-close" data-qlpk-call="closeAlert" data-qlpk-args='["$this"]'>×</button>
         </div>
     `;
@@ -174,8 +174,8 @@ function hideActionButtons() {
             <div class="completion-content">
                 <div class="completion-icon ${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? 'completion-icon--pending' : ''}">${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? '…' : '✓'}</div>
                 <div class="completion-text">
-                    <h4>${completion.title}</h4>
-                    <p>${completion.text}</p>
+                    <h4>${window.QLPKHtml.escape(completion.title)}</h4>
+                    <p>${window.QLPKHtml.escape(completion.text)}</p>
                 </div>
             </div>
             <div class="completion-buttons">

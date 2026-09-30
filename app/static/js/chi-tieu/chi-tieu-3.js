@@ -370,8 +370,8 @@ function buildCtHeaderHtml() {
 		} else {
 			sortIcon = ` <i class="bi bi-chevron-bar-expand ms-1 ct-sort-icon-muted"></i>`;
 		}
-		h += `<th class="ct-sortable-th"${widthAttr} data-qlpk-call="setSort" data-qlpk-args='["${col.id}"]' title="Sắp xếp theo ${col.name}">
-			<div class="ct-th-content">${col.name}${sortIcon}</div>
+		h += `<th class="ct-sortable-th"${widthAttr} data-qlpk-call="setSort" data-qlpk-args='["${col.id}"]' title="Sắp xếp theo ${window.QLPKHtml.escape(col.name)}">
+			<div class="ct-th-content">${window.QLPKHtml.escape(col.name)}${sortIcon}</div>
 		</th>`;
 	}
 	return h + '<th class="ct-action-th"></th></tr>';

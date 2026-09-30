@@ -181,7 +181,7 @@
 					confine: true,
 					formatter: (p) => {
 						const d = p.data;
-						return `<b>${d.name}</b><br/>
+						return `<b>${window.QLPKHtml.escape(d.name)}</b><br/>
 							<span class="dashboard-tooltip-muted">${d._disease}</span><br/>
 							${p.marker} <b>${d.value}</b> ca &nbsp;•&nbsp; ${d._pct}%`;
 					}
@@ -254,8 +254,8 @@
 				tbody.innerHTML = items.map((it, i) =>
 					`<tr class="${i % 2 === 0 ? '' : 'dashboard-row-green-alt'}">
 						<td class="ps-3 py-2 text-center fw-semibold dashboard-cell-accent">${i + 1}</td>
-						<td class="py-2 fw-semibold">${it.patient_name}</td>
-						<td class="py-2 dashboard-cell-muted">${it.doctor_name}</td>
+						<td class="py-2 fw-semibold">${window.QLPKHtml.escape(it.patient_name)}</td>
+						<td class="py-2 dashboard-cell-muted">${window.QLPKHtml.escape(it.doctor_name)}</td>
 						<td class="py-2 text-center dashboard-cell-muted">${it.exam_date}</td>
 						<td class="pe-3 py-2 text-center dashboard-cell-accent dashboard-cell-semibold">${it.exam_time}</td>
 					</tr>`
@@ -369,18 +369,18 @@
 			if (!s.is_online) statusText = s.last_login ? this.timeAgo(s.last_login) : 'Chưa đăng nhập';
 				const initials = (s.full_name || '').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
 				const avatarHtml = s.avatar
-					? `<img class="staff-avatar staff-avatar-img" src="${s.avatar}" alt="${s.full_name}">`
+					? `<img class="staff-avatar staff-avatar-img" src="${window.QLPKHtml.escape(s.avatar)}" alt="${window.QLPKHtml.escape(s.full_name)}">`
 					: `<div class="staff-avatar">${initials}</div>`;
 				return `
 					<div class="staff-item">
 						${avatarHtml}
 						<div class="staff-info">
-							<div class="staff-name">${s.full_name}</div>
-							<div class="staff-role">${s.role_label}</div>
+							<div class="staff-name">${window.QLPKHtml.escape(s.full_name)}</div>
+							<div class="staff-role">${window.QLPKHtml.escape(s.role_label)}</div>
 						</div>
 						<div class="staff-status">
 							<span class="status-dot ${dotClass}"></span>
-							<span class="status-text ${dotClass}">${statusText}</span>
+							<span class="status-text ${dotClass}">${window.QLPKHtml.escape(statusText)}</span>
 						</div>
 					</div>
 				`;

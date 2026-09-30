@@ -35,6 +35,7 @@ function setup() {
   $.ajax = options => saves.push(options);
   const document = {};
   const context = vm.createContext({$, document, window: {
+    QLPKHtml: require('./helpers/html-escape').QLPKHtml,
     QLPKUserFeedback: {show: (...args) => messages.push(args)}
   }});
   runScriptFile('app/static/js/permission-management.js', context);

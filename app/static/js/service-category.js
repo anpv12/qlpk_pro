@@ -50,8 +50,8 @@
 				const row = `
         <tr>
           <td>${category.id}</td>
-          <td><strong>${category.name}</strong></td>
-          <td>${category.description || '<span class="text-muted">Không có mô tả</span>'}</td>
+          <td><strong>${window.QLPKHtml.escape(category.name)}</strong></td>
+          <td>${category.description ? window.QLPKHtml.escape(category.description) : '<span class="text-muted">Không có mô tả</span>'}</td>
           <td>
             <span class="badge ${category.is_active ? 'bg-success' : 'bg-secondary'}">
               ${category.is_active ? 'Kích hoạt' : 'Không kích hoạt'}

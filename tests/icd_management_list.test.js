@@ -28,6 +28,7 @@ function setup() {
     const window = {
         location: { href: 'https://clinic.test/icd-management.html', origin: 'https://clinic.test' },
         QLPKSharedUtils: { escapeHtml: value => String(value).replace(/</g, '&lt;') },
+        QLPKHtml: require('./helpers/html-escape').QLPKHtml,
         fetch(url, options) { return new Promise(resolve => requests.push({url, options, resolve})); }
     };
     const context = vm.createContext({window, document: {}, $, Headers, URL, URLSearchParams, setTimeout,

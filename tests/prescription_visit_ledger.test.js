@@ -59,7 +59,7 @@ test('editor keeps current stock and allocations without showing movement histor
         prescriptionModel: {formatDoseValue: value => value || '', PRESCRIPTION_SLOT_DEFS: [],
             PRESCRIPTION_USAGE_MODES: {TIME_SLOTS: 'time_slots', TIMES_PER_DAY: 'times_per_day'}}
     };
-    const window = {QLPKDoctorModuleRegistry: {get: name => modules[name], register: (name, api) => {modules[name] = api;}},
+    const window = {QLPKHtml: require('./helpers/html-escape').QLPKHtml, QLPKDoctorModuleRegistry: {get: name => modules[name], register: (name, api) => {modules[name] = api;}},
         PrescriptionTypeContract: {DOCUMENT_TYPES: ['BASIC'], toDocumentType: () => 'BASIC', getLabel: () => 'Cơ bản'}};
     vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/prescription-row-renderer.js', 'utf8'), {window, Intl});
     const nodes = new Map();

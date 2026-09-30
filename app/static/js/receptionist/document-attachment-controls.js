@@ -192,7 +192,7 @@
 	}
 
 	function showAttachmentListError(list, message) {
-		if (list) list.innerHTML = `<div class="text-danger py-3">${message}</div>`;
+		if (list) list.innerHTML = `<div class="text-danger py-3">${window.QLPKHtml.escape(message)}</div>`;
 	}
 
 	function createContextGuard(options = {}) {

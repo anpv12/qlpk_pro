@@ -122,8 +122,8 @@ class OccupationAutocomplete {
             if (this.input && this.input.value.trim()) {
                 // Có text input -> hiển thị nút "Tạo mới"
                 html = `
-                    <div class="occupation-item new-occupation" data-new="true" data-name="${this.input.value}">
-                        <i class="bi bi-plus-circle me-2"></i>Tạo mới: "${this.input.value}"
+                    <div class="occupation-item new-occupation" data-new="true" data-name="${window.QLPKHtml.escape(this.input.value)}">
+                        <i class="bi bi-plus-circle me-2"></i>Tạo mới: "${window.QLPKHtml.escape(this.input.value)}"
                     </div>
                 `;
             } else {
@@ -134,8 +134,8 @@ class OccupationAutocomplete {
             // Có kết quả search -> hiển thị danh sách nghề nghiệp
             this.filteredOccupations.forEach((occ, index) => {
                 html += `
-                    <div class="occupation-item" data-index="${index}" data-id="${occ.id}" data-name="${occ.name}">
-                        ${occ.name}
+                    <div class="occupation-item" data-index="${index}" data-id="${occ.id}" data-name="${window.QLPKHtml.escape(occ.name)}">
+                        ${window.QLPKHtml.escape(occ.name)}
                     </div>
                 `;
             });

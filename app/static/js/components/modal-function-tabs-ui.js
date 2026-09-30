@@ -71,7 +71,7 @@
 			<div class="patient-search-modal__empty-state patient-search-modal__empty-state--error">
 				<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true"><i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i></span>
 				<p class="patient-search-modal__empty-title">Không tải được dữ liệu tab</p>
-				<small class="patient-search-modal__empty-description">${message}</small>
+				<small class="patient-search-modal__empty-description">${window.QLPKHtml.escape(message)}</small>
 			</div>`;
 	}
 

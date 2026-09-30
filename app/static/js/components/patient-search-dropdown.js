@@ -7,7 +7,7 @@
 	const DEFAULT_PER_PAGE = 10000;
 
 	function stateHtml(message) {
-		return `<div class="relative-search-item no-results">${message}</div>`;
+		return `<div class="relative-search-item no-results">${window.QLPKHtml.escape(message)}</div>`;
 	}
 
 	function renderPatientResults(dropdown, patients, options) {

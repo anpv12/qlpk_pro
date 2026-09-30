@@ -10,7 +10,7 @@
 				<div class="sc-answer-radio"></div>
 				<input type="text" class="sc-answer-text" placeholder="Nhập đáp án..." value="${moduleParts.escHtml(a.text || '')}">
 				<span class="sc-answer-score-label">Điểm:</span>
-				<input type="number" class="sc-answer-score" value="${a.score ?? a.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+				<input type="number" class="sc-answer-score" value="${window.QLPKHtml.escape(a.score ?? a.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
 				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
 			</div>
 		`;
@@ -26,7 +26,7 @@
 				</div>
 				<div class="sc-grid-col-score">
 					<span>Điểm mặc định</span>
-					<input type="number" class="sc-grid-score-input" value="${c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+					<input type="number" class="sc-grid-score-input" value="${window.QLPKHtml.escape(c.score ?? c.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
 					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
 				</div>
 			</th>

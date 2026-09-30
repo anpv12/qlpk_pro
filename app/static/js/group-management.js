@@ -29,8 +29,8 @@ function installGroupPage1(ctx) {
 			tbody.append(`
         <tr>
           <td><input type="checkbox" class="row-check"></td>
-          <td>${g.code}</td>
-          <td>${g.name}</td>
+          <td>${window.QLPKHtml.escape(g.code)}</td>
+          <td>${window.QLPKHtml.escape(g.name)}</td>
           <td>${renderPermBadges(g.permissions)}</td>
           <td>
             <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>

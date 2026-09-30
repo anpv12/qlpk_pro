@@ -70,6 +70,7 @@ function createEnvironment() {
   document.createElement = tag => new Element(tag);
   document.getElementById = id => document.querySelector('#' + id);
   const window = new Element('window'); window.innerWidth = 1000; window.innerHeight = 800;
+  window.QLPKHtml = require('./html-escape').QLPKHtml;
   window.getComputedStyle = element => ({fontSize: '16px', overflowY: element.overflowY || 'visible'});
   document.defaultView = window;
   const context = vm.createContext({window, document, console, URLSearchParams, AbortController,

@@ -38,8 +38,8 @@
     
     categories.forEach(category => {
       if (category.is_active) {
-        addSelect.append(`<option value="${category.id}">${category.name}</option>`);
-        editSelect.append(`<option value="${category.id}">${category.name}</option>`);
+        addSelect.append(`<option value="${category.id}">${window.QLPKHtml.escape(category.name)}</option>`);
+        editSelect.append(`<option value="${category.id}">${window.QLPKHtml.escape(category.name)}</option>`);
       }
     });
   }
@@ -83,8 +83,8 @@
       const row = `
         <tr>
           <td>${service.id}</td>
-          <td><strong>${service.name}</strong></td>
-          <td>${service.category_name || 'N/A'}</td>
+          <td><strong>${window.QLPKHtml.escape(service.name)}</strong></td>
+          <td>${window.QLPKHtml.escape(service.category_name || 'N/A')}</td>
           <td>${formatPrice(service.default_price)}</td>
           <td>${service.duration_minutes || 60}</td>
           <td>

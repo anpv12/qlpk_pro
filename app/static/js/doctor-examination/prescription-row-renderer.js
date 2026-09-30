@@ -135,7 +135,7 @@
 				<td class="doctor-prescription-table__quantity-cell">
 					<div class="doctor-prescription-table__quantity-control doctor-prescription-table__quantity-control--calculated">
 						<input type="text" class="doctor-prescription-table__quantity-value" value="${escapeAttr(formatDoseValue(row.quantity) || '0')}" data-prescription-field="quantity" aria-label="Tổng số lượng tự tính" aria-readonly="true" title="Tự tính từ lịch uống và số ngày điều trị" readonly>
-						${quantityUnit}
+						${window.QLPKHtml.escape(quantityUnit)}
 					</div>
 				</td>
 				<td class="doctor-prescription-table__total-cell"><strong data-prescription-row-total>${getRowTotal(row)}</strong></td>

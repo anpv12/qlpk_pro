@@ -133,19 +133,19 @@ function renderICDList(icdList) {
 		const row = `
             <tr>
                 <td>
-                    <span class="text-primary fw-bold">${icd.icd_code}</span>
+                    <span class="text-primary fw-bold">${window.QLPKHtml.escape(icd.icd_code)}</span>
                 </td>
                 <td>
-                    <div class="fw-semibold">${icd.disease_name}</div>
+                    <div class="fw-semibold">${window.QLPKHtml.escape(icd.disease_name)}</div>
                 </td>
                 <td>
                     <div class="text-muted">
-                        ${icd.description || 'Không có mô tả'}
+                        ${window.QLPKHtml.escape(icd.description || 'Không có mô tả')}
                     </div>
                 </td>
                 <td>
                     <div class="text-muted">
-                        ${icd.disease_group || 'Chưa phân nhóm'}
+                        ${window.QLPKHtml.escape(icd.disease_group || 'Chưa phân nhóm')}
                     </div>
                 </td>
                 <td>
@@ -156,7 +156,7 @@ function renderICDList(icdList) {
                         <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-primary" data-qlpk-call="editICD" data-qlpk-args='[${icd.id}]' title="Chỉnh sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" data-qlpk-call="deleteICD" data-qlpk-args='[${icd.id}, "${icd.icd_code}"]' title="Xóa">
+                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-outline-danger" data-qlpk-call="deleteICD" data-qlpk-args='[${icd.id}, "${window.QLPKHtml.escape(icd.icd_code)}"]' title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

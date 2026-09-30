@@ -301,7 +301,7 @@ function renderDashboard() {
 		: '';
 
 	const topTypeText = topType.length > 0
-		? `<span class="sv ct-text-orange">${topType[0][0]}</span> <span class="sm">(${fmtNum(topType[0][1])})</span>`
+		? `<span class="sv ct-text-orange">${window.QLPKHtml.escape(topType[0][0])}</span> <span class="sm">(${fmtNum(topType[0][1])})</span>`
 		: '';
 
 	// Khoản nhỏ nhất
@@ -309,7 +309,7 @@ function renderDashboard() {
 		? validRows.reduce((m, r) => (parseFloat(r.amount) || 0) < (parseFloat(m.amount) || 0) ? r : m)
 		: null;
 	const minText = minRow
-		? `<span class="sv ct-text-cyan">${minRow.type || 'Khác'}</span> <span class="sm">(${fmtNum(parseFloat(minRow.amount) || 0)})</span>`
+		? `<span class="sv ct-text-cyan">${window.QLPKHtml.escape(minRow.type || 'Khác')}</span> <span class="sm">(${fmtNum(parseFloat(minRow.amount) || 0)})</span>`
 		: '';
 
 	// Số ngày có chi
@@ -319,7 +319,7 @@ function renderDashboard() {
 	validRows.forEach(r => { const t = r.type || 'Khác'; typeCount[t] = (typeCount[t] || 0) + 1; });
 	const topCountType = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
 	const topCountText = topCountType.length > 0
-		? `<span class="sv ct-text-purple">${topCountType[0][0]}</span> <span class="sm">(${topCountType[0][1]} khoản)</span>`
+		? `<span class="sv ct-text-purple">${window.QLPKHtml.escape(topCountType[0][0])}</span> <span class="sm">(${topCountType[0][1]} khoản)</span>`
 		: '';
 
 		document.getElementById('summaryStrip').innerHTML = `
@@ -367,7 +367,7 @@ function renderPieChart(totalChi, dateRows) {
 	chart.setOption({
 		tooltip: {
 			trigger: 'item',
-			formatter: p => `<b>${p.name}</b><br/>${fmtNum(p.value)} · ${p.percent}%`
+			formatter: p => `<b>${window.QLPKHtml.escape(p.name)}</b><br/>${fmtNum(p.value)} · ${p.percent}%`
 		},
 		legend: { bottom: 0, padding: [16, 0, 0, 0], textStyle: { fontSize: 10 } },
 		series: [{

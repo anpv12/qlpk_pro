@@ -92,7 +92,7 @@ function processImportRows(raw, fileName) {
 	apiRequest('/api/expenses/bulk', 'POST', { items }).then(res => {
 		rows = res.items.concat(rows);
 		render();
-		window.CustomModal.alert(`Đã import <b>${res.items.length}</b> khoản chi từ file <b>${fileName}</b>`);
+		window.CustomModal.alert(`Đã import <b>${res.items.length}</b> khoản chi từ file <b>${window.QLPKHtml.escape(fileName)}</b>`);
 	}).catch(e => {
 		console.error('Import error:', e);
 		window.CustomModal.alert('Lỗi import dữ liệu');
@@ -199,7 +199,7 @@ function renderColList() {
 	const typeLabels = { number: 'Số', text: 'Văn bản', date: 'Ngày', time: 'Giờ', select: 'Dropdown', formula: 'Công thức', autocomplete: 'Tự động' };
 	document.getElementById('colList').innerHTML = columns.map(col => {
 		const fTag = col.type === 'formula' ? `<span class="ct-formula-summary">= ${col.formula}</span>` : '';
-		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${col.name}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" data-qlpk-call="editCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" data-qlpk-call="deleteCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-trash"></i></button></div></li>`;
+		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${window.QLPKHtml.escape(col.name)}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" data-qlpk-call="editCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" data-qlpk-call="deleteCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-trash"></i></button></div></li>`;
 	}).join('');
 }
 function showAddCol() {
@@ -264,7 +264,7 @@ window.triggerImportFile = function () {
 
 function renderFormulaPicker() {
 	const nc = columns.filter(c => c.type === 'number' || c.type === 'formula');
-	document.getElementById('formulaPicker').innerHTML = nc.map(c => `<span class="formula-tag" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson(['[' + c.name + ']'])}">${c.name}</span>`).join('') +
+	document.getElementById('formulaPicker').innerHTML = nc.map(c => `<span class="formula-tag" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson(['[' + c.name + ']'])}">${window.QLPKHtml.escape(c.name)}</span>`).join('') +
 		['+', '-', '*'].map((op, index) => `<span class="formula-op" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson([' ' + op + ' '])}">${['+', '−', '×'][index]}</span>`).join('');
 }
 function saveCol() {

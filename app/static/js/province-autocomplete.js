@@ -74,8 +74,8 @@ class ProvinceAutocomplete extends window.AutocompleteBase {
 		} else {
 			this.filteredItems.forEach((item, index) => {
 				html += `
-                    <div class="occupation-item" data-index="${index}" data-id="${item.code}" data-name="${item.name}">
-                        ${item.name}
+                    <div class="occupation-item" data-index="${index}" data-id="${window.QLPKHtml.escape(item.code)}" data-name="${window.QLPKHtml.escape(item.name)}">
+                        ${window.QLPKHtml.escape(item.name)}
                     </div>
                 `;
 			});

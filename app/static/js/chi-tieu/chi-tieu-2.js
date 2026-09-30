@@ -20,7 +20,7 @@ function renderThuChiChart(labels, thuValues, chiValues) {
 				const chi = params.find(p => p.seriesName === 'Chi tiêu');
 				const diff = ((thu?.value || 0) - (chi?.value || 0)).toFixed(2);
 				const diffClass = diff >= 0 ? 'ct-tooltip-positive' : 'ct-tooltip-negative';
-				return `<strong>${params[0].name}</strong><br/>` +
+				return `<strong>${window.QLPKHtml.escape(params[0].name)}</strong><br/>` +
 					`${thu?.marker || ''} Doanh thu: <b>${(thu?.value || 0).toFixed(2)}</b> triệu<br/>` +
 					`${chi?.marker || ''} Chi tiêu: <b>${(chi?.value || 0).toFixed(2)}</b> triệu<br/>` +
 					`<span class="${diffClass}">⬤</span> Chênh lệch: <b class="${diffClass}">${diff} triệu</b>`;
@@ -166,7 +166,7 @@ function renderRevenueChart(items) {
 				const svc = params.find(p => p.seriesName === 'Dịch vụ');
 				const med = params.find(p => p.seriesName === 'Thuốc');
 				const total = ((svc?.value || 0) + (med?.value || 0)).toFixed(2);
-				return `<strong>${params[0].name}</strong><br/>` +
+				return `<strong>${window.QLPKHtml.escape(params[0].name)}</strong><br/>` +
 					`${svc?.marker || ''} Dịch vụ: <b>${(svc?.value || 0).toFixed(2)}</b> triệu<br/>` +
 					`${med?.marker || ''} Thuốc: <b>${(med?.value || 0).toFixed(2)}</b> triệu<br/>` +
 					`<b>Tổng: ${total} triệu</b>`;
@@ -308,7 +308,7 @@ function renderServiceChart(items, type) {
 			trigger: 'item', confine: true,
 			formatter: (p) => {
 				const d = p.data;
-				return `<b>${p.name}</b><br/>${p.marker} Doanh thu: <b>${formatCurrency(p.value)}</b><br/>\u{1F4CA} T\u1ef7 l\u1ec7: <b>${p.percent}%</b><br/>\u{1F4E6} S\u1ed1 l\u01b0\u1ee3ng: <b>${d._count || 0} ${d._unit}</b>`;
+				return `<b>${window.QLPKHtml.escape(p.name)}</b><br/>${p.marker} Doanh thu: <b>${formatCurrency(p.value)}</b><br/>\u{1F4CA} T\u1ef7 l\u1ec7: <b>${p.percent}%</b><br/>\u{1F4E6} S\u1ed1 l\u01b0\u1ee3ng: <b>${d._count || 0} ${window.QLPKHtml.escape(d._unit)}</b>`;
 			}
 		},
 		graphic: [{
@@ -376,9 +376,9 @@ async function showRevenueDetail(type, dateLabel) {
 				return `<tr>
 					<td class="ps-3 py-2 border-bottom"><div class="d-flex align-items-center">
 						<span class="ct-revenue-dot ${colorClass}"></span>
-						<span class="fw-medium text-dark ct-revenue-cell-text">${item.name}</span>
+						<span class="fw-medium text-dark ct-revenue-cell-text">${window.QLPKHtml.escape(item.name)}</span>
 					</div></td>
-					<td class="py-2 text-center border-bottom text-secondary ct-revenue-cell-text">${qtyDisplay}</td>
+					<td class="py-2 text-center border-bottom text-secondary ct-revenue-cell-text">${window.QLPKHtml.escape(qtyDisplay)}</td>
 					<td class="pe-3 py-2 text-end border-bottom fw-medium text-dark ct-revenue-cell-text">${formatCurrency(item.total_amount)}</td>
 				</tr>`;
 			}).join('');
@@ -393,7 +393,7 @@ async function showRevenueDetail(type, dateLabel) {
 				if (oldChart) oldChart.dispose();
 				const donut = echarts.init(chartDom);
 				donut.setOption({
-					tooltip: { trigger: 'item', formatter: (p) => `${p.marker} ${p.name}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)` },
+					tooltip: { trigger: 'item', formatter: (p) => `${p.marker} ${window.QLPKHtml.escape(p.name)}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)` },
 					legend: { show: false },
 					series: [{
 						type: 'pie', radius: ['45%', '78%'], avoidLabelOverlap: false,
