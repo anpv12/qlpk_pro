@@ -4,7 +4,6 @@ from flask import jsonify, request
 from sqlalchemy import func
 from app.core.database import get_db
 from app.models.appointment import Appointment
-from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.api.auth import require_auth
 from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này

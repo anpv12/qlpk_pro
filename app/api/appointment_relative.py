@@ -3,7 +3,6 @@ from app.core.database import get_db
 from app.models.appointment_relative import AppointmentRelative
 from app.models.appointment import Appointment
 from app.models.examination import Examination
-from app.models.patient import Patient
 from app.models.family_member import FamilyMember
 from app.api.auth import require_auth
 from app.realtime.events import emit_patient_changed

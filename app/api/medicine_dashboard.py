@@ -5,10 +5,9 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.medicine import Medicine
-from app.models.medicine_batch import MedicineBatch
 from app.api.auth import require_auth
 from app.utils.search_normalization import normalized_contains
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import func, or_
 from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     logger,

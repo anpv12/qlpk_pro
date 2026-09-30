@@ -20,8 +20,6 @@ class PatientBase(BaseModel):
     allergies: Optional[List[AllergyEntry]] = None
     is_active: bool = True
 
-class PatientCreate(PatientBase):
-    pass
 
 class Patient(PatientBase):
     id: int
@@ -29,4 +27,4 @@ class Patient(PatientBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True 
+        from_attributes = True

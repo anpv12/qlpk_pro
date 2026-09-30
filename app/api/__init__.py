@@ -1,2 +1,1 @@
-# API routes and endpoints 
-from .patient import router as patient_router 
+# API routes and endpoints; blueprints are registered in main.py.

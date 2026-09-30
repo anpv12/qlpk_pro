@@ -81,28 +81,3 @@ class AppointmentServiceItem(BaseModel):
 
 class AppointmentServiceSyncRequest(BaseModel):
     services: List[AppointmentServiceItem] = []
-
-
-class AppointmentServiceResponse(BaseModel):
-    id: int
-    appointment_id: int
-    service_id: Optional[int] = None
-    service_name: Optional[str] = None
-    unit_price: Decimal
-    price: Decimal
-    quantity: int
-    total: Decimal
-    note: Optional[str] = None
-    discount_percent: Optional[Decimal] = None
-    tax_percent: Optional[Decimal] = None
-    duration_minutes: Optional[int] = None
-    created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class AppointmentServiceListResponse(BaseModel):
-    services: List[AppointmentServiceResponse]
-    total_amount: Decimal
-    count: int

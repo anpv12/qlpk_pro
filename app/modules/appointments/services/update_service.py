@@ -7,7 +7,6 @@ import logging
 import pytz
 
 from app.models.examination import Examination, ExaminationStatus, ExaminationType
-from app.models.examination_detail import ExaminationDetail
 from app.models.appointment import AppointmentStatus
 from app.models.package import Package
 from app.models.patient import Patient
@@ -22,18 +21,8 @@ from app.modules.appointments.services.scheduling_conflict import (
 )
 from app.schemas.appointment import AppointmentUpdate
 from app.utils.appointment_helpers import parse_appointment_date
-from app.utils.address_contract import ADDRESS_COMPONENT_FIELDS, apply_patient_address_update
-from app.utils.examination_utils import is_psychologist_examination
-from app.utils.medical_history_contract import (
-    normalize_family_history,
-    normalize_physical_history,
-    normalize_safety_plan,
-    normalize_substance_use_history,
-)
-from app.utils.allergy_contract import normalize_allergy_entries
+from app.utils.address_contract import ADDRESS_COMPONENT_FIELDS
 from app.utils.risk_assessment import normalize_risk_assessment, validate_risk_assessment
-from app.utils.referral_source import apply_referral_source
-from sqlalchemy import and_
 
 
 logger = logging.getLogger(__name__)

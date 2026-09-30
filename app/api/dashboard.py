@@ -2,19 +2,15 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import String, cast, func, text
 from app.core.database import get_db
-from app.models.examination import Examination, ExaminationStatus
+from app.models.examination import Examination
 from app.models.appointment import Appointment
 from app.models.medicine import Medicine
 from app.models.patient import Patient
-from app.models.user import User, UserRole
 from app.api.auth import require_auth
-from app.realtime.presence import get_online_user_ids
 from app.utils.referral_source import (
     REFERRAL_SOURCE_BY_KEY,
-    REFERRAL_SOURCE_CONFIG,
     get_referral_source_key,
 )
-from app.utils.upload_storage import normalize_upload_url
 import logging
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ from app.models.user import User
 from app.core.database import get_db
 from app.services.auth import authenticate_user, create_access_token, decode_access_token, get_password_hash, token_matches_user
 from app.schemas.user import UserCreate
-from app.services.session_identity import ALL_PERMISSIONS, session_user_payload
+from app.services.session_identity import session_user_payload
 from app.core.login_throttle import limit_login_attempts
 from app.services.auth import decode_access_claims
 from app.services.access_sessions import revoke_session, SessionStoreUnavailable

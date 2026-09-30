@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from app.core.database import get_db
 from app.models.group import Group
 from app.models.user import UserGroup
-from app.schemas.group import GroupCreate, GroupRead
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from app.utils.account_access import (

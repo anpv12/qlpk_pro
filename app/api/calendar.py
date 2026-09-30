@@ -7,10 +7,8 @@ from app.services.google_calendar_service import GoogleCalendarService
 from app.core.config import settings
 from app.realtime.events import emit_appointment_changed
 from app.modules.appointments.services.calendar_access import (
-    CalendarAccessError, calendar_actor, manages_all_calendars, parse_calendar_ids,
-    calendar_date_range, prepare_calendar_batch, scope_calendar_query,
+    CalendarAccessError, calendar_actor, manages_all_calendars, calendar_date_range, scope_calendar_query,
 )
-from datetime import datetime
 import hashlib
 import hmac
 import secrets
@@ -438,7 +436,6 @@ def get_sync_status(user: User):
     Lấy trạng thái đồng bộ của các lịch hẹn trong khoảng thời gian.
     Query params: from (YYYY-MM-DD), to (YYYY-MM-DD)
     """
-    from datetime import datetime
     from app.models.appointment import Appointment, AppointmentStatus
     from sqlalchemy.orm import joinedload
     

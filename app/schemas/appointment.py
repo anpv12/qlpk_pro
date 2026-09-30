@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from app.models.appointment import AppointmentStatus, AppointmentType, AppointmentCategory
+from app.models.appointment import AppointmentStatus, AppointmentType
 
 class AppointmentBase(BaseModel):
     appointment_code: Optional[str] = None

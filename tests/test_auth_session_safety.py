@@ -189,7 +189,8 @@ def test_active_login_keeps_bearer_response_contract(monkeypatch, token_settings
     data = response.get_json()
     assert data['token_type'] == 'bearer'
     assert auth_service.decode_access_token(data['access_token']) == 'qa-user'
-    assert data['user']['permissions'] == auth_api.ALL_PERMISSIONS
+    from app.services.session_identity import ALL_PERMISSIONS
+    assert data['user']['permissions'] == ALL_PERMISSIONS
     database.close.assert_called_once()
 
 

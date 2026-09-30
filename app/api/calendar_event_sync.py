@@ -5,7 +5,6 @@ from app.core.database import get_db
 from app.api.auth import require_auth
 from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
 from app.models.user import User
-from app.services.google_calendar_service import GoogleCalendarService
 from app.realtime.events import emit_appointment_changed
 from app.modules.appointments.services.calendar_access import CalendarAccessError, calendar_actor, manages_all_calendars, parse_calendar_ids, prepare_calendar_batch
 from datetime import datetime
@@ -266,7 +265,6 @@ def sync_appointments(user: User):
     Logic: Xóa record cũ (nếu event đã bị xóa) → Tạo mới → Verify → Return kết quả chi tiết
     Body: { "appointment_ids": [1, 2, 3] }
     """
-    from app.models.appointment import Appointment
 
     db = next(get_db())
     try:

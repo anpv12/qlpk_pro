@@ -3,7 +3,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import enum
-from app.models.user import User
 
 
 class AppointmentStatus(str, enum.Enum):

@@ -10,7 +10,6 @@ from app.utils.allergy_contract import AllergyContractError
 from app.utils.medical_history_contract import MedicalHistoryContractError
 from app.utils.risk_assessment import RiskAssessmentContractError
 from app.utils.clinical_access import appointment_access_error
-from app.modules.appointments.services.calendar_transfer import schedule_calendar_transfer_drain
 from app.modules.appointments.services import (
     AppointmentAdminValidationError,
     AppointmentConfirmationNotFound,
@@ -18,9 +17,6 @@ from app.modules.appointments.services import (
     AppointmentCreationDuplicateError,
     AppointmentCreationRequiresConfirmation,
     AppointmentCreationValidationError,
-    AppointmentDeletionBlocked,
-    AppointmentDeletionNotFound,
-    AppointmentDeletionRequiresForce,
     AppointmentImportNoData,
     AppointmentStatusTransitionNotFound,
     apply_appointment_admin_updates,
@@ -28,26 +24,15 @@ from app.modules.appointments.services import (
     apply_examination_clinical_updates_from_appointment_payload,
     apply_psychologist_detail_updates_from_appointment_payload,
     apply_patient_updates_from_appointment_payload,
-    build_appointments_export_file,
     confirm_scheduled_appointment,
     create_appointment_from_payload,
-    create_re_examination_from_payload,
-    create_re_examination_from_prescription as create_re_examination_from_prescription_service,
-    cancel_re_examination_appointment as cancel_re_examination_appointment_service,
     ensure_examination_for_confirmed_appointment,
     get_appointment_list,
-    get_appointment_stats as get_appointment_stats_service,
-    get_re_examination_appointment as get_re_examination_appointment_service,
-    hard_delete_appointment_record,
     import_appointments_batch,
     move_appointment_back_to_scheduled,
     return_appointment_to_doctor,
     return_appointment_to_receptionist,
-    ReExaminationError,
-    soft_delete_appointment,
     sync_calendar_for_appointment as sync_calendar_for_appointment_service,
-    AppointmentTransferValidationError,
-    transfer_appointments_between_roles,
 )
 from app.modules.appointments.view_models import (
     AppointmentEditNotFound,

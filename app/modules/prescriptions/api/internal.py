@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify
 from app.core.database import get_db
 from app.api.auth import require_auth
-from app.models.appointment import Appointment, AppointmentCategory, AppointmentStatus
+from app.models.appointment import Appointment
 from app.models.prescription import Prescription
 from app.utils.clinical_access import appointment_access_error, patient_access_error
 from app.realtime.events import emit_examination_changed, emit_inventory_changed
@@ -166,7 +166,7 @@ def get_prescription(user, appointment_id):
             return jsonify({'detail': access_error}), 403
         return jsonify(build_appointment_prescription_payload(db, appointment_id)), 200
         
-    except Exception as e:
+    except Exception:
         logger.exception("Error getting prescription for appointment_id=%s", appointment_id)
         return jsonify({'detail': 'Internal server error'}), 500
     finally:
@@ -188,7 +188,7 @@ def get_prescription_print_view_model(user, appointment_id):
 
     except PrescriptionPrintAppointmentNotFound as e:
         return jsonify({'detail': str(e)}), 404
-    except Exception as e:
+    except Exception:
         logger.exception("Error getting prescription print view model for appointment_id=%s", appointment_id)
         return jsonify({'detail': 'Internal server error'}), 500
     finally:
@@ -242,7 +242,7 @@ def save_prescription_usage(user):
 
         return jsonify({'message': 'Usage instructions saved successfully'}), 200
         
-    except Exception as e:
+    except Exception:
         db.rollback()
         logger.exception("Error saving prescription usage instructions")
         return jsonify({'detail': 'Internal server error'}), 500

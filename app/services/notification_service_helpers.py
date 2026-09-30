@@ -1,17 +1,6 @@
 """Constants and helpers shared by NotificationService and its workflow mixin."""
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta, timezone
-from app.core.database import get_db
-from app.models.notification import Notification
-from app.models.appointment import Appointment
-from app.models.chi_dinh import ChiDinh
-from app.models.examination import Examination
-from app.models.user import User
-from app.core.config import settings
-from app.realtime.events import emit_notification_changed
+from datetime import datetime, timezone
 
 import logging
 

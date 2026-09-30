@@ -3,7 +3,6 @@ from datetime import datetime
 from app.models.appointment import Appointment
 from app.modules.appointments.view_models.appointment_response import (
     build_appointment_response,
-    get_examination_status_text,
 )
 
 

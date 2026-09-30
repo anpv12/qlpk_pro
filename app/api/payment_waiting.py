@@ -1,13 +1,11 @@
-from flask import Blueprint, jsonify, request, render_template, abort, url_for
+from flask import Blueprint, jsonify, request
 from app.api.auth import require_auth
 from app.realtime.events import emit_payment_changed
-from sqlalchemy.orm import joinedload
 from sqlalchemy import func, or_
 from app.core.database import get_db
 from app.models.examination import Examination, ExaminationStatus
 from app.models.appointment import Appointment
 from app.models.patient import Patient
-from app.models.appointment_service import AppointmentService
 from app.utils.upload_storage import upload_dir
 from app.utils.search_normalization import normalize_search_text, normalized_contains
 from datetime import datetime

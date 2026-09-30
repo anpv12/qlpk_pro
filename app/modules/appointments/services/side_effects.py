@@ -2,7 +2,6 @@
 
 import logging
 import threading
-from datetime import datetime
 
 from app.core.database import get_db
 from app.models.appointment import AppointmentStatus

@@ -1,10 +1,9 @@
 """Read services for internal prescription workflows."""
 
-import re
 
 from sqlalchemy import func
 
-from app.models.appointment import Appointment, AppointmentCategory, AppointmentStatus
+from app.models.appointment import Appointment
 from app.models.examination import Examination
 from app.models.examination_detail import ExaminationDetail
 from app.models.medicine import Medicine

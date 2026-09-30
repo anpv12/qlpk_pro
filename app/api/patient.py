@@ -1,20 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.core.database import get_db
-from sqlalchemy import or_, text, select
-from datetime import datetime # Added for date parsing if needed for date_of_birth
-from app.utils import generate_patient_code # New: Import the utility function
-from app.utils.patient_utils import calculate_age # Import function to calculate age
-from app.utils.address_contract import apply_patient_address_update, build_full_address
-from app.utils.medical_history_contract import (
-    MedicalHistoryContractError,
-    normalize_family_history,
-    normalize_physical_history,
-    normalize_safety_plan,
-    normalize_substance_use_history,
-)
-from app.utils.allergy_contract import normalize_allergy_entries
-from app.utils.referral_source import apply_referral_source, build_referral_source_fields
-from app.utils.safety_plan_upload import SafetyPlanUploadError, save_safety_plan_file
+from sqlalchemy import text
 from app.utils.clinical_access import (
     has_full_patient_scope,
     patient_access_error,
@@ -27,10 +13,8 @@ from app.utils.search_normalization import (
     normalize_search_text,
 )
 from app.api.auth import require_auth
-from app.realtime.events import emit_document_changed, emit_patient_changed
 from app.models.patient import Patient # Import Patient model
 from app.models.appointment import Appointment
-from app.models.examination import Examination
 from sqlalchemy.orm import joinedload
 
 import logging

@@ -73,7 +73,7 @@ def get_examination_by_appointment_id(db, appointment_id):
     return examination
 
 def get_examination_details_result(db, examination_id, section=None):
-    examination = get_examination_by_id(db, examination_id)
+    get_examination_by_id(db, examination_id)
     query = db.query(ExaminationDetail).filter(ExaminationDetail.examination_id == examination_id)
 
     if section:
@@ -89,7 +89,7 @@ def get_examination_details_result(db, examination_id, section=None):
     return result
 
 def replace_examination_details(db, examination_id, data):
-    examination = get_examination_by_id(db, examination_id)
+    get_examination_by_id(db, examination_id)
     if not data:
         raise NoDataProvided()
 
@@ -110,7 +110,7 @@ def replace_examination_details(db, examination_id, data):
     db.commit()
 
 def get_section_details_result(db, examination_id, section):
-    examination = get_examination_by_id(db, examination_id)
+    get_examination_by_id(db, examination_id)
     new_section = section
     section_variants = [new_section]
     details = db.query(ExaminationDetail).filter(
@@ -168,7 +168,7 @@ def delete_examination_details_result(db, examination_id):
     db.commit()
 
 def get_psychological_examination_result(db, examination_id):
-    examination = get_examination_by_id(db, examination_id)
+    get_examination_by_id(db, examination_id)
     section_variants = ['tam_ly_gia_kham_kham_tam_ly']
     details = db.query(ExaminationDetail).filter(
         ExaminationDetail.examination_id == examination_id,
@@ -177,7 +177,7 @@ def get_psychological_examination_result(db, examination_id):
     return {detail.field_name: detail.field_value for detail in details}
 
 def save_psychological_examination_result(db, examination_id, data):
-    examination = get_examination_by_id(db, examination_id)
+    get_examination_by_id(db, examination_id)
     if not data:
         raise NoDataProvided()
 

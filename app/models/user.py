@@ -5,7 +5,6 @@ from app.core.database import Base
 import enum
 
 # Import Group model for relationship
-from app.models.group import Group
 
 
 class UserRole(str, enum.Enum):

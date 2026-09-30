@@ -146,7 +146,7 @@ def sync_reference_catalog(user):
     except DavReferenceSyncError as exc:
         db.rollback()
         return jsonify({"success": False, "message": str(exc)}), 502
-    except Exception as exc:
+    except Exception:
         db.rollback()
         logger.exception("Unexpected error while syncing DAV medicine reference catalog")
         return jsonify({"success": False, "message": "Lỗi hệ thống khi đồng bộ DAV"}), 500

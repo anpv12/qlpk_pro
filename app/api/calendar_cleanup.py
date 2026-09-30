@@ -5,10 +5,8 @@ from app.core.database import get_db
 from app.api.auth import require_auth
 from app.models.google_calendar import GoogleCalendarConnection, GoogleCalendarEvent
 from app.models.user import User
-from app.core.config import settings
 from app.realtime.events import emit_appointment_changed
 from app.modules.appointments.services.calendar_access import CalendarAccessError, calendar_actor, manages_all_calendars, calendar_date_range, scope_calendar_query
-import time
 from app.api.calendar import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     calendar_bp,
     logger,

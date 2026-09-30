@@ -1,5 +1,5 @@
 from app.core.database import Base
-from .user import User, UserRole, UserGroup
+from .user import User, UserRole, UserGroup  # noqa: F401 — importing registers the mapped table
 from .patient import Patient
 from .appointment import Appointment, AppointmentStatus, AppointmentType
 from .examination import Examination
@@ -11,13 +11,13 @@ from .medicine_reference_catalog import MedicineReferenceCatalog
 from .medicine_category import MedicineCategory
 from .medicine_batch import MedicineBatch
 from .supplier import Supplier
-from .medicine_transaction import MedicineTransaction
+from .medicine_transaction import MedicineTransaction  # noqa: F401 — importing registers the mapped table
 from .atc_code import ATCCode
 from .atc_group import ATCGroup
 from .route_administration import RouteAdministration
 from .dosage_form import DosageForm
 from .prescription import Prescription, PrescriptionItem
-from .group import Group
+from .group import Group  # noqa: F401 — importing registers the mapped table
 from .notification import Notification
 from .service_category import ServiceCategory
 from .service import Service, ServicePrice
@@ -39,7 +39,7 @@ from .ward import Ward
 from .administrative_region import AdministrativeRegion
 from .administrative_unit import AdministrativeUnit
 from .chi_dinh import ChiDinh
-from .google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarSyncJob, GoogleCalendarTransferJob
+from .google_calendar import GoogleCalendarConnection, GoogleCalendarEvent, GoogleCalendarSyncJob, GoogleCalendarTransferJob  # noqa: F401 — importing registers the mapped table
 from .expense import Expense
 from .expense_column import ExpenseColumn
 from .user_shortcut import UserShortcut

@@ -1,12 +1,11 @@
 """app.api.payment_waiting: phần 2 — tách từ payment_waiting.py (import ở cuối payment_waiting.py để đăng ký route/giữ tên cũ)."""
 
-from flask import jsonify, request, render_template, abort, url_for
+from flask import jsonify, render_template, abort, url_for
 from app.api.auth import require_auth
 from sqlalchemy.orm import joinedload
 from app.core.database import get_db
 from app.models.examination import Examination, ExaminationStatus
 from app.models.appointment import Appointment
-from app.models.patient import Patient
 from app.models.appointment_service import AppointmentService
 from datetime import datetime
 from decimal import Decimal

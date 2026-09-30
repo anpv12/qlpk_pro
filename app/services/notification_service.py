@@ -1,16 +1,6 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta, timezone
-from app.core.database import get_db
 from app.models.notification import Notification
-from app.models.appointment import Appointment
-from app.models.chi_dinh import ChiDinh
-from app.models.examination import Examination
 from app.models.user import User
 from app.core.config import settings
-from app.realtime.events import emit_notification_changed
-import logging
 from app.services.notification_service_helpers import (  # noqa: F401 — giữ tên cũ trên module này
     IN_APP_NOTIFICATION_TYPE,
     READ_STATUS,

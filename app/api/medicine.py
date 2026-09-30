@@ -1,7 +1,5 @@
-from flask import Blueprint, request, jsonify, make_response
-from sqlalchemy.orm import Session
+from flask import Blueprint, request, jsonify
 from app.core.database import get_db
-from app.core.config import settings
 from app.models.medicine import Medicine
 from app.models.medicine_category import MedicineCategory
 from app.models.medicine_batch import MedicineBatch
@@ -12,8 +10,8 @@ from sqlalchemy.exc import IntegrityError
 from app.modules.medicines.services.catalog_service import CatalogValidationError, write_clinic_medicine
 from app.modules.medicines.services.reference_review import can_review_reference, review_preview, confirm_reference
 import logging
-from datetime import datetime, date, timezone
-from sqlalchemy import func, or_
+from datetime import datetime, timezone
+from sqlalchemy import or_
 
 logger = logging.getLogger(__name__)
 

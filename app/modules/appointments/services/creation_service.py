@@ -572,7 +572,7 @@ def _try_create_initial_examination(db, appt, data):
         if appointment_relatives:
             logger.debug("Linked %s appointment_relatives to examination %s", len(appointment_relatives), examination.id)
         return examination
-    except Exception as exc:
+    except Exception:
         logger.exception("Error creating initial examination for appointment %s", appt.id)
         raise
 

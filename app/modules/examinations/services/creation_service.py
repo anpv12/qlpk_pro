@@ -25,7 +25,7 @@ class CreateExaminationValidationError(Exception):
 def create_examination_result(db, data, logger=None):
     normalize_create_examination_payload(data)
     validate_create_examination_payload(data)
-    doctor = get_create_examination_doctor(db, data['doctor_id'])
+    get_create_examination_doctor(db, data['doctor_id'])
     validate_create_examination_catalog(db, data)
 
     patient = upsert_create_examination_patient(db, data)

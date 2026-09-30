@@ -9,22 +9,10 @@ from app.models.service import Service, ServicePrice
 from app.models.service_category import ServiceCategory
 from app.models.appointment import Appointment
 from app.models.appointment_service import AppointmentService
-from app.modules.appointments.services.appointment_service_selection import (
-    AppointmentServiceLockedError,
-    AppointmentServiceValidationError,
-    apply_appointment_service_selection,
-    can_override_appointment_service_finance,
-    ensure_appointment_service_mutable,
-    is_appointment_service_locked,
-    resolve_catalog_service,
-)
 from app.schemas.service_schemas import (
     ServiceCreate,
     ServiceUpdate,
     ServicePriceCreate,
-    ServicePriceUpdate,
-    AppointmentServiceSyncRequest,
-    AppointmentServiceItem,
 )
 from app.realtime.events import emit_catalog_changed, emit_examination_changed
 

@@ -20,8 +20,9 @@ def part_modules(module):
 
 
 def setattr_all(monkeypatch, module, name, value, **kwargs):
-    """monkeypatch.setattr on the module and on every split part that binds ``name``."""
-    monkeypatch.setattr(module, name, value, **kwargs)
-    for part in part_modules(module):
-        if hasattr(part, name):
-            monkeypatch.setattr(part, name, value, **kwargs)
+    """monkeypatch.setattr on the module and every split part that binds ``name``; at least one must bind it."""
+    targets = [target for target in [module, *part_modules(module)] if hasattr(target, name)]
+    if not targets:
+        raise AttributeError(f"{module.__name__} and its split parts have no attribute {name!r}")
+    for target in targets:
+        monkeypatch.setattr(target, name, value, **kwargs)
