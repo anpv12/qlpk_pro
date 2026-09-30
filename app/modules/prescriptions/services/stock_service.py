@@ -1,7 +1,6 @@
 """Batch-aware inventory owner for prescription dispensing.
 
 The service deliberately uses only existing inventory tables:
-
 - ``medicine_batches.remaining_quantity`` owns the current balance per batch.
 - ``medicines.stock_quantity`` remains the aggregate balance used elsewhere.
 - ``medicine_transactions`` records append-only movements with explicit visit,
@@ -120,6 +119,67 @@ def _allocation_status(prescribed_quantity, allocated_quantity, integrity_ok):
     return "partially_tracked"
 
 
+def _medicine_allocation_state(allocations, batches_by_medicine, invalid_allocations, medicine_id, medicines, movements_by_medicine, prescribed_totals, result, today):
+    medicine = medicines.get(medicine_id)
+    batches = batches_by_medicine.get(medicine_id, [])
+    batch_map = {batch.id: batch for batch in batches}
+    batch_allocations = []
+    allocated_quantity = ZERO_QUANTITY
+    integrity_ok = not invalid_allocations.get(medicine_id)
+    for batch_id, quantity in sorted(
+        allocations.get(medicine_id, {}).items(),
+        key=lambda item: _batch_sort_key(batch_map[item[0]]) if item[0] in batch_map else (date.max, date.max, item[0]),
+    ):
+        batch = batch_map.get(batch_id)
+        if not batch:
+            integrity_ok = False
+            continue
+        allocated_quantity += quantity
+        batch_allocations.append({
+            "batch_id": batch.id,
+            "batch_number": batch.batch_number,
+            "import_date": batch.import_date.isoformat() if batch.import_date else None,
+            "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
+            "quantity": float(quantity),
+            "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
+        })
+
+    prescribed_quantity = prescribed_totals[medicine_id]
+    batch_total = sum(
+        (as_quantity_decimal(batch.remaining_quantity) for batch in batches),
+        ZERO_QUANTITY,
+    )
+    available_total = sum(
+        (
+            as_quantity_decimal(batch.remaining_quantity)
+            for batch in batches
+            if batch.expiry_date and batch.expiry_date >= today
+            and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
+        ),
+        ZERO_QUANTITY,
+    )
+    aggregate_stock = as_quantity_decimal(medicine.stock_quantity if medicine else 0)
+    inventory_consistent = bool(medicine) and _inventory_quantity(aggregate_stock) == _inventory_quantity(batch_total)
+    status = _allocation_status(prescribed_quantity, allocated_quantity, integrity_ok)
+    result[medicine_id] = {
+        "medicine_id": medicine_id,
+        "medicine_name": medicine.name if medicine else None,
+        "unit": medicine.unit if medicine else None,
+        "prescribed_quantity": float(prescribed_quantity),
+        "allocated_quantity": float(allocated_quantity),
+        "batch_allocations": batch_allocations,
+        "stock_movements": movements_by_medicine[medicine_id],
+        "batch_count": len(batch_allocations),
+        "batch_allocation_complete": status == "allocated",
+        "batch_allocation_status": status,
+        "allocation_integrity_ok": integrity_ok,
+        "aggregate_stock": float(aggregate_stock),
+        "batch_total_stock": float(batch_total),
+        "available_batch_stock": float(available_total),
+        "inventory_consistent": inventory_consistent,
+    }
+
+
 def build_prescription_batch_allocation_states(
     db,
     appointment_id,
@@ -164,64 +224,7 @@ def build_prescription_batch_allocation_states(
     today = date.today()
     result = {}
     for medicine_id in medicine_ids:
-        medicine = medicines.get(medicine_id)
-        batches = batches_by_medicine.get(medicine_id, [])
-        batch_map = {batch.id: batch for batch in batches}
-        batch_allocations = []
-        allocated_quantity = ZERO_QUANTITY
-        integrity_ok = not invalid_allocations.get(medicine_id)
-        for batch_id, quantity in sorted(
-            allocations.get(medicine_id, {}).items(),
-            key=lambda item: _batch_sort_key(batch_map[item[0]]) if item[0] in batch_map else (date.max, date.max, item[0]),
-        ):
-            batch = batch_map.get(batch_id)
-            if not batch:
-                integrity_ok = False
-                continue
-            allocated_quantity += quantity
-            batch_allocations.append({
-                "batch_id": batch.id,
-                "batch_number": batch.batch_number,
-                "import_date": batch.import_date.isoformat() if batch.import_date else None,
-                "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
-                "quantity": float(quantity),
-                "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
-            })
-
-        prescribed_quantity = prescribed_totals[medicine_id]
-        batch_total = sum(
-            (as_quantity_decimal(batch.remaining_quantity) for batch in batches),
-            ZERO_QUANTITY,
-        )
-        available_total = sum(
-            (
-                as_quantity_decimal(batch.remaining_quantity)
-                for batch in batches
-                if batch.expiry_date and batch.expiry_date >= today
-                and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
-            ),
-            ZERO_QUANTITY,
-        )
-        aggregate_stock = as_quantity_decimal(medicine.stock_quantity if medicine else 0)
-        inventory_consistent = bool(medicine) and _inventory_quantity(aggregate_stock) == _inventory_quantity(batch_total)
-        status = _allocation_status(prescribed_quantity, allocated_quantity, integrity_ok)
-        result[medicine_id] = {
-            "medicine_id": medicine_id,
-            "medicine_name": medicine.name if medicine else None,
-            "unit": medicine.unit if medicine else None,
-            "prescribed_quantity": float(prescribed_quantity),
-            "allocated_quantity": float(allocated_quantity),
-            "batch_allocations": batch_allocations,
-            "stock_movements": movements_by_medicine[medicine_id],
-            "batch_count": len(batch_allocations),
-            "batch_allocation_complete": status == "allocated",
-            "batch_allocation_status": status,
-            "allocation_integrity_ok": integrity_ok,
-            "aggregate_stock": float(aggregate_stock),
-            "batch_total_stock": float(batch_total),
-            "available_batch_stock": float(available_total),
-            "inventory_consistent": inventory_consistent,
-        }
+        _medicine_allocation_state(allocations, batches_by_medicine, invalid_allocations, medicine_id, medicines, movements_by_medicine, prescribed_totals, result, today)
     return result
 
 
@@ -301,6 +304,179 @@ def _append_stock_transaction(
     )
 
 
+def _refund_prescription_delta(allocated_total, appointment_id, batch_map, current_allocations, db, delta, medicine, medicine_id, medicine_name, movements, operation_id, running_stock, user_id):
+    refund_quantity = abs(delta)
+    refund_batches = sorted(
+        (
+            batch_map[batch_id]
+            for batch_id, quantity in current_allocations.items()
+            if quantity > ZERO_QUANTITY and batch_id in batch_map
+        ),
+        key=_batch_sort_key,
+        reverse=True,
+    )
+    tracked_refund_quantity = min(refund_quantity, allocated_total)
+    legacy_refund_quantity = refund_quantity - tracked_refund_quantity
+    remaining = tracked_refund_quantity
+    for batch in refund_batches:
+        if remaining <= ZERO_QUANTITY:
+            break
+        allocated = current_allocations[batch.id]
+        quantity = min(allocated, remaining)
+        batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) + quantity
+        running_stock += quantity
+        current_allocations[batch.id] = allocated - quantity
+        _append_stock_transaction(
+            db,
+            medicine_id=medicine_id,
+            appointment_id=appointment_id,
+            batch_id=batch.id,
+            quantity=quantity,
+            is_export=False,
+            stock_balance_after=running_stock,
+            user_id=user_id,
+            unit_cost=batch.import_price,
+            balance_after=batch.remaining_quantity,
+            operation_id=operation_id,
+        )
+        movements.append({
+            "batch_id": batch.id,
+            "batch_number": batch.batch_number,
+            "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
+            "quantity_refunded": float(quantity),
+            "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
+        })
+        remaining -= quantity
+    if remaining > ZERO_QUANTITY:
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: không thể hoàn đủ phần thuốc đã gắn với lô. "
+            "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
+        ])
+    if legacy_refund_quantity > ZERO_QUANTITY:
+        _append_stock_transaction(
+            db,
+            medicine_id=medicine_id,
+            appointment_id=appointment_id,
+            batch_id=None,
+            stock_balance_after=running_stock + legacy_refund_quantity,
+            quantity=legacy_refund_quantity,
+            is_export=False,
+            user_id=user_id,
+            operation_id=operation_id,
+        )
+    medicine.stock_quantity = as_quantity_decimal(medicine.stock_quantity) + refund_quantity
+
+
+def _dispense_prescription_delta(allocations, appointment_id, batches, db, delta, medicine, medicine_id, medicine_name, movements, new_quantity, old_quantity, operation_id, running_stock, sale_unit_price, unit, user_id):
+    today = date.today()
+    if not batches and as_quantity_decimal(medicine.stock_quantity) > ZERO_QUANTITY:
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: chưa có lô để cấp {format_quantity(delta)} {unit}. "
+            "Cần bổ sung lô cho tồn hiện hữu."
+        ], code="inventory.batch_missing")
+    valid_batches = [
+        batch for batch in batches
+        if batch.expiry_date and batch.expiry_date >= today
+        and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
+    ]
+    available_batch_stock = sum(
+        (as_quantity_decimal(batch.remaining_quantity) for batch in valid_batches),
+        ZERO_QUANTITY,
+    )
+    aggregate_stock = as_quantity_decimal(medicine.stock_quantity)
+    if not valid_batches and aggregate_stock > ZERO_QUANTITY and any(
+        batch.expiry_date and batch.expiry_date < today
+        and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
+        for batch in batches
+    ):
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: các lô còn số lượng đã hết hạn, không thể cấp thuốc. "
+            "Cần kiểm tra kho và bổ sung lô còn hạn."
+        ], code="inventory.batch_expired")
+    available_to_dispense = min(aggregate_stock, available_batch_stock)
+    if available_to_dispense < delta:
+        missing = delta - available_to_dispense
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: cần cấp thêm {format_quantity(delta)} {unit}, "
+            f"tồn khả dụng {format_quantity(available_to_dispense)} {unit}, "
+            f"thiếu {format_quantity(missing)} {unit}. Đơn chưa được lưu."
+        ], shortage={
+            "medicine_name": medicine_name,
+            "unit": unit,
+            "requested_quantity": str(new_quantity),
+            "stock_quantity": str(aggregate_stock),
+            "additional_quantity": str(delta),
+            "available_quantity": str(available_to_dispense),
+            "previous_quantity": str(old_quantity),
+        })
+
+    remaining = delta
+    for batch in valid_batches:
+        if remaining <= ZERO_QUANTITY:
+            break
+        quantity = min(as_quantity_decimal(batch.remaining_quantity), remaining)
+        batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) - quantity
+        running_stock -= quantity
+        allocations[medicine_id][batch.id] = allocations[medicine_id].get(batch.id, ZERO_QUANTITY) + quantity
+        _append_stock_transaction(
+            db,
+            medicine_id=medicine_id,
+            appointment_id=appointment_id,
+            batch_id=batch.id,
+            quantity=quantity,
+            is_export=True,
+            stock_balance_after=running_stock,
+            user_id=user_id,
+            unit_cost=batch.import_price,
+            balance_after=batch.remaining_quantity,
+            operation_id=operation_id,
+            sale_unit_price=sale_unit_price,
+        )
+        movements.append({
+            "batch_id": batch.id,
+            "batch_number": batch.batch_number,
+            "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
+            "quantity_deducted": float(quantity),
+            "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
+        })
+        remaining -= quantity
+    medicine.stock_quantity = as_quantity_decimal(medicine.stock_quantity) - delta
+    return running_stock
+
+
+def _checked_batch_allocations(appointment_id, batches, db, medicine, medicine_id, medicine_name, old_quantity, unit):
+    _validate_inventory_contract(medicine, batches, medicine_name, unit)
+    batch_map = {batch.id: batch for batch in batches}
+    allocations, invalid_allocations = _load_net_batch_allocations(
+        db,
+        appointment_id,
+        [medicine_id],
+    )
+    if invalid_allocations.get(medicine_id):
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: dấu vết cấp/hoàn theo lô không hợp lệ. "
+            "Cần đối soát đơn trước khi thay đổi số lượng."
+        ])
+
+    current_allocations = allocations.get(medicine_id, {})
+    allocated_total = sum(current_allocations.values(), ZERO_QUANTITY)
+    if allocated_total > old_quantity:
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: số thuốc đang gắn với lô lớn hơn số lượng đã lưu trong đơn. "
+            "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
+        ])
+    missing_batch_ids = {
+        batch_id for batch_id, quantity in current_allocations.items()
+        if quantity > ZERO_QUANTITY and batch_id not in batch_map
+    }
+    if missing_batch_ids:
+        raise PrescriptionStockValidationError([
+            f"{medicine_name}: không còn tìm thấy lô đã cấp cho đơn. "
+            "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
+        ])
+    return allocated_total, allocations, batch_map, current_allocations
+
+
 def apply_prescription_batch_stock_deltas(
     db,
     *,
@@ -335,173 +511,14 @@ def apply_prescription_batch_stock_deltas(
                 batch_balances={batch.id: batch.remaining_quantity for batch in batches})
             continue
 
-        _validate_inventory_contract(medicine, batches, medicine_name, unit)
-        batch_map = {batch.id: batch for batch in batches}
-        allocations, invalid_allocations = _load_net_batch_allocations(
-            db,
-            appointment_id,
-            [medicine_id],
-        )
-        if invalid_allocations.get(medicine_id):
-            raise PrescriptionStockValidationError([
-                f"{medicine_name}: dấu vết cấp/hoàn theo lô không hợp lệ. "
-                "Cần đối soát đơn trước khi thay đổi số lượng."
-            ])
-
-        current_allocations = allocations.get(medicine_id, {})
-        allocated_total = sum(current_allocations.values(), ZERO_QUANTITY)
-        if allocated_total > old_quantity:
-            raise PrescriptionStockValidationError([
-                f"{medicine_name}: số thuốc đang gắn với lô lớn hơn số lượng đã lưu trong đơn. "
-                "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
-            ])
-        missing_batch_ids = {
-            batch_id for batch_id, quantity in current_allocations.items()
-            if quantity > ZERO_QUANTITY and batch_id not in batch_map
-        }
-        if missing_batch_ids:
-            raise PrescriptionStockValidationError([
-                f"{medicine_name}: không còn tìm thấy lô đã cấp cho đơn. "
-                "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
-            ])
+        allocated_total, allocations, batch_map, current_allocations = _checked_batch_allocations(appointment_id, batches, db, medicine, medicine_id, medicine_name, old_quantity, unit)
 
         movements = []
         running_stock = as_quantity_decimal(medicine.stock_quantity)
         if delta > ZERO_QUANTITY:
-            today = date.today()
-            if not batches and as_quantity_decimal(medicine.stock_quantity) > ZERO_QUANTITY:
-                raise PrescriptionStockValidationError([
-                    f"{medicine_name}: chưa có lô để cấp {format_quantity(delta)} {unit}. "
-                    "Cần bổ sung lô cho tồn hiện hữu."
-                ], code="inventory.batch_missing")
-            valid_batches = [
-                batch for batch in batches
-                if batch.expiry_date and batch.expiry_date >= today
-                and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
-            ]
-            available_batch_stock = sum(
-                (as_quantity_decimal(batch.remaining_quantity) for batch in valid_batches),
-                ZERO_QUANTITY,
-            )
-            aggregate_stock = as_quantity_decimal(medicine.stock_quantity)
-            if not valid_batches and aggregate_stock > ZERO_QUANTITY and any(
-                batch.expiry_date and batch.expiry_date < today
-                and as_quantity_decimal(batch.remaining_quantity) > ZERO_QUANTITY
-                for batch in batches
-            ):
-                raise PrescriptionStockValidationError([
-                    f"{medicine_name}: các lô còn số lượng đã hết hạn, không thể cấp thuốc. "
-                    "Cần kiểm tra kho và bổ sung lô còn hạn."
-                ], code="inventory.batch_expired")
-            available_to_dispense = min(aggregate_stock, available_batch_stock)
-            if available_to_dispense < delta:
-                missing = delta - available_to_dispense
-                raise PrescriptionStockValidationError([
-                    f"{medicine_name}: cần cấp thêm {format_quantity(delta)} {unit}, "
-                    f"tồn khả dụng {format_quantity(available_to_dispense)} {unit}, "
-                    f"thiếu {format_quantity(missing)} {unit}. Đơn chưa được lưu."
-                ], shortage={
-                    "medicine_name": medicine_name,
-                    "unit": unit,
-                    "requested_quantity": str(new_quantity),
-                    "stock_quantity": str(aggregate_stock),
-                    "additional_quantity": str(delta),
-                    "available_quantity": str(available_to_dispense),
-                    "previous_quantity": str(old_quantity),
-                })
-
-            remaining = delta
-            for batch in valid_batches:
-                if remaining <= ZERO_QUANTITY:
-                    break
-                quantity = min(as_quantity_decimal(batch.remaining_quantity), remaining)
-                batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) - quantity
-                running_stock -= quantity
-                allocations[medicine_id][batch.id] = allocations[medicine_id].get(batch.id, ZERO_QUANTITY) + quantity
-                _append_stock_transaction(
-                    db,
-                    medicine_id=medicine_id,
-                    appointment_id=appointment_id,
-                    batch_id=batch.id,
-                    quantity=quantity,
-                    is_export=True,
-                    stock_balance_after=running_stock,
-                    user_id=user_id,
-                    unit_cost=batch.import_price,
-                    balance_after=batch.remaining_quantity,
-                    operation_id=operation_id,
-                    sale_unit_price=sale_unit_price,
-                )
-                movements.append({
-                    "batch_id": batch.id,
-                    "batch_number": batch.batch_number,
-                    "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
-                    "quantity_deducted": float(quantity),
-                    "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
-                })
-                remaining -= quantity
-            medicine.stock_quantity = as_quantity_decimal(medicine.stock_quantity) - delta
+            running_stock = _dispense_prescription_delta(allocations, appointment_id, batches, db, delta, medicine, medicine_id, medicine_name, movements, new_quantity, old_quantity, operation_id, running_stock, sale_unit_price, unit, user_id)
         else:
-            refund_quantity = abs(delta)
-            refund_batches = sorted(
-                (
-                    batch_map[batch_id]
-                    for batch_id, quantity in current_allocations.items()
-                    if quantity > ZERO_QUANTITY and batch_id in batch_map
-                ),
-                key=_batch_sort_key,
-                reverse=True,
-            )
-            tracked_refund_quantity = min(refund_quantity, allocated_total)
-            legacy_refund_quantity = refund_quantity - tracked_refund_quantity
-            remaining = tracked_refund_quantity
-            for batch in refund_batches:
-                if remaining <= ZERO_QUANTITY:
-                    break
-                allocated = current_allocations[batch.id]
-                quantity = min(allocated, remaining)
-                batch.remaining_quantity = as_quantity_decimal(batch.remaining_quantity) + quantity
-                running_stock += quantity
-                current_allocations[batch.id] = allocated - quantity
-                _append_stock_transaction(
-                    db,
-                    medicine_id=medicine_id,
-                    appointment_id=appointment_id,
-                    batch_id=batch.id,
-                    quantity=quantity,
-                    is_export=False,
-                    stock_balance_after=running_stock,
-                    user_id=user_id,
-                    unit_cost=batch.import_price,
-                    balance_after=batch.remaining_quantity,
-                    operation_id=operation_id,
-                )
-                movements.append({
-                    "batch_id": batch.id,
-                    "batch_number": batch.batch_number,
-                    "expiry_date": batch.expiry_date.isoformat() if batch.expiry_date else None,
-                    "quantity_refunded": float(quantity),
-                    "remaining_quantity": float(as_quantity_decimal(batch.remaining_quantity)),
-                })
-                remaining -= quantity
-            if remaining > ZERO_QUANTITY:
-                raise PrescriptionStockValidationError([
-                    f"{medicine_name}: không thể hoàn đủ phần thuốc đã gắn với lô. "
-                    "Cần kiểm tra lại dữ liệu cấp thuốc trước khi thay đổi số lượng."
-                ])
-            if legacy_refund_quantity > ZERO_QUANTITY:
-                _append_stock_transaction(
-                    db,
-                    medicine_id=medicine_id,
-                    appointment_id=appointment_id,
-                    batch_id=None,
-                    stock_balance_after=running_stock + legacy_refund_quantity,
-                    quantity=legacy_refund_quantity,
-                    is_export=False,
-                    user_id=user_id,
-                    operation_id=operation_id,
-                )
-            medicine.stock_quantity = as_quantity_decimal(medicine.stock_quantity) + refund_quantity
+            _refund_prescription_delta(allocated_total, appointment_id, batch_map, current_allocations, db, delta, medicine, medicine_id, medicine_name, movements, operation_id, running_stock, user_id)
 
         reprice_open_exports(db, appointment_id=appointment_id, medicine_id=medicine_id,
             sale_unit_price=sale_unit_price, operation_id=operation_id, user_id=user_id,

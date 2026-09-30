@@ -51,6 +51,38 @@ def re_examination_calendar(user, appointment_id):
 
 logger.debug("Prescription router created with name 'prescription_api'")
 
+def _prescription_saved_response(appointment_id, db, save_result):
+    prescription_id = save_result['prescription_id']
+    stock_updates = save_result['stock_updates']
+    stock_allocation_states = save_result['stock_allocation_states']
+    emit_examination_changed('prescription_saved', appointment_id=appointment_id, extra={
+        'entity': 'prescription',
+        'prescription_id': prescription_id,
+    })
+    if stock_updates:
+        emit_inventory_changed('prescription_saved', entity='prescription', extra={
+            'appointment_id': appointment_id,
+            'medicine_ids': [item.get('medicine_id') for item in stock_updates if item.get('medicine_id')],
+            'stock_updates_count': len(stock_updates),
+        })
+
+    re_examination_sync_result = save_result['re_examination_sync_result']
+    try:
+        sync_re_examination_after_prescription_save(db, re_examination_sync_result, logger)
+    except Exception:
+        logger.exception('Post-commit scheduling integration failed')
+
+    return jsonify({
+        'message': 'Prescription saved successfully',
+        'prescription_id': prescription_id,
+        'stock_updates': stock_updates,
+        'stock_allocation_states': stock_allocation_states,
+        'prescription_codes_by_type': save_result['prescription_codes_by_type'],
+        # Schedule state was committed together with the prescription.
+        're_examination_sync_result': re_examination_sync_result or {'ok': True}
+    }), 200
+
+
 @router.route('/save', methods=['POST'])
 @require_auth
 def save_prescription(user):
@@ -88,35 +120,7 @@ def save_prescription(user):
             re_examination_date=re_examination_date,
             re_examination_plan=re_exam_plan,
         )
-        prescription_id = save_result['prescription_id']
-        stock_updates = save_result['stock_updates']
-        stock_allocation_states = save_result['stock_allocation_states']
-        emit_examination_changed('prescription_saved', appointment_id=appointment_id, extra={
-            'entity': 'prescription',
-            'prescription_id': prescription_id,
-        })
-        if stock_updates:
-            emit_inventory_changed('prescription_saved', entity='prescription', extra={
-                'appointment_id': appointment_id,
-                'medicine_ids': [item.get('medicine_id') for item in stock_updates if item.get('medicine_id')],
-                'stock_updates_count': len(stock_updates),
-            })
-        
-        re_examination_sync_result = save_result['re_examination_sync_result']
-        try:
-            sync_re_examination_after_prescription_save(db, re_examination_sync_result, logger)
-        except Exception:
-            logger.exception('Post-commit scheduling integration failed')
-
-        return jsonify({
-            'message': 'Prescription saved successfully',
-            'prescription_id': prescription_id,
-            'stock_updates': stock_updates,
-            'stock_allocation_states': stock_allocation_states,
-            'prescription_codes_by_type': save_result['prescription_codes_by_type'],
-            # Schedule state was committed together with the prescription.
-            're_examination_sync_result': re_examination_sync_result or {'ok': True}
-        }), 200
+        return _prescription_saved_response(appointment_id, db, save_result)
         
     except PrescriptionInputValidationError as e:
         if db:

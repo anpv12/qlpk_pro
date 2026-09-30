@@ -341,6 +341,61 @@ def create_prescription_items(db, medicines_by_type, prescription_ids_by_type, m
             db.add(prescription_item)
 
 
+def _load_validated_medicine_catalog(db, medicines, new_totals_by_medicine, old_totals_by_medicine, stock_errors):
+    medicine_ids = set(old_totals_by_medicine) | set(new_totals_by_medicine)
+    medicine_catalog = load_medicine_catalog(db, medicine_ids)
+
+    for medicine_id, totals in new_totals_by_medicine.items():
+        medicine = medicine_catalog.get(medicine_id)
+        if not medicine:
+            stock_errors.append(
+                f"Không tìm thấy thuốc trong kho: {totals.get('medicine_name') or medicine_id}"
+            )
+        elif not totals.get('medicine_name'):
+            totals['medicine_name'] = medicine['name']
+    for medicine_data in medicines:
+        if _is_external_medicine(medicine_data.get('is_external', False)):
+            continue
+        medicine_id = _parse_medicine_id(medicine_data.get('medicine_id'))
+        medicine = medicine_catalog.get(medicine_id)
+        if medicine and not _medicine_display_name(medicine_data):
+            medicine_data['name'] = medicine['name']
+    missing_old_ids = sorted(set(old_totals_by_medicine) - set(medicine_catalog))
+    if missing_old_ids:
+        stock_errors.append(
+            "Đơn hiện tại tham chiếu thuốc kho không còn tồn tại: "
+            + ", ".join(str(item) for item in missing_old_ids)
+        )
+    if stock_errors:
+        raise PrescriptionStockValidationError(stock_errors)
+    return medicine_catalog
+
+
+def _prescription_transaction_result(appointment_id, db, new_totals_by_medicine, prescription_id, stock_updates):
+    allocation_states = build_prescription_batch_allocation_states(
+        db,
+        appointment_id,
+        {
+            medicine_id: totals.get('total_in_clinic_qty', ZERO_QUANTITY)
+            for medicine_id, totals in new_totals_by_medicine.items()
+        },
+    )
+
+    prescription_codes_by_type = {
+        prescription.prescription_type or 'BASIC': prescription.prescription_code
+        for prescription in db.query(Prescription).filter(
+            Prescription.appointment_id == appointment_id,
+            Prescription.prescription_code.isnot(None),
+        ).all()
+    }
+    return {
+        'prescription_id': prescription_id,
+        'stock_updates': stock_updates,
+        'stock_allocation_states': list(allocation_states.values()),
+        'prescription_codes_by_type': prescription_codes_by_type,
+    }
+
+
 def _persist_prescription_transaction(
     db,
     *,
@@ -375,32 +430,7 @@ def _persist_prescription_transaction(
 
     old_totals_by_medicine = collect_old_prescription_item_totals(db, appointment_id)
     new_totals_by_medicine, stock_errors = collect_new_in_clinic_totals(medicines)
-    medicine_ids = set(old_totals_by_medicine) | set(new_totals_by_medicine)
-    medicine_catalog = load_medicine_catalog(db, medicine_ids)
-
-    for medicine_id, totals in new_totals_by_medicine.items():
-        medicine = medicine_catalog.get(medicine_id)
-        if not medicine:
-            stock_errors.append(
-                f"Không tìm thấy thuốc trong kho: {totals.get('medicine_name') or medicine_id}"
-            )
-        elif not totals.get('medicine_name'):
-            totals['medicine_name'] = medicine['name']
-    for medicine_data in medicines:
-        if _is_external_medicine(medicine_data.get('is_external', False)):
-            continue
-        medicine_id = _parse_medicine_id(medicine_data.get('medicine_id'))
-        medicine = medicine_catalog.get(medicine_id)
-        if medicine and not _medicine_display_name(medicine_data):
-            medicine_data['name'] = medicine['name']
-    missing_old_ids = sorted(set(old_totals_by_medicine) - set(medicine_catalog))
-    if missing_old_ids:
-        stock_errors.append(
-            "Đơn hiện tại tham chiếu thuốc kho không còn tồn tại: "
-            + ", ".join(str(item) for item in missing_old_ids)
-        )
-    if stock_errors:
-        raise PrescriptionStockValidationError(stock_errors)
+    medicine_catalog = _load_validated_medicine_catalog(db, medicines, new_totals_by_medicine, old_totals_by_medicine, stock_errors)
 
     medicines_by_type = group_medicines_by_prescription_type(medicines, medicine_catalog)
     for existing_prescription in existing_prescriptions:
@@ -436,28 +466,7 @@ def _persist_prescription_transaction(
     )
     db.flush()
 
-    allocation_states = build_prescription_batch_allocation_states(
-        db,
-        appointment_id,
-        {
-            medicine_id: totals.get('total_in_clinic_qty', ZERO_QUANTITY)
-            for medicine_id, totals in new_totals_by_medicine.items()
-        },
-    )
-
-    prescription_codes_by_type = {
-        prescription.prescription_type or 'BASIC': prescription.prescription_code
-        for prescription in db.query(Prescription).filter(
-            Prescription.appointment_id == appointment_id,
-            Prescription.prescription_code.isnot(None),
-        ).all()
-    }
-    return {
-        'prescription_id': prescription_id,
-        'stock_updates': stock_updates,
-        'stock_allocation_states': list(allocation_states.values()),
-        'prescription_codes_by_type': prescription_codes_by_type,
-    }
+    return _prescription_transaction_result(appointment_id, db, new_totals_by_medicine, prescription_id, stock_updates)
 
 
 def save_prescription_transaction(

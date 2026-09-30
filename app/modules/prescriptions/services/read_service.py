@@ -78,24 +78,7 @@ def _build_history_stock_mapping_fields(item, medicine):
     }
 
 
-def build_appointment_prescription_payload(db, appointment_id):
-    """Build the legacy /api/prescription/appointment/<id> response payload."""
-    prescriptions = db.query(Prescription).filter(
-        Prescription.appointment_id == appointment_id
-    ).all()
-
-    re_appointment = latest_re_examination(db, appointment_id)
-    re_examination_fields = _build_re_examination_fields(re_appointment)
-
-    if not prescriptions:
-        return {
-            'medicines': [],
-            'prescriptions': [],
-            'total_amount': 0,
-            'usage_instructions': '',
-            **re_examination_fields,
-        }
-
+def _group_appointment_prescriptions(appointment_id, db, prescriptions):
     all_medicines = []
     prescriptions_grouped = []
     total_amount = 0
@@ -166,6 +149,28 @@ def build_appointment_prescription_payload(db, appointment_id):
             usage_instructions = prescription.usage_instructions
         if prescription.re_examination_date:
             re_examination_date_val = prescription.re_examination_date
+    return all_medicines, prescriptions_grouped, re_examination_date_val, total_amount, usage_instructions
+
+
+def build_appointment_prescription_payload(db, appointment_id):
+    """Build the legacy /api/prescription/appointment/<id> response payload."""
+    prescriptions = db.query(Prescription).filter(
+        Prescription.appointment_id == appointment_id
+    ).all()
+
+    re_appointment = latest_re_examination(db, appointment_id)
+    re_examination_fields = _build_re_examination_fields(re_appointment)
+
+    if not prescriptions:
+        return {
+            'medicines': [],
+            'prescriptions': [],
+            'total_amount': 0,
+            'usage_instructions': '',
+            **re_examination_fields,
+        }
+
+    all_medicines, prescriptions_grouped, re_examination_date_val, total_amount, usage_instructions = _group_appointment_prescriptions(appointment_id, db, prescriptions)
 
     re_examination_fields = _build_re_examination_fields(re_appointment, re_examination_date_val)
 
@@ -177,6 +182,46 @@ def build_appointment_prescription_payload(db, appointment_id):
         **re_examination_fields,
         'prescription_code': prescriptions[0].prescription_code if prescriptions else None
     }
+
+
+def _attach_prescription_history(db, grouped, prescription_results):
+    for prescription, appointment in prescription_results:
+        apt_id = appointment.id
+        items = db.query(PrescriptionItem).filter(
+            PrescriptionItem.prescription_id == prescription.id
+        ).all()
+
+        if not items:
+            continue
+
+        medicines = []
+        for item in items:
+            medicine = _resolve_item_medicine(db, item)
+            medicines.append({
+                "medicine_id": item.medicine_id if medicine else None,
+                "name": item.medicine_name,
+                "generic_name": medicine.generic_name if medicine else None,
+                "unit_price": item.unit_price,
+                "quantity": float(item.quantity) if item.quantity else 0.0,
+                "unit": item.unit,
+                "strength": item.strength,
+                "route": item.route,
+                "administration_method": medicine.administration_method if medicine else (item.route or ""),
+                "usage": item.usage,
+                "is_external": item.is_external if item.is_external is not None else False,
+                "category_type": medicine.category_type if medicine else "DRUG",
+                "prescription_type": medicine.prescription_type if medicine else "BASIC",
+                **_build_history_stock_mapping_fields(item, medicine),
+            })
+
+        if apt_id in grouped:
+            grouped[apt_id]["prescriptions"].append({
+                "prescription_code": prescription.prescription_code,
+                "prescription_type": prescription.prescription_type or "BASIC",
+                "total_amount": prescription.total_amount,
+                "medicines": medicines
+            })
+            grouped[apt_id]["total_items_count"] += len(medicines)
 
 
 def build_patient_prescription_history_payload(db, patient_id):
@@ -242,43 +287,7 @@ def build_patient_prescription_history_payload(db, patient_id):
         Appointment.is_deleted == False
     ).order_by(Appointment.appointment_date.desc(), Prescription.prescription_type.asc()).all()
 
-    for prescription, appointment in prescription_results:
-        apt_id = appointment.id
-        items = db.query(PrescriptionItem).filter(
-            PrescriptionItem.prescription_id == prescription.id
-        ).all()
-
-        if not items:
-            continue
-
-        medicines = []
-        for item in items:
-            medicine = _resolve_item_medicine(db, item)
-            medicines.append({
-                "medicine_id": item.medicine_id if medicine else None,
-                "name": item.medicine_name,
-                "generic_name": medicine.generic_name if medicine else None,
-                "unit_price": item.unit_price,
-                "quantity": float(item.quantity) if item.quantity else 0.0,
-                "unit": item.unit,
-                "strength": item.strength,
-                "route": item.route,
-                "administration_method": medicine.administration_method if medicine else (item.route or ""),
-                "usage": item.usage,
-                "is_external": item.is_external if item.is_external is not None else False,
-                "category_type": medicine.category_type if medicine else "DRUG",
-                "prescription_type": medicine.prescription_type if medicine else "BASIC",
-                **_build_history_stock_mapping_fields(item, medicine),
-            })
-
-        if apt_id in grouped:
-            grouped[apt_id]["prescriptions"].append({
-                "prescription_code": prescription.prescription_code,
-                "prescription_type": prescription.prescription_type or "BASIC",
-                "total_amount": prescription.total_amount,
-                "medicines": medicines
-            })
-            grouped[apt_id]["total_items_count"] += len(medicines)
+    _attach_prescription_history(db, grouped, prescription_results)
 
     for appointment_id, record in grouped.items():
         record['medicine_transactions'] = visit_ledger_payload(db, appointment_id)

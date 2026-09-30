@@ -11,7 +11,36 @@ from app.models.medicine_transaction import MedicineTransaction
 from app.utils.search_normalization import normalized_contains
 
 
-def build_ledger_report(db, filters):
+def _ledger_medicine_view(complete, cost, page, per_page, query):
+    exported = and_(MedicineTransaction.type == 'export', MedicineTransaction.quantity < 0)
+    returned = and_(MedicineTransaction.type.in_(('return', 'import')), MedicineTransaction.quantity > 0)
+    grouped = query.with_entities(
+        Medicine.id.label('medicine_id'), Medicine.name.label('medicine_name'), Medicine.unit,
+        func.count(func.distinct(case((exported, MedicineTransaction.operation_id)))).label('dispensing_count'),
+        func.sum(case((and_(exported, MedicineTransaction.operation_id.is_(None)), 1), else_=0)).label('untracked_export_rows'),
+        func.count(func.distinct(MedicineTransaction.appointment_id)).label('visit_count'),
+        func.sum(case((exported, -MedicineTransaction.quantity), else_=0)).label('exported_quantity'),
+        func.sum(case((returned, MedicineTransaction.quantity), else_=0)).label('returned_quantity'),
+        func.sum(-MedicineTransaction.quantity).label('net_quantity'),
+        func.sum(MedicineTransaction.sale_amount_delta).label('recorded_revenue'),
+        func.sum(cost).label('recorded_cost'),
+        func.sum(case((complete, MedicineTransaction.sale_amount_delta - cost), else_=None)).label('gross_margin_complete_rows'),
+        func.sum(case((complete, 0), else_=1)).label('incomplete_rows'),
+    ).group_by(Medicine.id, Medicine.name, Medicine.unit)
+    total = grouped.count()
+    rows = grouped.order_by(Medicine.name, Medicine.id).offset((page - 1) * per_page).limit(per_page).all()
+    medicines = []
+    for row in rows:
+        item = dict(row._mapping)
+        for key in ('exported_quantity', 'returned_quantity', 'net_quantity', 'recorded_revenue',
+                    'recorded_cost', 'gross_margin_complete_rows'):
+            item[key] = float(item[key]) if item[key] is not None else None
+        medicines.append(item)
+    return dict(success=True, medicines=medicines, total=total, page=page, per_page=per_page,
+        total_pages=(total + per_page - 1) // per_page, basis='movement_created_at', is_cash_collected=False)
+
+
+def _filtered_ledger_query(db, filters):
     query = db.query(MedicineTransaction).join(
         Medicine, Medicine.id == MedicineTransaction.medicine_id
     ).outerjoin(MedicineBatch, MedicineBatch.id == MedicineTransaction.batch_id).outerjoin(
@@ -50,6 +79,11 @@ def build_ledger_report(db, filters):
         query = query.filter(or_(normalized_contains(Medicine.name, filters['search']),
             normalized_contains(Patient.full_name, filters['search']),
             normalized_contains(MedicineBatch.batch_number, filters['search'])))
+    return query
+
+
+def build_ledger_report(db, filters):
+    query = _filtered_ledger_query(db, filters)
     complete = and_(MedicineTransaction.appointment_id.isnot(None),
         MedicineTransaction.batch_id.isnot(None), MedicineTransaction.price.isnot(None),
         MedicineTransaction.sale_amount_delta.isnot(None))
@@ -58,32 +92,7 @@ def build_ledger_report(db, filters):
     page = max(1, int(filters.get('page') or 1))
     per_page = min(100, max(1, int(filters.get('per_page') or 50)))
     if filters.get('view') == 'medicines':
-        exported = and_(MedicineTransaction.type == 'export', MedicineTransaction.quantity < 0)
-        returned = and_(MedicineTransaction.type.in_(('return', 'import')), MedicineTransaction.quantity > 0)
-        grouped = query.with_entities(
-            Medicine.id.label('medicine_id'), Medicine.name.label('medicine_name'), Medicine.unit,
-            func.count(func.distinct(case((exported, MedicineTransaction.operation_id)))).label('dispensing_count'),
-            func.sum(case((and_(exported, MedicineTransaction.operation_id.is_(None)), 1), else_=0)).label('untracked_export_rows'),
-            func.count(func.distinct(MedicineTransaction.appointment_id)).label('visit_count'),
-            func.sum(case((exported, -MedicineTransaction.quantity), else_=0)).label('exported_quantity'),
-            func.sum(case((returned, MedicineTransaction.quantity), else_=0)).label('returned_quantity'),
-            func.sum(-MedicineTransaction.quantity).label('net_quantity'),
-            func.sum(MedicineTransaction.sale_amount_delta).label('recorded_revenue'),
-            func.sum(cost).label('recorded_cost'),
-            func.sum(case((complete, MedicineTransaction.sale_amount_delta - cost), else_=None)).label('gross_margin_complete_rows'),
-            func.sum(case((complete, 0), else_=1)).label('incomplete_rows'),
-        ).group_by(Medicine.id, Medicine.name, Medicine.unit)
-        total = grouped.count()
-        rows = grouped.order_by(Medicine.name, Medicine.id).offset((page - 1) * per_page).limit(per_page).all()
-        medicines = []
-        for row in rows:
-            item = dict(row._mapping)
-            for key in ('exported_quantity', 'returned_quantity', 'net_quantity', 'recorded_revenue',
-                        'recorded_cost', 'gross_margin_complete_rows'):
-                item[key] = float(item[key]) if item[key] is not None else None
-            medicines.append(item)
-        return dict(success=True, medicines=medicines, total=total, page=page, per_page=per_page,
-            total_pages=(total + per_page - 1) // per_page, basis='movement_created_at', is_cash_collected=False)
+        return _ledger_medicine_view(complete, cost, page, per_page, query)
     total, incomplete, revenue, cost_total, margin = query.with_entities(
         func.count(MedicineTransaction.id),
         func.sum(case((complete, 0), else_=1)),
