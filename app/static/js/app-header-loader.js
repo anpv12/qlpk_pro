@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js, part-3.js, part-4.js
+// Parts (nạp trước file này): assets-and-session.js, global-search.js, header-buttons.js, notifications-and-mount.js
 (function (window, document) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['app-header-loader'] || (window.QLPKModuleParts['app-header-loader'] = { state: {} });
@@ -17,7 +17,7 @@
 	moduleState.ICON_SYSTEM_PATH = '/static/js/shared/icon-system.js';
 	moduleState.NAVIGATION_CONFIG_PATH = '/static/js/app-shell/navigation.config.js';
 	// Workspace tabs is split: parts first, entry last.
-	moduleState.WORKSPACE_TABS_PATHS = ['/static/js/app-shell/workspace-tabs-parts/part-1.js', '/static/js/app-shell/workspace-tabs-parts/part-2.js', '/static/js/app-shell/workspace-tabs.js'];
+	moduleState.WORKSPACE_TABS_PATHS = ['/static/js/app-shell/workspace-tabs-parts/access-and-launcher.js', '/static/js/app-shell/workspace-tabs-parts/panes-and-tabs.js', '/static/js/app-shell/workspace-tabs.js'];
 	moduleState.SOCKET_IO_CLIENT_PATH = '/static/vendor/socket.io/socket.io.min.js';
 	moduleState.REALTIME_CLIENT_PATH = '/static/js/realtime-client.js';
 	moduleState.APPOINTMENT_PAGE_HREF = 'appointment-management.html';

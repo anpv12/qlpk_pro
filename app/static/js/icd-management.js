@@ -1,6 +1,6 @@
 /* exported confirmDelete, currentPage, deleteICD, editICD, loadICDList, openImportModal, showToast, totalPages */
 
-// Continued in (nạp ngay sau file này, cùng scope trang): icd-management/icd-management-2.js
+// Continued in (nạp ngay sau file này, cùng scope trang): icd-management/import-export.js
 // ICD Management JavaScript
 let currentPage = 1;
 let totalPages = 1;

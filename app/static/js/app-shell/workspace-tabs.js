@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): access-and-launcher.js, panes-and-tabs.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['app-shell/workspace-tabs'] || (window.QLPKModuleParts['app-shell/workspace-tabs'] = { state: {} });

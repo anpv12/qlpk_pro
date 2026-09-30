@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js, part-3.js
+// Parts (nạp trước file này): list-state.js, delete-flow.js, list-bindings.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/modal-medical-history-list-ui'] || (window.QLPKModuleParts['components/modal-medical-history-list-ui'] = { state: {} });

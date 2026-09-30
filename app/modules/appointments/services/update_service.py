@@ -491,8 +491,8 @@ def apply_examination_clinical_updates_from_appointment_payload(db, appointment,
 
     return examination
 
-# Route/hàm còn lại nằm ở update_service_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.modules.appointments.services.update_service_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở update_service_patient_fields.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.modules.appointments.services.update_service_patient_fields import (  # noqa: E402,F401
     apply_examination_vitals,
     apply_psychologist_detail_updates_from_appointment_payload,
     save_psychologist_form_detail_fields,

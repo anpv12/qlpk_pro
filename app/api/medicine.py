@@ -447,26 +447,26 @@ def get_active_ingredients(user):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở medicine_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.medicine_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở medicine_dashboard.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.medicine_dashboard import (  # noqa: E402,F401
     get_medicine_units,
     get_dashboard,
     get_statistics_summary,
 )
 
-# Route/hàm còn lại nằm ở medicine_part3.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.medicine_part3 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở medicine_stats_prescriptions.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.medicine_stats_prescriptions import (  # noqa: E402,F401
     get_statistics_prescriptions,
 )
 
-# Route/hàm còn lại nằm ở medicine_part4.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.medicine_part4 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở medicine_stats_inventory.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.medicine_stats_inventory import (  # noqa: E402,F401
     get_statistics_inventory,
     get_statistics_prescription_history,
     get_statistics_doctors,
 )
 
-# Route/hàm còn lại nằm ở medicine_part5.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.medicine_part5 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở medicine_stats_export.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.medicine_stats_export import (  # noqa: E402,F401
     export_statistics_excel,
 )

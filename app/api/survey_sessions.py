@@ -412,8 +412,8 @@ def get_survey_status(user, examination_id):
         if db_gen:
             next(db_gen, None)
 
-# Route/hàm còn lại nằm ở survey_sessions_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.survey_sessions_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở survey_sessions_status.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.survey_sessions_status import (  # noqa: E402,F401
     update_survey_status,
     update_survey_status_by_token,
     get_survey_session_status_by_token,

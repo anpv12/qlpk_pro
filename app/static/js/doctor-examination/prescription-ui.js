@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js, part-3.js
+// Parts (nạp trước file này): state-and-quantities.js, rendering-and-load.js, input-and-binding.js
 import { createReExaminationCalendar } from './re-examination-calendar.js';
 
 (function (window, document) {

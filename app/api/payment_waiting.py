@@ -439,8 +439,8 @@ def export_payment_data(user):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở payment_waiting_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.payment_waiting_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở payment_waiting_invoice.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.payment_waiting_invoice import (  # noqa: E402,F401
     render_invoice,
     get_payment_stats,
 )

@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): snapshot.js, capture-and-bind.js
 (function (window, document) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination/draft-recovery'] || (window.QLPKModuleParts['doctor-examination/draft-recovery'] = { state: {} });

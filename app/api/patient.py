@@ -446,8 +446,8 @@ def get_patient_public(patient_id):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở patient_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.patient_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở patient_write.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.patient_write import (  # noqa: E402,F401
     create_patient,
     update_patient,
     upload_safety_plan_file,
@@ -455,8 +455,8 @@ from app.api.patient_part2 import (  # noqa: E402,F401
     delete_patient,
 )
 
-# Route/hàm còn lại nằm ở patient_part3.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.patient_part3 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở patient_lookup_import.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.patient_lookup_import import (  # noqa: E402,F401
     check_duplicate_patient,
     import_patients,
     get_patient_latest_appointment,

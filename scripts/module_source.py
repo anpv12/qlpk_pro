@@ -1,6 +1,6 @@
 """Read split browser modules (entry + ``<entry>-parts/``) as one plain source.
 
-Split entries carry ``// Parts (nạp trước file này): part-1.js, ...``; parts run
+Split entries carry ``// Parts (nạp trước file này): <topic>.js, ...``; parts run
 before the entry. The plain form strips the ``moduleParts.``/``moduleState.``
 indirection so source-contract checks keep matching the original code.
 """

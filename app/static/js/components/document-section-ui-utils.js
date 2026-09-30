@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): upload-controls.js, section-adapters.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/document-section-ui-utils'] || (window.QLPKModuleParts['components/document-section-ui-utils'] = { state: {} });

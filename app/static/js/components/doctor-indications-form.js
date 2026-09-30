@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): model-and-render.js, actions-and-loading.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/doctor-indications-form#create'] || (window.QLPKModuleParts['components/doctor-indications-form#create'] = { installers: [] });

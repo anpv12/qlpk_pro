@@ -1,7 +1,7 @@
 /* global applyFilters, debounce, formatMoney, formatNumber, getAuthHeaders, getFilterParams, hideLoading, loadPrescriptionHistory, renderInventoryTable, renderPrescriptionsTable, showLoading, showToast, switchTab */
 /* exported currentTab, expandedDoctors, ledgerMedicineId, loadDispensingLedger, loadDispensingMedicines, loadInventory, loadPrescriptions, loadStatistics, renderMedicineDetailTable, renderMedicineSummary, renderStatusBadge */
 
-// Continued in (nạp ngay sau file này, cùng scope trang): medicine-statistics/medicine-statistics-2.js, medicine-statistics/medicine-statistics-3.js
+// Continued in (nạp ngay sau file này, cùng scope trang): medicine-statistics/tables.js, medicine-statistics/helpers.js
 /**
  * Medicine Statistics JavaScript
  * Xử lý logic cho trang thống kê thuốc

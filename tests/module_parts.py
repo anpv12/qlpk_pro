@@ -1,4 +1,4 @@
-"""Patch helpers for API/service modules split into ``<module>_partN`` siblings.
+"""Patch helpers for API/service modules split into ``<module>_<topic>`` siblings.
 
 Split modules re-export moved functions, but each part binds its own imports,
 so a monkeypatch must reach every sibling that holds the same name.
@@ -7,17 +7,16 @@ so a monkeypatch must reach every sibling that holds the same name.
 from __future__ import annotations
 
 import importlib
-import pkgutil
+import inspect
+import re
 
 
 def part_modules(module):
+    """Sibling ``<stem>_*`` modules the split module imports its moved routes/functions from."""
     package_name, _, stem = module.__name__.rpartition(".")
-    package = importlib.import_module(package_name)
-    parts = []
-    for info in pkgutil.iter_modules(package.__path__):
-        if info.name.startswith(f"{stem}_part") and info.name[len(stem) + 5:].isdigit():
-            parts.append(importlib.import_module(f"{package_name}.{info.name}"))
-    return parts
+    source = inspect.getsource(module)
+    names = re.findall(rf"^from {re.escape(package_name)}\.({re.escape(stem)}_\w+) import", source, re.M)
+    return [importlib.import_module(f"{package_name}.{name}") for name in dict.fromkeys(names)]
 
 
 def setattr_all(monkeypatch, module, name, value, **kwargs):

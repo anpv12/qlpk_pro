@@ -66,7 +66,7 @@ def get_statistics_inventory(user):
     Lấy danh sách thuốc với thông tin tồn kho
     Query params: search, medicine_type
     """
-    from app.api.medicine_part5 import _parse_export_dates, _query_dispensed_map
+    from app.api.medicine_stats_export import _parse_export_dates, _query_dispensed_map
 
     db = next(get_db())
     try:
@@ -221,7 +221,7 @@ def get_statistics_prescription_history(user):
     Lịch sử kê thuốc: group by Medicine → Doctor → chi tiết từng đơn
     Query params: from_date, to_date, doctor_id, medicine_type, search
     """
-    from app.api.medicine_part5 import _parse_export_dates
+    from app.api.medicine_stats_export import _parse_export_dates
 
     db = next(get_db())
     try:

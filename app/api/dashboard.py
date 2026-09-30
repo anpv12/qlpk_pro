@@ -439,8 +439,8 @@ def get_icd_detail(user):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở dashboard_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.dashboard_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở dashboard_revenue.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.dashboard_revenue import (  # noqa: E402,F401
     export_dashboard_excel,
     get_revenue_detail,
     get_revenue,
@@ -448,16 +448,16 @@ from app.api.dashboard_part2 import (  # noqa: E402,F401
     get_top_icd,
 )
 
-# Route/hàm còn lại nằm ở dashboard_part3.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.dashboard_part3 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở dashboard_referral_staff.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.dashboard_referral_staff import (  # noqa: E402,F401
     get_referral_sources,
     get_referral_source_detail,
     export_referral_source_excel,
     get_staff_online,
 )
 
-# Route/hàm còn lại nằm ở dashboard_part4.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.dashboard_part4 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở dashboard_income_exam_stats.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.dashboard_income_exam_stats import (  # noqa: E402,F401
     export_thu_chi_excel,
     get_exam_stats_by_day,
     get_exam_detail_by_day,

@@ -427,8 +427,8 @@ def create_service_price(current_user, service_id):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở service_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.service_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở service_prices.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.service_prices import (  # noqa: E402,F401
     update_service_price,
     delete_service_price,
     get_appointment_services,
@@ -439,7 +439,7 @@ from app.api.service_part2 import (  # noqa: E402,F401
     sync_appointment_services,
 )
 
-# Route/hàm còn lại nằm ở service_part3.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.service_part3 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở service_import.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.service_import import (  # noqa: E402,F401
     import_services,
 )

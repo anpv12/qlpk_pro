@@ -1,7 +1,7 @@
 /* global collectFormData, formatDateDisplay, loadAttachmentsForCurrentPatient, resetFormToDefault, safeSetValue, saveReceptionistAppointment, saveReceptionistPatient, uploadReceptionistDraftDocuments, uploadedDocuments */
 /* exported DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, bindAddressFieldChanges, buildFullAddressFromParts, buildReceptionistConfirmOptions, calculatePregnancyWeek, currentAppointmentId, currentEditId, currentPage, currentPatientId, currentStatus, ensureSession, getCurrentLoadId, initializeAutocomplete, isCheckingDuplicate, isSubmitting, loadAppointments, loadDoctorsForForm, loadProvinces, loadServicesForForm, loadWards, perPage, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance, saveAddressToServerIfEditing, savePatientDataInternal, setCurrentPatientId, setDateOfBirthAndAge, setDefaultAppointmentDateTime, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, totalPages, updateAddressSummary, updateStatusCounts, validateReceptionistFormData, waitingListFilter */
 
-// Continued in (nạp ngay sau file này, cùng scope trang): receptionist/receptionist-new-2.js, receptionist/receptionist-new-3.js
+// Continued in (nạp ngay sau file này, cùng scope trang): receptionist/save-flow.js, receptionist/medical-data-and-documents.js
 // Receptionist intake workspace
 let currentPatientId = null;
 let relativeTableInstance = null;

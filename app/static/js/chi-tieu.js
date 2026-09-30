@@ -1,7 +1,7 @@
 /* global getRevDateRange, isInDateRange, loadAndRenderRevenue, parseDateStr, renderGrid, renderThuChiChart, updateCell */
 /* exported _thuChiChartInstance, acBlurTimer, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, mountCtChart, normalizeSearchText, openAcList, render, rows, saveColumnsToServer, selectAc, setCtVisible, switchTab */
 
-// Continued in (nạp ngay sau file này, cùng scope trang): chi-tieu/chi-tieu-2.js, chi-tieu/chi-tieu-3.js, chi-tieu/chi-tieu-4.js
+// Continued in (nạp ngay sau file này, cùng scope trang): chi-tieu/revenue-charts.js, chi-tieu/grid-and-filters.js, chi-tieu/import-and-edit.js
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
 
 function normalizeSearchText(value) {

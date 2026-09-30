@@ -486,13 +486,13 @@ def get_sync_status(user: User):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở calendar_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.calendar_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở calendar_event_sync.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.calendar_event_sync import (  # noqa: E402,F401
     verify_events,
     sync_appointments,
 )
 
-# Route/hàm còn lại nằm ở calendar_part3.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.calendar_part3 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở calendar_cleanup.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.calendar_cleanup import (  # noqa: E402,F401
     delete_all_calendar_events,
 )

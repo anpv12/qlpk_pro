@@ -472,8 +472,8 @@ def return_to_receptionist(user, appt_id):
     finally:
         db.close()
 
-# Route/hàm còn lại nằm ở appointment_part2.py; import để đăng ký route và giữ tên cũ trên module này.
-from app.api.appointment_part2 import (  # noqa: E402,F401
+# Route/hàm còn lại nằm ở appointment_reexam_reports.py; import để đăng ký route và giữ tên cũ trên module này.
+from app.api.appointment_reexam_reports import (  # noqa: E402,F401
     create_re_examination,
     get_re_examination_appointment,
     create_re_examination_from_prescription,

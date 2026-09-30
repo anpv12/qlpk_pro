@@ -1,6 +1,6 @@
 'use strict';
 // Split browser modules keep a manifest on their entry file:
-//   // Parts (nạp trước file này): part-1.js, part-2.js
+//   // Parts (nạp trước file này): state-and-quantities.js, rendering-and-load.js
 // Parts live in <entry>-parts/ and must run before the entry, in that order.
 const fs = require('node:fs');
 const path = require('node:path');

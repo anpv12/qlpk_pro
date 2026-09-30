@@ -1,7 +1,7 @@
 /* global filterTable, formatTimeRangeReadable, getStatusIndicator, resetForm, setQuickTimeSelection, showAlert */
 /* exported currentBusySchedules, loadMyBusySchedules, normalizeSearchText */
 
-// Continued in (nạp ngay sau file này, cùng scope trang): doctor-busy-schedule/doctor-busy-schedule-2.js
+// Continued in (nạp ngay sau file này, cùng scope trang): doctor-busy-schedule/list-and-form.js
 // Doctor Busy Schedule Management JavaScript
 
 let currentUser = null;

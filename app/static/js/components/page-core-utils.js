@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): api-and-indicators.js, page-bootstrap.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/page-core-utils'] || (window.QLPKModuleParts['components/page-core-utils'] = { state: {} });

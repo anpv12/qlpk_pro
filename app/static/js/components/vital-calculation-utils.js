@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): bmi-and-age.js, previous-vitals.js
 (function (window) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/vital-calculation-utils'] || (window.QLPKModuleParts['components/vital-calculation-utils'] = { state: {} });

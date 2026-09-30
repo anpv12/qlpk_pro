@@ -3,10 +3,10 @@
 
 	const SIDEBAR_CONTAINER_ID = 'sidebar-container';
 	// Split modules: parts are loaded in order before the entry file (last item).
-	const APP_HEADER_LOADER_PATHS = ['/static/js/app-header-loader-parts/part-1.js', '/static/js/app-header-loader-parts/part-2.js', '/static/js/app-header-loader-parts/part-3.js', '/static/js/app-header-loader-parts/part-4.js', '/static/js/app-header-loader.js'];
+	const APP_HEADER_LOADER_PATHS = ['/static/js/app-header-loader-parts/assets-and-session.js', '/static/js/app-header-loader-parts/global-search.js', '/static/js/app-header-loader-parts/header-buttons.js', '/static/js/app-header-loader-parts/notifications-and-mount.js', '/static/js/app-header-loader.js'];
 	const APP_HEADER_STYLESHEET_PATH = '/static/css/components/app-header.css';
 	const APP_HEADER_STYLESHEET_ID = 'qlpk-app-header-style';
-	const SHORTCUT_MANAGER_PATHS = ['/static/js/shortcut-manager-parts/part-1.js', '/static/js/shortcut-manager-parts/part-2.js', '/static/js/shortcut-manager.js'];
+	const SHORTCUT_MANAGER_PATHS = ['/static/js/shortcut-manager-parts/session-and-keys.js', '/static/js/shortcut-manager-parts/settings-page.js', '/static/js/shortcut-manager.js'];
 
 	function getAppVersion() {
 		return window.APP_VERSION || localStorage.getItem('APP_VERSION') || Date.now();

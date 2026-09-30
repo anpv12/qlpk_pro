@@ -1,4 +1,4 @@
-// Parts (nạp trước file này): part-1.js, part-2.js
+// Parts (nạp trước file này): queue-and-view-mode.js, patient-load-and-init.js
 (function (window, document) {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['doctor-examination'] || (window.QLPKModuleParts['doctor-examination'] = { state: {} });
