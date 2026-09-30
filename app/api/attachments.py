@@ -47,7 +47,7 @@ def validate_file_size(file):
         file.stream.seek(0, os.SEEK_END)
         size = file.stream.tell()
         file.stream.seek(0)
-    except Exception:
+    except (AttributeError, OSError, ValueError):
         logger.warning('Không đọc được kích thước tập tin tải lên, bỏ qua kiểm tra dung lượng', exc_info=True)
         size = 0
 

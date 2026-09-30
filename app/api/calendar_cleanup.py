@@ -11,6 +11,7 @@ from app.api.calendar import (  # noqa: E402 — module gốc đã khởi tạo 
     calendar_bp,
     logger,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _delete_calendar_events_parallel(db, event_data, events):
@@ -125,6 +126,7 @@ def _build_event_delete_payloads(db, events):
 
 @calendar_bp.route('/delete-all', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='{error}')
 def delete_all_calendar_events(user: User):
     """Xóa tất cả Google Calendar events trong khoảng ngày được chọn
     Tối ưu: Sử dụng ThreadPoolExecutor để xóa song song trên Google Calendar
@@ -178,11 +180,8 @@ def delete_all_calendar_events(user: User):
 
         return jsonify(result)
 
-    except Exception as e:
+    except CalendarAccessError as e:
         db.rollback()
-        if isinstance(e, CalendarAccessError):
-            return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error deleting calendar events: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), e.status_code
     finally:
         db.close()

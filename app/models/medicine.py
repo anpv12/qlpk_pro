@@ -101,7 +101,7 @@ class Medicine(Base):
         try:
             if self.batches:
                 batch_count = len(self.batches)
-        except Exception as exc:
+        except (SQLAlchemyError, TypeError) as exc:
             logger.warning('Không đếm được số lô của thuốc %s: %s', getattr(self, 'id', None), exc, exc_info=True)
 
         return {

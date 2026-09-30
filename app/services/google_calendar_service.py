@@ -49,8 +49,8 @@ def _parse_google_token_error(response) -> str:
         error_code = payload.get('error')
         if error_code:
             return str(error_code)
-    except Exception as exc:
-        logger.debug('Google Calendar error payload không phải JSON: %s', exc, exc_info=True)
+    except (ValueError, AttributeError) as exc:
+        logger.debug('Google Calendar error payload không phải JSON: %s', exc)
     return response.text or f'http_{response.status_code}'
 
 

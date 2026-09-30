@@ -91,7 +91,7 @@ def delete_result_file_for_chi_dinh(db, chi_dinh_id, file_id, root_path, logger=
     if os.path.exists(file_path):
         try:
             os.remove(file_path)
-        except Exception as exc:
+        except OSError as exc:
             if logger:
                 logger.warning(f"Could not delete file {file_path}: {exc}", exc_info=True)
 
@@ -109,7 +109,7 @@ def delete_result_files_for_chi_dinh_list(chi_dinh_list, root_path, logger=None)
                 if os.path.exists(file_path):
                     try:
                         os.remove(file_path)
-                    except Exception as exc:
+                    except OSError as exc:
                         if logger:
                             logger.warning(f"Could not delete file {file_path}: {exc}", exc_info=True)
 

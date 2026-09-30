@@ -261,6 +261,7 @@ def _find_duplicate_calendar_emails(email_map):
 
 @calendar_bp.route('/validate-connections', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def validate_connections(user: User):
     """
     Validate tất cả connections, lấy email từ Google, xử lý trùng email.
@@ -307,12 +308,9 @@ def validate_connections(user: User):
             'duplicates': duplicates
         })
         
-    except Exception as e:
+    except CalendarAccessError as e:
         db.rollback()
-        if isinstance(e, CalendarAccessError):
-            return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error validating connections: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), e.status_code
     finally:
         db.close()
 
@@ -423,6 +421,7 @@ def _calendar_status_context(appointments, db):
 
 @calendar_bp.route('/sync-status', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_sync_status(user: User):
     """
     Lấy trạng thái đồng bộ của các lịch hẹn trong khoảng thời gian.
@@ -467,11 +466,8 @@ def get_sync_status(user: User):
             'appointments': result
         })
         
-    except Exception as e:
-        if isinstance(e, CalendarAccessError):
-            return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error getting sync status: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+    except CalendarAccessError as e:
+        return jsonify({'error': str(e)}), e.status_code
     finally:
         db.close()
 

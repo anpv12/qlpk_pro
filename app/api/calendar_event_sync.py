@@ -12,6 +12,7 @@ from app.api.calendar import (  # noqa: E402 — module gốc đã khởi tạo 
     calendar_bp,
     logger,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _verify_appointment_events(appointment_ids, connections, events_by_appt, users):
@@ -93,6 +94,7 @@ def _index_calendar_events(db, events):
 
 @calendar_bp.route('/verify-events', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def verify_events(user: User):
     """
     Verify thực tế các event tồn tại trên Google Calendar.
@@ -130,11 +132,8 @@ def verify_events(user: User):
             'results': results
         })
 
-    except Exception as e:
-        if isinstance(e, CalendarAccessError):
-            return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error verifying events: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+    except CalendarAccessError as e:
+        return jsonify({'error': str(e)}), e.status_code
     finally:
         db.close()
 
@@ -259,6 +258,7 @@ def _calendar_users_to_sync(actor, appt, db):
 
 @calendar_bp.route('/sync', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def sync_appointments(user: User):
     """
     Đồng bộ các lịch hẹn được chọn lên Google Calendar.
@@ -332,11 +332,8 @@ def sync_appointments(user: User):
             'results': results
         })
 
-    except Exception as e:
+    except CalendarAccessError as e:
         db.rollback()
-        if isinstance(e, CalendarAccessError):
-            return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error syncing appointments: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), e.status_code
     finally:
         db.close()
