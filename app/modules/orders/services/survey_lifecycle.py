@@ -72,6 +72,32 @@ def expire_due_order_surveys(db, now=None):
     return changed
 
 
+def _verify_survey_submitter(data, db, order, session):
+    examination = db.query(Examination).filter_by(id=session.examination_id).first()
+    try:
+        matches = (int(data.get('patient_id')) == session.patient_id == examination.patient_id
+                   and int(data.get('examination_id')) == session.examination_id
+                   and int(data.get('survey_template_id')) == session.survey_template_id == order.survey_template_id
+                   and examination.appointment_id == order.appointment_id)
+    except (TypeError, ValueError, AttributeError):
+        matches = False
+    if not matches:
+        raise SurveyLifecycleError('Bài trả lời không khớp chỉ định hoặc phiên khảo sát')
+
+
+def _survey_submission_state(data, db, order, session):
+    existing = db.query(SurveyResponse).filter_by(session_id=session.id).first()
+    if session.status == SurveySessionStatus.completed:
+        if existing and existing.responses == data.get('responses'):
+            return existing, order, session, False
+        raise SurveyLifecycleError('Khảo sát đã hoàn thành, không thể thay đổi bài đã nộp', 409)
+    if order.status in ('has_result', 'completed'):
+        raise SurveyLifecycleError('Chỉ định đã có kết quả hoặc đã hoàn thành', 409)
+    if session.status not in (SurveySessionStatus.pending, SurveySessionStatus.in_progress) or session.is_expired():
+        raise SurveyLifecycleError('Link khảo sát đã đóng hoặc hết hạn', 410)
+    return None
+
+
 def submit_order_survey(db, data):
     """Validate, score and record a result atomically; caller commits then emits."""
     if not isinstance(data, dict) or not data.get('session_token'):
@@ -84,25 +110,10 @@ def submit_order_survey(db, data):
     session = db.query(SurveySession).filter_by(id=session.id).with_for_update().populate_existing().first()
     if not order:
         raise SurveyLifecycleError('Không tìm thấy chỉ định', 404)
-    examination = db.query(Examination).filter_by(id=session.examination_id).first()
-    try:
-        matches = (int(data.get('patient_id')) == session.patient_id == examination.patient_id
-                   and int(data.get('examination_id')) == session.examination_id
-                   and int(data.get('survey_template_id')) == session.survey_template_id == order.survey_template_id
-                   and examination.appointment_id == order.appointment_id)
-    except (TypeError, ValueError, AttributeError):
-        matches = False
-    if not matches:
-        raise SurveyLifecycleError('Bài trả lời không khớp chỉ định hoặc phiên khảo sát')
-    existing = db.query(SurveyResponse).filter_by(session_id=session.id).first()
-    if session.status == SurveySessionStatus.completed:
-        if existing and existing.responses == data.get('responses'):
-            return existing, order, session, False
-        raise SurveyLifecycleError('Khảo sát đã hoàn thành, không thể thay đổi bài đã nộp', 409)
-    if order.status in ('has_result', 'completed'):
-        raise SurveyLifecycleError('Chỉ định đã có kết quả hoặc đã hoàn thành', 409)
-    if session.status not in (SurveySessionStatus.pending, SurveySessionStatus.in_progress) or session.is_expired():
-        raise SurveyLifecycleError('Link khảo sát đã đóng hoặc hết hạn', 410)
+    _verify_survey_submitter(data, db, order, session)
+    error_response = _survey_submission_state(data, db, order, session)
+    if error_response is not None:
+        return error_response
     template = db.query(SurveyTemplate).filter_by(id=session.survey_template_id).first()
     if not template:
         raise SurveyLifecycleError('Không tìm thấy mẫu khảo sát')

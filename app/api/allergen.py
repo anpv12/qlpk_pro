@@ -8,6 +8,7 @@ from sqlalchemy import or_
 import pandas as pd
 import io
 from app.utils.api_error_contract import api_error_boundary
+from app.utils.catalog_excel_upload import catalog_excel_upload
 
 allergen_bp = Blueprint('allergen', __name__, url_prefix='/api/allergen')
 
@@ -160,21 +161,31 @@ def download_template(user):
         db.close()
 
 
+def _upsert_imported_allergen(added_count, db, mo_ta, skipped_count, ten_di_nguyen):
+    existing = db.query(Allergen).filter(Allergen.ten_di_nguyen.ilike(ten_di_nguyen)).first()
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            if mo_ta:
+                existing.mo_ta = mo_ta
+            added_count += 1
+        else:
+            skipped_count += 1
+    else:
+        db.add(Allergen(ten_di_nguyen=ten_di_nguyen, mo_ta=mo_ta))
+        added_count += 1
+    return added_count, skipped_count
+
+
 @allergen_bp.route('/import', methods=['POST'])
 @require_auth
 @api_error_boundary(success=False, message='Lỗi khi xử lý file: {error}')
 def import_excel(user):
     db = SessionLocal()
     try:
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'message': 'Không tìm thấy file'}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'success': False, 'message': 'Tên file rỗng'}), 400
-
-        if not (file.filename.endswith('.xlsx') or file.filename.endswith('.xls')):
-            return jsonify({'success': False, 'message': 'Chỉ hỗ trợ định dạng Excel (.xlsx, .xls)'}), 400
+        file, upload_error = catalog_excel_upload()
+        if upload_error:
+            return upload_error
 
         df = pd.read_excel(file)
         cols = df.columns.tolist()
@@ -196,18 +207,7 @@ def import_excel(user):
             if mo_ta.lower() == 'nan':
                 mo_ta = ''
 
-            existing = db.query(Allergen).filter(Allergen.ten_di_nguyen.ilike(ten_di_nguyen)).first()
-            if existing:
-                if not existing.is_active:
-                    existing.is_active = True
-                    if mo_ta:
-                        existing.mo_ta = mo_ta
-                    added_count += 1
-                else:
-                    skipped_count += 1
-            else:
-                db.add(Allergen(ten_di_nguyen=ten_di_nguyen, mo_ta=mo_ta))
-                added_count += 1
+            added_count, skipped_count = _upsert_imported_allergen(added_count, db, mo_ta, skipped_count, ten_di_nguyen)
 
         db.commit()
         emit_inventory_changed('allergens_imported', entity='allergen', extra={

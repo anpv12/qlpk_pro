@@ -208,25 +208,26 @@ def _build_appointment_export_row(db, idx, appt, logger=None):
     ]
 
 
-def _build_history_text(db, patient, appt, logger=None):
-    if not patient:
-        return ''
+def _split_physical_history_items(patient):
+    icd_ids = []
+    text_vals = []
+    if isinstance(patient.physical_history, list):
+        for item in patient.physical_history:
+            if isinstance(item, dict):
+                if item.get('type') == 'icd' and item.get('id') is not None:
+                    icd_ids.append(item.get('id'))
+                elif item.get('type') == 'text' and item.get('value'):
+                    text_vals.append(item.get('value'))
+            elif isinstance(item, int):
+                icd_ids.append(item)
+    return icd_ids, text_vals
 
-    tien_can_parts = []
+
+def _append_physical_history_parts(db, logger, patient, tien_can_parts):
     if patient.physical_history:
         try:
             from app.models.icd import ICD
-            icd_ids = []
-            text_vals = []
-            if isinstance(patient.physical_history, list):
-                for item in patient.physical_history:
-                    if isinstance(item, dict):
-                        if item.get('type') == 'icd' and item.get('id') is not None:
-                            icd_ids.append(item.get('id'))
-                        elif item.get('type') == 'text' and item.get('value'):
-                            text_vals.append(item.get('value'))
-                    elif isinstance(item, int):
-                        icd_ids.append(item)
+            icd_ids, text_vals = _split_physical_history_items(patient)
 
             if icd_ids:
                 icd_list = db.query(ICD).filter(ICD.id.in_(icd_ids)).all()
@@ -237,6 +238,14 @@ def _build_history_text(db, patient, appt, logger=None):
         except Exception as exc:
             if logger:
                 logger.error(f"Error fetching ICD names in excel export: {exc}", exc_info=True)
+
+
+def _build_history_text(db, patient, appt, logger=None):
+    if not patient:
+        return ''
+
+    tien_can_parts = []
+    _append_physical_history_parts(db, logger, patient, tien_can_parts)
 
     exam_risk = current_examination(appt)
     if exam_risk and getattr(exam_risk, 'risk_assessment', None):

@@ -421,6 +421,13 @@ def ensure_examination_for_confirmed_appointment(db, appointment, appointment_id
     return examination
 
 
+def _apply_clinical_text_fields_unless_locked(block_clinical_overwrite, data, examination):
+    if 'main_reason' in data and not block_clinical_overwrite:
+        examination.main_reason = data.get('main_reason')
+    if 'main_symptoms' in data and not block_clinical_overwrite:
+        examination.main_symptoms = data.get('main_symptoms')
+
+
 def apply_examination_clinical_updates_from_appointment_payload(db, appointment, appointment_id, data, logger=None):
     """Apply examination-owned clinical fields from the legacy appointment update payload."""
     examination = db.query(Examination).filter(Examination.appointment_id == appointment_id).first()
@@ -453,20 +460,10 @@ def apply_examination_clinical_updates_from_appointment_payload(db, appointment,
         bool(data.get('is_appointment_edit'))
         and exam_status_value not in ('WAITING_TRANSFER', None)
     )
-    if 'main_reason' in data and not block_clinical_overwrite:
-        examination.main_reason = data.get('main_reason')
-    if 'main_symptoms' in data and not block_clinical_overwrite:
-        examination.main_symptoms = data.get('main_symptoms')
-    if 'diagnosis' in data:
-        examination.diagnosis = data.get('diagnosis')
-    if 'benh_kem_theo' in data:
-        examination.benh_kem_theo = data.get('benh_kem_theo')
-    if 'treatment_plan' in data:
-        examination.treatment_plan = data.get('treatment_plan')
-    if 'loi_dan' in data:
-        examination.loi_dan = data.get('loi_dan')
-    if 'current_medications' in data:
-        examination.current_medications = data.get('current_medications')
+    _apply_clinical_text_fields_unless_locked(block_clinical_overwrite, data, examination)
+    for field in ('diagnosis', 'benh_kem_theo', 'treatment_plan', 'loi_dan', 'current_medications'):
+        if field in data:
+            setattr(examination, field, data.get(field))
     if 'risk_assessment' in data:
         examination.risk_assessment = normalize_risk_assessment(
             validate_risk_assessment(data.get('risk_assessment'))

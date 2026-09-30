@@ -178,6 +178,21 @@ def schedule_state(appointment):
                           'package_id': appointment.package_id}}
 
 
+def _guard_re_examination_change(current, requested, snapshot, state):
+    if current and snapshot is None:
+        raise ReExaminationValidationError('Tải lại lịch tái khám trước khi thay đổi.', code='re-examination-conflict', schedule=state)
+    if snapshot is not None:
+        expected = tuple(snapshot.get(key) for key in ('appointment_id', 'version', 'status'))
+        actual = tuple(state.get(key) for key in ('appointment_id', 'version', 'status'))
+        if expected != actual:
+            raise ReExaminationValidationError('Lịch tái khám đã thay đổi ở nơi khác. Kiểm tra lịch mới trước khi lưu.',
+                                               code='re-examination-conflict', schedule=state)
+    if current and not state['editable']:
+        raise ReExaminationValidationError(state['lock_reason'], code='re-examination-locked', schedule=state)
+    if requested and requested <= datetime.now():
+        raise ReExaminationValidationError('Ngày giờ tái khám mới phải nằm trong tương lai.', schedule=state)
+
+
 def plan_re_examination(db, appointment_id, data, *, user_id=None):
     from app.models.appointment import Appointment
     from app.models.prescription import Prescription
@@ -209,18 +224,7 @@ def plan_re_examination(db, appointment_id, data, *, user_id=None):
         return plan
     if (desired == state['datetime'] and (not desired or not selection_changed)) or (current and state['status'] == 'CANCELLED' and not desired):
         return plan  # retry of a successful create/update/cancel
-    if current and snapshot is None:
-        raise ReExaminationValidationError('Tải lại lịch tái khám trước khi thay đổi.', code='re-examination-conflict', schedule=state)
-    if snapshot is not None:
-        expected = tuple(snapshot.get(key) for key in ('appointment_id', 'version', 'status'))
-        actual = tuple(state.get(key) for key in ('appointment_id', 'version', 'status'))
-        if expected != actual:
-            raise ReExaminationValidationError('Lịch tái khám đã thay đổi ở nơi khác. Kiểm tra lịch mới trước khi lưu.',
-                                               code='re-examination-conflict', schedule=state)
-    if current and not state['editable']:
-        raise ReExaminationValidationError(state['lock_reason'], code='re-examination-locked', schedule=state)
-    if requested and requested <= datetime.now():
-        raise ReExaminationValidationError('Ngày giờ tái khám mới phải nằm trong tương lai.', schedule=state)
+    _guard_re_examination_change(current, requested, snapshot, state)
     plan.update(action='update' if current and requested else 'cancel' if current else 'create',
                 datetime=requested, prescription_date=requested.date() if requested else None)
     if requested and selection is not None and (selection_changed or not current):

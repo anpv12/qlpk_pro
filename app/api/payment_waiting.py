@@ -34,6 +34,41 @@ def format_currency(value: Decimal | None) -> str:
     amount = value or Decimal(0)
     return f"{amount:,.0f}".replace(",", ".")
 
+def _append_ones_after_zero_tens(hundreds, ones, show_zero_hundreds, words):
+    if ones != 0:
+        if hundreds > 0 or show_zero_hundreds:
+            words.append("lẻ")
+        if ones == 5 and (hundreds > 0 or show_zero_hundreds):
+            words.append("lăm")
+        else:
+            words.append(VIET_DIGITS[ones])
+
+
+def _append_ones_after_tens(ones, words):
+    if ones == 1:
+        words.append("mốt")
+    elif ones == 4:
+        words.append("tư")
+    elif ones == 5:
+        words.append("lăm")
+    elif ones != 0:
+        words.append(VIET_DIGITS[ones])
+
+
+def _append_tens_and_ones_words(hundreds, ones, show_zero_hundreds, tens, words):
+    if tens > 1:
+        words.append(f"{VIET_DIGITS[tens]} mươi")
+        _append_ones_after_tens(ones, words)
+    elif tens == 1:
+        words.append("mười")
+        if ones == 5:
+            words.append("lăm")
+        elif ones != 0:
+            words.append(VIET_DIGITS[ones])
+    else:
+        _append_ones_after_zero_tens(hundreds, ones, show_zero_hundreds, words)
+
+
 def read_three_digits(number: int, show_zero_hundreds: bool) -> str:
     hundreds = number // 100
     tens = (number % 100) // 10
@@ -43,30 +78,7 @@ def read_three_digits(number: int, show_zero_hundreds: bool) -> str:
     if hundreds > 0 or show_zero_hundreds:
         words.append(f"{VIET_DIGITS[hundreds]} trăm" if hundreds > 0 else "không trăm")
 
-    if tens > 1:
-        words.append(f"{VIET_DIGITS[tens]} mươi")
-        if ones == 1:
-            words.append("mốt")
-        elif ones == 4:
-            words.append("tư")
-        elif ones == 5:
-            words.append("lăm")
-        elif ones != 0:
-            words.append(VIET_DIGITS[ones])
-    elif tens == 1:
-        words.append("mười")
-        if ones == 5:
-            words.append("lăm")
-        elif ones != 0:
-            words.append(VIET_DIGITS[ones])
-    else:
-        if ones != 0:
-            if hundreds > 0 or show_zero_hundreds:
-                words.append("lẻ")
-            if ones == 5 and (hundreds > 0 or show_zero_hundreds):
-                words.append("lăm")
-            else:
-                words.append(VIET_DIGITS[ones])
+    _append_tens_and_ones_words(hundreds, ones, show_zero_hundreds, tens, words)
 
     return " ".join(words).strip()
 
@@ -128,7 +140,7 @@ def _payment_waiting_rows(db, examinations):
     return data
 
 
-def _filter_payment_waiting_query(db, end_date_str, query, search_query, start_date_str, status_filter):
+def _filter_payment_waiting_status(query, status_filter):
     # Filter theo status nếu có
     if status_filter:
         if status_filter == 'waiting_transfer':
@@ -143,6 +155,11 @@ def _filter_payment_waiting_query(db, end_date_str, query, search_query, start_d
     else:
         # Mặc định: lấy cả WAITING_PAYMENT và COMPLETED để frontend lọc
         query = query.filter(Examination.status.in_([ExaminationStatus.WAITING_PAYMENT, ExaminationStatus.COMPLETED]))
+    return query
+
+
+def _filter_payment_waiting_query(db, end_date_str, query, search_query, start_date_str, status_filter):
+    query = _filter_payment_waiting_status(query, status_filter)
 
     # Filter theo search query (Tên bệnh nhân, SĐT, hoặc chẩn đoán ICD)
     if search_query:

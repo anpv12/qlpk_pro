@@ -130,31 +130,19 @@ def _apply_doctor_license_update(data, db, user):
                 doctor_profile.license_issue_date = None
 
 
+USER_ACCOUNT_FIELDS = ('full_name', 'email', 'phone', 'gender', 'address', 'avatar', 'notes', 'is_active',
+                       'can_view_all_patients', 'role', 'calendar_color')
+
+
 def _apply_user_account_fields(data, user):
     # Update fields if provided
-    if 'full_name' in data:
-        user.full_name = data['full_name']
-    if 'email' in data:
-        user.email = data['email']
-    if 'phone' in data:
-        user.phone = data['phone']
-    if 'gender' in data:
-        user.gender = data['gender']
-    if 'address' in data:
-        user.address = data['address']
-    if 'avatar' in data:
-        user.avatar = normalize_upload_url(data['avatar'])
-    if 'notes' in data:
-        user.notes = data['notes']
-    if 'is_active' in data:
-        user.is_active = data['is_active']
-    if 'can_view_all_patients' in data:
-        user.can_view_all_patients = data['can_view_all_patients']
-        logger.info(f"Setting can_view_all_patients={data['can_view_all_patients']} for user {user.id}")
-    if 'role' in data:
-        user.role = data['role']
-    if 'calendar_color' in data:
-        user.calendar_color = data['calendar_color']
+    for field in USER_ACCOUNT_FIELDS:
+        if field not in data:
+            continue
+        value = normalize_upload_url(data[field]) if field == 'avatar' else data[field]
+        setattr(user, field, value)
+        if field == 'can_view_all_patients':
+            logger.info(f"Setting can_view_all_patients={data['can_view_all_patients']} for user {user.id}")
 
 
 def _update_user_account(current_user, db, user):

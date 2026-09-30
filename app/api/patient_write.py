@@ -199,6 +199,15 @@ def create_patient(user):
         db.close()
 
 
+PATIENT_FIELD_NORMALIZERS = {
+    'physical_history': normalize_physical_history,
+    'family_history': lambda db, value: normalize_family_history(value),
+    'substance_use_history': lambda db, value: normalize_substance_use_history(value),
+    'safety_plan': lambda db, value: normalize_safety_plan(value),
+    'allergies': lambda db, value: normalize_allergy_entries(value),
+}
+
+
 def _apply_patient_field_updates(data, db, patient):
     # Update other fields
     # Chỉ update field nếu có giá trị (không phải None và không phải empty string)
@@ -223,16 +232,9 @@ def _apply_patient_field_updates(data, db, patient):
             if field == 'referral_source':
                 apply_referral_source(patient, value)
                 continue
-            if field == 'physical_history':
-                value = normalize_physical_history(db, value)
-            if field == 'family_history':
-                value = normalize_family_history(value)
-            if field == 'substance_use_history':
-                value = normalize_substance_use_history(value)
-            if field == 'safety_plan':
-                value = normalize_safety_plan(value)
-            if field == 'allergies':
-                value = normalize_allergy_entries(value)
+            normalize = PATIENT_FIELD_NORMALIZERS.get(field)
+            if normalize:
+                value = normalize(db, value)
             # Chỉ update nếu có giá trị (không phải None, không phải empty string)
             # Cho phép 0 và False (có thể là giá trị hợp lệ)
             if value is not None and value != '':

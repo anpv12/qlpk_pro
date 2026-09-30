@@ -86,18 +86,16 @@ def _prescription_saved_response(appointment_id, db, save_result):
 
 @router.route('/save', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error', error='{error}')
 def save_prescription(user):
     """Save prescription, inventory and requested schedule changes atomically."""
-    db = None
+    db = next(get_db())
     try:
-        db = next(get_db())
         data = request.get_json() or {}
         
         appointment_id = data.get('appointment_id')
         medicines = normalize_prescription_medicines(data.get('medicines', []))
         usage_instructions = data.get('usage_instructions', '')
-        re_exam_date_raw = data.get('re_examination_date')
-        re_exam_time_raw = data.get('re_examination_time', '09:00')  # Mặc định 09:00 nếu không có
         
         logger.info(f"save_prescription: appointment_id={appointment_id}, medicines_count={len(medicines)}")
         if not appointment_id:
@@ -124,16 +122,13 @@ def save_prescription(user):
         return _prescription_saved_response(appointment_id, db, save_result)
         
     except PrescriptionInputValidationError as e:
-        if db:
-            db.rollback()
+        db.rollback()
         return jsonify({'code': 'prescription.invalid_input', 'detail': str(e)}), 400
     except ReExaminationValidationError as e:
-        if db:
-            db.rollback()
+        db.rollback()
         return jsonify({'code': e.code, 'detail': str(e), 're_examination_snapshot': e.schedule}), 409 if e.code in {'re-examination-conflict', 're-examination-locked'} else 400
     except PrescriptionStockValidationError as e:
-        if db:
-            db.rollback()
+        db.rollback()
         return jsonify({
             'code': e.code,
             'detail': str(e) if e.code in {'inventory.batch_missing', 'inventory.batch_expired'} else 'Không đủ tồn kho',
@@ -141,17 +136,10 @@ def save_prescription(user):
             'shortage': e.shortage,
         }), 400
     except PrescriptionAppointmentNotFound:
-        if db:
-            db.rollback()
+        db.rollback()
         return jsonify({'detail': 'Appointment not found'}), 404
-    except Exception as e:
-        if db:
-            db.rollback()
-        logger.exception("Error saving prescription for appointment_id=%s", locals().get('appointment_id'))
-        return jsonify({'detail': 'Internal server error', 'error': str(e)}), 500
     finally:
-        if db:
-            db.close()
+        db.close()
 
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth

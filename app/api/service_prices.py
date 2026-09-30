@@ -331,6 +331,34 @@ def update_appointment_service(current_user, appointment_id):
         db.close()
 
 
+def _upsert_synced_appointment_services(appointment_id, db, existing_by_id, keep_ids, sync_request):
+    for item in sync_request.services:
+        if item.id:
+            record = existing_by_id.get(item.id)
+            if not record:
+                raise AppointmentServiceValidationError(
+                    "Dòng dịch vụ không thuộc lịch hẹn hiện tại."
+                )
+            if item.service_id and item.service_id != record.service_id:
+                raise AppointmentServiceValidationError(
+                    "Không thể đổi dịch vụ trên dòng đã có. Hãy xóa rồi thêm dịch vụ mới."
+                )
+            service = resolve_catalog_service(
+                db,
+                record.service_id,
+                allow_inactive=True,
+            )
+            apply_appointment_service_selection(record, item, service)
+        else:
+            service = resolve_catalog_service(db, item.service_id)
+            record = AppointmentService(appointment_id=appointment_id)
+            apply_appointment_service_selection(record, item, service)
+            db.add(record)
+            db.flush()
+
+        keep_ids.append(record.id)
+
+
 @router.route('/appointment/<int:appointment_id>/sync', methods=['PUT'])
 @require_auth
 @api_error_boundary(detail='Internal server error: {error}')
@@ -355,31 +383,7 @@ def sync_appointment_services(current_user, appointment_id):
         existing_by_id = {record.id: record for record in existing_records}
 
         keep_ids = []
-        for item in sync_request.services:
-            if item.id:
-                record = existing_by_id.get(item.id)
-                if not record:
-                    raise AppointmentServiceValidationError(
-                        "Dòng dịch vụ không thuộc lịch hẹn hiện tại."
-                    )
-                if item.service_id and item.service_id != record.service_id:
-                    raise AppointmentServiceValidationError(
-                        "Không thể đổi dịch vụ trên dòng đã có. Hãy xóa rồi thêm dịch vụ mới."
-                    )
-                service = resolve_catalog_service(
-                    db,
-                    record.service_id,
-                    allow_inactive=True,
-                )
-                apply_appointment_service_selection(record, item, service)
-            else:
-                service = resolve_catalog_service(db, item.service_id)
-                record = AppointmentService(appointment_id=appointment_id)
-                apply_appointment_service_selection(record, item, service)
-                db.add(record)
-                db.flush()
-
-            keep_ids.append(record.id)
+        _upsert_synced_appointment_services(appointment_id, db, existing_by_id, keep_ids, sync_request)
 
         for record in existing_records:
             if record.id not in keep_ids:

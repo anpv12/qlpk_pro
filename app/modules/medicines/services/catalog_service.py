@@ -164,6 +164,23 @@ def _resolve_requested_reference(data, medicine, creating, allow_reference_mappi
     return requested_id, linking
 
 
+def _confirm_reference_relink(creating, data, human_review, medicine, reference):
+    if not creating:
+        allowed = {'reference_catalog_id', 'reference_version', 'reference_link_confirmed',
+                   'reference_registration_number', 'reference_medicine_version'}
+        if set(data) - allowed:
+            raise CatalogValidationError('Hãy lưu phần thông tin phòng khám riêng trước khi liên kết DAV.')
+        registration = str(data.get('reference_registration_number') or '').strip().upper()
+        numbers = {str(value).strip().upper() for value in (reference.registration_number, reference.old_registration_number) if value}
+        if not registration or registration not in numbers:
+            raise CatalogValidationError('Số đăng ký không khớp thuốc đã chọn. Hãy kiểm tra số trên hộp thuốc.')
+        preview = reference_preview(medicine, reference, human_review=human_review)
+        if 'reference_medicine_version' not in data or data['reference_medicine_version'] != preview['medicine_version']:
+            raise CatalogValidationError('Thông tin trong kho vừa thay đổi. Hãy mở lại Liên kết DAV để xem bản mới.', 409)
+        if not preview['can_apply']:
+            raise CatalogValidationError(preview['message'], 409)
+
+
 def _load_link_reference(db, data, medicine, requested_id, creating, human_review):
     if isinstance(requested_id, bool) or not isinstance(requested_id, int) or requested_id <= 0:
         raise CatalogValidationError('Thuốc DAV được chọn không hợp lệ.')
@@ -181,20 +198,7 @@ def _load_link_reference(db, data, medicine, requested_id, creating, human_revie
         raise CatalogValidationError('Thuốc DAV này đã có trong Tủ thuốc. Hãy mở bản ghi hiện có.', 409, duplicate.id)
     if not creating and data.get('reference_link_confirmed') is not True:
         raise CatalogValidationError('Hãy dùng Liên kết DAV để tìm và đối chiếu thuốc trước khi xác nhận.')
-    if not creating:
-        allowed = {'reference_catalog_id', 'reference_version', 'reference_link_confirmed',
-                   'reference_registration_number', 'reference_medicine_version'}
-        if set(data) - allowed:
-            raise CatalogValidationError('Hãy lưu phần thông tin phòng khám riêng trước khi liên kết DAV.')
-        registration = str(data.get('reference_registration_number') or '').strip().upper()
-        numbers = {str(value).strip().upper() for value in (reference.registration_number, reference.old_registration_number) if value}
-        if not registration or registration not in numbers:
-            raise CatalogValidationError('Số đăng ký không khớp thuốc đã chọn. Hãy kiểm tra số trên hộp thuốc.')
-        preview = reference_preview(medicine, reference, human_review=human_review)
-        if 'reference_medicine_version' not in data or data['reference_medicine_version'] != preview['medicine_version']:
-            raise CatalogValidationError('Thông tin trong kho vừa thay đổi. Hãy mở lại Liên kết DAV để xem bản mới.', 409)
-        if not preview['can_apply']:
-            raise CatalogValidationError(preview['message'], 409)
+    _confirm_reference_relink(creating, data, human_review, medicine, reference)
     return reference
 
 

@@ -31,6 +31,25 @@ def _parse_pagination_params():
         )
     return skip, limit
 
+def _apply_icd_id_code_filters(ids_str, query):
+    # Lọc theo danh sách ID
+    if ids_str:
+        try:
+            ids = [int(x.strip()) for x in ids_str.split(',') if x.strip()]
+            if ids:
+                query = query.filter(ICD.id.in_(ids))
+        except ValueError as exc:
+            logger.warning("Bỏ qua danh sách ICD id không hợp lệ: %s", exc)
+
+    # Lọc theo danh sách mã ICD
+    codes_str = request.args.get('codes', '').strip()
+    if codes_str:
+        codes = [x.strip() for x in codes_str.split(',') if x.strip()]
+        if codes:
+            query = query.filter(ICD.icd_code.in_(codes))
+    return query
+
+
 @icd_router.route("/", methods=['GET'])
 @require_auth
 @api_error_boundary(error='Lỗi khi lấy danh sách ICD')
@@ -52,21 +71,7 @@ def get_icd_list(user):
         
         query = db.query(ICD).filter(ICD.is_deleted == False)
         
-        # Lọc theo danh sách ID
-        if ids_str:
-            try:
-                ids = [int(x.strip()) for x in ids_str.split(',') if x.strip()]
-                if ids:
-                    query = query.filter(ICD.id.in_(ids))
-            except ValueError as exc:
-                logger.warning("Bỏ qua danh sách ICD id không hợp lệ: %s", exc)
-        
-        # Lọc theo danh sách mã ICD
-        codes_str = request.args.get('codes', '').strip()
-        if codes_str:
-            codes = [x.strip() for x in codes_str.split(',') if x.strip()]
-            if codes:
-                query = query.filter(ICD.icd_code.in_(codes))
+        query = _apply_icd_id_code_filters(ids_str, query)
         
         # Tìm kiếm theo mã ICD, tên bệnh
         if search:

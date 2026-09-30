@@ -201,6 +201,27 @@ def create_family_member(user):
     finally:
         db.close()
 
+def _apply_family_member_fields(data, family_member):
+    # Update fields
+    if data.get('name'):
+        family_member.name = data['name']
+    if data.get('kinship'):
+        family_member.kinship = data['kinship']
+    if data.get('diagnosis') is not None:
+        family_member.diagnosis = data['diagnosis']
+    if data.get('examine_together') is not None:
+        family_member.examine_together = data['examine_together']
+    # Cho phép cập nhật số điện thoại nếu được gửi lên
+    if data.get('phone') is not None:
+        family_member.phone = data['phone']
+    # Cho phép cập nhật CCCD/CMND nếu được gửi lên từ bảng người thân
+    if data.get('id_number') is not None:
+        family_member.id_number = data['id_number']
+    # Cập nhật liên hệ khẩn cấp
+    if data.get('emergency_contact') is not None:
+        family_member.emergency_contact = bool(data['emergency_contact'])
+
+
 @family_member_router.route('/family-members/<int:member_id>', methods=['PUT'])
 @require_auth
 @api_error_boundary(success=False, message='Lỗi khi cập nhật thông tin: {error}')
@@ -220,24 +241,7 @@ def update_family_member(user, member_id):
         if access_error:
             return jsonify({'success': False, 'message': access_error}), 403
         
-        # Update fields
-        if data.get('name'):
-            family_member.name = data['name']
-        if data.get('kinship'):
-            family_member.kinship = data['kinship']
-        if data.get('diagnosis') is not None:
-            family_member.diagnosis = data['diagnosis']
-        if data.get('examine_together') is not None:
-            family_member.examine_together = data['examine_together']
-        # Cho phép cập nhật số điện thoại nếu được gửi lên
-        if data.get('phone') is not None:
-            family_member.phone = data['phone']
-        # Cho phép cập nhật CCCD/CMND nếu được gửi lên từ bảng người thân
-        if data.get('id_number') is not None:
-            family_member.id_number = data['id_number']
-        # Cập nhật liên hệ khẩn cấp
-        if data.get('emergency_contact') is not None:
-            family_member.emergency_contact = bool(data['emergency_contact'])
+        _apply_family_member_fields(data, family_member)
         # Cập nhật ngày khám cùng
         if data.get('joint_exam_date'):
             try:
@@ -390,6 +394,35 @@ def search_relatives(user):
     finally:
         db.close()
 
+def _create_family_link(db, source_patient, target_patient, kinship_value, emergency_contact, joint_exam_date, is_forward=True):
+    if not source_patient or not target_patient:
+        return None
+    # Không tạo nếu đã tồn tại liên kết
+    existing = db.query(FamilyMember).filter(
+        FamilyMember.patient_id == source_patient.id,
+        FamilyMember.relative_patient_id == target_patient.id
+    ).first()
+    if existing:
+        # Cập nhật emergency_contact và joint_exam_date nếu đã tồn tại
+        if is_forward:  # Chỉ cập nhật cho forward link (từ patient_id chính)
+            existing.emergency_contact = emergency_contact
+            existing.joint_exam_date = joint_exam_date
+        return existing
+
+    member = FamilyMember(
+        patient_id=source_patient.id,
+        relative_patient_id=target_patient.id,
+        name=target_patient.full_name,
+        kinship=kinship_value or FALLBACK_KINSHIP,
+        examine_together=True,
+        phone=target_patient.phone,
+        emergency_contact=emergency_contact if is_forward else False,  # Chỉ set cho forward link
+        joint_exam_date=joint_exam_date if is_forward else None  # Chỉ set cho forward link
+    )
+    db.add(member)
+    return member
+
+
 def _link_relative_patients(db, emergency_contact, forward_kinship, joint_exam_date, patient_id, relative_ids):
     linked_relatives = []
     patient_cache = {}
@@ -398,34 +431,6 @@ def _link_relative_patients(db, emergency_contact, forward_kinship, joint_exam_d
         if pid not in patient_cache:
             patient_cache[pid] = db.query(Patient).filter(Patient.id == pid).first()
         return patient_cache[pid]
-
-    def create_link(source_patient, target_patient, kinship_value, is_forward=True):
-        if not source_patient or not target_patient:
-            return None
-        # Không tạo nếu đã tồn tại liên kết
-        existing = db.query(FamilyMember).filter(
-            FamilyMember.patient_id == source_patient.id,
-            FamilyMember.relative_patient_id == target_patient.id
-        ).first()
-        if existing:
-            # Cập nhật emergency_contact và joint_exam_date nếu đã tồn tại
-            if is_forward:  # Chỉ cập nhật cho forward link (từ patient_id chính)
-                existing.emergency_contact = emergency_contact
-                existing.joint_exam_date = joint_exam_date
-            return existing
-
-        member = FamilyMember(
-            patient_id=source_patient.id,
-            relative_patient_id=target_patient.id,
-            name=target_patient.full_name,
-            kinship=kinship_value or FALLBACK_KINSHIP,
-            examine_together=True,
-            phone=target_patient.phone,
-            emergency_contact=emergency_contact if is_forward else False,  # Chỉ set cho forward link
-            joint_exam_date=joint_exam_date if is_forward else None  # Chỉ set cho forward link
-        )
-        db.add(member)
-        return member
 
     requester_patient = get_patient(patient_id)
     if not requester_patient:
@@ -440,7 +445,7 @@ def _link_relative_patients(db, emergency_contact, forward_kinship, joint_exam_d
             continue
 
         # Forward link: từ requester_patient đến relative_patient (có emergency_contact và joint_exam_date)
-        forward = create_link(requester_patient, relative_patient, forward_kinship, is_forward=True)
+        forward = _create_family_link(db, requester_patient, relative_patient, forward_kinship, emergency_contact, joint_exam_date, is_forward=True)
         if forward:
             linked_relatives.append(forward)
 
@@ -451,7 +456,7 @@ def _link_relative_patients(db, emergency_contact, forward_kinship, joint_exam_d
         ) or FALLBACK_KINSHIP
 
         # Reverse link: từ relative_patient đến requester_patient (không có emergency_contact và joint_exam_date)
-        reverse = create_link(relative_patient, requester_patient, reverse_label, is_forward=False)
+        reverse = _create_family_link(db, relative_patient, requester_patient, reverse_label, emergency_contact, joint_exam_date, is_forward=False)
         if reverse:
             linked_relatives.append(reverse)
     return None, linked_relatives

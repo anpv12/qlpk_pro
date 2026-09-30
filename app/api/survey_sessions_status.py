@@ -17,6 +17,27 @@ from app.api.survey_sessions import (  # noqa: E402 — module gốc đã khởi
 from app.utils.api_error_contract import api_error_boundary
 
 
+REQUESTED_SESSION_STATUSES = {'pending': SurveySessionStatus.pending, 'in_progress': SurveySessionStatus.in_progress}
+
+
+def _expire_stale_session(db, session_row):
+    """Mark an open session whose link has expired; returns the 410 response for it, else None."""
+    if not (session_row.is_expired() and session_row.status in (SurveySessionStatus.pending, SurveySessionStatus.in_progress)):
+        return None
+    if session_row.status != SurveySessionStatus.expired:
+        session_row.status = SurveySessionStatus.expired
+        session_row.updated_at = get_current_datetime()
+        db.commit()
+        db.refresh(session_row)
+        emit_survey_changed(
+            'expired',
+            session=session_row,
+            appointment_id=get_appointment_id_for_examination(db, session_row.examination_id),
+            extra={'status': 'expired'}
+        )
+    return jsonify({'success': False, 'message': 'Phiên khảo sát đã hết hạn'}), 410
+
+
 @survey_sessions.route('/survey-sessions/<int:session_id>/update-status', methods=['PUT'])
 @require_auth
 @api_error_boundary(success=False, message='Lỗi: {error}')
@@ -44,30 +65,16 @@ def update_survey_status(user, session_id):
             return jsonify({'success': False, 'message': access_error[0]}), access_error[1]
 
         # Check if session is expired
-        if session_row.is_expired() and session_row.status in (SurveySessionStatus.pending, SurveySessionStatus.in_progress):
-            if session_row.status != SurveySessionStatus.expired:
-                session_row.status = SurveySessionStatus.expired
-                session_row.updated_at = get_current_datetime()
-                db.commit()
-                db.refresh(session_row)
-                emit_survey_changed(
-                    'expired',
-                    session=session_row,
-                    appointment_id=get_appointment_id_for_examination(db, session_row.examination_id),
-                    extra={'status': 'expired'}
-                )
-            return jsonify({'success': False, 'message': 'Phiên khảo sát đã hết hạn'}), 410
+        expired_response = _expire_stale_session(db, session_row)
+        if expired_response:
+            return expired_response
 
         if session_row.status in (SurveySessionStatus.completed, SurveySessionStatus.closed, SurveySessionStatus.expired):
             return jsonify(success=False, message='Link khảo sát không còn cho phép thay đổi'), 409
         # Update session status
         now = get_current_datetime()
         # Convert string to enum
-        status_enum = None
-        if status == 'pending':
-            status_enum = SurveySessionStatus.pending
-        elif status == 'in_progress':
-            status_enum = SurveySessionStatus.in_progress
+        status_enum = REQUESTED_SESSION_STATUSES.get(status)
 
         # Set started_at when status changes to in_progress
         if status == 'in_progress' and session_row.status != SurveySessionStatus.in_progress:
@@ -124,19 +131,9 @@ def update_survey_status_by_token():
             return jsonify({'success': False, 'message': 'Không tìm thấy phiên khảo sát'}), 404
 
         # Check if session is expired (unless we're explicitly setting it to expired or closed)
-        if session_row.is_expired() and session_row.status in (SurveySessionStatus.pending, SurveySessionStatus.in_progress):
-            if session_row.status != SurveySessionStatus.expired:
-                session_row.status = SurveySessionStatus.expired
-                session_row.updated_at = get_current_datetime()
-                db.commit()
-                db.refresh(session_row)
-                emit_survey_changed(
-                    'expired',
-                    session=session_row,
-                    appointment_id=get_appointment_id_for_examination(db, session_row.examination_id),
-                    extra={'status': 'expired'}
-                )
-            return jsonify({'success': False, 'message': 'Phiên khảo sát đã hết hạn'}), 410
+        expired_response = _expire_stale_session(db, session_row)
+        if expired_response:
+            return expired_response
 
         session_id = session_row.id
         current_status = session_row.status
@@ -147,11 +144,7 @@ def update_survey_status_by_token():
         now = get_current_datetime()
 
         # Convert string to enum
-        status_enum = None
-        if status == 'pending':
-            status_enum = SurveySessionStatus.pending
-        elif status == 'in_progress':
-            status_enum = SurveySessionStatus.in_progress
+        status_enum = REQUESTED_SESSION_STATUSES.get(status)
 
         # Set started_at when status changes to in_progress
         if status == 'in_progress' and current_status != SurveySessionStatus.in_progress:

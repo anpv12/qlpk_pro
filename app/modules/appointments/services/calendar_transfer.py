@@ -54,6 +54,26 @@ def _retire_old_owner_events(db, job, events, provider):
     return None
 
 
+def _reconcile_live_target_events(appointment, connection, db, job, provider, target_events):
+    live_events = []
+    for event in target_events:
+        updated = provider.update_event(appointment, event, connection, report_missing=True)
+        if updated is None:
+            db.delete(event)
+        elif updated is True:
+            live_events.append(event)
+        else:
+            raise CalendarTransferRetry('update_pending')
+    if live_events:
+        if not any(event.event_id == job.event_id for event in live_events):
+            _delete_event(SimpleNamespace(event_id=job.event_id), connection, provider)
+    else:
+        if not provider.upsert_transfer_event(appointment, connection, job.event_id):
+            raise CalendarTransferRetry('create_pending')
+        db.add(GoogleCalendarEvent(appointment_id=appointment.id,
+                                  user_id=job.target_user_id, event_id=job.event_id))
+
+
 def _reconcile(db, job, appointment, provider):
     events = db.query(GoogleCalendarEvent).filter(
         GoogleCalendarEvent.appointment_id == appointment.id,
@@ -77,23 +97,7 @@ def _reconcile(db, job, appointment, provider):
     if not connection:
         return note or 'target_calendar_disconnected'
     target_events = [event for event in events if event.user_id == job.target_user_id]
-    live_events = []
-    for event in target_events:
-        updated = provider.update_event(appointment, event, connection, report_missing=True)
-        if updated is None:
-            db.delete(event)
-        elif updated is True:
-            live_events.append(event)
-        else:
-            raise CalendarTransferRetry('update_pending')
-    if live_events:
-        if not any(event.event_id == job.event_id for event in live_events):
-            _delete_event(SimpleNamespace(event_id=job.event_id), connection, provider)
-    else:
-        if not provider.upsert_transfer_event(appointment, connection, job.event_id):
-            raise CalendarTransferRetry('create_pending')
-        db.add(GoogleCalendarEvent(appointment_id=appointment.id,
-                                  user_id=job.target_user_id, event_id=job.event_id))
+    _reconcile_live_target_events(appointment, connection, db, job, provider, target_events)
     return note
 
 

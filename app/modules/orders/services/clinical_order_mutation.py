@@ -115,12 +115,7 @@ def _apply_chi_dinh_notes_and_files(chi_dinh, data):
         chi_dinh.result_files = data['result_files']
 
 
-def _apply_chi_dinh_status_change(chi_dinh, current_status, data):
-    next_status = current_status
-    next_is_completed = bool(getattr(chi_dinh, 'is_completed', False))
-    if 'status' in data:
-        next_status = _normalize_status(data['status'])
-
+def _next_status_from_completion_flag(current_status, data, next_status):
     if 'is_completed' in data:
         next_is_completed = _normalize_bool(data['is_completed'], 'is_completed')
         if 'status' in data:
@@ -134,8 +129,15 @@ def _apply_chi_dinh_status_change(chi_dinh, current_status, data):
             raise InvalidChiDinhPayload('Không thể hủy trạng thái hoàn thành chỉ bằng is_completed')
         else:
             next_status = current_status
-    elif 'status' in data:
-        next_is_completed = next_status == 'completed'
+    return next_status
+
+
+def _apply_chi_dinh_status_change(chi_dinh, current_status, data):
+    next_status = current_status
+    if 'status' in data:
+        next_status = _normalize_status(data['status'])
+
+    next_status = _next_status_from_completion_flag(current_status, data, next_status)
 
     if getattr(chi_dinh, 'survey_template_id', None) and next_status != current_status:
         raise InvalidChiDinhPayload('Trạng thái khảo sát tự cập nhật khi gửi link và nộp bài')
@@ -231,22 +233,26 @@ def _chi_dinh_location_fields(db, item_data, location_type):
     return in_house_unit_id, out_facility, performer_name
 
 
+def _parse_chi_dinh_item_id(raw_id):
+    """None for a new order row, else a positive integer ID."""
+    if raw_id is None or raw_id == '':
+        return None
+    if isinstance(raw_id, bool):
+        raise InvalidChiDinhPayload('ID chỉ định không hợp lệ')
+    try:
+        chi_dinh_id = int(raw_id)
+    except (TypeError, ValueError) as exc:
+        raise InvalidChiDinhPayload('ID chỉ định không hợp lệ') from exc
+    if chi_dinh_id <= 0:
+        raise InvalidChiDinhPayload('ID chỉ định không hợp lệ')
+    return chi_dinh_id
+
+
 def _prepare_chi_dinh_payload(db, item_data):
     if not isinstance(item_data, dict):
         raise InvalidChiDinhPayload('Mỗi chỉ định phải là một object')
 
-    raw_id = item_data.get('id')
-    if raw_id is None or raw_id == '':
-        chi_dinh_id = None
-    elif isinstance(raw_id, bool):
-        raise InvalidChiDinhPayload('ID chỉ định không hợp lệ')
-    else:
-        try:
-            chi_dinh_id = int(raw_id)
-        except (TypeError, ValueError) as exc:
-            raise InvalidChiDinhPayload('ID chỉ định không hợp lệ') from exc
-        if chi_dinh_id <= 0:
-            raise InvalidChiDinhPayload('ID chỉ định không hợp lệ')
+    chi_dinh_id = _parse_chi_dinh_item_id(item_data.get('id'))
 
     order_name = str(item_data.get('order_name') or '').strip()
     if not order_name:

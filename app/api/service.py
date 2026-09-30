@@ -234,6 +234,22 @@ def create_service(current_user):
         db.close()
 
 
+def _apply_service_update_fields(service, update_data):
+    # Update fields
+    if update_data.name is not None:
+        service.name = update_data.name
+    if update_data.description is not None:
+        service.description = update_data.description
+    if update_data.default_price is not None:
+        service.default_price = update_data.default_price
+    if update_data.duration_minutes is not None:
+        service.duration_minutes = update_data.duration_minutes
+    if update_data.category_id is not None:
+        service.category_id = update_data.category_id
+    if update_data.is_active is not None:
+        service.is_active = update_data.is_active
+
+
 @router.route('/<int:service_id>', methods=['PUT'])
 @require_auth
 @api_error_boundary(detail='Internal server error: {error}')
@@ -264,19 +280,7 @@ def update_service(current_user, service_id):
             if existing_service:
                 return jsonify({'detail': 'Service with this name already exists in this category'}), 400
         
-        # Update fields
-        if update_data.name is not None:
-            service.name = update_data.name
-        if update_data.description is not None:
-            service.description = update_data.description
-        if update_data.default_price is not None:
-            service.default_price = update_data.default_price
-        if update_data.duration_minutes is not None:
-            service.duration_minutes = update_data.duration_minutes
-        if update_data.category_id is not None:
-            service.category_id = update_data.category_id
-        if update_data.is_active is not None:
-            service.is_active = update_data.is_active
+        _apply_service_update_fields(service, update_data)
         
         db.commit()
         db.refresh(service)

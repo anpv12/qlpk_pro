@@ -40,6 +40,24 @@ def _ledger_medicine_view(complete, cost, page, per_page, query):
         total_pages=(total + per_page - 1) // per_page, basis='movement_created_at', is_cash_collected=False)
 
 
+def _apply_ledger_movement_and_search_filters(filters, query):
+    if filters.get('movement_type'):
+        movement_type = filters['movement_type']
+        if movement_type not in ('export', 'return', 'price_adjustment'):
+            raise ValueError('Loại giao dịch không hợp lệ')
+        if movement_type == 'return':
+            query = query.filter(or_(MedicineTransaction.type == 'return', and_(
+                MedicineTransaction.type == 'import',
+                MedicineTransaction.note.like('Hoàn lại tồn kho - Lịch hẹn ID: %'))))
+        else:
+            query = query.filter(MedicineTransaction.type == movement_type)
+    if filters.get('search'):
+        query = query.filter(or_(normalized_contains(Medicine.name, filters['search']),
+            normalized_contains(Patient.full_name, filters['search']),
+            normalized_contains(MedicineBatch.batch_number, filters['search'])))
+    return query
+
+
 def _filtered_ledger_query(db, filters):
     query = db.query(MedicineTransaction).join(
         Medicine, Medicine.id == MedicineTransaction.medicine_id
@@ -65,20 +83,7 @@ def _filtered_ledger_query(db, filters):
         query = query.filter(Medicine.prescription_type == filters['medicine_type'])
     if filters.get('patient_search', '').strip():
         query = query.filter(normalized_contains(Patient.full_name, filters['patient_search'].strip()))
-    if filters.get('movement_type'):
-        movement_type = filters['movement_type']
-        if movement_type not in ('export', 'return', 'price_adjustment'):
-            raise ValueError('Loại giao dịch không hợp lệ')
-        if movement_type == 'return':
-            query = query.filter(or_(MedicineTransaction.type == 'return', and_(
-                MedicineTransaction.type == 'import',
-                MedicineTransaction.note.like('Hoàn lại tồn kho - Lịch hẹn ID: %'))))
-        else:
-            query = query.filter(MedicineTransaction.type == movement_type)
-    if filters.get('search'):
-        query = query.filter(or_(normalized_contains(Medicine.name, filters['search']),
-            normalized_contains(Patient.full_name, filters['search']),
-            normalized_contains(MedicineBatch.batch_number, filters['search'])))
+    query = _apply_ledger_movement_and_search_filters(filters, query)
     return query
 
 

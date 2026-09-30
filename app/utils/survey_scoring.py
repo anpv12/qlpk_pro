@@ -81,6 +81,17 @@ def _normalize_grid_identities(grid, identity, question, seen):
             row.setdefault('score_enabled', True)
 
 
+def _claim_identity(item, used):
+    if not isinstance(item, dict):
+        raise ValueError('Cấu trúc câu hỏi hoặc đáp án không hợp lệ')
+    if not _has_id(item.get('id')):
+        item['id'] = 'id_' + uuid4().hex
+    key = str(item['id'])
+    if key in used:
+        raise ValueError('Mã câu hỏi hoặc đáp án bị trùng')
+    used.add(key)
+
+
 def normalize_survey_content(content):
     """Fill missing IDs on template writes; never regenerate existing identities."""
     if content is None:
@@ -88,18 +99,9 @@ def normalize_survey_content(content):
     result = deepcopy(json.loads(content) if isinstance(content, str) else content)
     seen = set()
 
-    def identity(item, used):
-        if not isinstance(item, dict):
-            raise ValueError('Cấu trúc câu hỏi hoặc đáp án không hợp lệ')
-        if not _has_id(item.get('id')):
-            item['id'] = 'id_' + uuid4().hex
-        key = str(item['id'])
-        if key in used:
-            raise ValueError('Mã câu hỏi hoặc đáp án bị trùng')
-        used.add(key)
 
     for question in questions_from_content(result):
-        identity(question, seen)
+        _claim_identity(question, seen)
         if 'criteria' not in question and 'scoring_criteria' in question:
             question['criteria'] = question['scoring_criteria']
         answer_ids = set()
@@ -107,11 +109,11 @@ def normalize_survey_content(content):
         if not isinstance(answers, list):
             raise ValueError('Danh sách đáp án không hợp lệ')
         for answer in answers:
-            identity(answer, answer_ids)
+            _claim_identity(answer, answer_ids)
         grid = question.get('grid', {})
         if not isinstance(grid, dict) or not isinstance(grid.get('columns', []), list) or not isinstance(grid.get('rows', []), list):
             raise ValueError('Cấu trúc lưới khảo sát không hợp lệ')
-        _normalize_grid_identities(grid, identity, question, seen)
+        _normalize_grid_identities(grid, _claim_identity, question, seen)
     return result
 
 
@@ -161,6 +163,38 @@ def _score_template_questions(content, score_question):
                            question.get('answers', question.get('options', [])), criteria)
 
 
+def _claim_response(question, key, responses, consumed, remaining):
+    """(key, value) of an answered question, marking it consumed; None when unanswered (required ones raise)."""
+    if not _has_id(key) or str(key) not in responses:
+        if question.get('required'):
+            raise ValueError('Chưa trả lời câu hỏi bắt buộc')
+        return None
+    key = str(key)
+    if key in consumed:
+        raise ValueError('Mã câu hỏi bị trùng trong mẫu khảo sát')
+    consumed.add(key)
+    remaining.discard(key)
+    value = responses[key]
+    if value is None or value == '' or value == []:
+        if question.get('required'):
+            raise ValueError('Chưa trả lời câu hỏi bắt buộc')
+        return None
+    return key, value
+
+
+def _selected_choice_values(question, value):
+    """(kind, selected values) of a scored question; values is None for free-text kinds."""
+    kind = question.get('type', 'multiple_choice')
+    if kind in ('short_answer', 'paragraph', 'date', 'time'):
+        return kind, None
+    if isinstance(value, list) and kind not in ('checkboxes', 'checkbox_grid'):
+        raise ValueError('Câu hỏi chỉ cho phép chọn một đáp án')
+    values = value if isinstance(value, list) else [value]
+    if len(values) != len(set(map(str, values))):
+        raise ValueError('Đáp án bị lặp')
+    return kind, values
+
+
 def score_survey_responses(content, responses, *, details=False):
     """Resolve exact IDs; numeric legacy options without IDs use frontend's zero-based index."""
     if not isinstance(responses, dict):
@@ -173,28 +207,13 @@ def score_survey_responses(content, responses, *, details=False):
     group_counts = {}
 
     def score_question(question, key, options, criteria, enabled=True):
-        if not _has_id(key) or str(key) not in responses:
-            if question.get('required'):
-                raise ValueError('Chưa trả lời câu hỏi bắt buộc')
+        claimed = _claim_response(question, key, responses, consumed, remaining)
+        if claimed is None:
             return
-        key = str(key)
-        if key in consumed:
-            raise ValueError('Mã câu hỏi bị trùng trong mẫu khảo sát')
-        consumed.add(key)
-        remaining.discard(key)
-        value = responses[key]
-        if value is None or value == '' or value == []:
-            if question.get('required'):
-                raise ValueError('Chưa trả lời câu hỏi bắt buộc')
+        key, value = claimed
+        kind, values = _selected_choice_values(question, value)
+        if values is None:
             return
-        kind = question.get('type', 'multiple_choice')
-        if kind in ('short_answer', 'paragraph', 'date', 'time'):
-            return
-        if isinstance(value, list) and kind not in ('checkboxes', 'checkbox_grid'):
-            raise ValueError('Câu hỏi chỉ cho phép chọn một đáp án')
-        values = value if isinstance(value, list) else [value]
-        if len(values) != len(set(map(str, values))):
-            raise ValueError('Đáp án bị lặp')
         score = _score_selected_values(enabled, kind, options, question, values)
         if not enabled:
             return
@@ -215,6 +234,19 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
+def _validate_result_conditions(config):
+    conditions = list(config.get('conditions', []))
+    for group in config.get('group_configs', {}).values():
+        if not isinstance(group, dict) or not isinstance(group.get('conditions', []), list):
+            raise ValueError('Cấu hình kết quả nhóm không hợp lệ')
+        conditions.extend(group.get('conditions', []))
+    for condition in conditions:
+        if not isinstance(condition, dict) or condition.get('operator') not in ('between', '>', '>=', '<', '<=', '=') or not _number(condition.get('min_score')):
+            raise ValueError('Điều kiện kết quả không hợp lệ')
+        if condition['operator'] == 'between' and (not _number(condition.get('max_score')) or condition['max_score'] < condition['min_score']):
+            raise ValueError('Khoảng điểm kết quả không hợp lệ')
+
+
 def _validate_result_config(content, keys):
     config = content.get('result_config', {}) if isinstance(content, dict) else {}
     if not isinstance(config, dict) or not isinstance(config.get('conditions', []), list) or not isinstance(config.get('group_configs', {}), dict) or not isinstance(config.get('special_alerts', []), list):
@@ -227,38 +259,34 @@ def _validate_result_config(content, keys):
         conversion = config.get('conversion', {})
         if not isinstance(conversion, dict) or not _number(conversion.get('factor')) or not _number(conversion.get('offset')):
             raise ValueError('Vui lòng cấu hình hệ số và số cộng khi quy đổi điểm')
-    conditions = list(config.get('conditions', []))
-    for group in config.get('group_configs', {}).values():
-        if not isinstance(group, dict) or not isinstance(group.get('conditions', []), list):
-            raise ValueError('Cấu hình kết quả nhóm không hợp lệ')
-        conditions.extend(group.get('conditions', []))
-    for condition in conditions:
-        if not isinstance(condition, dict) or condition.get('operator') not in ('between', '>', '>=', '<', '<=', '=') or not _number(condition.get('min_score')):
-            raise ValueError('Điều kiện kết quả không hợp lệ')
-        if condition['operator'] == 'between' and (not _number(condition.get('max_score')) or condition['max_score'] < condition['min_score']):
-            raise ValueError('Khoảng điểm kết quả không hợp lệ')
+    _validate_result_conditions(config)
     for alert in config.get('special_alerts', []):
         if not isinstance(alert, dict) or str(alert.get('question_id')) not in keys or not _number(alert.get('threshold')) or alert.get('operator') not in ('>', '>=', '<', '<=', '='):
             raise ValueError('Lưu ý đặc biệt phải gắn với câu hỏi và điều kiện hợp lệ')
 
 
+def _validate_grid_rows(index, keys, q):
+    grid = q.get('grid', {})
+    options = grid.get('columns', [])
+    rows = grid.get('rows', [])
+    if not options or not rows:
+        raise ValueError(f'Câu {index} cần có hàng và cột')
+    for row in rows:
+        if not _has_id(row.get('id')) or not row.get('text'):
+            raise ValueError(f'Câu {index} thiếu mã hoặc nội dung hàng')
+        keys.add(str(row.get('question_id') or row['id']))
+        if row.get('score_enabled', True):
+            for col in options:
+                score = row['scores'].get(str(col.get('id'))) if 'scores' in row else col.get('score', col.get('value'))
+                if not _number(score):
+                    raise ValueError(f'Câu {index}, hàng “{row["text"]}”: chưa cấu hình đủ điểm')
+    return options
+
+
 def _validate_question_options(index, keys, q):
     kind = q.get('type', 'multiple_choice')
     if kind in ('multiple_choice_grid', 'checkbox_grid'):
-        grid = q.get('grid', {})
-        options = grid.get('columns', [])
-        rows = grid.get('rows', [])
-        if not options or not rows:
-            raise ValueError(f'Câu {index} cần có hàng và cột')
-        for row in rows:
-            if not _has_id(row.get('id')) or not row.get('text'):
-                raise ValueError(f'Câu {index} thiếu mã hoặc nội dung hàng')
-            keys.add(str(row.get('question_id') or row['id']))
-            if row.get('score_enabled', True):
-                for col in options:
-                    score = row['scores'].get(str(col.get('id'))) if 'scores' in row else col.get('score', col.get('value'))
-                    if not _number(score):
-                        raise ValueError(f'Câu {index}, hàng “{row["text"]}”: chưa cấu hình đủ điểm')
+        options = _validate_grid_rows(index, keys, q)
     elif kind in ('multiple_choice', 'checkboxes', 'dropdown'):
         options = q.get('answers', q.get('options', []))
         if len(options) < 2:
@@ -289,6 +317,24 @@ def validate_survey_content(content):
     _validate_result_config(content, keys)
 
 
+def _condition_matches(score, condition, threshold='min_score'):
+    if score is None:
+        return False
+    value = condition.get(threshold)
+    if not _number(value):
+        return False
+    op = condition.get('operator')
+    if op == 'between':
+        return _number(condition.get('max_score')) and value <= score <= condition['max_score']
+    return {'>': score > value, '>=': score >= value, '<': score < value,
+            '<=': score <= value, '=': score == value}.get(op, False)
+
+
+def _matching_conclusions(score, conditions):
+    return [{'conclusion': c.get('conclusion', ''), 'note': c.get('note', '')}
+            for c in conditions if _condition_matches(score, c) and (c.get('conclusion') or c.get('note'))]
+
+
 def evaluate_survey_results(content, responses):
     """Apply the saved configuration; raw group totals retain their existing contract."""
     scored = score_survey_responses(content, responses, details=True)
@@ -306,23 +352,9 @@ def evaluate_survey_results(content, responses):
             raise ValueError('Chưa cấu hình công thức quy đổi điểm')
         total = total * conversion['factor'] + conversion['offset'] if total is not None else None
 
-    def matches(score, condition, threshold='min_score'):
-        if score is None:
-            return False
-        value = condition.get(threshold)
-        if not _number(value):
-            return False
-        op = condition.get('operator')
-        if op == 'between':
-            return _number(condition.get('max_score')) and value <= score <= condition['max_score']
-        return {'>': score > value, '>=': score >= value, '<': score < value,
-                '<=': score <= value, '=': score == value}.get(op, False)
 
-    def conclusions(score, conditions):
-        return [{'conclusion': c.get('conclusion', ''), 'note': c.get('note', '')}
-                for c in conditions if matches(score, c) and (c.get('conclusion') or c.get('note'))]
 
-    groups = {name: {'score': score, 'conclusions': conclusions(score, config.get('group_configs', {}).get(name, {}).get('conditions', []))}
+    groups = {name: {'score': score, 'conclusions': _matching_conclusions(score, config.get('group_configs', {}).get(name, {}).get('conditions', []))}
               for name, score in scored['groups'].items()} if method == 'by_group' else {}
     # Grid parent alerts refer to the sum of its scored rows.
     question_scores = dict(scored['questions'])
@@ -333,7 +365,7 @@ def evaluate_survey_results(content, responses):
             question_scores[str(q['id'])] = sum(answered)
     alerts = [{'conclusion': a.get('conclusion', ''), 'note': a.get('note', '')}
               for a in config.get('special_alerts', [])
-              if matches(question_scores.get(str(a.get('question_id'))), a, 'threshold')]
+              if _condition_matches(question_scores.get(str(a.get('question_id'))), a, 'threshold')]
     return {'scoring_method': method, 'calculation_type': calculation, 'score': total,
-            'conclusions': conclusions(total, config.get('conditions', [])) if method == 'total' else [],
+            'conclusions': _matching_conclusions(total, config.get('conditions', [])) if method == 'total' else [],
             'groups': groups, 'alerts': alerts}

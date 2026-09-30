@@ -329,6 +329,17 @@ def _apply_existing_patient_updates(patient, patient_data):
     return updated
 
 
+def _normalize_new_patient_history_fields(db, patient_data):
+    if 'physical_history' in patient_data:
+        patient_data['physical_history'] = normalize_physical_history(db, patient_data['physical_history'])
+    if 'family_history' in patient_data:
+        patient_data['family_history'] = normalize_family_history(patient_data['family_history'])
+    if 'substance_use_history' in patient_data:
+        patient_data['substance_use_history'] = normalize_substance_use_history(patient_data['substance_use_history'])
+    if 'safety_plan' in patient_data:
+        patient_data['safety_plan'] = normalize_safety_plan(patient_data['safety_plan'])
+
+
 def _create_new_patient_for_appointment(db, patient_data, normalized_phone, logger=None):
     if logger:
         logger.info("Creating new patient from appointment payload")
@@ -347,14 +358,7 @@ def _create_new_patient_for_appointment(db, patient_data, normalized_phone, logg
 
     patient_data.pop('breathing', None)
     patient_data.pop('phone_number', None)
-    if 'physical_history' in patient_data:
-        patient_data['physical_history'] = normalize_physical_history(db, patient_data['physical_history'])
-    if 'family_history' in patient_data:
-        patient_data['family_history'] = normalize_family_history(patient_data['family_history'])
-    if 'substance_use_history' in patient_data:
-        patient_data['substance_use_history'] = normalize_substance_use_history(patient_data['substance_use_history'])
-    if 'safety_plan' in patient_data:
-        patient_data['safety_plan'] = normalize_safety_plan(patient_data['safety_plan'])
+    _normalize_new_patient_history_fields(db, patient_data)
     patient_data['family_history'] = patient_data.get('family_history') or []
     patient_data['substance_use_history'] = patient_data.get('substance_use_history') or {}
     patient_data['safety_plan'] = patient_data.get('safety_plan') or {}
@@ -450,29 +454,28 @@ def _ensure_no_duplicate_appointment(db, data, appt_create_data, appt_date, dura
         raise AppointmentCreationDuplicateError(exc.detail) from exc
 
 
+def _catalog_duration_minutes(db, model, record_id, label, logger=None):
+    """duration_minutes of the Service/Package row, or None when missing or unreadable."""
+    try:
+        record = db.query(model).filter(model.id == record_id).first()
+    except Exception as exc:
+        if logger:
+            logger.error(f"Error fetching {label.lower()} duration: {exc}", exc_info=True)
+        return None
+    if record and record.duration_minutes:
+        if logger:
+            logger.info(f"Using duration_minutes={record.duration_minutes} from {label} ID {record.id}")
+        return record.duration_minutes
+    return None
+
+
 def _resolve_duration_minutes(db, appt_create_data, logger=None):
     duration_minutes = appt_create_data.duration_minutes
     if appt_create_data.service_id:
-        try:
-            from app.models.service import Service
-            service = db.query(Service).filter(Service.id == appt_create_data.service_id).first()
-            if service and service.duration_minutes:
-                duration_minutes = service.duration_minutes
-                if logger:
-                    logger.info(f"Using duration_minutes={duration_minutes} from Service ID {service.id}")
-        except Exception as exc:
-            if logger:
-                logger.error(f"Error fetching service duration: {exc}", exc_info=True)
+        from app.models.service import Service
+        duration_minutes = _catalog_duration_minutes(db, Service, appt_create_data.service_id, 'Service', logger) or duration_minutes
     elif appt_create_data.package_id:
-        try:
-            package = db.query(Package).filter(Package.id == appt_create_data.package_id).first()
-            if package and package.duration_minutes:
-                duration_minutes = package.duration_minutes
-                if logger:
-                    logger.info(f"Using duration_minutes={duration_minutes} from Package ID {package.id}")
-        except Exception as exc:
-            if logger:
-                logger.error(f"Error fetching package duration: {exc}", exc_info=True)
+        duration_minutes = _catalog_duration_minutes(db, Package, appt_create_data.package_id, 'Package', logger) or duration_minutes
     return duration_minutes or 60
 
 

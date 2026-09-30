@@ -9,6 +9,7 @@ from sqlalchemy import or_
 import pandas as pd
 import io
 from app.utils.api_error_contract import api_error_boundary
+from app.utils.catalog_excel_upload import catalog_excel_upload
 
 drug_interaction_bp = Blueprint('drug_interaction', __name__)
 
@@ -281,15 +282,9 @@ def import_di_excel(user):
     """Import dữ liệu tương tác thuốc từ file Excel"""
     db = SessionLocal()
     try:
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'message': 'Không tìm thấy file'}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'success': False, 'message': 'Tên file rỗng'}), 400
-
-        if not file.filename.endswith('.xlsx') and not file.filename.endswith('.xls'):
-            return jsonify({'success': False, 'message': 'Chỉ hỗ trợ định dạng Excel (.xlsx, .xls)'}), 400
+        file, upload_error = catalog_excel_upload()
+        if upload_error:
+            return upload_error
 
         df = pd.read_excel(file)
         cols = df.columns.tolist()

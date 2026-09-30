@@ -158,21 +158,7 @@ def import_batch(
     return medicine, batch, movement
 
 
-def plan_existing_stock_batches(db, *, medicine_id, expected_stock, source_document, batches, lock=False):
-    """Validate a verified opening allocation. Never infer historical lots."""
-    medicine = lock_medicine(db, medicine_id) if lock else db.query(Medicine).filter_by(id=medicine_id).first()
-    if not medicine:
-        raise InventoryValidationError("Không tìm thấy thuốc")
-    expected = parse_quantity(expected_stock, "Tồn đã đối chiếu", allow_zero=False)
-    current = Decimal(str(medicine.stock_quantity or 0))
-    if expected != current:
-        raise InventoryValidationError("Tồn đã thay đổi; cần đối chiếu lại trước khi gán lô")
-    if db.query(MedicineBatch.id).filter_by(medicine_id=medicine_id).first():
-        raise InventoryValidationError("Thuốc đã có lô; không được gán tồn ban đầu lần nữa")
-    if not isinstance(source_document, str) or not source_document.strip() or len(source_document.strip()) > 300:
-        raise InventoryValidationError("Cần chứng từ/biên bản đối chiếu thực tế (tối đa 300 ký tự)")
-    if not isinstance(batches, list) or not batches:
-        raise InventoryValidationError("Cần danh sách lô đã xác nhận")
+def _prepare_opening_batches(batches, db, medicine_id):
     prepared, numbers = [], set()
     for item in batches:
         if not isinstance(item, dict):
@@ -193,6 +179,25 @@ def plan_existing_stock_batches(db, *, medicine_id, expected_stock, source_docum
             raise InventoryValidationError("Ngày nhập/hạn dùng của lô không hợp lệ")
         prepared.append({'batch_number': number, 'import_date': imported, 'expiry_date': expiry,
                          'quantity': parse_quantity(item.get('quantity'), 'Số lượng thực tế của lô', allow_zero=False)})
+    return prepared
+
+
+def plan_existing_stock_batches(db, *, medicine_id, expected_stock, source_document, batches, lock=False):
+    """Validate a verified opening allocation. Never infer historical lots."""
+    medicine = lock_medicine(db, medicine_id) if lock else db.query(Medicine).filter_by(id=medicine_id).first()
+    if not medicine:
+        raise InventoryValidationError("Không tìm thấy thuốc")
+    expected = parse_quantity(expected_stock, "Tồn đã đối chiếu", allow_zero=False)
+    current = Decimal(str(medicine.stock_quantity or 0))
+    if expected != current:
+        raise InventoryValidationError("Tồn đã thay đổi; cần đối chiếu lại trước khi gán lô")
+    if db.query(MedicineBatch.id).filter_by(medicine_id=medicine_id).first():
+        raise InventoryValidationError("Thuốc đã có lô; không được gán tồn ban đầu lần nữa")
+    if not isinstance(source_document, str) or not source_document.strip() or len(source_document.strip()) > 300:
+        raise InventoryValidationError("Cần chứng từ/biên bản đối chiếu thực tế (tối đa 300 ký tự)")
+    if not isinstance(batches, list) or not batches:
+        raise InventoryValidationError("Cần danh sách lô đã xác nhận")
+    prepared = _prepare_opening_batches(batches, db, medicine_id)
     if sum((item['quantity'] for item in prepared), ZERO) != current:
         raise InventoryValidationError("Tổng số lượng các lô phải bằng tồn hiện hữu; không cộng thêm hoặc bỏ bớt tồn")
     return medicine, prepared

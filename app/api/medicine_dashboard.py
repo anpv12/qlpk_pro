@@ -71,6 +71,31 @@ def get_medicine_units(user):
         db.close()
 
 
+def _count_expiry_warning_medicines(batches_by_medicine, medicines, today, warning_count):
+    for medicine in medicines:
+        # Cảnh báo tồn kho thấp
+        if medicine.low_stock_threshold and medicine.stock_quantity:
+            if float(medicine.stock_quantity) <= float(medicine.low_stock_threshold):
+                warning_count += 1
+
+        # Cảnh báo sắp hết hạn: theo lô còn tồn gần hạn nhất và ngưỡng
+        # riêng của từng thuốc (khớp `is_expiring_soon` trong to_dict()).
+        # `medicine.expiry_date` là field legacy không writer nào ghi,
+        # không dùng ở đây.
+        if medicine.expiry_warning_days:
+            active_batches = [b for b in batches_by_medicine.get(medicine.id, [])
+                               if b.expiry_date and (b.remaining_quantity or 0) > 0]
+            try:
+                if active_batches:
+                    nearest_expiry = min(b.expiry_date for b in active_batches)
+                    days_to_expiry = (nearest_expiry - today).days
+                    if days_to_expiry <= medicine.expiry_warning_days:
+                        warning_count += 1
+            except Exception:
+                logger.warning('Bỏ qua cảnh báo hạn dùng của thuốc %s vì dữ liệu lô không hợp lệ', medicine.id, exc_info=True)
+    return warning_count
+
+
 @medicine_router.route('/medicines/dashboard', methods=['GET'])
 @require_auth
 def get_dashboard(user):
@@ -114,27 +139,7 @@ def get_dashboard(user):
         # Load medicines để tính cảnh báo tồn kho thấp và hết hạn
         medicines = db.query(Medicine).all()
 
-        for medicine in medicines:
-            # Cảnh báo tồn kho thấp
-            if medicine.low_stock_threshold and medicine.stock_quantity:
-                if float(medicine.stock_quantity) <= float(medicine.low_stock_threshold):
-                    warning_count += 1
-
-            # Cảnh báo sắp hết hạn: theo lô còn tồn gần hạn nhất và ngưỡng
-            # riêng của từng thuốc (khớp `is_expiring_soon` trong to_dict()).
-            # `medicine.expiry_date` là field legacy không writer nào ghi,
-            # không dùng ở đây.
-            if medicine.expiry_warning_days:
-                active_batches = [b for b in batches_by_medicine.get(medicine.id, [])
-                                   if b.expiry_date and (b.remaining_quantity or 0) > 0]
-                try:
-                    if active_batches:
-                        nearest_expiry = min(b.expiry_date for b in active_batches)
-                        days_to_expiry = (nearest_expiry - today).days
-                        if days_to_expiry <= medicine.expiry_warning_days:
-                            warning_count += 1
-                except Exception:
-                    logger.warning('Bỏ qua cảnh báo hạn dùng của thuốc %s vì dữ liệu lô không hợp lệ', medicine.id, exc_info=True)
+        warning_count = _count_expiry_warning_medicines(batches_by_medicine, medicines, today, warning_count)
 
         return jsonify({
             'total_medicines': total_medicines,
@@ -155,6 +160,35 @@ def get_dashboard(user):
         }), 500
     finally:
         db.close()
+
+
+def _summary_service_revenue(db, doctor_id, from_date, to_date):
+    from app.models.appointment import Appointment
+    from app.models.examination import Examination
+    # Calculate total service revenue (nguồn: appointments.service_id → services.default_price)
+    from app.models.service import Service as SvcModel
+    svc_rev_query = db.query(func.sum(SvcModel.default_price)).join(
+        Appointment, Appointment.service_id == SvcModel.id
+    ).filter(
+        Appointment.status == 'CONFIRMED',
+        Appointment.service_id.isnot(None)
+    )
+    if from_date:
+        try:
+            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if to_date:
+        try:
+            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if doctor_id:
+        svc_rev_query = svc_rev_query.join(
+            Examination, Examination.appointment_id == Appointment.id
+        ).filter(Examination.doctor_id == int(doctor_id))
+    total_service_revenue = int(float(svc_rev_query.scalar() or 0))
+    return total_service_revenue
 
 
 def _summary_visit_totals(db, doctor_id, from_date, to_date):
@@ -181,29 +215,7 @@ def _summary_visit_totals(db, doctor_id, from_date, to_date):
         exam_count_query = exam_count_query.filter(Examination.doctor_id == int(doctor_id))
     total_examinations = exam_count_query.scalar() or 0
 
-    # Calculate total service revenue (nguồn: appointments.service_id → services.default_price)
-    from app.models.service import Service as SvcModel
-    svc_rev_query = db.query(func.sum(SvcModel.default_price)).join(
-        Appointment, Appointment.service_id == SvcModel.id
-    ).filter(
-        Appointment.status == 'CONFIRMED',
-        Appointment.service_id.isnot(None)
-    )
-    if from_date:
-        try:
-            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
-        except ValueError as exc:
-            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-    if to_date:
-        try:
-            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-        except ValueError as exc:
-            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-    if doctor_id:
-        svc_rev_query = svc_rev_query.join(
-            Examination, Examination.appointment_id == Appointment.id
-        ).filter(Examination.doctor_id == int(doctor_id))
-    total_service_revenue = int(float(svc_rev_query.scalar() or 0))
+    total_service_revenue = _summary_service_revenue(db, doctor_id, from_date, to_date)
     return total_examinations, total_service_revenue
 
 

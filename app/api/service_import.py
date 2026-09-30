@@ -13,6 +13,15 @@ from app.api.service import (  # noqa: E402 — module gốc đã khởi tạo x
 from app.utils.api_error_contract import api_error_boundary
 
 
+def _parse_import_duration(duration_str):
+    """Minutes from the Excel cell; empty, invalid or non-positive values fall back to 60."""
+    try:
+        duration = int(duration_str) if duration_str else 60
+    except ValueError:
+        return 60
+    return duration if duration > 0 else 60
+
+
 def _import_service_rows(db, df, error_count, errors, success_count):
     import pandas as pd
     for index, row in df.iterrows():
@@ -55,12 +64,7 @@ def _import_service_rows(db, df, error_count, errors, success_count):
                 continue
 
             # Validate duration
-            try:
-                duration = int(duration_str) if duration_str else 60
-                if duration <= 0:
-                    duration = 60
-            except ValueError:
-                duration = 60
+            duration = _parse_import_duration(duration_str)
 
             # Convert status to boolean
             is_active = status.lower() in ['kích hoạt', 'active', 'true', '1', 'yes']

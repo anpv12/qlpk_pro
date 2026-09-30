@@ -177,6 +177,47 @@ def delete_service_category(user, category_id):
         db.close()
 
 
+def _import_service_category_rows(db, df, error_count, errors, success_count):
+    import pandas as pd
+    for index, row in df.iterrows():
+        try:
+            name = str(row['Tên nhóm dịch vụ']).strip()
+            description = str(row['Mô tả']).strip() if pd.notna(row['Mô tả']) else None
+            status = str(row['Trạng thái']).strip()
+
+            # Validate required fields
+            if not name:
+                errors.append(f'Row {index + 2}: Tên nhóm dịch vụ không được để trống')
+                error_count += 1
+                continue
+
+            # Check if category already exists
+            existing_category = db.query(ServiceCategory).filter(ServiceCategory.name == name).first()
+            if existing_category:
+                errors.append(f'Row {index + 2}: Nhóm dịch vụ "{name}" đã tồn tại')
+                error_count += 1
+                continue
+
+            # Convert status to boolean
+            is_active = status.lower() in ['kích hoạt', 'active', 'true', '1', 'yes']
+
+            # Create new category
+            new_category = ServiceCategory(
+                name=name,
+                description=description,
+                is_active=is_active
+            )
+
+            db.add(new_category)
+            success_count += 1
+
+        except Exception as e:
+            logger.warning('Service category import row %s failed', index + 2, exc_info=True)
+            errors.append(f'Row {index + 2}: {str(e)}')
+            error_count += 1
+    return error_count, success_count
+
+
 @router.route('/import', methods=['POST'])
 @require_auth
 @api_error_boundary(detail='Internal server error: {error}')
@@ -212,42 +253,7 @@ def import_service_categories(user):
         error_count = 0
         errors = []
         
-        for index, row in df.iterrows():
-            try:
-                name = str(row['Tên nhóm dịch vụ']).strip()
-                description = str(row['Mô tả']).strip() if pd.notna(row['Mô tả']) else None
-                status = str(row['Trạng thái']).strip()
-                
-                # Validate required fields
-                if not name:
-                    errors.append(f'Row {index + 2}: Tên nhóm dịch vụ không được để trống')
-                    error_count += 1
-                    continue
-                
-                # Check if category already exists
-                existing_category = db.query(ServiceCategory).filter(ServiceCategory.name == name).first()
-                if existing_category:
-                    errors.append(f'Row {index + 2}: Nhóm dịch vụ "{name}" đã tồn tại')
-                    error_count += 1
-                    continue
-                
-                # Convert status to boolean
-                is_active = status.lower() in ['kích hoạt', 'active', 'true', '1', 'yes']
-                
-                # Create new category
-                new_category = ServiceCategory(
-                    name=name,
-                    description=description,
-                    is_active=is_active
-                )
-                
-                db.add(new_category)
-                success_count += 1
-                
-            except Exception as e:
-                logger.warning('Service category import row %s failed', index + 2, exc_info=True)
-                errors.append(f'Row {index + 2}: {str(e)}')
-                error_count += 1
+        error_count, success_count = _import_service_category_rows(db, df, error_count, errors, success_count)
         
         # Commit if any successful imports
         if success_count > 0:

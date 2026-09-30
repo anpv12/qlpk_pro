@@ -27,16 +27,7 @@ def static_asset(url):
     return candidate
 
 
-def prepare_html(html):
-    if not isinstance(html, str) or not html.strip() or len(html.encode()) > MAX_HTML_BYTES:
-        raise ValueError('Tài liệu PDF rỗng hoặc vượt quá 8 MB')
-    soup = BeautifulSoup(html, 'html.parser')
-    for element in soup.select('script, base, iframe, object, embed, meta[http-equiv], .action-buttons'):
-        element.decompose()
-    for element in soup.find_all(True):
-        for attribute in list(element.attrs):
-            if attribute.lower().startswith('on'):
-                del element[attribute]
+def _localize_pdf_asset_links(soup):
     for link in soup.select('link[href]'):
         href = link['href']
         if 'bootstrap@5.3.2/dist/css/bootstrap.min.css' in href:
@@ -48,6 +39,19 @@ def prepare_html(html):
         value = element[attribute]
         if urlsplit(value).path.startswith('/static/'):
             element[attribute] = urlsplit(value).path
+
+
+def prepare_html(html):
+    if not isinstance(html, str) or not html.strip() or len(html.encode()) > MAX_HTML_BYTES:
+        raise ValueError('Tài liệu PDF rỗng hoặc vượt quá 8 MB')
+    soup = BeautifulSoup(html, 'html.parser')
+    for element in soup.select('script, base, iframe, object, embed, meta[http-equiv], .action-buttons'):
+        element.decompose()
+    for element in soup.find_all(True):
+        for attribute in list(element.attrs):
+            if attribute.lower().startswith('on'):
+                del element[attribute]
+    _localize_pdf_asset_links(soup)
     return str(soup)
 
 

@@ -60,36 +60,7 @@ def get_chi_dinh_for_patient(db, patient_id, exclude_appointment_id=None, limit=
     return query.order_by(ChiDinh.created_at.desc()).limit(max(1, min(int(limit or 100), 200))).all()
 
 
-def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
-    """Return filtered ChiDinh models and legacy pagination metadata."""
-    logger = logger or logging.getLogger(__name__)
-
-    doctor_name = args.get('doctor_name', '').strip()
-    patient_name = args.get('patient_name', '').strip()
-    from_date = args.get('from_date', '').strip()
-    to_date = args.get('to_date', '').strip()
-    status = args.get('status', '').strip()
-    status_group = args.get('status_group', '').strip()
-    if status_group not in ('', 'active', 'completed'):
-        raise InvalidPagination('Nhóm trạng thái không hợp lệ')
-    location_type = args.get('location_type', '').strip()
-    page = _positive_int(args.get('page', 1), 'page')
-    per_page = min(_positive_int(args.get('per_page', 50), 'per_page'), 100)
-
-    # Query trực tiếp từ ChiDinh để giữ nguyên hành vi legacy với join tùy filter.
-    query = db.query(ChiDinh)
-
-    user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
-    user_role_upper = user_role.upper()
-
-    appointment_joined = False
-
-    if user_role_upper in ['DOCTOR', 'PSYCHOLOGIST']:
-        query = query.filter(ChiDinh.in_house_unit_id == user.id)
-        logger.info(
-            f"Filtering chi_dinh for {user_role_upper} user {user.id} ({user.full_name}) by in_house_unit_id"
-        )
-
+def _apply_chi_dinh_list_filters(appointment_joined, doctor_name, from_date, location_type, logger, patient_name, query, to_date):
     if doctor_name or patient_name:
         if not appointment_joined:
             query = query.join(Appointment, ChiDinh.appointment_id == Appointment.id)
@@ -127,6 +98,40 @@ def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
 
     if location_type:
         query = query.filter(ChiDinh.location_type == location_type.lower())
+    return query
+
+
+def get_chi_dinh_list_result(db, user, args, logger=None) -> ChiDinhListResult:
+    """Return filtered ChiDinh models and legacy pagination metadata."""
+    logger = logger or logging.getLogger(__name__)
+
+    doctor_name = args.get('doctor_name', '').strip()
+    patient_name = args.get('patient_name', '').strip()
+    from_date = args.get('from_date', '').strip()
+    to_date = args.get('to_date', '').strip()
+    status = args.get('status', '').strip()
+    status_group = args.get('status_group', '').strip()
+    if status_group not in ('', 'active', 'completed'):
+        raise InvalidPagination('Nhóm trạng thái không hợp lệ')
+    location_type = args.get('location_type', '').strip()
+    page = _positive_int(args.get('page', 1), 'page')
+    per_page = min(_positive_int(args.get('per_page', 50), 'per_page'), 100)
+
+    # Query trực tiếp từ ChiDinh để giữ nguyên hành vi legacy với join tùy filter.
+    query = db.query(ChiDinh)
+
+    user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    user_role_upper = user_role.upper()
+
+    appointment_joined = False
+
+    if user_role_upper in ['DOCTOR', 'PSYCHOLOGIST']:
+        query = query.filter(ChiDinh.in_house_unit_id == user.id)
+        logger.info(
+            f"Filtering chi_dinh for {user_role_upper} user {user.id} ({user.full_name}) by in_house_unit_id"
+        )
+
+    query = _apply_chi_dinh_list_filters(appointment_joined, doctor_name, from_date, location_type, logger, patient_name, query, to_date)
 
     # Counts are over the same permission/name/date scope, before status/paging.
     completed_count = query.filter(ChiDinh.status == 'completed').count()

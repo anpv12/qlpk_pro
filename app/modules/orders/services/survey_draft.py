@@ -31,6 +31,23 @@ def draft_view(db, session):
     }
 
 
+def _validated_draft_answers(data, session):
+    answers = data.get('responses')
+    if not isinstance(answers, dict) or len(json.dumps(answers, ensure_ascii=False)) > 131072:
+        raise SurveyLifecycleError('Dữ liệu tiến độ không hợp lệ hoặc quá lớn')
+    for value in answers.values():
+        values = value if isinstance(value, list) else [value]
+        if any(type(item) not in (str, int, float) for item in values):
+            raise SurveyLifecycleError('Giá trị câu trả lời không hợp lệ')
+    revision = data.get('revision')
+    if type(revision) is not int or revision != session.draft_revision:
+        # A lost response may be retried safely with the exact same contents.
+        if type(revision) is int and revision == session.draft_revision - 1 and answers == session.draft_responses:
+            return session, None
+        raise SurveyLifecycleError('Bài đang được thay đổi ở phiên khác. Vui lòng tải lại trước khi tiếp tục.', 409)
+    return None, answers
+
+
 def save_survey_draft(db, data):
     if not isinstance(data, dict) or not data.get('session_token'):
         raise SurveyLifecycleError('Thiếu phiên khảo sát')
@@ -51,19 +68,9 @@ def save_survey_draft(db, data):
         matches = False
     if not matches:
         raise SurveyLifecycleError('Tiến độ không khớp phiên khảo sát')
-    answers = data.get('responses')
-    if not isinstance(answers, dict) or len(json.dumps(answers, ensure_ascii=False)) > 131072:
-        raise SurveyLifecycleError('Dữ liệu tiến độ không hợp lệ hoặc quá lớn')
-    for value in answers.values():
-        values = value if isinstance(value, list) else [value]
-        if any(type(item) not in (str, int, float) for item in values):
-            raise SurveyLifecycleError('Giá trị câu trả lời không hợp lệ')
-    revision = data.get('revision')
-    if type(revision) is not int or revision != session.draft_revision:
-        # A lost response may be retried safely with the exact same contents.
-        if type(revision) is int and revision == session.draft_revision - 1 and answers == session.draft_responses:
-            return session
-        raise SurveyLifecycleError('Bài đang được thay đổi ở phiên khác. Vui lòng tải lại trước khi tiếp tục.', 409)
+    retried_session, answers = _validated_draft_answers(data, session)
+    if retried_session is not None:
+        return retried_session
     snapshot = session_snapshot(db, session)
     partial_content = deepcopy(snapshot['content'])
     for question in questions_from_content(partial_content):

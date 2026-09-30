@@ -135,6 +135,76 @@ def _persist_refreshed_token(connection, new_access_token, new_expires_at):
         db.close()
 
 
+_KEEP_CURRENT_TOKEN = object()
+
+
+def _refresh_google_credentials(connection):
+    """Refresh through the token endpoint: new Credentials, None on failure, or _KEEP_CURRENT_TOKEN when no token was issued."""
+    from datetime import timezone
+    max_retries = 2
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Token expired or expiring soon, refreshing for user {connection.user_id} (attempt {attempt + 1}/{max_retries})...")
+
+            token_url = "https://oauth2.googleapis.com/token"
+            payload = {
+                'client_id': settings.GOOGLE_CLIENT_ID,
+                'client_secret': settings.GOOGLE_CLIENT_SECRET,
+                'refresh_token': connection.refresh_token,
+                'grant_type': 'refresh_token'
+            }
+
+            # Timeout 5s mỗi lần thử (tổng max 10s)
+            response = requests.post(token_url, data=payload, timeout=5)
+
+            if response.status_code == 200:
+                data = response.json()
+                new_access_token = data.get('access_token')
+                expires_in = data.get('expires_in', 3599)  # Default 1h
+
+                if new_access_token:
+                    # Cập nhật vào đối tượng connection hiện tại
+                    new_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=expires_in)
+                    connection.access_token = new_access_token
+                    connection.token_expires_at = new_expires_at
+
+                    _persist_refreshed_token(connection, new_access_token, new_expires_at)
+
+                    # Trả về Credentials đầy đủ để SDK hoạt động đúng
+                    return Credentials(
+                        token=new_access_token,
+                        refresh_token=connection.refresh_token,
+                        token_uri="https://oauth2.googleapis.com/token",
+                        client_id=settings.GOOGLE_CLIENT_ID,
+                        client_secret=settings.GOOGLE_CLIENT_SECRET,
+                        expiry=new_expires_at,
+                        scopes=SCOPES
+                    )
+            else:
+                logger.error(f"Refresh failed: HTTP {response.status_code} - {response.text}")
+                reason = _parse_google_token_error(response)
+                _set_connection_credential_error(
+                    connection,
+                    f'refresh_failed:{reason}',
+                    _is_terminal_google_token_error(response)
+                )
+                return None
+
+        except requests.Timeout:
+            if attempt < max_retries - 1:
+                logger.warning(f"Refresh timeout for user {connection.user_id}, retrying...")
+                continue
+            else:
+                logger.error(f"Refresh timeout after {max_retries} attempts for user {connection.user_id}")
+                _set_connection_credential_error(connection, 'refresh_timeout', False)
+                return None
+        except Exception as e:
+            logger.error(f"Refresh exception: {e}", exc_info=True)
+            _set_connection_credential_error(connection, f'refresh_exception:{e}', False)
+            return None
+    return _KEEP_CURRENT_TOKEN
+
+
 class GoogleCalendarService:
     @staticmethod
     def get_credentials_file_path():
@@ -222,68 +292,9 @@ class GoogleCalendarService:
                 should_refresh = True
                 
             if should_refresh:
-                # Retry logic: thử tối đa 2 lần với timeout ngắn
-                max_retries = 2
-                for attempt in range(max_retries):
-                    try:
-                        logger.info(f"Token expired or expiring soon, refreshing for user {connection.user_id} (attempt {attempt + 1}/{max_retries})...")
-                        
-                        token_url = "https://oauth2.googleapis.com/token"
-                        payload = {
-                            'client_id': settings.GOOGLE_CLIENT_ID,
-                            'client_secret': settings.GOOGLE_CLIENT_SECRET,
-                            'refresh_token': connection.refresh_token,
-                            'grant_type': 'refresh_token'
-                        }
-                        
-                        # Timeout 5s mỗi lần thử (tổng max 10s)
-                        response = requests.post(token_url, data=payload, timeout=5)
-                        
-                        if response.status_code == 200:
-                            data = response.json()
-                            new_access_token = data.get('access_token')
-                            expires_in = data.get('expires_in', 3599)  # Default 1h
-                            
-                            if new_access_token:
-                                # Cập nhật vào đối tượng connection hiện tại
-                                new_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=expires_in)
-                                connection.access_token = new_access_token
-                                connection.token_expires_at = new_expires_at
-                                
-                                _persist_refreshed_token(connection, new_access_token, new_expires_at)
-                                
-                                # Trả về Credentials đầy đủ để SDK hoạt động đúng
-                                return Credentials(
-                                    token=new_access_token,
-                                    refresh_token=connection.refresh_token,
-                                    token_uri="https://oauth2.googleapis.com/token",
-                                    client_id=settings.GOOGLE_CLIENT_ID,
-                                    client_secret=settings.GOOGLE_CLIENT_SECRET,
-                                    expiry=new_expires_at,
-                                    scopes=SCOPES
-                                )
-                        else:
-                            logger.error(f"Refresh failed: HTTP {response.status_code} - {response.text}")
-                            reason = _parse_google_token_error(response)
-                            _set_connection_credential_error(
-                                connection,
-                                f'refresh_failed:{reason}',
-                                _is_terminal_google_token_error(response)
-                            )
-                            return None
-                            
-                    except requests.Timeout:
-                        if attempt < max_retries - 1:
-                            logger.warning(f"Refresh timeout for user {connection.user_id}, retrying...")
-                            continue
-                        else:
-                            logger.error(f"Refresh timeout after {max_retries} attempts for user {connection.user_id}")
-                            _set_connection_credential_error(connection, 'refresh_timeout', False)
-                            return None
-                    except Exception as e:
-                        logger.error(f"Refresh exception: {e}", exc_info=True)
-                        _set_connection_credential_error(connection, f'refresh_exception:{e}', False)
-                        return None
+                refreshed = _refresh_google_credentials(connection)
+                if refreshed is not _KEEP_CURRENT_TOKEN:
+                    return refreshed
 
             # Token còn hạn -> trả về Credentials đầy đủ
             return Credentials(

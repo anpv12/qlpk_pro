@@ -40,6 +40,36 @@ def get_dispensing_ledger(user):
         db.close()
 
 
+def _apply_medicine_sort(query, sort_by):
+    # Apply sorting - mặc định sort theo updated_at DESC (mới nhất trước)
+    if sort_by == 'name':
+        query = query.order_by(Medicine.name.asc())
+    elif sort_by == 'unit_price':
+        query = query.order_by(Medicine.unit_price.desc())
+    elif sort_by == 'stock_quantity':
+        query = query.order_by(Medicine.stock_quantity.desc())
+    elif sort_by == 'created_at':
+        query = query.order_by(Medicine.created_at.desc())
+    elif sort_by == 'expiry_date':
+        from sqlalchemy import select, func
+        nearest_expiry = (
+            select(func.min(MedicineBatch.expiry_date))
+            .where(MedicineBatch.medicine_id == Medicine.id, MedicineBatch.remaining_quantity > 0)
+            .correlate(Medicine)
+            .scalar_subquery()
+        )
+        # Thuốc sắp hết hạn nhất (lô còn tồn) lên trước; thuốc không có
+        # lô nào còn hạn xuống cuối vì chúng không cần cảnh báo.
+        query = query.order_by(nearest_expiry.asc().nullslast())
+    else:  # Mặc định: updated_at DESC (mới nhất trước), nếu null thì dùng created_at
+        from sqlalchemy import desc, func
+        query = query.order_by(
+            desc(func.coalesce(Medicine.updated_at, Medicine.created_at)),
+            desc(Medicine.created_at)
+        )
+    return query
+
+
 def _filtered_medicine_query(category, db, is_imported, reference_status, search, sort_by, unit):
     from sqlalchemy.orm import joinedload
     query = db.query(Medicine).options(joinedload(Medicine.reference_catalog))
@@ -70,32 +100,7 @@ def _filtered_medicine_query(category, db, is_imported, reference_status, search
     if is_imported in ['true', 'false']:
         query = query.filter(Medicine.is_imported == (is_imported == 'true'))
 
-    # Apply sorting - mặc định sort theo updated_at DESC (mới nhất trước)
-    if sort_by == 'name':
-        query = query.order_by(Medicine.name.asc())
-    elif sort_by == 'unit_price':
-        query = query.order_by(Medicine.unit_price.desc())
-    elif sort_by == 'stock_quantity':
-        query = query.order_by(Medicine.stock_quantity.desc())
-    elif sort_by == 'created_at':
-        query = query.order_by(Medicine.created_at.desc())
-    elif sort_by == 'expiry_date':
-        from sqlalchemy import select, func
-        nearest_expiry = (
-            select(func.min(MedicineBatch.expiry_date))
-            .where(MedicineBatch.medicine_id == Medicine.id, MedicineBatch.remaining_quantity > 0)
-            .correlate(Medicine)
-            .scalar_subquery()
-        )
-        # Thuốc sắp hết hạn nhất (lô còn tồn) lên trước; thuốc không có
-        # lô nào còn hạn xuống cuối vì chúng không cần cảnh báo.
-        query = query.order_by(nearest_expiry.asc().nullslast())
-    else:  # Mặc định: updated_at DESC (mới nhất trước), nếu null thì dùng created_at
-        from sqlalchemy import desc, func
-        query = query.order_by(
-            desc(func.coalesce(Medicine.updated_at, Medicine.created_at)),
-            desc(Medicine.created_at)
-        )
+    query = _apply_medicine_sort(query, sort_by)
     return query
 
 

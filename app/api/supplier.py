@@ -123,20 +123,9 @@ def update_supplier(user, supplier_id):
                 return jsonify({'detail': 'Tên nhà cung cấp đã tồn tại'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
             supplier.name = data['name']
         
-        if 'phone' in data:
-            supplier.phone = data['phone']
-        if 'email' in data:
-            supplier.email = data['email']
-        if 'address' in data:
-            supplier.address = data['address']
-        if 'tax_code' in data:
-            supplier.tax_code = data['tax_code']
-        if 'contact_person' in data:
-            supplier.contact_person = data['contact_person']
-        if 'notes' in data:
-            supplier.notes = data['notes']
-        if 'is_active' in data:
-            supplier.is_active = data['is_active']
+        for field in ('phone', 'email', 'address', 'tax_code', 'contact_person', 'notes', 'is_active'):
+            if field in data:
+                setattr(supplier, field, data[field])
         
         db.commit()
         db.refresh(supplier)

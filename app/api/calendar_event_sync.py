@@ -138,6 +138,29 @@ def verify_events(user: User):
         db.close()
 
 
+def _keep_first_verified_calendar_event(conn, db, existing_events):
+    from app.services.google_calendar_service import GoogleCalendarService
+    # 2. Kiểm tra và xóa TẤT CẢ records cũ nếu event không còn trên Calendar
+    valid_event = None
+    for existing_event in existing_events:
+        is_exists = GoogleCalendarService.verify_event(existing_event.event_id, conn, strict=True)
+        if is_exists:
+            # Giữ lại event hợp lệ đầu tiên
+            if not valid_event:
+                valid_event = existing_event
+            else:
+                # Xóa các event trùng lặp (giữ lại 1)
+                if existing_event.event_id == valid_event.event_id or GoogleCalendarService.delete_event(existing_event, conn):
+                    db.delete(existing_event)
+                else:
+                    raise RuntimeError('Chưa xóa được lịch Google trùng; giữ liên kết để thử lại')
+        else:
+            # Event đã bị xóa trên Calendar → Xóa record
+            logger.info(f"Event {existing_event.event_id} no longer exists, deleting record")
+            db.delete(existing_event)
+    return valid_event
+
+
 def _sync_appointment_for_users(appt, appt_id, appt_result, db, doctor_role_label, users_to_sync):
     from app.services.google_calendar_service import GoogleCalendarService, format_friendly_error
     for user_info in users_to_sync:
@@ -152,24 +175,7 @@ def _sync_appointment_for_users(appt, appt_id, appt_result, db, doctor_role_labe
                 GoogleCalendarEvent.user_id == user_id
             ).all()
 
-            # 2. Kiểm tra và xóa TẤT CẢ records cũ nếu event không còn trên Calendar
-            valid_event = None
-            for existing_event in existing_events:
-                is_exists = GoogleCalendarService.verify_event(existing_event.event_id, conn, strict=True)
-                if is_exists:
-                    # Giữ lại event hợp lệ đầu tiên
-                    if not valid_event:
-                        valid_event = existing_event
-                    else:
-                        # Xóa các event trùng lặp (giữ lại 1)
-                        if existing_event.event_id == valid_event.event_id or GoogleCalendarService.delete_event(existing_event, conn):
-                            db.delete(existing_event)
-                        else:
-                            raise RuntimeError('Chưa xóa được lịch Google trùng; giữ liên kết để thử lại')
-                else:
-                    # Event đã bị xóa trên Calendar → Xóa record
-                    logger.info(f"Event {existing_event.event_id} no longer exists, deleting record")
-                    db.delete(existing_event)
+            valid_event = _keep_first_verified_calendar_event(conn, db, existing_events)
 
             db.flush()
 

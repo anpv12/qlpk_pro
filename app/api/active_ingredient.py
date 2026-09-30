@@ -7,6 +7,7 @@ from app.utils.search_normalization import normalized_contains
 import pandas as pd
 import io
 from app.utils.api_error_contract import api_error_boundary
+from app.utils.catalog_excel_upload import catalog_excel_upload
 
 active_ingredient_bp = Blueprint('active_ingredient', __name__, url_prefix='/api/active-ingredient')
 
@@ -154,21 +155,35 @@ def download_template(user):
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
+def _upsert_imported_active_ingredient(added_count, db, mo_ta, skipped_count, ten_hoat_chat):
+    existing = db.query(ActiveIngredient).filter(ActiveIngredient.ten_hoat_chat.ilike(ten_hoat_chat)).first()
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            if mo_ta:
+                existing.mo_ta = mo_ta
+            added_count += 1
+        else:
+            skipped_count += 1
+    else:
+        new_item = ActiveIngredient(
+            ten_hoat_chat=ten_hoat_chat,
+            mo_ta=mo_ta
+        )
+        db.add(new_item)
+        added_count += 1
+    return added_count, skipped_count
+
+
 @active_ingredient_bp.route('/import', methods=['POST'])
 @require_auth
 @api_error_boundary(success=False, message='Lỗi khi xử lý file: {error}')
 def import_excel(user):
     db = SessionLocal()
     try:
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'message': 'Không tìm thấy file'}), 400
-            
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'success': False, 'message': 'Tên file rỗng'}), 400
-            
-        if not file.filename.endswith('.xlsx') and not file.filename.endswith('.xls'):
-            return jsonify({'success': False, 'message': 'Chỉ hỗ trợ định dạng Excel (.xlsx, .xls)'}), 400
+        file, upload_error = catalog_excel_upload()
+        if upload_error:
+            return upload_error
             
         df = pd.read_excel(file)
         
@@ -191,22 +206,7 @@ def import_excel(user):
             if mo_ta.lower() == 'nan':
                 mo_ta = ''
                 
-            existing = db.query(ActiveIngredient).filter(ActiveIngredient.ten_hoat_chat.ilike(ten_hoat_chat)).first()
-            if existing:
-                if not existing.is_active:
-                    existing.is_active = True
-                    if mo_ta:
-                        existing.mo_ta = mo_ta
-                    added_count += 1
-                else:
-                    skipped_count += 1
-            else:
-                new_item = ActiveIngredient(
-                    ten_hoat_chat=ten_hoat_chat,
-                    mo_ta=mo_ta
-                )
-                db.add(new_item)
-                added_count += 1
+            added_count, skipped_count = _upsert_imported_active_ingredient(added_count, db, mo_ta, skipped_count, ten_hoat_chat)
                 
         db.commit()
         emit_inventory_changed('active_ingredients_imported', entity='active_ingredient', extra={

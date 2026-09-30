@@ -35,17 +35,7 @@ def empty_risk_assessment() -> dict[str, Any]:
     }
 
 
-def validate_risk_assessment(raw: Any) -> dict[str, Any]:
-    """Validate runtime input without applying the forgiving legacy parser."""
-    if raw is None or raw == "":
-        return empty_risk_assessment()
-    if not isinstance(raw, Mapping):
-        raise RiskAssessmentContractError("risk_assessment must be an object")
-
-    version = raw.get("schema_version", RISK_SCHEMA_VERSION)
-    if version != RISK_SCHEMA_VERSION:
-        raise RiskAssessmentContractError("risk_assessment.schema_version is invalid")
-
+def _validate_suicide_history(raw):
     suicide_history = raw.get("suicide_history", [])
     if not isinstance(suicide_history, list):
         raise RiskAssessmentContractError("risk_assessment.suicide_history must be an array")
@@ -59,9 +49,8 @@ def validate_risk_assessment(raw: Any) -> dict[str, Any]:
                 f"risk_assessment.suicide_history[{index}].note must be text"
             )
 
-    assessment = raw.get("assessment", {})
-    if not isinstance(assessment, Mapping):
-        raise RiskAssessmentContractError("risk_assessment.assessment must be an object")
+
+def _validate_assessment_answers(assessment):
     for key in ("ideation", "plan", "intent", "self_harm"):
         item = assessment.get(key)
         if item is None:
@@ -74,9 +63,43 @@ def validate_risk_assessment(raw: Any) -> dict[str, Any]:
             raise RiskAssessmentContractError(
                 f"risk_assessment.assessment.{key}.note must be text"
             )
+
+
+def validate_risk_assessment(raw: Any) -> dict[str, Any]:
+    """Validate runtime input without applying the forgiving legacy parser."""
+    if raw is None or raw == "":
+        return empty_risk_assessment()
+    if not isinstance(raw, Mapping):
+        raise RiskAssessmentContractError("risk_assessment must be an object")
+
+    version = raw.get("schema_version", RISK_SCHEMA_VERSION)
+    if version != RISK_SCHEMA_VERSION:
+        raise RiskAssessmentContractError("risk_assessment.schema_version is invalid")
+
+    _validate_suicide_history(raw)
+
+    assessment = raw.get("assessment", {})
+    if not isinstance(assessment, Mapping):
+        raise RiskAssessmentContractError("risk_assessment.assessment must be an object")
+    _validate_assessment_answers(assessment)
     if assessment.get("level") is not None and assessment.get("level") not in {"thap", "trung_binh", "cao"}:
         raise RiskAssessmentContractError("risk_assessment.assessment.level is invalid")
     return dict(raw)
+
+
+def _normalize_assessment_answers(assessment, raw_assessment):
+    if isinstance(raw_assessment, Mapping):
+        for key, _label in _ASSESSMENT_FIELDS:
+            value = raw_assessment.get(key)
+            if isinstance(value, Mapping):
+                normalized_value = str(value.get("value") or "").strip().lower()
+                note = str(value.get("note") or "").strip()
+                if normalized_value in {"co", "khong", "yes", "no"}:
+                    normalized_value = "co" if normalized_value in {"co", "yes"} else "khong"
+                    assessment[key] = {"value": normalized_value, "note": note}
+        level = str(raw_assessment.get("level") or "").strip().lower()
+        if level in _LEVEL_LABELS:
+            assessment["level"] = level
 
 
 def normalize_risk_assessment(raw: Any, *, allow_legacy: bool = False) -> dict[str, Any]:
@@ -93,18 +116,7 @@ def normalize_risk_assessment(raw: Any, *, allow_legacy: bool = False) -> dict[s
 
         assessment = {}
         raw_assessment = raw.get("assessment", {})
-        if isinstance(raw_assessment, Mapping):
-            for key, _label in _ASSESSMENT_FIELDS:
-                value = raw_assessment.get(key)
-                if isinstance(value, Mapping):
-                    normalized_value = str(value.get("value") or "").strip().lower()
-                    note = str(value.get("note") or "").strip()
-                    if normalized_value in {"co", "khong", "yes", "no"}:
-                        normalized_value = "co" if normalized_value in {"co", "yes"} else "khong"
-                        assessment[key] = {"value": normalized_value, "note": note}
-            level = str(raw_assessment.get("level") or "").strip().lower()
-            if level in _LEVEL_LABELS:
-                assessment["level"] = level
+        _normalize_assessment_answers(assessment, raw_assessment)
 
         result = {
             "schema_version": RISK_SCHEMA_VERSION,
@@ -122,22 +134,7 @@ def normalize_risk_assessment(raw: Any, *, allow_legacy: bool = False) -> dict[s
     return empty_risk_assessment()
 
 
-def parse_legacy_risk_assessment(raw: str) -> dict[str, Any]:
-    """Convert the former [TSH]/[ĐGN] display string before the DB type change."""
-    value = str(raw or "").strip()
-    result = empty_risk_assessment()
-    if not value:
-        return result
-
-    tsh_match = re.search(r"\[TSH\]\s*(.*?)(?:;\s*\[ĐGN\]|$)", value, re.IGNORECASE | re.DOTALL)
-    if tsh_match:
-        for pair in tsh_match.group(1).strip().split(" | "):
-            code, separator, note = pair.partition(": ")
-            code = code.strip()
-            if code:
-                result["suicide_history"].append({"code": code, "note": note.strip() if separator else ""})
-
-    dgn_match = re.search(r"\[ĐGN\]\s*(.+)$", value, re.IGNORECASE | re.DOTALL)
+def _parse_legacy_assessment_part(dgn_match, result):
     if dgn_match:
         for part in dgn_match.group(1).strip().split(" | "):
             label, separator, rest = part.partition(": ")
@@ -159,6 +156,25 @@ def parse_legacy_risk_assessment(raw: str) -> dict[str, Any]:
                     "value": value_code,
                     "note": note.strip() if separator else "",
                 }
+
+
+def parse_legacy_risk_assessment(raw: str) -> dict[str, Any]:
+    """Convert the former [TSH]/[ĐGN] display string before the DB type change."""
+    value = str(raw or "").strip()
+    result = empty_risk_assessment()
+    if not value:
+        return result
+
+    tsh_match = re.search(r"\[TSH\]\s*(.*?)(?:;\s*\[ĐGN\]|$)", value, re.IGNORECASE | re.DOTALL)
+    if tsh_match:
+        for pair in tsh_match.group(1).strip().split(" | "):
+            code, separator, note = pair.partition(": ")
+            code = code.strip()
+            if code:
+                result["suicide_history"].append({"code": code, "note": note.strip() if separator else ""})
+
+    dgn_match = re.search(r"\[ĐGN\]\s*(.+)$", value, re.IGNORECASE | re.DOTALL)
+    _parse_legacy_assessment_part(dgn_match, result)
 
     if not result["suicide_history"] and not result["assessment"]:
         result["legacy_text"] = value

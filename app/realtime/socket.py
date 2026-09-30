@@ -182,6 +182,25 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _deliver_realtime_event(candidates, envelope, event_type, payload, server, target_rooms):
+    decisions = {}
+    for socket_id in candidates:
+        token = _client_tokens.get(socket_id)
+        if not token:
+            continue
+        try:
+            if token not in decisions:
+                decisions[token] = _prepare_delivery(token, event_type, payload or {}, target_rooms)
+            decision = decisions[token]
+            if decision is None:
+                _client_tokens.pop(socket_id, None)
+                server.disconnect(socket_id, namespace='/')
+            elif decision is not False:
+                socketio.emit('qlpk:event', {**envelope, 'payload': decision}, room=socket_id)
+        except Exception:
+            logger.exception('Failed to authorize/deliver realtime event %s', event_type)
+
+
 def emit_realtime_event(event_type: str, payload: dict | None = None, rooms: Iterable[str] | None = None) -> None:
     """Emit a domain event safely after database commit.
 
@@ -211,22 +230,7 @@ def emit_realtime_event(event_type: str, payload: dict | None = None, rooms: Ite
     except Exception:
         logger.exception('Failed to resolve realtime recipients')
         return
-    decisions = {}
-    for socket_id in candidates:
-        token = _client_tokens.get(socket_id)
-        if not token:
-            continue
-        try:
-            if token not in decisions:
-                decisions[token] = _prepare_delivery(token, event_type, payload or {}, target_rooms)
-            decision = decisions[token]
-            if decision is None:
-                _client_tokens.pop(socket_id, None)
-                server.disconnect(socket_id, namespace='/')
-            elif decision is not False:
-                socketio.emit('qlpk:event', {**envelope, 'payload': decision}, room=socket_id)
-        except Exception:
-            logger.exception('Failed to authorize/deliver realtime event %s', event_type)
+    _deliver_realtime_event(candidates, envelope, event_type, payload, server, target_rooms)
 
 
 def _prepare_delivery(token, event_type, payload, target_rooms):

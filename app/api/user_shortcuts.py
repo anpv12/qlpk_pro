@@ -308,6 +308,18 @@ def _resolve_shortcut_target(data, is_admin, row, user):
     return None, target_scope, target_user_id
 
 
+def _apply_shortcut_target_fields(data, row):
+    if 'target_url' in data:
+        target_url = (data.get('target_url') or '').strip()
+        if not _validate_target_url(target_url):
+            return jsonify({'detail': 'target_url không hợp lệ (phải là URL trong hệ thống)'}), 400
+        row.target_url = target_url
+
+    if 'is_active' in data:
+        row.is_active = bool(data.get('is_active'))
+    return None
+
+
 @shortcut_router.route('/<int:shortcut_id>', methods=['PUT'])
 @require_auth
 @api_error_boundary(detail='Không thể cập nhật phím tắt', error='{error}')
@@ -350,14 +362,9 @@ def update_shortcut(user, shortcut_id):
         row.user_id = target_user_id
         row.combo_key = next_combo
 
-        if 'target_url' in data:
-            target_url = (data.get('target_url') or '').strip()
-            if not _validate_target_url(target_url):
-                return jsonify({'detail': 'target_url không hợp lệ (phải là URL trong hệ thống)'}), 400
-            row.target_url = target_url
-
-        if 'is_active' in data:
-            row.is_active = bool(data.get('is_active'))
+        early_response = _apply_shortcut_target_fields(data, row)
+        if early_response is not None:
+            return early_response
 
         db.commit()
         db.refresh(row)

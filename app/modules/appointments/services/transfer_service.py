@@ -49,6 +49,22 @@ def parse_transfer_request(data):
     return appointment_ids, normalize_transfer_role(to_role), to_person_id
 
 
+def _lock_transferable_examinations(appointment_ids, appointments, db):
+    examinations = db.query(Examination).filter(Examination.appointment_id.in_(appointment_ids), Examination.is_active.is_(True)).order_by(Examination.id).populate_existing().with_for_update().all()
+    by_appointment = {}
+    for examination in examinations:
+        if examination.appointment_id in by_appointment:
+            raise AppointmentTransferValidationError('Lượt khám có nhiều hồ sơ đang hoạt động; cần kiểm tra lại', 409)
+        by_appointment[examination.appointment_id] = examination
+    allowed_statuses = {ExaminationStatus.WAITING_TRANSFER, ExaminationStatus.DOCTOR_EXAM,
+                        ExaminationStatus.PSYCHOLOGIST_EXAM, ExaminationStatus.CONCLUSION}
+    for appointment in appointments:
+        examination = by_appointment.get(appointment.id)
+        if appointment.status != AppointmentStatus.CONFIRMED or not examination or examination.status not in allowed_statuses:
+            raise AppointmentTransferValidationError('Có lượt khám không còn ở trạng thái được chuyển khám', 409)
+    return by_appointment
+
+
 def prepare_transfer_records(db, user, appointment_ids, to_role, to_person_id):
     actor_id = getattr(user, 'id', None)
     if not isinstance(actor_id, int) or isinstance(actor_id, bool) or actor_id <= 0:
@@ -70,18 +86,7 @@ def prepare_transfer_records(db, user, appointment_ids, to_role, to_person_id):
         raise AppointmentTransferValidationError('Có lượt khám không tồn tại hoặc đã bị hủy', 404)
     if role not in {'admin', 'staff'} and any(appointment.doctor_id != actor_id for appointment in appointments):
         raise AppointmentTransferValidationError('Bạn không có quyền chuyển một hoặc nhiều lượt khám đã chọn', 403)
-    examinations = db.query(Examination).filter(Examination.appointment_id.in_(appointment_ids), Examination.is_active.is_(True)).order_by(Examination.id).populate_existing().with_for_update().all()
-    by_appointment = {}
-    for examination in examinations:
-        if examination.appointment_id in by_appointment:
-            raise AppointmentTransferValidationError('Lượt khám có nhiều hồ sơ đang hoạt động; cần kiểm tra lại', 409)
-        by_appointment[examination.appointment_id] = examination
-    allowed_statuses = {ExaminationStatus.WAITING_TRANSFER, ExaminationStatus.DOCTOR_EXAM,
-                        ExaminationStatus.PSYCHOLOGIST_EXAM, ExaminationStatus.CONCLUSION}
-    for appointment in appointments:
-        examination = by_appointment.get(appointment.id)
-        if appointment.status != AppointmentStatus.CONFIRMED or not examination or examination.status not in allowed_statuses:
-            raise AppointmentTransferValidationError('Có lượt khám không còn ở trạng thái được chuyển khám', 409)
+    by_appointment = _lock_transferable_examinations(appointment_ids, appointments, db)
     return actor, [(appointment, by_appointment[appointment.id]) for appointment in appointments]
 
 

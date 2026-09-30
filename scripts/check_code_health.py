@@ -32,7 +32,7 @@ METRIC_RULES = {"complexity", "max-lines-per-function", "max-lines"}
 MAX_COMPLEXITY = 16
 JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
-MAX_PY_COMPLEXITY = 15
+MAX_PY_COMPLEXITY = 10
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
 MAX_WINDOW_GLOBALS = 226
 CSS_ROOT = ROOT / "app" / "static" / "css"
