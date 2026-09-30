@@ -150,9 +150,9 @@ def main():
     ):
         if forbidden_label in row_renderer:
             errors.append(f"passive legacy batch label returned: {forbidden_label}")
-    _require(prescription_css, "color: var(--qlpk-feedback-warning, #c2410c);", "pending allocation warning color", errors)
-    _require(prescription_css, "color: var(--qlpk-feedback-success, #15803d);", "allocated success color", errors)
-    _require(prescription_css, "border-inline-start: 0.18rem solid var(--qlpk-feedback-success, #15803d);", "per-lot success marker", errors)
+    _require(prescription_css, "color: var(--qlpk-feedback-warning);", "pending allocation warning color", errors)
+    _require(prescription_css, "color: var(--qlpk-feedback-success);", "allocated success color", errors)
+    _require(prescription_css, "border-inline-start: 0.18rem solid var(--qlpk-feedback-success);", "per-lot success marker", errors)
     _require(
         save_controller,
         "Không đủ thuốc trong kho. Vui lòng kiểm tra số lượng đã kê và tồn kho.",
