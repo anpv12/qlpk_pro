@@ -1,243 +1,134 @@
-		let holidays = [];
+// Holiday calendar: list/search, add and edit modals, delete confirmation, realtime refresh.
+import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
+import { requestJson } from './shared/http-json.js';
 
-		function normalizeSearchText(value) {
-			return window.QLPKSearchNormalization?.normalizeSearchText(value)
-				|| String(value || '').toLowerCase().trim();
-		}
+let holidays = [];
+const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 
-		// Toast function
-		function showToast(type, message) {
-			return window.QLPKUserFeedback?.show(type, message);
-		}
+function actionButton(kind, label, iconName, id, extraClass) {
+	return el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: `btn btn-sm${extraClass}`,
+		dataset: { holidayAction: kind, holidayId: id }, 'aria-label': label, title: label }, icon(iconName));
+}
 
-		// Load ngày lễ
-		function loadHolidays() {
-			$.ajax({
-				url: '/holidays/',
-				method: 'GET',
-				success: function (data) {
-					holidays = data;
-					renderHolidays(holidays);
-				},
-				error: function (xhr) {
-					console.error('Error loading holidays:', xhr);
-					showToast('error', 'Không thể tải danh sách ngày lễ. Vui lòng thử lại.');
-				}
-			});
-		}
+function holidayRow(holiday) {
+	return el('tr', {},
+		el('td', {}, holiday.id),
+		el('td', {}, el('strong', {}, holiday.name)),
+		el('td', {}, new Date(holiday.date).toLocaleDateString('vi-VN')),
+		el('td', {}, holiday.description ? holiday.description : el('span', { class: 'text-muted' }, 'Không có mô tả')),
+		el('td', {}, el('span', { class: `badge ${holiday.is_recurring ? 'qlpk-status--success' : 'qlpk-status--neutral'}` }, holiday.is_recurring ? 'Có' : 'Không')),
+		el('td', {}, actionButton('edit', 'Sửa ngày nghỉ', 'bi-pencil', holiday.id, ' me-1'), ' ', actionButton('danger', 'Xóa ngày nghỉ', 'bi-trash', holiday.id, '')));
+}
 
-		// Render ngày lễ
-		const listPagination = window.QLPKPagination.createClient({ render: renderPage });
-    function renderHolidays(holidaysToRender) { listPagination.setItems(holidaysToRender); }
-    function renderPage(holidaysToRender) {
-			const tbody = $('#holidayTableBody');
-			tbody.empty();
+function renderPage(items) {
+	const body = byId('holidayTableBody');
+	if (!items.length) {
+		replace(body, el('tr', {}, el('td', { colspan: 6, class: 'text-center text-muted py-4' }, icon('bi-inbox', 'fs-1 d-block mb-2'), 'Chưa có ngày lễ nào')));
+		return;
+	}
+	replace(body, items.map(holidayRow));
+}
 
-			if (holidaysToRender.length === 0) {
-				tbody.append(`
-        <tr>
-          <td colspan="6" class="text-center text-muted py-4">
-            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-            Chưa có ngày lễ nào
-          </td>
-        </tr>
-      `);
-				return;
-			}
+const pagination = window.QLPKPagination.createClient({ render: renderPage });
 
-			holidaysToRender.forEach(holiday => {
-				const row = `
-        <tr>
-          <td>${holiday.id}</td>
-          <td><strong>${window.QLPKHtml.escape(holiday.name)}</strong></td>
-          <td>${new Date(holiday.date).toLocaleDateString('vi-VN')}</td>
-          <td>${holiday.description ? window.QLPKHtml.escape(holiday.description) : '<span class="text-muted">Không có mô tả</span>'}</td>
-          <td>
-            <span class="badge ${holiday.is_recurring ? 'qlpk-status--success' : 'qlpk-status--neutral'}">
-              ${holiday.is_recurring ? 'Có' : 'Không'}
-            </span>
-          </td>
-          <td>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm me-1" data-qlpk-call="editHoliday" data-qlpk-args='[${holiday.id}]' aria-label="Sửa ngày nghỉ" title="Sửa ngày nghỉ">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-qlpk-call="deleteHoliday" data-qlpk-args='[${holiday.id}]' aria-label="Xóa ngày nghỉ" title="Xóa ngày nghỉ">
-              <i class="bi bi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `;
-				tbody.append(row);
-			});
-		}
+async function loadHolidays() {
+	try {
+		holidays = await requestJson('/holidays/');
+		pagination.setItems(holidays);
+	} catch (error) {
+		console.error('Error loading holidays:', error);
+		toast('error', 'Không thể tải danh sách ngày lễ. Vui lòng thử lại.');
+	}
+}
 
-		// Thêm ngày lễ
-		$('#addHolidayForm').submit(function (e) {
-			e.preventDefault();
+// Reads one holiday form (prefix '' = add, 'edit' = edit); marks the first missing required field.
+function readForm(prefix) {
+	const id = name => byId(prefix ? `edit${name}` : name.charAt(0).toLowerCase() + name.slice(1));
+	const nameInput = id('HolidayName');
+	const dateInput = id('HolidayDate');
+	const name = nameInput.value.trim();
+	const date = dateInput.value;
+	if (!name) {
+		nameInput.classList.add('is-invalid');
+		byId(prefix ? 'editNameError' : 'nameError').textContent = 'Tên ngày lễ không được để trống';
+		return null;
+	}
+	if (!date) {
+		dateInput.classList.add('is-invalid');
+		byId(prefix ? 'editDateError' : 'dateError').textContent = 'Ngày không được để trống';
+		return null;
+	}
+	nameInput.classList.remove('is-invalid');
+	dateInput.classList.remove('is-invalid');
+	return { name, date, description: id('HolidayDescription').value.trim(), is_recurring: id('HolidayRecurring').checked };
+}
 
-			const name = $('#holidayName').val().trim();
-			const date = $('#holidayDate').val();
-			const description = $('#holidayDescription').val().trim();
-			const isRecurring = $('#holidayRecurring').is(':checked');
+async function submitHoliday({ url, method, data, modalId, done, failed, label }) {
+	try {
+		await requestJson(url, { method, json: data });
+		toast('success', done);
+		modal(modalId).hide();
+		loadHolidays();
+	} catch (error) {
+		console.error(`Error ${label} holiday:`, error);
+		toast('error', failed);
+	}
+}
 
-			if (!name) {
-				$('#holidayName').addClass('is-invalid');
-				$('#nameError').text('Tên ngày lễ không được để trống');
-				return;
-			}
+function editHoliday(holidayId) {
+	const holiday = holidays.find(entry => entry.id === holidayId);
+	if (!holiday) return;
+	byId('editHolidayId').value = holiday.id;
+	byId('editHolidayName').value = holiday.name;
+	byId('editHolidayDate').value = holiday.date;
+	byId('editHolidayDescription').value = holiday.description ?? '';
+	byId('editHolidayRecurring').checked = Boolean(holiday.is_recurring);
+	modal('editHolidayModal').show();
+}
 
-			if (!date) {
-				$('#holidayDate').addClass('is-invalid');
-				$('#dateError').text('Ngày không được để trống');
-				return;
-			}
+async function deleteHoliday(holidayId) {
+	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa ngày lễ này?')) return;
+	try {
+		await requestJson(`/holidays/${holidayId}`, { method: 'DELETE' });
+		toast('success', 'Xóa ngày lễ thành công!');
+		loadHolidays();
+	} catch (error) {
+		console.error('Error deleting holiday:', error);
+		toast('error', 'Không thể xóa ngày nghỉ. Vui lòng thử lại.');
+	}
+}
 
-			$('#holidayName, #holidayDate').removeClass('is-invalid');
-
-			const data = {
-				name: name,
-				date: date,
-				description: description,
-				is_recurring: isRecurring
-			};
-
-
-			$.ajax({
-				url: '/holidays/',
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				data: JSON.stringify(data),
-				success: function () {
-					showToast('success', 'Thêm ngày lễ thành công!');
-					$('#addHolidayModal').modal('hide');
-					loadHolidays();
-				},
-				error: function (xhr) {
-					console.error('Error adding holiday:', xhr);
-					const error = 'Không thể thêm ngày nghỉ. Vui lòng kiểm tra lại.';
-					showToast('error', error);
-				}
-			});
-		});
-
-		// Sửa ngày lễ
-		window.editHoliday = function (holidayId) {
-			const holiday = holidays.find(h => h.id === holidayId);
-			if (!holiday) return;
-
-			$('#editHolidayId').val(holiday.id);
-			$('#editHolidayName').val(holiday.name);
-			$('#editHolidayDate').val(holiday.date);
-			$('#editHolidayDescription').val(holiday.description);
-			$('#editHolidayRecurring').prop('checked', holiday.is_recurring);
-
-			$('#editHolidayModal').modal('show');
-		};
-
-		// Cập nhật ngày lễ
-		$('#updateHolidayBtn').click(function () {
-			const id = $('#editHolidayId').val();
-			const name = $('#editHolidayName').val().trim();
-			const date = $('#editHolidayDate').val();
-			const description = $('#editHolidayDescription').val().trim();
-			const isRecurring = $('#editHolidayRecurring').is(':checked');
-
-			if (!name) {
-				$('#editHolidayName').addClass('is-invalid');
-				$('#editNameError').text('Tên ngày lễ không được để trống');
-				return;
-			}
-
-			if (!date) {
-				$('#editHolidayDate').addClass('is-invalid');
-				$('#editDateError').text('Ngày không được để trống');
-				return;
-			}
-
-			$('#editHolidayName, #editHolidayDate').removeClass('is-invalid');
-
-			const data = {
-				name: name,
-				date: date,
-				description: description,
-				is_recurring: isRecurring
-			};
-
-
-			$.ajax({
-				url: `/holidays/${id}`,
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				data: JSON.stringify(data),
-				success: function () {
-					showToast('success', 'Cập nhật ngày lễ thành công!');
-					$('#editHolidayModal').modal('hide');
-					loadHolidays();
-				},
-				error: function (xhr) {
-					console.error('Error updating holiday:', xhr);
-					const error = 'Không thể cập nhật ngày nghỉ. Vui lòng kiểm tra lại.';
-					showToast('error', error);
-				}
-			});
-		});
-
-		// Xóa ngày lễ
-		window.deleteHoliday = async function (holidayId) {
-			if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa ngày lễ này?')) return;
-
-
-			$.ajax({
-				url: `/holidays/${holidayId}`,
-				method: 'DELETE',
-				success: function () {
-					showToast('success', 'Xóa ngày lễ thành công!');
-					loadHolidays();
-				},
-				error: function (xhr) {
-					console.error('Error deleting holiday:', xhr);
-					const errorMessage = 'Không thể xóa ngày nghỉ. Vui lòng thử lại.';
-					showToast('error', errorMessage);
-				}
-			});
-		};
-
-		// Tìm kiếm
-		$('#searchInput').on('input', function () {
-			const searchTerm = normalizeSearchText($(this).val());
-			const filtered = holidays.filter(holiday =>
-				normalizeSearchText(holiday.name).includes(searchTerm) ||
-				(holiday.description && normalizeSearchText(holiday.description).includes(searchTerm))
-			);
-			renderHolidays(filtered);
-		});
-
-		// Reset form khi đóng modal
-		$('#addHolidayModal').on('hidden.bs.modal', function () {
-			$('#addHolidayForm')[0].reset();
-			$('.is-invalid').removeClass('is-invalid');
-		});
-
-		function registerRealtimeHooks() {
-			if (!window.QLPKRealtimePageHooks) return;
-			window.QLPKRealtimePageHooks.register({
-				types: ['catalog.changed'],
-				filter: function (event) {
-					return event && event.payload && event.payload.entity === 'holiday';
-				},
-				handler: function () {
-					loadHolidays();
-				},
-				debounceMs: 350,
-			});
-		}
-
-		// Load data ban đầu
-		$(document).ready(function () {
-			registerRealtimeHooks();
-			loadHolidays();
-		});
+on(byId('addHolidayForm'), 'submit', event => {
+	event.preventDefault();
+	const data = readForm('');
+	if (data) submitHoliday({ url: '/holidays/', method: 'POST', data, modalId: 'addHolidayModal', label: 'adding',
+		done: 'Thêm ngày lễ thành công!', failed: 'Không thể thêm ngày nghỉ. Vui lòng kiểm tra lại.' });
+});
+on(byId('updateHolidayBtn'), 'click', () => {
+	const data = readForm('edit');
+	if (data) submitHoliday({ url: `/holidays/${byId('editHolidayId').value}`, method: 'PUT', data, modalId: 'editHolidayModal', label: 'updating',
+		done: 'Cập nhật ngày lễ thành công!', failed: 'Không thể cập nhật ngày nghỉ. Vui lòng kiểm tra lại.' });
+});
+delegate(byId('holidayTableBody'), 'click', '[data-holiday-action]', (event, button) => {
+	const id = Number(button.dataset.holidayId);
+	if (button.dataset.holidayAction === 'edit') editHoliday(id);
+	else deleteHoliday(id);
+});
+on(byId('searchInput'), 'input', event => {
+	const term = normalize(event.target.value);
+	pagination.setItems(holidays.filter(holiday => normalize(holiday.name).includes(term)
+		|| (holiday.description && normalize(holiday.description).includes(term))));
+});
+on(byId('addHolidayModal'), 'hidden.bs.modal', () => {
+	byId('addHolidayForm').reset();
+	document.querySelectorAll('.is-invalid').forEach(node => node.classList.remove('is-invalid'));
+});
+window.QLPKRealtimePageHooks?.register({
+	types: ['catalog.changed'],
+	filter: event => event && event.payload && event.payload.entity === 'holiday',
+	handler: loadHolidays,
+	debounceMs: 350,
+});
+loadHolidays();
