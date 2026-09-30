@@ -436,6 +436,43 @@ def _default_headers(api_key: Optional[str]) -> Dict[str, str]:
     return headers
 
 
+def _extract_raw_suggestions(data):
+    # Hỗ trợ các cấu trúc phản hồi phổ biến
+    if isinstance(data, dict):
+        if "suggestions" in data:
+            suggestions = data["suggestions"]
+        elif "choices" in data:
+            content = ""
+            choices = data.get("choices") or []
+            for choice in choices:
+                message = choice.get("message") if isinstance(choice, dict) else None
+                if message and isinstance(message, dict):
+                    part = message.get("content") or ""
+                    if part:
+                        content += part
+            suggestions = _parse_openai_response(content)
+        else:
+            suggestions = []
+    elif isinstance(data, list):
+        suggestions = data
+    else:
+        suggestions = []
+    return suggestions
+
+
+def _normalize_ai_suggestions(suggestions):
+    normalized = _normalize_suggestions(suggestions)
+    if not normalized:
+        if isinstance(suggestions, str):
+            normalized = _parse_openai_response(suggestions)
+        elif suggestions:
+            try:
+                normalized = _parse_openai_response(json.dumps(suggestions, ensure_ascii=False))
+            except (TypeError, ValueError):
+                normalized = []
+    return normalized
+
+
 def request_usage_suggestions(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gọi dịch vụ AI để lấy gợi ý cách dùng."""
     url = settings.USAGE_AI_API_URL
@@ -477,36 +514,9 @@ def request_usage_suggestions(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     except ValueError as exc:
         raise UsageSuggestionError("Không parse được JSON từ phản hồi AI.") from exc
 
-    # Hỗ trợ các cấu trúc phản hồi phổ biến
-    if isinstance(data, dict):
-        if "suggestions" in data:
-            suggestions = data["suggestions"]
-        elif "choices" in data:
-            content = ""
-            choices = data.get("choices") or []
-            for choice in choices:
-                message = choice.get("message") if isinstance(choice, dict) else None
-                if message and isinstance(message, dict):
-                    part = message.get("content") or ""
-                    if part:
-                        content += part
-            suggestions = _parse_openai_response(content)
-        else:
-            suggestions = []
-    elif isinstance(data, list):
-        suggestions = data
-    else:
-        suggestions = []
+    suggestions = _extract_raw_suggestions(data)
 
-    normalized = _normalize_suggestions(suggestions)
-    if not normalized:
-        if isinstance(suggestions, str):
-            normalized = _parse_openai_response(suggestions)
-        elif suggestions:
-            try:
-                normalized = _parse_openai_response(json.dumps(suggestions, ensure_ascii=False))
-            except (TypeError, ValueError):
-                normalized = []
+    normalized = _normalize_ai_suggestions(suggestions)
 
     if not normalized:
         raise UsageSuggestionError("Dịch vụ AI không trả về gợi ý hợp lệ.")

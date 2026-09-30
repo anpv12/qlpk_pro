@@ -99,15 +99,23 @@ def sync_chi_dinh_for_appointment(db, appointment_id, chi_dinh_list):
     return result_list
 
 
-def update_chi_dinh_fields(db, chi_dinh_id, data):
-    if not isinstance(data, dict):
-        raise InvalidChiDinhPayload('Dữ liệu cập nhật chỉ định không hợp lệ')
+def _apply_chi_dinh_notes_and_files(chi_dinh, data):
+    if 'note_nurse' in data:
+        chi_dinh.note_nurse = _normalize_text(data['note_nurse'], 'Ghi chú xử lý')
 
-    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).with_for_update().first()
-    if not chi_dinh:
-        raise ChiDinhNotFound()
+    if 'note_patient' in data:
+        chi_dinh.note_patient = _normalize_text(data['note_patient'], 'Ghi chú bệnh nhân')
 
-    current_status = _normalize_status(getattr(chi_dinh, 'status', None) or 'sent')
+    if 'scheduled_for' in data:
+        chi_dinh.scheduled_for = _parse_scheduled_for_value(data['scheduled_for'])
+
+    if 'result_files' in data:
+        if not isinstance(data['result_files'], list):
+            raise InvalidChiDinhPayload('Danh sách file kết quả không hợp lệ')
+        chi_dinh.result_files = data['result_files']
+
+
+def _apply_chi_dinh_status_change(chi_dinh, current_status, data):
     next_status = current_status
     next_is_completed = bool(getattr(chi_dinh, 'is_completed', False))
     if 'status' in data:
@@ -137,19 +145,19 @@ def update_chi_dinh_fields(db, chi_dinh_id, data):
         raise InvalidChiDinhPayload('Không thể hủy trạng thái hoàn thành')
     transition_order(chi_dinh, next_status)
 
-    if 'note_nurse' in data:
-        chi_dinh.note_nurse = _normalize_text(data['note_nurse'], 'Ghi chú xử lý')
 
-    if 'note_patient' in data:
-        chi_dinh.note_patient = _normalize_text(data['note_patient'], 'Ghi chú bệnh nhân')
+def update_chi_dinh_fields(db, chi_dinh_id, data):
+    if not isinstance(data, dict):
+        raise InvalidChiDinhPayload('Dữ liệu cập nhật chỉ định không hợp lệ')
 
-    if 'scheduled_for' in data:
-        chi_dinh.scheduled_for = _parse_scheduled_for_value(data['scheduled_for'])
+    chi_dinh = db.query(ChiDinh).filter(ChiDinh.id == chi_dinh_id).with_for_update().first()
+    if not chi_dinh:
+        raise ChiDinhNotFound()
 
-    if 'result_files' in data:
-        if not isinstance(data['result_files'], list):
-            raise InvalidChiDinhPayload('Danh sách file kết quả không hợp lệ')
-        chi_dinh.result_files = data['result_files']
+    current_status = _normalize_status(getattr(chi_dinh, 'status', None) or 'sent')
+    _apply_chi_dinh_status_change(chi_dinh, current_status, data)
+
+    _apply_chi_dinh_notes_and_files(chi_dinh, data)
 
     return chi_dinh
 
@@ -199,6 +207,30 @@ def _apply_prepared_chi_dinh_payload(chi_dinh, payload):
     chi_dinh.is_completed = current_status == 'completed'
 
 
+def _chi_dinh_location_fields(db, item_data, location_type):
+    in_house_unit_id = _normalize_optional_id(item_data.get('in_house_unit_id'), 'Người thực hiện')
+    performer_name = ''
+    if location_type == 'in':
+        if not in_house_unit_id:
+            raise InvalidChiDinhPayload('Người thực hiện trong cơ sở là bắt buộc')
+        performer = db.query(User).filter(
+            User.id == in_house_unit_id,
+            User.is_active.is_(True),
+        ).first()
+        if not performer or _role_value(performer) not in PERFORMER_ROLES:
+            raise InvalidChiDinhPayload('Người thực hiện không hợp lệ hoặc đã ngừng hoạt động')
+        performer_name = performer.full_name or performer.name or ''
+    elif in_house_unit_id:
+        raise InvalidChiDinhPayload('Không được gán người thực hiện trong cơ sở cho chỉ định ngoài cơ sở')
+
+    out_facility = str(item_data.get('out_facility') or '').strip()
+    if len(out_facility) > 255:
+        raise InvalidChiDinhPayload('Tên cơ sở ngoài tối đa 255 ký tự')
+    if location_type == 'out' and not out_facility:
+        raise InvalidChiDinhPayload('Cơ sở ngoài là bắt buộc')
+    return in_house_unit_id, out_facility, performer_name
+
+
 def _prepare_chi_dinh_payload(db, item_data):
     if not isinstance(item_data, dict):
         raise InvalidChiDinhPayload('Mỗi chỉ định phải là một object')
@@ -239,26 +271,7 @@ def _prepare_chi_dinh_payload(db, item_data):
         if not template:
             raise InvalidChiDinhPayload('Mẫu khảo sát không tồn tại hoặc đã ngừng hoạt động')
 
-    in_house_unit_id = _normalize_optional_id(item_data.get('in_house_unit_id'), 'Người thực hiện')
-    performer_name = ''
-    if location_type == 'in':
-        if not in_house_unit_id:
-            raise InvalidChiDinhPayload('Người thực hiện trong cơ sở là bắt buộc')
-        performer = db.query(User).filter(
-            User.id == in_house_unit_id,
-            User.is_active.is_(True),
-        ).first()
-        if not performer or _role_value(performer) not in PERFORMER_ROLES:
-            raise InvalidChiDinhPayload('Người thực hiện không hợp lệ hoặc đã ngừng hoạt động')
-        performer_name = performer.full_name or performer.name or ''
-    elif in_house_unit_id:
-        raise InvalidChiDinhPayload('Không được gán người thực hiện trong cơ sở cho chỉ định ngoài cơ sở')
-
-    out_facility = str(item_data.get('out_facility') or '').strip()
-    if len(out_facility) > 255:
-        raise InvalidChiDinhPayload('Tên cơ sở ngoài tối đa 255 ký tự')
-    if location_type == 'out' and not out_facility:
-        raise InvalidChiDinhPayload('Cơ sở ngoài là bắt buộc')
+    in_house_unit_id, out_facility, performer_name = _chi_dinh_location_fields(db, item_data, location_type)
 
     return {
         'id': chi_dinh_id,

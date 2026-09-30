@@ -143,30 +143,7 @@ def normalize_substance_use_history(value: Any) -> dict[str, Any]:
     return normalized
 
 
-def normalize_safety_plan(value: Any) -> dict[str, Any]:
-    """Validate the patient safety-plan object while preserving its raw fields."""
-    if value is None or value == "":
-        return {}
-    if not isinstance(value, Mapping):
-        raise MedicalHistoryContractError("safety_plan must be an object")
-
-    normalized = dict(value)
-    for key in ("nhan_dien", "cach_ung_pho", "dong_luc_song"):
-        if key in normalized and normalized[key] is not None and not isinstance(normalized[key], str):
-            raise MedicalHistoryContractError(f"safety_plan.{key} must be text")
-        if key in normalized and isinstance(normalized[key], str):
-            normalized[key] = normalized[key].strip()
-
-    if "uploaded_file" in normalized:
-        uploaded_file = normalized["uploaded_file"]
-        if uploaded_file is not None and (
-            not isinstance(uploaded_file, str)
-            or not uploaded_file.startswith("/uploads/safety_plans/")
-        ):
-            raise MedicalHistoryContractError(
-                "safety_plan.uploaded_file must be a safety-plan upload path or null"
-            )
-
+def _normalize_safety_plan_supporters(normalized):
     supporters = normalized.get("nguoi_ho_tro")
     if supporters is not None:
         if not isinstance(supporters, list) or len(supporters) > 3:
@@ -192,4 +169,31 @@ def normalize_safety_plan(value: Any) -> dict[str, Any]:
                     raise MedicalHistoryContractError(
                         f"safety_plan.nguoi_ho_tro[{index}].{text_key} must be text"
                     )
+
+
+def normalize_safety_plan(value: Any) -> dict[str, Any]:
+    """Validate the patient safety-plan object while preserving its raw fields."""
+    if value is None or value == "":
+        return {}
+    if not isinstance(value, Mapping):
+        raise MedicalHistoryContractError("safety_plan must be an object")
+
+    normalized = dict(value)
+    for key in ("nhan_dien", "cach_ung_pho", "dong_luc_song"):
+        if key in normalized and normalized[key] is not None and not isinstance(normalized[key], str):
+            raise MedicalHistoryContractError(f"safety_plan.{key} must be text")
+        if key in normalized and isinstance(normalized[key], str):
+            normalized[key] = normalized[key].strip()
+
+    if "uploaded_file" in normalized:
+        uploaded_file = normalized["uploaded_file"]
+        if uploaded_file is not None and (
+            not isinstance(uploaded_file, str)
+            or not uploaded_file.startswith("/uploads/safety_plans/")
+        ):
+            raise MedicalHistoryContractError(
+                "safety_plan.uploaded_file must be a safety-plan upload path or null"
+            )
+
+    _normalize_safety_plan_supporters(normalized)
     return normalized

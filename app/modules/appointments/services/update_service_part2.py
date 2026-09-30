@@ -90,6 +90,36 @@ def save_psychologist_form_detail_fields(db, examination, data, logger=None):
         logger.debug("Examination details saved successfully")
 
 
+def _apply_patient_update_field(address_payload, db, field_name, logger, patient, value):
+    if field_name == 'date_of_birth':
+        apply_patient_date_of_birth(patient, value, logger=logger)
+    elif field_name == 'expected_delivery_date':
+        apply_patient_expected_delivery_date(patient, value, logger=logger)
+    elif field_name == 'mang_thai':
+        patient.mang_thai = normalize_boolean(value)
+    elif field_name == 'so_tuan_thai':
+        patient.so_tuan_thai = normalize_optional_integer(value)
+    elif field_name == 'referral_source':
+        apply_referral_source(patient, value)
+    elif field_name == 'safety_plan':
+        # Keep the separately uploaded safety-plan file when saving form fields.
+        current_plan = normalize_safety_plan(patient.safety_plan or {})
+        current_plan.update(normalize_safety_plan(value))
+        patient.safety_plan = current_plan
+    elif field_name == 'physical_history':
+        patient.physical_history = normalize_physical_history(db, value)
+    elif field_name == 'family_history':
+        patient.family_history = normalize_family_history(value)
+    elif field_name == 'substance_use_history':
+        patient.substance_use_history = normalize_substance_use_history(value)
+    elif field_name == 'allergies':
+        patient.allergies = normalize_allergy_entries(value)
+    elif field_name in ADDRESS_UPDATE_FIELDS:
+        address_payload[field_name] = value
+    elif field_name in PATIENT_MODEL_FIELDS:
+        setattr(patient, field_name, value)
+
+
 def apply_patient_updates_from_appointment_payload(db, appointment, data, logger=None):
     """Apply patient-owned fields from the legacy appointment update payload."""
     patient_data_for_update = {
@@ -112,33 +142,7 @@ def apply_patient_updates_from_appointment_payload(db, appointment, data, logger
     for key, value in patient_data_for_update.items():
         field_name = PATIENT_FIELD_ALIASES.get(key, key)
 
-        if field_name == 'date_of_birth':
-            apply_patient_date_of_birth(patient, value, logger=logger)
-        elif field_name == 'expected_delivery_date':
-            apply_patient_expected_delivery_date(patient, value, logger=logger)
-        elif field_name == 'mang_thai':
-            patient.mang_thai = normalize_boolean(value)
-        elif field_name == 'so_tuan_thai':
-            patient.so_tuan_thai = normalize_optional_integer(value)
-        elif field_name == 'referral_source':
-            apply_referral_source(patient, value)
-        elif field_name == 'safety_plan':
-            # Keep the separately uploaded safety-plan file when saving form fields.
-            current_plan = normalize_safety_plan(patient.safety_plan or {})
-            current_plan.update(normalize_safety_plan(value))
-            patient.safety_plan = current_plan
-        elif field_name == 'physical_history':
-            patient.physical_history = normalize_physical_history(db, value)
-        elif field_name == 'family_history':
-            patient.family_history = normalize_family_history(value)
-        elif field_name == 'substance_use_history':
-            patient.substance_use_history = normalize_substance_use_history(value)
-        elif field_name == 'allergies':
-            patient.allergies = normalize_allergy_entries(value)
-        elif field_name in ADDRESS_UPDATE_FIELDS:
-            address_payload[field_name] = value
-        elif field_name in PATIENT_MODEL_FIELDS:
-            setattr(patient, field_name, value)
+        _apply_patient_update_field(address_payload, db, field_name, logger, patient, value)
 
     if address_payload:
         apply_patient_address_update(patient, address_payload)

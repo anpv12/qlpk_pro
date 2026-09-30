@@ -24,6 +24,57 @@ class AppointmentListResult:
     latest_edited_id: int | None = None
 
 
+def _paginate_appointments(args, page, per_page, query):
+    is_receptionist_page = args.get('receptionist', 'false').lower() == 'true'
+    latest_activity_id = None
+    latest_edited_id = None
+    if is_receptionist_page:
+        latest_activity = query.with_entities(Appointment.id).order_by(
+            func.coalesce(Appointment.updated_at, Appointment.created_at).desc().nulls_last(),
+            Appointment.id.desc(),
+        ).first()
+        latest_activity_id = latest_activity[0] if latest_activity else None
+        latest_edit = query.with_entities(Appointment.id, Appointment.updated_at).filter(
+            Appointment.updated_at.isnot(None),
+        ).order_by(Appointment.updated_at.desc(), Appointment.id.desc()).first()
+        timezone = pytz.timezone('Asia/Ho_Chi_Minh')
+        if latest_edit and latest_edit.updated_at.astimezone(timezone).date() == datetime.now(timezone).date():
+            latest_edited_id = latest_edit.id
+
+    offset = (page - 1) * per_page
+    if is_receptionist_page and latest_activity_id is not None:
+        order_columns = (
+            case((Appointment.id == latest_activity_id, 0), else_=1),
+            Appointment.appointment_date.asc(),
+            Appointment.id.desc(),
+        )
+    elif args.get('doctor', 'false').lower() == 'true':
+        order_columns = (Appointment.doctor_queue_entered_at.desc().nulls_last(), Appointment.id.desc())
+    else:
+        order_columns = (Appointment.id.desc(),)
+
+    appointments = (
+        query.options(joinedload(Appointment.examinations))
+        .order_by(*order_columns)
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+    return appointments, latest_edited_id
+
+
+def _appointment_status_counts(logger, query, user, user_role_upper):
+    no_show_count = query.filter(Appointment.status == AppointmentStatus.NO_SHOW).count()
+    confirmed_count = query.filter(Appointment.status == AppointmentStatus.CONFIRMED).count()
+    scheduled_count = query.filter(Appointment.status == AppointmentStatus.SCHEDULED).count()
+    cancelled_count = query.filter(Appointment.status == AppointmentStatus.CANCELLED).count()
+    logger.debug(
+        f"Appointments count for user {user.id} (role: {user_role_upper}) - "
+        f"NO_SHOW: {no_show_count}, CONFIRMED: {confirmed_count}, "
+        f"SCHEDULED: {scheduled_count}, CANCELLED: {cancelled_count}"
+    )
+
+
 def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
     """Return appointment models and legacy pagination metadata for GET /api/appointments/."""
     logger = logger or logging.getLogger(__name__)
@@ -81,51 +132,9 @@ def get_appointment_list(db, user, args, logger=None) -> AppointmentListResult:
     total_count = query.count()
     logger.debug("Final appointment query count before pagination: %s", total_count)
 
-    no_show_count = query.filter(Appointment.status == AppointmentStatus.NO_SHOW).count()
-    confirmed_count = query.filter(Appointment.status == AppointmentStatus.CONFIRMED).count()
-    scheduled_count = query.filter(Appointment.status == AppointmentStatus.SCHEDULED).count()
-    cancelled_count = query.filter(Appointment.status == AppointmentStatus.CANCELLED).count()
-    logger.debug(
-        f"Appointments count for user {user.id} (role: {user_role_upper}) - "
-        f"NO_SHOW: {no_show_count}, CONFIRMED: {confirmed_count}, "
-        f"SCHEDULED: {scheduled_count}, CANCELLED: {cancelled_count}"
-    )
+    _appointment_status_counts(logger, query, user, user_role_upper)
 
-    is_receptionist_page = args.get('receptionist', 'false').lower() == 'true'
-    latest_activity_id = None
-    latest_edited_id = None
-    if is_receptionist_page:
-        latest_activity = query.with_entities(Appointment.id).order_by(
-            func.coalesce(Appointment.updated_at, Appointment.created_at).desc().nulls_last(),
-            Appointment.id.desc(),
-        ).first()
-        latest_activity_id = latest_activity[0] if latest_activity else None
-        latest_edit = query.with_entities(Appointment.id, Appointment.updated_at).filter(
-            Appointment.updated_at.isnot(None),
-        ).order_by(Appointment.updated_at.desc(), Appointment.id.desc()).first()
-        timezone = pytz.timezone('Asia/Ho_Chi_Minh')
-        if latest_edit and latest_edit.updated_at.astimezone(timezone).date() == datetime.now(timezone).date():
-            latest_edited_id = latest_edit.id
-
-    offset = (page - 1) * per_page
-    if is_receptionist_page and latest_activity_id is not None:
-        order_columns = (
-            case((Appointment.id == latest_activity_id, 0), else_=1),
-            Appointment.appointment_date.asc(),
-            Appointment.id.desc(),
-        )
-    elif args.get('doctor', 'false').lower() == 'true':
-        order_columns = (Appointment.doctor_queue_entered_at.desc().nulls_last(), Appointment.id.desc())
-    else:
-        order_columns = (Appointment.id.desc(),)
-
-    appointments = (
-        query.options(joinedload(Appointment.examinations))
-        .order_by(*order_columns)
-        .offset(offset)
-        .limit(per_page)
-        .all()
-    )
+    appointments, latest_edited_id = _paginate_appointments(args, page, per_page, query)
 
     total_pages = (total_count + per_page - 1) // per_page
     has_next = page < total_pages

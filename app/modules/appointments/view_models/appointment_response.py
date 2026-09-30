@@ -37,6 +37,82 @@ def build_appointment_response(appointment: Appointment, db=None) -> dict:
             owned_db.close()
 
 
+def _add_examination_fields(appointment, db, examination, result):
+    result['examination_id'] = examination.id
+    result['examination_code'] = examination.examination_code
+    result['examination_status'] = examination.status.value if examination.status else None
+    result['examination_status_text'] = get_examination_status_text(examination.status) if examination.status else None
+    result['examination_date'] = examination.examination_date.strftime('%Y-%m-%dT%H:%M:%S') if examination.examination_date else None
+
+    diagnosis_contract = build_icd_display_contract(db, examination.diagnosis)
+    benh_kem_theo_contract = build_icd_display_contract(db, examination.benh_kem_theo)
+
+    result['examination'] = {
+        'id': examination.id,
+        'status': examination.status.value if examination.status else None,
+        'weight': float(examination.weight) if examination.weight else None,
+        'height': float(examination.height) if examination.height else None,
+        'bmi': float(examination.bmi) if examination.bmi else None,
+        'pulse': float(examination.pulse) if examination.pulse else None,
+        'blood_pressure': examination.blood_pressure,
+        'temperature': float(examination.temperature) if examination.temperature else None,
+        'breathing': float(examination.breathing) if examination.breathing else None,
+        'main_reason': examination.main_reason,
+        'main_symptoms': examination.main_symptoms,
+        'diagnosis': diagnosis_contract['text'],
+        'diagnosis_ids': diagnosis_contract['ids'],
+        'benh_kem_theo': benh_kem_theo_contract['text'],
+        'benh_kem_theo_ids': benh_kem_theo_contract['ids'],
+        'treatment_plan': examination.treatment_plan,
+        'loi_dan': examination.loi_dan,
+        'current_medications': examination.current_medications,
+    }
+
+    result['examinations'] = []
+    for exam in appointment.examinations:
+        result['examinations'].append({
+            'id': exam.id,
+            'status': exam.status.value if exam.status else None,
+            'doctor_id': exam.doctor_id,
+            'loi_dan': exam.loi_dan,
+        })
+
+
+def _add_patient_fields(appointment, db, result):
+    result['patient_code'] = appointment.patient.patient_code or ''
+    result['patient_full_name'] = appointment.patient.full_name or ''
+    result['patient_gender'] = appointment.patient.gender or ''
+    result['patient_phone'] = appointment.patient.phone or ''
+    result['patient_address'] = appointment.patient.address or ''
+    result['patient_address_detail'] = appointment.patient.address_detail or ''
+    result['patient_province'] = appointment.patient.province or ''
+    result['patient_district'] = appointment.patient.district or ''
+    result['patient_ward'] = appointment.patient.ward or ''
+    result['patient_emergency_contact'] = appointment.patient.emergency_contact or ''
+    result['severity_level'] = appointment.patient.severity_level or ''
+
+    exam_for_risk = current_examination(appointment)
+    result['medical_history'] = _build_medical_history_payload(db, appointment, exam_for_risk)
+    result['patient_email'] = appointment.patient.email or ''
+    result['patient_current_medication'] = appointment.patient.current_medication or ''
+    result['patient_id_number'] = appointment.patient.id_number or ''
+    result['patient_date_of_birth'] = appointment.patient.date_of_birth.isoformat() if appointment.patient.date_of_birth else None
+
+    result['patient'] = {
+        'id': appointment.patient.id,
+        'patient_code': appointment.patient.patient_code or '',
+        'full_name': appointment.patient.full_name or '',
+        'gender': appointment.patient.gender or '',
+        'phone': appointment.patient.phone or '',
+        'address': appointment.patient.address or '',
+        'date_of_birth': appointment.patient.date_of_birth.isoformat() if appointment.patient.date_of_birth else None,
+        'id_number': appointment.patient.id_number or '',
+        'email': appointment.patient.email or '',
+        'current_medication': appointment.patient.current_medication or '',
+        'severity_level': appointment.patient.severity_level or ''
+    }
+
+
 def _build_appointment_response(appointment: Appointment, db) -> dict:
     result = AppointmentRead.from_orm(appointment).dict()
 
@@ -46,38 +122,7 @@ def _build_appointment_response(appointment: Appointment, db) -> dict:
         result['appointment_date'] = appointment.appointment_date.strftime('%Y-%m-%dT%H:%M:%S')
 
     if appointment.patient:
-        result['patient_code'] = appointment.patient.patient_code or ''
-        result['patient_full_name'] = appointment.patient.full_name or ''
-        result['patient_gender'] = appointment.patient.gender or ''
-        result['patient_phone'] = appointment.patient.phone or ''
-        result['patient_address'] = appointment.patient.address or ''
-        result['patient_address_detail'] = appointment.patient.address_detail or ''
-        result['patient_province'] = appointment.patient.province or ''
-        result['patient_district'] = appointment.patient.district or ''
-        result['patient_ward'] = appointment.patient.ward or ''
-        result['patient_emergency_contact'] = appointment.patient.emergency_contact or ''
-        result['severity_level'] = appointment.patient.severity_level or ''
-
-        exam_for_risk = current_examination(appointment)
-        result['medical_history'] = _build_medical_history_payload(db, appointment, exam_for_risk)
-        result['patient_email'] = appointment.patient.email or ''
-        result['patient_current_medication'] = appointment.patient.current_medication or ''
-        result['patient_id_number'] = appointment.patient.id_number or ''
-        result['patient_date_of_birth'] = appointment.patient.date_of_birth.isoformat() if appointment.patient.date_of_birth else None
-
-        result['patient'] = {
-            'id': appointment.patient.id,
-            'patient_code': appointment.patient.patient_code or '',
-            'full_name': appointment.patient.full_name or '',
-            'gender': appointment.patient.gender or '',
-            'phone': appointment.patient.phone or '',
-            'address': appointment.patient.address or '',
-            'date_of_birth': appointment.patient.date_of_birth.isoformat() if appointment.patient.date_of_birth else None,
-            'id_number': appointment.patient.id_number or '',
-            'email': appointment.patient.email or '',
-            'current_medication': appointment.patient.current_medication or '',
-            'severity_level': appointment.patient.severity_level or ''
-        }
+        _add_patient_fields(appointment, db, result)
     else:
         result['patient_code'] = ''
         result['patient_full_name'] = ''
@@ -119,44 +164,7 @@ def _build_appointment_response(appointment: Appointment, db) -> dict:
 
     examination = current_examination(appointment)
     if examination:
-        result['examination_id'] = examination.id
-        result['examination_code'] = examination.examination_code
-        result['examination_status'] = examination.status.value if examination.status else None
-        result['examination_status_text'] = get_examination_status_text(examination.status) if examination.status else None
-        result['examination_date'] = examination.examination_date.strftime('%Y-%m-%dT%H:%M:%S') if examination.examination_date else None
-
-        diagnosis_contract = build_icd_display_contract(db, examination.diagnosis)
-        benh_kem_theo_contract = build_icd_display_contract(db, examination.benh_kem_theo)
-
-        result['examination'] = {
-            'id': examination.id,
-            'status': examination.status.value if examination.status else None,
-            'weight': float(examination.weight) if examination.weight else None,
-            'height': float(examination.height) if examination.height else None,
-            'bmi': float(examination.bmi) if examination.bmi else None,
-            'pulse': float(examination.pulse) if examination.pulse else None,
-            'blood_pressure': examination.blood_pressure,
-            'temperature': float(examination.temperature) if examination.temperature else None,
-            'breathing': float(examination.breathing) if examination.breathing else None,
-            'main_reason': examination.main_reason,
-            'main_symptoms': examination.main_symptoms,
-            'diagnosis': diagnosis_contract['text'],
-            'diagnosis_ids': diagnosis_contract['ids'],
-            'benh_kem_theo': benh_kem_theo_contract['text'],
-            'benh_kem_theo_ids': benh_kem_theo_contract['ids'],
-            'treatment_plan': examination.treatment_plan,
-            'loi_dan': examination.loi_dan,
-            'current_medications': examination.current_medications,
-        }
-
-        result['examinations'] = []
-        for exam in appointment.examinations:
-            result['examinations'].append({
-                'id': exam.id,
-                'status': exam.status.value if exam.status else None,
-                'doctor_id': exam.doctor_id,
-                'loi_dan': exam.loi_dan,
-            })
+        _add_examination_fields(appointment, db, examination, result)
     else:
         result['examination_id'] = None
         result['examination_code'] = None

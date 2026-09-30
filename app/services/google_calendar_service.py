@@ -112,8 +112,30 @@ def format_friendly_error(error) -> str:
     # Fallback: trả về thông báo chung
     return 'Lỗi khi đồng bộ. Vui lòng thử lại hoặc liên hệ hỗ trợ.'
 
+def _persist_refreshed_token(connection, new_access_token, new_expires_at):
+    # Cập nhật vào Database
+    # Note: Service tự mở DB session là pattern phổ biến trong Flask monolith
+    # Cân nhắc inject db từ ngoài nếu cần test hoặc scale
+    db = next(get_db())
+    try:
+        db_conn = db.query(GoogleCalendarConnection).filter(
+            GoogleCalendarConnection.id == connection.id
+        ).first()
+        if db_conn:
+            db_conn.access_token = new_access_token
+            db_conn.token_expires_at = new_expires_at
+            db.commit()
+            logger.info(f"Refreshed Google Calendar token for user {connection.user_id}")
+        else:
+            logger.error(f"Connection {connection.id} not found in DB")
+    except Exception as e:
+        logger.error(f"Error saving token to DB: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 class GoogleCalendarService:
-    
     @staticmethod
     def get_credentials_file_path():
         """Lấy đường dẫn file credentials.json"""
@@ -228,26 +250,7 @@ class GoogleCalendarService:
                                 connection.access_token = new_access_token
                                 connection.token_expires_at = new_expires_at
                                 
-                                # Cập nhật vào Database
-                                # Note: Service tự mở DB session là pattern phổ biến trong Flask monolith
-                                # Cân nhắc inject db từ ngoài nếu cần test hoặc scale
-                                db = next(get_db())
-                                try:
-                                    db_conn = db.query(GoogleCalendarConnection).filter(
-                                        GoogleCalendarConnection.id == connection.id
-                                    ).first()
-                                    if db_conn:
-                                        db_conn.access_token = new_access_token
-                                        db_conn.token_expires_at = new_expires_at
-                                        db.commit()
-                                        logger.info(f"Refreshed Google Calendar token for user {connection.user_id}")
-                                    else:
-                                        logger.error(f"Connection {connection.id} not found in DB")
-                                except Exception as e:
-                                    logger.error(f"Error saving token to DB: {e}")
-                                    db.rollback()
-                                finally:
-                                    db.close()
+                                _persist_refreshed_token(connection, new_access_token, new_expires_at)
                                 
                                 # Trả về Credentials đầy đủ để SDK hoạt động đúng
                                 return Credentials(

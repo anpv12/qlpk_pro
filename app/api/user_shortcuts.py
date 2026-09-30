@@ -288,6 +288,31 @@ def create_shortcut_for_user(user, target_user_id):
         db.close()
 
 
+def _resolve_shortcut_target(data, is_admin, row, user):
+    # Cho phép admin đổi scope/owner khi edit
+    target_scope = row.scope
+    target_user_id = row.user_id
+    if is_admin:
+        incoming_scope = (data.get('scope') or row.scope or 'user').strip().lower()
+        if incoming_scope not in ('user', 'global'):
+            return (jsonify({'detail': 'scope không hợp lệ'}), 400), None, None
+        target_scope = incoming_scope
+        if target_scope == 'global':
+            target_user_id = None
+        else:
+            incoming_user_id = data.get('user_id', row.user_id)
+            if incoming_user_id is None:
+                return (jsonify({'detail': 'user_id là bắt buộc khi scope=user'}), 400), None, None
+            try:
+                target_user_id = int(incoming_user_id)
+            except Exception:
+                return (jsonify({'detail': 'user_id không hợp lệ'}), 400), None, None
+    else:
+        target_scope = 'user'
+        target_user_id = user.id
+    return None, target_scope, target_user_id
+
+
 @shortcut_router.route('/<int:shortcut_id>', methods=['PUT'])
 @require_auth
 def update_shortcut(user, shortcut_id):
@@ -305,27 +330,9 @@ def update_shortcut(user, shortcut_id):
 
         data = request.get_json() or {}
 
-        # Cho phép admin đổi scope/owner khi edit
-        target_scope = row.scope
-        target_user_id = row.user_id
-        if is_admin:
-            incoming_scope = (data.get('scope') or row.scope or 'user').strip().lower()
-            if incoming_scope not in ('user', 'global'):
-                return jsonify({'detail': 'scope không hợp lệ'}), 400
-            target_scope = incoming_scope
-            if target_scope == 'global':
-                target_user_id = None
-            else:
-                incoming_user_id = data.get('user_id', row.user_id)
-                if incoming_user_id is None:
-                    return jsonify({'detail': 'user_id là bắt buộc khi scope=user'}), 400
-                try:
-                    target_user_id = int(incoming_user_id)
-                except Exception:
-                    return jsonify({'detail': 'user_id không hợp lệ'}), 400
-        else:
-            target_scope = 'user'
-            target_user_id = user.id
+        error_response, target_scope, target_user_id = _resolve_shortcut_target(data, is_admin, row, user)
+        if error_response is not None:
+            return error_response
 
         next_combo = row.combo_key
         if 'combo_key' in data:
