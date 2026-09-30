@@ -1,239 +1,139 @@
-// Custom Toast function
-function showCustomToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+// Permission assignment: pick a user, tick the groups, save. Responses for a previously selected user
+// are dropped (revision guard) and saving stays disabled until the chosen user's assignments load.
+import { byId, delegate, el, on, replace } from './shared/dom.js';
+import { requestJson } from './shared/http-json.js';
+
+const ROLE_LABELS = { admin: 'Quản trị viên', doctor: 'Bác sĩ', PSYCHOLOGIST: 'Tâm lý gia', staff: 'Nhân viên', cashier: 'Thu ngân' };
+const state = { users: [], groups: [], selectedUserId: null, selectedGroupIds: [], userFilter: '', groupFilter: '', revision: 0, ready: false };
+
+const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const saveButton = () => byId('savePermissionBtn');
+const heading = text => el('div', { class: 'fw-bold mt-2 mb-1 permission-tree-heading' }, text);
+
+function renderUserList() {
+	const keyword = normalize(state.userFilter);
+	const users = state.users.filter(user => [user.full_name, user.username].some(value => normalize(value).includes(keyword)));
+	if (!users.length) {
+		replace(byId('userTree'), el('div', { class: 'text-muted' }, 'Không có người dùng'));
+		return;
+	}
+	const grouped = new Map();
+	users.forEach(user => {
+		const role = user.role || 'other';
+		if (!grouped.has(role)) grouped.set(role, []);
+		grouped.get(role).push(user);
+	});
+	replace(byId('userTree'), [...grouped].map(([role, members]) => [heading(ROLE_LABELS[role] || role), members.map(user =>
+		el('div', { class: `user-item mb-1 px-2 py-1 rounded${String(user.id) === String(state.selectedUserId) ? ' active' : ''}`, 'data-user-id': user.id },
+			user.full_name || user.username))]));
 }
 
-function normalizeSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
-		|| String(value || '').toLowerCase().trim();
+function renderGroupList() {
+	let groups = state.groups;
+	if (state.groupFilter.trim() !== '') {
+		const keyword = normalize(state.groupFilter);
+		groups = groups.filter(group => normalize(group.name || group.desc).includes(keyword) || normalize(group.code).includes(keyword));
+	}
+	if (!groups.length) {
+		replace(byId('groupTree'), el('div', { class: 'text-muted' }, 'Không có nhóm quyền'));
+		return;
+	}
+	replace(byId('groupTree'), heading('Quyền'), groups.map(group => el('div', { class: 'form-check group-checkbox mb-2' },
+		el('input', { class: 'form-check-input group-checkbox-input', type: 'checkbox', value: group.id, id: `group_${group.id}`,
+			checked: state.selectedGroupIds.includes(String(group.id)), disabled: !state.ready }),
+		el('label', { class: 'form-check-label', for: `group_${group.id}` }, `${group.name || group.desc || group.code} (${group.code})`))));
 }
 
-(function () {
-function installPermissionPageFns1(ctx) {
-	// Load danh sách user
-	function fetchUsers(callback) {
-	  $.get('/users/', function (data) {
-	    ctx.users = data.items || data; // tuỳ API trả về
-	    ctx.renderUserList();
-	    if (callback) callback();
-	  });
-	}
-
-	// Load danh sách nhóm quyền
-	function fetchGroups(callback) {
-	  $.get('/groups/', function (data) {
-	    ctx.groups = data;
-	    ctx.renderGroupList();
-	    if (callback) callback();
-	  });
-	}
-
-	// The GET contract is an array of user-group assignments, not group_ids.
-	function fetchUserGroups(userId) {
-	  const revision = ++ctx.permissionRevision;
-	  ctx.permissionsReady = false;
-	  ctx.selectedGroupIds = [];
-	  $('#savePermissionBtn').prop('disabled', true);
-	  ctx.renderGroupList();
-	  $.get(`/user-groups/${userId}`, function (data) {
-	    if (revision !== ctx.permissionRevision || String(ctx.selectedUserId) !== String(userId)) return;
-	    if (!Array.isArray(data)) {
-	      showCustomToast('error', 'Dữ liệu nhóm quyền không hợp lệ');
-	      return;
-	    }
-	    ctx.selectedGroupIds = data.map(g => String(g.group_id));
-	    ctx.permissionsReady = true;
-	    $('#savePermissionBtn').prop('disabled', false);
-	    ctx.renderGroupList();
-	  }).fail(function () {
-	    if (revision !== ctx.permissionRevision) return;
-	    showCustomToast('error', 'Không tải được quyền của người dùng. Vui lòng chọn lại.');
-	  });
-	}
-
-	function bindUserClick() {
-	  $('#userTree .user-item').off('click').on('click', function () {
-	    ctx.selectedUserId = $(this).attr('data-user-id');
-	    $('#userTree .user-item').removeClass('active');
-	    $(this).addClass('active');
-	    fetchUserGroups(ctx.selectedUserId);
-	  });
-	}
-
-	Object.assign(ctx, { fetchUsers, fetchGroups, fetchUserGroups, bindUserClick });
+async function fetchUsers() {
+	const data = await requestJson('/users/');
+	state.users = data.items || data;
+	renderUserList();
 }
 
-function installPermissionPageFns2(ctx) {
-	// Sửa lại renderUserList để thêm class user-item cho từng user
-	function renderUserList() {
-	  const userTree = $('#userTree');
-	  userTree.empty();
-	  const keyword = normalizeSearchText(ctx.userFilter);
-	  const filteredUsers = ctx.users.filter(u => [u.full_name, u.username].some(value => normalizeSearchText(value).includes(keyword)));
-	  if (filteredUsers.length === 0) {
-	    userTree.append('<div class="text-muted">Không có người dùng</div>');
-	    return;
-	  }
-	  
-	  // Map tất cả role có trong hệ thống
-	  const roleMap = {
-	    'admin': 'Quản trị viên',
-	    'doctor': 'Bác sĩ', 
-	    'PSYCHOLOGIST': 'Tâm lý gia',
-	    'staff': 'Nhân viên',
-	    'cashier': 'Thu ngân'
-	  };
-	  
-	  const grouped = {};
-	  filteredUsers.forEach(u => {
-	    const role = u.role || 'other';
-	    if (!grouped[role]) grouped[role] = [];
-	    grouped[role].push(u);
-	  });
-	  
-	  // Hiển thị tất cả role có user
-	  Object.keys(grouped).forEach(role => {
-	    const roleDisplay = roleMap[role] || role;
-	    userTree.append(`<div class="fw-bold mt-2 mb-1 permission-tree-heading">${roleDisplay}</div>`);
-	    grouped[role].forEach(u => {
-	      userTree.append($('<div class="user-item mb-1 px-2 py-1 rounded"></div>')
-	        .attr('data-user-id', u.id)
-	        .toggleClass('active', String(u.id) === String(ctx.selectedUserId))
-	        .text(u.full_name || u.username));
-	    });
-	  });
-	  ctx.bindUserClick();
-	}
-
-	// Render danh sách nhóm quyền vào #groupTree
-	function renderGroupList() {
-	  const groupTree = $('#groupTree');
-	  groupTree.empty();
-	  let filteredGroups = ctx.groups;
-	  if (ctx.groupFilter.trim() !== '') {
-	    const kw = normalizeSearchText(ctx.groupFilter);
-	    filteredGroups = ctx.groups.filter(g => normalizeSearchText(g.name || g.desc).includes(kw) || normalizeSearchText(g.code).includes(kw));
-	  }
-	  if (filteredGroups.length === 0) {
-	    groupTree.append('<div class="text-muted">Không có nhóm quyền</div>');
-	    return;
-	  }
-	  groupTree.append('<div class="fw-bold mt-2 mb-1 permission-tree-heading">Quyền</div>');
-	  filteredGroups.forEach(g => {
-	    const checked = ctx.selectedGroupIds.includes(g.id + '') ? 'checked' : '';
-	    groupTree.append(`<div class="form-check group-checkbox mb-2">
-	      <input class="form-check-input group-checkbox-input" type="checkbox" value="${g.id}" id="group_${g.id}" ${checked} ${ctx.permissionsReady ? '' : 'disabled'}>
-	      <label class="form-check-label" for="group_${g.id}">${window.QLPKHtml.escape(g.name || g.desc || g.code)} (${window.QLPKHtml.escape(g.code)})</label>
-	    </div>`);
-	  });
-	}
-
-	Object.assign(ctx, { renderUserList, renderGroupList });
+async function fetchGroups() {
+	state.groups = await requestJson('/groups/');
+	renderGroupList();
 }
 
-function installPermissionPageFns3(ctx) {
-	function reloadPermissionData() {
-	  ctx.fetchUsers(function () {
-	    if (ctx.selectedUserId && !ctx.users.some(u => String(u.id) === String(ctx.selectedUserId))) {
-	      ctx.selectedUserId = null;
-	      ctx.selectedGroupIds = [];
-	      ctx.permissionsReady = false;
-	      ++ctx.permissionRevision;
-	      $('#savePermissionBtn').prop('disabled', true);
-	    }
-	    ctx.fetchGroups(function () {
-	      if (!ctx.selectedUserId) {
-	        ctx.renderGroupList();
-	        return;
-	      }
-	      ctx.fetchUserGroups(ctx.selectedUserId);
-	    });
-	  });
+// The GET contract is an array of user-group assignments, not group_ids.
+async function fetchUserGroups(userId) {
+	const revision = ++state.revision;
+	state.ready = false;
+	state.selectedGroupIds = [];
+	saveButton().disabled = true;
+	renderGroupList();
+	let data;
+	try {
+		data = await requestJson(`/user-groups/${userId}`);
+	} catch {
+		if (revision === state.revision) toast('error', 'Không tải được quyền của người dùng. Vui lòng chọn lại.');
+		return;
 	}
-
-	function registerRealtimeHooks() {
-	  if (!window.QLPKRealtimePageHooks) return;
-	  window.QLPKRealtimePageHooks.register({
-	    types: ['catalog.changed'],
-	    filter: function(event) {
-	      const entity = event && event.payload ? event.payload.entity : '';
-	      return ['user', 'group', 'user_group'].includes(entity);
-	    },
-	    handler: reloadPermissionData,
-	    debounceMs: 350,
-	  });
+	if (revision !== state.revision || String(state.selectedUserId) !== String(userId)) return;
+	if (!Array.isArray(data)) {
+		toast('error', 'Dữ liệu nhóm quyền không hợp lệ');
+		return;
 	}
-
-	Object.assign(ctx, { registerRealtimeHooks });
+	state.selectedGroupIds = data.map(group => String(group.group_id));
+	state.ready = true;
+	saveButton().disabled = false;
+	renderGroupList();
 }
 
-$(function () {
-  const ctx = {};
-  installPermissionPageFns1(ctx);
-  installPermissionPageFns2(ctx);
-  installPermissionPageFns3(ctx);
+async function reloadPermissionData() {
+	await fetchUsers();
+	if (state.selectedUserId && !state.users.some(user => String(user.id) === String(state.selectedUserId))) {
+		Object.assign(state, { selectedUserId: null, selectedGroupIds: [], ready: false, revision: state.revision + 1 });
+		saveButton().disabled = true;
+	}
+	await fetchGroups();
+	if (state.selectedUserId) fetchUserGroups(state.selectedUserId);
+	else renderGroupList();
+}
 
-  ctx.users = [];
-  ctx.groups = [];
-  ctx.selectedUserId = null;
-  ctx.selectedGroupIds = [];
-  ctx.userFilter = '';
-  ctx.permissionRevision = 0;
-  ctx.permissionsReady = false;
-  ctx.groupFilter = '';
+async function savePermissions() {
+	if (!state.selectedUserId || !state.ready) {
+		toast('warning', 'Vui lòng chọn người dùng!');
+		return;
+	}
+	try {
+		await requestJson(`/user-groups/${state.selectedUserId}`, { method: 'POST', json: { group_ids: state.selectedGroupIds } });
+		toast('success', 'Lưu phân quyền thành công!');
+	} catch {
+		toast('error', 'Lưu phân quyền thất bại!');
+	}
+}
 
-  // Khi tick checkbox, cập nhật selectedGroupIds
-  $(document).on('change', '.group-checkbox-input', function() {
-    if (!ctx.permissionsReady) return;
-    const gid = $(this).val();
-    if ($(this).is(':checked')) {
-      if (!ctx.selectedGroupIds.includes(gid)) ctx.selectedGroupIds.push(gid);
-    } else {
-      ctx.selectedGroupIds = ctx.selectedGroupIds.filter(x => x !== gid);
-    }
-  });
+function bind() {
+	delegate(byId('userTree'), 'click', '.user-item', (event, item) => {
+		state.selectedUserId = item.getAttribute('data-user-id');
+		byId('userTree').querySelectorAll('.user-item').forEach(row => row.classList.toggle('active', row === item));
+		fetchUserGroups(state.selectedUserId);
+	});
+	delegate(byId('groupTree'), 'change', '.group-checkbox-input', (event, input) => {
+		if (!state.ready) return;
+		state.selectedGroupIds = state.selectedGroupIds.filter(id => id !== input.value);
+		if (input.checked) state.selectedGroupIds.push(input.value);
+	});
+	on(saveButton(), 'click', savePermissions);
+	on(byId('userSearchInput'), 'input', event => {
+		state.userFilter = event.target.value;
+		renderUserList();
+	});
+	on(byId('groupSearchInput'), 'input', event => {
+		state.groupFilter = event.target.value;
+		renderGroupList();
+	});
+	byId('logoutBtn')?.addEventListener('click', () => window.QLPKAppHeader?.logout());
+}
 
-  // Khi nhấn Lưu, gửi API gán nhóm quyền cho user
-  $('#savePermissionBtn').off('click').on('click', function() {
-    if (!ctx.selectedUserId || !ctx.permissionsReady) {
-      showCustomToast('warning', 'Vui lòng chọn người dùng!');
-      return;
-    }
-    $.ajax({
-      url: `/user-groups/${ctx.selectedUserId}`,
-      type: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify({ group_ids: ctx.selectedGroupIds }),
-      success: function() {
-        showCustomToast('success', 'Lưu phân quyền thành công!');
-      },
-      error: function() {
-        showCustomToast('error', 'Lưu phân quyền thất bại!');
-      }
-    });
-  });
-
-  // Đăng xuất
-  $('#logoutBtn').on('click', function () {
-    window.QLPKAppHeader?.logout();
-  });
-
-  $('#userSearchInput').on('input', function () {
-    ctx.userFilter = $(this).val();
-    ctx.renderUserList();
-  });
-
-  // Bắt sự kiện tìm kiếm nhóm quyền
-  $('#groupSearchInput').on('input', function() {
-    ctx.groupFilter = $(this).val();
-    ctx.renderGroupList();
-  });
-
-  // Khởi tạo
-  $('#savePermissionBtn').prop('disabled', true);
-  ctx.registerRealtimeHooks();
-  ctx.fetchUsers(function () {
-    ctx.fetchGroups();
-  });
+bind();
+saveButton().disabled = true;
+window.QLPKRealtimePageHooks?.register({
+	types: ['catalog.changed'],
+	filter: event => ['user', 'group', 'user_group'].includes(event && event.payload ? event.payload.entity : ''),
+	handler: () => reloadPermissionData().catch(() => {}),
+	debounceMs: 350,
 });
-})();
+fetchUsers().then(fetchGroups).catch(() => {});
