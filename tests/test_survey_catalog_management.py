@@ -5,6 +5,8 @@ import os
 from uuid import uuid4
 
 import pytest
+
+from module_parts import setattr_all
 from flask import Flask
 from sqlalchemy.orm import Session
 from app.core.database import engine
@@ -47,7 +49,7 @@ def catalog(monkeypatch, tmp_path):
     for module in (api, management, criteria):
         monkeypatch.setattr(module, 'emit_catalog_changed', lambda *args, **kwargs: None)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: actor)
-    monkeypatch.setattr(api, 'UPLOAD_FOLDER', str(tmp_path / 'uploads'))
+    setattr_all(monkeypatch, api, 'UPLOAD_FOLDER', str(tmp_path / 'uploads'))
     app = Flask(__name__)
     for bp in (api.survey_templates_router, management.router, criteria.survey_criteria_bp):
         app.register_blueprint(bp, url_prefix='/api')

@@ -6,7 +6,6 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 
 from app.core.database import get_db
 from app.api.auth import require_auth
-from app.models.appointment import Appointment
 from app.modules.orders.services.clinical_order_mutation import (
     AppointmentNotFound,
     ChiDinhNotFound,
@@ -15,7 +14,6 @@ from app.modules.orders.services.clinical_order_mutation import (
     delete_chi_dinh_batch,
     delete_chi_dinh_by_id,
     get_chi_dinh_batch_for_delete,
-    get_chi_dinh_by_id,
     get_chi_dinh_for_appointment,
     sync_chi_dinh_for_appointment,
     update_chi_dinh_fields,
@@ -44,14 +42,13 @@ from app.modules.orders.view_models.clinical_order import (
     build_chi_dinh_detail_response,
     build_chi_dinh_list_item,
 )
-from app.services.notification_service import NotificationService
 from app.realtime.events import emit_order_changed
 from app.modules.orders.services.survey_lifecycle import expire_due_order_surveys, finish_order_survey, SurveyLifecycleError
 from app.utils.api_error_contract import api_error_boundary
+from app.modules.orders.api.chi_dinh_access import _emit_order_assignment_notifications, _get_accessible_appointment, _get_accessible_chi_dinh, notification_service  # noqa: F401 — re-exported for callers of this module
 
 router = Blueprint('chi_dinh', __name__)
 logger = logging.getLogger(__name__)
-notification_service = NotificationService()
 
 
 @router.before_app_request
@@ -94,51 +91,6 @@ def finish_survey(user, chi_dinh_id):
     finally:
         db.close()
 
-
-def _emit_order_assignment_notifications(
-    db,
-    appointment,
-    assignments,
-    actor_user,
-):
-    """Persist assignment notifications after the order mutation is committed."""
-    if not assignments:
-        return
-    try:
-        notifications = notification_service.create_clinical_order_assignment_notifications(
-            db,
-            appointment,
-            assignments,
-            actor_user=actor_user,
-        )
-        payloads = notification_service.build_realtime_payloads(db, notifications)
-        db.commit()
-        notification_service.emit_realtime_payloads(payloads)
-    except Exception:
-        # A notification failure must not undo a successful clinical order save.
-        db.rollback()
-        logger.exception('Không thể tạo thông báo giao chỉ định')
-
-
-def _get_accessible_appointment(db, user, appointment_id):
-    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
-    if not appointment:
-        raise AppointmentNotFound()
-    access_error = appointment_access_error(user, appointment)
-    if access_error:
-        return None, access_error
-    return appointment, None
-
-
-def _get_accessible_chi_dinh(db, user, chi_dinh_id):
-    chi_dinh = get_chi_dinh_by_id(db, chi_dinh_id)
-    appointment = chi_dinh.appointment
-    if not appointment:
-        return None, 'Không tìm thấy lịch hẹn của chỉ định này.'
-    access_error = appointment_access_error(user, appointment)
-    if access_error and chi_dinh.in_house_unit_id != user.id:
-        return None, access_error
-    return chi_dinh, None
 
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth

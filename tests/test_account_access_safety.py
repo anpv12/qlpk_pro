@@ -9,6 +9,7 @@ from app.api import auth, group, user, user_group
 from app.models.user import UserRole
 from app.utils import account_access as policy
 from app.services import access_sessions
+from module_parts import setattr_all
 
 
 def actor(role='staff', permissions=(), **fields):
@@ -236,7 +237,7 @@ def test_manager_can_update_nonsecurity_profile_fields(application, monkeypatch,
     set_actor(monkeypatch, current)
     target = actor(id=2, full_name='Old')
     database = set_database(monkeypatch, user, [target])
-    monkeypatch.setattr(user, 'UserRead', SimpleNamespace(model_validate=lambda item: SimpleNamespace(model_dump=lambda: {'full_name': item.full_name})))
+    setattr_all(monkeypatch, user, 'UserRead', SimpleNamespace(model_validate=lambda item: SimpleNamespace(model_dump=lambda: {'full_name': item.full_name})))
     response = application.test_client().put('/users/2', json={'full_name': 'New', 'role': 'staff', 'is_active': True,
         'can_view_all_patients': False}, headers={'Authorization': 'Bearer qa'})
     assert response.status_code == 200
@@ -247,8 +248,8 @@ def test_manager_can_update_nonsecurity_profile_fields(application, monkeypatch,
 def test_admin_can_create_account(application, monkeypatch):
     set_actor(monkeypatch, actor('admin'))
     database = set_database(monkeypatch, user)
-    monkeypatch.setattr(user, 'get_password_hash', lambda password: 'qa-hash')
-    monkeypatch.setattr(user, 'UserRead', SimpleNamespace(model_validate=lambda item: SimpleNamespace(model_dump=lambda: {'role': item.role})))
+    setattr_all(monkeypatch, user, 'get_password_hash', lambda password: 'qa-hash')
+    setattr_all(monkeypatch, user, 'UserRead', SimpleNamespace(model_validate=lambda item: SimpleNamespace(model_dump=lambda: {'role': item.role})))
     response = application.test_client().post('/users/', json={'username': 'qa', 'full_name': 'QA', 'password': 'qa-secret',
         'role': 'staff'}, headers={'Authorization': 'Bearer qa'})
     assert response.status_code == 201
