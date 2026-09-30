@@ -14,49 +14,16 @@
 			return null;
 		}
 	}
-	function tryOpenAppointmentModal(targetWindow) {
-		if (!targetWindow) return false;
+	// Nút lịch trên header chỉ mở màn Lịch hẹn (không mở form Thêm lịch hẹn).
+	function openAppointmentPageFromHeader() {
 		try {
-			const path = targetWindow.location && targetWindow.location.pathname ? targetWindow.location.pathname : '';
-			if (path.endsWith('/appointment-management.html') && targetWindow.QLPKAppointmentManagementReadyForHeaderModal === false) {
-				return false;
-			}
-			const modal = targetWindow.document && targetWindow.document.getElementById('addAppointmentModal');
-			if (modal && modal.classList.contains('show')) {
-				sessionStorage.removeItem(moduleState.APPOINTMENT_MODAL_REQUEST_KEY);
-				return true;
-			}
-			if (typeof targetWindow.openAddAppointmentWithDate !== 'function') return false;
-			targetWindow.openAddAppointmentWithDate();
-			if (modal && modal.classList.contains('show')) {
-				sessionStorage.removeItem(moduleState.APPOINTMENT_MODAL_REQUEST_KEY);
-				return true;
-			}
-			return false;
-		} catch (error) {
-			return false;
-		}
-	}
-	function scheduleAppointmentModalOpen() {
-		let attempts = 0;
-		const maxAttempts = 40;
-		const timer = setInterval(() => {
-			attempts += 1;
-			if (tryOpenAppointmentModal(window) || tryOpenAppointmentModal(getActiveWorkspaceWindow()) || attempts >= maxAttempts) {
-				clearInterval(timer);
-			}
-		}, 150);
-	}
-	function openAppointmentModalFromHeader() {
-		if (tryOpenAppointmentModal(window) || tryOpenAppointmentModal(getActiveWorkspaceWindow())) return;
-
-		sessionStorage.setItem(moduleState.APPOINTMENT_MODAL_REQUEST_KEY, '1');
+			sessionStorage.removeItem(moduleState.APPOINTMENT_MODAL_REQUEST_KEY);
+		} catch (error) { /* sessionStorage không khả dụng: bỏ qua */ }
 		if (window.QLPKWorkspaceShell && typeof window.QLPKWorkspaceShell.openHref === 'function') {
 			window.QLPKWorkspaceShell.openHref(moduleState.APPOINTMENT_PAGE_HREF, {
 				label: 'Lịch hẹn',
 				icon: 'bi bi-calendar2-week',
 			});
-			scheduleAppointmentModalOpen();
 			return;
 		}
 
@@ -64,7 +31,7 @@
 	}
 	function bindCalendarButton() {
 		const calendarBtn = document.getElementById('qlpkHeaderCalendarBtn');
-		if (calendarBtn) calendarBtn.addEventListener('click', openAppointmentModalFromHeader);
+		if (calendarBtn) calendarBtn.addEventListener('click', openAppointmentPageFromHeader);
 	}
 	function getFullscreenElement() {
 		return document.fullscreenElement
@@ -452,9 +419,7 @@
 
 	Object.assign(moduleParts, {
 		getActiveWorkspaceWindow,
-		tryOpenAppointmentModal,
-		scheduleAppointmentModalOpen,
-		openAppointmentModalFromHeader,
+		openAppointmentPageFromHeader,
 		bindCalendarButton,
 		getFullscreenElement,
 		isFullscreenSupported,

@@ -4,32 +4,12 @@
 	const page = window.AppointmentManagementPage || (window.AppointmentManagementPage = { state: {} });
 	const state = page.state;
 
-	function consumeHeaderAppointmentModalRequest() {
-		let attempts = 0;
-		const maxAttempts = 20;
-		const openWhenReady = () => {
-			attempts += 1;
-			try {
-				if (sessionStorage.getItem('qlpk_open_add_appointment_modal') !== '1') return;
-				const modal = document.getElementById('addAppointmentModal');
-				if (!modal || !window.$ || typeof $('#addAppointmentModal').modal !== 'function') {
-					if (attempts < maxAttempts) setTimeout(openWhenReady, 150);
-					return;
-				}
-				window.openAddAppointmentWithDate();
-				setTimeout(() => {
-					if (modal.classList.contains('show')) {
-						sessionStorage.removeItem('qlpk_open_add_appointment_modal');
-						return;
-					}
-					if (attempts < maxAttempts) setTimeout(openWhenReady, 150);
-				}, 80);
-			} catch (error) {
-				if (attempts < maxAttempts) setTimeout(openWhenReady, 150);
-			}
-		};
-
-		setTimeout(openWhenReady, 2500);
+	// Bản cũ: nút header ghi cờ này để màn Lịch hẹn tự mở form Thêm; cờ sót lại làm form tự mở
+	// ở lần vào sau. Nay chỉ xóa cờ cũ, không tự mở form.
+	function clearStaleHeaderAppointmentModalRequest() {
+		try {
+			sessionStorage.removeItem('qlpk_open_add_appointment_modal');
+		} catch (error) { /* sessionStorage không khả dụng: bỏ qua */ }
 	}
 
 	// Load danh sách bác sĩ cho modal add
@@ -379,7 +359,7 @@
 	}
 
 	Object.assign(page, {
-		consumeHeaderAppointmentModalRequest,
+		clearStaleHeaderAppointmentModalRequest,
 		loadDoctorsForAdd,
 		scheduleCalendarSizeUpdate,
 		bindCalendarResizeObserver,

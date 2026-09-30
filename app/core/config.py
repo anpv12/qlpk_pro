@@ -80,8 +80,9 @@ class Settings(BaseSettings):
     SAFETY_PLAN_MAX_SIZE_MB: int = 10
     
     class Config:
-        # Chỉ load .env duy nhất
-        env_file = ".env"
+        # .env dùng chung (có thể chép lên server); .env.local chỉ ở máy dev, ghi đè .env.
+        # Biến môi trường thật (vd. docker-compose `environment:`) luôn thắng cả hai file.
+        env_file = (".env", ".env.local")
         extra = "allow"  # Cho phép các biến môi trường extra
 
 

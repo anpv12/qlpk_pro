@@ -84,7 +84,7 @@ $(function () {
 	});
 
 	// Hàm mở modal tạo mới lịch hẹn với ngày tuỳ chỉnh (global để gọi từ mini calendar)
-	window.QLPKAppointmentManagementReadyForHeaderModal = false;
+	page.clearStaleHeaderAppointmentModalRequest();
 	window.openAddAppointmentWithDate = function (dateStr) {
 		window.AppointmentManagementAddModalUiUtils.openAddAppointmentWithDate({
 			$,
@@ -200,11 +200,6 @@ $(function () {
 				console.error('Không thể mở form thêm lịch hẹn:', error);
 			}
 		});
-
-		setTimeout(() => {
-			window.QLPKAppointmentManagementReadyForHeaderModal = true;
-			page.consumeHeaderAppointmentModalRequest();
-		}, 2500);
 
 	});
 
