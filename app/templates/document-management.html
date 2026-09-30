@@ -14,7 +14,6 @@
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
@@ -104,7 +103,7 @@
 		<div class="config-modal doc-folder-modal">
 			<div class="config-modal-header">
 				<h3 id="folderModalTitle"><i class="bi bi-folder-plus me-2"></i>Thêm Thư Mục</h3>
-				<i class="bi bi-x-lg doc-modal-close" data-qlpk-call="closeDocModal" data-qlpk-args='["#folderModal"]'></i>
+				<i class="bi bi-x-lg doc-modal-close" data-doc-close="#folderModal"></i>
 			</div>
 			<div class="config-modal-body">
 				<form id="folderForm">
@@ -117,7 +116,7 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-qlpk-call="closeDocModal" data-qlpk-args='["#folderModal"]'>Hủy</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-doc-close="#folderModal">Hủy</button>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveFolder">Lưu thư mục</button>
 			</div>
 		</div>
@@ -128,7 +127,7 @@
 		<div class="config-modal doc-link-modal">
 			<div class="config-modal-header">
 				<h3 id="linkModalTitle"><i class="bi bi-link-45deg me-2"></i>Thêm Liên Kết (Link)</h3>
-				<i class="bi bi-x-lg doc-modal-close" data-qlpk-call="closeDocModal" data-qlpk-args='["#linkModal"]'></i>
+				<i class="bi bi-x-lg doc-modal-close" data-doc-close="#linkModal"></i>
 			</div>
 			<div class="config-modal-body">
 				<form id="linkForm">
@@ -144,14 +143,13 @@
 				</form>
 			</div>
 			<div class="config-modal-footer">
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-qlpk-call="closeDocModal" data-qlpk-args='["#linkModal"]'>Hủy</button>
+				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-secondary" data-doc-close="#linkModal">Hủy</button>
 				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary doc-primary-action" id="btnSaveLink">Lưu liên kết</button>
 			</div>
 		</div>
 	</div>
 
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-	<script src="/static/js/document-management-parts/page-installers.js?v={{ app_version }}"></script>
-	<script src="/static/js/document-management.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/document-management.js?v={{ app_version }}"></script>
 </body>
 </html>
