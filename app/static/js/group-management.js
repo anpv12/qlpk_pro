@@ -1,322 +1,162 @@
-// Custom Toast function
-function showCustomToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+// Permission groups: searchable list with permission badges, add/edit modal with a parent/child
+// permission tree, read-only view, delete confirmation modal, realtime refresh.
+import { byId, delegate, el, on, replace } from './shared/dom.js';
+import { requestJson } from './shared/http-json.js';
+import { PERMISSIONS } from './group-permissions.js';
+
+const state = { groups: [], editingId: null, deletingId: null };
+const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+
+function permissionBadges(perms) {
+	return PERMISSIONS.flatMap(permission => {
+		const children = (permission.children || []).filter(child => perms.includes(child.id));
+		if (!perms.includes(permission.id) && !children.length) return [];
+		return [el('div', { class: 'gm-perm-badge-wrap' },
+			el('span', { class: `badge badge-role ${permission.color}` }, el('i', { class: permission.icon }), ` ${permission.label}`),
+			children.map(child => el('span', { class: 'badge badge-child' }, child.label))), ' '];
+	});
 }
 
-(function () {
-function installGroupPage1(ctx) {
-	// Fetch group list from API
-	function fetchGroups(callback) {
-		$.get('/groups/', function (data) {
-			ctx.groupList = data;
-			if (callback) callback();
-			renderTable();
-		});
+function actionButton(kind, className, title, iconName, id) {
+	return el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: `action-btn ${className}`, 'data-id': id, title }, el('i', { class: `bi ${iconName}` }));
+}
+
+function renderPage(groups) {
+	replace(byId('groupTable').querySelector('tbody'), groups.map(group => el('tr', {},
+		el('td', {}, el('input', { type: 'checkbox', class: 'row-check' })),
+		el('td', {}, group.code), el('td', {}, group.name), el('td', {}, permissionBadges(group.permissions)),
+		el('td', {}, actionButton('view', 'view-btn', 'Xem', 'bi-eye', group.id), ' ', actionButton('edit', 'edit-btn', 'Sửa', 'bi-pencil-square', group.id), ' ',
+			actionButton('danger', 'delete-btn', 'Xoá', 'bi-trash', group.id)))));
+}
+
+const pagination = window.QLPKPagination.createClient({ render: renderPage });
+
+function renderTable() {
+	const keyword = normalize(byId('searchInput').value);
+	pagination.setItems(state.groups.filter(group => [group.code, group.name, group.desc].some(value => normalize(value).includes(keyword))));
+}
+
+async function fetchGroups() {
+	state.groups = await requestJson('/groups/');
+	renderTable();
+}
+
+function permissionCheck(permission, className, checked, readonly, extraClass) {
+	return el('div', { class: extraClass },
+		el('input', { class: `form-check-input ${className}`, type: 'checkbox', value: permission.id, id: `perm_${permission.id}`, checked: checked.includes(permission.id), disabled: readonly }),
+		el('label', { class: 'form-check-label', for: `perm_${permission.id}` }, permission.label));
+}
+
+function renderPermTree(container, checked = [], readonly = false) {
+	replace(container, PERMISSIONS.map(permission => {
+		const children = permission.children || [];
+		const parent = permissionCheck(permission, 'perm-parent', checked, readonly, 'form-check tree-group mb-1');
+		if (!children.length) return parent;
+		const collapseId = `collapse_${permission.id}`;
+		parent.append(' ', el('span', { class: 'collapse-toggle', 'data-bs-toggle': 'collapse', 'data-bs-target': `#${collapseId}` }, el('i', { class: 'bi bi-chevron-down' })));
+		return [parent, el('div', { class: 'collapse show tree-children mb-2', id: collapseId },
+			children.map(child => permissionCheck(child, 'perm-child', checked, readonly, 'form-check ms-2')))];
+	}));
+}
+
+function formError(message) {
+	const box = byId('groupFormError');
+	box.classList.toggle('d-none', !message);
+	box.textContent = message;
+}
+
+function openEditor(group) {
+	state.editingId = group ? group.id : null;
+	byId('groupModalLabel').textContent = group ? 'Cập nhật nhóm quyền' : 'Thêm mới nhóm quyền';
+	const form = byId('groupForm');
+	form.reset();
+	if (group) ['code', 'name', 'desc'].forEach(name => { form.querySelector(`[name="${name}"]`).value = group[name] ?? ''; });
+	renderPermTree(byId('permTreeEdit'), group ? group.permissions : [], false);
+	formError('');
+	modal('groupModal').show();
+}
+
+function openView(group) {
+	const view = byId('viewGroupModal');
+	['code', 'name', 'desc'].forEach(name => { view.querySelector(`[name="${name}"]`).value = group[name] ?? ''; });
+	renderPermTree(byId('permTreeView'), group.permissions, true);
+	modal('viewGroupModal').show();
+}
+
+async function saveGroup(event) {
+	event.preventDefault();
+	const form = event.currentTarget;
+	const [code, name, desc] = ['code', 'name', 'desc'].map(field => form.querySelector(`[name="${field}"]`).value.trim());
+	const permissions = [...byId('permTreeEdit').querySelectorAll('input[type=checkbox]')].filter(input => input.checked).map(input => input.value);
+	if (!code || !name || permissions.length === 0) {
+		formError('Vui lòng nhập đầy đủ thông tin bắt buộc và chọn ít nhất 1 quyền.');
+		return;
 	}
-
-	function renderTable() {
-        const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
-            || String(value || '').toLowerCase().trim();
-        const keyword = normalize($('#searchInput').val());
-        ctx.listPagination.setItems(ctx.groupList.filter(group =>
-            [group.code, group.name, group.desc].some(value => normalize(value).includes(keyword))));
-    }
-
-	function renderPage(pageData) {
-		const tbody = $('#groupTable tbody');
-		tbody.empty();
-		pageData.forEach((g) => {
-			tbody.append(`
-        <tr>
-          <td><input type="checkbox" class="row-check"></td>
-          <td>${window.QLPKHtml.escape(g.code)}</td>
-          <td>${window.QLPKHtml.escape(g.name)}</td>
-          <td>${renderPermBadges(g.permissions)}</td>
-          <td>
-            <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="action-btn view-btn" data-id="${g.id}" title="Xem"><i class="bi bi-eye"></i></button>
-            <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn edit-btn" data-id="${g.id}" title="Sửa"><i class="bi bi-pencil-square"></i></button>
-            <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete-btn" data-id="${g.id}" title="Xoá"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>
-      `);
-		});
-
+	const editing = state.editingId;
+	try {
+		await requestJson(editing ? `/groups/${editing}` : '/groups/', { method: editing ? 'PUT' : 'POST', json: { code, name, desc, permissions } });
+		modal('groupModal').hide();
+		fetchGroups().catch(() => {});
+	} catch {
+		formError(editing ? 'Không thể cập nhật nhóm quyền. Vui lòng kiểm tra lại.' : 'Không thể tạo nhóm quyền. Vui lòng kiểm tra lại.');
 	}
+}
 
-	function renderPermBadges(perms) {
-		let html = '';
-		ctx.PERMISSIONS.forEach(p => {
-			const hasParent = perms.includes(p.id);
-			const selectedChildren = (p.children || []).filter(c => perms.includes(c.id));
-			if (hasParent || selectedChildren.length) {
-				html += `<div class="gm-perm-badge-wrap">`;
-				// Badge cha
-				html += `<span class="badge badge-role ${p.color}"><i class="${p.icon}"></i> ${p.label}</span>`;
-				// Badge con
-				selectedChildren.forEach(c => {
-					html += `<span class="badge badge-child">${c.label}</span>`;
-				});
-				html += `</div> `;
-			}
-		});
-		return html;
+async function confirmDelete() {
+	if (!state.deletingId) return;
+	try {
+		await requestJson(`/groups/${state.deletingId}`, { method: 'DELETE' });
+		modal('confirmDeleteGroupModal').hide();
+		fetchGroups().catch(() => {});
+		state.deletingId = null;
+	} catch {
+		window.QLPKUserFeedback?.show('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
 	}
-
-	Object.assign(ctx, { fetchGroups, renderTable, renderPage });
 }
 
-function installGroupPage2(ctx) {
-	// Tree quyền (checkbox cha/con, expand/collapse)
-	function renderPermTree(container, checked = [], readonly = false) {
-		container.empty();
-		ctx.PERMISSIONS.forEach(p => {
-			const hasChildren = p.children && p.children.length;
-			const checkedParent = checked.includes(p.id) ? 'checked' : '';
-			const disabled = readonly ? 'disabled' : '';
-			const collapseId = 'collapse_' + p.id;
-			container.append(`
-        <div class="form-check tree-group mb-1">
-          <input class="form-check-input perm-parent" type="checkbox" value="${p.id}" id="perm_${p.id}" ${checkedParent} ${disabled}>
-          <label class="form-check-label" for="perm_${p.id}">${p.label}</label>
-          ${hasChildren ? `<span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}"><i class="bi bi-chevron-down"></i></span>` : ''}
-        </div>
-      `);
-			if (hasChildren) {
-				container.append(`<div class="collapse show tree-children mb-2" id="${collapseId}"></div>`);
-				const childDiv = container.find(`#${collapseId}`);
-				p.children.forEach(c => {
-					const checkedChild = checked.includes(c.id) ? 'checked' : '';
-					childDiv.append(`
-            <div class="form-check ms-2">
-              <input class="form-check-input perm-child" type="checkbox" value="${c.id}" id="perm_${c.id}" ${checkedChild} ${disabled}>
-              <label class="form-check-label" for="perm_${c.id}">${c.label}</label>
-            </div>
-          `);
-				});
-			}
-		});
-	}
-
-	function registerRealtimeHooks() {
-		if (!window.QLPKRealtimePageHooks) return;
-		window.QLPKRealtimePageHooks.register({
-			types: ['catalog.changed'],
-			filter: function (event) {
-				const entity = event && event.payload ? event.payload.entity : '';
-				return ['group', 'user_group'].includes(entity);
-			},
-			handler: function () {
-				ctx.fetchGroups();
-			},
-			debounceMs: 350,
-		});
-	}
-
-	Object.assign(ctx, { renderPermTree, registerRealtimeHooks });
-}
-
-function runGroupPage1(ctx) {
-	// Danh sách màn hình thực tế từ hệ thống
-	ctx.PERMISSIONS = [
-		{
-			id: 'dashboard', label: 'Trang chủ', icon: 'bi bi-house-door', color: 'badge-dashboard', children: []
-		},
-		{
-			id: 'lichhen', label: 'Lịch hẹn', icon: 'bi bi-calendar-event', color: 'badge-lichhen', children: []
-		},
-		{
-			id: 'qlkham', label: 'Quản lý khám', icon: 'bi bi-clipboard2-pulse', color: 'badge-qlkham', children: [
-				{ id: 'qlkham-letan', label: 'Lễ tân', icon: 'bi bi-person-check', color: '' },
-				{ id: 'qlkham-bs', label: 'Bác sĩ', icon: 'bi bi-heart-pulse-fill', color: '' },
-				{ id: 'qlkham-tamly', label: 'Tâm lý gia', icon: 'bi bi-people', color: '' },
-				{ id: 'qlkham-cls', label: 'Chỉ định CLS', icon: 'bi bi-journal-medical', color: '' },
-			]
-		},
-		{
-			id: 'hoadon', label: 'Hóa đơn', icon: 'bi bi-credit-card', color: 'badge-hoadon', children: []
-		},
-		{
-			id: 'chi-tieu', label: 'Thu chi', icon: 'bi bi-wallet2', color: 'badge-chi-tieu', children: []
-		},
-		{
-			id: 'thongke-thuoc', label: 'Thống kê thuốc', icon: 'bi bi-bar-chart-line', color: 'badge-thongke-thuoc', children: []
-		},
-		{
-			id: 'ql-tailieu', label: 'Quản lý tài liệu', icon: 'bi bi-folder-symlink', color: 'badge-quanly', children: []
-		},
-		{
-			id: 'ql-kho-thuoc', label: 'Kho thuốc', icon: 'bi bi-box-seam', color: 'badge-kho-thuoc', children: [
-				{ id: 'ql-thuoc', label: 'Tủ thuốc', icon: 'bi bi-capsule', color: '' },
-				{ id: 'ql-hoat-chat', label: 'Hoạt chất', icon: 'bi bi-tags', color: '' },
-				{ id: 'ql-di-nguyen', label: 'Dị nguyên', icon: 'bi bi-shield-exclamation', color: '' },
-				{ id: 'ql-tuong-tac-thuoc', label: 'Tương tác thuốc', icon: 'bi bi-exclamation-triangle', color: '' }
-			]
-		},
-		{
-			id: 'quanly', label: 'Quản lý', icon: 'bi bi-gear', color: 'badge-quanly', children: [
-				{ id: 'ql-taikhoan', label: 'Tài khoản', icon: 'bi bi-person-badge', color: '' },
-				{ id: 'ql-phanquyen', label: 'Phân quyền', icon: 'bi bi-shield-lock', color: '' },
-				{ id: 'ql-nhomquyen', label: 'Nhóm phân quyền', icon: 'bi bi-people', color: '' },
-				{ id: 'ql-tu-viettat', label: 'Từ viết tắt', icon: 'bi bi-type', color: '' },
-				{ id: 'ql-danhmuc-dichvu', label: 'Danh mục dịch vụ', icon: 'bi bi-list-check', color: '' },
-				{ id: 'ql-dichvu', label: 'Dịch vụ', icon: 'bi bi-briefcase', color: '' },
-				{ id: 'ql-goi-dichvu', label: 'Gói dịch vụ', icon: 'bi bi-gift', color: '' },
-				{ id: 'ql-mau-khaosat', label: 'Mẫu khảo sát', icon: 'bi bi-clipboard2-check', color: '' },
-				{ id: 'ql-danhmuc-icd', label: 'Danh mục ICD', icon: 'bi bi-hospital', color: '' },
-				{ id: 'ql-ngayle', label: 'Quản lý ngày lễ', icon: 'bi bi-calendar-x', color: '' },
-			]
-		},
-		{
-			id: 'ca-nhan', label: 'Cá nhân', icon: 'bi bi-person-circle', color: 'badge-ca-nhan', children: [
-				{ id: 'ca-nhan-phimtat', label: 'Phím tắt menu', icon: 'bi bi-keyboard', color: '' }
-			]
-		}
-	];
-	ctx.groupList = [];
-	ctx.editingGroupId = null;
-	ctx.deletingGroupId = null;
-	// Render table nhóm quyền
-	ctx.listPagination = window.QLPKPagination.createClient({ render: ctx.renderPage });
-	$('#groupFilterForm').on('submit', function (event) {
-        event.preventDefault();
-        ctx.renderTable();
-    });
-	$('#resetBtn').on('click', function () {
-        $('#searchInput').val('');
-        ctx.renderTable();
-    });
-}
-
-function runGroupPage2(ctx) {
-	// Checkbox cha/con logic
-	$(document).on('change', '.perm-parent', function () {
-		const checked = $(this).is(':checked');
-		$(this).closest('.tree-group').next('.tree-children').find('.perm-child').prop('checked', checked);
+function bindTree() {
+	delegate(document, 'change', '.perm-parent', (event, input) => {
+		const children = input.closest('.tree-group').nextElementSibling;
+		if (children && children.classList.contains('tree-children')) children.querySelectorAll('.perm-child').forEach(child => { child.checked = input.checked; });
 	});
-	$(document).on('change', '.perm-child', function () {
-		const group = $(this).closest('.tree-children');
-		const all = group.find('.perm-child').length;
-		const checked = group.find('.perm-child:checked').length;
-		const parent = group.prevAll('.tree-group').first().find('.perm-parent');
-		if (checked === all) parent.prop('checked', true);
-		else parent.prop('checked', false);
-	});
-	// Thêm mới nhóm quyền
-	$('#addGroupBtn').on('click', function () {
-		ctx.editingGroupId = null;
-		$('#groupModalLabel').text('Thêm mới nhóm quyền');
-		$('#groupForm')[0].reset();
-		ctx.renderPermTree($('#permTreeEdit'), [], false);
-		$('#groupFormError').addClass('d-none').text('');
-		$('#groupModal').modal('show');
-	});
-	// Sửa nhóm quyền
-	$('#groupTable').on('click', '.edit-btn', function () {
-		const id = $(this).data('id');
-		const group = ctx.groupList.find(g => g.id === id);
-		if (!group) return;
-		ctx.editingGroupId = id;
-		$('#groupModalLabel').text('Cập nhật nhóm quyền');
-		$('#groupForm')[0].reset();
-		$('#groupForm [name="code"]').val(group.code);
-		$('#groupForm [name="name"]').val(group.name);
-		$('#groupForm [name="desc"]').val(group.desc);
-		ctx.renderPermTree($('#permTreeEdit'), group.permissions, false);
-		$('#groupFormError').addClass('d-none').text('');
-		$('#groupModal').modal('show');
-	});
-	// Xem chi tiết nhóm quyền
-	$('#groupTable').on('click', '.view-btn', function () {
-		const id = $(this).data('id');
-		const group = ctx.groupList.find(g => g.id === id);
-		if (!group) return;
-		$('#viewGroupModal [name="code"]').val(group.code);
-		$('#viewGroupModal [name="name"]').val(group.name);
-		$('#viewGroupModal [name="desc"]').val(group.desc);
-		ctx.renderPermTree($('#permTreeView'), group.permissions, true);
-		$('#viewGroupModal').modal('show');
-	});
-	// Xoá nhóm quyền
-	$('#groupTable').on('click', '.delete-btn', function () {
-		ctx.deletingGroupId = $(this).data('id');
-		$('#confirmDeleteGroupModal').modal('show');
-	});
-	$('#confirmDeleteGroupBtn').on('click', function () {
-		if (!ctx.deletingGroupId) return;
-		$.ajax({
-			url: `/groups/${ctx.deletingGroupId}`,
-			type: 'DELETE',
-			success: function () {
-				$('#confirmDeleteGroupModal').modal('hide');
-				ctx.fetchGroups();
-				ctx.deletingGroupId = null;
-			},
-			error: function () {
-				showCustomToast('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
-			}
-		});
+	delegate(document, 'change', '.perm-child', (event, input) => {
+		const group = input.closest('.tree-children');
+		const boxes = [...group.querySelectorAll('.perm-child')];
+		const parent = group.previousElementSibling?.querySelector('.perm-parent');
+		if (parent) parent.checked = boxes.every(box => box.checked);
 	});
 }
 
-function runGroupPage3(ctx) {
-	// Lưu nhóm quyền (thêm/sửa)
-	$('#groupForm').on('submit', function (e) {
-		e.preventDefault();
-		const code = $(this).find('[name="code"]').val().trim();
-		const name = $(this).find('[name="name"]').val().trim();
-		const desc = $(this).find('[name="desc"]').val().trim();
-		const perms = $('#permTreeEdit input[type=checkbox]:checked').map(function () { return $(this).val(); }).get();
-		if (!code || !name || perms.length === 0) {
-			$('#groupFormError').removeClass('d-none').text('Vui lòng nhập đầy đủ thông tin bắt buộc và chọn ít nhất 1 quyền.');
-			return;
-		}
-		if (ctx.editingGroupId) {
-			// Update
-			$.ajax({
-				url: `/groups/${ctx.editingGroupId}`,
-				type: 'PUT',
-				contentType: 'application/json',
-				data: JSON.stringify({ code, name, desc, permissions: perms }),
-				success: function () {
-					$('#groupModal').modal('hide');
-					ctx.fetchGroups();
-				},
-				error: function () {
-					$('#groupFormError').removeClass('d-none').text('Không thể cập nhật nhóm quyền. Vui lòng kiểm tra lại.');
-				}
-			});
-		} else {
-			// Add
-			$.ajax({
-				url: '/groups/',
-				type: 'POST',
-				contentType: 'application/json',
-				data: JSON.stringify({ code, name, desc, permissions: perms }),
-				success: function () {
-					$('#groupModal').modal('hide');
-					ctx.fetchGroups();
-				},
-				error: function () {
-					$('#groupFormError').removeClass('d-none').text('Không thể tạo nhóm quyền. Vui lòng kiểm tra lại.');
-				}
-			});
-		}
+function bindTable() {
+	const find = button => state.groups.find(group => group.id === Number(button.getAttribute('data-id')));
+	const table = byId('groupTable');
+	delegate(table, 'click', '.edit-btn', (event, button) => { const group = find(button); if (group) openEditor(group); });
+	delegate(table, 'click', '.view-btn', (event, button) => { const group = find(button); if (group) openView(group); });
+	delegate(table, 'click', '.delete-btn', (event, button) => {
+		state.deletingId = Number(button.getAttribute('data-id'));
+		modal('confirmDeleteGroupModal').show();
 	});
-	// Đăng xuất
-	$('#logoutBtn').on('click', function () {
-		window.QLPKAppHeader?.logout();
-	});
-	// Khởi tạo
-	ctx.registerRealtimeHooks();
-	ctx.fetchGroups();
 }
 
-$(function () {
-	const ctx = {};
-	installGroupPage1(ctx);
-	installGroupPage2(ctx);
-	runGroupPage1(ctx);
-	runGroupPage2(ctx);
-	runGroupPage3(ctx);
+on(byId('groupFilterForm'), 'submit', event => {
+	event.preventDefault();
+	renderTable();
 });
-})(); 
+on(byId('resetBtn'), 'click', () => {
+	byId('searchInput').value = '';
+	renderTable();
+});
+bindTree();
+bindTable();
+on(byId('addGroupBtn'), 'click', () => openEditor(null));
+on(byId('confirmDeleteGroupBtn'), 'click', confirmDelete);
+on(byId('groupForm'), 'submit', saveGroup);
+byId('logoutBtn')?.addEventListener('click', () => window.QLPKAppHeader?.logout());
+window.QLPKRealtimePageHooks?.register({
+	types: ['catalog.changed'],
+	filter: event => ['group', 'user_group'].includes(event && event.payload ? event.payload.entity : ''),
+	handler: () => fetchGroups().catch(() => {}),
+	debounceMs: 350,
+});
+fetchGroups().catch(() => {});

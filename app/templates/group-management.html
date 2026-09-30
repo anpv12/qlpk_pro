@@ -19,7 +19,6 @@
 	<link rel="stylesheet" href="/static/css/pages/group-management.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
 
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 
 	<!-- Flatpickr JS -->
@@ -27,7 +26,6 @@
 	<script src="/static/js/flatpickr-vn.js?v={{ app_version }}"></script>
 
 	<!-- Utils and Datepicker Init -->
-	<script src="/static/js/utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
@@ -191,7 +189,7 @@
 		</div>
 	</div>
 
-	<script src="/static/js/group-management.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/group-management.js?v={{ app_version }}"></script>
 </body>
 
 </html>

@@ -148,6 +148,9 @@ class Element extends Node {
     set className(value) { this.setAttribute('class', value); }
     get children() { return this.childNodes.filter(node => node.nodeType === 1); }
     get firstElementChild() { return this.children[0] || null; }
+    get lastElementChild() { return this.children.at(-1) || null; }
+    get nextElementSibling() { const siblings = this.parentNode ? this.parentNode.children : []; return siblings[siblings.indexOf(this) + 1] || null; }
+    get previousElementSibling() { const siblings = this.parentNode ? this.parentNode.children : []; const index = siblings.indexOf(this); return index > 0 ? siblings[index - 1] : null; }
     get innerText() { return this.textContent; }
     set innerText(value) { this.textContent = value; }
     get innerHTML() { return this.childNodes.map(node => node.outerHTML).join(''); }
