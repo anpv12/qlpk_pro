@@ -38,5 +38,4 @@
 	};
 
 	window.ClinicalVitalCalculationUtils = moduleState.api;
-	window.DoctorExaminationVitalCalculationUtils = moduleState.api;
 })(window);

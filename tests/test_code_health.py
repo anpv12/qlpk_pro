@@ -35,3 +35,7 @@ def test_python_complexity_counts_like_mccabe() -> None:
     )
     node = ast.parse(source).body[0]
     assert 1 + health._statements_complexity(node.body) == 5
+
+
+def test_window_globals_do_not_grow() -> None:
+    assert health.window_global_findings() == []

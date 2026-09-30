@@ -155,20 +155,10 @@
 			.catch(() => triggerCompatibilityEvents());
 	}
 
-	function refreshActiveState() {
-		if (window.QLPKWorkspaceShell && typeof window.QLPKWorkspaceShell.renderTabs === 'function') {
-			window.QLPKWorkspaceShell.renderTabs();
-		}
-	}
-
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', loadSidebar);
 	} else {
 		loadSidebar();
 	}
 
-	window.SidebarDryLoader = {
-		reload: loadSidebar,
-		setActiveMenu: refreshActiveState,
-	};
 })(window, document);

@@ -7,6 +7,7 @@
   longer than the max-lines-per-function limit (80).
 - Every app Python function stays at or under MAX_FUNCTION_LINES code lines and has
   McCabe complexity (same counting as ruff C901) at or under MAX_PY_COMPLEXITY.
+- The number of distinct window.X globals assigned by page scripts never exceeds MAX_WINDOW_GLOBALS.
   Skipped with a notice when ESLint is unavailable.
 """
 
@@ -28,6 +29,8 @@ MAX_COMPLEXITY = 16
 JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 15
+# Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
+MAX_WINDOW_GLOBALS = 226
 
 
 def source_files() -> list[Path]:
@@ -111,6 +114,21 @@ def python_function_findings() -> list[str]:
     return findings
 
 
+def window_global_names() -> set[str]:
+    names = set()
+    for path in JS_ROOT.rglob('*.js'):
+        if 'vendor' in path.parts or '.min.' in path.name:
+            continue
+        for match in re.finditer(r"\bwindow\.([A-Za-z_$][\w$]*)\s*=(?!=)", path.read_text(encoding='utf-8', errors='ignore')):
+            names.add(match.group(1))
+    return names
+
+
+def window_global_findings() -> list[str]:
+    count = len(window_global_names())
+    return [f"window globals: {count} (> {MAX_WINDOW_GLOBALS}); dùng registry/module thay vì biến toàn cục mới"] if count > MAX_WINDOW_GLOBALS else []
+
+
 def eslint_findings() -> list[str] | None:
     eslint = shutil.which("eslint")
     if not eslint:
@@ -135,7 +153,7 @@ def eslint_findings() -> list[str] | None:
 
 
 def main() -> int:
-    failures = oversized() + python_function_findings()
+    failures = oversized() + python_function_findings() + window_global_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")

@@ -74,5 +74,4 @@
 	}
 
 	EVENTS.forEach(type => document.addEventListener(type, dispatch));
-	window.QLPKInlineActions = Object.freeze({ dispatch, resolvePath, resolveArgs, EVENTS, CALL_ATTR });
 })(window, document);

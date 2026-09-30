@@ -53,7 +53,6 @@
 	}
 
 	const api = Object.freeze({ create, getOrCreate, resolveDependencies, assertDependencies, installLegacyBridge });
-	window.QLPKPatientModalContract = api;
 	if (window.QLPKDoctorModuleRegistry?.register) {
 		window.QLPKDoctorModuleRegistry.register('patientModalContract', api, {
 			dependencies: ['modalPatientSearchUi', 'patientHistoryModal'],

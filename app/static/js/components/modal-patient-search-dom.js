@@ -91,9 +91,6 @@
 	function syncWindowState(options = {}) {
 		if (options.exposeLegacyWindowState === false || typeof window === 'undefined') return options;
 		window.modalSelectedPatient = options.selectedPatient;
-		window.modalMedicalHistoryLoading = options.medicalHistoryLoading;
-		window.modalMedicalHistoryData = options.medicalHistoryData;
-		window.modalSelectedHistoryIndex = options.selectedHistoryIndex;
 		return options;
 	}
 
