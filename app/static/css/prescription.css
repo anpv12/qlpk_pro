@@ -1,31 +1,31 @@
 /* Prescription Section Styles */
 .prescription-header {
     background: var(--qlpk-workflow-context-header-bg);
-    border: 1px solid var(--qlpk-color-primary);
-    border-radius: 8px;
-    padding: 12px 20px;
-    margin-bottom: 20px;
+    border: 0.0625rem solid var(--qlpk-color-primary);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.25rem;
 }
 
 .prescription-header .section-title {
     color: var(--qlpk-color-white);
     font-weight: var(--qlpk-font-weight-bold, 700);
-    font-size: var(--qlpk-font-size-2xl, 20px);
+    font-size: var(--qlpk-font-size-2xl, 1.25rem);
     margin: 0;
 }
 
 .prescription-actions {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
 }
 
 .medicine-table-container {
     background: white;
-    border: 1px solid var(--qlpk-palette-gray-86);
-    border-radius: 8px;
+    border: 0.0625rem solid var(--qlpk-palette-gray-86);
+    border-radius: 0.5rem;
     overflow: hidden;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(var(--qlpk-color-black-rgb), 0.1);
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0.125rem 0.625rem rgba(var(--qlpk-color-black-rgb), 0.1);
 }
 
 .medicine-table {
@@ -40,13 +40,13 @@
 
 .medicine-autocomplete-dropdown {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 0.25rem);
     left: 0;
     right: 0;
     background: var(--qlpk-color-white);
-    border: 1px solid var(--qlpk-alpha-blue-25-15);
-    border-radius: 12px;
-    box-shadow: 0 18px 36px var(--qlpk-alpha-blue-11-18);
+    border: 0.0625rem solid var(--qlpk-alpha-blue-25-15);
+    border-radius: 0.75rem;
+    box-shadow: 0 1.125rem 2.25rem var(--qlpk-alpha-blue-11-18);
     z-index: 1050;
     display: none;
     padding: 0;
@@ -57,13 +57,13 @@
 .medicine-autocomplete-dropdown .medicine-autocomplete-header {
     display: grid;
     grid-template-columns: var(--medicine-autocomplete-columns);
-    gap: 12px;
-    padding: 5px 5px;
-    font-size: var(--qlpk-font-size-sm, 12px);
+    gap: 0.75rem;
+    padding: 0.3125rem 0.3125rem;
+    font-size: var(--qlpk-font-size-sm, 0.75rem);
     font-weight: var(--qlpk-font-weight-semibold, 600);
     text-transform: uppercase;
     color: var(--qlpk-alpha-blue-11-70);
-    border-bottom: 1px solid var(--qlpk-alpha-blue-11-08);
+    border-bottom: 0.0625rem solid var(--qlpk-alpha-blue-11-08);
     background: var(--qlpk-palette-blue-97-d);
     position: sticky;
     top: 0;
@@ -72,17 +72,17 @@
 }
 
 .medicine-autocomplete-dropdown .medicine-autocomplete-body {
-    max-height: 320px;
+    max-height: 20rem;
     overflow-y: auto;
 }
 
 .medicine-autocomplete-item {
     display: grid;
     grid-template-columns: var(--medicine-autocomplete-columns);
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
     cursor: pointer;
-    border-bottom: 1px solid var(--qlpk-alpha-blue-25-08);
+    border-bottom: 0.0625rem solid var(--qlpk-alpha-blue-25-08);
     align-items: center;
     text-align: left;
 }
@@ -102,18 +102,18 @@
 }
 
 .medicine-autocomplete-item .meta {
-    font-size: var(--qlpk-font-size-sm, 12px);
+    font-size: var(--qlpk-font-size-sm, 0.75rem);
     color: var(--qlpk-alpha-blue-15-70);
 }
 
 .medicine-autocomplete-item .price {
-    font-size: var(--qlpk-font-size-sm, 12px);
+    font-size: var(--qlpk-font-size-sm, 0.75rem);
     color: var(--qlpk-palette-green-28);
     font-weight: var(--qlpk-font-weight-medium, 500);
 }
 
 .medicine-autocomplete-col {
-    font-size: var(--qlpk-font-size-base, 13px);
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
     color: var(--qlpk-alpha-blue-11-85);
 }
 
@@ -127,7 +127,7 @@
 }
 
 .medicine-autocomplete-empty {
-    padding: 16px;
+    padding: 1rem;
     text-align: center;
 }
 
@@ -135,26 +135,26 @@
     background: var(--qlpk-color-surface-subtle);
     color: var(--qlpk-alpha-blue-15-60);
     font-weight: var(--qlpk-font-weight-semibold, 600);
-    font-size: var(--qlpk-font-size-sm, 12px);
-    border: 1px solid var(--qlpk-alpha-blue-25-08);
-    padding: 12px 8px;
+    font-size: var(--qlpk-font-size-sm, 0.75rem);
+    border: 0.0625rem solid var(--qlpk-alpha-blue-25-08);
+    padding: 0.75rem 0.5rem;
     text-align: center;
     vertical-align: middle;
 }
 
 .medicine-table tbody td {
-    border: 1px solid var(--qlpk-palette-gray-86);
-    padding: 8px 12px;
+    border: 0.0625rem solid var(--qlpk-palette-gray-86);
+    padding: 0.5rem 0.75rem;
     vertical-align: middle;
     color: var(--qlpk-alpha-blue-15-80);
-    font-size: var(--qlpk-font-size-md, 14px);
+    font-size: var(--qlpk-font-size-md, 0.875rem);
 }
 
 .medicine-table tbody td input {
-    border: 1px solid var(--qlpk-alpha-blue-25-20);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: var(--qlpk-font-size-md, 14px);
+    border: 0.0625rem solid var(--qlpk-alpha-blue-25-20);
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: var(--qlpk-font-size-md, 0.875rem);
     width: 100%;
 }
 
@@ -171,25 +171,25 @@
 
 .prescription-summary {
     background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(var(--qlpk-color-black-rgb), 0.1);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    box-shadow: 0 0.125rem 0.625rem rgba(var(--qlpk-color-black-rgb), 0.1);
 }
 
 .prescription-summary .form-label {
     color: var(--qlpk-color-primary);
     font-weight: var(--qlpk-font-weight-medium, 500);
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
 }
 
 .prescription-summary .form-control {
-	border-width: 1px;
+	border-width: 0.0625rem;
 	border-style: solid;
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
 }
 .prescription-summary .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
-    border: 1px solid var(--qlpk-palette-gray-85);
+    border: 0.0625rem solid var(--qlpk-palette-gray-85);
 }
 .prescription-summary .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
     border-color: var(--qlpk-color-primary);
@@ -225,18 +225,18 @@
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
     .medicine-table-container {
         overflow-x: auto;
     }
 
     .medicine-table {
-        min-width: 800px;
+        min-width: 50rem;
     }
 
     .prescription-actions {
         flex-direction: column;
-        gap: 8px;
+        gap: 0.5rem;
     }
 
     .prescription-actions .btn {
@@ -257,7 +257,7 @@
 }
 
 .btn:hover {
-    transform: translateY(-1px);
+    transform: translateY(-0.0625rem);
 }
 
 /* Loading states */
@@ -268,47 +268,47 @@
 
 /* Enhanced Status Badge Styling */
 .medicine-status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: var(--qlpk-font-size-xs, 11px);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.75rem;
+    font-size: var(--qlpk-font-size-xs, 0.6875rem);
     font-weight: var(--qlpk-font-weight-semibold, 600);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
-    box-shadow: 0 1px 4px rgba(var(--qlpk-color-black-rgb), 0.1);
+    letter-spacing: 0.01875rem;
+    box-shadow: 0 0.0625rem 0.25rem rgba(var(--qlpk-color-black-rgb), 0.1);
     transition: all 0.3s ease;
 }
 
 .medicine-status-badge:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.15);
+    transform: translateY(-0.0625rem);
+    box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.15);
 }
 
 .medicine-status-active {
     background: linear-gradient(135deg, var(--qlpk-palette-green-88) 0%, var(--qlpk-palette-green-83) 100%);
     color: var(--qlpk-palette-green-21);
-    border: 1px solid var(--qlpk-palette-green-83);
+    border: 0.0625rem solid var(--qlpk-palette-green-83);
 }
 
 .medicine-status-low {
     background: linear-gradient(135deg, var(--qlpk-palette-amber-90) 0%, var(--qlpk-palette-amber-83) 100%);
     color: var(--qlpk-palette-orange-27-a);
-    border: 1px solid var(--qlpk-palette-amber-83);
+    border: 0.0625rem solid var(--qlpk-palette-amber-83);
 }
 
 .medicine-status-out {
     background: linear-gradient(135deg, var(--qlpk-palette-red-91) 0%, var(--qlpk-palette-red-87) 100%);
     color: var(--qlpk-palette-red-28);
-    border: 1px solid var(--qlpk-palette-red-87);
+    border: 0.0625rem solid var(--qlpk-palette-red-87);
 }
 
 .medicine-status-expired {
     background: linear-gradient(135deg, var(--qlpk-palette-red-91) 0%, var(--qlpk-palette-red-87) 100%);
     color: var(--qlpk-palette-red-28);
-    border: 1px solid var(--qlpk-palette-red-87);
+    border: 0.0625rem solid var(--qlpk-palette-red-87);
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
 
 }
 

@@ -35,7 +35,7 @@ test('import actions delegate interactive color to the shared semantic owner', (
 test('dispensing filters share control geometry without changing focus or global controls', () => {
     const controls = css.match(/\.qlpk-receipt-dispensing-filters :is\(\.form-control, \.form-select, \.btn\)\s*\{([^}]+)\}/)?.[1];
     assert.ok(controls);
-    for (const rule of ['min-height: 36px', 'padding: 6px 10px', 'border-width: 1px',
+    for (const rule of ['min-height: 2.25rem', 'padding: 0.375rem 0.625rem', 'border-width: 0.0625rem',
         'border-radius: var(--clinic-control-radius)', 'font-size: var(--clinic-control-font-size)',
         'font-weight: var(--qlpk-font-weight-medium)', 'line-height: var(--qlpk-line-height-normal)']) {
         assert.ok(controls.includes(rule), rule);
@@ -154,7 +154,7 @@ test('narrow and short layouts scroll the body without hiding input rows or foot
     assert.match(importStyles, /\.modal\.qlpk-import-batch-modal \.modal-body\s*\{[^}]*padding:\s*0/);
     assert.match(importStyles, /\.mm-import-pane\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*overflow:\s*hidden/);
     assert.match(importStyles, /\.mm-import-table-scroll\s*\{[^}]*overflow:\s*auto/);
-    assert.match(css, /\.qlpk-batch-import-table\s*\{[^}]*min-width:\s*1100px/);
+    assert.match(css, /\.qlpk-batch-import-table\s*\{[^}]*min-width:\s*68\.75rem/);
     assert.match(importStyles, /\.mm-import-toolbar\s*\{[^}]*flex-wrap:\s*wrap/);
     assert.match(importStyles, /\.mm-import-toolbar\s*\{[^}]*flex-shrink:\s*0/);
     const compactStyles = importStyles.slice(importStyles.indexOf('@media (max-width: 47.99rem), (max-height: 44.99rem)'));

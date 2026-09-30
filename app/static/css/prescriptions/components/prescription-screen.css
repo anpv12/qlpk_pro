@@ -12,7 +12,7 @@
 	width: 100%;
 	min-width: 0;
 	padding: clamp(1rem, 2.5cqi, 2rem);
-	border: 1px solid var(--qlpk-palette-blue-88-a);
+	border: 0.0625rem solid var(--qlpk-palette-blue-88-a);
 	border-radius: 1rem;
 	background: var(--qlpk-color-white);
 	color: var(--qlpk-palette-gray-15);
@@ -30,7 +30,7 @@
 	align-items: center;
 	gap: 1rem;
 	padding-bottom: 1rem;
-	border-bottom: 4px solid var(--qlpk-palette-blue-54-a);
+	border-bottom: 0.25rem solid var(--qlpk-palette-blue-54-a);
 }
 .rx-screen__logo { width: 100%; height: auto; }
 .rx-screen__clinic-name { color: var(--rx-screen-accent); font-size: var(--qlpk-font-size-xl); font-weight: var(--qlpk-font-weight-bold); }

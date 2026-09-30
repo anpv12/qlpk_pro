@@ -127,20 +127,20 @@
 }
 
 .vital-view-mode-selector {
-	border: 1px solid var(--patient-modal-line-strong);
-	border-radius: 6px;
+	border: 0.0625rem solid var(--patient-modal-line-strong);
+	border-radius: 0.375rem;
 	overflow: hidden;
 	background: var(--patient-modal-cream);
 }
 
 .vital-view-mode-selector .btn {
 	border: none;
-	font-size: var(--qlpk-font-size-sm, 12px);
-	padding: 3px 8px;
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
+	padding: 0.1875rem 0.5rem;
 	font-weight: var(--qlpk-font-weight-medium, 500);
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: 0.25rem;
 }
 
 .vital-signs-layout {
@@ -149,17 +149,17 @@
 	min-height: 0;
 	flex-direction: row;
 	overflow: hidden;
-	border: 1px solid var(--patient-modal-line-strong);
-	border-radius: 6px;
+	border: 0.0625rem solid var(--patient-modal-line-strong);
+	border-radius: 0.375rem;
 }
 
 .vital-signs-yaxis-fixed {
-	width: 165px;
+	width: 10.3125rem;
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
 	background: var(--patient-modal-cream);
-	border-right: 1px solid var(--patient-modal-line-strong);
+	border-right: 0.0625rem solid var(--patient-modal-line-strong);
 	position: relative;
 	z-index: var(--qlpk-z-sticky-header);
 }
@@ -175,9 +175,9 @@
 
 .vital-chart-header-table {
 	position: relative;
-	height: 62px;
+	height: 3.875rem;
 	background: var(--patient-modal-cream);
-	border-bottom: 1px solid var(--patient-modal-line-strong);
+	border-bottom: 0.0625rem solid var(--patient-modal-line-strong);
 	flex-shrink: 0;
 	width: 100%;
 }
@@ -185,7 +185,7 @@
 .canvas-container {
 	flex: 1;
 	position: relative;
-	min-height: 320px;
+	min-height: 20rem;
 }
 
 .patient-search-modal__vitals-chart {
@@ -201,22 +201,22 @@
 	display: none;
 	width: 100%;
 	overflow-x: auto;
-	padding: 2px;
+	padding: 0.125rem;
 }
 
 .vital-signs-grid-table {
 	border-collapse: collapse;
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-	font-size: var(--qlpk-font-size-base, 13px);
-	margin-top: 5px;
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
+	margin-top: 0.3125rem;
 	table-layout: fixed;
 	width: 100%;
 }
 
 .vital-signs-grid-table th,
 .vital-signs-grid-table td {
-	border: 1px solid var(--patient-modal-line);
-	padding: 8px 10px;
+	border: 0.0625rem solid var(--patient-modal-line);
+	padding: 0.5rem 0.625rem;
 	text-align: center;
 	vertical-align: middle;
 	white-space: nowrap;
@@ -235,30 +235,30 @@
 
 .vital-signs-grid-table td.vital-label-col {
 	background-color: var(--patient-modal-cream);
-	box-shadow: 2px 0 5px rgba(var(--qlpk-color-black-rgb), 0.05);
+	box-shadow: 0.125rem 0 0.3125rem rgba(var(--qlpk-color-black-rgb), 0.05);
 	box-sizing: border-box;
 	color: var(--patient-modal-text);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	left: 0;
-	max-width: 165px;
-	min-width: 165px;
+	max-width: 10.3125rem;
+	min-width: 10.3125rem;
 	position: sticky;
 	text-align: left;
 	white-space: nowrap;
-	width: 165px;
+	width: 10.3125rem;
 	z-index: var(--qlpk-z-sticky-header);
 }
 
 .vital-signs-grid-table th.vital-label-col {
 	background-color: var(--patient-modal-brown-soft);
-	box-shadow: 2px 0 5px rgba(var(--qlpk-color-black-rgb), 0.05);
+	box-shadow: 0.125rem 0 0.3125rem rgba(var(--qlpk-color-black-rgb), 0.05);
 	box-sizing: border-box;
 	left: 0;
-	max-width: 165px;
-	min-width: 165px;
+	max-width: 10.3125rem;
+	min-width: 10.3125rem;
 	position: sticky;
 	white-space: nowrap;
-	width: 165px;
+	width: 10.3125rem;
 	z-index: var(--qlpk-z-sticky-corner);
 }
 
@@ -277,23 +277,23 @@
 .vital-axis-date-header {
 	align-items: center;
 	background: var(--patient-modal-cream);
-	border-bottom: 1px solid var(--patient-modal-line-strong);
+	border-bottom: 0.0625rem solid var(--patient-modal-line-strong);
 	color: var(--patient-modal-brown);
 	display: flex;
-	font-size: var(--qlpk-font-size-xs, 11px);
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	height: 26px;
+	height: 1.625rem;
 	justify-content: center;
 }
 
 .vital-axis-metric-header {
 	background: var(--patient-modal-cream);
-	border-bottom: 1px solid var(--patient-modal-line-strong);
+	border-bottom: 0.0625rem solid var(--patient-modal-line-strong);
 	color: var(--patient-modal-text);
 	display: flex;
-	font-size: var(--qlpk-font-size-2xs, 10px);
+	font-size: var(--qlpk-font-size-2xs, 0.625rem);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	height: 36px;
+	height: 2.25rem;
 	text-align: center;
 }
 
@@ -303,12 +303,12 @@
 	flex: 1;
 	justify-content: center;
 	line-height: 1.2;
-	padding: 2px;
+	padding: 0.125rem;
 	white-space: nowrap;
 }
 
 .vital-axis-metric-cell--border {
-	border-right: 1px solid var(--patient-modal-line-strong);
+	border-right: 0.0625rem solid var(--patient-modal-line-strong);
 }
 
 .vital-y-ticks {
@@ -319,7 +319,7 @@
 .vital-y-tick {
 	color: var(--patient-modal-muted);
 	display: flex;
-	font-size: var(--qlpk-font-size-2xs, 10px);
+	font-size: var(--qlpk-font-size-2xs, 0.625rem);
 	font-weight: var(--qlpk-font-weight-medium, 500);
 	left: 0;
 	position: absolute;
@@ -332,23 +332,23 @@
 	align-items: center;
 	display: flex;
 	flex: 1;
-	height: 16px;
+	height: 1rem;
 	justify-content: center;
 }
 
 .vital-y-tick-cell--border {
-	border-right: 1px dashed var(--patient-modal-line);
+	border-right: 0.0625rem dashed var(--patient-modal-line);
 }
 
 .vital-x-date-row {
-	border-bottom: 1px solid var(--patient-modal-line-strong);
-	height: 26px;
+	border-bottom: 0.0625rem solid var(--patient-modal-line-strong);
+	height: 1.625rem;
 	position: relative;
 	width: 100%;
 }
 
 .vital-x-time-row {
-	height: 36px;
+	height: 2.25rem;
 	position: relative;
 	width: 100%;
 }
@@ -359,25 +359,25 @@
 	text-align: center;
 	transform: translateX(-50%);
 	white-space: nowrap;
-	width: 60px;
+	width: 3.75rem;
 }
 
 .vital-x-date-label {
 	color: var(--patient-modal-brown);
-	font-size: var(--qlpk-font-size-xs, 11px);
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	line-height: 26px;
+	line-height: 1.625rem;
 }
 
 .vital-x-time-label {
 	color: var(--patient-modal-muted);
-	font-size: var(--qlpk-font-size-xs, 11px);
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-medium, 500);
-	line-height: 36px;
+	line-height: 2.25rem;
 }
 
 .vital-grid-col-label {
-	width: 165px;
+	width: 10.3125rem;
 }
 
 .vital-grid-col-data {
@@ -403,12 +403,12 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-end;
-	gap: 16px;
+	gap: 1rem;
 }
 
 .clinic-name {
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	font-size: var(--qlpk-font-size-lg, 16px);
+	font-size: var(--qlpk-font-size-lg, 1rem);
 	text-transform: uppercase;
 	color: var(--patient-modal-brown);
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
@@ -416,13 +416,13 @@
 }
 
 .clinic-details {
-	font-size: var(--qlpk-font-size-base, 13px);
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 	line-height: 1.5;
 }
 
 .prescription-code-badge {
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
 	line-height: 1.5;

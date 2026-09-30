@@ -22,7 +22,7 @@
 
 /* Vital Signs Chart Styles */
 .vital-chart-container {
-	padding: 15px;
+	padding: 0.9375rem;
 	height: 100%;
 	display: flex;
 	flex-direction: column;
@@ -32,21 +32,21 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 12px;
+	margin-bottom: 0.75rem;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 0.625rem;
 }
 
 .time-range-selector {
 	display: flex;
-	gap: 6px;
+	gap: 0.375rem;
 }
 
 .time-range-btn {
-	padding: 5px 10px;
-	border: 1px solid var(--patient-modal-line-strong);
-	border-radius: 6px;
-	font-size: var(--qlpk-font-size-xs, 11px);
+	padding: 0.3125rem 0.625rem;
+	border: 0.0625rem solid var(--patient-modal-line-strong);
+	border-radius: 0.375rem;
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-medium, 500);
 	cursor: pointer;
 	transition: all 0.2s ease;
@@ -67,7 +67,7 @@
 
 .vital-chart-wrapper {
 	flex: 1;
-	min-height: 380px;
+	min-height: 23.75rem;
 	position: relative;
 	display: flex;
 	flex-direction: column;
@@ -83,8 +83,8 @@
 }
 
 .vital-chart-empty i {
-	font-size: var(--qlpk-font-size-display-md, 48px);
-	margin-bottom: 10px;
+	font-size: var(--qlpk-font-size-display-md, 3rem);
+	margin-bottom: 0.625rem;
 }
 
 /* Modal History Row */
@@ -183,12 +183,12 @@
 /* Prescription Preview */
 .prescription-preview:not(.prescription-preview--moh) {
 	background: var(--patient-modal-surface);
-	border: 1px solid var(--patient-modal-line-strong);
-	border-radius: 12px;
-	padding: 24px;
-	padding-top: 10px;
+	border: 0.0625rem solid var(--patient-modal-line-strong);
+	border-radius: 0.75rem;
+	padding: 1.5rem;
+	padding-top: 0.625rem;
 	color: var(--patient-modal-text);
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	line-height: 1.6;
 	box-shadow: 0 0.375rem 1.25rem color-mix(in srgb, var(--patient-modal-brown) 8%, transparent);
 	box-sizing: border-box;
@@ -200,13 +200,13 @@
 .prescription-preview__header {
 	display: flex;
 	justify-content: space-between;
-	gap: 24px;
+	gap: 1.5rem;
 	border-bottom: none;
 }
 
 .prescription-preview__header--clinic {
 	align-items: flex-start;
-	gap: 20px;
+	gap: 1.25rem;
 	justify-content: flex-start;
 }
 
@@ -217,7 +217,7 @@
 .clinic-logo__image {
 	height: auto;
 	object-fit: contain;
-	width: 120px;
+	width: 7.5rem;
 }
 
 .clinic-info {
@@ -236,7 +236,7 @@
 }
 
 .clinic-detail-line {
-	margin-bottom: 4px;
+	margin-bottom: 0.25rem;
 }
 
 .prescription-code-section {
@@ -250,49 +250,49 @@
 }
 
 .barcode-svg--patient {
-	height: 35px;
-	width: 200px;
+	height: 2.1875rem;
+	width: 12.5rem;
 }
 
 .patient-code {
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	text-align: center;
 }
 
 .prescription-gradient-separator {
 	background: var(--patient-modal-accent);
-	border-radius: 2px;
-	height: 3px;
-	margin: 5px 0;
+	border-radius: 0.125rem;
+	height: 0.1875rem;
+	margin: 0.3125rem 0;
 }
 
 .prescription-preview__title {
 	text-align: center;
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	font-size: var(--qlpk-font-size-2xl, 20px);
-	letter-spacing: 1px;
+	font-size: var(--qlpk-font-size-2xl, 1.25rem);
+	letter-spacing: 0.0625rem;
 	margin: 0;
 	color: var(--patient-modal-brown);
 }
 
 .prescription-preview__title--document {
-	font-size: var(--qlpk-font-size-3xl, 24px);
+	font-size: var(--qlpk-font-size-3xl, 1.5rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	padding: 1.25rem 0 2.8125rem;
 }
 
 .prescription-preview__diagnosis {
-	margin-bottom: 10px;
+	margin-bottom: 0.625rem;
 }
 
 .prescription-preview__patient-info {
 	display: flex;
-	gap: 16px;
+	gap: 1rem;
 }
 
 .prescription-preview__patient-info div>div {
-	margin-bottom: 6px;
+	margin-bottom: 0.375rem;
 }
 
 .prescription-preview__patient-info-left {
@@ -305,7 +305,7 @@
 	max-width: 33.3333%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
 	.prescription-preview__patient-info {
 		flex-direction: column;
 	}
@@ -318,26 +318,26 @@
 }
 
 .prescription-preview__body {
-	margin-bottom: 20px;
+	margin-bottom: 1.25rem;
 }
 
 .prescription-preview-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 }
 
 .prescription-preview-table th,
 .prescription-preview-table td {
-	border: 1px solid var(--patient-modal-line-strong);
-	padding: 10px 12px;
+	border: 0.0625rem solid var(--patient-modal-line-strong);
+	padding: 0.625rem 0.75rem;
 	vertical-align: top;
 }
 
 .prescription-preview-table th {
 	background: var(--patient-modal-cream);
-	font-size: var(--qlpk-font-size-sm, 12px);
-	letter-spacing: 0.5px;
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
+	letter-spacing: 0.03125rem;
 }
 
 .prescription-preview-table.table-centered th,
@@ -386,7 +386,7 @@
 	margin-right: 0;
 	margin-top: auto;
 	max-width: 50%;
-	padding-top: 30px;
+	padding-top: 1.875rem;
 	text-align: center;
 }
 
@@ -396,9 +396,9 @@
 }
 
 .prescription-preview__signature-role {
-	margin-top: 8px;
+	margin-top: 0.5rem;
 }
 
 .prescription-preview__signature-name {
-	margin-top: 64px;
+	margin-top: 4rem;
 }

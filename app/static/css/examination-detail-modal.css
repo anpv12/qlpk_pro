@@ -2,7 +2,7 @@
 
 .examination-detail-modal .modal-header {
 	background: var(--qlpk-color-primary-soft);
-	border-bottom: 1px solid var(--qlpk-color-border);
+	border-bottom: 0.0625rem solid var(--qlpk-color-border);
 }
 
 .examination-detail-modal .modal-title {
@@ -24,7 +24,7 @@
 }
 
 .examination-detail-modal .modal-footer {
-	border-top: 1px solid var(--qlpk-color-border);
+	border-top: 0.0625rem solid var(--qlpk-color-border);
 }
 
 .examination-detail-modal .chem-check-right {
@@ -48,10 +48,10 @@ body.examination-detail-modal-open .modal-backdrop {
 .examination-detail-modal input[type="checkbox"] {
 	appearance: none;
 	-webkit-appearance: none;
-	width: 18px;
-	height: 18px;
-	border: 2px solid var(--qlpk-palette-gray-20-a);
-	border-radius: 4px;
+	width: 1.125rem;
+	height: 1.125rem;
+	border: 0.125rem solid var(--qlpk-palette-gray-20-a);
+	border-radius: 0.25rem;
 	background: var(--qlpk-color-white);
 	cursor: pointer;
 	position: relative;
@@ -59,7 +59,7 @@ body.examination-detail-modal-open .modal-backdrop {
 }
 
 .examination-detail-modal input[type="checkbox"]:hover {
-	box-shadow: 0 0 0 3px var(--qlpk-alpha-blue-52-15);
+	box-shadow: 0 0 0 0.1875rem var(--qlpk-alpha-blue-52-15);
 }
 
 .examination-detail-modal input[type="checkbox"]:checked {
@@ -70,11 +70,11 @@ body.examination-detail-modal-open .modal-backdrop {
 .examination-detail-modal input[type="checkbox"]:checked::after {
 	content: "";
 	position: absolute;
-	left: 5px;
-	top: 1px;
-	width: 5px;
-	height: 10px;
-	border: 2px solid var(--qlpk-color-white);
+	left: 0.3125rem;
+	top: 0.0625rem;
+	width: 0.3125rem;
+	height: 0.625rem;
+	border: 0.125rem solid var(--qlpk-color-white);
 	border-top: 0;
 	border-left: 0;
 	transform: rotate(45deg);
@@ -84,9 +84,9 @@ body.examination-detail-modal-open .modal-backdrop {
 .auto-save-indicator {
   --qlpk-status-color: var(--qlpk-feedback-success);
   position: fixed;
-  top: 16px;
+  top: 1rem;
   left: 50%;
-  transform: translateX(-50%) translateY(-12px);
+  transform: translateX(-50%) translateY(-0.75rem);
   z-index: 9999;
   opacity: 0;
   transition: opacity 0.22s ease, transform 0.22s ease;

@@ -21,8 +21,8 @@
 
 .user-management-page .table .action-btn {
   border: none;
-  font-size: var(--qlpk-font-size-2xl, 20px);
-  margin-right: 6px;
+  font-size: var(--qlpk-font-size-2xl, 1.25rem);
+  margin-right: 0.375rem;
 }
 .user-management-page .table .action-btn:not([data-qlpk-button], [data-qlpk-button] *) {
   background: none;
@@ -33,17 +33,17 @@
 }
 
 .user-management-page .um-modal-content-lg {
-  border-radius: var(--clinic-surface-radius, 20px);
+  border-radius: var(--clinic-surface-radius, 1.25rem);
 }
 
 .user-management-page .um-modal-content-md {
-  border-radius: var(--clinic-surface-radius, 18px);
+  border-radius: var(--clinic-surface-radius, 1.125rem);
 }
 
 .user-management-page .um-modal-title {
   color: var(--qlpk-color-primary);
-  font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-5xl, 32px));
-  letter-spacing: 1px;
+  font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-5xl, 2rem));
+  letter-spacing: 0.0625rem;
 }
 
 .user-management-page .modal.qlpk-user-modal .form-label,
@@ -53,19 +53,19 @@
 }
 
 .user-management-page .um-gap-12 {
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .user-management-page .um-gap-8 {
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .user-management-page .um-avatar-preview {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--qlpk-palette-gray-91);
+  border: 0.0625rem solid var(--qlpk-palette-gray-91);
 }
 
 .user-management-page .form-control.qlpk-avatar-file,
@@ -75,7 +75,7 @@
   padding: 0;
   background: transparent;
   width: auto;
-  max-width: 260px;
+  max-width: 16.25rem;
 }
 
 .user-management-page .form-control.qlpk-avatar-file:focus,
@@ -87,10 +87,10 @@
 .user-management-page .form-control.qlpk-avatar-file::file-selector-button,
 .user-management-page .form-control.qlpk-license-certificate-file::file-selector-button,
 .user-management-page input[type="file"]::-webkit-file-upload-button {
-  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-md, 14px));
-  padding: 6px 14px;
-  border-radius: var(--clinic-control-radius, 24px);
-  border: 1px solid var(--qlpk-color-primary);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-md, 0.875rem));
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--clinic-control-radius, 1.5rem);
+  border: 0.0625rem solid var(--qlpk-color-primary);
   background: var(--qlpk-workflow-context-header-bg);
   color: var(--qlpk-color-white);
   cursor: pointer;
@@ -101,22 +101,22 @@
   color: var(--qlpk-color-primary);
   text-decoration: underline;
   cursor: pointer;
-  font-size: var(--qlpk-font-size-md, 14px);
+  font-size: var(--qlpk-font-size-md, 0.875rem);
 }
 
 .user-management-page .qlpk-color-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
   align-items: center;
 }
 
 .user-management-page .color-swatch {
-  width: 26px;
-  height: 26px;
+  width: 1.625rem;
+  height: 1.625rem;
   border-radius: 50%;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 0.125rem solid transparent;
   transition:
     transform 0.15s,
     border-color 0.15s,
@@ -126,14 +126,14 @@
 
 .user-management-page .color-swatch:hover {
   transform: scale(1.15);
-  box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.2);
+  box-shadow: 0 0.125rem 0.5rem rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 .user-management-page .color-swatch.selected {
   border-color: var(--qlpk-palette-gray-20-a);
   box-shadow:
-    0 0 0 2px var(--qlpk-color-white),
-    0 0 0 4px var(--qlpk-palette-gray-20-a);
+    0 0 0 0.125rem var(--qlpk-color-white),
+    0 0 0 0.25rem var(--qlpk-palette-gray-20-a);
 }
 
 .user-management-page .color-swatch[data-color="#2196f3"] {
@@ -174,18 +174,18 @@
 }
 
 .user-management-page .um-clear-color-btn {
-  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xs, 11px));
-  padding: 2px 8px;
-  margin-left: 4px;
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xs, 0.6875rem));
+  padding: 0.125rem 0.5rem;
+  margin-left: 0.25rem;
 }
 
 .user-management-page .um-footer-actions {
-  gap: 16px;
+  gap: 1rem;
 }
 
 .user-management-page .um-btn-primary-pill-lg,
 .user-management-page .um-btn-primary-pill-md {
-  border-radius: var(--clinic-control-radius, 30px);
+  border-radius: var(--clinic-control-radius, 1.875rem);
 }
 .user-management-page .um-btn-primary-pill-lg:not([data-qlpk-button], [data-qlpk-button] *),
 .user-management-page .um-btn-primary-pill-md:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -195,26 +195,26 @@
 
 .user-management-page .um-btn-primary-pill-lg,
 .user-management-page .um-btn-pill-lg {
-  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 18px));
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 1.125rem));
 }
 
 .user-management-page .um-btn-primary-pill-md,
 .user-management-page .um-btn-pill-md {
-  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-lg, 16px));
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-lg, 1rem));
 }
 
 .user-management-page .um-btn-pill-lg,
 .user-management-page .um-btn-pill-md {
-  border-radius: var(--clinic-control-radius, 30px);
+  border-radius: var(--clinic-control-radius, 1.875rem);
 }
 
 .user-management-page .um-text-lg {
-  font-size: var(--qlpk-font-size-xl, 18px);
+  font-size: var(--qlpk-font-size-xl, 1.125rem);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 56.25rem) {
   .user-management-page .main-content {
-    padding: 0 8px;
+    padding: 0 0.5rem;
   }
 
 }

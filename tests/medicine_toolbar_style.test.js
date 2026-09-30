@@ -87,10 +87,10 @@ test('confirmed DAV borders use success tokens without changing badge background
     assert.match(variant, /--mm-badge-border-color:\s*rgba\(var\(--qlpk-feedback-success-rgb\),\s*\.4\)/);
     assert.match(variant, /--mm-badge-active-border-color:\s*var\(--qlpk-feedback-success\)/);
     assert.doesNotMatch(variant, /(?:background|padding|font-size)\s*:/);
-    assert.match(css, /border:\s*1px solid var\(--mm-badge-border-color,\s*var\(--qlpk-brown-200\)\)/);
+    assert.match(css, /border:\s*0\.0625rem solid var\(--mm-badge-border-color,\s*var\(--qlpk-brown-200\)\)/);
     for (const property of ['border-color', 'outline']) {
         const stateRule = css.match(/\.stock-detail-badge:hover[^{}]*,\s*\.medicine-management-page \.stock-detail-badge:focus-visible[^{}]*\{([^}]+)\}/)?.[1];
         assert.ok(stateRule);
-        assert.match(stateRule, new RegExp(`${property}:\\s*(?:1px solid )?var\\(--mm-badge-active-border-color,\\s*var\\(--qlpk-color-primary\\)\\)`));
+        assert.match(stateRule, new RegExp(`${property}:\\s*(?:0\\.0625rem solid )?var\\(--mm-badge-active-border-color,\\s*var\\(--qlpk-color-primary\\)\\)`));
     }
 });

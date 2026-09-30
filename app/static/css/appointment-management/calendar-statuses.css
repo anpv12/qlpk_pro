@@ -18,7 +18,7 @@
 	border-radius: 0.6rem;
 	background: var(--calendar-status-surface);
 	color: var(--calendar-status-text);
-	font-size: var(--qlpk-font-size-base, 13px);
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	line-height: 1.25;
 }
@@ -101,13 +101,13 @@
 .appointment-fullscreen .qlpk-appointment-calendar.fc .fc-dayGridMonth-view .fc-col-header-cell-cushion {
 	padding: 0;
 	color: var(--qlpk-brown-700);
-	font-size: var(--qlpk-font-size-xs, 11px);
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	letter-spacing: 0.05em;
 }
 
 .appointment-fullscreen .qlpk-appointment-calendar.fc .fc-toolbar-title {
-	font-size: var(--qlpk-font-size-xl, 18px);
+	font-size: var(--qlpk-font-size-xl, 1.125rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	color: var(--qlpk-brown-900);
 }

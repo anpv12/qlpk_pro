@@ -33,7 +33,7 @@
 	--patient-modal-pink: var(--patient-modal-accent);
 	--patient-modal-cream: var(--patient-modal-canvas);
 	--patient-modal-surface-soft: var(--patient-modal-primary-soft);
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	color: var(--patient-modal-text);
 }
 
@@ -118,7 +118,7 @@
 	align-items: center;
 	gap: 0.45rem;
 	color: var(--patient-modal-brown);
-	font-size: var(--qlpk-font-size-lg, 16px);
+	font-size: var(--qlpk-font-size-lg, 1rem);
 	line-height: var(--qlpk-line-height-tight, 1.2);
 }
 
@@ -146,7 +146,7 @@
 	margin-inline: 0;
 	border-color: transparent;
 	color: var(--patient-modal-on-primary);
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 	letter-spacing: 0.01em;
 }
 .patient-search-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -249,13 +249,13 @@
 }
 
 .patient-search-modal__results-card {
-	max-height: 300px;
+	max-height: 18.75rem;
 	border-color: var(--patient-modal-line-strong);
 	box-shadow: var(--patient-modal-shadow);
 }
 
 .patient-search-modal__results-body {
-	max-height: 250px;
+	max-height: 15.625rem;
 	overflow-y: auto;
 	background: var(--patient-modal-surface);
 }
@@ -273,15 +273,15 @@
 }
 
 .patient-search-modal__empty-icon {
-	font-size: var(--qlpk-font-size-5xl, 32px);
+	font-size: var(--qlpk-font-size-5xl, 2rem);
 }
 
 .patient-search-modal__empty-icon--sm {
-	font-size: var(--qlpk-font-size-3xl, 24px);
+	font-size: var(--qlpk-font-size-3xl, 1.5rem);
 }
 
 .patient-search-modal__empty-icon--md {
-	font-size: var(--qlpk-font-size-3xl, 24px);
+	font-size: var(--qlpk-font-size-3xl, 1.5rem);
 }
 
 .patient-search-modal__empty-state {
@@ -316,7 +316,7 @@
 .patient-search-modal__empty-title {
 	margin: 0;
 	color: var(--patient-modal-deep);
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 	line-height: var(--qlpk-line-height-tight, 1.2);
 }
@@ -324,7 +324,7 @@
 .patient-search-modal__empty-description {
 	max-width: 32rem;
 	color: var(--patient-modal-muted);
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 	font-weight: var(--qlpk-font-weight-medium, 500);
 }
 

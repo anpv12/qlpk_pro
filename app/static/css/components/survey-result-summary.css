@@ -1,3 +1,3 @@
-.survey-configured-result { margin: 16px 0; line-height: 1.5; }
-.survey-configured-result p { margin: 4px 0 8px; }
+.survey-configured-result { margin: 1rem 0; line-height: 1.5; }
+.survey-configured-result p { margin: 0.25rem 0 0.5rem; }
 .survey-configured-result .text-danger { color: var(--qlpk-palette-red-40); }

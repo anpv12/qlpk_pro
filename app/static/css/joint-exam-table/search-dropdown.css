@@ -4,13 +4,13 @@
     position: absolute;
     z-index: var(--qlpk-z-legacy-floating);
     background: white;
-    border: 1px solid var(--qlpk-palette-gray-87);
-    border-radius: 4px;
-    max-height: 300px;
+    border: 0.0625rem solid var(--qlpk-palette-gray-87);
+    border-radius: 0.25rem;
+    max-height: 18.75rem;
     overflow-y: auto;
-    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
+    box-shadow: 0 0.125rem 0.5rem rgba(var(--qlpk-color-black-rgb), 0.15);
     width: 100%;
-    margin-top: 2px;
+    margin-top: 0.125rem;
 }
 
 .joint-exam-search-dropdown.is-open {
@@ -24,11 +24,11 @@
 
 .relative-search-dropdown {
     background: white;
-    border: 1px solid var(--qlpk-palette-gray-87);
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
+    border: 0.0625rem solid var(--qlpk-palette-gray-87);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.5rem rgba(var(--qlpk-color-black-rgb), 0.15);
     display: none;
-    max-height: 300px;
+    max-height: 18.75rem;
     overflow-y: auto;
     position: absolute;
     z-index: var(--qlpk-z-legacy-floating);
@@ -44,9 +44,9 @@
 }
 
 .relative-search-item {
-    padding: 8px 12px;
+    padding: 0.5rem 0.75rem;
     cursor: pointer;
-    border-bottom: 1px solid var(--qlpk-palette-gray-94);
+    border-bottom: 0.0625rem solid var(--qlpk-palette-gray-94);
 }
 
 .relative-search-item:hover {
@@ -132,7 +132,7 @@
 
     .joint-exam-table tbody td::before {
         color: var(--qlpk-color-brown);
-        font-size: var(--qlpk-font-size-base, 13px);
+        font-size: var(--qlpk-font-size-base, 0.8125rem);
         font-weight: var(--qlpk-font-weight-bold, 700);
         line-height: 1.25;
     }

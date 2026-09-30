@@ -28,7 +28,7 @@
 
 	50% {
 		transform: scale(1.02);
-		box-shadow: 0 0 0 10px var(--qlpk-alpha-blue-52-00);
+		box-shadow: 0 0 0 0.625rem var(--qlpk-alpha-blue-52-00);
 	}
 
 	100% {
@@ -116,7 +116,7 @@
 	top: var(--autocomplete-floating-top);
 	left: var(--autocomplete-floating-left);
 	width: var(--autocomplete-floating-width);
-	max-height: var(--autocomplete-floating-max-height, 200px);
+	max-height: var(--autocomplete-floating-max-height, 12.5rem);
 	overflow-y: auto;
 	z-index: 1070;
 }
@@ -128,11 +128,11 @@
 	left: 0;
 	right: 0;
 	background: white;
-	border: 1px solid var(--qlpk-palette-gray-87);
+	border: 0.0625rem solid var(--qlpk-palette-gray-87);
 	border-top: none;
-	border-radius: 0 0 4px 4px;
-	box-shadow: 0 4px 8px rgba(var(--qlpk-color-black-rgb), 0.1);
-	max-height: 200px;
+	border-radius: 0 0 0.25rem 0.25rem;
+	box-shadow: 0 0.25rem 0.5rem rgba(var(--qlpk-color-black-rgb), 0.1);
+	max-height: 12.5rem;
 	overflow-y: auto;
 	z-index: 1000;
 }
@@ -140,7 +140,7 @@
 @keyframes successFade {
 	0% {
 		opacity: 0;
-		transform: translateY(10px);
+		transform: translateY(0.625rem);
 	}
 
 	100% {
@@ -151,11 +151,11 @@
 
 /* Button hover effects */
 .btn-primary:hover {
-	transform: translateY(-2px);
+	transform: translateY(-0.125rem);
 }
 /* Button hover effects */
 .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-	box-shadow: 0 4px 12px var(--qlpk-alpha-blue-52-30);
+	box-shadow: 0 0.25rem 0.75rem var(--qlpk-alpha-blue-52-30);
 	transition: all 0.3s ease;
 }
 
@@ -214,7 +214,7 @@
 
 	50% {
 		transform: scale(1.03);
-		box-shadow: 0 0 0 15px var(--qlpk-alpha-blue-52-00);
+		box-shadow: 0 0 0 0.9375rem var(--qlpk-alpha-blue-52-00);
 	}
 
 	100% {
@@ -255,18 +255,18 @@
 }
 
 .sidebar .nav-link:hover {
-	transform: translateX(5px);
+	transform: translateX(0.3125rem);
 	background: var(--qlpk-color-primary-soft);
 	color: var(--qlpk-color-primary);
-	box-shadow: 0 2px 8px rgba(var(--qlpk-color-primary-rgb), 0.2);
+	box-shadow: 0 0.125rem 0.5rem rgba(var(--qlpk-color-primary-rgb), 0.2);
 }
 
 .sidebar .nav-link.active {
 	background: var(--qlpk-color-primary-soft);
 	color: var(--qlpk-color-primary);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	transform: translateX(3px);
-	box-shadow: 0 2px 8px rgba(var(--qlpk-color-primary-rgb), 0.15);
+	transform: translateX(0.1875rem);
+	box-shadow: 0 0.125rem 0.5rem rgba(var(--qlpk-color-primary-rgb), 0.15);
 }
 
 /* Special animation for "Bác sĩ" (Khám bệnh) button */
@@ -276,18 +276,18 @@
 }
 
 .sidebar .nav-link[href="doctor-examination.html"]:hover {
-	transform: translateX(8px) scale(1.02);
+	transform: translateX(0.5rem) scale(1.02);
 	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, var(--qlpk-palette-blue-97-c) 100%);
 	color: var(--qlpk-color-primary);
-	box-shadow: 0 4px 12px rgba(var(--qlpk-color-primary-rgb), 0.3);
+	box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-primary-rgb), 0.3);
 }
 
 .sidebar .nav-link[href="doctor-examination.html"].active {
 	background: linear-gradient(135deg, var(--qlpk-color-primary-soft) 0%, var(--qlpk-palette-blue-97-c) 100%);
 	color: var(--qlpk-color-primary);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	transform: translateX(5px) scale(1.01);
-	box-shadow: 0 3px 10px rgba(var(--qlpk-color-primary-rgb), 0.25);
+	transform: translateX(0.3125rem) scale(1.01);
+	box-shadow: 0 0.1875rem 0.625rem rgba(var(--qlpk-color-primary-rgb), 0.25);
 }
 
 /* Icon animation for sidebar items */
@@ -307,31 +307,31 @@
 
 /* Animation for other sidebar menu items */
 .sidebar .nav-link[href="receptionist-new.html"]:hover {
-	transform: translateX(6px) scale(1.01);
+	transform: translateX(0.375rem) scale(1.01);
 	background: linear-gradient(135deg, var(--qlpk-palette-green-94-b) 0%, var(--qlpk-palette-green-97) 100%);
 	color: var(--qlpk-palette-green-41);
-	box-shadow: 0 3px 10px rgba(var(--qlpk-palette-green-41-rgb), 0.25);
+	box-shadow: 0 0.1875rem 0.625rem rgba(var(--qlpk-palette-green-41-rgb), 0.25);
 }
 
 .sidebar .nav-link[href="psychologist-examination.html"]:hover {
-	transform: translateX(6px) scale(1.01);
+	transform: translateX(0.375rem) scale(1.01);
 	background: linear-gradient(135deg, var(--qlpk-palette-orange-94-a) 0%, var(--qlpk-palette-orange-97-b) 100%);
 	color: var(--qlpk-palette-orange-54);
-	box-shadow: 0 3px 10px var(--qlpk-alpha-orange-54-25);
+	box-shadow: 0 0.1875rem 0.625rem var(--qlpk-alpha-orange-54-25);
 }
 
 .sidebar .nav-link[href="appointment-management.html"]:hover {
-	transform: translateX(6px) scale(1.01);
+	transform: translateX(0.375rem) scale(1.01);
 	background: linear-gradient(135deg, var(--qlpk-palette-rose-93) 0%, var(--qlpk-palette-violet-97-b) 100%);
 	color: var(--qlpk-palette-violet-51);
-	box-shadow: 0 3px 10px var(--qlpk-alpha-violet-51-25);
+	box-shadow: 0 0.1875rem 0.625rem var(--qlpk-alpha-violet-51-25);
 }
 
 .sidebar .nav-link[href="payment-waiting.html"]:hover {
-	transform: translateX(6px) scale(1.01);
+	transform: translateX(0.375rem) scale(1.01);
 	background: linear-gradient(135deg, var(--qlpk-palette-teal-91-a) 0%, var(--qlpk-palette-teal-97-a) 100%);
 	color: var(--qlpk-palette-green-46);
-	box-shadow: 0 3px 10px var(--qlpk-alpha-green-46-25);
+	box-shadow: 0 0.1875rem 0.625rem var(--qlpk-alpha-green-46-25);
 }
 
 /* Animation for left sidebar buttons in examination modal */
@@ -342,18 +342,18 @@
 }
 
 .btn-sidebar:hover {
-	transform: translateX(8px) scale(1.02);
+	transform: translateX(0.5rem) scale(1.02);
 	background: rgba(var(--qlpk-color-white-rgb), 0.15);
 	color: var(--qlpk-color-white);
-	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.2);
+	box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 .btn-sidebar.active {
 	background: var(--qlpk-color-white);
 	color: var(--qlpk-palette-blue-24);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
-	transform: translateX(5px) scale(1.01);
-	box-shadow: 0 3px 10px rgba(var(--qlpk-color-black-rgb), 0.15);
+	transform: translateX(0.3125rem) scale(1.01);
+	box-shadow: 0 0.1875rem 0.625rem rgba(var(--qlpk-color-black-rgb), 0.15);
 }
 
 /* Special animation for "Khám bệnh" button in left sidebar */
@@ -363,18 +363,18 @@
 }
 
 .btn-sidebar[data-left-tab="examination"]:hover {
-	transform: translateX(10px) scale(1.03);
+	transform: translateX(0.625rem) scale(1.03);
 	background: linear-gradient(135deg, rgba(var(--qlpk-color-white-rgb), 0.2) 0%, rgba(var(--qlpk-color-white-rgb), 0.1) 100%);
 	color: var(--qlpk-color-white);
-	box-shadow: 0 5px 15px rgba(var(--qlpk-color-black-rgb), 0.3);
+	box-shadow: 0 0.3125rem 0.9375rem rgba(var(--qlpk-color-black-rgb), 0.3);
 }
 
 .btn-sidebar[data-left-tab="examination"].active {
 	background: linear-gradient(135deg, var(--qlpk-color-white) 0%, var(--qlpk-color-page-bg) 100%);
 	color: var(--qlpk-palette-blue-24);
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	transform: translateX(6px) scale(1.02);
-	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.2);
+	transform: translateX(0.375rem) scale(1.02);
+	box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.2);
 }
 
 /* Icon animation for left sidebar buttons */

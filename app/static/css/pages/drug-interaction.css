@@ -1,14 +1,14 @@
 		/* Add button */
 		.btn-add {
 			border: none;
-			border-radius: var(--clinic-control-radius, 8px);
-			padding: 7px 16px;
+			border-radius: var(--clinic-control-radius, 0.5rem);
+			padding: 0.4375rem 1rem;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+			font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 0.8125rem));
 			cursor: pointer;
 			display: flex;
 			align-items: center;
-			gap: 5px;
+			gap: 0.3125rem;
 			white-space: nowrap;
 }
 /* Add button */
@@ -25,9 +25,9 @@
 		.badge-type {
 			display: inline-flex;
 			align-items: center;
-			gap: 4px;
-			padding: 3px 10px;
-			border-radius: 99px;
+			gap: 0.25rem;
+			padding: 0.1875rem 0.625rem;
+			border-radius: 6.1875rem;
 			font-size: inherit;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			white-space: nowrap;
@@ -50,19 +50,19 @@
 			left: 0;
 			right: 0;
 			background: var(--qlpk-color-white);
-			border: 1px solid var(--qlpk-color-border);
-			border-radius: 8px;
-			max-height: 220px;
+			border: 0.0625rem solid var(--qlpk-color-border);
+			border-radius: 0.5rem;
+			max-height: 13.75rem;
 			overflow-y: auto;
 			z-index: 1060;
-			box-shadow: 0 8px 24px rgba(var(--qlpk-color-black-rgb), 0.12);
+			box-shadow: 0 0.5rem 1.5rem rgba(var(--qlpk-color-black-rgb), 0.12);
 		}
 
 		.ac-item {
-			padding: 8px 12px;
+			padding: 0.5rem 0.75rem;
 			cursor: pointer;
-			font-size: var(--qlpk-font-size-base, 13px);
-			border-bottom: 1px solid var(--qlpk-color-brown-soft);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
+			border-bottom: 0.0625rem solid var(--qlpk-color-brown-soft);
 		}
 
 		.ac-item:hover {
@@ -75,7 +75,7 @@
 
 		.ac-item-new {
 			background-color: var(--qlpk-color-primary-soft);
-			border-bottom: 1px dashed var(--qlpk-color-border);
+			border-bottom: 0.0625rem dashed var(--qlpk-color-border);
 		}
 
 		.ac-new-label {
@@ -88,7 +88,7 @@
 		}
 
 		.di-empty-icon {
-			font-size: var(--qlpk-font-size-5xl, 32px);
+			font-size: var(--qlpk-font-size-5xl, 2rem);
 		}
 
 		.di-preline {
@@ -105,32 +105,32 @@
 
 		/* Modal compact */
 		.modal-header {
-			padding: 8px 16px;
+			padding: 0.5rem 1rem;
 		}
 
 		.modal-footer {
-			padding: 8px 16px;
+			padding: 0.5rem 1rem;
 		}
 
 		/* Drug selector section */
 		.drug-selector {
 			background: var(--qlpk-color-page-bg);
-			border: 1px solid var(--qlpk-color-border);
-			border-radius: 10px;
-			padding: 12px;
+			border: 0.0625rem solid var(--qlpk-color-border);
+			border-radius: 0.625rem;
+			padding: 0.75rem;
 		}
 
 		.drug-selector .label {
-			font-size: var(--qlpk-font-size-xs, 11px);
+			font-size: var(--qlpk-font-size-xs, 0.6875rem);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--qlpk-color-primary);
 			text-transform: uppercase;
-			margin-bottom: 6px;
+			margin-bottom: 0.375rem;
 		}
 
 		.drug-pair {
 			display: flex;
-			gap: 12px;
+			gap: 0.75rem;
 			align-items: center;
 		}
 
@@ -141,19 +141,19 @@
 		.drug-pair .vs {
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--qlpk-feedback-error);
-			font-size: var(--qlpk-font-size-lg, 16px);
+			font-size: var(--qlpk-font-size-lg, 1rem);
 			flex-shrink: 0;
 		}
 
 		/* Section title */
 		.section-title {
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--qlpk-color-text);
-			margin-bottom: 6px;
+			margin-bottom: 0.375rem;
 			display: flex;
 			align-items: center;
-			gap: 5px;
+			gap: 0.3125rem;
 		}
 
 		.section-title i {
@@ -161,19 +161,19 @@
 		}
 
 		.info-section {
-			margin-top: 10px;
+			margin-top: 0.625rem;
 		}
 
 		/* Type radio labels */
 		.type-label {
 			display: flex;
 			align-items: center;
-			gap: 6px;
-			padding: 6px 12px;
-			border: 2px solid var(--qlpk-color-border);
-			border-radius: 8px;
+			gap: 0.375rem;
+			padding: 0.375rem 0.75rem;
+			border: 0.125rem solid var(--qlpk-color-border);
+			border-radius: 0.5rem;
 			cursor: pointer;
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			transition: all .2s;
 		}
@@ -200,26 +200,26 @@
 
 		/* View modal */
 		.view-field-label {
-			font-size: var(--qlpk-font-size-xs, 11px);
+			font-size: var(--qlpk-font-size-xs, 0.6875rem);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--qlpk-color-primary);
 			text-transform: uppercase;
-			margin-bottom: 4px;
+			margin-bottom: 0.25rem;
 		}
 
 		.view-field-value {
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
 			color: var(--qlpk-color-text);
 			white-space: pre-line;
-			padding: 8px 12px;
+			padding: 0.5rem 0.75rem;
 			background: var(--qlpk-color-page-bg);
-			border-radius: 8px;
-			border: 1px solid var(--qlpk-color-border);
-			margin-bottom: 10px;
+			border-radius: 0.5rem;
+			border: 0.0625rem solid var(--qlpk-color-border);
+			margin-bottom: 0.625rem;
 		}
 
 .di-main-content {
-	padding: 16px 20px;
+	padding: 1rem 1.25rem;
 }
 
 .di-hidden-input {
@@ -232,12 +232,12 @@
 
 .di-col-stt,
 .di-col-separator {
-	width: 40px;
+	width: 2.5rem;
 }
 
 .di-col-med,
 .di-col-type {
-	width: 160px;
+	width: 10rem;
 }
 
 .di-col-type,
@@ -246,17 +246,17 @@
 }
 
 .di-col-action {
-	width: 100px;
+	width: 6.25rem;
 }
 
 .di-modal-header {
 	background: var(--qlpk-workflow-context-header-bg);
 	color: var(--qlpk-color-white);
-	border-radius: 8px 8px 0 0;
+	border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .di-modal-body {
-	padding: 12px 16px;
+	padding: 0.75rem 1rem;
 }
 
 .di-drug-box {
@@ -264,7 +264,7 @@
 }
 
 .di-field-label {
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
@@ -278,7 +278,7 @@
 
 .di-view-pair {
 	background: var(--qlpk-color-page-bg);
-	padding: 10px;
-	border-radius: 8px;
-	border: 1px solid var(--qlpk-color-border);
+	padding: 0.625rem;
+	border-radius: 0.5rem;
+	border: 0.0625rem solid var(--qlpk-color-border);
 }

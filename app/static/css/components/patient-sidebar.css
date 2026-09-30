@@ -1,20 +1,20 @@
 .patient-modal-close-btn {
-	border-width: 1px;
+	border-width: 0.0625rem;
 	border-style: solid;
 	border-radius: 50%;
-	width: 36px;
-	height: 36px;
+	width: 2.25rem;
+	height: 2.25rem;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: var(--qlpk-font-size-lg, 16px);
+	font-size: var(--qlpk-font-size-lg, 1rem);
 }
 .patient-modal-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
 	background: var(--qlpk-palette-black);
-	border: 1px solid rgba(var(--qlpk-color-white-rgb), 0.4);
+	border: 0.0625rem solid rgba(var(--qlpk-color-white-rgb), 0.4);
 	color: var(--qlpk-color-white);
 	transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.15);
+	box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.15);
 }
 
 .patient-modal-close-btn:hover {

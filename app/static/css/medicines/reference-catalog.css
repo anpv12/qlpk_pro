@@ -19,11 +19,11 @@ body {
     grid-template-columns: minmax(0, 1fr) 10rem auto auto;
     gap: .625rem;
     align-items: end;
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
 }
 
 .content-wrap {
-    padding: 16px 20px 24px;
+    padding: 1rem 1.25rem 1.5rem;
     font-size: var(--qlpk-font-size-base);
 }
 
@@ -38,7 +38,7 @@ body {
 
 .surface {
     background: var(--qlpk-color-white);
-    border: 1px solid var(--qlpk-color-border);
+    border: 0.0625rem solid var(--qlpk-color-border);
     border-radius: var(--clinic-surface-radius);
     box-shadow: var(--clinic-surface-shadow);
     padding: 0.875rem;
@@ -49,7 +49,7 @@ body {
     min-width: 74rem;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: var(--qlpk-font-size-base, 13px);
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
 }
 
 .reference-table :is(th, td):is(:nth-child(2), :nth-child(5)) {
@@ -64,27 +64,27 @@ body {
     background: var(--qlpk-brown-150);
     color: var(--qlpk-brown-700);
     font-weight: var(--qlpk-font-weight-bold, 700);
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--qlpk-color-border);
+    padding: 0.5625rem 0.625rem;
+    border-bottom: 0.0625rem solid var(--qlpk-color-border);
     white-space: nowrap;
 }
 
 .reference-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--qlpk-color-brown-soft);
+    padding: 0.5625rem 0.625rem;
+    border-bottom: 0.0625rem solid var(--qlpk-color-brown-soft);
     vertical-align: top;
 }
 
 .reference-col-index {
-    width: 52px;
+    width: 3.25rem;
 }
 
 .reference-col-registration {
-    width: 135px;
+    width: 8.4375rem;
 }
 
 .reference-col-actions {
-    width: 74px;
+    width: 4.625rem;
 }
 
 .drug-name {
@@ -105,16 +105,16 @@ body {
 
 .sync-result {
     color: var(--qlpk-color-text-muted);
-    font-size: var(--qlpk-font-size-sm, 12px);
-    margin-top: 8px;
-    min-height: 18px;
+    font-size: var(--qlpk-font-size-sm, 0.75rem);
+    margin-top: 0.5rem;
+    min-height: 1.125rem;
 }
 
 .detail-grid {
     display: grid;
-    grid-template-columns: 160px 1fr;
-    gap: 8px 12px;
-    font-size: var(--qlpk-font-size-base, 13px);
+    grid-template-columns: 10rem 1fr;
+    gap: 0.5rem 0.75rem;
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
 }
 
 .detail-label {

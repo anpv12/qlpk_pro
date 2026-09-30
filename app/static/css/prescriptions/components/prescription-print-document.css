@@ -16,7 +16,7 @@ html, body { margin: 0; padding: 0; background: var(--qlpk-color-white); color: 
 	padding: 0;
 }
 .prescription-print-document__asset-error {
-	border: 1px solid var(--qlpk-palette-red-42);
+	border: 0.0625rem solid var(--qlpk-palette-red-42);
 	color: var(--qlpk-feedback-critical);
 	padding: 1rem;
 	font-family: var(--qlpk-font-family);

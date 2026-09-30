@@ -26,11 +26,11 @@
 }
 
 .exam-card-header-roomy {
-	padding: 15px;
+	padding: 0.9375rem;
 }
 
 .exam-patient-header-compact {
-	padding: 8px 15px;
+	padding: 0.5rem 0.9375rem;
 }
 
 .exam-inline-center {
@@ -57,7 +57,7 @@
 .exam-previous-vital-hint {
 	display: block;
 	color: var(--qlpk-palette-gray-46);
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -67,7 +67,7 @@
 .exam-bmi-classification-hint {
 	display: none;
 	color: var(--qlpk-palette-gray-46);
-	font-size: var(--qlpk-font-size-sm, 12px);
+	font-size: var(--qlpk-font-size-sm, 0.75rem);
 	font-style: italic;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .exam-label-top {
-	margin-top: 8px;
+	margin-top: 0.5rem;
 }
 
 .exam-flex-field {
@@ -124,14 +124,14 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 4px;
-	min-height: 36px;
+	gap: 0.25rem;
+	min-height: 2.25rem;
 	cursor: text;
-	padding: 4px 8px;
+	padding: 0.25rem 0.5rem;
 }
 
 .exam-chip-input-container--tall {
-	min-height: 38px;
+	min-height: 2.375rem;
 }
 
 .exam-chip-tags {
@@ -142,15 +142,15 @@
 	border: none;
 	outline: none;
 	flex: 1;
-	min-width: 100px;
+	min-width: 6.25rem;
 	background: transparent;
 	box-shadow: none;
-	font-size: var(--qlpk-font-size-base, 13px);
+	font-size: var(--qlpk-font-size-base, 0.8125rem);
 	padding: 0;
 }
 
 .exam-chip-search--wide {
-	min-width: 120px;
+	min-width: 7.5rem;
 }
 
 .exam-dropdown-panel {
@@ -161,29 +161,29 @@
 	right: 0;
 	z-index: 1000;
 	background: var(--qlpk-color-white);
-	border: 1px solid var(--qlpk-palette-gray-89);
-	border-radius: 8px;
+	border: 0.0625rem solid var(--qlpk-palette-gray-89);
+	border-radius: 0.5rem;
 	box-shadow: 0 0.5rem 1rem rgba(var(--qlpk-color-black-rgb), 0.15);
-	max-height: 400px;
+	max-height: 25rem;
 	overflow-y: auto;
 }
 
 .exam-dropdown-panel--compact {
-	max-height: 300px;
-	margin-top: 4px;
+	max-height: 18.75rem;
+	margin-top: 0.25rem;
 }
 
 .exam-dropdown-search {
-	padding: 8px;
+	padding: 0.5rem;
 }
 
 .exam-dropdown-list {
-	max-height: 350px;
+	max-height: 21.875rem;
 	overflow-y: auto;
 }
 
 .exam-dropdown-list--compact {
-	max-height: 240px;
+	max-height: 15rem;
 }
 
 .exam-detail-modal-dialog {
@@ -200,7 +200,7 @@
 }
 
 .exam-modal-header-compact {
-	padding: 10px;
+	padding: 0.625rem;
 }
 
 .exam-modal-body-scroll {
@@ -211,23 +211,23 @@
 .exam-medical-history-dialog {
 	max-width: 100%;
 	width: 90%;
-	margin-top: 5px;
+	margin-top: 0.3125rem;
 }
 
 .exam-order-dialog {
 	max-width: 100%;
 	width: 95%;
-	margin-top: 35px;
+	margin-top: 2.1875rem;
 }
 
 .exam-document-upload-icon {
-	font-size: var(--qlpk-font-size-5xl, 32px);
+	font-size: var(--qlpk-font-size-5xl, 2rem);
 }
 
 .exam-document-empty-icon {
-	font-size: var(--qlpk-font-size-display-md, 48px);
+	font-size: var(--qlpk-font-size-display-md, 3rem);
 }
 
 .exam-input-group-compact {
-	max-width: 280px;
+	max-width: 17.5rem;
 }

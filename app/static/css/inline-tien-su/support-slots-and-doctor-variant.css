@@ -22,7 +22,7 @@
   color: var(--qlpk-color-white);
   display: flex;
   flex-shrink: 0;
-  font-size: var(--qlpk-font-size-sm, 12px);
+  font-size: var(--qlpk-font-size-sm, 0.75rem);
   font-weight: var(--qlpk-font-weight-bold, 700);
   height: 1.7rem;
   justify-content: center;
@@ -42,7 +42,7 @@
   color: var(--qlpk-color-text);
   cursor: pointer;
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   min-height: 2.15rem;
   overflow: hidden;
   padding: 0.45rem 2.15rem 0.45rem 0.65rem;
@@ -101,7 +101,7 @@
 .inline-tien-su--doctor-flat .medical-history-chip-input,
 .inline-tien-su--doctor-flat .medical-history-sub-input,
 .inline-tien-su--doctor-flat .medical-history-allergy-input {
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
 }
 
 .inline-tien-su--doctor-flat .form-control-sm:not([data-icd-autocomplete-input]) {
@@ -141,7 +141,7 @@
   border-radius: 0.5rem;
   color: var(--qlpk-color-primary);
   flex: 0 0 auto;
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   line-height: 1.2;
   min-height: 2rem;
@@ -185,14 +185,14 @@
 }
 
 .inline-tien-su--doctor-flat .medical-history-icd-badge {
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   margin-right: 0.1rem;
   padding: 0.06rem 0.28rem;
 }
 
 .inline-tien-su--doctor-flat .medical-history-item-name {
   color: var(--qlpk-palette-blue-20);
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   line-height: 1.25;
 }
 
@@ -200,7 +200,7 @@
   background: var(--qlpk-workflow-context-header-bg);
   border-bottom: 0.0625rem solid var(--qlpk-palette-teal-17);
   color: var(--qlpk-color-white);
-  font-size: var(--qlpk-font-size-sm, 12px);
+  font-size: var(--qlpk-font-size-sm, 0.75rem);
   font-weight: var(--qlpk-font-weight-bold, 700);
   letter-spacing: 0.02em;
   padding: 0.4rem 0.55rem;
@@ -212,7 +212,7 @@
 .inline-tien-su--doctor-flat .medical-history-chip,
 .inline-tien-su--doctor-flat .medical-history-chip--allergy {
   border-radius: 0.45rem;
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   line-height: 1.2;
   padding: 0.18rem 0.45rem;
 }
@@ -232,25 +232,25 @@
 
 .inline-tien-su--doctor-flat .medical-history-substance-table,
 .inline-tien-su--doctor-flat .medical-history-allergy-table {
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
 }
 
 .inline-tien-su--doctor-flat .medical-history-substance-table thead th,
 .inline-tien-su--doctor-flat .medical-history-allergy-table thead th {
-  font-size: var(--qlpk-font-size-sm, 12px);
+  font-size: var(--qlpk-font-size-sm, 0.75rem);
   letter-spacing: 0.02em;
   padding: 0.35rem 0.45rem;
 }
 
 .inline-tien-su--doctor-flat .medical-history-substance-table td,
 .inline-tien-su--doctor-flat .medical-history-allergy-table td {
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   padding: 0.3rem 0.4rem;
 }
 
 .inline-tien-su--doctor-flat .medical-history-add-row-btn {
   border-radius: 0.5rem;
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   min-height: 2rem;
   padding: 0.3rem 0.7rem;
 }

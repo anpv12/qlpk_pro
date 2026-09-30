@@ -1,35 +1,35 @@
 body {
 	background: var(--qlpk-palette-blue-95-b);
 	min-height: 100vh;
-	padding: 20px;
+	padding: 1.25rem;
 }
 
 .verify-banner {
-	max-width: 800px;
-	margin: 0 auto 20px auto;
-	padding: 12px 20px;
+	max-width: 50rem;
+	margin: 0 auto 1.25rem auto;
+	padding: 0.75rem 1.25rem;
 	text-align: center;
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-	border-radius: 8px;
+	border-radius: 0.5rem;
 	background: linear-gradient(135deg, var(--qlpk-palette-green-30), var(--qlpk-palette-green-39));
 	color: white;
-	box-shadow: 0 2px 12px rgba(var(--qlpk-color-black-rgb), 0.1);
+	box-shadow: 0 0.125rem 0.75rem rgba(var(--qlpk-color-black-rgb), 0.1);
 }
 
 .verify-banner .icon {
-	font-size: var(--qlpk-font-size-3xl, 24px);
-	margin-right: 8px;
+	font-size: var(--qlpk-font-size-3xl, 1.5rem);
+	margin-right: 0.5rem;
 }
 
 .verify-banner .text {
-	font-size: var(--qlpk-font-size-xl, 18px);
+	font-size: var(--qlpk-font-size-xl, 1.125rem);
 	font-weight: var(--qlpk-font-weight-semibold, 600);
 }
 
 .verify-banner .sub {
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	opacity: 0.9;
-	margin-top: 4px;
+	margin-top: 0.25rem;
 }
 
 .verify-banner.invalid {
@@ -39,7 +39,7 @@ body {
 .qlpk-prescription-preview-area {
 	--verify-document-width: 800;
 	--verify-document-scale: 1;
-	max-width: 800px;
+	max-width: 50rem;
 	margin: 0 auto;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
@@ -50,16 +50,16 @@ body {
 }
 
 .verify-prescription-page .qlpk-prescription-preview-area .prescription-preview--verify {
-	width: calc(var(--verify-document-width) * 1px);
+	width: calc(var(--verify-document-width) * 0.0625rem);
 	max-width: none;
 	overflow: visible;
 	transform: scale(var(--verify-document-scale));
 	transform-origin: top left;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 50rem) {
 	body {
-		padding: 10px;
+		padding: 0.625rem;
 	}
 
 	.qlpk-prescription-preview-area {
@@ -81,23 +81,23 @@ body {
 
 .verify-prescription-loading {
 	text-align: center;
-	padding: 40px;
+	padding: 2.5rem;
 	color: var(--qlpk-palette-gray-40-b);
 }
 
 .verify-prescription-invalid-state {
 	text-align: center;
-	padding: 60px 20px;
+	padding: 3.75rem 1.25rem;
 }
 
 .verify-prescription-invalid-icon {
-	font-size: var(--qlpk-font-size-display-xl, 64px);
-	margin-bottom: 16px;
+	font-size: var(--qlpk-font-size-display-xl, 4rem);
+	margin-bottom: 1rem;
 }
 
 .verify-prescription-invalid-title {
 	color: var(--qlpk-feedback-error);
-	margin-bottom: 8px;
+	margin-bottom: 0.5rem;
 }
 
 .verify-prescription-invalid-copy {
@@ -105,11 +105,11 @@ body {
 }
 
 .verify-prescription-badge {
-	margin-top: 30px;
-	padding: 12px;
+	margin-top: 1.875rem;
+	padding: 0.75rem;
 	text-align: center;
 	color: var(--qlpk-palette-gray-20-a);
-	border-top: 1px solid var(--qlpk-palette-gray-87);
+	border-top: 0.0625rem solid var(--qlpk-palette-gray-87);
 	font-family: var(--qlpk-font-family, Roboto, Arial, sans-serif);
 	font-style: italic;
 }

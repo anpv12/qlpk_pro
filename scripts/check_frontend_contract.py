@@ -170,8 +170,8 @@ METRICS = [
 		pattern=r"\b\d+(?:\.\d+)?px\b",
 		roots=("app/static/css",),
 		suffixes=(".css",),
-		max_count=6115,
-		description="Legacy px debt is locked; new responsive work should use tokens/rem/%/clamp/minmax.",
+		max_count=978,
+		description="px -> rem done (6115 -> 978, 30/09/2026) except stylesheets loaded by the three pages whose html root is 13px (payment-waiting, survey-template-create/-management): rem there would shrink shared UI. Do not add px.",
 	),
 ]
 

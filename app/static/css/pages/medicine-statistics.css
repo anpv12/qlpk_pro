@@ -13,7 +13,7 @@
 
 		.main-content {
 			overflow-x: hidden;
-			padding: 5px 10px;
+			padding: 0.3125rem 0.625rem;
 			background-color: var(--qlpk-color-page-bg);
 		}
 
@@ -31,60 +31,60 @@
 		/* ==================== Filter ==================== */
 		.filter-card {
 			background: white;
-			border-radius: 16px;
+			border-radius: 1rem;
 			padding: 1rem;
-			box-shadow: 0 4px 20px rgba(var(--qlpk-color-black-rgb), 0.08);
+			box-shadow: 0 0.25rem 1.25rem rgba(var(--qlpk-color-black-rgb), 0.08);
 			margin-bottom: 0.5rem;
 		}
 
 		.filter-card .form-control,
 		.filter-card .form-select {
-			font-size: var(--qlpk-font-size-md, 14px);
+			font-size: var(--qlpk-font-size-md, 0.875rem);
 		}
 
 		.filter-search {
-			width: 300px;
+			width: 18.75rem;
 		}
 
 		.filter-doctor {
-			width: 180px;
+			width: 11.25rem;
 		}
 
 		.filter-type {
-			width: 140px;
+			width: 8.75rem;
 		}
 
 		.filter-date {
-			width: 140px;
+			width: 8.75rem;
 		}
 
 		/* ==================== Stat Cards ==================== */
 		.stat-card {
 			background: white;
-			border-radius: 12px;
+			border-radius: 0.75rem;
 			padding: 0.75rem;
-			box-shadow: 0 2px 10px rgba(var(--qlpk-color-black-rgb), 0.06);
+			box-shadow: 0 0.125rem 0.625rem rgba(var(--qlpk-color-black-rgb), 0.06);
 			transition: transform 0.3s ease, box-shadow 0.3s ease;
 			height: 100%;
 		}
 
 		.stat-card:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 4px 15px rgba(var(--qlpk-color-black-rgb), 0.1);
+			transform: translateY(-0.1875rem);
+			box-shadow: 0 0.25rem 0.9375rem rgba(var(--qlpk-color-black-rgb), 0.1);
 		}
 
 		.stat-card .stat-icon {
-			width: 40px;
-			height: 40px;
-			border-radius: 8px;
+			width: 2.5rem;
+			height: 2.5rem;
+			border-radius: 0.5rem;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: var(--qlpk-font-size-2xl, 20px);
+			font-size: var(--qlpk-font-size-2xl, 1.25rem);
 		}
 
 		.stat-card .stat-value {
-			font-size: var(--qlpk-font-size-2xl, 20px);
+			font-size: var(--qlpk-font-size-2xl, 1.25rem);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 			color: var(--qlpk-color-text);
 		}
@@ -96,7 +96,7 @@
 
 		.stat-label-qty {
 			font-weight: var(--qlpk-font-weight-semibold, 600);
-			font-size: var(--qlpk-font-size-lg, 16px);
+			font-size: var(--qlpk-font-size-lg, 1rem);
 		}
 
 		.stat-icon.blue {
@@ -127,22 +127,22 @@
 		/* ==================== Data Cards & Tables ==================== */
 		.data-card {
 			background: white;
-			border-radius: 16px;
-			box-shadow: 0 4px 20px rgba(var(--qlpk-color-black-rgb), 0.08);
+			border-radius: 1rem;
+			box-shadow: 0 0.25rem 1.25rem rgba(var(--qlpk-color-black-rgb), 0.08);
 			overflow: hidden;
 		}
 
 		.data-card .card-header {
 			background: linear-gradient(135deg, var(--qlpk-color-page-bg) 0%, var(--qlpk-color-brown-soft) 100%);
 			padding: 0.5rem 0.5rem;
-			border-bottom: 1px solid var(--qlpk-color-border);
+			border-bottom: 0.0625rem solid var(--qlpk-color-border);
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			color: var(--primary-blue);
 		}
 
 		.table {
 			margin: 0;
-			font-size: var(--qlpk-font-size-md, 14px);
+			font-size: var(--qlpk-font-size-md, 0.875rem);
 		}
 
 		.table thead th {
@@ -150,7 +150,7 @@
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			color: var(--qlpk-color-neutral-700);
 			padding: 0.5rem 0.75rem;
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
 		}
 
 		.table tbody td {
@@ -166,7 +166,7 @@
 		.btn-export {
 			border: none;
 			padding: 0.5rem 1.25rem;
-			border-radius: 8px;
+			border-radius: 0.5rem;
 			font-weight: var(--qlpk-font-weight-medium, 500);
 }
 /* ==================== Buttons ==================== */
@@ -177,33 +177,33 @@
 }
 
 		.btn-export:hover {
-			transform: translateY(-2px);
+			transform: translateY(-0.125rem);
 }
 .btn-export:hover:not([data-qlpk-button], [data-qlpk-button] *) {
-			box-shadow: 0 4px 12px rgba(var(--qlpk-color-primary-rgb), 0.4);
+			box-shadow: 0 0.25rem 0.75rem rgba(var(--qlpk-color-primary-rgb), 0.4);
 			color: white;
 }
 
 		/* ==================== Medicine Summary (shared JS + Table) ==================== */
 		.summary-qty {
-			font-size: var(--qlpk-font-size-xl, 18px);
+			font-size: var(--qlpk-font-size-xl, 1.125rem);
 			font-weight: var(--qlpk-font-weight-bold, 700);
 		}
 
 		.badge-type {
 			background: var(--qlpk-color-surface);
-			border: 1px solid var(--qlpk-color-border);
+			border: 0.0625rem solid var(--qlpk-color-border);
 			color: var(--qlpk-color-neutral-700);
-			font-size: var(--qlpk-font-size-xs, 11px);
+			font-size: var(--qlpk-font-size-xs, 0.6875rem);
 			font-weight: var(--qlpk-font-weight-medium, 500);
 		}
 
 		.medicine-summary {
-			margin-top: 2px;
+			margin-top: 0.125rem;
 		}
 
 		.medicine-summary-nested {
-			padding-left: 20px;
+			padding-left: 1.25rem;
 		}
 
 		.medicine-stats-fixed-table {
@@ -252,29 +252,29 @@
 		}
 
 		.medicine-detail-row td {
-			padding: 8px 12px;
+			padding: 0.5rem 0.75rem;
 		}
 
 		/* Detail sub-table */
 		.detail-table {
 			width: 100%;
-			font-size: var(--qlpk-font-size-base, 13px);
+			font-size: var(--qlpk-font-size-base, 0.8125rem);
 			background: white;
-			border-radius: 6px;
+			border-radius: 0.375rem;
 			border-collapse: collapse;
 			overflow: hidden;
 		}
 
 		.detail-table th {
-			padding: 6px 10px;
+			padding: 0.375rem 0.625rem;
 			font-weight: var(--qlpk-font-weight-semibold, 600);
 			background: var(--qlpk-color-brown-soft);
-			font-size: var(--qlpk-font-size-sm, 12px);
+			font-size: var(--qlpk-font-size-sm, 0.75rem);
 		}
 
 		.detail-table td {
-			padding: 6px 10px;
-			border: 1px solid var(--qlpk-color-border);
+			padding: 0.375rem 0.625rem;
+			border: 0.0625rem solid var(--qlpk-color-border);
 		}
 
 		/* Status badges */
@@ -294,16 +294,16 @@
 		.nav-tabs-custom {
 			border: none;
 			background: white;
-			border-radius: 12px;
+			border-radius: 0.75rem;
 			padding: 0.5rem;
-			box-shadow: 0 2px 10px rgba(var(--qlpk-color-black-rgb), 0.05);
+			box-shadow: 0 0.125rem 0.625rem rgba(var(--qlpk-color-black-rgb), 0.05);
 		}
 
 		.nav-tabs-custom .nav-link {
 			border: none;
 			color: var(--qlpk-color-black);
 			font-weight: var(--qlpk-font-weight-medium, 500);
-			border-radius: 8px;
+			border-radius: 0.5rem;
 			transition: all 0.3s ease;
 		}
 
@@ -393,10 +393,10 @@
 		/* ==================== Footer ==================== */
 		.footer-bar {
 			background: var(--qlpk-color-white);
-			border-top: 1px solid var(--qlpk-palette-gray-88);
+			border-top: 0.0625rem solid var(--qlpk-palette-gray-88);
 			color: var(--qlpk-color-primary);
-			font-size: var(--qlpk-font-size-lg, 16px);
-			padding: 10px 32px 8px 32px;
+			font-size: var(--qlpk-font-size-lg, 1rem);
+			padding: 0.625rem 2rem 0.5rem 2rem;
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
@@ -404,7 +404,7 @@
 
 		.footer-bar .contact {
 			display: flex;
-			gap: 18px;
+			gap: 1.125rem;
 			align-items: center;
 		}
 
@@ -419,7 +419,7 @@
 }
 
 .ms-history-master-scroll {
-	max-height: 340px;
+	max-height: 21.25rem;
 	overflow-y: auto;
 }
 

@@ -1,23 +1,23 @@
 /* Medical Record Preview */
 .prescription-preview--document {
 	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 }
 
 .medical-record-section {
-	margin-bottom: 15px;
+	margin-bottom: 0.9375rem;
 }
 
 .medical-record-section-title {
 	font-weight: var(--qlpk-font-weight-bold, 700);
-	margin-bottom: 10px;
+	margin-bottom: 0.625rem;
 }
 
 .medical-record-admin-grid {
 	align-items: flex-start;
 	display: flex;
 	flex-direction: row;
-	gap: 16px;
+	gap: 1rem;
 }
 
 .medical-record-admin-main {
@@ -31,31 +31,31 @@
 }
 
 .medical-record-line {
-	margin-bottom: 8px;
+	margin-bottom: 0.5rem;
 	max-width: 100%;
 	overflow-wrap: break-word;
 	word-wrap: break-word;
 }
 
 .medical-record-line--tight {
-	margin-bottom: 6px;
+	margin-bottom: 0.375rem;
 }
 
 .medical-record-line--compact {
-	margin-bottom: 4px;
+	margin-bottom: 0.25rem;
 }
 
 .medical-record-block {
-	margin-bottom: 8px;
+	margin-bottom: 0.5rem;
 }
 
 .medical-record-indent {
-	margin-left: 20px;
-	margin-top: 5px;
+	margin-left: 1.25rem;
+	margin-top: 0.3125rem;
 }
 
 .medical-record-indent-lg {
-	margin-left: 20px;
+	margin-left: 1.25rem;
 }
 
 .medical-record-examination-grid {
@@ -70,37 +70,37 @@
 }
 
 .medical-record-subtitle {
-	margin-bottom: 5px;
+	margin-bottom: 0.3125rem;
 }
 
 .medical-record-subtitle--spaced {
-	margin-top: 10px;
+	margin-top: 0.625rem;
 }
 
 .medical-record-treatment-list {
-	margin-top: 10px;
+	margin-top: 0.625rem;
 }
 
 .medical-record-loi-dan {
-	margin-bottom: 8px;
-	margin-top: 10px;
+	margin-bottom: 0.5rem;
+	margin-top: 0.625rem;
 	max-width: 100%;
 	overflow-wrap: break-word;
 	word-wrap: break-word;
 }
 
 .medical-record-loi-dan-text {
-	margin-top: 4px;
+	margin-top: 0.25rem;
 }
 
 .medical-record-medicine-item {
-	margin-bottom: 14px;
+	margin-bottom: 0.875rem;
 }
 
 .medical-record-medicine-row {
 	align-items: baseline;
 	display: flex;
-	gap: 16px;
+	gap: 1rem;
 }
 
 .medical-record-medicine-name {
@@ -117,8 +117,8 @@
 
 .medical-record-medicine-usage {
 	line-height: 1.5;
-	margin-top: 2px;
-	padding-left: 20px;
+	margin-top: 0.125rem;
+	padding-left: 1.25rem;
 }
 
 /* Prescription paper styles are shared with the print document. */
@@ -229,7 +229,7 @@
 	}
 }
 
-@media (max-width: 600px) {
+@media (max-width: 37.5rem) {
 	.patient-search-modal .prescription-preview {
 		padding: 0.75rem;
 	}

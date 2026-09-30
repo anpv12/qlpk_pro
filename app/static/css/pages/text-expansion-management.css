@@ -2,8 +2,8 @@
     .table td { vertical-align: middle; }
 
     .category-badge {
-      padding: 2px 6px;
-      border-radius: 8px;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.5rem;
       font-size: inherit;
       font-weight: var(--qlpk-font-weight-medium, 500);
     }
@@ -15,29 +15,29 @@
       position: relative;
     }
     .search-container .form-control {
-      padding-left: 40px;
+      padding-left: 2.5rem;
     }
     .search-container .search-icon {
       position: absolute;
-      left: 12px;
+      left: 0.75rem;
       top: 50%;
       transform: translateY(-50%);
       color: var(--qlpk-palette-gray-46);
     }
 
     .action-buttons .btn {
-      margin-right: 5px;
+      margin-right: 0.3125rem;
     }
 
     .modal-header {
       background-color: var(--qlpk-color-page-bg);
-      border-bottom: 1px solid var(--qlpk-palette-gray-89);
+      border-bottom: 0.0625rem solid var(--qlpk-palette-gray-89);
     }
 
     .form-label {
       font-weight: var(--qlpk-font-weight-semibold, 600);
       color: var(--qlpk-palette-gray-31);
-      margin-bottom: 5px;
+      margin-bottom: 0.3125rem;
     }
 
     .required {
@@ -46,13 +46,13 @@
 
     .import-export-section {
       background: var(--qlpk-color-page-bg);
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
+      border-radius: 0.5rem;
+      padding: 0.9375rem;
+      margin-bottom: 1.25rem;
     }
 
 .text-expansion-empty-icon {
-  font-size: var(--qlpk-font-size-5xl, 32px);
+  font-size: var(--qlpk-font-size-5xl, 2rem);
 }
 
 .text-expansion-feedback {
@@ -60,11 +60,11 @@
   top: var(--text-expansion-feedback-top, 0);
   left: var(--text-expansion-feedback-left, 0);
   z-index: 9999;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
   background: var(--qlpk-palette-green-41);
   color: var(--qlpk-color-white);
-  font-size: var(--qlpk-font-size-sm, 12px);
+  font-size: var(--qlpk-font-size-sm, 0.75rem);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;

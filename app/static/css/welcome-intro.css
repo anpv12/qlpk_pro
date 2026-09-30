@@ -2,10 +2,10 @@
 
 .welcome-container {
     background-color: var(--qlpk-palette-amber-97);
-    border-radius: 12px;
-    padding: 10px;
-    margin: 10px 0;
-    box-shadow: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.05);
+    border-radius: 0.75rem;
+    padding: 0.625rem;
+    margin: 0.625rem 0;
+    box-shadow: 0 0.0625rem 0.1875rem rgba(var(--qlpk-color-black-rgb), 0.05);
     font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
     color: var(--qlpk-color-neutral-700);
     overflow: hidden;
@@ -13,72 +13,72 @@
 
 /* Phần tiêu đề chính */
 .welcome-header {
-    margin-bottom: 10px;
-    border-bottom: 1.5px solid var(--qlpk-color-border);
-    padding-bottom: 8px;
+    margin-bottom: 0.625rem;
+    border-bottom: 0.09375rem solid var(--qlpk-color-border);
+    padding-bottom: 0.5rem;
 }
 
 .welcome-title {
-    font-size: var(--qlpk-font-size-2xl, 20px);
+    font-size: var(--qlpk-font-size-2xl, 1.25rem);
     font-weight: var(--qlpk-font-weight-bold, 700);
     color: var(--qlpk-palette-brown-52);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.03125rem;
     margin: 0;
 }
 
 .welcome-intro-text {
-    font-size: var(--qlpk-font-size-base, 13px);
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
     line-height: 1.5;
     color: var(--qlpk-color-neutral-600);
-    margin-top: 5px;
-    margin-bottom: 10px;
+    margin-top: 0.3125rem;
+    margin-bottom: 0.625rem;
 }
 
 /* Danh sách các nhiệm vụ chính */
 .welcome-tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0.625rem;
 }
 
 /* Hàng nhiệm vụ */
 .welcome-task-row {
     display: flex;
-    gap: 10px;
+    gap: 0.625rem;
     align-items: stretch;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .welcome-task-row:hover {
-    transform: translateY(-1px);
+    transform: translateY(-0.0625rem);
 }
 
 /* Hộp tiêu đề màu vàng đất bên trái */
 .welcome-task-title-box {
-    width: 220px;
+    width: 13.75rem;
     background: linear-gradient(135deg, var(--qlpk-palette-brown-57) 0%, var(--qlpk-palette-brown-52) 100%);
     color: var(--qlpk-color-white);
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 0.5rem;
+    padding: 0.625rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: 6px;
+    gap: 0.375rem;
     flex-shrink: 0;
-    box-shadow: 0 2px 4px var(--qlpk-alpha-brown-52-15);
+    box-shadow: 0 0.125rem 0.25rem var(--qlpk-alpha-brown-52-15);
 }
 
 .welcome-task-icon {
-    font-size: var(--qlpk-font-size-3xl, 24px);
+    font-size: var(--qlpk-font-size-3xl, 1.5rem);
     color: var(--qlpk-color-white);
     line-height: 1;
 }
 
 .welcome-task-title-text {
-    font-size: var(--qlpk-font-size-base, 13px);
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
     font-weight: var(--qlpk-font-weight-bold, 700);
     line-height: 1.3;
     margin: 0;
@@ -88,13 +88,13 @@
 .welcome-task-content-box {
     flex: 1;
     background-color: var(--qlpk-color-white);
-    border-radius: 8px;
-    padding: 10px;
-    border: 1px solid var(--qlpk-palette-gray-91);
+    border-radius: 0.5rem;
+    padding: 0.625rem;
+    border: 0.0625rem solid var(--qlpk-palette-gray-91);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: 0 1px 2px rgba(var(--qlpk-color-black-rgb), 0.02);
+    box-shadow: 0 0.0625rem 0.125rem rgba(var(--qlpk-color-black-rgb), 0.02);
 }
 
 .welcome-task-points {
@@ -103,54 +103,54 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.375rem;
 }
 
 .welcome-task-points li {
-    font-size: var(--qlpk-font-size-base, 13px);
+    font-size: var(--qlpk-font-size-base, 0.8125rem);
     line-height: 1.4;
     color: var(--qlpk-color-neutral-600);
     position: relative;
-    padding-left: 14px;
+    padding-left: 0.875rem;
 }
 
 /* Chấm tròn màu vàng đất thay thế cho bullet mặc định */
 .welcome-task-points li::before {
     content: "";
     position: absolute;
-    left: 2px;
-    top: 6px;
-    width: 5px;
-    height: 5px;
+    left: 0.125rem;
+    top: 0.375rem;
+    width: 0.3125rem;
+    height: 0.3125rem;
     background-color: var(--qlpk-palette-brown-52);
     border-radius: 50%;
 }
 
 /* Responsive cho màn hình nhỏ */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
     .welcome-task-row {
         flex-direction: column;
-        gap: 6px;
+        gap: 0.375rem;
     }
 
     .welcome-task-title-box {
         width: 100%;
         flex-direction: row;
-        padding: 8px 10px;
+        padding: 0.5rem 0.625rem;
         justify-content: flex-start;
-        gap: 10px;
+        gap: 0.625rem;
     }
 
     .welcome-task-icon {
-        font-size: var(--qlpk-font-size-2xl, 20px);
+        font-size: var(--qlpk-font-size-2xl, 1.25rem);
     }
 
     .welcome-task-title-text {
         text-align: left;
-        font-size: var(--qlpk-font-size-base, 13px);
+        font-size: var(--qlpk-font-size-base, 0.8125rem);
     }
 
     .welcome-task-content-box {
-        padding: 8px 10px;
+        padding: 0.5rem 0.625rem;
     }
 }

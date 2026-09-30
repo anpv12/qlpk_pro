@@ -178,7 +178,7 @@
 
 .appointment-fullscreen .qlpk-mini-calendar+.flatpickr-calendar .qlpk-mini-calendar__title {
 	color: var(--qlpk-brown-800);
-	font-size: var(--qlpk-font-size-md, 14px);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
 	font-weight: var(--qlpk-font-weight-bold, 700);
 	white-space: nowrap;
 }

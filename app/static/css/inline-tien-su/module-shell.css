@@ -38,7 +38,7 @@
 .inline-tien-su--doctor-flat .medical-history-workbench-summary__text {
   color: var(--qlpk-palette-blue-19);
   display: grid;
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   font-weight: var(--qlpk-font-weight-medium, 500);
   gap: 0.28rem;
   grid-area: status;
@@ -165,7 +165,7 @@
   cursor: pointer;
   display: flex;
   font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
-  font-size: var(--qlpk-font-size-base, 13px);
+  font-size: var(--qlpk-font-size-base, 0.8125rem);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   gap: 0.5rem;
   justify-content: space-between;
@@ -206,11 +206,11 @@
 .inline-tien-su--doctor-flat .medical-history-workbench-nav__item strong {
   align-items: center;
   background: var(--qlpk-color-primary-soft);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   color: var(--qlpk-color-primary);
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: var(--qlpk-font-size-sm, 12px);
+  font-size: var(--qlpk-font-size-sm, 0.75rem);
   font-weight: var(--qlpk-font-weight-bold, 700);
   justify-content: center;
   min-width: 1.35rem;
@@ -255,7 +255,7 @@
   background: var(--qlpk-workflow-context-header-bg);
   border-bottom: 0.0625rem solid var(--qlpk-palette-teal-17);
   color: var(--qlpk-color-white);
-  font-size: var(--qlpk-font-size-md, 14px);
+  font-size: var(--qlpk-font-size-md, 0.875rem);
   font-weight: var(--qlpk-font-weight-semibold, 600);
   min-height: 2.5rem;
   padding: 0.55rem 0.8rem;
@@ -324,13 +324,13 @@
 }
 
 .medical-history-micro-row {
-  margin-top: 4px;
+  margin-top: 0.25rem;
 }
 
 .medical-history-thoi-quen-cols {
   background: var(--qlpk-color-brown-soft);
   display: grid;
-  gap: 1px;
+  gap: 0.0625rem;
   grid-column: 1 / -1;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   width: 100%;
@@ -340,7 +340,7 @@
   background: var(--qlpk-color-white);
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0.0625rem;
 }
 
 .medical-history-col-check {
@@ -386,35 +386,35 @@
 
 .medical-history-panel {
   background: var(--qlpk-color-white);
-  border: 1px solid var(--qlpk-palette-gray-91);
-  border-radius: 12px;
-  box-shadow: 0 8px 22px var(--qlpk-alpha-blue-11-04);
+  border: 0.0625rem solid var(--qlpk-palette-gray-91);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.5rem 1.375rem var(--qlpk-alpha-blue-11-04);
   overflow: hidden;
 }
 
 .medical-history-panel-header {
   background: var(--qlpk-color-white);
   color: var(--qlpk-color-text);
-  padding: 12px 16px;
-  font-size: var(--qlpk-font-size-md, 14px);
+  padding: 0.75rem 1rem;
+  font-size: var(--qlpk-font-size-md, 0.875rem);
   font-weight: var(--qlpk-font-weight-bold, 700);
   letter-spacing: 0;
-  border-bottom: 1px solid var(--qlpk-palette-gray-91);
+  border-bottom: 0.0625rem solid var(--qlpk-palette-gray-91);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .medical-history-panel-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .medical-history-panel-toggle {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   border: 0;
   border-radius: 50%;
   background: var(--qlpk-palette-orange-92);
@@ -432,12 +432,12 @@
 }
 
 .medical-history-panel-toggle:focus-visible {
-  outline: 2px solid var(--qlpk-alpha-orange-29-35);
-  outline-offset: 2px;
+  outline: 0.125rem solid var(--qlpk-alpha-orange-29-35);
+  outline-offset: 0.125rem;
 }
 
 .medical-history-panel-toggle i {
-  font-size: var(--qlpk-font-size-lg, 16px);
+  font-size: var(--qlpk-font-size-lg, 1rem);
   line-height: 1;
   transition: transform .18s ease;
 }
