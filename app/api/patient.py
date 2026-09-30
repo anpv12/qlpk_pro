@@ -71,6 +71,39 @@ logger = logging.getLogger(__name__)
 
 router = Blueprint('patients', __name__, url_prefix='/patients')
 
+def _list_patient_rows(patients):
+    result_list = []
+    for p in patients:
+        result_list.append({
+            'id': p.id,
+            'patient_code': p.patient_code,
+            'full_name': p.full_name,
+            'phone': p.phone,
+            'date_of_birth': p.date_of_birth.isoformat() if p.date_of_birth else None,
+            'address': p.address,
+            'address_detail': p.address_detail,
+            'province': p.province,
+            'district': p.district,
+            'ward': p.ward,
+            'is_active': p.is_active,
+            'emergency_contact': p.emergency_contact,
+            'allergies': p.allergies,
+            'gender': p.gender,
+            'occupation': p.occupation,
+            'don_vi_cong_tac': p.don_vi_cong_tac,
+            'dia_chi_cong_ty': p.dia_chi_cong_ty,
+            'marital_status': p.marital_status,
+            'sexual_orientation': p.sexual_orientation,
+            'id_card': p.id_number,
+            'nationality': p.nationality,
+            'religion': p.religion,
+            'ethnicity': p.ethnicity,
+            'education_level': p.education_level,
+            'nickname': p.nickname
+        })
+    return result_list
+
+
 # Lấy danh sách bệnh nhân (có thể filter theo tên, sđt, appointment_status)
 @router.route('/', methods=['GET'])
 @require_auth
@@ -134,41 +167,90 @@ def list_patients(user):
         patients = result.fetchall()
         if scoped_ids is not None:
             patients = [patient for patient in patients if patient.id in scoped_ids]
-        result_list = []
-        for p in patients:
-            result_list.append({
-                'id': p.id,
-                'patient_code': p.patient_code,
-                'full_name': p.full_name,
-                'phone': p.phone,
-                'date_of_birth': p.date_of_birth.isoformat() if p.date_of_birth else None,
-                'address': p.address,
-                'address_detail': p.address_detail,
-                'province': p.province,
-                'district': p.district,
-                'ward': p.ward,
-                'is_active': p.is_active,
-                'emergency_contact': p.emergency_contact,
-                'allergies': p.allergies,
-                'gender': p.gender,
-                'occupation': p.occupation,
-                'don_vi_cong_tac': p.don_vi_cong_tac,
-                'dia_chi_cong_ty': p.dia_chi_cong_ty,
-                'marital_status': p.marital_status,
-                'sexual_orientation': p.sexual_orientation,
-                'id_card': p.id_number,
-                'nationality': p.nationality,
-                'religion': p.religion,
-                'ethnicity': p.ethnicity,
-                'education_level': p.education_level,
-                'nickname': p.nickname
-            })
+        result_list = _list_patient_rows(patients)
         return jsonify(result_list), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
         logger.error(f"Error listing patients: {e}")
         return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
+
+def _modal_patient_rows(doctor_id, patients, psychologist_id):
+    from app.models.appointment import AppointmentStatus
+    data = []
+    for patient in patients:
+        last_appointment = None
+        for appt in patient.appointments or []:
+            if appt.is_deleted or appt.status != AppointmentStatus.CONFIRMED:
+                continue
+            # Chỉ lấy appointments với doctor_id hoặc psychologist_id hiện tại (nếu có filter)
+            if doctor_id and appt.doctor_id != doctor_id:
+                continue
+            if psychologist_id and not (
+                appt.psychologist_id == psychologist_id
+                or appt.doctor_id == psychologist_id
+            ):
+                continue
+            if not last_appointment or (appt.appointment_date and appt.appointment_date > last_appointment.appointment_date):
+                last_appointment = appt
+
+        data.append({
+            'id': patient.id,
+            'patient_code': patient.patient_code,
+            'full_name': patient.full_name,
+            'phone': patient.phone,
+            'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+            'gender': patient.gender,
+            'id_number': patient.id_number,
+            'last_appointment': {
+                'id': last_appointment.id,
+                'appointment_date': last_appointment.appointment_date.isoformat() if last_appointment and last_appointment.appointment_date else None,
+                'doctor_id': last_appointment.doctor_id,
+                'doctor_name': last_appointment.doctor.full_name if last_appointment and last_appointment.doctor else None,
+                'status': last_appointment.status.value if last_appointment and last_appointment.status else None
+            } if last_appointment else None
+        })
+    return data
+
+
+def _filter_patients_by_clinician(db, doctor_id, patient_query, psychologist_id):
+    # Tìm kiếm bệnh nhân chỉ hiển thị hồ sơ có ít nhất một lịch hẹn đã
+    # xác nhận và chưa bị xóa. Với tài khoản có full scope cũng không được
+    # đưa hồ sơ chỉ có lịch SCHEDULED/CANCELLED/NO_SHOW vào kết quả.
+    from app.models.appointment import AppointmentStatus
+    appointment_filter = (
+        (Appointment.is_deleted == False)
+        & (Appointment.status == AppointmentStatus.CONFIRMED)
+    )
+    if doctor_id:
+        appointment_filter = appointment_filter & (Appointment.doctor_id == doctor_id)
+        logger.info(f"Filtering patients by doctor_id={doctor_id} with CONFIRMED status")
+    if psychologist_id:
+        # TLG: check cả psychologist_id OR doctor_id (vì khi TLG khám,
+        # cả 2 field đều = TLG_id; dữ liệu cũ có thể chỉ còn doctor_id).
+        appointment_filter = appointment_filter & (
+            (Appointment.psychologist_id == psychologist_id)
+            | (Appointment.doctor_id == psychologist_id)
+        )
+        logger.info(f"Filtering patients by psychologist_id OR doctor_id={psychologist_id} with CONFIRMED status")
+
+    appointment_patient_ids = (
+        db.query(Appointment.patient_id)
+        .filter(appointment_filter)
+        .distinct()
+        .all()
+    )
+    # Chuyển từ list of tuples sang list of ids.
+    patient_ids = [pid[0] for pid in appointment_patient_ids] if appointment_patient_ids else []
+    if patient_ids:
+        patient_query = patient_query.filter(Patient.id.in_(patient_ids))
+    else:
+        # Không có lịch hẹn CONFIRMED nào thì không trả hồ sơ bệnh nhân.
+        patient_query = patient_query.filter(Patient.id == -1)
+    filter_type = f"doctor_id={doctor_id}" if doctor_id else f"psychologist_id={psychologist_id}" if psychologist_id else "confirmed_appointments"
+    logger.info(f"After filter, query will return {len(patient_ids)} patients with {filter_type}")
+    return patient_query
+
 
 # Modal search patients (used in doctor examination page)
 @router.route('/modal-search', methods=['GET'])
@@ -218,41 +300,7 @@ def modal_search_patients(user):
         # Không filter bằng SQL cho query_str nữa (PostgreSQL lower()/ILIKE với collation C 
         # không xử lý đúng Vietnamese Unicode). Filter sẽ thực hiện ở Python bên dưới.
 
-        # Tìm kiếm bệnh nhân chỉ hiển thị hồ sơ có ít nhất một lịch hẹn đã
-        # xác nhận và chưa bị xóa. Với tài khoản có full scope cũng không được
-        # đưa hồ sơ chỉ có lịch SCHEDULED/CANCELLED/NO_SHOW vào kết quả.
-        from app.models.appointment import AppointmentStatus
-        appointment_filter = (
-            (Appointment.is_deleted == False)
-            & (Appointment.status == AppointmentStatus.CONFIRMED)
-        )
-        if doctor_id:
-            appointment_filter = appointment_filter & (Appointment.doctor_id == doctor_id)
-            logger.info(f"Filtering patients by doctor_id={doctor_id} with CONFIRMED status")
-        if psychologist_id:
-            # TLG: check cả psychologist_id OR doctor_id (vì khi TLG khám,
-            # cả 2 field đều = TLG_id; dữ liệu cũ có thể chỉ còn doctor_id).
-            appointment_filter = appointment_filter & (
-                (Appointment.psychologist_id == psychologist_id)
-                | (Appointment.doctor_id == psychologist_id)
-            )
-            logger.info(f"Filtering patients by psychologist_id OR doctor_id={psychologist_id} with CONFIRMED status")
-
-        appointment_patient_ids = (
-            db.query(Appointment.patient_id)
-            .filter(appointment_filter)
-            .distinct()
-            .all()
-        )
-        # Chuyển từ list of tuples sang list of ids.
-        patient_ids = [pid[0] for pid in appointment_patient_ids] if appointment_patient_ids else []
-        if patient_ids:
-            patient_query = patient_query.filter(Patient.id.in_(patient_ids))
-        else:
-            # Không có lịch hẹn CONFIRMED nào thì không trả hồ sơ bệnh nhân.
-            patient_query = patient_query.filter(Patient.id == -1)
-        filter_type = f"doctor_id={doctor_id}" if doctor_id else f"psychologist_id={psychologist_id}" if psychologist_id else "confirmed_appointments"
-        logger.info(f"After filter, query will return {len(patient_ids)} patients with {filter_type}")
+        patient_query = _filter_patients_by_clinician(db, doctor_id, patient_query, psychologist_id)
 
         all_patients = (
             patient_query
@@ -274,39 +322,7 @@ def modal_search_patients(user):
 
         patients = all_patients[:limit]
 
-        data = []
-        for patient in patients:
-            last_appointment = None
-            for appt in patient.appointments or []:
-                if appt.is_deleted or appt.status != AppointmentStatus.CONFIRMED:
-                    continue
-                # Chỉ lấy appointments với doctor_id hoặc psychologist_id hiện tại (nếu có filter)
-                if doctor_id and appt.doctor_id != doctor_id:
-                    continue
-                if psychologist_id and not (
-                    appt.psychologist_id == psychologist_id
-                    or appt.doctor_id == psychologist_id
-                ):
-                    continue
-                if not last_appointment or (appt.appointment_date and appt.appointment_date > last_appointment.appointment_date):
-                    last_appointment = appt
-
-            data.append({
-                'id': patient.id,
-                'patient_code': patient.patient_code,
-                'full_name': patient.full_name,
-                'phone': patient.phone,
-                'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
-                'gender': patient.gender,
-                'id_number': patient.id_number,
-                'last_appointment': {
-                    'id': last_appointment.id,
-                    'appointment_date': last_appointment.appointment_date.isoformat() if last_appointment and last_appointment.appointment_date else None,
-                    'doctor_id': last_appointment.doctor_id,
-                    'doctor_name': last_appointment.doctor.full_name if last_appointment and last_appointment.doctor else None,
-                    'status': last_appointment.status.value if last_appointment and last_appointment.status else None
-                } if last_appointment else None
-            })
+        data = _modal_patient_rows(doctor_id, patients, psychologist_id)
 
         return jsonify({'patients': data}), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except Exception as e:
