@@ -134,6 +134,200 @@ def get_appointment_relative(user, relative_id):
     finally:
         db.close()
 
+def parse_joint_exam_date(data):
+    """Ngày khám cùng từ payload; thiếu hoặc sai định dạng thì dùng ngày hôm nay."""
+    joint_date = None
+    if data.get('joint_date'):
+        try:
+            joint_date = datetime.strptime(data['joint_date'], '%Y-%m-%d').date()
+        except (ValueError, TypeError) as exc:
+            logger.warning("Bỏ qua ngày khám cùng không hợp lệ: %s", exc)
+    if not joint_date:
+        from datetime import date
+        joint_date = date.today()
+    return joint_date
+
+
+def _upsert_manual_family_member(appointment, data, db, family_member, id_number, joint_date, name, phone):
+    # Tìm xem đã có FamilyMember với cùng name và id_number chưa (tránh duplicate)
+    existing_family_member = None
+    if id_number:
+        existing_family_member = db.query(FamilyMember).filter(
+            FamilyMember.patient_id == appointment.patient_id,
+            FamilyMember.relative_patient_id.is_(None),  # Không chọn từ hệ thống
+            FamilyMember.id_number == id_number
+        ).first()
+    else:
+        # Nếu không có id_number, tìm theo name và phone
+        if phone:
+            existing_family_member = db.query(FamilyMember).filter(
+                FamilyMember.patient_id == appointment.patient_id,
+                FamilyMember.relative_patient_id.is_(None),
+                FamilyMember.name == name,
+                FamilyMember.phone == phone
+            ).first()
+
+    if existing_family_member:
+        # Nếu đã có, sử dụng và cập nhật thông tin
+        family_member = existing_family_member
+        if joint_date:
+            family_member.joint_exam_date = joint_date
+        family_member.examine_together = True
+        if data.get('kinship'):
+            family_member.kinship = data['kinship']
+        if data.get('emergency_contact') is not None:
+            family_member.emergency_contact = bool(data['emergency_contact'])
+        if data.get('notes'):
+            family_member.notes = data['notes']
+        db.flush()
+    else:
+        # Tạo mới FamilyMember với thông tin nhập thủ công
+        family_member = FamilyMember(
+            patient_id=appointment.patient_id,
+            relative_patient_id=None,  # Không chọn từ hệ thống
+            name=name,
+            kinship=data.get('kinship') or 'Khác',
+            phone=phone,
+            id_number=id_number,
+            emergency_contact=bool(data.get('emergency_contact', False)),
+            joint_exam_date=joint_date,
+            examine_together=True,  # Đánh dấu đã đi khám cùng
+            notes=data.get('notes')
+        )
+        db.add(family_member)
+        db.flush()
+    return family_member
+
+
+def _upsert_system_family_member(appointment, data, db, family_member, joint_date, relative_patient, relative_patient_id):
+    # Nếu chưa có, tạo mới với đầy đủ thông tin
+    if not family_member:
+        family_member = FamilyMember(
+            patient_id=appointment.patient_id,
+            relative_patient_id=relative_patient_id,
+            name=relative_patient.full_name,
+            kinship=data.get('kinship') or 'Khác',
+            phone=relative_patient.phone,
+            id_number=relative_patient.id_number,
+            date_of_birth=relative_patient.date_of_birth,
+            gender=relative_patient.gender,
+            occupation=relative_patient.occupation,
+            address=relative_patient.address or (
+                f"{relative_patient.address_detail or ''}, "
+                f"{relative_patient.ward or ''}, "
+                f"{relative_patient.district or ''}, "
+                f"{relative_patient.province or ''}"
+            ).strip(', ').strip() or None,
+            emergency_contact=bool(data.get('emergency_contact', False)),
+            joint_exam_date=joint_date,
+            examine_together=True,  # Đánh dấu đã đi khám cùng
+            notes=data.get('notes')
+        )
+        db.add(family_member)
+        db.flush()
+    else:
+        # Nếu đã có, cập nhật thông tin liên quan đến việc đi khám cùng
+        if joint_date:
+            family_member.joint_exam_date = joint_date
+        family_member.examine_together = True
+        # Cập nhật thông tin nếu chưa có hoặc cần cập nhật
+        if not family_member.name and relative_patient.full_name:
+            family_member.name = relative_patient.full_name
+        if not family_member.phone and relative_patient.phone:
+            family_member.phone = relative_patient.phone
+        if not family_member.id_number and relative_patient.id_number:
+            family_member.id_number = relative_patient.id_number
+        if data.get('kinship'):
+            family_member.kinship = data['kinship']
+        if data.get('emergency_contact') is not None:
+            family_member.emergency_contact = bool(data['emergency_contact'])
+        if data.get('notes'):
+            family_member.notes = data['notes']
+        db.flush()
+    return family_member
+
+
+def _validate_relative_request(data):
+    # Validate required fields
+    if not data.get('appointment_id'):
+        return (jsonify({
+            'success': False,
+            'message': 'appointment_id là bắt buộc'
+        }), 400), None
+
+    if not data.get('name'):
+        return (jsonify({
+            'success': False,
+            'message': 'Họ tên là bắt buộc'
+        }), 400), None
+
+    # Validate kinship (Quan hệ) là bắt buộc
+    if not data.get('kinship') or not str(data.get('kinship', '')).strip():
+        return (jsonify({
+            'success': False,
+            'message': 'Quan hệ là bắt buộc'
+        }), 400), None
+
+    # Chỉ require CCCD/CMND nếu không chọn từ hệ thống
+    relative_patient_id = data.get('relative_patient_id')
+    if not relative_patient_id and not data.get('id_number'):
+        return (jsonify({
+            'success': False,
+            'message': 'CCCD/CMND là bắt buộc khi nhập thủ công'
+        }), 400), None
+    return None, relative_patient_id
+
+
+def _resolve_relative_examination(data, db):
+    # Lấy examination_id nếu có
+    examination_id = data.get('examination_id')
+    if examination_id:
+        examination = db.query(Examination).filter(Examination.id == examination_id).first()
+        if not examination:
+            return (jsonify({
+                'success': False,
+                'message': 'Không tìm thấy examination'
+            }), 404), None
+    else:
+        examination = db.query(Examination).filter(
+            Examination.appointment_id == data['appointment_id'],
+            Examination.is_active == True
+        ).order_by(Examination.created_at.desc()).first()
+        if examination:
+            examination_id = examination.id
+    return None, examination_id
+
+
+def _save_appointment_relative(appointment, data, db, examination_id, family_member_id, id_number, name, phone):
+    # Tạo appointment_relative
+    appointment_relative = AppointmentRelative(
+        appointment_id=data['appointment_id'],
+        examination_id=examination_id,
+        patient_id=appointment.patient_id,
+        family_member_id=family_member_id,
+        name=name,
+        kinship=data.get('kinship'),
+        id_number=id_number,
+        phone=phone,
+        emergency_contact=bool(data.get('emergency_contact', False)),
+        notes=data.get('notes')
+    )
+
+    db.add(appointment_relative)
+    db.commit()
+    db.refresh(appointment_relative)
+    emit_patient_changed('appointment_relative_created', patient_id=appointment_relative.patient_id, appointment_id=appointment_relative.appointment_id, examination_id=appointment_relative.examination_id, extra={
+        'appointment_relative_id': appointment_relative.id,
+        'family_member_id': appointment_relative.family_member_id,
+    })
+
+    return jsonify({
+        'success': True,
+        'message': 'Đã thêm người đi khám cùng thành công',
+        'data': appointment_relative.to_dict()
+    })
+
+
 @appointment_relative_router.route('/appointment-relatives', methods=['POST'])
 @require_auth
 def create_appointment_relative(user):
@@ -142,33 +336,9 @@ def create_appointment_relative(user):
         db = next(get_db())
         data = request.get_json()
         
-        # Validate required fields
-        if not data.get('appointment_id'):
-            return jsonify({
-                'success': False,
-                'message': 'appointment_id là bắt buộc'
-            }), 400
-        
-        if not data.get('name'):
-            return jsonify({
-                'success': False,
-                'message': 'Họ tên là bắt buộc'
-            }), 400
-        
-        # Validate kinship (Quan hệ) là bắt buộc
-        if not data.get('kinship') or not str(data.get('kinship', '')).strip():
-            return jsonify({
-                'success': False,
-                'message': 'Quan hệ là bắt buộc'
-            }), 400
-        
-        # Chỉ require CCCD/CMND nếu không chọn từ hệ thống
-        relative_patient_id = data.get('relative_patient_id')
-        if not relative_patient_id and not data.get('id_number'):
-            return jsonify({
-                'success': False,
-                'message': 'CCCD/CMND là bắt buộc khi nhập thủ công'
-            }), 400
+        error_response, relative_patient_id = _validate_relative_request(data)
+        if error_response is not None:
+            return error_response
         
         # Kiểm tra appointment có tồn tại không
         appointment = db.query(Appointment).filter(Appointment.id == data['appointment_id']).first()
@@ -178,22 +348,9 @@ def create_appointment_relative(user):
                 'message': 'Không tìm thấy lịch hẹn'
             }), 404
         
-        # Lấy examination_id nếu có
-        examination_id = data.get('examination_id')
-        if examination_id:
-            examination = db.query(Examination).filter(Examination.id == examination_id).first()
-            if not examination:
-                return jsonify({
-                    'success': False,
-                    'message': 'Không tìm thấy examination'
-                }), 404
-        else:
-            examination = db.query(Examination).filter(
-                Examination.appointment_id == data['appointment_id'],
-                Examination.is_active == True
-            ).order_by(Examination.created_at.desc()).first()
-            if examination:
-                examination_id = examination.id
+        error_response, examination_id = _resolve_relative_examination(data, db)
+        if error_response is not None:
+            return error_response
         
         # Xử lý relative_patient_id (chọn từ hệ thống)
         family_member_id = data.get('family_member_id')
@@ -216,62 +373,9 @@ def create_appointment_relative(user):
                 FamilyMember.relative_patient_id == relative_patient_id
             ).first()
             
-            # Lấy joint_date từ data hoặc dùng ngày hôm nay
-            joint_date = None
-            if data.get('joint_date'):
-                try:
-                    joint_date = datetime.strptime(data['joint_date'], '%Y-%m-%d').date()
-                except (ValueError, TypeError) as exc:
-                    logger.warning("Bỏ qua ngày khám cùng không hợp lệ: %s", exc)
-            if not joint_date:
-                # Dùng ngày hôm nay thay vì appointment_date
-                from datetime import date
-                joint_date = date.today()
+            joint_date = parse_joint_exam_date(data)
             
-            # Nếu chưa có, tạo mới với đầy đủ thông tin
-            if not family_member:
-                family_member = FamilyMember(
-                    patient_id=appointment.patient_id,
-                    relative_patient_id=relative_patient_id,
-                    name=relative_patient.full_name,
-                    kinship=data.get('kinship') or 'Khác',
-                    phone=relative_patient.phone,
-                    id_number=relative_patient.id_number,
-                    date_of_birth=relative_patient.date_of_birth,
-                    gender=relative_patient.gender,
-                    occupation=relative_patient.occupation,
-                    address=relative_patient.address or (
-                        f"{relative_patient.address_detail or ''}, "
-                        f"{relative_patient.ward or ''}, "
-                        f"{relative_patient.district or ''}, "
-                        f"{relative_patient.province or ''}"
-                    ).strip(', ').strip() or None,
-                    emergency_contact=bool(data.get('emergency_contact', False)),
-                    joint_exam_date=joint_date,
-                    examine_together=True,  # Đánh dấu đã đi khám cùng
-                    notes=data.get('notes')
-                )
-                db.add(family_member)
-                db.flush()
-            else:
-                # Nếu đã có, cập nhật thông tin liên quan đến việc đi khám cùng
-                if joint_date:
-                    family_member.joint_exam_date = joint_date
-                family_member.examine_together = True
-                # Cập nhật thông tin nếu chưa có hoặc cần cập nhật
-                if not family_member.name and relative_patient.full_name:
-                    family_member.name = relative_patient.full_name
-                if not family_member.phone and relative_patient.phone:
-                    family_member.phone = relative_patient.phone
-                if not family_member.id_number and relative_patient.id_number:
-                    family_member.id_number = relative_patient.id_number
-                if data.get('kinship'):
-                    family_member.kinship = data['kinship']
-                if data.get('emergency_contact') is not None:
-                    family_member.emergency_contact = bool(data['emergency_contact'])
-                if data.get('notes'):
-                    family_member.notes = data['notes']
-                db.flush()
+            family_member = _upsert_system_family_member(appointment, data, db, family_member, joint_date, relative_patient, relative_patient_id)
             
             family_member_id = family_member.id
             
@@ -288,65 +392,9 @@ def create_appointment_relative(user):
             
             # Nếu chưa có family_member_id từ frontend, tạo FamilyMember mới
             if not family_member_id:
-                # Lấy joint_date từ data hoặc dùng ngày hôm nay
-                joint_date = None
-                if data.get('joint_date'):
-                    try:
-                        joint_date = datetime.strptime(data['joint_date'], '%Y-%m-%d').date()
-                    except (ValueError, TypeError) as exc:
-                        logger.warning("Bỏ qua ngày khám cùng không hợp lệ: %s", exc)
-                if not joint_date:
-                    # Dùng ngày hôm nay thay vì appointment_date
-                    from datetime import date
-                    joint_date = date.today()
+                joint_date = parse_joint_exam_date(data)
                 
-                # Tìm xem đã có FamilyMember với cùng name và id_number chưa (tránh duplicate)
-                existing_family_member = None
-                if id_number:
-                    existing_family_member = db.query(FamilyMember).filter(
-                        FamilyMember.patient_id == appointment.patient_id,
-                        FamilyMember.relative_patient_id.is_(None),  # Không chọn từ hệ thống
-                        FamilyMember.id_number == id_number
-                    ).first()
-                else:
-                    # Nếu không có id_number, tìm theo name và phone
-                    if phone:
-                        existing_family_member = db.query(FamilyMember).filter(
-                            FamilyMember.patient_id == appointment.patient_id,
-                            FamilyMember.relative_patient_id.is_(None),
-                            FamilyMember.name == name,
-                            FamilyMember.phone == phone
-                        ).first()
-                
-                if existing_family_member:
-                    # Nếu đã có, sử dụng và cập nhật thông tin
-                    family_member = existing_family_member
-                    if joint_date:
-                        family_member.joint_exam_date = joint_date
-                    family_member.examine_together = True
-                    if data.get('kinship'):
-                        family_member.kinship = data['kinship']
-                    if data.get('emergency_contact') is not None:
-                        family_member.emergency_contact = bool(data['emergency_contact'])
-                    if data.get('notes'):
-                        family_member.notes = data['notes']
-                    db.flush()
-                else:
-                    # Tạo mới FamilyMember với thông tin nhập thủ công
-                    family_member = FamilyMember(
-                        patient_id=appointment.patient_id,
-                        relative_patient_id=None,  # Không chọn từ hệ thống
-                        name=name,
-                        kinship=data.get('kinship') or 'Khác',
-                        phone=phone,
-                        id_number=id_number,
-                        emergency_contact=bool(data.get('emergency_contact', False)),
-                        joint_exam_date=joint_date,
-                        examine_together=True,  # Đánh dấu đã đi khám cùng
-                        notes=data.get('notes')
-                    )
-                    db.add(family_member)
-                    db.flush()
+                family_member = _upsert_manual_family_member(appointment, data, db, family_member, id_number, joint_date, name, phone)
                 
                 family_member_id = family_member.id
         
@@ -361,33 +409,7 @@ def create_appointment_relative(user):
                 }), 404
             family_member_id = family_member.id
         
-        # Tạo appointment_relative
-        appointment_relative = AppointmentRelative(
-            appointment_id=data['appointment_id'],
-            examination_id=examination_id,
-            patient_id=appointment.patient_id,
-            family_member_id=family_member_id,
-            name=name,
-            kinship=data.get('kinship'),
-            id_number=id_number,
-            phone=phone,
-            emergency_contact=bool(data.get('emergency_contact', False)),
-            notes=data.get('notes')
-        )
-        
-        db.add(appointment_relative)
-        db.commit()
-        db.refresh(appointment_relative)
-        emit_patient_changed('appointment_relative_created', patient_id=appointment_relative.patient_id, appointment_id=appointment_relative.appointment_id, examination_id=appointment_relative.examination_id, extra={
-            'appointment_relative_id': appointment_relative.id,
-            'family_member_id': appointment_relative.family_member_id,
-        })
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã thêm người đi khám cùng thành công',
-            'data': appointment_relative.to_dict()
-        })
+        return _save_appointment_relative(appointment, data, db, examination_id, family_member_id, id_number, name, phone)
     except Exception as e:
         db.rollback()
         return jsonify({
