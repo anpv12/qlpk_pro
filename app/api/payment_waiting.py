@@ -92,6 +92,102 @@ def number_to_vietnamese_words(number: Decimal | float | int) -> str:
     result = " ".join(reversed(parts))
     return result[:1].upper() + result[1:] + " đồng"
 
+def _payment_waiting_rows(db, examinations):
+    # Chuyển đổi thành dữ liệu JSON
+    data = []
+    for exam in examinations:
+        # Lấy thông tin bệnh nhân
+        patient = exam.appointment.patient
+
+        from app.utils.examination_utils import build_icd_display_contract
+        diagnosis_contract = build_icd_display_contract(db, exam.diagnosis)
+        diagnosis = diagnosis_contract['text']
+
+        # Map examination status to frontend status
+        status_mapping = {
+            'WAITING_TRANSFER': 'waiting_transfer',
+            'DOCTOR_EXAM': 'doctor_exam',
+            'PSYCHOLOGIST_EXAM': 'doctor_exam',
+            'WAITING_PAYMENT': 'waiting_payment',
+            'COMPLETED': 'examined'
+        }
+
+        payment_data = {
+            'id': exam.id,
+            'patient_name': f"{patient.full_name}",
+            'phone_number': patient.phone if patient else None,
+            'examination_date': exam.created_at.isoformat() if exam.created_at else None,
+            'doctor_name': exam.appointment.doctor.full_name if exam.appointment.doctor else 'N/A',
+            'diagnosis': diagnosis,
+            'diagnosis_ids': diagnosis_contract['ids'],
+            'status': status_mapping.get(exam.status.value, 'pending'),
+            'payment_status': exam.payment_status,
+            'created_at': exam.created_at.isoformat() if exam.created_at else None,
+            'updated_at': exam.updated_at.isoformat() if exam.updated_at else None
+        }
+        data.append(payment_data)
+    return data
+
+
+def _filter_payment_waiting_query(db, end_date_str, query, search_query, start_date_str, status_filter):
+    # Filter theo status nếu có
+    if status_filter:
+        if status_filter == 'waiting_transfer':
+            query = query.filter(Examination.status == ExaminationStatus.WAITING_TRANSFER)
+        elif status_filter == 'doctor_exam':
+            query = query.filter(Examination.status.in_([ExaminationStatus.DOCTOR_EXAM, ExaminationStatus.PSYCHOLOGIST_EXAM]))
+        # Fix filter theo payment_status
+        elif status_filter == 'UNPAID':
+            query = query.filter(Examination.status == ExaminationStatus.WAITING_PAYMENT)
+        elif status_filter == 'PAID':
+            query = query.filter(Examination.status == ExaminationStatus.COMPLETED)
+    else:
+        # Mặc định: lấy cả WAITING_PAYMENT và COMPLETED để frontend lọc
+        query = query.filter(Examination.status.in_([ExaminationStatus.WAITING_PAYMENT, ExaminationStatus.COMPLETED]))
+
+    # Filter theo search query (Tên bệnh nhân, SĐT, hoặc chẩn đoán ICD)
+    if search_query:
+        from app.models.icd import ICD
+
+        matching_icd_ids = [
+            row[0]
+            for row in db.query(ICD.id).filter(
+                ICD.is_deleted == False,
+                or_(
+                    normalized_contains(ICD.icd_code, search_query),
+                    normalized_contains(ICD.disease_name, search_query),
+                )
+            ).all()
+        ]
+        diagnosis_filters = [Examination.diagnosis.contains([icd_id]) for icd_id in matching_icd_ids]
+        normalized_query = normalize_search_text(search_query)
+        if normalized_query.isdigit():
+            diagnosis_filters.append(Examination.diagnosis.contains([int(normalized_query)]))
+
+        query = query.filter(or_(
+            normalized_contains(Patient.full_name, search_query),
+            normalized_contains(Patient.phone, search_query),
+            *diagnosis_filters
+        )
+        )
+
+    # Filter theo ngày
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            query = query.filter(func.date(Examination.created_at) >= start_date.date())
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            query = query.filter(func.date(Examination.created_at) <= end_date.date())
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    return query
+
+
 @payment_waiting_bp.route('/api/payment-waiting', methods=['GET'])
 @require_auth
 def get_payment_waiting_list(user):
@@ -109,61 +205,7 @@ def get_payment_waiting_list(user):
         # Xây dựng query cơ bản
         query = db.query(Examination).join(Appointment).join(Patient)
         
-        # Filter theo status nếu có
-        if status_filter:
-            if status_filter == 'waiting_transfer':
-                query = query.filter(Examination.status == ExaminationStatus.WAITING_TRANSFER)
-            elif status_filter == 'doctor_exam':
-                query = query.filter(Examination.status.in_([ExaminationStatus.DOCTOR_EXAM, ExaminationStatus.PSYCHOLOGIST_EXAM]))
-            # Fix filter theo payment_status
-            elif status_filter == 'UNPAID':
-                query = query.filter(Examination.status == ExaminationStatus.WAITING_PAYMENT)
-            elif status_filter == 'PAID':
-                query = query.filter(Examination.status == ExaminationStatus.COMPLETED)
-        else:
-            # Mặc định: lấy cả WAITING_PAYMENT và COMPLETED để frontend lọc
-            query = query.filter(Examination.status.in_([ExaminationStatus.WAITING_PAYMENT, ExaminationStatus.COMPLETED]))
-
-        # Filter theo search query (Tên bệnh nhân, SĐT, hoặc chẩn đoán ICD)
-        if search_query:
-            from app.models.icd import ICD
-
-            matching_icd_ids = [
-                row[0]
-                for row in db.query(ICD.id).filter(
-                    ICD.is_deleted == False,
-                    or_(
-                        normalized_contains(ICD.icd_code, search_query),
-                        normalized_contains(ICD.disease_name, search_query),
-                    )
-                ).all()
-            ]
-            diagnosis_filters = [Examination.diagnosis.contains([icd_id]) for icd_id in matching_icd_ids]
-            normalized_query = normalize_search_text(search_query)
-            if normalized_query.isdigit():
-                diagnosis_filters.append(Examination.diagnosis.contains([int(normalized_query)]))
-
-            query = query.filter(or_(
-                normalized_contains(Patient.full_name, search_query),
-                normalized_contains(Patient.phone, search_query),
-                *diagnosis_filters
-            )
-            )
-            
-        # Filter theo ngày
-        if start_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-                query = query.filter(func.date(Examination.created_at) >= start_date.date())
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-                
-        if end_date_str:
-            try:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-                query = query.filter(func.date(Examination.created_at) <= end_date.date())
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+        query = _filter_payment_waiting_query(db, end_date_str, query, search_query, start_date_str, status_filter)
         
         # Sắp xếp theo thời gian cập nhật mới nhất lên đầu (nếu updated_at NULL thì dùng created_at)
         query = query.order_by(
@@ -177,39 +219,7 @@ def get_payment_waiting_list(user):
         offset = (page - 1) * per_page
         examinations = query.offset(offset).limit(per_page).all()
         
-        # Chuyển đổi thành dữ liệu JSON
-        data = []
-        for exam in examinations:
-            # Lấy thông tin bệnh nhân
-            patient = exam.appointment.patient
-            
-            from app.utils.examination_utils import build_icd_display_contract
-            diagnosis_contract = build_icd_display_contract(db, exam.diagnosis)
-            diagnosis = diagnosis_contract['text']
-            
-            # Map examination status to frontend status
-            status_mapping = {
-                'WAITING_TRANSFER': 'waiting_transfer',
-                'DOCTOR_EXAM': 'doctor_exam',
-                'PSYCHOLOGIST_EXAM': 'doctor_exam',
-                'WAITING_PAYMENT': 'waiting_payment',
-                'COMPLETED': 'examined'
-            }
-            
-            payment_data = {
-                'id': exam.id,
-                'patient_name': f"{patient.full_name}",
-                'phone_number': patient.phone if patient else None,
-                'examination_date': exam.created_at.isoformat() if exam.created_at else None,
-                'doctor_name': exam.appointment.doctor.full_name if exam.appointment.doctor else 'N/A',
-                'diagnosis': diagnosis,
-                'diagnosis_ids': diagnosis_contract['ids'],
-                'status': status_mapping.get(exam.status.value, 'pending'),
-                'payment_status': exam.payment_status,
-                'created_at': exam.created_at.isoformat() if exam.created_at else None,
-                'updated_at': exam.updated_at.isoformat() if exam.updated_at else None
-            }
-            data.append(payment_data)
+        data = _payment_waiting_rows(db, examinations)
         
         return jsonify({
             'data': data,
