@@ -26,6 +26,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from template_source import rendered_page  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "scripts" / "eslint.health.config.mjs"
@@ -88,12 +91,8 @@ def declared_globals(path: Path) -> set[str]:
 
 
 def page_scripts(template: Path) -> list[str]:
-    text = template.read_text(encoding="utf-8")
-    scripts = ["app/static/js/" + s for s in re.findall(r'<script[^>]*\bsrc="/static/js/([^"?]+)', text)]
-    for include in re.findall(r"""\{%\s*include\s+['"]([^'"]+)['"]""", text):
-        partial = TEMPLATES / include
-        if partial.exists():
-            scripts += ["app/static/js/" + s for s in re.findall(r'<script[^>]*\bsrc="/static/js/([^"?]+)', partial.read_text(encoding="utf-8"))]
+    text = rendered_page(template, TEMPLATES)
+    scripts = ["app/static/js/" + s for s in re.findall(r'<script(?![^>]*type="module")[^>]*\bsrc="/static/js/([^"?]+)', text)]
     seen: list[Path] = []
 
     def walk(path: Path) -> None:
@@ -104,7 +103,7 @@ def page_scripts(template: Path) -> list[str]:
         for match in re.finditer(r"""import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}/[^'"]+)['"]""", path.read_text(encoding="utf-8")):
             walk(path.parent / match.group(1))
 
-    for entry in re.findall(r'<script type="module" src="/static/js/([^"?]+)', text):
+    for entry in re.findall(r'<script[^>]*type="module"[^>]*\bsrc="/static/js/([^"?]+)', text):
         walk(JS_ROOT / entry)
     scripts += [str(p.relative_to(ROOT)) for p in seen]
     return list(dict.fromkeys(scripts))

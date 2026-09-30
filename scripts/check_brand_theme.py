@@ -9,6 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from module_source import css_split_files, read_source  # noqa: E402
+from template_source import expanded_source  # noqa: E402
 
 # Explicit opt-in protects the clinical, financial and public screens from
 # administrative presentation changes, including future shared-theme edits.
@@ -125,7 +126,7 @@ def main():
     errors.extend(check_primary_background_contract(ROOT / 'app/static/css'))
     pages = list((ROOT / 'app/templates').glob('*.html'))
     for page in pages:
-        source = page.read_text()
+        source = expanded_source(page)
         clinic_styles = source.count('/static/css/shared/clinic-workspace.css')
         clinic_body = bool(re.search(r'<body[^>]*\bqlpk-clinic-page\b', source))
         expected_clinic = page.stem in CLINIC_WORKSPACE_PAGES
@@ -137,7 +138,7 @@ def main():
             errors.append(f'{page.name}: clinic pagination owner/scope mismatch')
         if source.count("include 'partials/brand-theme.html'") != 1:
             errors.append(f'{page.name}: expected one brand theme include')
-        if '/static/css/shared/color-tokens.css' in source:
+        if '/static/css/shared/color-tokens.css' in page.read_text():
             errors.append(f'{page.name}: duplicate token stylesheet outside shared include')
     tokens = read_source(ROOT / 'app/static/css/shared/color-tokens.css')
     if '--qlpk-color-primary: var(--qlpk-brand-primary);' not in tokens:

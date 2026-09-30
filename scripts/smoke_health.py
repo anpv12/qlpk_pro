@@ -17,6 +17,9 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from template_source import rendered_page  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_PARTS = {"_archive", "uploads", "__pycache__", ".git", ".venv", "venv", "node_modules"}
@@ -123,9 +126,16 @@ def check_static_refs() -> list[str]:
         for path in iter_files(base, "*.html"):
             text = path.read_text(errors="ignore")
             for ref in pattern.findall(text):
+                if "{{" in ref:
+                    continue
                 target = ROOT / "app" / "static" / ref.removeprefix("/static/")
                 if not target.exists():
                     errors.append(f"{rel(path)}: missing static ref {ref}")
+    # Partial parameters (e.g. /static/js/{{ catalog.entry }}) resolve only in the rendered page.
+    for path in sorted((ROOT / "app" / "templates").glob("*.html")):
+        for ref in pattern.findall(rendered_page(path)):
+            if not (ROOT / "app" / "static" / ref.removeprefix("/static/")).exists():
+                errors.append(f"{rel(path)} (rendered): missing static ref {ref}")
     for ref in DYNAMIC_STATIC_REFS:
         target = ROOT / "app" / "static" / ref.removeprefix("/static/")
         if not target.exists():

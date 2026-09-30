@@ -33,6 +33,10 @@ class Metric:
     exclude: tuple[str, ...] = ()
 
 
+MAX_JQUERY = 1510
+MAX_HTML_SINKS = 324
+MAX_CLASSIC_SCRIPTS = 461
+
 METRICS = [
     Metric(
         name="html_inline_style_blocks",
@@ -172,6 +176,30 @@ METRICS = [
 		suffixes=(".css",),
 		max_count=978,
 		description="px -> rem done (6115 -> 978, 30/09/2026) except stylesheets loaded by the three pages whose html root is 13px (payment-waiting, survey-template-create/-management): rem there would shrink shared UI. Do not add px.",
+	),
+	Metric(
+		name="js_jquery_calls",
+		pattern=r"(?<![\w$.])(?:\$|jQuery)\s*[(.]",
+		roots=("app/static/js",),
+		suffixes=(".js",),
+		max_count=MAX_JQUERY,
+		description="Debt item 3: jQuery calls are locked and only decrease; new code uses native DOM (shared/dom.js) and fetch (shared/http-json.js).",
+	),
+	Metric(
+		name="js_html_string_sinks",
+		pattern=r"\.innerHTML\s*\+?=(?!=)|\.outerHTML\s*=(?!=)|insertAdjacentHTML\s*\(|\.html\s*\(\s*[^)\s]",
+		roots=("app/static/js",),
+		suffixes=(".js",),
+		max_count=MAX_HTML_SINKS,
+		description="Debt item 3: HTML-string rendering is locked and only decreases; build nodes with shared/dom.js el().",
+	),
+	Metric(
+		name="html_classic_page_scripts",
+		pattern=r"<script(?![^>]*type=\"module\")[^>]*\bsrc=\"/static/js/",
+		roots=("app/templates",),
+		suffixes=(".html",),
+		max_count=MAX_CLASSIC_SCRIPTS,
+		description="Debt item 3: classic <script src> tags for app code are locked and only decrease; pages load one ES module entry.",
 	),
 ]
 

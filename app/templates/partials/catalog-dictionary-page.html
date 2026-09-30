@@ -1,0 +1,120 @@
+{# Shared CRUD page for name/description catalogs; owner JS: static/js/components/catalog-dictionary-page.js #}
+{% set p = catalog.prefix %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+	{% include 'partials/user-feedback-runtime.html' %}
+	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
+	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{ catalog.page_title }}</title>
+	<meta name="qlpk-app-version" content="{{ app_version }}">
+	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
+	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
+  {% include 'partials/brand-theme.html' %}
+	<link rel="stylesheet" href="/static/css/shared/catalog-crud-shell.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/pages/catalog-dictionary.css?v={{ app_version }}">
+	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
+
+	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
+
+	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
+</head>
+
+<body class="qlpk-admin-page qlpk-clinic-page">
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
+			<main class="col-md-10 main-content catalog-dict-main">
+				<div class="qlpk-admin-page-header qlpk-clinic-header">
+					<h1 class="qlpk-clinic-title">{{ catalog.heading }}</h1>
+					<p class="qlpk-admin-page-subtitle qlpk-clinic-subtitle">{{ catalog.subtitle }}</p>
+				</div>
+
+				<div class="card-wrap">
+					<!-- Toolbar -->
+					<div class="toolbar">
+						<div class="search-wrap">
+							<input type="text" id="{{ p }}-search" placeholder="Tìm kiếm tên {{ catalog.noun }}...">
+						</div>
+						<div class="right-group">
+							<div class="qlpk-clinic-summary__item">
+								<span class="qlpk-clinic-summary__label">{{ catalog.heading }}</span>
+								<span class="qlpk-clinic-summary__value" id="stat-total">0</span>
+							</div>
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn-outline" id="btn-download-template"><i class="bi bi-download"></i> Tải file mẫu</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-outline" id="btn-import-excel"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn-action" id="{{ catalog.add_button_id }}"><i class="bi bi-plus-circle"></i> Thêm mới</button>
+								<input type="file" id="{{ p }}-import-file" accept=".xlsx, .xls" class="catalog-dict-hidden">
+						</div>
+					</div>
+
+					<!-- Table -->
+					<div class="table-responsive">
+<table class="ai-table">
+						<thead>
+							<tr>
+								<th class="catalog-dict-col-index">STT</th>
+								<th class="{{ catalog.name_col_class }}">Tên {{ catalog.noun }}</th>
+								<th>Mô tả</th>
+								<th class="catalog-dict-col-actions">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody id="{{ p }}-table-body">
+							<tr>
+								<td colspan="4" class="text-center text-muted py-4">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+</div>
+
+					<!-- Pagination -->
+					{% include 'partials/clinic-pagination.html' %}
+				</div>
+
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal thêm/sửa -->
+	<div class="modal fade" id="{{ catalog.modal_id }}" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header catalog-dict-modal-header">
+					<h6 class="modal-title mb-0" id="{{ p }}-modal-title"><i class="bi {{ catalog.add_icon }}"></i> Thêm {{ catalog.noun }} mới</h6>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<form id="{{ p }}-form">
+					<div class="modal-body catalog-dict-modal-body">
+						<input type="hidden" id="{{ p }}-id">
+
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-tag-fill"></i> Tên {{ catalog.noun }} <span class="text-danger">*</span></div>
+							<input type="text" class="form-control form-control-sm" id="{{ p }}-name" placeholder="Nhập tên {{ catalog.noun }}..." required autocomplete="off">
+						</div>
+
+						<div class="info-section">
+							<div class="section-title"><i class="bi bi-card-text"></i> Mô tả</div>
+							<textarea class="form-control form-control-sm" id="{{ p }}-desc" rows="3" placeholder="Nhập mô tả thêm..."></textarea>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="submit" class="btn btn-sm catalog-dict-primary-btn">Lưu {{ catalog.noun }}</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/{{ catalog.entry }}?v={{ app_version }}"></script>
+</body>
+
+</html>
