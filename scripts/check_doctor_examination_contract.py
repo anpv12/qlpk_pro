@@ -273,10 +273,6 @@ def main() -> int:
             failures.append(f"Doctor module tự tăng revision/dirty thay vì dùng createChangeTracker: {relative_path}")
 
     raw_color_literal = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(\s*\d")
-    contract_color_fallbacks = (
-        "var(--qlpk-feedback-warning, #c2410c)",
-        "var(--qlpk-feedback-success, #15803d)",
-    )
     for relative_path in (
         "app/static/css/components/doctor-component-base.css",
         "app/static/css/pages/doctor-examination.css",
@@ -286,8 +282,6 @@ def main() -> int:
         path = ROOT / relative_path
         text = read_source(path) if path.exists() else ""
         text = re.sub(r"/\*.*?\*/", lambda match: "\n" * match[0].count("\n"), text, flags=re.DOTALL)
-        for fallback in contract_color_fallbacks:
-            text = text.replace(fallback, " " * len(fallback))
         for match in raw_color_literal.finditer(text):
             line = text.count("\n", 0, match.start()) + 1
             failures.append(f"{relative_path}:{line}: dùng token màu trong shared/color-tokens.css thay vì {match[0]}")

@@ -183,7 +183,10 @@ function positionBatchMedicineDropdown(input, dropdown) {
 	}
 
 	dropdown.classList.add('batch-medicine-dropdown--floating');
-	dropdown.style.cssText = `--mm-batch-dropdown-top: ${inputRect.bottom}px; --mm-batch-dropdown-left: ${inputRect.left}px; --mm-batch-dropdown-width: ${inputRect.width}px;`;
+	dropdown.removeAttribute('style');
+	dropdown.style.setProperty('--mm-batch-dropdown-top', `${inputRect.bottom}px`);
+	dropdown.style.setProperty('--mm-batch-dropdown-left', `${inputRect.left}px`);
+	dropdown.style.setProperty('--mm-batch-dropdown-width', `${inputRect.width}px`);
 }
 
 function showBatchMedicineDropdown(input, dropdown, hiddenId, rowId) {

@@ -296,4 +296,13 @@
 	--qlpk-palette-white-g: #FAFBFD;
 	--qlpk-palette-white-h: #F8FAFF;
 	--qlpk-palette-white-i: rgb(255, 255, 255);
+
+	/* Former 8-digit alpha hex literals (30/09/2026); names are hue + HSL lightness + alpha percent. */
+	--qlpk-alpha-white-13: #ffffff22;
+	--qlpk-alpha-white-20: #ffffff33;
+	--qlpk-alpha-white-09: #ffffff18;
+	--qlpk-alpha-white-12: #ffffff1f;
+	--qlpk-alpha-white-33: #ffffff55;
+	--qlpk-alpha-violet-66-08: #8B5CF614;
+	--qlpk-alpha-violet-66-15: #8B5CF626;
 }

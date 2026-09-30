@@ -55,8 +55,8 @@
 
 .referral-source-tag {
 	--tag-color: var(--qlpk-palette-violet-66);
-	--tag-bg: #8B5CF614;
-	--tag-shadow: #8B5CF626;
+	--tag-bg: var(--qlpk-alpha-violet-66-08);
+	--tag-shadow: var(--qlpk-alpha-violet-66-15);
 	--tag-width: 0%;
 	width: 100%;
 	min-height: 8.25rem;

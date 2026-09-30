@@ -350,13 +350,13 @@
 	gap: 0.25rem;
 	min-width: 0;
 	margin-block-start: 0.2rem;
-	color: var(--qlpk-feedback-warning, #c2410c);
+	color: var(--qlpk-feedback-warning);
 	font-size: var(--qlpk-font-size-xs);
 	line-height: 1.25;
 }
 
 .doctor-prescription-batches[data-status="allocated"] {
-	color: var(--qlpk-feedback-success, #15803d);
+	color: var(--qlpk-feedback-success);
 }
 
 .doctor-prescription-batches > span {
@@ -378,8 +378,8 @@
 	display: grid;
 	gap: 0.04rem;
 	padding: 0.24rem 0.42rem;
-	border-inline-start: 0.18rem solid var(--qlpk-feedback-success, #15803d);
-	background: color-mix(in srgb, var(--qlpk-feedback-success, #15803d) 6%, var(--qlpk-doctor-surface));
+	border-inline-start: 0.18rem solid var(--qlpk-feedback-success);
+	background: color-mix(in srgb, var(--qlpk-feedback-success) 6%, var(--qlpk-doctor-surface));
 	color: var(--prescription-muted);
 }
 

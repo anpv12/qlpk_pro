@@ -229,7 +229,9 @@ function selectAc(ri, colId, value) {
 				inp.classList.add('ct-type-input');
 				if (cell) {
 					cell.classList.add('ct-type-cell');
-					cell.style.cssText = `--ct-type-bg:${cat.bg};--ct-type-color:${cat.color};`;
+					cell.removeAttribute('style');
+					cell.style.setProperty('--ct-type-bg', cat.bg);
+					cell.style.setProperty('--ct-type-color', cat.color);
 				}
 			}
 		}
