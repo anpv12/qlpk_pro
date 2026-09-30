@@ -388,6 +388,44 @@ def delete_medicine_batch(user, batch_id):
         db.close()
 
 
+def _normalize_import_order_items(data, db):
+    normalized_items = []
+    # Validate every row before writing anything.  The old implementation
+    # silently skipped invalid rows, which made an order look successful
+    # while its aggregate was only partially updated.
+    for index, item in enumerate(data['items']):
+        if not isinstance(item, dict) or not item.get('medicine_id'):
+            raise InventoryValidationError(f"Dòng {index + 1}: medicine_id là bắt buộc")
+        try:
+            medicine_id = int(item['medicine_id'])
+        except (TypeError, ValueError):
+            raise InventoryValidationError(f"Dòng {index + 1}: medicine_id không hợp lệ")
+        if not db.query(Medicine.id).filter(Medicine.id == medicine_id).first():
+            raise LookupError(f"Dòng {index + 1}: Không tìm thấy thuốc")
+        if not item.get('expiry_date'):
+            raise InventoryValidationError(f"Dòng {index + 1}: Hạn sử dụng là bắt buộc")
+        try:
+            expiry_date = datetime.strptime(item['expiry_date'], '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            raise InventoryValidationError(f"Dòng {index + 1}: Định dạng hạn sử dụng không hợp lệ")
+        quantity = parse_quantity(item.get('quantity'), f"Dòng {index + 1}: Số lượng nhập", allow_zero=False)
+        batch_number = str(item.get('batch_number') or '').strip()
+        if 'remaining_quantity' in item:
+            raise InventoryValidationError(f'Dòng {index + 1}: Không truyền tồn lô trực tiếp')
+        import_price = parse_quantity(item.get('import_price'), f'Dòng {index + 1}: Đơn giá nhập')
+
+        normalized_items.append({
+            'index': index,
+            'medicine_id': medicine_id,
+            'batch_number': batch_number,
+            'expiry_date': expiry_date,
+            'quantity': quantity,
+            'import_price': import_price,
+            'notes': item.get('notes') or data.get('notes'),
+        })
+    return normalized_items
+
+
 @medicine_batch_router.route('/medicine-batches/import-order', methods=['POST'])
 @require_auth
 def import_order(user):
@@ -411,40 +449,7 @@ def import_order(user):
         supplier_id = data.get('supplier_id')
         invoice_number = data.get('invoice_number')
         
-        normalized_items = []
-        # Validate every row before writing anything.  The old implementation
-        # silently skipped invalid rows, which made an order look successful
-        # while its aggregate was only partially updated.
-        for index, item in enumerate(data['items']):
-            if not isinstance(item, dict) or not item.get('medicine_id'):
-                raise InventoryValidationError(f"Dòng {index + 1}: medicine_id là bắt buộc")
-            try:
-                medicine_id = int(item['medicine_id'])
-            except (TypeError, ValueError):
-                raise InventoryValidationError(f"Dòng {index + 1}: medicine_id không hợp lệ")
-            if not db.query(Medicine.id).filter(Medicine.id == medicine_id).first():
-                raise LookupError(f"Dòng {index + 1}: Không tìm thấy thuốc")
-            if not item.get('expiry_date'):
-                raise InventoryValidationError(f"Dòng {index + 1}: Hạn sử dụng là bắt buộc")
-            try:
-                expiry_date = datetime.strptime(item['expiry_date'], '%Y-%m-%d').date()
-            except (TypeError, ValueError):
-                raise InventoryValidationError(f"Dòng {index + 1}: Định dạng hạn sử dụng không hợp lệ")
-            quantity = parse_quantity(item.get('quantity'), f"Dòng {index + 1}: Số lượng nhập", allow_zero=False)
-            batch_number = str(item.get('batch_number') or '').strip()
-            if 'remaining_quantity' in item:
-                raise InventoryValidationError(f'Dòng {index + 1}: Không truyền tồn lô trực tiếp')
-            import_price = parse_quantity(item.get('import_price'), f'Dòng {index + 1}: Đơn giá nhập')
-
-            normalized_items.append({
-                'index': index,
-                'medicine_id': medicine_id,
-                'batch_number': batch_number,
-                'expiry_date': expiry_date,
-                'quantity': quantity,
-                'import_price': import_price,
-                'notes': item.get('notes') or data.get('notes'),
-            })
+        normalized_items = _normalize_import_order_items(data, db)
 
         created_by_index = {}
         total_value = 0

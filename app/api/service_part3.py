@@ -12,6 +12,84 @@ from app.api.service import (  # noqa: E402 — module gốc đã khởi tạo x
 )
 
 
+def _import_service_rows(db, df, error_count, errors, success_count):
+    import pandas as pd
+    for index, row in df.iterrows():
+        try:
+            name = str(row['Tên dịch vụ']).strip()
+            category_name = str(row['Danh mục']).strip()
+            price_str = str(row['Đơn giá (VNĐ)']).strip()
+            duration_str = str(row['Thời gian (phút)']).strip()
+            description = str(row['Mô tả']).strip() if pd.notna(row['Mô tả']) else None
+            status = str(row['Trạng thái']).strip()
+
+            # Validate required fields
+            if not name:
+                errors.append(f'Row {index + 2}: Tên dịch vụ không được để trống')
+                error_count += 1
+                continue
+
+            if not category_name:
+                errors.append(f'Row {index + 2}: Danh mục không được để trống')
+                error_count += 1
+                continue
+
+            # Find category by name
+            category = db.query(ServiceCategory).filter(ServiceCategory.name == category_name).first()
+            if not category:
+                errors.append(f'Row {index + 2}: Danh mục "{category_name}" không tồn tại')
+                error_count += 1
+                continue
+
+            # Validate price
+            try:
+                price = float(price_str.replace(',', ''))
+                if price < 0:
+                    errors.append(f'Row {index + 2}: Đơn giá không được âm')
+                    error_count += 1
+                    continue
+            except ValueError:
+                errors.append(f'Row {index + 2}: Đơn giá không hợp lệ')
+                error_count += 1
+                continue
+
+            # Validate duration
+            try:
+                duration = int(duration_str) if duration_str else 60
+                if duration <= 0:
+                    duration = 60
+            except ValueError:
+                duration = 60
+
+            # Convert status to boolean
+            is_active = status.lower() in ['kích hoạt', 'active', 'true', '1', 'yes']
+
+            # Check if service already exists
+            existing_service = db.query(Service).filter(Service.name == name).first()
+            if existing_service:
+                errors.append(f'Row {index + 2}: Dịch vụ "{name}" đã tồn tại')
+                error_count += 1
+                continue
+
+            # Create new service
+            new_service = Service(
+                name=name,
+                category_id=category.id,
+                default_price=price,
+                duration_minutes=duration,
+                description=description,
+                is_active=is_active
+            )
+
+            db.add(new_service)
+            success_count += 1
+
+        except Exception as e:
+            errors.append(f'Row {index + 2}: {str(e)}')
+            error_count += 1
+    return error_count, success_count
+
+
 @router.route('/import', methods=['POST'])
 @require_auth
 def import_services(current_user):
@@ -45,79 +123,7 @@ def import_services(current_user):
         error_count = 0
         errors = []
 
-        for index, row in df.iterrows():
-            try:
-                name = str(row['Tên dịch vụ']).strip()
-                category_name = str(row['Danh mục']).strip()
-                price_str = str(row['Đơn giá (VNĐ)']).strip()
-                duration_str = str(row['Thời gian (phút)']).strip()
-                description = str(row['Mô tả']).strip() if pd.notna(row['Mô tả']) else None
-                status = str(row['Trạng thái']).strip()
-
-                # Validate required fields
-                if not name:
-                    errors.append(f'Row {index + 2}: Tên dịch vụ không được để trống')
-                    error_count += 1
-                    continue
-
-                if not category_name:
-                    errors.append(f'Row {index + 2}: Danh mục không được để trống')
-                    error_count += 1
-                    continue
-
-                # Find category by name
-                category = db.query(ServiceCategory).filter(ServiceCategory.name == category_name).first()
-                if not category:
-                    errors.append(f'Row {index + 2}: Danh mục "{category_name}" không tồn tại')
-                    error_count += 1
-                    continue
-
-                # Validate price
-                try:
-                    price = float(price_str.replace(',', ''))
-                    if price < 0:
-                        errors.append(f'Row {index + 2}: Đơn giá không được âm')
-                        error_count += 1
-                        continue
-                except ValueError:
-                    errors.append(f'Row {index + 2}: Đơn giá không hợp lệ')
-                    error_count += 1
-                    continue
-
-                # Validate duration
-                try:
-                    duration = int(duration_str) if duration_str else 60
-                    if duration <= 0:
-                        duration = 60
-                except ValueError:
-                    duration = 60
-
-                # Convert status to boolean
-                is_active = status.lower() in ['kích hoạt', 'active', 'true', '1', 'yes']
-
-                # Check if service already exists
-                existing_service = db.query(Service).filter(Service.name == name).first()
-                if existing_service:
-                    errors.append(f'Row {index + 2}: Dịch vụ "{name}" đã tồn tại')
-                    error_count += 1
-                    continue
-
-                # Create new service
-                new_service = Service(
-                    name=name,
-                    category_id=category.id,
-                    default_price=price,
-                    duration_minutes=duration,
-                    description=description,
-                    is_active=is_active
-                )
-
-                db.add(new_service)
-                success_count += 1
-
-            except Exception as e:
-                errors.append(f'Row {index + 2}: {str(e)}')
-                error_count += 1
+        error_count, success_count = _import_service_rows(db, df, error_count, errors, success_count)
 
         # Commit if any successful imports
         if success_count > 0:
