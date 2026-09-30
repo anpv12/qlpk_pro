@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('./module-source');
 
 function createEnvironment() {
   const timers = new Map(); let nextTimer = 0;
@@ -75,7 +76,7 @@ function createEnvironment() {
   document.defaultView = window;
   const context = vm.createContext({window, document, console, URLSearchParams, AbortController,
     setTimeout: fn => {timers.set(++nextTimer, fn); return nextTimer;}, clearTimeout: id => timers.delete(id)});
-  const load = relative => vm.runInContext(fs.readFileSync(path.join(__dirname, '../..', relative), 'utf8'), context);
+  const load = relative => runScriptFile(path.join(__dirname, '../..', relative), context);
   function createField(id = 'testField') {
     const create = (tag, suffix, marker) => {const element = new Element(tag); element.id = id + suffix; element.setAttribute(marker, ''); return element;};
     const root = create('div', '', 'data-autocomplete-field'), control = create('div', 'Control', 'data-autocomplete-control');

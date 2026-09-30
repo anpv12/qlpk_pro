@@ -3,12 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { runScriptFile } = require('./helpers/module-source');
 const {loadSupportRuntime} = require('./helpers/doctor-registry');
 const {createChangeTracker, createSectionChangeTracker} = loadSupportRuntime();
 const modules = new Map();
 const window = {QLPKDoctorModuleRegistry:{register:(name, value)=>modules.set(name,value)}};
 for (const file of ['clinical-detail-persistence.js','workspace-save-controller.js']) {
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../app/static/js/doctor-examination',file),'utf8'), {window,console});
+  runScriptFile(path.join(__dirname,'../app/static/js/doctor-examination',file), vm.createContext({window,console}));
 }
 const normal = 'Không ghi nhận bất thường';
 

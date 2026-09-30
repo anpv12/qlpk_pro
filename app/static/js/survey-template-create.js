@@ -3,7 +3,7 @@
  * Expose: window.surveyCreateModal.open(mode, templateId)
  */
 
-// Parts (nạp trước file này): page-state.js, question-editor.js
+// Parts (nạp trước file này): page-state.js, criteria-autocomplete.js, question-editor.js
 (function () {
 	'use strict';
 	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['survey-template-create'] || (window.QLPKModuleParts['survey-template-create'] = { state: {} });

@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_source import read_source  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "app/templates"
@@ -131,8 +134,8 @@ def check_api_contract(errors: list[str]) -> None:
 
 
 def check_doctor_error_code_pipeline(errors: list[str]) -> None:
-    runtime = DOCTOR_SUPPORT_RUNTIME.read_text(encoding="utf-8")
-    controller = DOCTOR_SAVE_CONTROLLER.read_text(encoding="utf-8")
+    runtime = read_source(DOCTOR_SUPPORT_RUNTIME)
+    controller = read_source(DOCTOR_SAVE_CONTROLLER)
     for needle in ("readResponseFailure", "error.code = failure.code", "error.payload = failure.payload"):
         if needle not in runtime:
             fail(errors, f"Doctor support runtime drops response error metadata: {needle}")

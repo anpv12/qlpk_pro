@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function deferred() {
   let resolve;
@@ -14,8 +15,7 @@ function deferred() {
 }
 
 function load(window, filename) {
-  const source = fs.readFileSync(path.join(__dirname, '../app/static/js', filename), 'utf8');
-  vm.runInNewContext(source, { window, document: window.document, console });
+  runScriptFile(path.join(__dirname, '../app/static/js', filename), vm.createContext({ window, document: window.document, console }));
 }
 
 function createHarness() {

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { runScriptFile } = require('./helpers/module-source');
 
 function harness() {
   const nodes = new Map(), requests = [], messages = [];
@@ -40,8 +41,8 @@ function harness() {
   const window = {QLPKUserFeedback:{show:(...args)=>messages.push(args)}, QLPKApiTransport: {
     installJQuery() {}, getAuthHeader: () => credential, session: null
   }};
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../app/static/js/transfer-modal-dry.js'),'utf8'),
-    {window,document,$,localStorage:{getItem:()=>''},console:{error() {},warn() {}},setTimeout});
+  runScriptFile(path.join(__dirname,'../app/static/js/transfer-modal-dry.js'),
+    vm.createContext({window,document,$,localStorage:{getItem:()=>''},console:{error() {},warn() {}},setTimeout}));
   return {modal:window.TransferModal,$,requests,messages, window, changeSession() { credential = 'changed'; }};
 }
 

@@ -12,14 +12,15 @@ const MANIFEST = /^\/\/ Parts \(nạp trước file này\): (.+)$/m;
 const FACTORY_SPLIT = /moduleParts\.installers\.push\(function \(inst, outer\)/;
 const CONTINUED = /^\/\/ Continued in \(nạp ngay sau file này, cùng scope trang\): (.+)$/m;
 
+// Load order: the entry's parts, the entry, then its continuation files (each expanded the same way).
 function moduleFiles(rel) {
     const entry = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
-    const continued = entry.match(CONTINUED);
-    if (continued) return [rel, ...continued[1].split(',').map(name => name.trim())];
     const match = entry.match(MANIFEST);
-    if (!match) return [rel];
     const partDir = rel.replace(/\.js$/, '-parts');
-    return [...match[1].split(',').map(name => `${partDir}/${name.trim()}`), rel];
+    const parts = match ? match[1].split(',').map(name => `${partDir}/${name.trim()}`) : [];
+    const continued = entry.match(CONTINUED);
+    const next = continued ? continued[1].split(',').flatMap(name => moduleFiles(name.trim())) : [];
+    return [...parts, rel, ...next];
 }
 
 // Plain source strips the moduleParts./moduleState. indirection so text checks see the original code.

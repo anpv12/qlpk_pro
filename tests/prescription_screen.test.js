@@ -1,10 +1,11 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const content = { innerHTML: '' };
 const context = vm.createContext({ window: {}, console, document: { getElementById: () => content } });
 for (const file of ['shared/prescription-type-contract.js', 'shared/prescription-document-template.js', 'components/prescription-modal-preview.js', 'components/prescription-print-document.js']) {
-  vm.runInContext(fs.readFileSync('app/static/js/prescriptions/' + file, 'utf8'), context);
+  runScriptFile('app/static/js/prescriptions/' + file, context);
 }
 const data = {
   clinicInfo: { name: 'Clinic <script>', email: 'care@example.test' },

@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 const SOURCE = fs.readFileSync('app/static/js/shared/confirmation-dialog.js', 'utf8');
 
@@ -67,7 +68,7 @@ test('choose maps results and reports an unavailable dialog as staying', async (
 });
 
 test('Doctor workspace uses the shared dialog owner instead of SweetAlert directly', () => {
-    const controller = fs.readFileSync('app/static/js/doctor-examination/workspace-save-controller.js', 'utf8');
+    const controller = readScriptSource('app/static/js/doctor-examination/workspace-save-controller.js');
     assert.doesNotMatch(controller, /Swal/);
     assert.match(controller, /registry\.require\('confirmationDialog'\)\.choose\(/);
 });

@@ -1,9 +1,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const context = vm.createContext({window:{}, document:{}, console});
 vm.runInContext(fs.readFileSync('app/static/js/prescriptions/shared/prescription-type-contract.js','utf8'),context);
-vm.runInContext(fs.readFileSync('app/static/js/prescriptions/shared/prescription-document-template.js','utf8'),context);
+runScriptFile('app/static/js/prescriptions/shared/prescription-document-template.js', context);
 vm.runInContext(fs.readFileSync('app/static/js/prescriptions/components/prescription-print-document.js','utf8'),context);
 const render = (type, overrides={}) => context.buildPrescriptionPreviewHTML({
   patient:{full_name:'QA <patient>',date_of_birth:'2020-09-10',gender:'Nữ'},

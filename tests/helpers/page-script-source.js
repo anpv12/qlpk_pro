@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const { moduleFiles } = require('./module-source');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -11,8 +12,10 @@ function pageScripts(templateName, prefixes) {
         .filter(file => prefixes.some(prefix => file.startsWith(prefix)));
 }
 
+// Split entries contribute their parts/continuations once, in load order.
 function readPageScripts(templateName, prefixes) {
-    return pageScripts(templateName, prefixes)
+    const files = [...new Set(pageScripts(templateName, prefixes).flatMap(file => moduleFiles(file)))];
+    return files
         .map(file => fs.readFileSync(path.join(ROOT, 'app/static/js', file), 'utf8'))
         .join('\n');
 }

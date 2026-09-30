@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./module-source');
 
 const RUNTIME_FILES = Object.freeze([
   'app/static/js/doctor-examination/module-registry.js',
@@ -23,7 +24,7 @@ const MEDICINE_SEARCH_FILES = Object.freeze([
 function loadDoctorRegistry(files, windowProps = {}) {
   const window = { ...windowProps };
   const context = vm.createContext({ window, document: {}, console });
-  for (const file of files) vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+  for (const file of files) runScriptFile(file, context);
   return window.QLPKDoctorModuleRegistry;
 }
 

@@ -16,15 +16,14 @@ JS_ROOT = Path(__file__).resolve().parents[1] / "app" / "static" / "js"
 
 
 def module_files(path: Path) -> list[Path]:
+    """Load order: the entry's parts, the entry, then its continuation files (each expanded the same way)."""
     text = path.read_text(encoding="utf-8", errors="ignore")
-    continued = CONTINUED.search(text)
-    if continued:
-        return [path] + [JS_ROOT / name.strip() for name in continued.group(1).split(",")]
     match = MANIFEST.search(text)
-    if not match:
-        return [path]
     part_dir = path.with_name(path.stem + "-parts")
-    return [part_dir / name.strip() for name in match.group(1).split(",")] + [path]
+    parts = [part_dir / name.strip() for name in match.group(1).split(",")] if match else []
+    continued = CONTINUED.search(text)
+    following = [part for name in continued.group(1).split(",") for part in module_files(JS_ROOT / name.strip())] if continued else []
+    return parts + [path] + following
 
 
 def read_module_source(path: Path, plain: bool = True) -> str:

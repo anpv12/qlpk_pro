@@ -1,5 +1,6 @@
 /* global collectFormData, formatDateDisplay, loadAttachmentsForCurrentPatient, resetFormToDefault, safeSetValue, saveReceptionistAppointment, saveReceptionistPatient, uploadReceptionistDraftDocuments, uploadedDocuments */
-/* exported DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, bindAddressFieldChanges, buildFullAddressFromParts, buildReceptionistConfirmOptions, calculatePregnancyWeek, currentAppointmentId, currentEditId, currentPage, currentPatientId, currentStatus, ensureSession, getCurrentLoadId, initializeAutocomplete, isCheckingDuplicate, isSubmitting, loadAppointments, loadDoctorsForForm, loadProvinces, loadServicesForForm, loadWards, perPage, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance, saveAddressToServerIfEditing, savePatientDataInternal, setCurrentPatientId, setDateOfBirthAndAge, setDefaultAppointmentDateTime, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, totalPages, updateAddressSummary, updateStatusCounts, validateReceptionistFormData, waitingListFilter */
+/* exported DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, calculatePregnancyWeek, currentAppointmentId, currentEditId, currentPage, currentPatientId, currentStatus, ensureSession, getCurrentLoadId, initializeAutocomplete, isCheckingDuplicate, isSubmitting, loadAppointments, loadDoctorsForForm, loadServicesForForm, perPage, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance, savePatientDataInternal, setCurrentPatientId, setDateOfBirthAndAge, setDefaultAppointmentDateTime, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, totalPages, updateStatusCounts, validateReceptionistFormData, waitingListFilter */
+// Parts (nạp trước file này): address.js
 
 // Continued in (nạp ngay sau file này, cùng scope trang): receptionist/save-flow.js, receptionist/medical-data-and-documents.js
 // Receptionist intake workspace
@@ -200,37 +201,6 @@ function getCurrentLoadId() {
 	}
 }
 
-function buildFullAddressFromParts(addressDetail, ward, district, province) {
-	return window.ReceptionistAddressMainForm.buildFullAddressFromParts(addressDetail, ward, district, province);
-}
-
-function getMainAddressFormValues() {
-	return window.ReceptionistAddressMainForm.getMainAddressFormValues({ document });
-}
-
-async function saveAddressToServerIfEditing() {
-	if (receptionistLoadState.loading || receptionistLoadState.failed) return { status: 'skipped', reason: 'not-ready' };
-	try {
-		if (!window.currentPatientId) return;
-		const pid = window.currentPatientId;
-		const { address_detail, province, district, ward, address } = getMainAddressFormValues();
-		const body = {
-			address_detail,
-			province,
-			district,
-			ward,
-			address
-		};
-		await apiCall(`/api/patients/${pid}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-	} catch (e) {
-		console.warn('Không thể lưu địa chỉ bệnh nhân:', e);
-	}
-}
-
 document.addEventListener('DOMContentLoaded', () => {
 	if (window.ReferralSourceControl) {
 		window.ReferralSourceControl.bind({ document });
@@ -245,36 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		kinshipOptions
 	});
 });
-
-// Load regions (main form) - replacing Provinces
-async function loadProvinces() {
-	return window.ReceptionistAddressMainForm.loadProvinces({
-		document,
-		apiCall,
-		console
-	});
-}
-
-// Load units (main form) - replacing Wards
-async function loadWards(provinceName, districtNameIgnored) {
-	return window.ReceptionistAddressMainForm.loadWards(provinceName, districtNameIgnored, {
-		document,
-		apiCall,
-		console
-	});
-}
-
-// Update address summary
-function updateAddressSummary() {
-	window.ReceptionistAddressMainForm.updateAddressSummary({ document });
-}
-
-function bindAddressFieldChanges() {
-	window.ReceptionistAddressMainForm.bindAddressFieldChanges({
-		document,
-		loadWards
-	});
-}
 
 // Initialize autocomplete for personal info fields
 function initializeAutocomplete() {

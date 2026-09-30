@@ -2,13 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const { loadSupportRuntime } = require('./helpers/doctor-registry');
 
 function createController(overrides = {}) {
     const { createChangeTracker } = loadSupportRuntime();
     const modules = new Map();
     const window = { QLPKDoctorModuleRegistry: { register: (name, value) => modules.set(name, value), get: () => null } };
-    vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/workspace-save-controller.js', 'utf8'), { window, console });
+    runScriptFile('app/static/js/doctor-examination/workspace-save-controller.js', vm.createContext({ window, console }));
     const state = { appointment: { id: 101 }, contextToken: 1, mainDirty: false, ...overrides.state };
     const log = { toasts: [], afterSave: 0, drafts: 0, requests: [], phases: [] };
     const support = overrides.support || { getSaveReadiness: () => ({ failures: [] }), saveAll: async () => ({ status: 'skipped', reason: 'clean' }) };

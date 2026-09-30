@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const { loadSupportRuntime } = require('./helpers/doctor-registry');
 const { createChangeTracker } = loadSupportRuntime();
 
@@ -15,7 +16,7 @@ async function saveFailure(payload, code = 'inventory.insufficient', extra = [])
     let controllerModule;
     const messages = [];
     const window = { QLPKDoctorModuleRegistry: { register: (name, module) => { controllerModule = module; } } };
-    vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/workspace-save-controller.js', 'utf8'), { window });
+    runScriptFile('app/static/js/doctor-examination/workspace-save-controller.js', vm.createContext({ window }));
     const error = Object.assign(new Error('Không đủ thuốc trong kho'), { code, payload });
     const state = { appointment: { id: 1 }, contextToken: 1 };
     const controller = controllerModule.create({

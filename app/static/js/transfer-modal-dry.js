@@ -1,3 +1,4 @@
+// Parts (nạp trước file này): helpers.js
 /**
  * Transfer Modal DRY Module
  * Module chung để xử lý modal chuyển khám, tái sử dụng cho lễ tân, bác sĩ và tâm lý gia
@@ -6,6 +7,7 @@
 
 (function () {
 	'use strict';
+	const { captureAuthContext, mapRoleToDatabase, escapeHtml, openWithErrorHandling } = window.QLPKModuleParts["transfer-modal-dry"];
 	window.QLPKApiTransport.installJQuery($);
 
 	// State quản lý dữ liệu chuyển khám
@@ -24,20 +26,6 @@
 	let personRequestToken = 0;
 	let transferring = false;
 	let authContext = null;
-
-	function captureAuthContext() {
-		const binding = window.QLPKApiTransport.session;
-		if (binding) {
-			const snapshot = binding.owner.snapshot();
-			return () => window.QLPKApiTransport.session === binding
-				&& snapshot.status === 'authenticated'
-				&& binding.owner.snapshot().status === 'authenticated'
-				&& binding.owner.snapshot().revision === snapshot.revision;
-		}
-		const credential = window.QLPKApiTransport.getAuthHeader();
-		return () => !window.QLPKApiTransport.session && Boolean(credential)
-			&& window.QLPKApiTransport.getAuthHeader() === credential;
-	}
 
 	function isCurrentSession(token) {
 		return token === sessionToken && authContext?.()
@@ -245,29 +233,6 @@
 			loadPersonList(role);
 			$('#confirmTransferBtn').prop('disabled', true);
 		}
-	}
-
-	/**
- * Map role từ frontend sang database enum
- * Frontend: doctor, psychologist, receptionist (lowercase)
- * Database: doctor, PSYCHOLOGIST, staff (mixed case, không có receptionist)
- */
-	function mapRoleToDatabase(role) {
-		const roleMap = {
-			'doctor': 'doctor',
-			'psychologist': 'PSYCHOLOGIST',
-			'receptionist': 'staff'  // Lễ tân = staff trong database
-		};
-		return roleMap[role.toLowerCase()] || role;
-	}
-
-	function escapeHtml(value) {
-		return String(value ?? '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
 	}
 
 	/**
@@ -494,23 +459,6 @@
 			bindTransferModalEvents();
 		}
 	});
-
-	/**
-	 * Helper function để mở modal với error handling thống nhất
-	 * @param {Array|Number} appointmentIds - Mảng ID hoặc một ID đơn
-	 * @param {String} fromRole - Role hiện tại
-	 * @param {Function} onSuccess - Callback khi thành công
-	 * @returns {Boolean} - true nếu thành công, false nếu có lỗi
-	 */
-	function openWithErrorHandling(appointmentIds, fromRole, onSuccess) {
-		if (!window.TransferModal || !window.TransferModal.open) {
-			console.error('TransferModal module chưa được load. Vui lòng đảm bảo transfer-modal-dry.js được load trước.');
-			window.QLPKUserFeedback.show('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-			return false;
-		}
-		window.TransferModal.open(appointmentIds, fromRole, onSuccess);
-		return true;
-	}
 
 	// Export functions để sử dụng từ bên ngoài
 	window.TransferModal = {
