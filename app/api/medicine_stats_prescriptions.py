@@ -13,6 +13,7 @@ from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo 
     logger,
     medicine_router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 STATISTICS_TYPE_LABELS = {'BASIC': 'Cơ bản', 'H': 'H', 'N': 'N', 'TOXIC': 'Độc'}
 
@@ -295,6 +296,7 @@ def _finalize_doctor_stats(doctors_data, grand_total):
 
 @medicine_router.route('/medicine/statistics/prescriptions', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_statistics_prescriptions(user):
     """
     Lấy danh sách đơn thuốc grouped by doctor
@@ -323,10 +325,5 @@ def get_statistics_prescriptions(user):
             'doctors': sorted(doctors_data.values(), key=lambda x: x['examination_count'], reverse=True)
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting statistics prescriptions: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()

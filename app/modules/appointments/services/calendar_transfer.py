@@ -121,7 +121,7 @@ def process_calendar_transfer(job_id, session_factory=SessionLocal, provider=Goo
             else:
                 job.last_error = str(error) if isinstance(error, CalendarTransferRetry) else 'provider_or_database_failure'
             job.next_attempt_at = now + timedelta(seconds=min(3600, 30 * 2 ** min(job.attempts - 1, 7)))
-            logger.warning('Calendar transfer job %s pending: %s', job.id, job.last_error)
+            logger.warning('Calendar transfer job %s pending: %s', job.id, job.last_error, exc_info=True)
         db.commit()
         return job.completed_at is not None
 
@@ -140,7 +140,7 @@ def drain_calendar_transfers(appointment_ids=None, limit=100, session_factory=Se
         try:
             completed += bool(process_calendar_transfer(job_id, session_factory, provider))
         except Exception:
-            logger.warning('Calendar transfer job %s remains pending after transaction failure', job_id)
+            logger.warning('Calendar transfer job %s remains pending after transaction failure', job_id, exc_info=True)
     return {'selected': len(job_ids), 'completed': completed}
 
 
@@ -154,7 +154,7 @@ def schedule_calendar_transfer_drain(appointment_ids):
         try:
             drain_calendar_transfers(appointment_ids=identities)
         except Exception as error:
-            logger.warning('Immediate calendar transfer drain deferred to worker: %s', type(error).__name__)
+            logger.warning('Immediate calendar transfer drain deferred to worker: %s', type(error).__name__, exc_info=True)
 
     thread = threading.Thread(target=run, name='calendar-transfer-drain', daemon=True)
     thread.start()

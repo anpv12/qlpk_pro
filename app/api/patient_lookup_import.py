@@ -12,7 +12,6 @@ from app.models.patient import Patient
 from app.models.appointment import Appointment
 from app.models.examination import Examination
 from sqlalchemy.orm import joinedload
-import logging
 from app.api.patient import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     logger,
     router,
@@ -93,6 +92,7 @@ def check_duplicate_patient(user):
 # Import bệnh nhân từ file (dữ liệu JSON)
 @router.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error during import: {error}')
 def import_patients(user):
     db = next(get_db())
     try:
@@ -137,6 +137,7 @@ def import_patients(user):
                 db.flush() # Use flush to assign an ID if needed for subsequent operations within the same transaction
                 imported_count += 1
             except Exception as e:
+                logger.warning('Patient import row %s failed', idx + 1, exc_info=True)
                 errors.append(f"Row {idx+1}: Error creating patient - {str(e)}. Skipping entry.")
                 db.rollback() # Rollback the current patient creation if there's an issue
                 db.close() # Đóng kết nối cũ để tránh rò rỉ
@@ -151,10 +152,6 @@ def import_patients(user):
             'message': f'Successfully imported {imported_count} patients.',
             'errors': errors
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error during bulk import: {e}")
-        return jsonify({'detail': f'Internal server error during import: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -229,6 +226,7 @@ def get_patient_latest_appointment(user, patient_id):
 
 @router.route('/<int:patient_id>/examinations', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_patient_examinations(user, patient_id):
     """Return examination history for patient (used in doctor examination modal)"""
     db = next(get_db())
@@ -308,8 +306,5 @@ def get_patient_examinations(user, patient_id):
             })
 
         return jsonify({'examinations': result}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting examinations for patient {patient_id}: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

@@ -134,6 +134,7 @@ def process_calendar_sync(job_id, session_factory=SessionLocal, provider=GoogleC
             job.token = uuid4().hex
             _schedule_retry(job, 'event_identity_retired', now)
         except Exception:
+            logger.warning('Calendar sync job %s failed; retry scheduled', job_id, exc_info=True)
             _schedule_retry(job, 'provider_or_database_failure', now)
         else:
             # Confirmed provider changes are kept even when another part is still pending.
@@ -160,7 +161,7 @@ def drain_calendar_syncs(appointment_ids=None, limit=100, session_factory=Sessio
         try:
             completed += bool(process_calendar_sync(job_id, session_factory, provider))
         except Exception:
-            logger.warning('Calendar sync job %s remains pending after transaction failure', job_id)
+            logger.warning('Calendar sync job %s remains pending after transaction failure', job_id, exc_info=True)
     return {'selected': len(job_ids), 'completed': completed}
 
 
@@ -174,7 +175,7 @@ def schedule_calendar_sync_drain(appointment_ids):
         try:
             drain_calendar_syncs(appointment_ids=identities)
         except Exception as error:
-            logger.warning('Immediate calendar sync drain deferred to worker: %s', type(error).__name__)
+            logger.warning('Immediate calendar sync drain deferred to worker: %s', type(error).__name__, exc_info=True)
 
     thread = threading.Thread(target=run, name='calendar-sync-drain', daemon=True)
     thread.start()
@@ -192,6 +193,7 @@ def retire_calendar_events_before_hard_delete(appointment, db, action='delete', 
         try:
             removed = bool(connection) and provider.delete_event(event, connection) is True
         except Exception:
+            logger.warning('Calendar event %s could not be removed from the provider', event.id, exc_info=True)
             removed = False
         retained += not removed
         # The appointment row is going away; its mappings cannot outlive it (FK is NOT NULL).

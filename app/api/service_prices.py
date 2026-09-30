@@ -1,6 +1,7 @@
 """app.api.service: phần 2 — tách từ service.py (import ở cuối service.py để đăng ký route/giữ tên cũ)."""
 
 from decimal import Decimal
+from pydantic import ValidationError
 from flask import request, jsonify
 from app.api.auth import require_auth
 from app.core.database import get_db
@@ -276,7 +277,7 @@ def update_appointment_service(current_user, appointment_id):
 
         try:
             item = AppointmentServiceItem(**data)
-        except Exception as exc:
+        except (ValidationError, TypeError) as exc:
             return jsonify({'detail': f'Invalid payload: {exc}'}), 400
 
         if not item.service_id and not item.id:
@@ -340,7 +341,7 @@ def sync_appointment_services(current_user, appointment_id):
         payload = request.get_json() or {}
         try:
             sync_request = AppointmentServiceSyncRequest(**payload)
-        except Exception as exc:
+        except (ValidationError, TypeError) as exc:
             return jsonify({'detail': f'Invalid payload: {exc}'}), 400
 
         appointment = _ensure_appointment(db, appointment_id)

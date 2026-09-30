@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ supplier_router = Blueprint('supplier', __name__)
 
 @supplier_router.route('/suppliers/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi lấy danh sách nhà cung cấp', error='{error}')
 def get_suppliers(user):
     """Lấy danh sách nhà cung cấp"""
     db = next(get_db())
@@ -37,15 +39,13 @@ def get_suppliers(user):
             'suppliers': [supplier.to_dict() for supplier in suppliers],
             'total': len(suppliers)
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Lỗi lấy danh sách nhà cung cấp: {e}")
-        return jsonify({'detail': 'Lỗi lấy danh sách nhà cung cấp', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @supplier_router.route('/suppliers/<int:supplier_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi lấy thông tin nhà cung cấp', error='{error}')
 def get_supplier(user, supplier_id):
     """Lấy thông tin chi tiết nhà cung cấp"""
     db = next(get_db())
@@ -55,15 +55,13 @@ def get_supplier(user, supplier_id):
             return jsonify({'detail': 'Không tìm thấy nhà cung cấp'}), 404, {'Content-Type': 'application/json; charset=utf-8'}
         
         return jsonify(supplier.to_dict()), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Lỗi lấy thông tin nhà cung cấp: {e}")
-        return jsonify({'detail': 'Lỗi lấy thông tin nhà cung cấp', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @supplier_router.route('/suppliers/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi tạo nhà cung cấp', error='{error}')
 def create_supplier(user):
     """Tạo nhà cung cấp mới"""
     db = next(get_db())
@@ -97,16 +95,13 @@ def create_supplier(user):
         emit_inventory_changed('supplier_created', entity='supplier', entity_id=supplier.id)
         
         return jsonify(supplier.to_dict()), 201, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi tạo nhà cung cấp: {e}")
-        return jsonify({'detail': 'Lỗi tạo nhà cung cấp', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @supplier_router.route('/suppliers/<int:supplier_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Lỗi cập nhật nhà cung cấp', error='{error}')
 def update_supplier(user, supplier_id):
     """Cập nhật thông tin nhà cung cấp"""
     db = next(get_db())
@@ -148,16 +143,13 @@ def update_supplier(user, supplier_id):
         emit_inventory_changed('supplier_updated', entity='supplier', entity_id=supplier.id)
         
         return jsonify(supplier.to_dict()), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi cập nhật nhà cung cấp: {e}")
-        return jsonify({'detail': 'Lỗi cập nhật nhà cung cấp', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @supplier_router.route('/suppliers/<int:supplier_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi xóa nhà cung cấp', error='{error}')
 def delete_supplier(user, supplier_id):
     """Xóa nhà cung cấp"""
     db = next(get_db())
@@ -179,9 +171,5 @@ def delete_supplier(user, supplier_id):
         emit_inventory_changed('supplier_deleted', entity='supplier', entity_id=supplier_id)
         
         return jsonify({'detail': 'Đã xóa nhà cung cấp thành công'}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi xóa nhà cung cấp: {e}")
-        return jsonify({'detail': 'Lỗi xóa nhà cung cấp', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

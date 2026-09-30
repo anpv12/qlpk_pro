@@ -1,3 +1,4 @@
+import logging
 """Batch import services for appointment workflows."""
 
 from dataclasses import dataclass
@@ -39,6 +40,7 @@ def import_appointments_batch(db, rows, logger=None):
             if imported:
                 imported_count += 1
         except Exception as exc:
+            logging.getLogger(__name__).warning('Appointment import row %s failed', idx + 1, exc_info=True)
             errors.append(f"Row {idx+1}: Error processing entry - {str(exc)}. Skipping entry.")
             db.rollback()
             continue

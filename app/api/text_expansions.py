@@ -9,6 +9,9 @@ from typing import Optional
 import pandas as pd
 import io
 from app.utils.api_error_contract import api_error_boundary
+import logging
+
+logger = logging.getLogger(__name__)
 
 text_expansions_bp = Blueprint('text_expansions', __name__)
 
@@ -318,6 +321,7 @@ def import_text_expansions(current_user):
                 imported_count += 1
                 
             except Exception as e:
+                logger.warning('Text expansion import row %s failed', index + 2, exc_info=True)
                 errors.append(f"Dòng {index + 2}: {str(e)}")
         
         db.commit()

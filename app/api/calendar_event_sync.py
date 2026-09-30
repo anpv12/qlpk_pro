@@ -133,7 +133,7 @@ def verify_events(user: User):
     except Exception as e:
         if isinstance(e, CalendarAccessError):
             return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error verifying events: {e}")
+        logger.error(f"Error verifying events: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
@@ -206,7 +206,7 @@ def _sync_appointment_for_users(appt, appt_id, appt_result, db, doctor_role_labe
                     appt_result['errors'].append(f"Verify thất bại cho {role_label}")
 
         except Exception as e:
-            logger.error(f"Error syncing for user {user_id}: {e}")
+            logger.error(f"Error syncing for user {user_id}: {e}", exc_info=True)
             role_label = doctor_role_label if role == 'doctor' else 'Lễ tân'
             friendly_error = format_friendly_error(e)
             appt_result['errors'].append(f"{role_label}: {friendly_error}")
@@ -336,7 +336,7 @@ def sync_appointments(user: User):
         db.rollback()
         if isinstance(e, CalendarAccessError):
             return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error syncing appointments: {e}")
+        logger.error(f"Error syncing appointments: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()

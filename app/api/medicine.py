@@ -215,6 +215,7 @@ def get_medicine(user, medicine_id):
 
 @medicine_router.route('/medicines/export/excel', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='{error}')
 def export_medicines_excel(user):
     """Xuất danh sách thuốc ra Excel"""
     from flask import send_file
@@ -248,9 +249,6 @@ def export_medicines_excel(user):
         return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                        as_attachment=True, download_name=filename)
 
-    except Exception as e:
-        logger.error(f"Error exporting to Excel: {e}")
-        return jsonify({'detail': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 

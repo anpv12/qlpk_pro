@@ -1,4 +1,8 @@
+import logging
+
 from flask import Blueprint, jsonify, request
+from pydantic import ValidationError
+from werkzeug.exceptions import BadRequest
 
 from app.api.auth import require_auth
 from app.schemas.usage_suggestion import (
@@ -11,6 +15,8 @@ from app.services.usage_suggestion_service import (
     UsageSuggestionError,
 )
 
+logger = logging.getLogger(__name__)
+
 usage_suggestions_bp = Blueprint("usage_suggestions", __name__)
 
 
@@ -20,7 +26,7 @@ def generate_usage_suggestions(current_user):
     """Endpoint gọi dịch vụ AI để sinh gợi ý cách dùng thuốc."""
     try:
         payload = request.get_json(force=True, silent=False) or {}
-    except Exception as exc:
+    except BadRequest as exc:
         return (
             jsonify(
                 {
@@ -34,7 +40,7 @@ def generate_usage_suggestions(current_user):
 
     try:
         validated = UsageSuggestionRequest.model_validate(payload)
-    except Exception as exc:
+    except ValidationError as exc:
         return (
             jsonify(
                 {
@@ -59,6 +65,7 @@ def generate_usage_suggestions(current_user):
             502,
         )
     except Exception as exc:
+        logger.exception("Usage suggestion service failed")
         return (
             jsonify(
                 {

@@ -45,7 +45,7 @@ def date_to_text(value) -> str:
         return ''
     try:
         return value.strftime('%d/%m/%Y')
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         return str(value)
 
 
@@ -54,7 +54,7 @@ def datetime_to_text(value) -> str:
         return ''
     try:
         return value.strftime('%d/%m/%Y %H:%M')
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         return str(value)
 
 

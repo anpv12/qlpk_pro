@@ -329,7 +329,7 @@ def apply_service_duration_update(db, appointment, new_service_id, old_service_i
                 logger.info(f"Auto-updated duration_minutes={service.duration_minutes} from Service ID {new_service_id}")
     except Exception as exc:
         if logger:
-            logger.error(f"Error fetching service duration on update: {exc}")
+            logger.error(f"Error fetching service duration on update: {exc}", exc_info=True)
 
 
 def apply_package_duration_update(db, appointment, new_package_id, old_package_id, logger=None):
@@ -344,7 +344,7 @@ def apply_package_duration_update(db, appointment, new_package_id, old_package_i
                 logger.info(f"Auto-updated duration_minutes={package.duration_minutes} from Package ID {new_package_id}")
     except Exception as exc:
         if logger:
-            logger.error(f"Error fetching package duration on update: {exc}")
+            logger.error(f"Error fetching package duration on update: {exc}", exc_info=True)
 
 
 def ensure_scheduling_update_has_no_conflict(db, appointment, appointment_id):

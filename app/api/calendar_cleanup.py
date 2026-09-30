@@ -60,7 +60,7 @@ def _delete_calendar_events_parallel(db, event_data, events):
                         time.sleep(wait_time)
                         continue
 
-                logger.warning('Could not delete Google event %s', data['event_id'])
+                logger.warning('Could not delete Google event %s', data['event_id'], exc_info=True)
 
                 return (data['db_event_id'], False, 'Chưa xóa được lịch Google; giữ liên kết để thử lại')
 
@@ -182,7 +182,7 @@ def delete_all_calendar_events(user: User):
         db.rollback()
         if isinstance(e, CalendarAccessError):
             return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error deleting calendar events: {e}")
+        logger.error(f"Error deleting calendar events: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()

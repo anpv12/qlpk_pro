@@ -36,6 +36,7 @@ def get_occupations(user):
 
 @occupation_bp.route('/occupations/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi tạo nghề nghiệp')
 def create_occupation(user):
     """Tạo nghề nghiệp mới"""
     try:
@@ -76,20 +77,13 @@ def create_occupation(user):
             }
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating occupation: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi tạo nghề nghiệp'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()
 
 @occupation_bp.route('/occupations/<int:occupation_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi cập nhật nghề nghiệp')
 def update_occupation(user, occupation_id):
     """Cập nhật nghề nghiệp"""
     try:
@@ -137,20 +131,13 @@ def update_occupation(user, occupation_id):
             }
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error updating occupation: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi cập nhật nghề nghiệp'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()
 
 @occupation_bp.route('/occupations/<int:occupation_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xóa nghề nghiệp')
 def delete_occupation(user, occupation_id):
     """Xóa nghề nghiệp (soft delete)"""
     try:
@@ -172,14 +159,6 @@ def delete_occupation(user, occupation_id):
             'message': 'Xóa nghề nghiệp thành công'
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error deleting occupation: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi xóa nghề nghiệp'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()

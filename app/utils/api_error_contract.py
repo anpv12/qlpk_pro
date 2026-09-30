@@ -75,5 +75,8 @@ def api_error_boundary(**fields):
             except Exception as error:
                 logger.exception("Unhandled error in %s %s", request.method, request.path)
                 return jsonify(_error_payload(fields, error)), 500
+        # The boundary is part of the endpoint contract: inspect.unwrap() (used to bypass auth in
+        # tests) stops here instead of skipping the error handling.
+        del wrapped.__wrapped__
         return wrapped
     return decorate

@@ -232,7 +232,7 @@ def _mark_expired_scheduled_appointments_no_show(db, logger):
             })
             logger.info(f"Auto-updated {len(expired_appointments)} expired appointments to NO_SHOW")
     except Exception as exc:
-        logger.error(f"Error auto-updating expired appointments: {str(exc)}")
+        logger.error(f"Error auto-updating expired appointments: {str(exc)}", exc_info=True)
         db.rollback()
 
 

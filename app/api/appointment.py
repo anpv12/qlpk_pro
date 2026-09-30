@@ -83,6 +83,7 @@ def _mark_latest_edited_appointment(result, appointment_list, args):
 # Lấy danh sách lịch hẹn (filter theo ngày, bác sĩ, trạng thái, phân trang)
 @router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def list_appointments(user):
     db = next(get_db())
     try:
@@ -96,16 +97,13 @@ def list_appointments(user):
         }
 
         return jsonify(response_data), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        # Catch any unexpected errors during the process
-        logger.error(f"Error in list_appointments: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 # Lấy chi tiết lịch hẹn
 @router.route('/<int:appt_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_appointment(user, appt_id):
     db = next(get_db())
     try:
@@ -123,9 +121,6 @@ def get_appointment(user, appt_id):
         result = format_appointment_response(appt, db=db)
             
         return jsonify(result), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error in get_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -155,6 +150,7 @@ def get_appointment_for_edit(user, appt_id):
 # Tạo mới lịch hẹn
 @router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_appointment(user):
     db = next(get_db())
     try:
@@ -188,16 +184,13 @@ def create_appointment(user):
     except (MedicalHistoryContractError, RiskAssessmentContractError) as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.info(f"Error in create_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 # Cập nhật lịch hẹn
 @router.route('/<int:appt_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_appointment(user, appt_id):
     db = next(get_db())
     try:
@@ -277,16 +270,13 @@ def update_appointment(user, appt_id):
     except (MedicalHistoryContractError, RiskAssessmentContractError) as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback() # Rollback changes in case of an error
-        logger.info(f"Error in update_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 # Xác nhận lịch hẹn và tạo examination
 @router.route('/<int:appt_id>/confirm', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def confirm_appointment(user, appt_id):
     db = next(get_db())
     try:
@@ -316,10 +306,6 @@ def confirm_appointment(user, appt_id):
         return jsonify({'detail': str(e)}), 404, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentConfirmationValidationError as e:
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.info(f"Error in confirm_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -328,6 +314,7 @@ def confirm_appointment(user, appt_id):
 
 @router.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error during import: {error}')
 def import_appointments(user):
     db = next(get_db())
     try:
@@ -343,16 +330,13 @@ def import_appointments(user):
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentImportNoData as e:
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback() # Rollback all changes if any overall error occurs during the batch import
-        logger.info(f"Error during import_appointments: {e}")
-        return jsonify({'detail': f'Internal server error during import: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @router.route('/<int:appt_id>/back-to-appointment', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def back_to_appointment(user, appt_id):
     """
     Xóa examination và chuyển appointment về trạng thái SCHEDULED (chờ xác nhận)
@@ -373,15 +357,12 @@ def back_to_appointment(user, appt_id):
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentStatusTransitionNotFound as e:
         return jsonify({'detail': str(e)}), 404, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in back_to_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @router.route('/<int:appt_id>/return-to-doctor', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def return_to_doctor(user, appt_id):
     """
     Chuyển examination về trạng thái DOCTOR_EXAM (trả về bác sĩ)
@@ -411,15 +392,12 @@ def return_to_doctor(user, appt_id):
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentStatusTransitionNotFound as e:
         return jsonify({'detail': str(e)}), 404, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in return_to_doctor: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @router.route('/<int:appt_id>/return-to-receptionist', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def return_to_receptionist(user, appt_id):
     """
     Chuyển examination về trạng thái WAITING_TRANSFER (chờ chuyển khám)
@@ -449,10 +427,6 @@ def return_to_receptionist(user, appt_id):
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
     except AppointmentStatusTransitionNotFound as e:
         return jsonify({'detail': str(e)}), 404, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in return_to_receptionist: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 

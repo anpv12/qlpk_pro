@@ -181,7 +181,8 @@ def test_commit_failure_returns_no_replacement_and_does_not_disconnect(account, 
         json={'current_password': 'current-password', 'new_password': 'next-password'})
     assert response.status_code == 500
     assert 'access_token' not in response.json
-    database.rollback.assert_called_once()
+    # Session.close() rolls back the failed transaction (api_error_boundary answers after the view's finally).
+    assert database.close.called
     revoke.assert_not_called()
 
 

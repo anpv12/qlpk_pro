@@ -72,7 +72,7 @@ def update_examination_status(user, examination_id):
     except Exception as e:
         if db is not None:
             db.rollback()
-        logging.error(f"Lỗi cập nhật trạng thái lượt khám: {str(e)}")
+        logging.error(f"Lỗi cập nhật trạng thái lượt khám: {str(e)}", exc_info=True)
         return jsonify({'detail': 'Có lỗi xảy ra khi cập nhật trạng thái'}), 500
     finally:
         if db is not None:

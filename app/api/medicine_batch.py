@@ -28,6 +28,7 @@ medicine_batch_router = Blueprint('medicine_batch', __name__)
 
 @medicine_batch_router.route('/medicine-batches/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi lấy danh sách lô thuốc', error='{error}')
 def get_medicine_batches(user):
     """Lấy danh sách lô thuốc"""
     db = next(get_db())
@@ -105,15 +106,13 @@ def get_medicine_batches(user):
             'per_page': per_page,
             'total_pages': (total + per_page - 1) // per_page
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Lỗi lấy danh sách lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi lấy danh sách lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @medicine_batch_router.route('/medicine-batches/<int:batch_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi lấy thông tin lô thuốc', error='{error}')
 def get_medicine_batch(user, batch_id):
     """Lấy thông tin chi tiết lô thuốc"""
     db = next(get_db())
@@ -123,15 +122,13 @@ def get_medicine_batch(user, batch_id):
             return jsonify({'detail': 'Không tìm thấy lô thuốc'}), 404, {'Content-Type': 'application/json; charset=utf-8'}
         
         return jsonify(batch.to_dict()), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Lỗi lấy thông tin lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi lấy thông tin lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @medicine_batch_router.route('/medicines/<int:medicine_id>/batches', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi lấy danh sách lô thuốc', error='{error}')
 def get_medicine_batches_by_medicine(user, medicine_id):
     """Lấy danh sách lô thuốc theo medicine_id"""
     db = next(get_db())
@@ -178,15 +175,13 @@ def get_medicine_batches_by_medicine(user, medicine_id):
             'synthetic_receipts': sum(b.batch_number.startswith('SEED-LOCAL-') for b in batches),
             'distinct_lots': len({(b.batch_number, b.expiry_date) for b in batches}),
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Lỗi lấy danh sách lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi lấy danh sách lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @medicine_batch_router.route('/medicine-batches/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi tạo lô thuốc', error='{error}')
 def create_medicine_batch(user):
     """Tạo lô thuốc mới"""
     db = next(get_db())
@@ -249,10 +244,6 @@ def create_medicine_batch(user):
     except (InventoryValidationError, LookupError) as e:
         db.rollback()
         return jsonify({'detail': str(e), 'code': 'inventory.receipt_invalid'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi tạo lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi tạo lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -299,6 +290,7 @@ def supply_missing_import_price(user, batch_id):
 
 @medicine_batch_router.route('/medicine-batches/<int:batch_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Lỗi cập nhật lô thuốc', error='{error}')
 def update_medicine_batch(user, batch_id):
     """Cập nhật thông tin lô thuốc"""
     db = next(get_db())
@@ -333,16 +325,13 @@ def update_medicine_batch(user, batch_id):
         })
         
         return jsonify(batch.to_dict()), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi cập nhật lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi cập nhật lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @medicine_batch_router.route('/medicine-batches/<int:batch_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi xóa lô thuốc', error='{error}')
 def delete_medicine_batch(user, batch_id):
     """Xóa lô thuốc"""
     db = next(get_db())
@@ -378,10 +367,6 @@ def delete_medicine_batch(user, batch_id):
         })
         
         return jsonify({'detail': 'Đã xóa lô thuốc thành công'}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi xóa lô thuốc: {e}")
-        return jsonify({'detail': 'Lỗi xóa lô thuốc', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -426,6 +411,7 @@ def _normalize_import_order_items(data, db):
 
 @medicine_batch_router.route('/medicine-batches/import-order', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi nhập kho theo đơn hàng', error='{error}')
 def import_order(user):
     """Nhập kho theo đơn hàng (nhiều lô cùng lúc)"""
     db = next(get_db())
@@ -491,9 +477,5 @@ def import_order(user):
     except (InventoryValidationError, LookupError) as e:
         db.rollback()
         return jsonify({'detail': str(e), 'code': 'inventory.receipt_invalid'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi nhập kho theo đơn hàng: {e}")
-        return jsonify({'detail': 'Lỗi nhập kho theo đơn hàng', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

@@ -23,6 +23,7 @@ from app.utils.clinical_access import patient_access_error, user_role_value
 
 # Changed Blueprint name for clarity (e.g., if you also have an 'auth' blueprint)
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def create_user(current_user):
         return jsonify(UserRead.model_validate(new_user).model_dump()), 201, {'Content-Type': 'application/json; charset=utf-8'} # 201 Created
     except Exception as e:
         db.rollback() # Rollback changes on error
-        logger.error(f"Error creating user: {e}") # Log the error for debugging
+        logger.error(f"Error creating user: {e}", exc_info=True) # Log the error for debugging
         # Return a more generic error for security, or specific if appropriate
         return jsonify({"detail": "Failed to create user", "error": str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
@@ -92,6 +93,7 @@ def create_user(current_user):
 @user_router.route("/", methods=['GET'])
 @require_auth
 @require_account_permission('ql-taikhoan', 'ql-phanquyen')
+@api_error_boundary(detail='Failed to retrieve users', error='{error}')
 def read_users(current_user):
     """
     Retrieves a list of all users, with optional filtering by 'role'.
@@ -105,9 +107,6 @@ def read_users(current_user):
         users = query.all()
         # Return a list of users, each transformed by UserRead schema
         return jsonify([_user_read_payload(u) for u in users]), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error reading users: {e}")
-        return jsonify({"detail": "Failed to retrieve users", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -208,13 +207,14 @@ def _user_detail_response(db, user, user_id):
                 if doctor_profile.license_issue_date:
                     user_json['license_issue_date'] = doctor_profile.license_issue_date.isoformat()
     except Exception as exc:
-        logger.warning('Không đọc được hồ sơ bác sĩ của user %s: %s', user_id, exc)
+        logger.warning('Không đọc được hồ sơ bác sĩ của user %s: %s', user_id, exc, exc_info=True)
     return jsonify(user_json), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 
 @user_router.route("/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
 @require_auth
 @require_account_permission('ql-taikhoan')
+@api_error_boundary(detail='Failed to process user', error='{error}')
 def read_user(current_user, user_id):
     """
     Retrieves a single user by their ID.
@@ -247,10 +247,6 @@ def read_user(current_user, user_id):
     except SessionStoreUnavailable:
         db.rollback()
         return jsonify(code='system.unavailable', detail='Chưa thể thu hồi phiên; tài khoản chưa được cập nhật.'), 503
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error with user {user_id}: {e}")
-        return jsonify({"detail": "Failed to process user", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -258,6 +254,7 @@ def read_user(current_user, user_id):
 @user_router.route("/<int:user_id>/avatar", methods=['POST'])
 @require_auth
 @require_account_permission('ql-taikhoan')
+@api_error_boundary(detail='Upload thất bại', error='{error}')
 def upload_avatar(current_user, user_id):
     db = next(get_db())
     try:
@@ -293,9 +290,6 @@ def upload_avatar(current_user, user_id):
         emit_catalog_changed('user_avatar_updated', entity='user', entity_id=user_id, extra={'role': getattr(user.role, 'value', user.role)})
 
         return jsonify({'success': True, 'avatar': public_url}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Upload thất bại', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -303,6 +297,7 @@ def upload_avatar(current_user, user_id):
 @user_router.route("/<int:user_id>/license-certificate", methods=['POST'])
 @require_auth
 @require_account_permission('ql-taikhoan')
+@api_error_boundary(detail='Upload thất bại', error='{error}')
 def upload_license_certificate(current_user, user_id):
     db = next(get_db())
     try:
@@ -351,16 +346,13 @@ def upload_license_certificate(current_user, user_id):
             'license_certificate_file': public_url,
             'license_certificate_original_filename': original_filename
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error uploading license certificate: {e}")
-        return jsonify({'detail': 'Upload thất bại', 'error': str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @user_router.route("/me", methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Failed to retrieve current user', error='{error}')
 def get_current_user(user):
     """
     Retrieves information about the currently authenticated user.
@@ -384,19 +376,17 @@ def get_current_user(user):
                 if doctor_profile and doctor_profile.license_number:
                     user_data['license_number'] = doctor_profile.license_number
         except Exception as exc:
-            logger.warning('Không đọc được số chứng chỉ của user %s: %s', user.id, exc)
+            logger.warning('Không đọc được số chứng chỉ của user %s: %s', user.id, exc, exc_info=True)
             
         response = jsonify(user_data)
         response.headers['Cache-Control'] = 'no-store'
         return response
-    except Exception as e:
-        logger.error(f"Error getting current user: {e}")
-        return jsonify({"detail": "Failed to retrieve current user", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @user_router.route("/me/password", methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Không thể đổi mật khẩu')
 def change_current_user_password(current_user):
     db = next(get_db())
     try:
@@ -440,10 +430,6 @@ def change_current_user_password(current_user):
     except SessionStoreUnavailable:
         db.rollback()
         return jsonify(code='system.unavailable', detail='Chưa thể cập nhật phiên đăng nhập; mật khẩu chưa được lưu.'), 503
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error changing password for user {getattr(current_user, 'id', None)}: {e}")
-        return jsonify({'detail': 'Không thể đổi mật khẩu'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -472,6 +458,7 @@ def get_transfer_recipients(current_user):
 
 @user_router.route("/doctors", methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Failed to retrieve doctors', error='{error}')
 def get_doctors(user):
     """
     Trả về danh sách người khám (bác sĩ và tâm lý gia) để chọn trong lịch hẹn.
@@ -490,14 +477,12 @@ def get_doctors(user):
             'avatar': normalize_upload_url(u.avatar),
             'calendar_color': u.calendar_color
         } for u in people]), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting doctors: {e}")
-        return jsonify({"detail": "Failed to retrieve doctors", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @user_router.route("/psychologists", methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Failed to retrieve psychologists', error='{error}')
 def get_psychologists(user):
     """
     Retrieves a list of all psychologists (users with role 'PSYCHOLOGIST').
@@ -511,14 +496,12 @@ def get_psychologists(user):
             'email': psychologist.email,
             'role': psychologist.role
         } for psychologist in psychologists]), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error reading psychologists: {e}")
-        return jsonify({"detail": "Failed to retrieve psychologists", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @user_router.route("/patients/<int:patient_id>", methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Failed to retrieve patient (DEBUG)', error='{error}')
 def get_patient_by_id(current_user, patient_id):
     """
     DEBUG API: Retrieves a single patient by their ID.
@@ -533,8 +516,5 @@ def get_patient_by_id(current_user, patient_id):
         if db_patient is None:
             return jsonify({"detail": "Patient not found"}), 404, {'Content-Type': 'application/json; charset=utf-8'}
         return jsonify(PatientSchema.from_orm(db_patient).dict()), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting patient {patient_id} (DEBUG): {e}")
-        return jsonify({"detail": "Failed to retrieve patient (DEBUG)", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

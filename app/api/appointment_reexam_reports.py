@@ -21,6 +21,7 @@ from app.utils.api_error_contract import api_error_boundary
 # Tạo lịch hẹn tái khám
 @router.route('/re-examination', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_re_examination(user):
     db = next(get_db())
     try:
@@ -47,10 +48,6 @@ def create_re_examination(user):
         return jsonify(result), 201, {'Content-Type': 'application/json; charset=utf-8'}
     except ReExaminationError as e:
         return jsonify({'detail': e.detail}), e.status_code, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in create_re_examination: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -84,6 +81,7 @@ def cancel_re_examination_appointment(db, appointment_id):
 
 @router.route('/stats', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Failed to retrieve appointment stats', error='{error}')
 def get_appointment_stats(user):
     """Lấy thống kê appointments theo trạng thái examination"""
     db = next(get_db())
@@ -91,15 +89,13 @@ def get_appointment_stats(user):
         stats = get_appointment_stats_service(db, user, request.args, logger=logger)
         return jsonify(stats), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
-    except Exception as e:
-        logger.error(f"Error getting appointment stats: {e}")
-        return jsonify({"detail": "Failed to retrieve appointment stats", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @router.route('/export', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xuất dữ liệu: {error}')
 def export_appointments(user):
     """Xuất danh sách appointments ra file Excel với format chuyên nghiệp"""
     db = next(get_db())
@@ -115,11 +111,6 @@ def export_appointments(user):
             mimetype=export_result.mimetype,
         )
 
-    except Exception as e:
-        logger.error(f"Lỗi xuất dữ liệu appointments: {str(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi xuất dữ liệu: {str(e)}'}), 500
     finally:
         db.close()
 
@@ -171,6 +162,7 @@ def _get_delete_force_flag():
 
 @router.route('/<int:appt_id>/hard-delete', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def hard_delete_appointment(user, appt_id):
     db = next(get_db())
     try:
@@ -184,16 +176,13 @@ def hard_delete_appointment(user, appt_id):
         return jsonify({'detail': f'Appointment with ID {appt_id} deleted successfully'}), 204 # 204 No Content for successful deletion
     except AppointmentDeletionNotFound as e:
         return jsonify({'detail': str(e)}), 404, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback() # Rollback changes in case of an error
-        logger.info(f"Error in hard_delete_appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 
 @router.route('/transfer', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Failed to transfer appointments', error='{error}')
 def transfer_appointments(user):
     """Chuyển appointments giữa các role"""
     db = next(get_db())
@@ -229,9 +218,5 @@ def transfer_appointments(user):
     except AppointmentTransferValidationError as e:
         db.rollback()
         return jsonify({"detail": str(e)}), e.status_code, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in transfer_appointments: {e}")
-        return jsonify({"detail": "Failed to transfer appointments", "error": str(e)}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

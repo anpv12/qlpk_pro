@@ -254,7 +254,7 @@ class NotificationWorkflowMixin:
                     )
                 except Exception as e:
                     error_msg = f"Lỗi gửi email: {str(e)}"
-                    logger.error(f"Error sending email for appointment {appointment_id}: {e}")
+                    logger.error(f"Error sending email for appointment {appointment_id}: {e}", exc_info=True)
 
                 email_notification = Notification(
                     appointment_id=appointment_id,

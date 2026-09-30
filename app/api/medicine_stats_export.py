@@ -1,6 +1,6 @@
 """app.api.medicine: phần 5 — tách từ medicine.py (import ở cuối medicine.py để đăng ký route/giữ tên cũ)."""
 
-from flask import request, jsonify, make_response
+from flask import request, make_response
 from app.core.database import get_db
 from app.models.medicine import Medicine
 from app.api.auth import require_auth
@@ -11,6 +11,7 @@ from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo 
     logger,
     medicine_router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 MEDICINE_TYPE_LABELS = {'BASIC': 'Cơ bản', 'H': 'Thuốc H', 'N': 'Thuốc N', 'TOXIC': 'Thuốc độc'}
 
@@ -423,6 +424,7 @@ def _export_date_label(from_date_obj, to_date_obj):
 
 @medicine_router.route('/medicine/statistics/export', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def export_statistics_excel(user):
     """Xuất Excel thống kê thuốc: Sheet 1 = Bác sĩ, Tâm lý gia, Sheet 2 = Tồn kho"""
     from openpyxl import Workbook
@@ -454,10 +456,5 @@ def export_statistics_excel(user):
         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
-    except Exception as e:
-        logger.error(f"Error exporting statistics: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()

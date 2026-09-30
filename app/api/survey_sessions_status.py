@@ -11,7 +11,6 @@ from app.api.survey_sessions import (  # noqa: E402 — module gốc đã khởi
     _get_accessible_examination,
     get_appointment_id_for_examination,
     get_current_datetime,
-    logger,
     survey_sessions,
     utc_iso,
 )

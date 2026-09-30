@@ -147,7 +147,7 @@ def get_dashboard(user):
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
-        logger.error(f"Error getting dashboard data: {e}\n{error_trace}")
+        logger.error(f"Error getting dashboard data: {e}\n{error_trace}", exc_info=True)
         return jsonify({
             'success': False,
             'detail': f'Lỗi khi lấy dữ liệu dashboard: {str(e)}',
@@ -289,6 +289,7 @@ def _summary_prescriptions(db, doctor_id, from_date, search, to_date):
 
 @medicine_router.route('/medicine/statistics/summary', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_statistics_summary(user):
     """
     Lấy thống kê tổng quan: Tổng đơn thuốc, Thuốc đã bốc, Tồn kho, Doanh thu
@@ -334,10 +335,5 @@ def get_statistics_summary(user):
             'total_service_revenue': total_service_revenue
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting statistics summary: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()

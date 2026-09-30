@@ -1,3 +1,4 @@
+from sqlalchemy.exc import SQLAlchemyError
 """Re-examination services for appointment workflows."""
 
 from dataclasses import dataclass
@@ -221,7 +222,7 @@ def _create_re_examination_appointment(
     db.add(re_appointment)
     try:
         db.commit()
-    except Exception:
+    except SQLAlchemyError:
         db.rollback()
         re_appointment.appointment_code = _build_re_appointment_code(1000, 9999)
         db.add(re_appointment)

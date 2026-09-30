@@ -146,6 +146,7 @@ def _parse_new_patient_dates(data):
 # Tạo mới bệnh nhân
 @router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_patient(user):
     db = next(get_db())
     try:
@@ -194,10 +195,6 @@ def create_patient(user):
     except MedicalHistoryContractError as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback() # Rollback changes in case of an error
-        logger.error(f"Error creating patient: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -253,10 +250,10 @@ def _apply_patient_date_updates(data, patient):
         try:
             # Try ISO format first
             parsed_dob = datetime.strptime(dob_raw, '%Y-%m-%d').date()
-        except Exception:
+        except (TypeError, ValueError):
             try:
                 parsed_dob = datetime.strptime(dob_raw, '%d/%m/%Y').date()
-            except Exception:
+            except (TypeError, ValueError):
                 parsed_dob = None
         if parsed_dob:
             patient.date_of_birth = parsed_dob
@@ -323,6 +320,7 @@ def _patient_updated_response(patient):
 # Cập nhật thông tin bệnh nhân
 @router.route('/<int:patient_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_patient(user, patient_id):
     db = next(get_db())
     try:
@@ -355,10 +353,6 @@ def update_patient(user, patient_id):
     except MedicalHistoryContractError as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating patient: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -443,6 +437,7 @@ def get_safety_plan_file(user, patient_id):
 
 @router.route('/<int:patient_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_patient(user, patient_id):
     db = next(get_db())
     try:
@@ -458,9 +453,5 @@ def delete_patient(user, patient_id):
         db.commit()
         emit_patient_changed('deleted', patient_id=deleted_patient_id)
         return jsonify({'detail': 'Patient deleted successfully'}), 204 # 204 No Content for successful deletion
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting patient: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

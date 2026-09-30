@@ -236,7 +236,7 @@ def _build_history_text(db, patient, appt, logger=None):
                 tien_can_parts.extend(text_vals)
         except Exception as exc:
             if logger:
-                logger.error(f"Error fetching ICD names in excel export: {exc}")
+                logger.error(f"Error fetching ICD names in excel export: {exc}", exc_info=True)
 
     exam_risk = current_examination(appt)
     if exam_risk and getattr(exam_risk, 'risk_assessment', None):

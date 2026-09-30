@@ -7,6 +7,9 @@ from app.utils.survey_template_policy import require_survey_manager, survey_temp
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalized_contains
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Blueprint('survey_template_management', __name__)
 
@@ -69,6 +72,7 @@ def duplicate_survey_template(user, template_id):
         db.close()
         return jsonify(success=False, message=str(e)), 400
     except Exception as e:
+        logger.exception('Survey template request failed')
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -122,5 +126,6 @@ def public_get_survey_templates():
         })
         
     except Exception as e:
+        logger.exception('Survey template request failed')
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500

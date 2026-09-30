@@ -17,8 +17,6 @@ from app.modules.appointments.services.appointment_service_selection import (
 from app.modules.examinations.view_models.detail import build_examination_invoice_detail_response
 from app.realtime.events import emit_examination_changed, emit_payment_changed
 from datetime import datetime
-import logging
-import traceback
 from app.utils.api_error_contract import api_error_boundary
 
 examination_detail_bp = Blueprint('examination_detail', __name__)
@@ -29,6 +27,7 @@ def _can_manage_financial_services(user) -> bool:
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy thông tin: {error}')
 def get_examination_detail(user, examination_id):
     """Lấy thông tin chi tiết hóa đơn"""
     db = next(get_db())
@@ -39,11 +38,6 @@ def get_examination_detail(user, examination_id):
 
         return jsonify(build_examination_invoice_detail_response(db, examination)), 200
 
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi lấy thông tin chi tiết hóa đơn: {str(e)}")
-        logging.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi lấy thông tin: {str(e)}'}), 500
     finally:
         db.close()
 

@@ -39,6 +39,7 @@ def get_survey_criteria(user):
 @survey_criteria_bp.route('/survey-criteria/', methods=['POST'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi tạo tiêu chí')
 def create_survey_criteria(user):
     """Tạo tiêu chí khảo sát mới"""
     try:
@@ -82,14 +83,6 @@ def create_survey_criteria(user):
             }
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating survey criteria: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi tạo tiêu chí'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()
@@ -97,6 +90,7 @@ def create_survey_criteria(user):
 @survey_criteria_bp.route('/survey-criteria/<int:criteria_id>', methods=['PUT'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi cập nhật tiêu chí')
 def update_survey_criteria(user, criteria_id):
     """Cập nhật tiêu chí khảo sát"""
     try:
@@ -146,14 +140,6 @@ def update_survey_criteria(user, criteria_id):
             }
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error updating survey criteria: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi cập nhật tiêu chí'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()
@@ -161,6 +147,7 @@ def update_survey_criteria(user, criteria_id):
 @survey_criteria_bp.route('/survey-criteria/<int:criteria_id>', methods=['DELETE'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi xóa tiêu chí')
 def delete_survey_criteria(user, criteria_id):
     """Xóa tiêu chí khảo sát (soft delete)"""
     try:
@@ -182,14 +169,6 @@ def delete_survey_criteria(user, criteria_id):
             'message': 'Xóa tiêu chí thành công'
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error deleting survey criteria: {str(e)}")
-        if 'db' in locals():
-            db.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi xóa tiêu chí'
-        }), 500
     finally:
         if 'db' in locals():
             db.close()

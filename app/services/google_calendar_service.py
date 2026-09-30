@@ -50,7 +50,7 @@ def _parse_google_token_error(response) -> str:
         if error_code:
             return str(error_code)
     except Exception as exc:
-        logger.debug('Google Calendar error payload không phải JSON: %s', exc)
+        logger.debug('Google Calendar error payload không phải JSON: %s', exc, exc_info=True)
     return response.text or f'http_{response.status_code}'
 
 
@@ -129,7 +129,7 @@ def _persist_refreshed_token(connection, new_access_token, new_expires_at):
         else:
             logger.error(f"Connection {connection.id} not found in DB")
     except Exception as e:
-        logger.error(f"Error saving token to DB: {e}")
+        logger.error(f"Error saving token to DB: {e}", exc_info=True)
         db.rollback()
     finally:
         db.close()
@@ -281,7 +281,7 @@ class GoogleCalendarService:
                             _set_connection_credential_error(connection, 'refresh_timeout', False)
                             return None
                     except Exception as e:
-                        logger.error(f"Refresh exception: {e}")
+                        logger.error(f"Refresh exception: {e}", exc_info=True)
                         _set_connection_credential_error(connection, f'refresh_exception:{e}', False)
                         return None
 
@@ -297,7 +297,7 @@ class GoogleCalendarService:
             )
             
         except Exception as e:
-            logger.error(f"Error getting valid credentials: {e}")
+            logger.error(f"Error getting valid credentials: {e}", exc_info=True)
             _set_connection_credential_error(connection, f'credential_exception:{e}', False)
             return None
 
@@ -396,7 +396,7 @@ class GoogleCalendarService:
             logger.error(f'Error creating Google Calendar event: {error}')
             return None
         except Exception as e:
-            logger.error(f'Unexpected error creating Google Calendar event: {e}')
+            logger.error(f'Unexpected error creating Google Calendar event: {e}', exc_info=True)
             return None
     
     @staticmethod
@@ -433,7 +433,7 @@ class GoogleCalendarService:
         except CalendarEventRetired:
             raise
         except Exception:
-            logger.warning('Google Calendar transfer event remains pending for appointment %s', appointment.id)
+            logger.warning('Google Calendar transfer event remains pending for appointment %s', appointment.id, exc_info=True)
             return False
 
     @staticmethod
@@ -494,7 +494,7 @@ class GoogleCalendarService:
             logger.error(f'Error updating Google Calendar event: {error}')
             return False
         except Exception as e:
-            logger.error(f'Unexpected error updating Google Calendar event: {e}')
+            logger.error(f'Unexpected error updating Google Calendar event: {e}', exc_info=True)
             return False
     
     @staticmethod
@@ -525,7 +525,7 @@ class GoogleCalendarService:
             logger.error(f'Error deleting Google Calendar event: {error}')
             return False
         except Exception as e:
-            logger.error(f'Unexpected error deleting Google Calendar event: {e}')
+            logger.error(f'Unexpected error deleting Google Calendar event: {e}', exc_info=True)
             return False
 
     @staticmethod

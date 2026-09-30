@@ -11,7 +11,6 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
     _get_referral_source_cases,
     _parse_referral_source_date_range,
     dashboard_bp,
-    logger,
 )
 from app.utils.api_error_contract import api_error_boundary
 

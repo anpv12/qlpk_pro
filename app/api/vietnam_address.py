@@ -405,7 +405,7 @@ def get_ward_by_name():
         try:
             db.close()
         except Exception as exc:
-            logger.warning('Không đóng được session DB: %s', exc)
+            logger.warning('Không đóng được session DB: %s', exc, exc_info=True)
 
 def _import_wards(base_url, db):
     # 3. Lấy danh sách phường/xã

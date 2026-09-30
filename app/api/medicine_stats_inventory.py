@@ -8,7 +8,6 @@ from app.utils.search_normalization import normalized_contains
 from sqlalchemy import or_
 from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     latest_batch_of,
-    logger,
     medicine_router,
 )
 from app.utils.api_error_contract import api_error_boundary
@@ -62,6 +61,7 @@ def _query_inventory_medicines(db, medicine_type, search):
 
 @medicine_router.route('/medicine/statistics/inventory', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_statistics_inventory(user):
     """
     Lấy danh sách thuốc với thông tin tồn kho
@@ -91,11 +91,6 @@ def get_statistics_inventory(user):
             'medicines': data
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting statistics inventory: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()
 
@@ -217,6 +212,7 @@ def _add_history_item(db, medicines_map, medicine_cache, item):
 
 @medicine_router.route('/medicine/statistics/prescription-history', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_statistics_prescription_history(user):
     """
     Lịch sử kê thuốc: group by Medicine → Doctor → chi tiết từng đơn
@@ -254,11 +250,6 @@ def get_statistics_prescription_history(user):
             'medicines': medicines_list
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting prescription history: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()
 

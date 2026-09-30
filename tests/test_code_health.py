@@ -33,6 +33,23 @@ def test_split_stylesheet_entries_import_existing_topic_parts_in_order() -> None
         assert len(set(imports)) == len(imports), entry
 
 
+def test_no_blind_except_swallows_errors() -> None:
+    assert health.blind_except_findings() == []
+
+
+def test_blind_except_rule_matches_ruff_ble001() -> None:
+    import ast
+    def handler(source):
+        return next(node for node in ast.walk(ast.parse(source)) if isinstance(node, ast.ExceptHandler))
+    assert health._is_blind(handler("try:\n    x()\nexcept Exception:\n    pass\n"))
+    assert health._is_blind(handler("try:\n    x()\nexcept:\n    pass\n"))
+    assert not health._is_blind(handler("try:\n    x()\nexcept ValueError:\n    pass\n"))
+    assert not health._reports_failure(handler("try:\n    x()\nexcept Exception as e:\n    logger.error(e)\n"))
+    assert health._reports_failure(handler("try:\n    x()\nexcept Exception:\n    logger.error('x', exc_info=True)\n"))
+    assert health._reports_failure(handler("try:\n    x()\nexcept Exception:\n    logger.exception('x')\n"))
+    assert health._reports_failure(handler("try:\n    x()\nexcept Exception:\n    cleanup()\n    raise\n"))
+
+
 def test_python_functions_stay_short_and_simple() -> None:
     assert health.python_function_findings() == []
 

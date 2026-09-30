@@ -7,6 +7,8 @@
   longer than the max-lines-per-function limit (80).
 - Every app Python function stays at or under MAX_FUNCTION_LINES code lines and has
   McCabe complexity (same counting as ruff C901) at or under MAX_PY_COMPLEXITY.
+- No app Python handler catches Exception/BaseException (or bare except) silently: it must
+  re-raise or log with the traceback (logger.exception / exc_info=True), as ruff BLE001 requires.
 - Every app stylesheet (vendor excluded) stays at or under MAX_CSS_LINES; large sheets are split by
   topic into <stem>/ and the entry keeps the @import order (the cascade order).
 - The number of distinct window.X globals assigned by page scripts never exceeds MAX_WINDOW_GLOBALS.
@@ -50,6 +52,37 @@ def oversized() -> list[str]:
         if count > MAX_LINES:
             out.append(f"{path.relative_to(ROOT)}: {count} dòng (> {MAX_LINES})")
     return out
+
+
+LOG_METHODS = {"error", "warning", "info", "debug", "critical"}
+
+
+def _is_blind(handler: ast.ExceptHandler) -> bool:
+    if handler.type is None:
+        return True
+    names = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+    return any(isinstance(name, ast.Name) and name.id in {"Exception", "BaseException"} for name in names)
+
+
+def _reports_failure(handler: ast.ExceptHandler) -> bool:
+    for node in ast.walk(ast.Module(body=handler.body, type_ignores=[])):
+        if isinstance(node, ast.Raise):
+            return True
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and "log" in ast.unparse(node.func.value).lower():
+            if node.func.attr == "exception" or (node.func.attr in LOG_METHODS and any(k.arg == "exc_info" for k in node.keywords)):
+                return True
+    return False
+
+
+def blind_except_findings() -> list[str]:
+    findings = []
+    for path in source_files():
+        if path.suffix != ".py":
+            continue
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.ExceptHandler) and _is_blind(node) and not _reports_failure(node):
+                findings.append(f"{path.relative_to(ROOT)}:{node.lineno}: except Exception nuốt lỗi; bắt đúng loại lỗi hoặc log kèm traceback")
+    return findings
 
 
 def stylesheet_files() -> list[Path]:
@@ -170,7 +203,7 @@ def eslint_findings() -> list[str] | None:
 
 
 def main() -> int:
-    failures = oversized() + oversized_stylesheets() + python_function_findings() + window_global_findings()
+    failures = oversized() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")

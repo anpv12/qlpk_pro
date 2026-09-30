@@ -93,7 +93,7 @@ def delete_result_file_for_chi_dinh(db, chi_dinh_id, file_id, root_path, logger=
             os.remove(file_path)
         except Exception as exc:
             if logger:
-                logger.warning(f"Could not delete file {file_path}: {exc}")
+                logger.warning(f"Could not delete file {file_path}: {exc}", exc_info=True)
 
     chi_dinh.result_files = [f for f in chi_dinh.result_files if f.get('id') != file_id]
     return chi_dinh
@@ -111,7 +111,7 @@ def delete_result_files_for_chi_dinh_list(chi_dinh_list, root_path, logger=None)
                         os.remove(file_path)
                     except Exception as exc:
                         if logger:
-                            logger.warning(f"Could not delete file {file_path}: {exc}")
+                            logger.warning(f"Could not delete file {file_path}: {exc}", exc_info=True)
 
 def get_result_file_download(db, chi_dinh_id, file_id, root_path):
     chi_dinh = _get_chi_dinh_or_raise(db, chi_dinh_id)

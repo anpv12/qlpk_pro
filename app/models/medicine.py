@@ -1,3 +1,4 @@
+from sqlalchemy.exc import SQLAlchemyError
 import logging
 from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, Boolean, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
@@ -72,14 +73,14 @@ class Medicine(Base):
                                if b.expiry_date and (b.remaining_quantity or 0) > 0]
             if active_batches:
                 nearest_expiry_date = min(b.expiry_date for b in active_batches)
-        except Exception:
+        except (SQLAlchemyError, TypeError, AttributeError):
             nearest_expiry_date = None
 
         days_to_expiry = None
         if nearest_expiry_date:
             try:
                 days_to_expiry = (nearest_expiry_date - date.today()).days
-            except Exception:
+            except (TypeError, AttributeError):
                 days_to_expiry = None
 
         is_low_stock = None
@@ -88,7 +89,7 @@ class Medicine(Base):
                 stock_qty = float(self.stock_quantity) if self.stock_quantity is not None else 0.0
                 threshold = float(self.low_stock_threshold) if self.low_stock_threshold else 0.0
                 is_low_stock = stock_qty <= threshold and threshold > 0
-            except Exception:
+            except (TypeError, ValueError):
                 is_low_stock = None
 
         is_expiring_soon = None
@@ -101,7 +102,7 @@ class Medicine(Base):
             if self.batches:
                 batch_count = len(self.batches)
         except Exception as exc:
-            logger.warning('Không đếm được số lô của thuốc %s: %s', getattr(self, 'id', None), exc)
+            logger.warning('Không đếm được số lô của thuốc %s: %s', getattr(self, 'id', None), exc, exc_info=True)
 
         return {
             'id': self.id,

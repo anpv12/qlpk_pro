@@ -18,6 +18,7 @@ from app.models.appointment import Appointment
 from sqlalchemy.orm import joinedload
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 def populate_history_icd_details(db, history_list):
     if not history_list or not isinstance(history_list, list):
@@ -91,6 +92,7 @@ def _list_patient_rows(patients):
 # Lấy danh sách bệnh nhân (có thể filter theo tên, sđt, appointment_status)
 @router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def list_patients(user):
     db = next(get_db())
     try:
@@ -153,9 +155,6 @@ def list_patients(user):
             patients = [patient for patient in patients if patient.id in scoped_ids]
         result_list = _list_patient_rows(patients)
         return jsonify(result_list), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error listing patients: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -239,6 +238,7 @@ def _filter_patients_by_clinician(db, doctor_id, patient_query, psychologist_id)
 # Modal search patients (used in doctor examination page)
 @router.route('/modal-search', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def modal_search_patients(user):
     """Tìm kiếm bệnh nhân trong modal, tự động filter theo doctor_id của user hiện tại"""
     db = next(get_db())
@@ -309,15 +309,13 @@ def modal_search_patients(user):
         data = _modal_patient_rows(doctor_id, patients, psychologist_id)
 
         return jsonify({'patients': data}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error in modal_search_patients: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 # Lấy chi tiết bệnh nhân theo ID
 @router.route('/<int:patient_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_patient(user, patient_id):
     db = next(get_db())
     try:
@@ -375,13 +373,11 @@ def get_patient(user, patient_id):
                 'safety_plan': patient.safety_plan or {}
             }
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting patient details: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @router.route('/<int:patient_id>/public', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi khi lấy thông tin bệnh nhân')
 def get_patient_public(patient_id):
     """Public patient profile used by survey pages."""
     db = next(get_db())
@@ -421,12 +417,6 @@ def get_patient_public(patient_id):
                 'updated_at': safe_isoformat(patient.updated_at)
             }
         }), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as exc:
-        logger.error("Error getting public patient %s: %s", patient_id, exc, exc_info=True)
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi lấy thông tin bệnh nhân'
-        }), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 

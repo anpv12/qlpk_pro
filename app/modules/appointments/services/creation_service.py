@@ -462,7 +462,7 @@ def _resolve_duration_minutes(db, appt_create_data, logger=None):
                     logger.info(f"Using duration_minutes={duration_minutes} from Service ID {service.id}")
         except Exception as exc:
             if logger:
-                logger.error(f"Error fetching service duration: {exc}")
+                logger.error(f"Error fetching service duration: {exc}", exc_info=True)
     elif appt_create_data.package_id:
         try:
             package = db.query(Package).filter(Package.id == appt_create_data.package_id).first()
@@ -472,7 +472,7 @@ def _resolve_duration_minutes(db, appt_create_data, logger=None):
                     logger.info(f"Using duration_minutes={duration_minutes} from Package ID {package.id}")
         except Exception as exc:
             if logger:
-                logger.error(f"Error fetching package duration: {exc}")
+                logger.error(f"Error fetching package duration: {exc}", exc_info=True)
     return duration_minutes or 60
 
 

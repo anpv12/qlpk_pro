@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 from datetime import datetime
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ holiday_router = Blueprint('holiday', __name__, url_prefix='/holidays')
 
 @holiday_router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_holidays(user):
     """Lấy danh sách tất cả ngày lễ"""
     try:
@@ -31,14 +33,12 @@ def get_holidays(user):
             })
         
         return jsonify(result), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting holidays: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @holiday_router.route('/<int:holiday_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_holiday(user, holiday_id):
     """Lấy thông tin một ngày lễ cụ thể"""
     try:
@@ -59,14 +59,12 @@ def get_holiday(user, holiday_id):
         }
         
         return jsonify(result), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error getting holiday: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @holiday_router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def create_holiday(user):
     """Tạo ngày lễ mới"""
     try:
@@ -119,14 +117,12 @@ def create_holiday(user):
         }
         
         return jsonify(result), 201, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error creating holiday: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @holiday_router.route('/<int:holiday_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def update_holiday(user, holiday_id):
     """Cập nhật ngày lễ"""
     try:
@@ -169,14 +165,12 @@ def update_holiday(user, holiday_id):
         }
         
         return jsonify(result), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error updating holiday: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @holiday_router.route('/<int:holiday_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def delete_holiday(user, holiday_id):
     """Xóa ngày lễ"""
     try:
@@ -191,8 +185,5 @@ def delete_holiday(user, holiday_id):
         emit_catalog_changed('holiday_deleted', entity='holiday', entity_id=holiday_id)
         
         return jsonify({'detail': 'Holiday deleted successfully'}), 200, {'Content-Type': 'application/json; charset=utf-8'}
-    except Exception as e:
-        logger.error(f"Error deleting holiday: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()

@@ -70,27 +70,23 @@ def _oauth_user(db, pending, lock=False):
 
 @calendar_bp.route('/connect/google/init', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Không thể bắt đầu kết nối Google Calendar')
 def connect_google_init(user: User):
     """Return the Google consent URL bound to the current login session."""
     try:
         return jsonify({'url': _begin_google_oauth(user)}), 200
     except CalendarAccessError as error:
         return jsonify({'error': str(error)}), error.status_code
-    except Exception as error:
-        logger.error('Error initiating Google Calendar connection: %s', type(error).__name__)
-        return jsonify({'error': 'Không thể bắt đầu kết nối Google Calendar'}), 500
 
 @calendar_bp.route('/connect/google', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Không thể bắt đầu kết nối Google Calendar')
 def connect_google(user: User):
     """Redirect to the Google consent URL bound to the current login session."""
     try:
         return redirect(_begin_google_oauth(user))
     except CalendarAccessError as error:
         return jsonify({'error': str(error)}), error.status_code
-    except Exception as error:
-        logger.error('Error initiating Google Calendar connection: %s', type(error).__name__)
-        return jsonify({'error': 'Không thể bắt đầu kết nối Google Calendar'}), 500
 
 @calendar_bp.route('/oauth/google/callback', methods=['GET'])
 def google_callback():
@@ -137,7 +133,7 @@ def google_callback():
         return _calendar_redirect('session_unavailable')
     except Exception as error:
         db.rollback()
-        logger.error('Error completing Google Calendar connection: %s', type(error).__name__)
+        logger.error('Error completing Google Calendar connection: %s', type(error).__name__, exc_info=True)
         return _calendar_redirect('oauth_failed')
     finally:
         db.close()
@@ -233,7 +229,7 @@ def _validate_calendar_connections(connections, email_map, invalidated, validate
                 })
 
         except Exception as e:
-            logger.error(f"Error validating connection for user {conn.user_id}: {e}")
+            logger.error(f"Error validating connection for user {conn.user_id}: {e}", exc_info=True)
             warnings.append({
                 'user_id': conn.user_id,
                 'reason': str(e)
@@ -315,7 +311,7 @@ def validate_connections(user: User):
         db.rollback()
         if isinstance(e, CalendarAccessError):
             return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error validating connections: {e}")
+        logger.error(f"Error validating connections: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
@@ -474,7 +470,7 @@ def get_sync_status(user: User):
     except Exception as e:
         if isinstance(e, CalendarAccessError):
             return jsonify({'error': str(e)}), e.status_code
-        logger.error(f"Error getting sync status: {e}")
+        logger.error(f"Error getting sync status: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()

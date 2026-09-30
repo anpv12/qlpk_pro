@@ -211,7 +211,7 @@ def create_doctor_busy_schedule(current_user):
         try:
             _notify_staff_of_busy_schedule(busy_schedule)
         except Exception as e:
-            logger.warning(f"Could not create notifications: {e}")
+            logger.warning(f"Could not create notifications: {e}", exc_info=True)
             # Không rollback nếu notification lỗi
 
         emit_busy_schedule_changed('created', schedule=busy_schedule)
@@ -226,7 +226,7 @@ def create_doctor_busy_schedule(current_user):
         try:
             db.close()
         except Exception as exc:
-            logger.warning('Không đóng được session DB: %s', exc)
+            logger.warning('Không đóng được session DB: %s', exc, exc_info=True)
 
 # Cập nhật lịch bận
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/<int:schedule_id>', methods=['PUT'])

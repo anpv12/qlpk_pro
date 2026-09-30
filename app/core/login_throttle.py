@@ -9,6 +9,9 @@ from flask import jsonify, request
 from redis import Redis
 
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 REDIS_RESERVE = """
@@ -97,6 +100,7 @@ def limit_login_attempts(handler):
         try:
             retry_after = reserve_login_attempt(username, request.remote_addr)
         except Exception:
+            logger.exception('Login throttle store unavailable')
             return jsonify(code='system.unavailable', detail='Tạm thời không thể đăng nhập.'), 503, {'Retry-After': '5'}
         if retry_after:
             return jsonify(code='request.rate_limited', detail='Vui lòng chờ trước khi thử đăng nhập lại.',

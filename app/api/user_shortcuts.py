@@ -300,7 +300,7 @@ def _resolve_shortcut_target(data, is_admin, row, user):
                 return (jsonify({'detail': 'user_id là bắt buộc khi scope=user'}), 400), None, None
             try:
                 target_user_id = int(incoming_user_id)
-            except Exception:
+            except (TypeError, ValueError):
                 return (jsonify({'detail': 'user_id không hợp lệ'}), 400), None, None
     else:
         target_scope = 'user'

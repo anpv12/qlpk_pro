@@ -9,7 +9,6 @@ from app.models.appointment import Appointment
 from app.models.appointment_service import AppointmentService
 from datetime import datetime
 from decimal import Decimal
-import logging
 from app.api.payment_waiting import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     CLINIC_INFO,
     INVOICE_SERIAL,

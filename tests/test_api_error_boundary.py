@@ -47,3 +47,13 @@ def test_http_errors_keep_their_status_with_the_same_shape():
     response = build_app().test_client().get('/missing')
     assert response.status_code == 404
     assert set(response.get_json()) == {'error'}
+
+
+def test_unwrap_keeps_the_error_boundary():
+    import inspect
+
+    def view():
+        raise RuntimeError('x')
+
+    wrapped = api_error_boundary(detail='{error}')(view)
+    assert inspect.unwrap(wrapped) is wrapped and wrapped.__name__ == 'view'

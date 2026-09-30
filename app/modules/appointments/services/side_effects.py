@@ -24,7 +24,7 @@ def sync_calendar_for_appointment(appt, db, action='update', logger_override=Non
         db.commit()
     except Exception as e:
         db.rollback()
-        active_logger.error('Không ghi được yêu cầu đồng bộ Calendar (%s) cho lịch hẹn %s: %s', action, appt.id, e)
+        active_logger.error('Không ghi được yêu cầu đồng bộ Calendar (%s) cho lịch hẹn %s: %s', action, appt.id, e, exc_info=True)
         return False
     schedule_calendar_sync_drain([appt.id])
     return True
@@ -95,7 +95,7 @@ def schedule_appointment_reminder(
                 notification_service.create_appointment_reminder(appt_id, reminder_hours=24)
                 active_logger.info(success_message.format(appointment_id=appt_id))
             except Exception as e:
-                active_logger.info(error_message.format(appointment_id=appt_id, error=e))
+                active_logger.info(error_message.format(appointment_id=appt_id, error=e), exc_info=True)
             finally:
                 thread_db.close()
 
@@ -103,4 +103,4 @@ def schedule_appointment_reminder(
         reminder_thread.daemon = True
         reminder_thread.start()
     except Exception as e:
-        active_logger.info(scheduling_error_message.format(appointment_id=appointment_id, error=e))
+        active_logger.info(scheduling_error_message.format(appointment_id=appointment_id, error=e), exc_info=True)

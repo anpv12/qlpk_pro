@@ -86,6 +86,7 @@ def _import_service_rows(db, df, error_count, errors, success_count):
             success_count += 1
 
         except Exception as e:
+            logger.warning('Service import row %s failed', index + 2, exc_info=True)
             errors.append(f'Row {index + 2}: {str(e)}')
             error_count += 1
     return error_count, success_count
@@ -113,6 +114,7 @@ def import_services(current_user):
         try:
             df = pd.read_excel(file, header=0)
         except Exception as e:
+            logger.warning('Service import: unreadable Excel file', exc_info=True)
             return jsonify({'detail': f'Error reading Excel file: {str(e)}'}), 400
 
         # Validate columns

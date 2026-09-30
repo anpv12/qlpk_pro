@@ -34,7 +34,7 @@ class MedicineBatch(Base):
         if self.expiry_date:
             try:
                 days_to_expiry = (self.expiry_date - date.today()).days
-            except Exception:
+            except (TypeError, AttributeError):
                 days_to_expiry = None
 
         # Xác định trạng thái lô

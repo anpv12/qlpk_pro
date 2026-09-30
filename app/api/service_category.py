@@ -199,6 +199,7 @@ def import_service_categories(user):
         try:
             df = pd.read_excel(file, header=0)
         except Exception as e:
+            logger.warning('Service category import: unreadable Excel file', exc_info=True)
             return jsonify({'detail': f'Error reading Excel file: {str(e)}'}), 400
         
         # Validate columns
@@ -244,6 +245,7 @@ def import_service_categories(user):
                 success_count += 1
                 
             except Exception as e:
+                logger.warning('Service category import row %s failed', index + 2, exc_info=True)
                 errors.append(f'Row {index + 2}: {str(e)}')
                 error_count += 1
         

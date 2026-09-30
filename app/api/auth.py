@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 from flask import Blueprint, request, jsonify
 from app.models.user import User
 from app.core.database import get_db
@@ -15,6 +16,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ def require_auth(f):
         except Exception as exc:
             if activity_db is not None:
                 activity_db.rollback()
-            logger.warning('Không cập nhật được last_login cho user %s: %s', getattr(user, 'id', None), exc)
+            logger.warning('Không cập nhật được last_login cho user %s: %s', getattr(user, 'id', None), exc, exc_info=True)
         finally:
             if activity_db is not None:
                 activity_db.close()
@@ -113,6 +115,7 @@ def require_admin(f):
 
 @router.route('/login', methods=['POST'])
 @limit_login_attempts
+@api_error_boundary(detail='Internal server error')
 def login(): # Corrected function name from 'cllogin' to 'login'
     """
     Handles user login, authenticates credentials, and issues a JWT access token.
@@ -160,9 +163,6 @@ def login(): # Corrected function name from 'cllogin' to 'login'
     except SessionStoreUnavailable:
         db.rollback()
         return jsonify(code='system.unavailable', detail='Chưa thể tạo phiên đăng nhập.'), 503
-    except Exception as e:
-        logger.error(f"Login error: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
@@ -174,6 +174,7 @@ def logout(user):
     try:
         revoke_session(claims)
     except Exception:
+        logger.exception('Session revocation failed during logout')
         return jsonify(code='system.unavailable', detail='Chưa thể thu hồi phiên đăng nhập.'), 503
     from app.realtime.socket import disconnect_token_clients
     disconnect_token_clients(token)
@@ -200,6 +201,7 @@ def browser_session_info(user):
 
 @router.route('/register', methods=['POST'])
 @require_admin
+@api_error_boundary(detail='Internal server error')
 def register(user):
     """
     Registers a new user.
@@ -211,7 +213,7 @@ def register(user):
         # Validate input data using Pydantic schema
         try:
             user_data = UserCreate(**data)
-        except Exception as e:
+        except (ValidationError, TypeError) as e:
             # Catch Pydantic validation errors and return a 400
             return jsonify({'detail': f'Invalid input data: {e.errors() if hasattr(e, "errors") else str(e)}'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
@@ -246,15 +248,12 @@ def register(user):
             "full_name": db_user.full_name,
             "role": db_user.role
         }), 201, {'Content-Type': 'application/json; charset=utf-8'} # 201 Created
-    except Exception as e:
-        db.rollback() # Rollback changes in case of an error
-        logger.error(f"Registration error: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 
 @check_router.route('/me', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_current_user_info(user: User):
     """
     Returns information about the currently authenticated user.
@@ -268,9 +267,6 @@ def get_current_user_info(user: User):
         response = jsonify(session_user_payload(current))
         response.headers['Cache-Control'] = 'no-store'
         return response
-    except Exception as e:
-        logger.error(f"Error getting user info: {e}")
-        return jsonify({'detail': 'Internal server error'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
 

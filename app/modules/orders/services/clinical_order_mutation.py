@@ -352,5 +352,5 @@ def _parse_scheduled_for(value):
     except (ValueError, TypeError):
         try:
             return datetime.fromisoformat(value.split('T')[0]).date()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return None

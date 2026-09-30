@@ -8,7 +8,6 @@ from app.models.user import User, UserRole
 from app.api.auth import require_auth
 from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo xong các tên này
     dashboard_bp,
-    logger,
 )
 from app.utils.api_error_contract import api_error_boundary
 

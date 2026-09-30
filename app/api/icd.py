@@ -368,6 +368,7 @@ def import_icd(user):
                 imported_count += 1
                 
             except Exception as e:
+                logger.warning('ICD import row %s failed', i + 2, exc_info=True)
                 errors.append(f"Dòng {i+2}: Lỗi - {str(e)}")
                 db.rollback()  # Rollback nếu có lỗi
                 continue
