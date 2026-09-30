@@ -4,12 +4,14 @@ from app.models.occupation import Occupation
 from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 occupation_bp = Blueprint('occupation', __name__)
 
 @occupation_bp.route('/occupations/', methods=['GET'])
 @require_auth  # Bật lại authentication
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách nghề nghiệp: {error}')
 def get_occupations(user):
     """Lấy danh sách tất cả nghề nghiệp đang hoạt động"""
     try:
@@ -29,12 +31,6 @@ def get_occupations(user):
             'data': occupation_list
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting occupations: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy danh sách nghề nghiệp: {str(e)}'
-        }), 500
     finally:
         db.close()
 

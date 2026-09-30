@@ -15,6 +15,7 @@ from app.services.kinship_service import (
 )
 from datetime import datetime
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 family_member_router = Blueprint('family_member', __name__)
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ def sync_appointment_relatives_from_family_member(db, family_member):
 
 @family_member_router.route('/family-members/patient/<int:patient_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách người thân: {error}')
 def get_family_members(user, patient_id):
     """Lấy danh sách người thân của bệnh nhân"""
     try:
@@ -67,11 +69,6 @@ def get_family_members(user, patient_id):
             'success': True,
             'data': family_members_data
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy danh sách người thân: {str(e)}'
-        }), 500
     finally:
         db.close()
 
@@ -159,6 +156,7 @@ def _parse_family_member_dates(data):
 
 @family_member_router.route('/family-members', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi thêm người thân: {error}')
 def create_family_member(user):
     """Tạo người thân mới"""
     try:
@@ -200,17 +198,12 @@ def create_family_member(user):
             'message': 'Đã thêm người thân thành công',
             'data': family_member.to_dict()
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi thêm người thân: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @family_member_router.route('/family-members/<int:member_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi cập nhật thông tin: {error}')
 def update_family_member(user, member_id):
     """Cập nhật thông tin người thân"""
     try:
@@ -270,17 +263,12 @@ def update_family_member(user, member_id):
             'message': 'Đã cập nhật thông tin thành công',
             'data': family_member.to_dict()
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi cập nhật thông tin: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @family_member_router.route('/family-members/<int:member_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xóa người thân: {error}')
 def delete_family_member(user, member_id):
     """Xóa người thân"""
     try:
@@ -318,17 +306,12 @@ def delete_family_member(user, member_id):
             'success': True,
             'message': 'Đã xóa người thân thành công'
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi xóa người thân: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @family_member_router.route('/family-members/search', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi tìm kiếm: {error}')
 def search_relatives(user):
     """Tìm kiếm người thân trong hệ thống"""
     try:
@@ -404,11 +387,6 @@ def search_relatives(user):
                 'pages': (total + per_page - 1) // per_page
             }
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi tìm kiếm: {str(e)}'
-        }), 500
     finally:
         db.close()
 
@@ -481,6 +459,7 @@ def _link_relative_patients(db, emergency_contact, forward_kinship, joint_exam_d
 
 @family_member_router.route('/family-members/link', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi liên kết người thân: {error}')
 def link_relatives(user):
     """Liên kết người thân với bệnh nhân hiện tại"""
     try:
@@ -530,11 +509,5 @@ def link_relatives(user):
             'message': f'Đã liên kết {len(linked_relatives)} người thân thành công',
             'data': [member.to_dict() for member in linked_relatives]
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi liên kết người thân: {str(e)}'
-        }), 500
     finally:
         db.close() 

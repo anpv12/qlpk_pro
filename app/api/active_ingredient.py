@@ -6,11 +6,13 @@ from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import pandas as pd
 import io
+from app.utils.api_error_contract import api_error_boundary
 
 active_ingredient_bp = Blueprint('active_ingredient', __name__, url_prefix='/api/active-ingredient')
 
 @active_ingredient_bp.route('', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def get_active_ingredients(user):
     db = SessionLocal()
     try:
@@ -34,13 +36,12 @@ def get_active_ingredients(user):
             'page': page,
             'limit': limit
         })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 @active_ingredient_bp.route('', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def create_active_ingredient(user):
     db = SessionLocal()
     try:
@@ -72,14 +73,12 @@ def create_active_ingredient(user):
         emit_inventory_changed('active_ingredient_created', entity='active_ingredient', entity_id=new_item.id)
         
         return jsonify({'success': True, 'data': new_item.to_dict()})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 @active_ingredient_bp.route('/<int:id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def update_active_ingredient(user, id):
     db = SessionLocal()
     try:
@@ -108,14 +107,12 @@ def update_active_ingredient(user, id):
         db.commit()
         emit_inventory_changed('active_ingredient_updated', entity='active_ingredient', entity_id=item.id)
         return jsonify({'success': True, 'data': item.to_dict()})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 @active_ingredient_bp.route('/<int:id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def delete_active_ingredient(user, id):
     db = SessionLocal()
     try:
@@ -128,42 +125,38 @@ def delete_active_ingredient(user, id):
         emit_inventory_changed('active_ingredient_deleted', entity='active_ingredient', entity_id=item.id)
         
         return jsonify({'success': True})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 @active_ingredient_bp.route('/template', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def download_template(user):
-    try:
-        df = pd.DataFrame({
-            'Tên hoạt chất (Bắt buộc)': ['Paracetamol', 'Ibuprofen'],
-            'Mô tả': ['Giảm đau, hạ sốt', 'Kháng viêm không steroid']
-        })
+    df = pd.DataFrame({
+        'Tên hoạt chất (Bắt buộc)': ['Paracetamol', 'Ibuprofen'],
+        'Mô tả': ['Giảm đau, hạ sốt', 'Kháng viêm không steroid']
+    })
         
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='HoatChat')
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='HoatChat')
             
-            # Formatting
-            worksheet = writer.sheets['HoatChat']
-            worksheet.column_dimensions['A'].width = 35
-            worksheet.column_dimensions['B'].width = 50
+        # Formatting
+        worksheet = writer.sheets['HoatChat']
+        worksheet.column_dimensions['A'].width = 35
+        worksheet.column_dimensions['B'].width = 50
             
-        output.seek(0)
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name='hoat_chat_mau.xlsx',
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name='hoat_chat_mau.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @active_ingredient_bp.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xử lý file: {error}')
 def import_excel(user):
     db = SessionLocal()
     try:
@@ -224,8 +217,5 @@ def import_excel(user):
             'success': True,
             'message': f'Đã thêm/khôi phục {added_count} hoạt chất. Bỏ qua {skipped_count} hoạt chất trùng lặp.'
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': f'Lỗi khi xử lý file: {str(e)}'}), 500
     finally:
         db.close()

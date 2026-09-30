@@ -12,6 +12,7 @@ from app.modules.medicines.services.reference_review import can_review_reference
 import logging
 from datetime import datetime, timezone
 from sqlalchemy import or_
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,7 @@ def _filtered_medicine_query(category, db, is_imported, reference_status, search
 
 @medicine_router.route('/medicines/', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách thuốc')
 def get_medicines(user):
     """Lấy danh sách thuốc"""
     try:
@@ -156,9 +158,6 @@ def get_medicines(user):
             'total_pages': (total + per_page - 1) // per_page
         })
         
-    except Exception as e:
-        logger.error(f"Error getting medicines: {e}")
-        return jsonify({"error": "Lỗi khi lấy danh sách thuốc"}), 500
     finally:
         db.close()
 
@@ -169,6 +168,7 @@ def catalog_error(error):
 
 @medicine_router.route('/medicines/', methods=['POST'])
 @require_auth
+@api_error_boundary(error='Không thể thêm thuốc.')
 def create_medicine(user):
     db = next(get_db())
     try:
@@ -182,16 +182,13 @@ def create_medicine(user):
     except IntegrityError:
         db.rollback()
         return jsonify({'error': 'Thuốc DAV hoặc mã thuốc đã tồn tại. Hãy tải lại danh sách.'}), 409
-    except Exception:
-        db.rollback()
-        logger.exception('Cannot create DAV-linked medicine')
-        return jsonify({'error': 'Không thể thêm thuốc.'}), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/<int:medicine_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy thông tin thuốc')
 def get_medicine(user, medicine_id):
     """Lấy thông tin thuốc theo ID"""
     try:
@@ -212,9 +209,6 @@ def get_medicine(user, medicine_id):
         } if latest else None)
         return jsonify(result)
         
-    except Exception as e:
-        logger.error(f"Error getting medicine: {e}")
-        return jsonify({"error": "Lỗi khi lấy thông tin thuốc"}), 500
     finally:
         db.close()
 
@@ -263,6 +257,7 @@ def export_medicines_excel(user):
 
 @medicine_router.route('/medicines/<int:medicine_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(error='Không thể cập nhật thuốc.')
 def update_medicine(user, medicine_id):
     db = next(get_db())
     try:
@@ -279,16 +274,13 @@ def update_medicine(user, medicine_id):
     except IntegrityError:
         db.rollback()
         return jsonify({'error': 'Thuốc DAV hoặc mã thuốc đã tồn tại. Hãy tải lại danh sách.'}), 409
-    except Exception:
-        db.rollback()
-        logger.exception('Cannot update DAV-linked medicine')
-        return jsonify({'error': 'Không thể cập nhật thuốc.'}), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/<int:medicine_id>/price', methods=['GET', 'POST'])
 @require_auth
+@api_error_boundary(error='Không thể cập nhật giá. Hãy mở lại để kiểm tra.')
 def medicine_price(user, medicine_id):
     from app.modules.medicines.services.price_history import price_payload, update_price
     db = next(get_db())
@@ -311,16 +303,13 @@ def medicine_price(user, medicine_id):
     except CatalogValidationError as error:
         db.rollback()
         return catalog_error(error)
-    except Exception:
-        db.rollback()
-        logger.exception('Cannot update medicine sale price')
-        return jsonify(error='Không thể cập nhật giá. Hãy mở lại để kiểm tra.'), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/<int:medicine_id>/reference-review', methods=['GET', 'POST'])
 @require_auth
+@api_error_boundary(error='Không thể lưu xác nhận thuốc. Hãy mở lại và kiểm tra.')
 def review_medicine_reference(user, medicine_id):
     db = next(get_db())
     try:
@@ -350,16 +339,13 @@ def review_medicine_reference(user, medicine_id):
     except IntegrityError:
         db.rollback()
         return jsonify(error='Thuốc DAV này đã được liên kết. Hãy tải lại và kiểm tra.'), 409
-    except Exception:
-        db.rollback()
-        logger.exception('Cannot review medicine reference')
-        return jsonify(error='Không thể lưu xác nhận thuốc. Hãy mở lại và kiểm tra.'), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/<int:medicine_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='Lỗi khi xóa thuốc')
 def delete_medicine(user, medicine_id):
     """Xóa thuốc"""
     try:
@@ -386,16 +372,13 @@ def delete_medicine(user, medicine_id):
         
         return jsonify({"message": "Xóa thuốc thành công"})
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting medicine: {e}")
-        return jsonify({"error": "Lỗi khi xóa thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/categories', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách danh mục thuốc')
 def get_medicine_categories(user):
     """Lấy danh sách danh mục thuốc (deprecated - use /medicine-categories/active)"""
     try:
@@ -413,15 +396,13 @@ def get_medicine_categories(user):
         
         return jsonify(categories_data)
         
-    except Exception as e:
-        logger.error(f"Error getting medicine categories: {e}")
-        return jsonify({"error": "Lỗi khi lấy danh sách danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_router.route('/medicines/active-ingredients', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def get_active_ingredients(user):
     """Lấy danh sách hoạt chất/biệt dược duy nhất (DISTINCT generic_name) cho autocomplete"""
     try:
@@ -439,9 +420,6 @@ def get_active_ingredients(user):
             'data': ingredients
         })
         
-    except Exception as e:
-        logger.error(f"Error getting active ingredients: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 

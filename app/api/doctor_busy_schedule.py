@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import joinedload
 import pytz
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ doctor_busy_schedule_bp = Blueprint('doctor_busy_schedule', __name__)
 # Lấy danh sách lịch bận của bác sĩ
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def get_doctor_busy_schedules(current_user):
     """Lấy danh sách lịch bận của bác sĩ"""
     db = next(get_db())
@@ -76,9 +78,6 @@ def get_doctor_busy_schedules(current_user):
             'total': len(result)
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting doctor busy schedules: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 
@@ -158,6 +157,7 @@ def _busy_schedule_conflict_response(data, db, end_datetime, start_datetime):
 # Tạo lịch bận mới
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules', methods=['POST'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def create_doctor_busy_schedule(current_user):
     """Tạo lịch bận mới"""
     db = next(get_db())
@@ -222,10 +222,6 @@ def create_doctor_busy_schedule(current_user):
             'message': 'Tạo lịch bận thành công'
         }), 201
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error creating doctor busy schedule: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         try:
             db.close()
@@ -235,6 +231,7 @@ def create_doctor_busy_schedule(current_user):
 # Cập nhật lịch bận
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/<int:schedule_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def update_doctor_busy_schedule(current_user, schedule_id):
     """Cập nhật lịch bận"""
     db = next(get_db())
@@ -302,16 +299,13 @@ def update_doctor_busy_schedule(current_user, schedule_id):
             'message': 'Cập nhật lịch bận thành công'
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating doctor busy schedule: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 
 # Xóa lịch bận
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/<int:schedule_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def delete_doctor_busy_schedule(current_user, schedule_id):
     """Xóa lịch bận"""
     db = next(get_db())
@@ -334,16 +328,13 @@ def delete_doctor_busy_schedule(current_user, schedule_id):
             'message': 'Xóa lịch bận thành công'
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting doctor busy schedule: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 
 # Lấy danh sách lý do bận phổ biến
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/busy-reasons', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def get_busy_reasons(current_user):
     """Lấy danh sách lý do bận phổ biến"""
     db = next(get_db())
@@ -406,15 +397,13 @@ def get_busy_reasons(current_user):
             'reasons': combined_reasons[:15]  # Giới hạn 15 lý do
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting busy reasons: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 
 # Kiểm tra bác sĩ có rảnh không
 @doctor_busy_schedule_bp.route('/check-doctor-availability', methods=['POST'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def check_doctor_availability(current_user):
     """Kiểm tra bác sĩ có rảnh không"""
     db = next(get_db())
@@ -483,15 +472,13 @@ def check_doctor_availability(current_user):
             'message': 'Bác sĩ rảnh trong khoảng thời gian này'
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error checking doctor availability: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 
 # Lấy lịch bận của bác sĩ hiện tại
 @doctor_busy_schedule_bp.route('/doctor-busy-schedules/my-busy-schedules', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def get_my_busy_schedules(current_user):
     """Lấy lịch bận của bác sĩ hiện tại"""
     db = next(get_db())
@@ -532,8 +519,5 @@ def get_my_busy_schedules(current_user):
             'total': len(result)
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting my busy schedules: {e}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()

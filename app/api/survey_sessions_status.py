@@ -15,10 +15,12 @@ from app.api.survey_sessions import (  # noqa: E402 — module gốc đã khởi
     survey_sessions,
     utc_iso,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 @survey_sessions.route('/survey-sessions/<int:session_id>/update-status', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def update_survey_status(user, session_id):
     """Update survey session status"""
     db_gen = None
@@ -92,15 +94,13 @@ def update_survey_status(user, session_id):
             }
         })
 
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)
 
 
 @survey_sessions.route('/survey-sessions/update-status-by-token', methods=['PUT'])
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def update_survey_status_by_token():
     """Update survey session status by session token"""
     db_gen = None
@@ -178,15 +178,13 @@ def update_survey_status_by_token():
             }
         })
 
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)
 
 
 @survey_sessions.route('/survey-sessions/status/<session_token>', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def get_survey_session_status_by_token(session_token):
     """Get survey session status by session token"""
     db_gen = None
@@ -247,9 +245,6 @@ def get_survey_session_status_by_token(session_token):
             }
         })
 
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)
@@ -257,6 +252,7 @@ def get_survey_session_status_by_token(session_token):
 
 @survey_sessions.route('/survey-sessions/close/<session_token>', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def close_survey_session(user, session_token):
     """Close survey session - make it read-only"""
     db_gen = None
@@ -279,9 +275,6 @@ def close_survey_session(user, session_token):
             return jsonify(success=False, message='Phiên khảo sát chưa liên kết chỉ định'), 409
         return finish_survey.__wrapped__(user, session_row.order_id)
 
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)

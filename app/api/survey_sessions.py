@@ -19,6 +19,7 @@ from datetime import datetime, timedelta, timezone
 import uuid
 import logging
 from copy import deepcopy
+from app.utils.api_error_contract import api_error_boundary
 
 survey_sessions = Blueprint('survey_sessions', __name__)
 logger = logging.getLogger(__name__)
@@ -243,6 +244,7 @@ def _load_survey_generation_context(data, db, examination_id, patient_id, templa
 
 @survey_sessions.route('/survey-sessions/generate', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def generate_survey_session(user):
     """Generate survey session with QR code and URL"""
     db_gen = None
@@ -295,9 +297,6 @@ def generate_survey_session(user):
             }
         })
         
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)
@@ -362,6 +361,7 @@ def _survey_status_response(db, session_row):
 
 @survey_sessions.route('/survey-sessions/<int:examination_id>/status', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi: {error}')
 def get_survey_status(user, examination_id):
     """Get survey status for an examination"""
     db_gen = None
@@ -405,9 +405,6 @@ def get_survey_status(user, examination_id):
         
         return _survey_status_response(db, session_row)
         
-    except Exception as e:
-        logger.exception("Unhandled survey session error")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         if db_gen:
             next(db_gen, None)

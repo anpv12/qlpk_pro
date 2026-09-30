@@ -10,6 +10,7 @@ from app.utils.account_access import (
 )
 from types import SimpleNamespace
 import json
+from app.utils.api_error_contract import api_error_boundary
 
 router = Blueprint('group', __name__, url_prefix='/groups')
 
@@ -135,6 +136,7 @@ def update_group(user, group_id):
 @router.route('/<int:group_id>', methods=['DELETE'])
 @require_auth
 @require_account_permission('ql-nhomquyen')
+@api_error_boundary(detail='Lỗi khi xóa nhóm quyền: {error}')
 def delete_group(user, group_id):
     db = next(get_db())
     try:
@@ -154,8 +156,5 @@ def delete_group(user, group_id):
         emit_catalog_changed('group_deleted', entity='group', entity_id=group_id)
         
         return jsonify({'detail': 'Đã xoá nhóm quyền!'}) 
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': f'Lỗi khi xóa nhóm quyền: {str(e)}'}), 500
     finally:
         db.close()

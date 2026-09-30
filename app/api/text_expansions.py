@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import Optional
 import pandas as pd
 import io
+from app.utils.api_error_contract import api_error_boundary
 
 text_expansions_bp = Blueprint('text_expansions', __name__)
 
@@ -40,6 +41,7 @@ class TextExpansionResponse(BaseModel):
 # GET /api/text-expansions/ - Lấy danh sách từ viết tắt
 @text_expansions_bp.route('/api/text-expansions/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def get_text_expansions(current_user):
     try:
         db = next(get_db())
@@ -96,14 +98,13 @@ def get_text_expansions(current_user):
             }
         }), 200
         
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # GET /api/text-expansions/active - Lấy danh sách từ viết tắt đang hoạt động (cho frontend)
 @text_expansions_bp.route('/api/text-expansions/active', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def get_active_text_expansions(current_user):
     try:
         db = next(get_db())
@@ -120,14 +121,13 @@ def get_active_text_expansions(current_user):
             'data': result
         }), 200
         
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # GET /api/text-expansions/<id> - Lấy thông tin một từ viết tắt
 @text_expansions_bp.route('/api/text-expansions/<int:expansion_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def get_text_expansion(current_user, expansion_id):
     try:
         db = next(get_db())
@@ -151,14 +151,13 @@ def get_text_expansion(current_user, expansion_id):
             }
         }), 200
         
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # POST /api/text-expansions/ - Tạo từ viết tắt mới
 @text_expansions_bp.route('/api/text-expansions/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def create_text_expansion(current_user):
     try:
         db = next(get_db())
@@ -202,15 +201,13 @@ def create_text_expansion(current_user):
             }
         }), 201
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # PUT /api/text-expansions/<id> - Cập nhật từ viết tắt
 @text_expansions_bp.route('/api/text-expansions/<int:expansion_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def update_text_expansion(current_user, expansion_id):
     try:
         db = next(get_db())
@@ -250,15 +247,13 @@ def update_text_expansion(current_user, expansion_id):
             }
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # DELETE /api/text-expansions/<id> - Xóa từ viết tắt
 @text_expansions_bp.route('/api/text-expansions/<int:expansion_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def delete_text_expansion(current_user, expansion_id):
     try:
         db = next(get_db())
@@ -273,15 +268,13 @@ def delete_text_expansion(current_user, expansion_id):
         
         return jsonify({'success': True, 'message': 'Xóa từ viết tắt thành công'}), 200
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # POST /api/text-expansions/import - Import từ Excel
 @text_expansions_bp.route('/api/text-expansions/import', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def import_text_expansions(current_user):
     try:
         if 'file' not in request.files:
@@ -338,15 +331,13 @@ def import_text_expansions(current_user):
             'errors': errors
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # GET /api/text-expansions/export - Export ra Excel
 @text_expansions_bp.route('/api/text-expansions/export', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def export_text_expansions(current_user):
     try:
         db = next(get_db())
@@ -382,14 +373,13 @@ def export_text_expansions(current_user):
             headers={'Content-Disposition': 'attachment; filename=text_expansions.xlsx'}
         )
         
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()
 
 # POST /api/text-expansions/reset - Reset toàn bộ (xóa tất cả)
 @text_expansions_bp.route('/api/text-expansions/reset', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, error='{error}')
 def reset_text_expansions(current_user):
     try:
         db = next(get_db())
@@ -401,8 +391,5 @@ def reset_text_expansions(current_user):
         
         return jsonify({'success': True, 'message': 'Reset toàn bộ từ viết tắt thành công'}), 200
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         db.close()

@@ -41,6 +41,7 @@ from app.modules.appointments.view_models import (
 from app.utils.appointment_helpers import format_appointment_response
 from app.modules.appointments.services.calendar_sync import enqueue_calendar_sync
 import logging
+from app.utils.api_error_contract import api_error_boundary
 # Import pandas và os trong function để tránh lỗi import
 
 logger = logging.getLogger(__name__)
@@ -133,6 +134,7 @@ def get_appointment(user, appt_id):
 # Lấy thông tin lịch hẹn để edit
 @router.route('/<int:appt_id>/edit', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi server')
 def get_appointment_for_edit(user, appt_id):
     """Lấy thông tin lịch hẹn để edit"""
     db = next(get_db())
@@ -147,9 +149,6 @@ def get_appointment_for_edit(user, appt_id):
         return jsonify(result)
     except AppointmentEditNotFound:
         return jsonify({'error': 'Không tìm thấy lịch hẹn'}), 404
-    except Exception as e:
-        logger.error(f"Error getting appointment for edit: {str(e)}")
-        return jsonify({'error': 'Lỗi server'}), 500
     finally:
         db.close()
 

@@ -14,6 +14,7 @@ from app.api.appointment_relative import (  # noqa: E402 — module gốc đã k
     cleanup_family_member_from_deleted_appointment_relative,
     parse_joint_exam_date,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _upsert_linked_family_member(appointment_relative, data, db, family_member, joint_date, relative_patient, relative_patient_id):
@@ -106,6 +107,7 @@ def _apply_relative_examination(appointment_relative, data, db):
 
 @appointment_relative_router.route('/appointment-relatives/<int:relative_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi cập nhật thông tin: {error}')
 def update_appointment_relative(user, relative_id):
     """Cập nhật thông tin người đi khám cùng"""
     try:
@@ -175,18 +177,13 @@ def update_appointment_relative(user, relative_id):
             'message': 'Đã cập nhật thông tin thành công',
             'data': appointment_relative.to_dict()
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi cập nhật thông tin: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 
 @appointment_relative_router.route('/appointment-relatives/<int:relative_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xóa người đi khám cùng: {error}')
 def delete_appointment_relative(user, relative_id):
     """Xóa người đi khám cùng"""
     try:
@@ -223,11 +220,5 @@ def delete_appointment_relative(user, relative_id):
             'message': 'Đã xóa người đi khám cùng thành công',
             'deleted_family_member_id': deleted_family_member_id
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi xóa người đi khám cùng: {str(e)}'
-        }), 500
     finally:
         db.close()

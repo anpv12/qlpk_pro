@@ -17,6 +17,7 @@ from app.schemas.service_schemas import (
 from app.realtime.events import emit_catalog_changed, emit_examination_changed
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ def _emit_appointment_services_changed(db: Session, appointment_id: int, action:
 
 @router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def list_services(current_user):
     db = next(get_db())
     try:
@@ -135,15 +137,13 @@ def list_services(current_user):
                 }
             }), 200
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in list_services: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:service_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_service(current_user, service_id):
     db = next(get_db())
     try:
@@ -177,15 +177,13 @@ def get_service(current_user, service_id):
             'updated_at': service.updated_at.isoformat() if service.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in get_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_service(current_user):
     db = next(get_db())
     try:
@@ -232,16 +230,13 @@ def create_service(current_user):
             'updated_at': new_service.updated_at.isoformat() if new_service.updated_at else None
         }
         return jsonify(result), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in create_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:service_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_service(current_user, service_id):
     db = next(get_db())
     try:
@@ -300,16 +295,13 @@ def update_service(current_user, service_id):
             'updated_at': service.updated_at.isoformat() if service.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in update_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:service_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_service(current_user, service_id):
     db = next(get_db())
     try:
@@ -326,10 +318,6 @@ def delete_service(current_user, service_id):
         emit_catalog_changed('service_deleted', entity='service', entity_id=service_id)
         
         return jsonify({'detail': 'Service deleted successfully'}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in delete_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
@@ -337,6 +325,7 @@ def delete_service(current_user, service_id):
 # Service Prices API
 @router.route('/<int:service_id>/prices', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_service_prices(current_user, service_id):
     db = next(get_db())
     try:
@@ -359,15 +348,13 @@ def get_service_prices(current_user, service_id):
             result.append(price_data)
         
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in get_service_prices: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:service_id>/prices', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_service_price(current_user, service_id):
     db = next(get_db())
     try:
@@ -408,10 +395,6 @@ def create_service_price(current_user, service_id):
             'created_at': new_price.created_at.isoformat() if new_price.created_at else None
         }
         return jsonify(result), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in create_service_price: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 

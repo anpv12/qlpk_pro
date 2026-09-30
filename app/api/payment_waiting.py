@@ -11,6 +11,7 @@ from app.utils.search_normalization import normalize_search_text, normalized_con
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,7 @@ def _filter_payment_waiting_query(db, end_date_str, query, search_query, start_d
 
 @payment_waiting_bp.route('/api/payment-waiting', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy danh sách chờ thanh toán')
 def get_payment_waiting_list(user):
     """Lấy danh sách các lượt khám chờ thanh toán"""
     db = next(get_db())
@@ -227,15 +229,12 @@ def get_payment_waiting_list(user):
             'pages': (total + per_page - 1) // per_page
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi lấy danh sách chờ thanh toán: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy danh sách chờ thanh toán'}), 500
     finally:
         db.close()
 
 @payment_waiting_bp.route('/api/payment-waiting/<int:payment_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy chi tiết chờ thanh toán')
 def get_payment_detail(user, payment_id):
     """Lấy chi tiết một lượt khám chờ thanh toán"""
     db = next(get_db())
@@ -281,15 +280,12 @@ def get_payment_detail(user, payment_id):
         
         return jsonify({'data': examination_data}), 200
         
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi lấy chi tiết chờ thanh toán: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy chi tiết chờ thanh toán'}), 500
     finally:
         db.close()
 
 @payment_waiting_bp.route('/api/payment-waiting/<int:payment_id>/confirm', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xác nhận thanh toán')
 def confirm_payment(user, payment_id):
     """Xác nhận thanh toán cho một lượt khám"""
     db = next(get_db())
@@ -329,15 +325,12 @@ def confirm_payment(user, payment_id):
             'actual_price': float(examination.actual_price) if examination.actual_price else 0
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi xác nhận thanh toán: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi xác nhận thanh toán'}), 500
     finally:
         db.close()
 
 @payment_waiting_bp.route('/api/payment-waiting/export', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xuất dữ liệu')
 def export_payment_data(user):
     """Xuất dữ liệu thanh toán ra file Excel"""
     db = next(get_db())
@@ -430,10 +423,6 @@ def export_payment_data(user):
             'exported_count': len(examinations)
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi xuất dữ liệu thanh toán: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi xuất dữ liệu'}), 500
     finally:
         db.close()
 

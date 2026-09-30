@@ -13,6 +13,7 @@ from app.modules.prescriptions.view_models.public_prescription import (
     PrescriptionNotFound,
     build_public_prescription_view_model,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 public_prescription_bp = Blueprint("public_prescription", __name__)
@@ -29,6 +30,7 @@ def verify_prescription_page(prescription_code):
     "/api/public/prescription/<prescription_code>/verification-qr.png",
     methods=["GET"],
 )
+@api_error_boundary(success=False, message='Không thể tạo mã QR xác thực đơn thuốc')
 def get_prescription_verification_qr(prescription_code):
     """Generate the prescription verification QR as a same-origin PNG."""
     db = SessionLocal()
@@ -62,17 +64,12 @@ def get_prescription_verification_qr(prescription_code):
         return jsonify({"success": False, "message": str(exc)}), 404
     except AppointmentNotFound as exc:
         return jsonify({"success": False, "message": str(exc)}), 404
-    except Exception:
-        logger.exception("Error generating prescription QR %s", prescription_code)
-        return jsonify({
-            "success": False,
-            "message": "Không thể tạo mã QR xác thực đơn thuốc",
-        }), 500
     finally:
         db.close()
 
 
 @public_prescription_bp.route("/api/public/prescription/<prescription_code>", methods=["GET"])
+@api_error_boundary(success=False, message='{error}')
 def get_public_prescription(prescription_code):
     """Public API - Lấy thông tin đơn thuốc để xác thực."""
     db = SessionLocal()
@@ -83,8 +80,5 @@ def get_public_prescription(prescription_code):
         return jsonify({"success": False, "message": str(exc)}), 404
     except AppointmentNotFound as exc:
         return jsonify({"success": False, "message": str(exc)}), 404
-    except Exception as exc:
-        logger.exception("Error getting public prescription %s", prescription_code)
-        return jsonify({"success": False, "message": str(exc)}), 500
     finally:
         db.close()

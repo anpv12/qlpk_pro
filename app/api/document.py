@@ -7,6 +7,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_document_changed
 from app.services.drive_service import DriveService
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ def is_admin(current_user):
 
 @document_bp.route('/document-folders', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_folders(current_user):
     db: Session = SessionLocal()
     try:
@@ -46,13 +48,12 @@ def get_folders(current_user):
                 tree.append(folder_dict[f.id])
                 
         return jsonify(tree), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/document-folders', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def create_folder(current_user):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -82,14 +83,12 @@ def create_folder(current_user):
             "name": new_folder.name,
             "parent_id": new_folder.parent_id
         }), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/document-folders/<int:folder_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(error='{error}')
 def update_folder(current_user, folder_id):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -112,14 +111,12 @@ def update_folder(current_user, folder_id):
             'parent_id': folder.parent_id,
         })
         return jsonify({"message": "Folder updated successfully"}), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/document-folders/<int:folder_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='{error}')
 def delete_folder(current_user, folder_id):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -141,9 +138,6 @@ def delete_folder(current_user, folder_id):
         db.commit()
         emit_document_changed('folder_deleted', entity='folder', entity_id=folder_id, folder_id=folder_id)
         return jsonify({"message": "Folder deleted successfully"}), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
@@ -151,6 +145,7 @@ def delete_folder(current_user, folder_id):
 
 @document_bp.route('/documents', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_documents(current_user):
     folder_id = request.args.get('folder_id')
     if not folder_id:
@@ -173,13 +168,12 @@ def get_documents(current_user):
                 "updated_at": d.updated_at.strftime("%d/%m/%Y")
             })
         return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/documents/upload', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def upload_document(current_user):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -225,15 +219,12 @@ def upload_document(current_user):
             "name": new_doc.name,
             "url": new_doc.url
         }), 201
-    except Exception as e:
-        db.rollback()
-        logger.exception("Lỗi upload tài liệu")
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/documents/link', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def add_document_link(current_user):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -266,14 +257,12 @@ def add_document_link(current_user):
             "name": new_doc.name,
             "url": new_doc.url
         }), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @document_bp.route('/documents/<int:doc_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='{error}')
 def delete_document(current_user, doc_id):
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized. Admin only."}), 403
@@ -298,8 +287,5 @@ def delete_document(current_user, doc_id):
         db.commit()
         emit_document_changed('document_deleted', entity='document', entity_id=doc_id, folder_id=folder_id)
         return jsonify({"message": "Document deleted successfully"}), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()

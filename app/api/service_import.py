@@ -10,6 +10,7 @@ from app.api.service import (  # noqa: E402 — module gốc đã khởi tạo x
     logger,
     router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _import_service_rows(db, df, error_count, errors, success_count):
@@ -92,6 +93,7 @@ def _import_service_rows(db, df, error_count, errors, success_count):
 
 @router.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def import_services(current_user):
     db = next(get_db())
     try:
@@ -147,9 +149,5 @@ def import_services(current_user):
                 'result': result
             }), 200
 
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in import_services: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()

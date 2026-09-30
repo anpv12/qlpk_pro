@@ -7,6 +7,7 @@ from app.realtime.events import emit_finance_changed
 from datetime import datetime
 import logging
 import io
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +207,7 @@ def _write_expense_total_row(col_configs, col_map, expense_dicts, left_align, ri
 
 @expense_bp.route('/export', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi xuất Excel')
 def export_excel(user):
     """Xuất Excel chi tiêu có format"""
     from openpyxl import Workbook
@@ -271,9 +273,6 @@ def export_excel(user):
             as_attachment=True,
             download_name=filename
         )
-    except Exception as e:
-        logger.error(f'Error exporting excel: {e}')
-        return jsonify({'detail': 'Lỗi xuất Excel'}), 500
     finally:
         db.close()
 
@@ -294,6 +293,7 @@ def parse_date(date_str):
 
 @expense_bp.route('', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi tải danh sách chi tiêu')
 def list_expenses(user):
     """Lấy danh sách khoản chi, hỗ trợ filter theo ngày"""
     db = next(get_db())
@@ -314,15 +314,13 @@ def list_expenses(user):
 
         expenses = query.order_by(Expense.date.desc(), Expense.id.desc()).all()
         return jsonify([e.to_dict() for e in expenses]), 200
-    except Exception as e:
-        logger.error(f"Error listing expenses: {e}")
-        return jsonify({'detail': 'Lỗi tải danh sách chi tiêu'}), 500
     finally:
         db.close()
 
 
 @expense_bp.route('', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi tạo khoản chi')
 def create_expense(user):
     """Tạo khoản chi mới"""
     db = next(get_db())
@@ -344,16 +342,13 @@ def create_expense(user):
         db.refresh(expense)
         emit_finance_changed('expense_created', entity='expense', entity_id=expense.id)
         return jsonify(expense.to_dict()), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error creating expense: {e}")
-        return jsonify({'detail': 'Lỗi tạo khoản chi'}), 500
     finally:
         db.close()
 
 
 @expense_bp.route('/<int:expense_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Lỗi cập nhật khoản chi')
 def update_expense(user, expense_id):
     """Cập nhật khoản chi"""
     db = next(get_db())
@@ -391,16 +386,13 @@ def update_expense(user, expense_id):
         db.refresh(expense)
         emit_finance_changed('expense_updated', entity='expense', entity_id=expense.id)
         return jsonify(expense.to_dict()), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating expense {expense_id}: {e}")
-        return jsonify({'detail': 'Lỗi cập nhật khoản chi'}), 500
     finally:
         db.close()
 
 
 @expense_bp.route('/<int:expense_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi xóa khoản chi')
 def delete_expense(user, expense_id):
     """Xóa khoản chi"""
     db = next(get_db())
@@ -413,16 +405,13 @@ def delete_expense(user, expense_id):
         db.commit()
         emit_finance_changed('expense_deleted', entity='expense', entity_id=expense_id)
         return jsonify({'message': 'Đã xóa khoản chi'}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting expense {expense_id}: {e}")
-        return jsonify({'detail': 'Lỗi xóa khoản chi'}), 500
     finally:
         db.close()
 
 
 @expense_bp.route('/bulk', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi import chi tiêu')
 def bulk_create_expenses(user):
     """Import nhiều khoản chi cùng lúc (cho CSV import)"""
     db = next(get_db())
@@ -457,10 +446,6 @@ def bulk_create_expenses(user):
             'message': f'Đã import {len(created)} khoản chi',
             'items': [e.to_dict() for e in created]
         }), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error bulk creating expenses: {e}")
-        return jsonify({'detail': 'Lỗi import chi tiêu'}), 500
     finally:
         db.close()
 
@@ -481,6 +466,7 @@ def get_columns(user):
 
 @expense_bp.route('/columns', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi lưu cấu hình cột')
 def save_columns(user):
     """Lưu cấu hình cột (upsert + soft-delete)"""
     db = next(get_db())
@@ -535,9 +521,5 @@ def save_columns(user):
             'removed_count': len(removed),
         })
         return jsonify({'message': f'Đã lưu {len(data)} cột'})
-    except Exception as e:
-        db.rollback()
-        logger.error(f'Error saving columns: {e}')
-        return jsonify({'detail': 'Lỗi lưu cấu hình cột'}), 500
     finally:
         db.close()

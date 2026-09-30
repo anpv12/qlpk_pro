@@ -26,10 +26,12 @@ from app.api.service import (  # noqa: E402 — module gốc đã khởi tạo x
     logger,
     router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 @router.route('/<int:service_id>/prices/<int:price_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_service_price(current_user, service_id, price_id):
     db = next(get_db())
     try:
@@ -80,16 +82,13 @@ def update_service_price(current_user, service_id, price_id):
             'created_at': price.created_at.isoformat() if price.created_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in update_service_price: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:service_id>/prices/<int:price_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_service_price(current_user, service_id, price_id):
     db = next(get_db())
     try:
@@ -111,10 +110,6 @@ def delete_service_price(current_user, service_id, price_id):
         emit_catalog_changed('service_price_deleted', entity='service_price', entity_id=price_id, extra={'service_id': service_id})
 
         return jsonify({'detail': 'Service price deleted successfully'}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in delete_service_price: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
@@ -122,6 +117,7 @@ def delete_service_price(current_user, service_id, price_id):
 # Appointment Services Endpoints
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_appointment_services(current_user, appointment_id):
     """Lấy danh sách dịch vụ của một appointment"""
     db = next(get_db())
@@ -175,16 +171,13 @@ def get_appointment_services(current_user, appointment_id):
             'total_amount': float(total_amount),
             'count': len(result)
         }), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in get_appointment_services: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>/add', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def add_appointment_service(current_user, appointment_id):
     """Thêm dịch vụ vào appointment"""
     db = next(get_db())
@@ -215,16 +208,13 @@ def add_appointment_service(current_user, appointment_id):
         return jsonify({'detail': str(e)}), 409
     except AppointmentServiceValidationError as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in add_appointment_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>/remove/<int:service_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def remove_appointment_service(current_user, appointment_id, service_id):
     """Xóa dịch vụ khỏi appointment"""
     db = next(get_db())
@@ -246,16 +236,13 @@ def remove_appointment_service(current_user, appointment_id, service_id):
         return jsonify({'detail': 'Service removed from appointment successfully'}), 200
     except AppointmentServiceLockedError as e:
         return jsonify({'detail': str(e)}), 409
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in remove_appointment_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>/clear', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def clear_appointment_services(current_user, appointment_id):
     """Xóa tất cả dịch vụ của appointment"""
     db = next(get_db())
@@ -272,16 +259,13 @@ def clear_appointment_services(current_user, appointment_id):
         return jsonify({'detail': f'Cleared {deleted_count} services from appointment'}), 200
     except AppointmentServiceLockedError as e:
         return jsonify({'detail': str(e)}), 409
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in clear_appointment_services: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>/update', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_appointment_service(current_user, appointment_id):
     """Cập nhật thông tin dịch vụ của appointment"""
     db = next(get_db())
@@ -342,16 +326,13 @@ def update_appointment_service(current_user, appointment_id):
         return jsonify({'detail': str(e)}), 409
     except AppointmentServiceValidationError as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in update_appointment_service: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>/sync', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def sync_appointment_services(current_user, appointment_id):
     """Đồng bộ danh sách dịch vụ cho một appointment (thay thế toàn bộ)."""
     db = next(get_db())
@@ -422,9 +403,5 @@ def sync_appointment_services(current_user, appointment_id):
         return jsonify({'detail': str(e)}), 409
     except AppointmentServiceValidationError as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in sync_appointment_services: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()

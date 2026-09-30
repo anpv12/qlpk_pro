@@ -19,6 +19,7 @@ from app.utils.search_normalization import normalized_contains
 import logging
 from decimal import Decimal
 from datetime import datetime, date
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -258,6 +259,7 @@ def create_medicine_batch(user):
 
 @medicine_batch_router.route('/medicine-batches/<int:batch_id>/import-price', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Không thể bổ sung giá nhập. Hãy tải lại để kiểm tra.')
 def supply_missing_import_price(user, batch_id):
     db = next(get_db())
     try:
@@ -291,10 +293,6 @@ def supply_missing_import_price(user, batch_id):
     except InventoryValidationError as error:
         db.rollback()
         return jsonify(detail=str(error)), 400
-    except Exception:
-        db.rollback()
-        logger.exception('Không thể bổ sung giá nhập lô')
-        return jsonify(detail='Không thể bổ sung giá nhập. Hãy tải lại để kiểm tra.'), 500
     finally:
         db.close()
 

@@ -11,6 +11,7 @@ from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo 
     logger,
     medicine_router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 INVENTORY_TYPE_LABELS = {'BASIC': 'Cơ bản', 'H': 'Thuốc H', 'N': 'Thuốc N', 'TOXIC': 'Thuốc độc'}
@@ -264,6 +265,7 @@ def get_statistics_prescription_history(user):
 
 @medicine_router.route('/medicine/statistics/doctors', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_statistics_doctors(user):
     """Lấy danh sách bác sĩ cho dropdown filter"""
     from app.models.user import User as UserModel, UserRole
@@ -280,8 +282,5 @@ def get_statistics_doctors(user):
             'doctors': [{'id': d.id, 'name': d.full_name} for d in doctors]
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting doctors list: {e}")
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()

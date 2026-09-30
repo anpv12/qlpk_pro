@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime
 import logging
 import unicodedata
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,7 @@ def get_attachment_config(user):
 
 @attachments_router.route('/list', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi lấy danh sách tài liệu')
 def get_all_attachments(user):
     """Lấy danh sách tất cả tài liệu đính kèm"""
     db = next(get_db())
@@ -120,14 +122,12 @@ def get_all_attachments(user):
         
         return jsonify(result), 200
         
-    except Exception as e:
-        logger.error(f"Error getting all attachments: {e}")
-        return jsonify({"detail": "Lỗi khi lấy danh sách tài liệu"}), 500
     finally:
         db.close()
 
 @attachments_router.route('/patients/<int:patient_id>/attachments', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi lấy danh sách tài liệu')
 def get_patient_attachments(user, patient_id):
     """Lấy danh sách tài liệu đính kèm của bệnh nhân"""
     db = next(get_db())
@@ -158,14 +158,12 @@ def get_patient_attachments(user, patient_id):
         
         return jsonify(result), 200
         
-    except Exception as e:
-        logger.error(f"Error getting patient attachments: {e}")
-        return jsonify({"detail": "Lỗi khi lấy danh sách tài liệu"}), 500
     finally:
         db.close()
 
 @attachments_router.route('/upload', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi upload file')
 def upload_attachment_general(user):
     """Upload tài liệu đính kèm (cần appointment_id để lấy patient_id)"""
     db = next(get_db())
@@ -261,15 +259,12 @@ def upload_attachment_general(user):
             'files': uploaded_files
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error uploading attachment: {e}")
-        return jsonify({"detail": "Lỗi khi upload file"}), 500
     finally:
         db.close()
 
 @attachments_router.route('/patients/<int:patient_id>/attachments', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi upload file')
 def upload_attachment(user, patient_id):
     """Upload tài liệu đính kèm cho bệnh nhân"""
     db = next(get_db())
@@ -346,14 +341,12 @@ def upload_attachment(user, patient_id):
             'icon_class': get_file_icon(attachment.filename)
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error uploading attachment: {e}")
-        return jsonify({"detail": "Lỗi khi upload file"}), 500
     finally:
         db.close()
 
 @attachments_router.route('/<int:attachment_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi xóa tài liệu')
 def delete_attachment(user, attachment_id):
     """Xóa tài liệu đính kèm"""
     db = next(get_db())
@@ -390,14 +383,12 @@ def delete_attachment(user, attachment_id):
         
         return jsonify({"detail": "Đã xóa tài liệu thành công"}), 200
         
-    except Exception as e:
-        logger.error(f"Error deleting attachment: {e}")
-        return jsonify({"detail": "Lỗi khi xóa tài liệu"}), 500
     finally:
         db.close()
 
 @attachments_router.route('/<int:attachment_id>/download', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi download file')
 def download_attachment(user, attachment_id):
     """Download tài liệu đính kèm"""
     db = next(get_db())
@@ -419,15 +410,13 @@ def download_attachment(user, attachment_id):
             download_name=attachment.original_filename
         )
 
-    except Exception as e:
-        logger.error(f"Error downloading attachment: {e}")
-        return jsonify({"detail": "Lỗi khi download file"}), 500
     finally:
         db.close()
 
 
 @attachments_router.route('/<int:attachment_id>/preview', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi preview file')
 def preview_attachment(user, attachment_id):
     """Preview tài liệu: trả file trực tiếp nếu hỗ trợ, hoặc convert DOC/DOCX sang PDF."""
     db = next(get_db())
@@ -455,8 +444,5 @@ def preview_attachment(user, attachment_id):
 
         return jsonify({"detail": "Định dạng này chưa hỗ trợ preview. Vui lòng tải xuống."}), 422
 
-    except Exception as e:
-        logger.error(f"Error previewing attachment: {e}")
-        return jsonify({"detail": "Lỗi khi preview file"}), 500
     finally:
         db.close() 

@@ -17,6 +17,7 @@ import logging
 from app.services.access_sessions import SessionStoreUnavailable, session_digest_is_active
 from app.services.auth import decode_access_claims
 from app.services.browser_sessions import request_access_token
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +144,7 @@ def google_callback():
 
 @calendar_bp.route('/disconnect', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def disconnect(user: User):
     """Ngắt kết nối Google Calendar"""
     db = next(get_db())
@@ -160,15 +162,12 @@ def disconnect(user: User):
         else:
             return jsonify({'success': False, 'message': 'Không tìm thấy kết nối'}), 404
             
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error disconnecting Google Calendar: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 @calendar_bp.route('/status', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_connection_status(user: User):
     """Lấy trạng thái kết nối Google Calendar của user"""
     db = next(get_db())
@@ -183,9 +182,6 @@ def get_connection_status(user: User):
             'connected': is_connected,
             'is_active': connection.is_active if connection else False
         })
-    except Exception as e:
-        logger.error(f"Error getting calendar status: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 

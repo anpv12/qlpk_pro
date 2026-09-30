@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ dosage_form_bp = Blueprint('dosage_form', __name__)
 
 @dosage_form_bp.route('/dosage-forms/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def get_dosage_forms(user):
     """Lấy danh sách dạng bào chế"""
     try:
@@ -38,18 +40,13 @@ def get_dosage_forms(user):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting dosage forms: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 
 @dosage_form_bp.route('/dosage-forms/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def create_dosage_form(user):
     """Tạo dạng bào chế mới"""
     try:
@@ -84,12 +81,5 @@ def create_dosage_form(user):
             'data': dosage_form.to_dict()
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating dosage form: {e}")
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()

@@ -7,6 +7,7 @@ from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalized_contains
 import logging
 from datetime import datetime
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def _parse_pagination_params():
 
 @icd_router.route("/", methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách ICD')
 def get_icd_list(user):
     """Lấy danh sách ICD với phân trang và tìm kiếm"""
     db = None
@@ -112,15 +114,13 @@ def get_icd_list(user):
             }
         })
         
-    except Exception as e:
-        logger.error(f"Error getting ICD list: {e}")
-        return jsonify({'error': 'Lỗi khi lấy danh sách ICD'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route("/<int:icd_id>", methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy thông tin ICD')
 def get_icd(user, icd_id):
     """Lấy thông tin chi tiết một ICD"""
     db = None
@@ -148,15 +148,13 @@ def get_icd(user, icd_id):
         
         return jsonify(result)
         
-    except Exception as e:
-        logger.error(f"Error getting ICD {icd_id}: {e}")
-        return jsonify({'error': 'Lỗi khi lấy thông tin ICD'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route("/", methods=['POST'])
 @require_auth
+@api_error_boundary(error='Lỗi khi tạo mã ICD')
 def create_icd(user):
     """Tạo mới một mã ICD"""
     db = None
@@ -206,16 +204,13 @@ def create_icd(user):
         
         return jsonify(result), 201
         
-    except Exception as e:
-        logger.error(f"Error creating ICD: {e}")
-        db.rollback()
-        return jsonify({'error': 'Lỗi khi tạo mã ICD'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route("/<int:icd_id>", methods=['PUT'])
 @require_auth
+@api_error_boundary(error='Lỗi khi cập nhật mã ICD')
 def update_icd(user, icd_id):
     """Cập nhật thông tin ICD"""
     db = None
@@ -270,16 +265,13 @@ def update_icd(user, icd_id):
         
         return jsonify(result)
         
-    except Exception as e:
-        logger.error(f"Error updating ICD {icd_id}: {e}")
-        db.rollback()
-        return jsonify({'error': 'Lỗi khi cập nhật mã ICD'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route("/<int:icd_id>", methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='Lỗi khi xóa mã ICD')
 def delete_icd(user, icd_id):
     """Xóa ICD (soft delete)"""
     db = None
@@ -302,16 +294,13 @@ def delete_icd(user, icd_id):
         
         return jsonify({'message': 'Xóa mã ICD thành công'})
         
-    except Exception as e:
-        logger.error(f"Error deleting ICD {icd_id}: {e}")
-        db.rollback()
-        return jsonify({'error': 'Lỗi khi xóa mã ICD'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route("/groups/list", methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách nhóm bệnh')
 def get_disease_groups(user):
     """Lấy danh sách các nhóm bệnh"""
     db = None
@@ -326,15 +315,13 @@ def get_disease_groups(user):
         
         return jsonify(result)
         
-    except Exception as e:
-        logger.error(f"Error getting disease groups: {e}")
-        return jsonify({'error': 'Lỗi khi lấy danh sách nhóm bệnh'}), 500
     finally:
         if db is not None:
             db.close()
 
 @icd_router.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(error='Lỗi khi import dữ liệu ICD')
 def import_icd(user):
     """Import danh sách ICD từ Excel"""
     db = None
@@ -396,9 +383,6 @@ def import_icd(user):
         
         return jsonify(result)
         
-    except Exception as e:
-        logger.error(f"Error importing ICD: {e}")
-        return jsonify({'error': 'Lỗi khi import dữ liệu ICD'}), 500
     finally:
         if db is not None:
             db.close()

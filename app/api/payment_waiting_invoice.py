@@ -17,6 +17,7 @@ from app.api.payment_waiting import (  # noqa: E402 — module gốc đã khởi
     number_to_vietnamese_words,
     payment_waiting_bp,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _render_invoice_template(doctor_name, examination, examination_id, patient, service_rows, subtotal, tax_total, total_amount, vat_rate):
@@ -166,6 +167,7 @@ def render_invoice(user, examination_id):
 
 @payment_waiting_bp.route('/api/payment-waiting/stats', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy thống kê')
 def get_payment_stats(user):
     """Lấy thống kê examination theo trạng thái"""
     db = next(get_db())
@@ -199,9 +201,5 @@ def get_payment_stats(user):
 
         return jsonify(stats), 200
 
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi lấy thống kê examination: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy thống kê'}), 500
     finally:
         db.close()

@@ -10,6 +10,7 @@ from app.utils.survey_scoring import score_survey_responses
 import json
 import logging
 from datetime import datetime
+from app.utils.api_error_contract import api_error_boundary
 
 survey_responses_router = Blueprint('survey_responses', __name__)
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ def get_appointment_id_for_examination(db, examination_id):
 
 @survey_responses_router.route('/survey-templates/active', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách mẫu khảo sát')
 def get_active_survey_templates(user):
     """Get all active survey templates"""
     try:
@@ -66,16 +68,11 @@ def get_active_survey_templates(user):
             'data': templates_data
         })
 
-    except Exception as e:
-        logger.debug(f"Error getting active survey templates: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi lấy danh sách mẫu khảo sát'
-        }), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-templates/active/public', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách mẫu khảo sát')
 def get_active_survey_templates_public():
     """Get all active survey templates (public route for survey)"""
     try:
@@ -120,17 +117,12 @@ def get_active_survey_templates_public():
             'data': templates_data
         })
 
-    except Exception as e:
-        logger.debug(f"Error getting active survey templates: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi lấy danh sách mẫu khảo sát'
-        }), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-responses/examination/<int:examination_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy câu trả lời: {error}')
 def get_survey_responses_by_examination(user, examination_id):
     """Lấy câu trả lời khảo sát theo examination_id"""
     try:
@@ -165,15 +157,11 @@ def get_survey_responses_by_examination(user, examination_id):
             'data': result
         })
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy câu trả lời: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-templates/examination/<int:examination_id>/public', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách mẫu khảo sát')
 def get_survey_templates_by_examination_public(examination_id):
     """Lấy danh sách template khảo sát theo examination_id (public route)"""
     try:
@@ -238,49 +226,38 @@ def get_survey_templates_by_examination_public(examination_id):
             'data': templates_data
         })
 
-    except Exception as e:
-        logger.debug(f"Error getting survey templates by examination: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi lấy danh sách mẫu khảo sát'
-        }), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-responses/examination/<int:examination_id>/public', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi khi lấy câu trả lời: {error}')
 def get_survey_responses_by_examination_public(examination_id):
     """Lấy câu trả lời khảo sát theo examination_id (public route)"""
-    try:
-        db = next(get_db())
-        from app.models.survey_session import SurveySession, SurveySessionStatus
-        session = db.query(SurveySession).filter_by(session_token=request.args.get('session_token'), examination_id=examination_id).first()
-        if not session or not session.order_id:
-            return jsonify(success=False, message='Phiên khảo sát không hợp lệ'), 403
-        responses = db.query(SurveyResponse).filter_by(session_id=session.id).all()
-        if not responses and session.status == SurveySessionStatus.completed:
-            responses = db.query(SurveyResponse).filter_by(order_id=session.order_id, session_id=None).all()
+    db = next(get_db())
+    from app.models.survey_session import SurveySession, SurveySessionStatus
+    session = db.query(SurveySession).filter_by(session_token=request.args.get('session_token'), examination_id=examination_id).first()
+    if not session or not session.order_id:
+        return jsonify(success=False, message='Phiên khảo sát không hợp lệ'), 403
+    responses = db.query(SurveyResponse).filter_by(session_id=session.id).all()
+    if not responses and session.status == SurveySessionStatus.completed:
+        responses = db.query(SurveyResponse).filter_by(order_id=session.order_id, session_id=None).all()
 
-        result = []
-        for response in responses:
-            response_data = response.to_dict()
-            # Thêm thông tin template
-            if response.survey_template:
-                response_data['template_name'] = response.survey_template.name
-                response_data['template_content'] = (response.template_snapshot or {}).get('content', response.survey_template.content)
-                response_data['questions_by_criteria'] = survey_questions_by_criteria(response_data['template_content'])
+    result = []
+    for response in responses:
+        response_data = response.to_dict()
+        # Thêm thông tin template
+        if response.survey_template:
+            response_data['template_name'] = response.survey_template.name
+            response_data['template_content'] = (response.template_snapshot or {}).get('content', response.survey_template.content)
+            response_data['questions_by_criteria'] = survey_questions_by_criteria(response_data['template_content'])
             
-            result.append(response_data)
+        result.append(response_data)
         
-        return jsonify({
-            'success': True,
-            'data': result
-        })
+    return jsonify({
+        'success': True,
+        'data': result
+    })
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy câu trả lời: {str(e)}'
-        }), 500
 
 def _create_new_survey_response(data, db, user):
     # Create new response
@@ -362,6 +339,7 @@ def _update_existing_survey_response(data, db, existing_response):
 
 @survey_responses_router.route('/survey-responses', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi tạo kết quả khảo sát')
 def create_survey_response(user):
     """Create a new survey response"""
     try:
@@ -395,16 +373,11 @@ def create_survey_response(user):
         db.rollback()
         return jsonify({'success': False, 'code': 'SURVEY_ANSWER_MISMATCH',
                         'message': 'Chưa lưu được kết quả. Vui lòng kiểm tra lại mẫu và câu trả lời khảo sát.'}), 400
-    except Exception as e:
-        logger.debug(f"Error creating survey response: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Lỗi khi tạo kết quả khảo sát'
-        }), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-responses/public', methods=['POST'])
+@api_error_boundary(success=False, message='Không thể lưu kết quả khảo sát')
 def create_survey_response_public():
     from app.modules.orders.services.survey_lifecycle import submit_order_survey, SurveyLifecycleError
     from app.api.survey_sessions import _emit_survey_completion_notifications
@@ -428,15 +401,12 @@ def create_survey_response_public():
         db.rollback()
         return jsonify(success=False, code='SURVEY_ANSWER_MISMATCH',
                        message='Chưa lưu được kết quả. Vui lòng kiểm tra lại mẫu và câu trả lời khảo sát.'), 400
-    except Exception:
-        db.rollback()
-        logger.exception('Không thể lưu bài khảo sát')
-        return jsonify(success=False, message='Không thể lưu kết quả khảo sát'), 500
     finally:
         db.close()
 
 @survey_responses_router.route('/survey-responses/<int:response_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi cập nhật câu trả lời: {error}')
 def update_survey_response(user, response_id):
     """Cập nhật câu trả lời khảo sát"""
     try:
@@ -484,14 +454,10 @@ def update_survey_response(user, response_id):
         db.rollback()
         return jsonify({'success': False, 'code': 'SURVEY_ANSWER_MISMATCH',
                         'message': 'Chưa lưu được kết quả. Vui lòng kiểm tra lại mẫu và câu trả lời khảo sát.'}), 400
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi cập nhật câu trả lời: {str(e)}'
-        }), 500
 
 @survey_responses_router.route('/survey-responses/<int:response_id>/recalculate-scores', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi tính lại điểm: {error}')
 def recalculate_survey_scores(user, response_id):
     """Tính lại điểm cho khảo sát"""
     try:
@@ -535,11 +501,6 @@ def recalculate_survey_scores(user, response_id):
         db.rollback()
         return jsonify({'success': False, 'code': 'SURVEY_ANSWER_MISMATCH',
                         'message': 'Chưa lưu được kết quả. Vui lòng kiểm tra lại mẫu và câu trả lời khảo sát.'}), 400
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi tính lại điểm: {str(e)}'
-        }), 500
 
 def calculate_total_scores(responses, survey_template_id, db):
     template = db.query(SurveyTemplate).filter(SurveyTemplate.id == survey_template_id).first()

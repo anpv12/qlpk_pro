@@ -24,6 +24,7 @@ from app.api.patient import (  # noqa: E402 — module gốc đã khởi tạo x
     logger,
     router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _patient_created_response(patient):
@@ -365,6 +366,7 @@ def update_patient(user, patient_id):
 # ── Kế hoạch an toàn: Upload file đã ký ──
 @router.route('/<int:patient_id>/safety-plan/upload', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='{error}')
 def upload_safety_plan_file(user, patient_id):
     db = next(get_db())
     try:
@@ -403,10 +405,6 @@ def upload_safety_plan_file(user, patient_id):
     except SafetyPlanUploadError as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f'Error uploading safety plan: {e}')
-        return jsonify({'detail': str(e)}), 500
     finally:
         db.close()
 

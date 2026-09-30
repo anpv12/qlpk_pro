@@ -5,12 +5,14 @@ from app.api.auth import require_auth
 from app.utils.survey_template_policy import require_survey_manager
 from app.realtime.events import emit_catalog_changed
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 survey_criteria_bp = Blueprint('survey_criteria', __name__)
 
 @survey_criteria_bp.route('/survey-criteria/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách tiêu chí: {error}')
 def get_survey_criteria(user):
     """Lấy danh sách tất cả tiêu chí khảo sát đang hoạt động"""
     try:
@@ -31,12 +33,6 @@ def get_survey_criteria(user):
             'data': criteria_list
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting survey criteria: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy danh sách tiêu chí: {str(e)}'
-        }), 500
     finally:
         db.close()
 

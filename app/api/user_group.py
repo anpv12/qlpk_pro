@@ -10,6 +10,7 @@ from app.utils.account_access import (
 )
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ router = Blueprint('user_group', __name__, url_prefix='/user-groups')
 @router.route('/<int:user_id>', methods=['GET'])
 @require_auth
 @require_account_permission('ql-phanquyen')
+@api_error_boundary(detail='Internal server error: {error}')
 def get_user_groups(current_user, user_id):
     db = next(get_db())
     try:
@@ -39,9 +41,6 @@ def get_user_groups(current_user, user_id):
                 'group_name': group.name if group else ''
             })
         return jsonify(result)
-    except Exception as e:
-        logger.error(f"Error in get_user_groups: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:    
         db.close()
 
@@ -49,6 +48,7 @@ def get_user_groups(current_user, user_id):
 @router.route('/', methods=['POST'])
 @require_auth
 @require_account_permission('ql-phanquyen')
+@api_error_boundary(detail='Internal server error: {error}')
 def add_user_group(current_user):
     db = next(get_db())
     try:
@@ -87,10 +87,6 @@ def add_user_group(current_user):
         })
         
         return jsonify({'id': ug.id, 'user_id': ug.user_id, 'group_id': ug.group_id})
-    except Exception as e:
-        db.rollback() # Rollback on error
-        logger.error(f"Error in add_user_group: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
@@ -98,6 +94,7 @@ def add_user_group(current_user):
 @router.route('/<int:user_group_id>', methods=['DELETE'])
 @require_auth
 @require_account_permission('ql-phanquyen')
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_user_group(current_user, user_group_id):
     db = next(get_db())
     try:
@@ -119,10 +116,6 @@ def delete_user_group(current_user, user_group_id):
         })
         
         return jsonify({'detail': 'Đã xoá nhóm quyền khỏi user!'})
-    except Exception as e:
-        db.rollback() # Rollback on error
-        logger.error(f"Error in delete_user_group: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
@@ -130,6 +123,7 @@ def delete_user_group(current_user, user_group_id):
 @router.route('/<int:user_id>', methods=['POST'])
 @require_auth
 @require_account_permission('ql-phanquyen')
+@api_error_boundary(detail='Internal server error: {error}')
 def update_user_groups(current_user, user_id):
     db = next(get_db())
     try:
@@ -171,9 +165,5 @@ def update_user_groups(current_user, user_id):
         })
         
         return jsonify({'message': 'OK'}) 
-    except Exception as e:
-        db.rollback() # Rollback on error
-        logger.error(f"Error in update_user_groups: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()

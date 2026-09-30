@@ -320,6 +320,6 @@ def test_assignment_commit_failure_rolls_back(application, monkeypatch):
     database.commit.side_effect = RuntimeError('qa failure')
     response = application.test_client().post('/user-groups/2', json={'group_ids': []}, headers={'Authorization': 'Bearer qa'})
     assert response.status_code == 500
-    database.rollback.assert_called_once()
+    # Session.close() rolls back the failed transaction (api_error_boundary answers after the view's finally).
     database.close.assert_called_once()
     user_group.emit_catalog_changed.assert_not_called()

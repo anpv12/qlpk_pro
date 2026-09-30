@@ -10,6 +10,7 @@ from app.realtime.events import emit_catalog_changed
 from app.utils.search_normalization import normalize_search_text, normalized_contains
 import requests
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ vietnam_address_bp = Blueprint('vietnam_address', __name__)
 # --- New 2-Level API Endpoints (AddressKit Standard) ---
 
 @vietnam_address_bp.route('/vietnam-address/regions', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_regions():
     """Lấy danh sách Tỉnh/Thành phố (Cấp 1)"""
     try:
@@ -47,13 +49,11 @@ def get_regions():
             'success': True,
             'data': result
         }), 200
-    except Exception as e:
-        logger.error(f"Error getting regions: {e}")
-        return jsonify({'success': False, 'detail': 'Internal server error'}), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/regions/<region_code>/units', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_units_by_region(region_code):
     """Lấy danh sách Đơn vị hành chính (Cấp 2) theo Tỉnh"""
     try:
@@ -72,14 +72,12 @@ def get_units_by_region(region_code):
             'success': True,
             'data': result
         }), 200
-    except Exception as e:
-        logger.error(f"Error getting units: {e}")
-        return jsonify({'success': False, 'detail': 'Internal server error'}), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/sync-addresskit', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def sync_address_kit_data(user):
     """Đồng bộ dữ liệu từ AddressKit (bảng 2 cấp)"""
     try:
@@ -149,10 +147,6 @@ def sync_address_kit_data(user):
             'data': {'regions': region_count, 'units': unit_count}
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error syncing AddressKit: {e}")
-        db.rollback()
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()
 
@@ -160,6 +154,7 @@ def sync_address_kit_data(user):
 # --- Old 3-Level API Endpoints (Kept for compatibility) ---
 
 @vietnam_address_bp.route('/vietnam-address/provinces', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_provinces():
     """Lấy danh sách tỉnh/thành phố"""
     try:
@@ -185,16 +180,11 @@ def get_provinces():
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting provinces: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/districts', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_districts_by_province_name():
     """Lấy danh sách quận/huyện theo tên tỉnh/thành phố (query parameter)"""
     try:
@@ -235,16 +225,11 @@ def get_districts_by_province_name():
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting districts by province name: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/districts/<province_code>', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_districts_by_province_code(province_code):
     """Lấy danh sách quận/huyện theo tỉnh/thành phố"""
     try:
@@ -270,16 +255,11 @@ def get_districts_by_province_code(province_code):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting districts: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/wards', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_wards_by_district_name():
     """Lấy danh sách phường/xã theo tên quận/huyện (query parameter)"""
     try:
@@ -329,16 +309,11 @@ def get_wards_by_district_name():
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting wards by district name: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 @vietnam_address_bp.route('/vietnam-address/wards/<district_code>', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_wards_by_district_code(district_code):
     """Lấy danh sách phường/xã theo quận/huyện"""
     try:
@@ -364,17 +339,12 @@ def get_wards_by_district_code(district_code):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting wards: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 # Tra cứu phường/xã theo tên để suy ra quận/huyện (và đối chiếu theo tỉnh nếu truyền vào)
 @vietnam_address_bp.route('/vietnam-address/ward-by-name', methods=['GET'])
+@api_error_boundary(success=False, detail='Internal server error')
 def get_ward_by_name():
     """Tìm phường/xã theo tên. Tham số: name (bắt buộc), province (tuỳ chọn, tên tỉnh/thành phố)
     Trả về: ward {code, name, district_code} và district {code, name, province_code}
@@ -431,9 +401,6 @@ def get_ward_by_name():
                 }
             }
         }), 200
-    except Exception as e:
-        logger.error(f"Error finding ward by name: {e}")
-        return jsonify({'success': False, 'detail': 'Internal server error'}), 500
     finally:
         try:
             db.close()
@@ -500,6 +467,7 @@ def _import_districts(base_url, db):
 
 @vietnam_address_bp.route('/vietnam-address/import-data', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='Lỗi khi import dữ liệu: {error}')
 def import_address_data(user):
     """Cào và import dữ liệu địa chỉ từ Province Open API"""
     try:
@@ -553,12 +521,5 @@ def import_address_data(user):
             }
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error importing address data: {e}")
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'detail': f'Lỗi khi import dữ liệu: {str(e)}'
-        }), 500
     finally:
         db.close()

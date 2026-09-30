@@ -7,12 +7,14 @@ from app.utils.search_normalization import normalized_contains
 from sqlalchemy import or_
 import pandas as pd
 import io
+from app.utils.api_error_contract import api_error_boundary
 
 allergen_bp = Blueprint('allergen', __name__, url_prefix='/api/allergen')
 
 
 @allergen_bp.route('', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def get_allergens(user):
     db = SessionLocal()
     try:
@@ -39,14 +41,13 @@ def get_allergens(user):
             'page': page,
             'limit': limit
         })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 
 @allergen_bp.route('', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def create_allergen(user):
     db = SessionLocal()
     try:
@@ -75,15 +76,13 @@ def create_allergen(user):
         db.refresh(new_item)
         emit_inventory_changed('allergen_created', entity='allergen', entity_id=new_item.id)
         return jsonify({'success': True, 'data': new_item.to_dict()})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 
 @allergen_bp.route('/<int:id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def update_allergen(user, id):
     db = SessionLocal()
     try:
@@ -111,15 +110,13 @@ def update_allergen(user, id):
         db.commit()
         emit_inventory_changed('allergen_updated', entity='allergen', entity_id=item.id)
         return jsonify({'success': True, 'data': item.to_dict()})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 
 @allergen_bp.route('/<int:id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def delete_allergen(user, id):
     db = SessionLocal()
     try:
@@ -131,15 +128,13 @@ def delete_allergen(user, id):
         db.commit()
         emit_inventory_changed('allergen_deleted', entity='allergen', entity_id=item.id)
         return jsonify({'success': True})
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 
 @allergen_bp.route('/template', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def download_template(user):
     db = SessionLocal()
     try:
@@ -161,14 +156,13 @@ def download_template(user):
             download_name='di_nguyen_export.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         db.close()
 
 
 @allergen_bp.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xử lý file: {error}')
 def import_excel(user):
     db = SessionLocal()
     try:
@@ -224,8 +218,5 @@ def import_excel(user):
             'success': True,
             'message': f'Đã thêm/khôi phục {added_count} dị nguyên. Bỏ qua {skipped_count} dị nguyên trùng lặp.'
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': f'Lỗi khi xử lý file: {str(e)}'}), 500
     finally:
         db.close()

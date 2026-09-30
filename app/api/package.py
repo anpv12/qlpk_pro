@@ -6,6 +6,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ router = Blueprint('packages', __name__, url_prefix='/packages')
 
 @router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def list_packages(user):
     db = next(get_db())
     try:
@@ -32,15 +34,13 @@ def list_packages(user):
             }
             result.append(package_data)
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in list_packages: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:package_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_package(user, package_id):
     db = next(get_db())
     try:
@@ -59,15 +59,13 @@ def get_package(user, package_id):
             'updated_at': package.updated_at.isoformat() if package.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in get_package: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_package(user):
     db = next(get_db())
     try:
@@ -103,16 +101,13 @@ def create_package(user):
             'updated_at': new_package.updated_at.isoformat() if new_package.updated_at else None
         }
         return jsonify(result), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in create_package: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:package_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_package(user, package_id):
     db = next(get_db())
     try:
@@ -159,16 +154,13 @@ def update_package(user, package_id):
             'updated_at': package.updated_at.isoformat() if package.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in update_package: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:package_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_package(user, package_id):
     db = next(get_db())
     try:
@@ -185,9 +177,5 @@ def delete_package(user, package_id):
         emit_catalog_changed('package_deleted', entity='package', entity_id=package_id)
         
         return jsonify({'detail': 'Package deleted successfully'}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in delete_package: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close() 

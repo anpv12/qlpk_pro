@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ medicine_category_router = Blueprint('medicine_category', __name__)
 
 @medicine_category_router.route('/medicine-categories/', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách danh mục thuốc')
 def get_medicine_categories(user):
     """Lấy danh sách danh mục thuốc"""
     try:
@@ -57,15 +59,13 @@ def get_medicine_categories(user):
             'total_pages': (total + per_page - 1) // per_page
         })
         
-    except Exception as e:
-        logger.error(f"Error getting medicine categories: {e}")
-        return jsonify({"error": "Lỗi khi lấy danh sách danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_category_router.route('/medicine-categories/', methods=['POST'])
 @require_auth
+@api_error_boundary(error='Lỗi khi tạo danh mục thuốc')
 def create_medicine_category(user):
     """Tạo danh mục thuốc mới"""
     try:
@@ -101,16 +101,13 @@ def create_medicine_category(user):
             "category": category.to_dict()
         }), 201
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error creating medicine category: {e}")
-        return jsonify({"error": "Lỗi khi tạo danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_category_router.route('/medicine-categories/<int:category_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy thông tin danh mục thuốc')
 def get_medicine_category(user, category_id):
     """Lấy thông tin danh mục thuốc theo ID"""
     try:
@@ -125,15 +122,13 @@ def get_medicine_category(user, category_id):
         
         return jsonify(category.to_dict())
         
-    except Exception as e:
-        logger.error(f"Error getting medicine category: {e}")
-        return jsonify({"error": "Lỗi khi lấy thông tin danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_category_router.route('/medicine-categories/<int:category_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(error='Lỗi khi cập nhật danh mục thuốc')
 def update_medicine_category(user, category_id):
     """Cập nhật thông tin danh mục thuốc"""
     try:
@@ -173,16 +168,13 @@ def update_medicine_category(user, category_id):
             "category": category.to_dict()
         })
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating medicine category: {e}")
-        return jsonify({"error": "Lỗi khi cập nhật danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_category_router.route('/medicine-categories/<int:category_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='Lỗi khi xóa danh mục thuốc')
 def delete_medicine_category(user, category_id):
     """Xóa danh mục thuốc"""
     try:
@@ -203,16 +195,13 @@ def delete_medicine_category(user, category_id):
         
         return jsonify({"message": "Xóa danh mục thuốc thành công"})
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting medicine category: {e}")
-        return jsonify({"error": "Lỗi khi xóa danh mục thuốc"}), 500
     finally:
         db.close()
 
 
 @medicine_category_router.route('/medicine-categories/active', methods=['GET'])
 @require_auth
+@api_error_boundary(error='Lỗi khi lấy danh sách danh mục thuốc')
 def get_active_medicine_categories(user):
     """Lấy danh sách danh mục thuốc đang hoạt động (cho dropdown)"""
     try:
@@ -230,8 +219,5 @@ def get_active_medicine_categories(user):
         
         return jsonify(categories_data)
         
-    except Exception as e:
-        logger.error(f"Error getting active medicine categories: {e}")
-        return jsonify({"error": "Lỗi khi lấy danh sách danh mục thuốc"}), 500
     finally:
         db.close()

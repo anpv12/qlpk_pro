@@ -8,6 +8,7 @@ from itertools import combinations
 from sqlalchemy import or_
 import pandas as pd
 import io
+from app.utils.api_error_contract import api_error_boundary
 
 drug_interaction_bp = Blueprint('drug_interaction', __name__)
 
@@ -19,6 +20,7 @@ def _normalize_hoat_chat(hc1, hc2):
 
 @drug_interaction_bp.route('/drug-interactions', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_drug_interactions(user):
     """Lấy danh sách tương tác thuốc (theo hoạt chất)"""
     db = SessionLocal()
@@ -27,14 +29,13 @@ def get_drug_interactions(user):
             .order_by(DrugInteraction.id.desc())\
             .all()
         return jsonify([i.to_dict() for i in interactions])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/active-ingredients', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_active_ingredients(user):
     """Lấy danh sách hoạt chất unique từ danh mục hoạt chất"""
     db = SessionLocal()
@@ -43,14 +44,13 @@ def get_active_ingredients(user):
         ingredients_db = db.query(ActiveIngredient).filter(ActiveIngredient.is_active == True).all()
         ingredients = sorted([i.ten_hoat_chat.strip() for i in ingredients_db if i.ten_hoat_chat])
         return jsonify(ingredients)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def create_drug_interaction(user):
     """Thêm tương tác thuốc mới"""
     db = SessionLocal()
@@ -90,15 +90,13 @@ def create_drug_interaction(user):
         emit_inventory_changed('drug_interaction_created', entity='drug_interaction', entity_id=interaction.id)
 
         return jsonify(interaction.to_dict()), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/<int:interaction_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(error='{error}')
 def update_drug_interaction(user, interaction_id):
     """Cập nhật tương tác thuốc"""
     db = SessionLocal()
@@ -139,15 +137,13 @@ def update_drug_interaction(user, interaction_id):
         emit_inventory_changed('drug_interaction_updated', entity='drug_interaction', entity_id=interaction.id)
 
         return jsonify(interaction.to_dict())
-    except Exception as e:
-        db.rollback()
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/<int:interaction_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(error='{error}')
 def delete_drug_interaction(user, interaction_id):
     """Xóa tương tác thuốc"""
     db = SessionLocal()
@@ -160,15 +156,13 @@ def delete_drug_interaction(user, interaction_id):
         db.commit()
         emit_inventory_changed('drug_interaction_deleted', entity='drug_interaction', entity_id=interaction_id)
         return jsonify({'message': 'Đã xóa'}), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/check', methods=['POST'])
 @require_auth
+@api_error_boundary(error='{error}')
 def check_drug_interactions(user):
     """
     Kiểm tra tương tác thuốc cho danh sách thuốc trong đơn.
@@ -214,14 +208,13 @@ def check_drug_interactions(user):
         # Vì kết quả trả về không còn chứa thông tin sản phẩm thuốc (chỉ chứa hoạt chất)
         # Frontend sẽ tự lo việc map hoạt chất -> tên thuốc để hiển thị cho bác sĩ
         return jsonify([i.to_dict() for i in interactions])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/template', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def download_di_template(user):
     """Xuất toàn bộ dữ liệu tương tác thuốc hiện có thành file Excel mẫu"""
     db = SessionLocal()
@@ -277,14 +270,13 @@ def download_di_template(user):
             download_name='tuong_tac_thuoc.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @drug_interaction_bp.route('/drug-interactions/import', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi xử lý file: {error}')
 def import_di_excel(user):
     """Import dữ liệu tương tác thuốc từ file Excel"""
     db = SessionLocal()
@@ -377,8 +369,5 @@ def import_di_excel(user):
             'success': True,
             'message': f'Đã thêm {added_count} cặp tương tác. Bỏ qua {skipped_count} cặp trùng lặp.'
         })
-    except Exception as e:
-        db.rollback()
-        return jsonify({'success': False, 'message': f'Lỗi khi xử lý file: {str(e)}'}), 500
     finally:
         db.close()

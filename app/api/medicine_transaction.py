@@ -9,6 +9,7 @@ from app.api.auth import require_auth
 from app.utils.search_normalization import normalized_contains
 import logging
 from datetime import datetime
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ medicine_transaction_router = Blueprint('medicine_transaction', __name__)
 
 @medicine_transaction_router.route('/medicine-transactions/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='{error}')
 def get_transactions(user):
     """Lấy lịch sử giao dịch"""
     db = next(get_db())
@@ -82,9 +84,6 @@ def get_transactions(user):
             'total_pages': (total + per_page - 1) // per_page,
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting transactions: {e}")
-        return jsonify({'success': False, 'detail': str(e)}), 500
     finally:
         db.close()
 

@@ -14,6 +14,7 @@ from app.modules.medicines.services.reference_catalog_query import (
     list_reference_catalog,
 )
 from app.modules.medicines.services.reference_catalog_export import build_reference_catalog_excel
+from app.utils.api_error_contract import api_error_boundary
 
 
 reference_catalog_bp = Blueprint(
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 @reference_catalog_bp.route("", methods=["GET"])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def get_reference_catalog(user):
     db = SessionLocal()
     try:
@@ -60,14 +62,13 @@ def get_reference_catalog(user):
         })
     except ValueError as exc:
         return jsonify(success=False, message=str(exc)), 400
-    except Exception as exc:
-        return jsonify({"success": False, "message": str(exc)}), 500
     finally:
         db.close()
 
 
 @reference_catalog_bp.route("/export/excel", methods=["GET"])
 @require_auth
+@api_error_boundary(success=False, message='Không thể xuất danh mục DAV. Vui lòng thử lại.')
 def export_reference_catalog(user):
     db = SessionLocal()
     try:
@@ -80,15 +81,13 @@ def export_reference_catalog(user):
         )
         response.headers['Cache-Control'] = 'no-store'
         return response
-    except Exception:
-        logger.exception('Unexpected error while exporting DAV catalog')
-        return jsonify(success=False, message='Không thể xuất danh mục DAV. Vui lòng thử lại.'), 500
     finally:
         db.close()
 
 
 @reference_catalog_bp.route("/search", methods=["GET"])
 @require_auth
+@api_error_boundary(success=False, message='{error}')
 def search_reference_catalog(user):
     db = SessionLocal()
     try:
@@ -104,14 +103,13 @@ def search_reference_catalog(user):
             "data": result["items"],
             "total": result["total"],
         })
-    except Exception as exc:
-        return jsonify({"success": False, "message": str(exc)}), 500
     finally:
         db.close()
 
 
 @reference_catalog_bp.route("/<int:catalog_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi hệ thống khi tải chi tiết thuốc DAV')
 def get_reference_catalog_detail_endpoint(user, catalog_id):
     db = SessionLocal()
     try:
@@ -119,15 +117,13 @@ def get_reference_catalog_detail_endpoint(user, catalog_id):
         if not item:
             return jsonify({"success": False, "message": "Không tìm thấy thuốc DAV"}), 404
         return jsonify({"success": True, "data": item})
-    except Exception:
-        logger.exception("Unexpected error while loading DAV medicine reference detail")
-        return jsonify({"success": False, "message": "Lỗi hệ thống khi tải chi tiết thuốc DAV"}), 500
     finally:
         db.close()
 
 
 @reference_catalog_bp.route("/sync", methods=["POST"])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi hệ thống khi đồng bộ DAV')
 def sync_reference_catalog(user):
     db = SessionLocal()
     try:
@@ -146,9 +142,5 @@ def sync_reference_catalog(user):
     except DavReferenceSyncError as exc:
         db.rollback()
         return jsonify({"success": False, "message": str(exc)}), 502
-    except Exception:
-        db.rollback()
-        logger.exception("Unexpected error while syncing DAV medicine reference catalog")
-        return jsonify({"success": False, "message": "Lỗi hệ thống khi đồng bộ DAV"}), 500
     finally:
         db.close()

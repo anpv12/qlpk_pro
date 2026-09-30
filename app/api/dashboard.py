@@ -12,6 +12,7 @@ from app.utils.referral_source import (
     get_referral_source_key,
 )
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ def _get_referral_source_cases(db, start, end):
 
 @dashboard_bp.route('/api/dashboard/service-summary', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_service_summary(user):
     """Tổng hợp dịch vụ / thuốc theo khoảng thời gian đang chọn"""
     db = next(get_db())
@@ -153,9 +155,6 @@ def get_service_summary(user):
             'medicines': [{'name': r.name, 'count': float(r.count), 'revenue': float(r.revenue)} for r in med_rows],
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting service summary: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
@@ -284,6 +283,7 @@ def _write_icd_summary_sheet(from_str, items, mk_border, to_str, total, ws):
 
 @dashboard_bp.route('/api/dashboard/export-icd-excel', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def export_icd_excel(user):
     """Xuất Excel thống kê ICD theo khoảng ngày"""
     import io
@@ -370,14 +370,12 @@ def export_icd_excel(user):
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True, download_name=fname)
 
-    except Exception as e:
-        logger.error(f"Export ICD excel error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 @dashboard_bp.route('/api/dashboard/icd-detail', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}', items=[])
 def get_icd_detail(user):
     """Chi tiết các ca khám theo mã ICD trong khoảng ngày"""
     db = next(get_db())
@@ -429,9 +427,6 @@ def get_icd_detail(user):
 
         return jsonify({'items': items, 'icd_code': icd_code}), 200
 
-    except Exception as e:
-        logger.error(f"Error getting ICD detail: {e}", exc_info=True)
-        return jsonify({'error': str(e), 'items': []}), 500
     finally:
         db.close()
 

@@ -10,6 +10,7 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
     dashboard_bp,
     logger,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _write_thu_chi_total_row(brd, daily_data, right_align, total_chi, total_diff, total_fill, total_med, total_svc, total_thu, ws):
@@ -161,6 +162,7 @@ def _write_thu_chi_header(brd, center_align, header_fill_blue, header_font, peri
 
 @dashboard_bp.route('/api/dashboard/export-thu-chi', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def export_thu_chi_excel(user):
     """Xuất Excel thống kê thu chi theo ngày"""
     import io
@@ -229,15 +231,13 @@ def export_thu_chi_excel(user):
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True, download_name=filename)
 
-    except Exception as e:
-        logger.error(f"Export thu chi excel error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/exam-stats-by-day', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_exam_stats_by_day(user):
     """Số lượt khám theo từng ngày trong khoảng from_date → to_date, phân nhóm theo role"""
     db = next(get_db())
@@ -297,15 +297,13 @@ def get_exam_stats_by_day(user):
 
         return jsonify({'items': items}), 200
 
-    except Exception as e:
-        logger.error(f"Error getting exam stats by day: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/exam-detail-by-day', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_exam_detail_by_day(user):
     """Chi tiết ca khám trong 1 ngày cụ thể"""
     db = next(get_db())
@@ -359,8 +357,5 @@ def get_exam_detail_by_day(user):
 
         return jsonify({'date': date_str, 'items': items, 'total': len(items)}), 200
 
-    except Exception as e:
-        logger.error(f"Error getting exam detail by day: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()

@@ -19,6 +19,7 @@ from app.realtime.events import emit_examination_changed, emit_payment_changed
 from datetime import datetime
 import logging
 import traceback
+from app.utils.api_error_contract import api_error_boundary
 
 examination_detail_bp = Blueprint('examination_detail', __name__)
 
@@ -48,6 +49,7 @@ def get_examination_detail(user, examination_id):
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/services', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy danh sách dịch vụ: {error}')
 def get_examination_services(user, examination_id):
     """Lấy danh sách dịch vụ của ca khám"""
     db = next(get_db())
@@ -91,15 +93,12 @@ def get_examination_services(user, examination_id):
 
         return jsonify(services_data), 200
 
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi lấy danh sách dịch vụ: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi lấy danh sách dịch vụ: {str(e)}'}), 500
     finally:
         db.close()
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/services', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi thêm dịch vụ: {error}')
 def add_examination_service(user, examination_id):
     """Thêm dịch vụ cho ca khám"""
     db = next(get_db())
@@ -139,15 +138,12 @@ def add_examination_service(user, examination_id):
         return jsonify({'detail': str(e)}), 409
     except AppointmentServiceValidationError as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi thêm dịch vụ: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi thêm dịch vụ: {str(e)}'}), 500
     finally:
         db.close()
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/services/<int:service_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xóa dịch vụ: {error}')
 def delete_examination_service(user, examination_id, service_id):
     """Xóa dịch vụ khỏi ca khám"""
     db = next(get_db())
@@ -184,15 +180,12 @@ def delete_examination_service(user, examination_id, service_id):
 
     except AppointmentServiceLockedError as e:
         return jsonify({'detail': str(e)}), 409
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi xóa dịch vụ: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi xóa dịch vụ: {str(e)}'}), 500
     finally:
         db.close()
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/services/<int:service_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi cập nhật dịch vụ: {error}')
 def update_examination_service(user, examination_id, service_id):
     """Cập nhật dịch vụ của ca khám"""
     db = next(get_db())
@@ -245,15 +238,12 @@ def update_examination_service(user, examination_id, service_id):
         return jsonify({'detail': str(e)}), 409
     except AppointmentServiceValidationError as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi cập nhật dịch vụ: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi cập nhật dịch vụ: {str(e)}'}), 500
     finally:
         db.close()
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/financial-summary', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy tóm tắt tài chính: {error}')
 def get_financial_summary(user, examination_id):
     """Lấy tóm tắt tài chính từ database"""
     db = next(get_db())
@@ -294,14 +284,12 @@ def get_financial_summary(user, examination_id):
             'total_after_tax': total_after_tax
         }), 200
         
-    except Exception as e:
-        logging.error(f"Lỗi lấy tóm tắt tài chính: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi lấy tóm tắt tài chính: {str(e)}'}), 500
     finally:
         db.close()
 
 @examination_detail_bp.route('/api/examination-detail/<int:examination_id>/export', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xuất hóa đơn: {error}')
 def export_invoice(user, examination_id):
     """Xuất hóa đơn"""
     db = next(get_db())
@@ -326,9 +314,5 @@ def export_invoice(user, examination_id):
             'payment_method': payment_method
         }), 200
 
-    except Exception as e:
-        db.rollback()
-        logging.error(f"Lỗi xuất hóa đơn: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi xuất hóa đơn: {str(e)}'}), 500
     finally:
         db.close()

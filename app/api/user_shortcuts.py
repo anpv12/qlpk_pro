@@ -4,6 +4,7 @@ from app.api.auth import require_auth
 from app.models.user_shortcut import UserShortcut
 from app.models.user import UserRole
 from app.realtime.events import emit_catalog_changed
+from app.utils.api_error_contract import api_error_boundary
 
 shortcut_router = Blueprint('user_shortcuts', __name__, url_prefix='/api/user-shortcuts')
 
@@ -200,6 +201,7 @@ def _create_shortcut(db, scope: str, owner_user_id, data):
 
 @shortcut_router.route('/mine', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Không thể tạo phím tắt', error='{error}')
 def create_my_shortcut(user):
     db = next(get_db())
     try:
@@ -210,15 +212,13 @@ def create_my_shortcut(user):
             return jsonify(payload), code
         _emit_shortcut_changed('user_shortcut_created', row)
         return jsonify(_row_json(row)), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Không thể tạo phím tắt', 'error': str(e)}), 500
     finally:
         db.close()
 
 
 @shortcut_router.route('/global', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Không thể tạo phím tắt global', error='{error}')
 def create_global_shortcut(user):
     if not _is_admin(user):
         return jsonify({'detail': 'Bạn không có quyền'}), 403
@@ -231,9 +231,6 @@ def create_global_shortcut(user):
             return jsonify(payload), code
         _emit_shortcut_changed('user_shortcut_created', row)
         return jsonify(_row_json(row)), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Không thể tạo phím tắt global', 'error': str(e)}), 500
     finally:
         db.close()
 
@@ -269,6 +266,7 @@ def list_shortcuts_by_user(user, target_user_id):
 
 @shortcut_router.route('/user/<int:target_user_id>', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Không thể tạo phím tắt cho user', error='{error}')
 def create_shortcut_for_user(user, target_user_id):
     if not _is_admin(user):
         return jsonify({'detail': 'Bạn không có quyền'}), 403
@@ -281,9 +279,6 @@ def create_shortcut_for_user(user, target_user_id):
             return jsonify(payload), code
         _emit_shortcut_changed('user_shortcut_created', row)
         return jsonify(_row_json(row)), 201
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Không thể tạo phím tắt cho user', 'error': str(e)}), 500
     finally:
         db.close()
 
@@ -315,6 +310,7 @@ def _resolve_shortcut_target(data, is_admin, row, user):
 
 @shortcut_router.route('/<int:shortcut_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Không thể cập nhật phím tắt', error='{error}')
 def update_shortcut(user, shortcut_id):
     db = next(get_db())
     try:
@@ -367,15 +363,13 @@ def update_shortcut(user, shortcut_id):
         db.refresh(row)
         _emit_shortcut_changed('user_shortcut_updated', row)
         return jsonify(_row_json(row)), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Không thể cập nhật phím tắt', 'error': str(e)}), 500
     finally:
         db.close()
 
 
 @shortcut_router.route('/<int:shortcut_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Không thể xóa phím tắt', error='{error}')
 def delete_shortcut(user, shortcut_id):
     db = next(get_db())
     try:
@@ -401,8 +395,5 @@ def delete_shortcut(user, shortcut_id):
             },
         )
         return jsonify({'detail': 'Đã xóa phím tắt'}), 200
-    except Exception as e:
-        db.rollback()
-        return jsonify({'detail': 'Không thể xóa phím tắt', 'error': str(e)}), 500
     finally:
         db.close()

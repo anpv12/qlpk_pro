@@ -8,6 +8,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_patient_changed
 from datetime import datetime
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ def cleanup_family_member_from_deleted_appointment_relative(db, family_member_id
 
 @appointment_relative_router.route('/appointment-relatives/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách người đi khám cùng: {error}')
 def get_appointment_relatives(user, appointment_id):
     """Lấy danh sách người đi khám cùng của một appointment"""
     try:
@@ -80,16 +82,12 @@ def get_appointment_relatives(user, appointment_id):
             'success': True,
             'data': relatives_data
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy danh sách người đi khám cùng: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @appointment_relative_router.route('/appointment-relatives/<int:relative_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy thông tin người đi khám cùng: {error}')
 def get_appointment_relative(user, relative_id):
     """Lấy thông tin một người đi khám cùng"""
     try:
@@ -125,11 +123,6 @@ def get_appointment_relative(user, relative_id):
             'success': True,
             'data': relative_data
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy thông tin người đi khám cùng: {str(e)}'
-        }), 500
     finally:
         db.close()
 
@@ -329,6 +322,7 @@ def _save_appointment_relative(appointment, data, db, examination_id, family_mem
 
 @appointment_relative_router.route('/appointment-relatives', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi thêm người đi khám cùng: {error}')
 def create_appointment_relative(user):
     """Tạo người đi khám cùng mới"""
     try:
@@ -409,12 +403,6 @@ def create_appointment_relative(user):
             family_member_id = family_member.id
         
         return _save_appointment_relative(appointment, data, db, examination_id, family_member_id, id_number, name, phone)
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi thêm người đi khám cùng: {str(e)}'
-        }), 500
     finally:
         db.close()
 

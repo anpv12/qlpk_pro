@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from copy import deepcopy
+from app.utils.api_error_contract import api_error_boundary
 
 survey_templates_router = Blueprint('survey_templates', __name__)
 
@@ -103,6 +104,7 @@ def survey_template_access(user):
 
 @survey_templates_router.route('/survey-templates', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy danh sách mẫu khảo sát: {error}')
 def get_survey_templates(user):
     """Lấy danh sách mẫu khảo sát với phân trang và tìm kiếm"""
     db: Session = next(get_db())
@@ -148,16 +150,12 @@ def get_survey_templates(user):
             }
         }), 200
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy danh sách mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/<int:template_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi lấy chi tiết mẫu khảo sát: {error}')
 def get_survey_template(user, template_id):
     """Lấy chi tiết một mẫu khảo sát"""
     db: Session = next(get_db())
@@ -179,15 +177,11 @@ def get_survey_template(user, template_id):
                      'validation_message': template_validation_message(template.content)}
         }), 200
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy chi tiết mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/<int:template_id>/public', methods=['GET'])
+@api_error_boundary(success=False, message='Lỗi khi lấy chi tiết mẫu khảo sát: {error}')
 def get_survey_template_public(template_id):
     """Lấy chi tiết một mẫu khảo sát (public route for preview)"""
     db: Session = next(get_db())
@@ -211,17 +205,13 @@ def get_survey_template_public(template_id):
             'data': template_data
         }), 200
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi lấy chi tiết mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates', methods=['POST'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi tạo mẫu khảo sát: {error}')
 def create_survey_template(user):
     """Tạo mẫu khảo sát mới"""
     db: Session = next(get_db())
@@ -279,18 +269,13 @@ def create_survey_template(user):
             'success': False,
             'message': str(e)
         }), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi tạo mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/<int:template_id>', methods=['PUT'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi cập nhật mẫu khảo sát: {error}')
 def update_survey_template(user, template_id):
     """Cập nhật mẫu khảo sát"""
     db: Session = next(get_db())
@@ -365,18 +350,13 @@ def update_survey_template(user, template_id):
             'success': False,
             'message': str(e)
         }), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi cập nhật mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/<int:template_id>', methods=['DELETE'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi xóa mẫu khảo sát: {error}')
 def delete_survey_template(user, template_id):
     """Xóa mẫu khảo sát (soft delete)"""
     db: Session = next(get_db())
@@ -404,18 +384,13 @@ def delete_survey_template(user, template_id):
             'message': 'Xóa mẫu khảo sát thành công'
         }), 200
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi xóa mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/upload', methods=['POST'])
 @require_auth
 @require_survey_manager
+@api_error_boundary(success=False, message='Lỗi khi upload mẫu khảo sát: {error}')
 def upload_survey_template(user):
     """Upload file mẫu khảo sát"""
     db: Session = next(get_db())
@@ -502,17 +477,12 @@ def upload_survey_template(user):
             'success': False,
             'message': str(e)
         }), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi upload mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()
 
 @survey_templates_router.route('/survey-templates/download/<int:template_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, message='Lỗi khi download mẫu khảo sát: {error}')
 def download_survey_template(user, template_id):
     """Download file mẫu khảo sát"""
     db: Session = next(get_db())
@@ -542,10 +512,5 @@ def download_survey_template(user, template_id):
             download_name=template.file_name
         )
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Lỗi khi download mẫu khảo sát: {str(e)}'
-        }), 500
     finally:
         db.close()

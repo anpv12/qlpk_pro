@@ -47,6 +47,7 @@ from app.modules.orders.view_models.clinical_order import (
 from app.services.notification_service import NotificationService
 from app.realtime.events import emit_order_changed
 from app.modules.orders.services.survey_lifecycle import expire_due_order_surveys, finish_order_survey, SurveyLifecycleError
+from app.utils.api_error_contract import api_error_boundary
 
 router = Blueprint('chi_dinh', __name__)
 logger = logging.getLogger(__name__)
@@ -141,6 +142,7 @@ def _get_accessible_chi_dinh(db, user, chi_dinh_id):
 
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def get_chi_dinh_by_appointment(user, appointment_id):
     """Lấy danh sách chỉ định của appointment"""
     db = next(get_db())
@@ -154,15 +156,13 @@ def get_chi_dinh_by_appointment(user, appointment_id):
         }), 200
     except AppointmentNotFound:
         return jsonify({'detail': 'Không tìm thấy lịch hẹn'}), 404
-    except Exception as e:
-        logger.error(f"Error getting chi_dinh: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/appointment/<int:appointment_id>', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def save_chi_dinh_by_appointment(user, appointment_id):
     """Lưu danh sách chỉ định của appointment (UPSERT - giữ nguyên created_at cho record cũ)"""
     db = next(get_db())
@@ -213,16 +213,13 @@ def save_chi_dinh_by_appointment(user, appointment_id):
     except InvalidChiDinhPayload as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error saving chi_dinh: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/patient/<int:patient_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Không thể tải lịch sử chỉ định')
 def get_patient_chi_dinh_history(user, patient_id):
     """Lấy lịch sử chỉ định của bệnh nhân trong phạm vi quyền hiện tại."""
     db = next(get_db())
@@ -241,15 +238,13 @@ def get_patient_chi_dinh_history(user, patient_id):
             'patient_id': patient_id,
             'chi_dinh': [build_chi_dinh_history_item(item) for item in history],
         }), 200
-    except Exception as e:
-        logger.error(f"Error getting patient chi_dinh history: {e}")
-        return jsonify({'detail': 'Không thể tải lịch sử chỉ định'}), 500
     finally:
         db.close()
 
 
 @router.route('', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def get_chi_dinh_list(user):
     """Lấy danh sách chỉ định với filter và pagination"""
     
@@ -270,15 +265,13 @@ def get_chi_dinh_list(user):
 
     except InvalidPagination as e:
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        logger.error(f"Error in get_chi_dinh_list: {e}", exc_info=True)
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def get_chi_dinh_detail(user, chi_dinh_id):
     """Lấy chi tiết chỉ định"""
     db = next(get_db())
@@ -290,15 +283,13 @@ def get_chi_dinh_detail(user, chi_dinh_id):
         return jsonify(result), 200
     except ChiDinhNotFound:
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
-    except Exception as e:
-        logger.error(f"Error getting chi_dinh detail: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def update_chi_dinh(user, chi_dinh_id):
     """Cập nhật chỉ định"""
     db = next(get_db())
@@ -323,16 +314,13 @@ def update_chi_dinh(user, chi_dinh_id):
     except InvalidChiDinhPayload as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating chi_dinh: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def delete_chi_dinh(user, chi_dinh_id):
     """Xóa chỉ định"""
     db = next(get_db())
@@ -347,16 +335,13 @@ def delete_chi_dinh(user, chi_dinh_id):
         return jsonify({'message': 'Xóa chỉ định thành công'}), 200
     except ChiDinhNotFound:
         return jsonify({'detail': 'Không tìm thấy chỉ định'}), 404
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting chi_dinh: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>/upload-result', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def upload_result_file(user, chi_dinh_id):
     """Upload file kết quả cho chỉ định"""
     db = next(get_db())
@@ -392,16 +377,13 @@ def upload_result_file(user, chi_dinh_id):
         return jsonify({'detail': str(e)}), 400
     except FileTooLarge:
         return jsonify({'detail': 'File không được vượt quá 25MB'}), 400
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error uploading result file: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>/result-files/<file_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def delete_result_file(user, chi_dinh_id, file_id):
     """Xóa file kết quả của chỉ định"""
     db = next(get_db())
@@ -429,16 +411,13 @@ def delete_result_file(user, chi_dinh_id, file_id):
         return jsonify({'detail': 'Không có file nào để xóa'}), 404
     except ResultFileNotFound:
         return jsonify({'detail': 'Không tìm thấy file'}), 404
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting result file: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/batch-delete', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def batch_delete_chi_dinh(user):
     """Xóa nhiều chỉ định cùng lúc"""
     db = next(get_db())
@@ -471,16 +450,13 @@ def batch_delete_chi_dinh(user):
         return jsonify({'detail': 'Danh sách ID không hợp lệ'}), 400
     except ChiDinhNotFound:
         return jsonify({'detail': 'Không tìm thấy chỉ định nào để xóa'}), 404
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error batch deleting chi_dinh: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:chi_dinh_id>/result-files/<file_id>/download', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Lỗi server: {error}')
 def download_result_file(user, chi_dinh_id, file_id):
     """Download file kết quả"""
     db = next(get_db())
@@ -507,9 +483,6 @@ def download_result_file(user, chi_dinh_id, file_id):
         return jsonify({'detail': 'Không tìm thấy file'}), 404
     except ResultFileMissingOnDisk:
         return jsonify({'detail': 'File không tồn tại'}), 404
-    except Exception as e:
-        logger.error(f"Error downloading result file: {e}")
-        return jsonify({'detail': f'Lỗi server: {str(e)}'}), 500
     finally:
         db.close()
 

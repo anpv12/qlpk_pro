@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ atc_group_bp = Blueprint('atc_group', __name__)
 
 @atc_group_bp.route('/atc-groups/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def get_atc_groups(user):
     """Lấy danh sách nhóm thuốc"""
     try:
@@ -38,18 +40,13 @@ def get_atc_groups(user):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting ATC groups: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 
 @atc_group_bp.route('/atc-groups/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def create_atc_group(user):
     """Tạo nhóm thuốc mới"""
     try:
@@ -84,12 +81,5 @@ def create_atc_group(user):
             'data': atc_group.to_dict()
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating nhóm thuốc: {e}")
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()

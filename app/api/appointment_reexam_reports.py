@@ -15,6 +15,7 @@ from app.api.appointment import (  # noqa: E402 — module gốc đã khởi t�
     router,
     sync_calendar_for_appointment,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 # Tạo lịch hẹn tái khám
@@ -126,6 +127,7 @@ def export_appointments(user):
 # Xóa lịch hẹn (soft delete) - Đổi route để tránh xung đột với GET
 @router.route('/<int:appointment_id>/cancel', methods=['DELETE', 'POST'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi xóa lịch hẹn: {error}')
 def delete_appointment(user, appointment_id):
     db = next(get_db())
     try:
@@ -154,10 +156,6 @@ def delete_appointment(user, appointment_id):
             'requires_force': True,
             'examination_status': e.examination_status
         }), 409
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi khi xóa appointment {appointment_id}: {str(e)}")
-        return jsonify({'detail': f'Có lỗi xảy ra khi xóa lịch hẹn: {str(e)}'}), 500
     finally:
         db.close()
 

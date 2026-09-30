@@ -3,6 +3,7 @@ from app.api.auth import require_auth
 from app.core.database import get_db
 from app.services.notification_service import NotificationService
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ def unread_count(user):
 
 @api_router.route('/<int:notification_id>/read', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server')
 def mark_notification_read(user, notification_id):
     db = next(get_db())
     try:
@@ -57,16 +59,13 @@ def mark_notification_read(user, notification_id):
             'notification': notification_service.serialize_notification(notification),
             'unread_count': unread_count,
         }), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi đánh dấu đã đọc thông báo {notification_id}: {e}", exc_info=True)
-        return jsonify({'detail': 'Lỗi server'}), 500
     finally:
         db.close()
 
 
 @api_router.route('/read-all', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server')
 def mark_all_notifications_read(user):
     db = next(get_db())
     try:
@@ -80,10 +79,6 @@ def mark_all_notifications_read(user):
             'notification': None,
         }])
         return jsonify({'updated_count': updated_count, 'unread_count': 0}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Lỗi đánh dấu tất cả thông báo đã đọc: {e}", exc_info=True)
-        return jsonify({'detail': 'Lỗi server'}), 500
     finally:
         db.close()
 
@@ -91,25 +86,22 @@ def mark_all_notifications_read(user):
 
 @router.route('/create-reminder/<int:appointment_id>', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi server')
 def create_appointment_reminder(user, appointment_id):
     """Tạo thông báo nhắc lịch cho lịch hẹn"""
-    try:
-        data = request.get_json() or {}
-        reminder_hours = data.get('reminder_hours', 24)
-        notification_type = data.get('notification_type', 'both')  # email, sms, both
+    data = request.get_json() or {}
+    reminder_hours = data.get('reminder_hours', 24)
+    notification_type = data.get('notification_type', 'both')  # email, sms, both
         
-        success, message = notification_service.create_appointment_reminder(
-            appointment_id, reminder_hours, notification_type
-        )
+    success, message = notification_service.create_appointment_reminder(
+        appointment_id, reminder_hours, notification_type
+    )
         
-        if success:
-            return jsonify({'message': message}), 201
-        else:
-            return jsonify({'detail': message}), 400
+    if success:
+        return jsonify({'message': message}), 201
+    else:
+        return jsonify({'detail': message}), 400
             
-    except Exception as e:
-        logger.error(f"Lỗi tạo thông báo nhắc lịch: {e}")
-        return jsonify({'detail': 'Lỗi server'}), 500
 
 
 

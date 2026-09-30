@@ -13,10 +13,12 @@ from app.api.medicine import (  # noqa: E402 — module gốc đã khởi tạo 
     logger,
     medicine_router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 @medicine_router.route('/medicines/units', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def get_medicine_units(user):
     """Lấy danh sách đơn vị tính từ database thuốc"""
     try:
@@ -65,12 +67,6 @@ def get_medicine_units(user):
             'data': result
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting medicine units: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 

@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ atc_code_bp = Blueprint('atc_code', __name__)
 
 @atc_code_bp.route('/atc-codes/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def get_atc_codes(user):
     """Lấy danh sách mã ATC"""
     try:
@@ -41,18 +43,13 @@ def get_atc_codes(user):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting ATC codes: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 
 @atc_code_bp.route('/atc-codes/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def create_atc_code(user):
     """Tạo mã ATC mới"""
     try:
@@ -90,12 +87,5 @@ def create_atc_code(user):
             'data': atc_code.to_dict()
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating ATC code: {e}")
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()

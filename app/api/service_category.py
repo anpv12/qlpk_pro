@@ -6,6 +6,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_catalog_changed
 
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ router = Blueprint('service_categories', __name__, url_prefix='/service-categori
 
 @router.route('/', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def list_service_categories(user):
     db = next(get_db())
     try:
@@ -30,15 +32,13 @@ def list_service_categories(user):
             }
             result.append(category_data)
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in list_service_categories: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:category_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_service_category(user, category_id):
     db = next(get_db())
     try:
@@ -55,15 +55,13 @@ def get_service_category(user, category_id):
             'updated_at': category.updated_at.isoformat() if category.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error in get_service_category: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def create_service_category(user):
     db = next(get_db())
     try:
@@ -95,16 +93,13 @@ def create_service_category(user):
             'updated_at': new_category.updated_at.isoformat() if new_category.updated_at else None
         }
         return jsonify(result), 201
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in create_service_category: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:category_id>', methods=['PUT'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def update_service_category(user, category_id):
     db = next(get_db())
     try:
@@ -145,16 +140,13 @@ def update_service_category(user, category_id):
             'updated_at': category.updated_at.isoformat() if category.updated_at else None
         }
         return jsonify(result), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in update_service_category: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/<int:category_id>', methods=['DELETE'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def delete_service_category(user, category_id):
     db = next(get_db())
     try:
@@ -181,16 +173,13 @@ def delete_service_category(user, category_id):
         emit_catalog_changed('service_category_deleted', entity='service_category', entity_id=category_id)
         
         return jsonify({'detail': 'Service category deleted successfully'}), 200
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in delete_service_category: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 
 
 @router.route('/import', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def import_service_categories(user):
     db = next(get_db())
     try:
@@ -280,9 +269,5 @@ def import_service_categories(user):
                 'result': result
             }), 200
             
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error in import_service_categories: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close() 

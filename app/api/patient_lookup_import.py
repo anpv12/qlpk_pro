@@ -17,11 +17,13 @@ from app.api.patient import (  # noqa: E402 — module gốc đã khởi tạo x
     logger,
     router,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 # Check for duplicate patients
 @router.route('/check-duplicate', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Lỗi khi kiểm tra trùng lặp bệnh nhân')
 def check_duplicate_patient(user):
     db = next(get_db())
     try:
@@ -84,9 +86,6 @@ def check_duplicate_patient(user):
         else:
             return jsonify({'is_duplicate': False}), 200
 
-    except Exception as e:
-        logging.error(f"Error checking duplicate patient: {str(e)}")
-        return jsonify({'detail': 'Lỗi khi kiểm tra trùng lặp bệnh nhân'}), 500
     finally:
         db.close()
 
@@ -162,6 +161,7 @@ def import_patients(user):
 
 @router.route('/<int:patient_id>/latest-appointment', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error: {error}')
 def get_patient_latest_appointment(user, patient_id):
     """Lấy appointment cuối cùng của patient để copy thông tin"""
     db = next(get_db())
@@ -223,9 +223,6 @@ def get_patient_latest_appointment(user, patient_id):
             'examination': examination_data
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting patient latest appointment: {e}")
-        return jsonify({'detail': f'Internal server error: {str(e)}'}), 500
     finally:
         db.close()
 

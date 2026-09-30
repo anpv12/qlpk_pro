@@ -5,6 +5,7 @@ from app.api.auth import require_auth
 from app.realtime.events import emit_inventory_changed
 from app.utils.search_normalization import normalized_contains
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ route_administration_bp = Blueprint('route_administration', __name__)
 
 @route_administration_bp.route('/route-administrations/', methods=['GET'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def get_route_administrations(user):
     """Lấy danh sách đường dùng"""
     try:
@@ -38,18 +40,13 @@ def get_route_administrations(user):
             'data': result
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting route administrations: {e}")
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()
 
 
 @route_administration_bp.route('/route-administrations/', methods=['POST'])
 @require_auth
+@api_error_boundary(success=False, detail='Internal server error')
 def create_route_administration(user):
     """Tạo đường dùng mới"""
     try:
@@ -84,12 +81,5 @@ def create_route_administration(user):
             'data': route_administration.to_dict()
         }), 201
         
-    except Exception as e:
-        logger.error(f"Error creating route administration: {e}")
-        db.rollback()
-        return jsonify({
-            'success': False,
-            'detail': 'Internal server error'
-        }), 500
     finally:
         db.close()

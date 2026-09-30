@@ -14,11 +14,13 @@ from app.modules.examinations.services import (
 )
 from app.modules.examinations.services.management_query import InvalidManagementFilter
 import logging
+from app.utils.api_error_contract import api_error_boundary
 
 examination_management_bp = Blueprint('examination_management', __name__)
 
 @examination_management_bp.route('/examinations', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy danh sách lượt khám')
 def get_examinations(user):
     """Lấy danh sách lượt khám với phân trang và lọc"""
     db = None
@@ -29,9 +31,6 @@ def get_examinations(user):
         
     except InvalidManagementFilter as exc:
         return jsonify(detail=str(exc)), 400
-    except Exception as e:
-        logging.error(f"Lỗi lấy danh sách lượt khám: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy danh sách lượt khám'}), 500
     finally:
         if db is not None:
             db.close()
@@ -39,6 +38,7 @@ def get_examinations(user):
 
 @examination_management_bp.route('/examinations/<int:examination_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy chi tiết lượt khám')
 def get_examination_detail(user, examination_id):
     """Lấy chi tiết lượt khám"""
     db = None
@@ -48,9 +48,6 @@ def get_examination_detail(user, examination_id):
         return jsonify(result), 200
     except ManagementExaminationNotFound:
         return jsonify({'detail': 'Lượt khám không tồn tại'}), 404
-    except Exception as e:
-        logging.error(f"Lỗi lấy chi tiết lượt khám: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy chi tiết lượt khám'}), 500
     finally:
         if db is not None:
             db.close()
@@ -84,6 +81,7 @@ def update_examination_status(user, examination_id):
 
 @examination_management_bp.route('/examinations/stats', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Có lỗi xảy ra khi lấy thống kê')
 def get_examination_stats(user):
     """Lấy thống kê lượt khám theo trạng thái"""
     db = None
@@ -94,9 +92,6 @@ def get_examination_stats(user):
         
     except InvalidManagementFilter as exc:
         return jsonify(detail=str(exc)), 400
-    except Exception as e:
-        logging.error(f"Lỗi lấy thống kê lượt khám: {str(e)}")
-        return jsonify({'detail': 'Có lỗi xảy ra khi lấy thống kê'}), 500
     finally:
         if db is not None:
             db.close()

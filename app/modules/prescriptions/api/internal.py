@@ -25,6 +25,7 @@ from app.modules.prescriptions.view_models.print_prescription import (
 
 from app.modules.prescriptions.services.re_examination_service import plan_re_examination, ReExaminationValidationError
 from app.modules.prescriptions.services.save_service import PrescriptionInputValidationError
+from app.utils.api_error_contract import api_error_boundary
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,7 @@ def save_prescription(user):
 
 @router.route('/appointment/<int:appointment_id>', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_prescription(user, appointment_id):
     """Get prescriptions for an appointment (grouped by type)"""
     try:
@@ -166,14 +168,12 @@ def get_prescription(user, appointment_id):
             return jsonify({'detail': access_error}), 403
         return jsonify(build_appointment_prescription_payload(db, appointment_id)), 200
         
-    except Exception:
-        logger.exception("Error getting prescription for appointment_id=%s", appointment_id)
-        return jsonify({'detail': 'Internal server error'}), 500
     finally:
         db.close()
 
 @router.route('/appointment/<int:appointment_id>/print-view-model', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def get_prescription_print_view_model(user, appointment_id):
     """Build prescription print/preview data from backend-owned contracts."""
     try:
@@ -188,14 +188,12 @@ def get_prescription_print_view_model(user, appointment_id):
 
     except PrescriptionPrintAppointmentNotFound as e:
         return jsonify({'detail': str(e)}), 404
-    except Exception:
-        logger.exception("Error getting prescription print view model for appointment_id=%s", appointment_id)
-        return jsonify({'detail': 'Internal server error'}), 500
     finally:
         db.close()
 
 @router.route('/usage', methods=['POST'])
 @require_auth
+@api_error_boundary(detail='Internal server error')
 def save_prescription_usage(user):
     """Save prescription usage instructions only"""
     try:
@@ -242,15 +240,12 @@ def save_prescription_usage(user):
 
         return jsonify({'message': 'Usage instructions saved successfully'}), 200
         
-    except Exception:
-        db.rollback()
-        logger.exception("Error saving prescription usage instructions")
-        return jsonify({'detail': 'Internal server error'}), 500
     finally:
         db.close()
 
 @router.route('/get-next-sequence', methods=['GET'])
 @require_auth
+@api_error_boundary(detail='Internal server error', error='{error}')
 def get_next_prescription_sequence(user):
     """Lấy số thứ tự đơn thuốc tiếp theo trong ngày hiện tại"""
     try:
@@ -274,15 +269,13 @@ def get_next_prescription_sequence(user):
             'date': today.strftime('%Y-%m-%d')
         }), 200
         
-    except Exception as e:
-        logger.error(f"Error getting prescription sequence: {str(e)}")
-        return jsonify({'detail': 'Internal server error', 'error': str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/patient/<int:patient_id>/history", methods=["GET"])
 @require_auth
+@api_error_boundary(detail='Internal server error', error='{error}')
 def get_patient_prescription_history(user, patient_id):
     """Lay lich su kham cua benh nhan, group theo luot kham (appointment).
     Bao gom: benh su (examination_details.bac_si_kham_tien_su.medical_history),
@@ -295,8 +288,5 @@ def get_patient_prescription_history(user, patient_id):
             return jsonify({'detail': access_error}), 403
         return jsonify(build_patient_prescription_history_payload(db, patient_id)), 200
 
-    except Exception as e:
-        logger.error(f"Error getting patient prescription history: {str(e)}")
-        return jsonify({"detail": "Internal server error", "error": str(e)}), 500
     finally:
         db.close()

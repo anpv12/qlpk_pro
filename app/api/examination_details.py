@@ -25,6 +25,7 @@ from app.modules.examinations.services.details_service import (
 )
 from app.utils.examination_utils import build_icd_display_contract
 from app.utils.clinical_access import appointment_access_error, examination_access_error
+from app.utils.api_error_contract import api_error_boundary
 
 router = Blueprint("examination_details", __name__)
 
@@ -45,6 +46,7 @@ def _appointment_access_error(db, user, appointment_id):
 
 @router.route("/examination-details/<int:examination_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_examination_details(user, examination_id: int):
     """Lấy chi tiết khám bệnh theo examination_id và section"""
     db = next(get_db())
@@ -55,15 +57,13 @@ def get_examination_details(user, examination_id: int):
         return jsonify(get_examination_details_result(db, examination_id, request.args.get('section')))
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/<int:examination_id>", methods=["POST"])
 @require_auth
+@api_error_boundary(error='{error}')
 def save_examination_details(user, examination_id: int):
     """Lưu chi tiết khám bệnh"""
     db = next(get_db())
@@ -79,15 +79,13 @@ def save_examination_details(user, examination_id: int):
         return jsonify({"error": "Examination not found"}), 404
     except NoDataProvided:
         return jsonify({"error": "No data provided"}), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/<int:examination_id>/section/<section>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_examination_section_details(user, examination_id: int, section: str):
     """Lấy chi tiết khám bệnh cho một section cụ thể"""
     db = next(get_db())
@@ -98,15 +96,13 @@ def get_examination_section_details(user, examination_id: int, section: str):
         return jsonify({"data": get_section_details_result(db, examination_id, section)})
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/<int:examination_id>/section/<section>", methods=["POST"])
 @require_auth
+@api_error_boundary(error='{error}')
 def save_examination_section_details(user, examination_id: int, section: str):
     """Lưu chi tiết khám bệnh cho một section cụ thể"""
     db = next(get_db())
@@ -131,15 +127,13 @@ def save_examination_section_details(user, examination_id: int, section: str):
         return jsonify({"error": "Examination not found"}), 404
     except NoDataProvided:
         return jsonify({"error": "No data provided"}), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/<int:examination_id>", methods=["DELETE"])
 @require_auth
+@api_error_boundary(error='{error}')
 def delete_examination_details(user, examination_id: int):
     """Xóa tất cả chi tiết khám bệnh cho một examination"""
     db = next(get_db())
@@ -152,15 +146,13 @@ def delete_examination_details(user, examination_id: int):
         return jsonify({"message": "Examination details deleted successfully"})
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/psychological/<int:examination_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_psychological_examination(user, examination_id: int):
     """Lấy dữ liệu khám tâm lý"""
     db = next(get_db())
@@ -171,15 +163,13 @@ def get_psychological_examination(user, examination_id: int):
         return jsonify({"data": get_psychological_examination_result(db, examination_id)})
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/psychological/<int:examination_id>", methods=["POST"])
 @require_auth
+@api_error_boundary(error='{error}')
 def save_psychological_examination(user, examination_id: int):
     """Lưu dữ liệu khám tâm lý"""
     db = next(get_db())
@@ -195,15 +185,13 @@ def save_psychological_examination(user, examination_id: int):
         return jsonify({"error": "Examination not found"}), 404
     except NoDataProvided:
         return jsonify({"error": "No data provided"}), 400
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-id/<int:appointment_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_examination_id_by_appointment(user, appointment_id: int):
     """Lấy examination_id từ appointment_id"""
     db = next(get_db())
@@ -214,15 +202,13 @@ def get_examination_id_by_appointment(user, appointment_id: int):
         return jsonify(get_examination_id_payload_by_appointment(db, appointment_id))
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found for this appointment"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details", methods=["POST"])
 @require_auth
+@api_error_boundary(error='{error}')
 def save_examination_detail_by_appointment(user):
     """Lưu một examination detail theo appointment_id"""
     db = next(get_db())
@@ -248,15 +234,13 @@ def save_examination_detail_by_appointment(user):
         return jsonify({"error": "Missing required fields"}), 400
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found for this appointment"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/modal-save", methods=["POST"])
 @require_auth
+@api_error_boundary(error='{error}')
 def save_examination_modal_data(user):
     """Lưu dữ liệu modal Khám chi tiết theo appointment_id và sections"""
     db = next(get_db())
@@ -274,15 +258,13 @@ def save_examination_modal_data(user):
         return jsonify({"error": "appointment_id is required"}), 400
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found for this appointment"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/modal-load/<int:appointment_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def load_examination_modal_data(user, appointment_id: int):
     """Load dữ liệu modal Khám chi tiết theo appointment_id"""
     db = next(get_db())
@@ -293,15 +275,13 @@ def load_examination_modal_data(user, appointment_id: int):
         return jsonify(load_modal_data_result(db, appointment_id))
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found for this appointment"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 
 @router.route("/examination-details/appointment/<int:appointment_id>", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_examination_details_by_appointment(user, appointment_id: int):
     """Lấy tất cả examination details theo appointment_id"""
     db = next(get_db())
@@ -312,14 +292,12 @@ def get_examination_details_by_appointment(user, appointment_id: int):
         return jsonify(get_details_by_appointment_result(db, appointment_id))
     except ExaminationNotFound:
         return jsonify({"error": "Examination not found for this appointment"}), 404
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
 @router.route("/examination-details/<int:examination_id>/info", methods=["GET"])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_examination_info(user, examination_id: int):
     """Lấy thông tin examination theo examination_id"""
     try:
@@ -353,8 +331,5 @@ def get_examination_info(user, examination_id: int):
             "diagnosis_ids": diagnosis_contract["ids"]
         })
         
-    except Exception as e:
-        db.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
         db.close()

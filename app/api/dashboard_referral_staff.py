@@ -13,10 +13,12 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
     dashboard_bp,
     logger,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 @dashboard_bp.route('/api/dashboard/referral-sources', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}', items=[])
 def get_referral_sources(user):
     """Thống kê lượt khám theo nguồn giới thiệu của bệnh nhân."""
     db = next(get_db())
@@ -44,15 +46,13 @@ def get_referral_sources(user):
             'items': items,
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting referral source stats: {e}", exc_info=True)
-        return jsonify({'error': str(e), 'items': []}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/referral-source-detail', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}', items=[])
 def get_referral_source_detail(user):
     """Danh sách ca khám thuộc một nguồn giới thiệu."""
     db = next(get_db())
@@ -77,9 +77,6 @@ def get_referral_source_detail(user):
             'total': len(cases),
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting referral source detail: {e}", exc_info=True)
-        return jsonify({'error': str(e), 'items': []}), 500
     finally:
         db.close()
 
@@ -187,6 +184,7 @@ def _write_referral_summary_sheet(counts, hdr_fill, mk_border, pct_base, period,
 
 @dashboard_bp.route('/api/dashboard/export-referral-source-excel', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def export_referral_source_excel(user):
     """Xuất Excel thống kê nguồn giới thiệu theo khoảng ngày."""
     import io
@@ -239,15 +237,13 @@ def export_referral_source_excel(user):
             download_name=filename,
         )
 
-    except Exception as e:
-        logger.error(f"Export referral source excel error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/staff-online', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}', items=[])
 def get_staff_online(user):
     """Trạng thái online của bác sĩ / tâm lý gia / lễ tân"""
     db = next(get_db())
@@ -286,8 +282,5 @@ def get_staff_online(user):
             'total': len(items)
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting staff online: {e}")
-        return jsonify({'error': str(e), 'items': []}), 500
     finally:
         db.close()

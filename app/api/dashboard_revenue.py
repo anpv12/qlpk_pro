@@ -11,6 +11,7 @@ from app.api.dashboard import (  # noqa: E402 — module gốc đã khởi tạo
     dashboard_bp,
     logger,
 )
+from app.utils.api_error_contract import api_error_boundary
 
 
 def _write_medicine_revenue_sheet(db, end, make_header, period_label, start, wb, write_row):
@@ -101,6 +102,7 @@ def _write_service_revenue_sheet(db, end, make_header, period_label, start, wb, 
 
 @dashboard_bp.route('/api/dashboard/export-excel', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def export_dashboard_excel(user):
     """Xuất Excel tổng hợp doanh thu dịch vụ và thuốc"""
     import io
@@ -170,9 +172,6 @@ def export_dashboard_excel(user):
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True, download_name=filename)
 
-    except Exception as e:
-        logger.error(f"Export excel error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
@@ -292,6 +291,7 @@ def _revenue_detail_range(date_key, mode, year_str):
 
 @dashboard_bp.route('/api/dashboard/revenue/detail', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_revenue_detail(user):
     """Trích xuất chi tiết doanh thu theo dịch vụ hoặc thuốc cho 1 ngày/tháng"""
     db = next(get_db())
@@ -317,15 +317,13 @@ def get_revenue_detail(user):
             'total_sum': total_sum
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting revenue detail: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/revenue', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_revenue(user):
     """Doanh thu = tiền thuốc + tiền dịch vụ, theo ngày trong khoảng from_date → to_date"""
     db = next(get_db())
@@ -380,15 +378,13 @@ def get_revenue(user):
 
         return jsonify({'items': items}), 200
 
-    except Exception as e:
-        logger.error(f"Error getting revenue: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/exam-today', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}')
 def get_exam_today(user):
     """Số ca khám hôm nay: đã khám vs chưa khám"""
     db = next(get_db())
@@ -425,15 +421,13 @@ def get_exam_today(user):
             'total': examined + not_examined
         }), 200
 
-    except Exception as e:
-        logger.error(f"Error getting exam today: {e}")
-        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
 
 @dashboard_bp.route('/api/dashboard/top-icd', methods=['GET'])
 @require_auth
+@api_error_boundary(error='{error}', items=[])
 def get_top_icd(user):
     """Thống kê ICD theo khoảng ngày"""
     db = next(get_db())
@@ -484,8 +478,5 @@ def get_top_icd(user):
         items.sort(key=lambda x: x['count'], reverse=True)
         return jsonify({'items': items}), 200
 
-    except Exception as e:
-        logger.error(f"Error getting top ICD: {e}")
-        return jsonify({'error': str(e), 'items': []}), 500
     finally:
         db.close()
