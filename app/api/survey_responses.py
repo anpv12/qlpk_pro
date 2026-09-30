@@ -282,6 +282,84 @@ def get_survey_responses_by_examination_public(examination_id):
             'message': f'Lỗi khi lấy câu trả lời: {str(e)}'
         }), 500
 
+def _create_new_survey_response(data, db, user):
+    # Create new response
+    new_response = SurveyResponse(
+        examination_id=data['examination_id'],
+        survey_template_id=data['survey_template_id'],
+        patient_id=data['patient_id'],
+        doctor_id=user.id,
+        responses=data['responses'],
+        notes=data.get('notes', ''),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+
+    # Calculate total scores
+    total_scores = calculate_total_scores(data['responses'], data['survey_template_id'], db)
+    new_response.total_scores = total_scores
+
+    # Debug log
+    logger.debug(f"💾 [SAVE-AUTH] Saving total_scores to new_response: {total_scores}")
+
+    db.add(new_response)
+    db.commit()
+    db.refresh(new_response)
+    emit_survey_changed(
+        'response_created',
+        response=new_response,
+        appointment_id=get_appointment_id_for_examination(db, new_response.examination_id),
+        extra={'source': 'authenticated'}
+    )
+
+    # Verify after commit
+    logger.debug(f"✅ [VERIFY-AUTH] After commit, new_response ID {new_response.id}.total_scores: {new_response.total_scores}")
+
+    return jsonify({
+        'success': True,
+        'message': 'Tạo kết quả khảo sát thành công',
+        'data': {
+            'id': new_response.id,
+            'total_scores': total_scores
+        }
+    })
+
+
+def _update_existing_survey_response(data, db, existing_response):
+    # Update existing response
+    existing_response.responses = data['responses']
+    existing_response.notes = data.get('notes', '')
+    existing_response.updated_at = datetime.utcnow()
+
+    # Calculate total scores
+    total_scores = calculate_total_scores(data['responses'], data['survey_template_id'], db)
+    existing_response.total_scores = total_scores
+
+    # Debug log
+    logger.debug(f"💾 [SAVE-AUTH] Saving total_scores to existing_response ID {existing_response.id}: {total_scores}")
+
+    db.commit()
+    db.refresh(existing_response)
+    emit_survey_changed(
+        'response_updated',
+        response=existing_response,
+        appointment_id=get_appointment_id_for_examination(db, existing_response.examination_id),
+        extra={'source': 'authenticated'}
+    )
+
+    # Verify after commit
+    logger.debug(f"✅ [VERIFY-AUTH] After commit, existing_response ID {existing_response.id}.total_scores: {existing_response.total_scores}")
+
+    return jsonify({
+        'success': True,
+        'message': 'Cập nhật kết quả khảo sát thành công',
+        'data': {
+            'id': existing_response.id,
+            'total_scores': total_scores
+        }
+    })
+
+
 @survey_responses_router.route('/survey-responses', methods=['POST'])
 @require_auth
 def create_survey_response(user):
@@ -309,79 +387,9 @@ def create_survey_response(user):
         if existing_response and existing_response.order_id:
             return jsonify(success=False, message='Bài đã nộp chỉ được xem'), 409
         if existing_response:
-            # Update existing response
-            existing_response.responses = data['responses']
-            existing_response.notes = data.get('notes', '')
-            existing_response.updated_at = datetime.utcnow()
-            
-            # Calculate total scores
-            total_scores = calculate_total_scores(data['responses'], data['survey_template_id'], db)
-            existing_response.total_scores = total_scores
-            
-            # Debug log
-            logger.debug(f"💾 [SAVE-AUTH] Saving total_scores to existing_response ID {existing_response.id}: {total_scores}")
-            
-            db.commit()
-            db.refresh(existing_response)
-            emit_survey_changed(
-                'response_updated',
-                response=existing_response,
-                appointment_id=get_appointment_id_for_examination(db, existing_response.examination_id),
-                extra={'source': 'authenticated'}
-            )
-            
-            # Verify after commit
-            logger.debug(f"✅ [VERIFY-AUTH] After commit, existing_response ID {existing_response.id}.total_scores: {existing_response.total_scores}")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Cập nhật kết quả khảo sát thành công',
-                'data': {
-                    'id': existing_response.id,
-                    'total_scores': total_scores
-                }
-            })
+            return _update_existing_survey_response(data, db, existing_response)
         else:
-            # Create new response
-            new_response = SurveyResponse(
-                examination_id=data['examination_id'],
-                survey_template_id=data['survey_template_id'],
-                patient_id=data['patient_id'],
-                doctor_id=user.id,
-                responses=data['responses'],
-                notes=data.get('notes', ''),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
-            )
-            
-            # Calculate total scores
-            total_scores = calculate_total_scores(data['responses'], data['survey_template_id'], db)
-            new_response.total_scores = total_scores
-            
-            # Debug log
-            logger.debug(f"💾 [SAVE-AUTH] Saving total_scores to new_response: {total_scores}")
-            
-            db.add(new_response)
-            db.commit()
-            db.refresh(new_response)
-            emit_survey_changed(
-                'response_created',
-                response=new_response,
-                appointment_id=get_appointment_id_for_examination(db, new_response.examination_id),
-                extra={'source': 'authenticated'}
-            )
-            
-            # Verify after commit
-            logger.debug(f"✅ [VERIFY-AUTH] After commit, new_response ID {new_response.id}.total_scores: {new_response.total_scores}")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Tạo kết quả khảo sát thành công',
-                'data': {
-                    'id': new_response.id,
-                    'total_scores': total_scores
-                }
-            })
+            return _create_new_survey_response(data, db, user)
 
     except ValueError:
         db.rollback()

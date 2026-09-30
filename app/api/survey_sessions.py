@@ -168,6 +168,79 @@ def _emit_survey_completion_notifications(db, session_row, template_id, actor_us
         db.rollback()
         logger.exception('Không thể tạo thông báo hoàn thành khảo sát')
 
+def _prepare_survey_session(db, examination_id, linked_order, patient_id, template, template_id):
+    session = db.query(SurveySession).filter(
+        SurveySession.order_id == linked_order.id,
+        SurveySession.status.in_([SurveySessionStatus.pending, SurveySessionStatus.in_progress]),
+        SurveySession.expires_at > get_current_datetime(),
+    ).order_by(SurveySession.id.desc()).first()
+    if not session:
+        now = get_current_datetime()
+        session = SurveySession(patient_id=patient_id, examination_id=examination_id,
+            order_id=linked_order.id, survey_template_id=template_id,
+            session_token=str(uuid.uuid4()), status=SurveySessionStatus.pending,
+            expires_at=now + timedelta(hours=24), created_at=now, updated_at=now)
+        db.add(session)
+    from app.utils.survey_scoring import validate_survey_content
+    try:
+        validate_survey_content((session.template_snapshot or {}).get('content', template.content))
+    except ValueError as exc:
+        # An empty invalid legacy snapshot may adopt a repaired catalog template.
+        # A draft or submitted response must keep the exact questionnaire it used.
+        can_refresh = not session.draft_responses and not db.query(SurveyResponse.id).filter_by(session_id=session.id).first()
+        try:
+            if not can_refresh:
+                raise exc
+            validate_survey_content(template.content)
+        except ValueError:
+            db.rollback()
+            return (jsonify(success=False, code='SURVEY_TEMPLATE_INVALID', message='Mẫu khảo sát chưa đủ cấu hình điểm. Vui lòng kiểm tra lại.'), 400), None
+        session.template_snapshot = {'name': template.name, 'content': deepcopy(template.content)}
+    if not session.template_snapshot:
+        session.template_snapshot = {'name': template.name, 'content': deepcopy(template.content)}
+    return None, session
+
+
+def _load_survey_generation_context(data, db, examination_id, patient_id, template_id, user):
+    # Check if patient, examination and appointment are in the current user's scope.
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        return (jsonify({'success': False, 'message': 'Không tìm thấy bệnh nhân'}), 404), None, None, None, None, None
+
+    examination, appointment, access_error = _get_accessible_examination(db, user, examination_id)
+    if access_error:
+        return (jsonify({'success': False, 'message': access_error[0]}), access_error[1]), None, None, None, None, None
+    if examination.patient_id != patient_id:
+        return (jsonify({'success': False, 'message': 'Bệnh nhân không khớp với lần khám'}), 400), None, None, None, None, None
+
+    if not template_id:
+        template_id = _get_order_template_id(db, appointment.id)
+    if not template_id:
+        return (jsonify({'success': False, 'message': 'Chỉ định chưa gắn mẫu khảo sát'}), 400), None, None, None, None, None
+
+    template = db.query(SurveyTemplate).filter(
+        SurveyTemplate.id == template_id,
+        SurveyTemplate.is_active.is_(True),
+        SurveyTemplate.content.isnot(None),
+    ).first()
+    if not template:
+        return (jsonify({'success': False, 'message': 'Mẫu khảo sát không tồn tại hoặc đã ngừng hoạt động'}), 400), None, None, None, None, None
+
+    order_id = data.get('order_id')
+    if not order_id:
+        return (jsonify(success=False, message='Thiếu chỉ định cần gửi khảo sát'), 400), None, None, None, None, None
+    linked_order = db.query(ChiDinh).filter(
+        ChiDinh.id == order_id, ChiDinh.appointment_id == appointment.id,
+        ChiDinh.survey_template_id == template_id,
+    ).with_for_update().first()
+    if not linked_order:
+        return (jsonify({'success': False, 'message': 'Mẫu khảo sát chưa được gắn vào chỉ định của lượt khám'}), 400), None, None, None, None, None
+
+    if linked_order.status in ('has_result', 'completed'):
+        return (jsonify(success=False, message='Khảo sát đã có kết quả hoặc đã kết thúc.'), 409), None, None, None, None, None
+    return None, examination, linked_order, patient, template, template_id
+
+
 @survey_sessions.route('/survey-sessions/generate', methods=['POST'])
 @require_auth
 def generate_survey_session(user):
@@ -194,71 +267,12 @@ def generate_survey_session(user):
         except (TypeError, ValueError):
             return jsonify({'success': False, 'message': 'ID bệnh nhân, lần khám hoặc mẫu khảo sát không hợp lệ'}), 400
 
-        # Check if patient, examination and appointment are in the current user's scope.
-        patient = db.query(Patient).filter(Patient.id == patient_id).first()
-        if not patient:
-            return jsonify({'success': False, 'message': 'Không tìm thấy bệnh nhân'}), 404
-
-        examination, appointment, access_error = _get_accessible_examination(db, user, examination_id)
-        if access_error:
-            return jsonify({'success': False, 'message': access_error[0]}), access_error[1]
-        if examination.patient_id != patient_id:
-            return jsonify({'success': False, 'message': 'Bệnh nhân không khớp với lần khám'}), 400
-
-        if not template_id:
-            template_id = _get_order_template_id(db, appointment.id)
-        if not template_id:
-            return jsonify({'success': False, 'message': 'Chỉ định chưa gắn mẫu khảo sát'}), 400
-
-        template = db.query(SurveyTemplate).filter(
-            SurveyTemplate.id == template_id,
-            SurveyTemplate.is_active.is_(True),
-            SurveyTemplate.content.isnot(None),
-        ).first()
-        if not template:
-            return jsonify({'success': False, 'message': 'Mẫu khảo sát không tồn tại hoặc đã ngừng hoạt động'}), 400
-
-        order_id = data.get('order_id')
-        if not order_id:
-            return jsonify(success=False, message='Thiếu chỉ định cần gửi khảo sát'), 400
-        linked_order = db.query(ChiDinh).filter(
-            ChiDinh.id == order_id, ChiDinh.appointment_id == appointment.id,
-            ChiDinh.survey_template_id == template_id,
-        ).with_for_update().first()
-        if not linked_order:
-            return jsonify({'success': False, 'message': 'Mẫu khảo sát chưa được gắn vào chỉ định của lượt khám'}), 400
-        
-        if linked_order.status in ('has_result', 'completed'):
-            return jsonify(success=False, message='Khảo sát đã có kết quả hoặc đã kết thúc.'), 409
-        session = db.query(SurveySession).filter(
-            SurveySession.order_id == linked_order.id,
-            SurveySession.status.in_([SurveySessionStatus.pending, SurveySessionStatus.in_progress]),
-            SurveySession.expires_at > get_current_datetime(),
-        ).order_by(SurveySession.id.desc()).first()
-        if not session:
-            now = get_current_datetime()
-            session = SurveySession(patient_id=patient_id, examination_id=examination_id,
-                order_id=linked_order.id, survey_template_id=template_id,
-                session_token=str(uuid.uuid4()), status=SurveySessionStatus.pending,
-                expires_at=now + timedelta(hours=24), created_at=now, updated_at=now)
-            db.add(session)
-        from app.utils.survey_scoring import validate_survey_content
-        try:
-            validate_survey_content((session.template_snapshot or {}).get('content', template.content))
-        except ValueError as exc:
-            # An empty invalid legacy snapshot may adopt a repaired catalog template.
-            # A draft or submitted response must keep the exact questionnaire it used.
-            can_refresh = not session.draft_responses and not db.query(SurveyResponse.id).filter_by(session_id=session.id).first()
-            try:
-                if not can_refresh:
-                    raise exc
-                validate_survey_content(template.content)
-            except ValueError:
-                db.rollback()
-                return jsonify(success=False, code='SURVEY_TEMPLATE_INVALID', message='Mẫu khảo sát chưa đủ cấu hình điểm. Vui lòng kiểm tra lại.'), 400
-            session.template_snapshot = {'name': template.name, 'content': deepcopy(template.content)}
-        if not session.template_snapshot:
-            session.template_snapshot = {'name': template.name, 'content': deepcopy(template.content)}
+        early_response, examination, linked_order, patient, template, template_id = _load_survey_generation_context(data, db, examination_id, patient_id, template_id, user)
+        if early_response is not None:
+            return early_response
+        error_response, session = _prepare_survey_session(db, examination_id, linked_order, patient_id, template, template_id)
+        if error_response is not None:
+            return error_response
         transition_order(linked_order, 'survey_sent')
         linked_order.survey_expires_at = session.expires_at.replace(tzinfo=timezone.utc)
         db.commit()
@@ -287,6 +301,64 @@ def generate_survey_session(user):
     finally:
         if db_gen:
             next(db_gen, None)
+
+def _survey_status_response(db, session_row):
+    session_id = session_row.id
+    patient_id = session_row.patient_id
+    session_token = session_row.session_token
+    status = session_row.status
+    expires_at = session_row.expires_at
+    created_at = session_row.created_at
+    started_at = session_row.started_at
+    template_id = session_row.survey_template_id
+
+    # Get patient info
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    patient_name = patient.full_name if patient else 'Unknown'
+    patient_phone = patient.phone if patient else 'Unknown'
+
+    # Get survey responses if completed
+    responses_data = None
+    if status == SurveySessionStatus.completed:
+        responses_data = []
+        response_rows = db.query(SurveyResponse).filter(SurveyResponse.order_id == session_row.order_id).all() if session_row.order_id else []
+        for row in response_rows:
+            responses_data.append({
+                'template_id': row.survey_template_id,
+                'total_scores': row.total_scores,
+                'completed_at': row.created_at.isoformat()
+            })
+
+    # Calculate elapsed_time correctly: use started_at if available, otherwise created_at for pending/in_progress
+    elapsed_time = None
+    if status in [SurveySessionStatus.pending, SurveySessionStatus.in_progress]:
+        now = get_current_datetime()
+        if started_at:
+            started_at_normalized = normalize_datetime(started_at)
+            elapsed_time = (now - started_at_normalized).total_seconds()
+        elif created_at:
+            created_at_normalized = normalize_datetime(created_at)
+            elapsed_time = (now - created_at_normalized).total_seconds()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'session_id': session_id,
+            'order_id': session_row.order_id,
+            'updated_at': utc_iso(session_row.updated_at),
+            'session_token': session_token,
+            **_session_link_payload(session_row),
+            'status': status.value,
+            'patient_name': patient_name,
+            'patient_phone': patient_phone,
+            'created_at': utc_iso(created_at),
+            'expires_at': utc_iso(expires_at),
+            'responses': responses_data,
+            'elapsed_time': elapsed_time,
+            'template_id': template_id,
+        }
+    })
+
 
 @survey_sessions.route('/survey-sessions/<int:examination_id>/status', methods=['GET'])
 @require_auth
@@ -331,61 +403,7 @@ def get_survey_status(user, examination_id):
                 extra={'status': 'expired'}
             )
         
-        session_id = session_row.id
-        patient_id = session_row.patient_id
-        session_token = session_row.session_token
-        status = session_row.status
-        expires_at = session_row.expires_at
-        created_at = session_row.created_at
-        started_at = session_row.started_at
-        template_id = session_row.survey_template_id
-        
-        # Get patient info
-        patient = db.query(Patient).filter(Patient.id == patient_id).first()
-        patient_name = patient.full_name if patient else 'Unknown'
-        patient_phone = patient.phone if patient else 'Unknown'
-        
-        # Get survey responses if completed
-        responses_data = None
-        if status == SurveySessionStatus.completed:
-            responses_data = []
-            response_rows = db.query(SurveyResponse).filter(SurveyResponse.order_id == session_row.order_id).all() if session_row.order_id else []
-            for row in response_rows:
-                responses_data.append({
-                    'template_id': row.survey_template_id,
-                    'total_scores': row.total_scores,
-                    'completed_at': row.created_at.isoformat()
-                })
-        
-        # Calculate elapsed_time correctly: use started_at if available, otherwise created_at for pending/in_progress
-        elapsed_time = None
-        if status in [SurveySessionStatus.pending, SurveySessionStatus.in_progress]:
-            now = get_current_datetime()
-            if started_at:
-                started_at_normalized = normalize_datetime(started_at)
-                elapsed_time = (now - started_at_normalized).total_seconds()
-            elif created_at:
-                created_at_normalized = normalize_datetime(created_at)
-                elapsed_time = (now - created_at_normalized).total_seconds()
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'session_id': session_id,
-                'order_id': session_row.order_id,
-                'updated_at': utc_iso(session_row.updated_at),
-                'session_token': session_token,
-                **_session_link_payload(session_row),
-                'status': status.value,
-                'patient_name': patient_name,
-                'patient_phone': patient_phone,
-                'created_at': utc_iso(created_at),
-                'expires_at': utc_iso(expires_at),
-                'responses': responses_data,
-                'elapsed_time': elapsed_time,
-                'template_id': template_id,
-            }
-        })
+        return _survey_status_response(db, session_row)
         
     except Exception as e:
         logger.exception("Unhandled survey session error")
