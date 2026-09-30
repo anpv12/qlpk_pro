@@ -1,425 +1,210 @@
-/**
- * Drug Interaction Management — JS Logic
- * Quản lý tương tác thuốc: CRUD, autocomplete, thống kê theo hoạt chất
- */
-(function () {
-	'use strict';
+// Drug interaction catalog: CRUD, creatable active-ingredient autocomplete, Excel template/import.
+import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
+import { downloadFile, HttpError, requestJson } from './shared/http-json.js';
+import { setupIngredientAutocomplete } from './drug-interaction-autocomplete.js';
 
-	function normalizeSearchText(value) {
-		return window.QLPKSearchNormalization?.normalizeSearchText(value)
-			|| String(value || '').toLowerCase().trim();
+const API_BASE = '/api/drug-interactions';
+const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
+const state = { interactions: [], ingredients: [], editingId: null };
+const FIELDS = ['consequence', 'mechanism', 'management', 'notes'];
+
+const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+
+function typeBadge(contra, classes) {
+	return el('span', { class: contra ? classes.contra : classes.approved },
+		icon(contra ? 'bi-x-octagon-fill' : 'bi-check-circle-fill'), contra ? ' Chống chỉ định' : ' Được đồng thuận');
+}
+
+function rowButton(kind, title, iconName, id, className) {
+	return el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: className, title,
+		dataset: { diAction: kind, diId: id } }, icon(iconName));
+}
+
+function interactionRow(item, index) {
+	return el('tr', {},
+		el('td', {}, index),
+		el('td', {}, el('div', { class: 'fw-semibold' }, item.hoat_chat_1 || '—')),
+		el('td', { class: 'text-center text-muted' }, icon('bi-arrow-left-right')),
+		el('td', {}, el('div', { class: 'fw-semibold' }, item.hoat_chat_2 || '—')),
+		el('td', { class: 'text-center' }, typeBadge(item.interaction_type === 'contraindicated', { contra: 'badge-type badge-contra', approved: 'badge-type badge-approved' })),
+		el('td', {}, el('div', { class: 'di-preline' }, item.consequence || '—')),
+		el('td', {}, el('div', { class: 'd-flex gap-1' },
+			rowButton('view', 'Xem', 'bi-eye', item.id, 'btn btn-sm btn-outline-secondary'),
+			rowButton('edit', 'Sửa', 'bi-pencil', item.id, 'btn btn-sm'),
+			rowButton('danger', 'Xóa', 'bi-trash', item.id, 'btn btn-sm'))));
+}
+
+function renderPage(items, offset) {
+	const body = byId('di-table-body');
+	if (!items.length) {
+		replace(body, el('tr', {}, el('td', { colspan: 7, class: 'text-center text-muted py-4' },
+			icon('bi-inbox', 'di-empty-icon'), el('br'), 'Chưa có tương tác nào')));
+		return;
 	}
+	replace(body, items.map((item, index) => interactionRow(item, offset + index + 1)));
+}
 
-	const API_BASE = '/api/drug-interactions';
-	const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
-	const HEADERS = () => ({
-		'Content-Type': 'application/json'
+const pagination = window.QLPKPagination.createClient({ render: renderPage });
+
+async function loadInteractions() {
+	try {
+		state.interactions = await requestJson(API_BASE);
+		pagination.setItems(state.interactions);
+	} catch (error) {
+		console.error('Load interactions error:', error);
+	}
+}
+
+async function loadActiveIngredients() {
+	try {
+		const response = await requestJson(ACTIVE_INGREDIENT_API);
+		if (response.success && response.data) state.ingredients = response.data.map(item => item.ten_hoat_chat);
+	} catch (error) {
+		console.error('Load active ingredients error:', error);
+	}
+}
+
+function setModalTitle(text) {
+	replace(byId('di-modal-title'), icon('bi-exclamation-triangle'), ` ${text}`);
+}
+
+function openAddModal() {
+	state.editingId = null;
+	setModalTitle('Thêm tương tác thuốc');
+	byId('di-form').reset();
+	byId('di-med1-id').value = '';
+	byId('di-med2-id').value = '';
+	byId('di-type-contra').checked = true;
+	modal('diModal').show();
+}
+
+function viewInteraction(id) {
+	const item = state.interactions.find(entry => entry.id === id);
+	if (!item) return;
+	byId('view-med1').textContent = item.hoat_chat_1 || '—';
+	byId('view-med2').textContent = item.hoat_chat_2 || '—';
+	replace(byId('view-type'), typeBadge(item.interaction_type === 'contraindicated', { contra: 'di-view-type-contra', approved: 'di-view-type-approved' }));
+	FIELDS.forEach(field => { byId(`view-${field}`).textContent = item[field] || '—'; });
+	modal('diViewModal').show();
+}
+
+function editInteraction(id) {
+	const item = state.interactions.find(entry => entry.id === id);
+	if (!item) return;
+	state.editingId = id;
+	setModalTitle('Sửa tương tác thuốc');
+	['1', '2'].forEach(n => {
+		byId(`di-med${n}`).value = item[`hoat_chat_${n}`] || '';
+		byId(`di-med${n}-id`).value = item[`hoat_chat_${n}`] || '';
 	});
+	byId(item.interaction_type === 'contraindicated' ? 'di-type-contra' : 'di-type-approved').checked = true;
+	FIELDS.forEach(field => { byId(`di-${field}`).value = item[field] || ''; });
+	modal('diModal').show();
+}
 
-	let allInteractions = [];
-	let allActiveIngredients = [];
-	let editingId = null;
-
-	// ─── Toast ────────────────────────────────────────────
-	function showToast(type, msg) {
-		return window.QLPKUserFeedback?.show(type, msg);
+async function saveNewIngredientIfNeeded(name) {
+	if (state.ingredients.some(entry => normalize(entry) === normalize(name))) return;
+	try {
+		await requestJson('/api/active-ingredient', { method: 'POST', json: { ten_hoat_chat: name } });
+	} catch (error) {
+		if (!(error instanceof HttpError)) console.error('Auto-save ingredient error:', error);
 	}
+}
 
-	async function downloadProtectedFile(url, filename) {
-		try {
-			const response = await fetch(url);
-			if (!response.ok) throw new Error(response.status);
-			const blob = await response.blob();
-			const blobUrl = URL.createObjectURL(blob);
-			const link = document.createElement('a');
-			link.href = blobUrl;
-			link.download = filename;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(blobUrl);
-		} catch (error) {
-			showToast('error', 'Có lỗi xảy ra khi tải file mẫu');
-		}
+async function saveInteraction(event) {
+	event.preventDefault();
+	const hc1 = byId('di-med1-id').value;
+	const hc2 = byId('di-med2-id').value;
+	if (!hc1 || !hc2) {
+		toast('error', 'Vui lòng nhập/chọn đủ 2 hoạt chất');
+		return;
 	}
-
-	// ─── Load danh sách tương tác ──────────────────────────
-	async function loadInteractions() {
-		try {
-			const res = await fetch(API_BASE, { headers: HEADERS() });
-			allInteractions = await res.json();
-			renderTable(allInteractions);
-		} catch (e) {
-			console.error('Load interactions error:', e);
-		}
+	const payload = { hoat_chat_1: hc1, hoat_chat_2: hc2, interaction_type: document.querySelector('input[name="interaction_type"]:checked').value };
+	FIELDS.forEach(field => { payload[field] = byId(`di-${field}`).value.trim(); });
+	try {
+		await saveNewIngredientIfNeeded(hc1);
+		await saveNewIngredientIfNeeded(hc2);
+		const editing = state.editingId;
+		await requestJson(editing ? `${API_BASE}/${editing}` : API_BASE, { method: editing ? 'PUT' : 'POST', json: payload });
+		toast('success', editing ? 'Cập nhật thành công' : 'Thêm thành công');
+		window.bootstrap.Modal.getInstance(byId('diModal')).hide();
+		loadInteractions();
+		loadActiveIngredients();
+	} catch (error) {
+		toast('error', error instanceof HttpError ? 'Không thể lưu tương tác thuốc. Vui lòng kiểm tra lại.' : 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
 	}
+}
 
-	// ─── Load danh sách Hoạt chất (cho autocomplete) ───────
-	async function loadActiveIngredients() {
-		try {
-			const res = await fetch(ACTIVE_INGREDIENT_API, { headers: HEADERS() });
-			const response = await res.json();
-			if (response.success && response.data) {
-				// Map data từ danh mục hoạt chất (độc lập) -> lấy array string
-				allActiveIngredients = response.data.map(item => item.ten_hoat_chat);
-			}
-		} catch (e) {
-			console.error('Load active ingredients error:', e);
-		}
+async function removeInteraction(id) {
+	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa tương tác này?')) return;
+	try {
+		await requestJson(`${API_BASE}/${id}`, { method: 'DELETE' });
+		toast('success', 'Đã xóa');
+		loadInteractions();
+	} catch (error) {
+		toast('error', error instanceof HttpError ? 'Không thể xóa tương tác thuốc. Vui lòng thử lại.' : 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
 	}
+}
 
-	// ─── Render bảng ──────────────────────────────────────
-	const listPagination = window.QLPKPagination.createClient({ render: renderPage });
-    function renderTable(data) { listPagination.setItems(data); }
-    function renderPage(data, offset) {
-		const tbody = document.getElementById('di-table-body');
-		if (!data.length) {
-			tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">
-				<i class="bi bi-inbox di-empty-icon"></i><br>Chưa có tương tác nào</td></tr>`;
-			return;
-		}
+function setupSearch() {
+	on(byId('di-search'), 'input', event => {
+		const query = normalize(event.target.value);
+		pagination.setItems(query ? state.interactions.filter(item => ['hoat_chat_1', 'hoat_chat_2', 'consequence']
+			.some(field => normalize(item[field]).includes(query))) : state.interactions);
+	});
+}
 
-		tbody.innerHTML = data.map((item, idx) => {
-			const hc1 = item.hoat_chat_1;
-			const hc2 = item.hoat_chat_2;
-			const isContra = item.interaction_type === 'contraindicated';
-			const typeBadge = isContra
-				? '<span class="badge-type badge-contra"><i class="bi bi-x-octagon-fill"></i> Chống chỉ định</span>'
-				: '<span class="badge-type badge-approved"><i class="bi bi-check-circle-fill"></i> Được đồng thuận</span>';
-
-			return `<tr>
-				<td>${offset + idx + 1}</td>
-				<td>
-					<div class="fw-semibold">${hc1 || '—'}</div>
-				</td>
-				<td class="text-center text-muted"><i class="bi bi-arrow-left-right"></i></td>
-				<td>
-					<div class="fw-semibold">${hc2 || '—'}</div>
-				</td>
-				<td class="text-center">${typeBadge}</td>
-				<td><div class="di-preline">${item.consequence || '—'}</div></td>
-				<td>
-					<div class="d-flex gap-1">
-						<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm btn-outline-secondary" title="Xem" data-qlpk-call="DrugInteraction.view" data-qlpk-args='[${item.id}]'><i class="bi bi-eye"></i></button>
-						<button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm" title="Sửa" data-qlpk-call="DrugInteraction.edit" data-qlpk-args='[${item.id}]'><i class="bi bi-pencil"></i></button>
-						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" title="Xóa" data-qlpk-call="DrugInteraction.remove" data-qlpk-args='[${item.id}]'><i class="bi bi-trash"></i></button>
-					</div>
-				</td>
-			</tr>`;
-		}).join('');
-	}
-
-
-
-	// ─── Autocomplete Hoạt chất (Creatable) ───────────────
-	function setupAutocomplete(inputId, hiddenId) {
-		const input = document.getElementById(inputId);
-		const hidden = document.getElementById(hiddenId);
-
-		let dropdown = null;
-
-		function showDropdown(query) {
-			if (dropdown) dropdown.remove();
-			
-			// Cập nhật giá trị ẩn luôn bằng text vừa gõ
-			hidden.value = input.value.trim();
-
-			let matches = [];
-			const queryLower = normalizeSearchText(query);
-
-			if (!query) {
-				// Focus mà chưa gõ → hiện 15 hoạt chất đầu tiên
-				matches = allActiveIngredients.slice(0, 15).map(m => ({ label: m, isNew: false }));
-			} else {
-				const filtered = allActiveIngredients.filter(m => normalizeSearchText(m).includes(queryLower));
-				matches = filtered.slice(0, 15).map(m => ({ label: m, isNew: false }));
-				
-				// Kiểm tra xem đã khớp chính xác 100% chưa, nếu chưa thì chèn mục Thêm mới
-				const exactMatch = allActiveIngredients.find(m => normalizeSearchText(m) === queryLower);
-				if (!exactMatch) {
-					matches.unshift({ label: query, displayLabel: `+ Thêm hoạt chất mới: "${query}"`, isNew: true });
-				}
-			}
-
-			if (!matches.length) return;
-
-			dropdown = document.createElement('div');
-			dropdown.className = 'ac-dropdown';
-			matches.forEach(m => {
-				const opt = document.createElement('div');
-				opt.className = 'ac-item';
-				if (m.isNew) {
-					opt.classList.add('ac-item-new');
-					opt.innerHTML = `<span class="ac-new-label"><i class="bi bi-plus-circle me-1"></i> ${window.QLPKHtml.escape(m.displayLabel)}</span>`;
-				} else {
-					opt.innerHTML = `<strong>${window.QLPKHtml.escape(m.label)}</strong>`;
-				}
-
-				opt.addEventListener('click', () => {
-					input.value = m.label;
-					hidden.value = m.label;
-					dropdown.remove();
-					dropdown = null;
-				});
-				dropdown.appendChild(opt);
-			});
-			input.parentElement.classList.add('di-autocomplete-wrap');
-			input.parentElement.appendChild(dropdown);
-		}
-
-		input.addEventListener('focus', function () {
-			showDropdown(this.value.trim());
-		});
-
-		input.addEventListener('input', function () {
-			showDropdown(this.value.trim());
-		});
-
-		document.addEventListener('click', (e) => {
-			if (dropdown && !input.contains(e.target) && !dropdown.contains(e.target)) {
-				dropdown.remove();
-				dropdown = null;
-			}
-		});
-	}
-
-	// ─── Mở modal thêm mới ────────────────────────────────
-	function openAddModal() {
-		editingId = null;
-		document.getElementById('di-modal-title').innerHTML = '<i class="bi bi-exclamation-triangle"></i> Thêm tương tác thuốc';
-		document.getElementById('di-form').reset();
-		document.getElementById('di-med1-id').value = '';
-		document.getElementById('di-med2-id').value = '';
-		document.getElementById('di-type-contra').checked = true;
-		new bootstrap.Modal(document.getElementById('diModal')).show();
-	}
-
-	// ─── Xem chi tiết ─────────────────────────────────────
-	function viewInteraction(id) {
-		const item = allInteractions.find(i => i.id === id);
-		if (!item) return;
-
-		const isContra = item.interaction_type === 'contraindicated';
-
-		document.getElementById('view-med1').textContent = item.hoat_chat_1 || '—';
-		document.getElementById('view-med2').textContent = item.hoat_chat_2 || '—';
-		document.getElementById('view-type').innerHTML = isContra
-			? '<span class="di-view-type-contra"><i class="bi bi-x-octagon-fill"></i> Chống chỉ định</span>'
-			: '<span class="di-view-type-approved"><i class="bi bi-check-circle-fill"></i> Được đồng thuận</span>';
-		document.getElementById('view-consequence').textContent = item.consequence || '—';
-		document.getElementById('view-mechanism').textContent = item.mechanism || '—';
-		document.getElementById('view-management').textContent = item.management || '—';
-		document.getElementById('view-notes').textContent = item.notes || '—';
-
-		new bootstrap.Modal(document.getElementById('diViewModal')).show();
-	}
-
-	// ─── Mở modal sửa ─────────────────────────────────────
-	function editInteraction(id) {
-		const item = allInteractions.find(i => i.id === id);
-		if (!item) return;
-
-		editingId = id;
-		document.getElementById('di-modal-title').innerHTML = '<i class="bi bi-exclamation-triangle"></i> Sửa tương tác thuốc';
-
-		document.getElementById('di-med1').value = item.hoat_chat_1 || '';
-		document.getElementById('di-med1-id').value = item.hoat_chat_1 || '';
-		document.getElementById('di-med2').value = item.hoat_chat_2 || '';
-		document.getElementById('di-med2-id').value = item.hoat_chat_2 || '';
-
-		if (item.interaction_type === 'contraindicated') {
-			document.getElementById('di-type-contra').checked = true;
-		} else {
-			document.getElementById('di-type-approved').checked = true;
-		}
-
-		document.getElementById('di-consequence').value = item.consequence || '';
-		document.getElementById('di-mechanism').value = item.mechanism || '';
-		document.getElementById('di-management').value = item.management || '';
-		document.getElementById('di-notes').value = item.notes || '';
-
-		new bootstrap.Modal(document.getElementById('diModal')).show();
-	}
-
-	// ─── Lưu (thêm / sửa) ────────────────────────────────
-	async function saveInteraction(e) {
-		e.preventDefault();
-
-		const hc1 = document.getElementById('di-med1-id').value;
-		const hc2 = document.getElementById('di-med2-id').value;
-
-		if (!hc1 || !hc2) {
-			showToast('error', 'Vui lòng nhập/chọn đủ 2 hoạt chất');
-			return;
-		}
-
-		const payload = {
-			hoat_chat_1: hc1,
-			hoat_chat_2: hc2,
-			interaction_type: document.querySelector('input[name="interaction_type"]:checked').value,
-			consequence: document.getElementById('di-consequence').value.trim(),
-			mechanism: document.getElementById('di-mechanism').value.trim(),
-			management: document.getElementById('di-management').value.trim(),
-			notes: document.getElementById('di-notes').value.trim()
-		};
-
-		async function saveNewIngredientIfNeeded(name) {
-			const normalizedName = normalizeSearchText(name);
-			const exists = allActiveIngredients.find(m => normalizeSearchText(m) === normalizedName);
-			if (!exists) {
-				try {
-					await fetch('/api/active-ingredient', {
-						method: 'POST',
-						headers: HEADERS(),
-						body: JSON.stringify({ ten_hoat_chat: name })
-					});
-				} catch (e) {
-					console.error('Auto-save ingredient error:', e);
-				}
-			}
-		}
-
-		try {
-			// Tự động thêm vào danh mục hoạt chất nếu chưa có
-			await saveNewIngredientIfNeeded(hc1);
-			await saveNewIngredientIfNeeded(hc2);
-
-			const url = editingId ? `${API_BASE}/${editingId}` : API_BASE;
-			const method = editingId ? 'PUT' : 'POST';
-
-			const res = await fetch(url, {
-				method,
-				headers: HEADERS(),
-				body: JSON.stringify(payload)
-			});
-
-			if (!res.ok) {
-				showToast('error', 'Không thể lưu tương tác thuốc. Vui lòng kiểm tra lại.');
-				return;
-			}
-
-			showToast('success', editingId ? 'Cập nhật thành công' : 'Thêm thành công');
-			bootstrap.Modal.getInstance(document.getElementById('diModal')).hide();
-			
-			// Refresh lại cả tương tác và danh mục hoạt chất (để cập nhật autocomplete)
+async function importFile(input) {
+	const file = input.files && input.files[0];
+	if (!file) return;
+	const formData = new FormData();
+	formData.append('file', file);
+	toast('success', 'Đang xử lý file...');
+	try {
+		const result = await requestJson('/api/drug-interactions/import', { method: 'POST', body: formData });
+		if (result.success) {
+			toast('success', 'Đã nhập dữ liệu tương tác thuốc.');
 			loadInteractions();
-			loadActiveIngredients();
-		} catch (e) {
-			showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
+		} else {
+			toast('error', 'Không thể nhập tương tác thuốc. Vui lòng kiểm tra tệp và thử lại.');
 		}
+	} catch {
+		toast('error', 'Không thể nhập tương tác thuốc. Vui lòng kiểm tra tệp và thử lại.');
 	}
+	input.value = '';
+}
 
-	// ─── Xóa ──────────────────────────────────────────────
-	async function removeInteraction(id) {
-		if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa tương tác này?')) return;
+function bindActions() {
+	on(byId('di-form'), 'submit', saveInteraction);
+	on(byId('btn-add-interaction'), 'click', openAddModal);
+	on(byId('btn-di-download-template'), 'click', () => downloadFile('/api/drug-interactions/template', 'mau_import_tuong_tac_thuoc.xlsx')
+		.catch(() => toast('error', 'Có lỗi xảy ra khi tải file mẫu')));
+	on(byId('btn-di-import-excel'), 'click', () => byId('di-import-file').click());
+	on(byId('di-import-file'), 'change', event => importFile(event.target));
+	const actions = { view: viewInteraction, edit: editInteraction, danger: removeInteraction };
+	delegate(byId('di-table-body'), 'click', '[data-di-action]', (event, button) => actions[button.dataset.diAction](Number(button.dataset.diId)));
+}
 
-		try {
-			const res = await fetch(`${API_BASE}/${id}`, {
-				method: 'DELETE',
-				headers: HEADERS()
-			});
-
-			if (res.ok) {
-				showToast('success', 'Đã xóa');
-				loadInteractions();
-			} else {
-				showToast('error', 'Không thể xóa tương tác thuốc. Vui lòng thử lại.');
+async function init() {
+	await loadActiveIngredients();
+	await loadInteractions();
+	const ingredients = () => state.ingredients;
+	setupIngredientAutocomplete(byId('di-med1'), byId('di-med1-id'), ingredients, normalize);
+	setupIngredientAutocomplete(byId('di-med2'), byId('di-med2-id'), ingredients, normalize);
+	setupSearch();
+	bindActions();
+	window.QLPKRealtimePageHooks?.register({
+		types: ['inventory.changed'], debounceMs: 500,
+		async handler(event) {
+			const entity = event && event.payload ? event.payload.entity : null;
+			if (!entity || entity === 'drug_interaction' || entity === 'active_ingredient') {
+				await loadActiveIngredients();
+				await loadInteractions();
 			}
-		} catch (e) {
-			showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
-		}
-	}
+		},
+	});
+}
 
-	// ─── Tìm kiếm ────────────────────────────────────────
-	function setupSearch() {
-		const input = document.getElementById('di-search');
-		input.addEventListener('input', function () {
-			const q = normalizeSearchText(this.value);
-			if (!q) {
-				renderTable(allInteractions);
-				return;
-			}
-			const filtered = allInteractions.filter(item => {
-				return normalizeSearchText(item.hoat_chat_1).includes(q) ||
-					normalizeSearchText(item.hoat_chat_2).includes(q) ||
-					normalizeSearchText(item.consequence).includes(q);
-			});
-			renderTable(filtered);
-		});
-	}
-
-	// ─── Init ─────────────────────────────────────────────
-	async function init() {
-		await loadActiveIngredients();
-		await loadInteractions();
-		setupAutocomplete('di-med1', 'di-med1-id');
-		setupAutocomplete('di-med2', 'di-med2-id');
-		setupSearch();
-
-		document.getElementById('di-form').addEventListener('submit', saveInteraction);
-		document.getElementById('btn-add-interaction').addEventListener('click', openAddModal);
-
-		// Download template (xuất toàn bộ dữ liệu hiện có)
-		document.getElementById('btn-di-download-template').addEventListener('click', function () {
-			downloadProtectedFile('/api/drug-interactions/template', 'mau_import_tuong_tac_thuoc.xlsx');
-		});
-
-		// Import Excel
-		document.getElementById('btn-di-import-excel').addEventListener('click', function () {
-			document.getElementById('di-import-file').click();
-		});
-
-		document.getElementById('di-import-file').addEventListener('change', async function (e) {
-			if (!e.target.files || e.target.files.length === 0) return;
-
-			const file = e.target.files[0];
-			const formData = new FormData();
-			formData.append('file', file);
-
-			showToast('success', 'Đang xử lý file...');
-
-			try {
-				const res = await fetch('/api/drug-interactions/import', {
-					method: 'POST',
-					body: formData
-				});
-				const result = await res.json();
-				if (result.success) {
-					showToast('success', 'Đã nhập dữ liệu tương tác thuốc.');
-					loadInteractions();
-				} else {
-					showToast('error', 'Không thể nhập tương tác thuốc. Vui lòng kiểm tra tệp và thử lại.');
-				}
-			} catch (err) {
-				showToast('error', 'Không thể nhập tương tác thuốc. Vui lòng kiểm tra tệp và thử lại.');
-			}
-
-			// Reset file input
-			e.target.value = '';
-		});
-
-		if (window.QLPKRealtimePageHooks) {
-			window.QLPKRealtimePageHooks.register({
-				types: ['inventory.changed'],
-				debounceMs: 500,
-				handler: async function (event) {
-					const entity = event && event.payload ? event.payload.entity : null;
-					if (!entity || entity === 'drug_interaction' || entity === 'active_ingredient') {
-						await loadActiveIngredients();
-						await loadInteractions();
-					}
-				}
-			});
-		}
-	}
-
-	// Export
-	window.DrugInteraction = {
-		init,
-		view: viewInteraction,
-		edit: editInteraction,
-		remove: removeInteraction
-	};
-
-	document.addEventListener('DOMContentLoaded', init);
-})();
+init();
