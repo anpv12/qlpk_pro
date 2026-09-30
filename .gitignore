@@ -25,3 +25,4 @@ reports/
 *.sqlite
 *.sqlite3
 *.dump
+.venv/
