@@ -1,5 +1,25 @@
 # QLPK Refactor Progress
 
+## Nợ kỹ thuật mục 3–6 (đợt 2) — 30/09/2026
+
+- Mục 5 (Python) xong: 141 import thừa, 11 biến thừa, 35 schema chết (4 file) đã gỡ.
+  `api_error_boundary` (`app/utils/api_error_contract.py`) thay 332 khối catch-all chép tay,
+  giữ nguyên payload 500 (đối chiếu từng route bằng exception thật), log traceback.
+  Không còn `except Exception` nuốt lỗi (gate BLE001 trong `check_code_health.py`).
+  Mọi hàm Python McCabe ≤10 (gate hạ 15 → 10).
+- Mục 6 (file lớn) xong: Python/JS/template ≤500 dòng (gate `MAX_LINES = 500`, thêm
+  template). JS tách `<entry>-parts/` theo manifest (nạp trước entry) hoặc continuation;
+  helper test/script mở rộng cả parts lẫn continuation. Template ghép partial, HTML render
+  giống từng byte.
+- Mục 4 (một phần): px → rem (6115 → 978; phần còn lại thuộc stylesheet của 3 trang đặt
+  root 13px), 12 màu cứng → token, cssText → setProperty; `css_id_selector`/
+  `css_hard_font_size` sửa cách đo (thuộc tính trong ngoặc kép, `font-size: 0`).
+  Còn: 43 `!important`, 97 class Bootstrap action thô.
+- Mục 3 chưa làm: module hóa script cổ điển/biến toàn cục, jQuery, innerHTML, markup trùng
+  ở trang quản trị.
+- Kiểm chứng: base/new trên 2 bản sao DB — GET 4.440 request, 12 bộ ghi + bộ route mới,
+  32 trang computed style, 27 trang tương tác + 10 kịch bản thao tác sâu (payload ghi trùng).
+
 ## Dọn nợ kỹ thuật mục 1–6 — 30/09/2026
 
 1. Hàm Python dài/phức tạp: 56 → 0 (≤80 dòng code, McCabe ≤15), gate
