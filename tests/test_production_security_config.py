@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from jose import jwt
+import jwt
 
 from app.core.config import Settings
 from app.core.security_config import production_security_errors, validate_security_config

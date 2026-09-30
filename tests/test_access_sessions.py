@@ -53,7 +53,7 @@ def test_memory_store_expiry_and_capacity_do_not_evict_live_sessions():
 
 
 def test_signed_token_with_changed_jti_not_registered_is_rejected(account):
-    from jose import jwt
+    import jwt
     claims = auth.decode_access_claims(issue(account))
     claims['jti'] = 'a' * 32
     token = jwt.encode(claims, auth.settings.SECRET_KEY, algorithm='HS256')

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from flask import Flask
-from jose import jwt
+import jwt
 
 from app.api import auth as auth_api
 from app.services import auth as auth_service

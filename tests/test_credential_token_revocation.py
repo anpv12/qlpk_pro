@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from flask import Flask
 from flask_socketio import SocketIO
-from jose import jwt
+import jwt
 
 from app.api import auth as auth_api, user as user_api
 from app.realtime import socket as realtime
