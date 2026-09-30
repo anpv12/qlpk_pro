@@ -61,6 +61,88 @@
 		window.addEventListener('resize', scheduleCalendarSizeUpdate);
 	}
 
+	function renderAppointmentDayHeader(arg) {
+		const viewType = arg.view.type;
+		if (viewType === 'timeGridWeek') {
+			const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+			const dayName = dayNames[arg.date.getDay()];
+			const dayNum = String(arg.date.getDate()).padStart(2, '0');
+			const container = document.createElement('div');
+			container.className = 'appointment-week-day-header';
+			const nameEl = document.createElement('span');
+			nameEl.textContent = dayName;
+			nameEl.className = 'appointment-week-day-name';
+			const numEl = document.createElement('span');
+			numEl.textContent = dayNum;
+			numEl.className = 'appointment-week-day-number';
+			container.appendChild(nameEl);
+			container.appendChild(numEl);
+			return { domNodes: [container] };
+		}
+		return arg.text;
+	}
+
+	function handleAppointmentEventDrop(info) {
+		const event = info.event;
+		const newDate = event.start;
+		const appointmentId = event.id;
+
+		//   eventId: appointmentId,
+		//   newDate: newDate,
+		//   event: event
+		// });
+
+		// Kiểm tra ID format
+		if (!appointmentId || appointmentId === '') {
+			page.showCustomToast('error', 'Lỗi: Không tìm thấy ID lịch hẹn!');
+			info.revert(); // Revert the drag
+			return;
+		}
+
+		// Kiểm tra lịch bận trước khi cập nhật
+		page.checkDoctorAvailabilityForDragDrop(appointmentId, newDate, info);
+	}
+
+	function handleAppointmentEventResize(info) {
+		const event = info.event;
+		const newStart = event.start;
+		const newEnd = event.end;
+		const appointmentId = event.id;
+		let numericId = appointmentId;
+		if (appointmentId.startsWith('appt-')) {
+			numericId = appointmentId.replace('appt-', '');
+		}
+		const appointment = state.allAppointments.find(item => String(item.id) === String(numericId));
+		if (!appointment) {
+			page.showCustomToast('error', 'Không tìm thấy lịch hẹn!');
+			info.revert();
+			return;
+		}
+		const duration = Math.round((newEnd - newStart) / (1000 * 60));
+		const appointmentData = {
+			appointment_date: toLocalISOString(newStart),
+			doctor_id: appointment.doctor_id,
+			duration_minutes: duration,
+			appointment_id: numericId
+		};
+
+		// Thêm visual feedback ngay lập tức
+		page.showCustomToast('info', 'Đang cập nhật thời lượng...');
+
+		// Debounce để tránh gọi API quá nhiều
+		clearTimeout(window.resizeTimeout);
+		window.resizeTimeout = setTimeout(() => {
+			page.checkDoctorAvailabilityBeforeCreate(appointmentData, function (isAvailable, conflictInfo) {
+				if (!isAvailable) {
+					page.showConflictWarning(conflictInfo, appointmentData, true);
+					info.revert();
+					return;
+				}
+				updateAppointmentDuration(appointmentId, newStart, newEnd, info);
+			});
+		}, 300);
+	}
+
 	function initializeCalendar() {
 		const calendarEl = document.getElementById('calendar');
 		if (!calendarEl) return;
@@ -80,26 +162,7 @@
 				minute: '2-digit',
 				hour12: false
 			},
-			dayHeaderContent: function (arg) {
-				const viewType = arg.view.type;
-				if (viewType === 'timeGridWeek') {
-					const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-					const dayName = dayNames[arg.date.getDay()];
-					const dayNum = String(arg.date.getDate()).padStart(2, '0');
-					const container = document.createElement('div');
-					container.className = 'appointment-week-day-header';
-					const nameEl = document.createElement('span');
-					nameEl.textContent = dayName;
-					nameEl.className = 'appointment-week-day-name';
-					const numEl = document.createElement('span');
-					numEl.textContent = dayNum;
-					numEl.className = 'appointment-week-day-number';
-					container.appendChild(nameEl);
-					container.appendChild(numEl);
-					return { domNodes: [container] };
-				}
-				return arg.text;
-			},
+			dayHeaderContent: renderAppointmentDayHeader,
 
 			editable: true,
 			selectable: true,
@@ -130,65 +193,8 @@
 			initialDate: new Date(), // Hiển thị tuần hiện tại
 			// Không giới hạn phạm vi thời gian - cho phép xem tất cả các tháng/năm
 			// Tối ưu drag & drop
-			eventDrop: function (info) {
-				const event = info.event;
-				const newDate = event.start;
-				const appointmentId = event.id;
-
-				//   eventId: appointmentId,
-				//   newDate: newDate,
-				//   event: event
-				// });
-
-				// Kiểm tra ID format
-				if (!appointmentId || appointmentId === '') {
-					page.showCustomToast('error', 'Lỗi: Không tìm thấy ID lịch hẹn!');
-					info.revert(); // Revert the drag
-					return;
-				}
-
-				// Kiểm tra lịch bận trước khi cập nhật
-				page.checkDoctorAvailabilityForDragDrop(appointmentId, newDate, info);
-			},
-			eventResize: function (info) {
-				const event = info.event;
-				const newStart = event.start;
-				const newEnd = event.end;
-				const appointmentId = event.id;
-				let numericId = appointmentId;
-				if (appointmentId.startsWith('appt-')) {
-					numericId = appointmentId.replace('appt-', '');
-				}
-				const appointment = state.allAppointments.find(item => String(item.id) === String(numericId));
-				if (!appointment) {
-					page.showCustomToast('error', 'Không tìm thấy lịch hẹn!');
-					info.revert();
-					return;
-				}
-				const duration = Math.round((newEnd - newStart) / (1000 * 60));
-				const appointmentData = {
-					appointment_date: toLocalISOString(newStart),
-					doctor_id: appointment.doctor_id,
-					duration_minutes: duration,
-					appointment_id: numericId
-				};
-
-				// Thêm visual feedback ngay lập tức
-				page.showCustomToast('info', 'Đang cập nhật thời lượng...');
-
-				// Debounce để tránh gọi API quá nhiều
-				clearTimeout(window.resizeTimeout);
-				window.resizeTimeout = setTimeout(() => {
-					page.checkDoctorAvailabilityBeforeCreate(appointmentData, function (isAvailable, conflictInfo) {
-						if (!isAvailable) {
-							page.showConflictWarning(conflictInfo, appointmentData, true);
-							info.revert();
-							return;
-						}
-						updateAppointmentDuration(appointmentId, newStart, newEnd, info);
-					});
-				}, 300);
-			},
+			eventDrop: handleAppointmentEventDrop,
+			eventResize: handleAppointmentEventResize,
 			eventClick: function (info) {
 				// Không cho phép click vào ngày lễ
 				if (info.event.extendedProps.type === 'holiday') {
