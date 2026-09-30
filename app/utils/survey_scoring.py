@@ -62,6 +62,25 @@ def survey_questions_by_criteria(content):
     return grouped
 
 
+def _normalize_grid_identities(grid, identity, question, seen):
+    column_ids = set()
+    for column in grid.get('columns', []):
+        if isinstance(column, dict):
+            identity(column, column_ids)
+            column.setdefault('label', column.get('text', ''))
+            if 'score' not in column and 'value' in column:
+                column['score'] = column['value']
+    for row in grid.get('rows', []):
+        if isinstance(row, dict):
+            if _has_id(row.get('question_id')) and not _has_id(row.get('id')):
+                row['id'] = row['question_id']
+            identity(row, seen)
+            if 'scores' in row and not isinstance(row['scores'], dict):
+                raise ValueError('Điểm từng ô phải gắn với mã cột')
+            row.setdefault('criteria', row.get('scoring_criteria', question.get('criteria', '')))
+            row.setdefault('score_enabled', True)
+
+
 def normalize_survey_content(content):
     """Fill missing IDs on template writes; never regenerate existing identities."""
     if content is None:
@@ -92,23 +111,54 @@ def normalize_survey_content(content):
         grid = question.get('grid', {})
         if not isinstance(grid, dict) or not isinstance(grid.get('columns', []), list) or not isinstance(grid.get('rows', []), list):
             raise ValueError('Cấu trúc lưới khảo sát không hợp lệ')
-        column_ids = set()
-        for column in grid.get('columns', []):
-            if isinstance(column, dict):
-                identity(column, column_ids)
-                column.setdefault('label', column.get('text', ''))
-                if 'score' not in column and 'value' in column:
-                    column['score'] = column['value']
-        for row in grid.get('rows', []):
-            if isinstance(row, dict):
-                if _has_id(row.get('question_id')) and not _has_id(row.get('id')):
-                    row['id'] = row['question_id']
-                identity(row, seen)
-                if 'scores' in row and not isinstance(row['scores'], dict):
-                    raise ValueError('Điểm từng ô phải gắn với mã cột')
-                row.setdefault('criteria', row.get('scoring_criteria', question.get('criteria', '')))
-                row.setdefault('score_enabled', True)
+        _normalize_grid_identities(grid, identity, question, seen)
     return result
+
+
+def _score_selected_values(enabled, kind, options, question, values):
+    score = 0
+    for selected in values:
+        matches = [a for a in options if isinstance(a, dict)
+                   and _has_id(a.get('id')) and str(a['id']) == str(selected)]
+        if len(matches) > 1:
+            raise ValueError('Mã đáp án bị trùng trong câu hỏi')
+        answer = matches[0] if matches else None
+        if answer is None and str(selected).isdigit():
+            index = int(selected)
+            if index < len(options) and isinstance(options[index], dict) and not _has_id(options[index].get('id')):
+                answer = options[index]
+        if kind == 'linear_scale':
+            bounds = question.get('linear_scale', {})
+            number = float(selected)
+            if not bounds.get('min', 1) <= number <= bounds.get('max', 5):
+                raise ValueError('Điểm ngoài thang khảo sát')
+        elif answer is not None:
+            number = answer.get('score', answer.get('value'))
+        else:
+            raise ValueError('Không ghép được đáp án với mẫu khảo sát')
+        if not enabled:
+            continue
+        if isinstance(number, bool) or not isinstance(number, (int, float)) or not math.isfinite(number):
+            raise ValueError('Điểm đáp án chưa được cấu hình hợp lệ')
+        score += number
+    return score
+
+
+def _score_template_questions(content, score_question):
+    for question in questions_from_content(content):
+        criteria = question.get('scoring_criteria', question.get('criteria', ''))
+        if question.get('type') in ('multiple_choice_grid', 'checkbox_grid'):
+            grid = question.get('grid', {})
+            options = grid.get('columns') or question.get('answers', [])
+            for row in grid.get('rows', []):
+                row_options = [{**col, 'score': row['scores'].get(str(col.get('id')))}
+                               for col in options] if 'scores' in row else options
+                score_question(question, row.get('question_id') or row.get('id'), row_options,
+                               row.get('scoring_criteria', row.get('criteria', criteria)),
+                               row.get('score_enabled', True))
+        else:
+            score_question(question, question.get('id'),
+                           question.get('answers', question.get('options', [])), criteria)
 
 
 def score_survey_responses(content, responses, *, details=False):
@@ -145,31 +195,7 @@ def score_survey_responses(content, responses, *, details=False):
         values = value if isinstance(value, list) else [value]
         if len(values) != len(set(map(str, values))):
             raise ValueError('Đáp án bị lặp')
-        score = 0
-        for selected in values:
-            matches = [a for a in options if isinstance(a, dict)
-                       and _has_id(a.get('id')) and str(a['id']) == str(selected)]
-            if len(matches) > 1:
-                raise ValueError('Mã đáp án bị trùng trong câu hỏi')
-            answer = matches[0] if matches else None
-            if answer is None and str(selected).isdigit():
-                index = int(selected)
-                if index < len(options) and isinstance(options[index], dict) and not _has_id(options[index].get('id')):
-                    answer = options[index]
-            if kind == 'linear_scale':
-                bounds = question.get('linear_scale', {})
-                number = float(selected)
-                if not bounds.get('min', 1) <= number <= bounds.get('max', 5):
-                    raise ValueError('Điểm ngoài thang khảo sát')
-            elif answer is not None:
-                number = answer.get('score', answer.get('value'))
-            else:
-                raise ValueError('Không ghép được đáp án với mẫu khảo sát')
-            if not enabled:
-                continue
-            if isinstance(number, bool) or not isinstance(number, (int, float)) or not math.isfinite(number):
-                raise ValueError('Điểm đáp án chưa được cấu hình hợp lệ')
-            score += number
+        score = _score_selected_values(enabled, kind, options, question, values)
         if not enabled:
             return
         if criteria:
@@ -177,20 +203,7 @@ def score_survey_responses(content, responses, *, details=False):
             group_counts[criteria] = group_counts.get(criteria, 0) + 1
         question_scores[key] = score
 
-    for question in questions_from_content(content):
-        criteria = question.get('scoring_criteria', question.get('criteria', ''))
-        if question.get('type') in ('multiple_choice_grid', 'checkbox_grid'):
-            grid = question.get('grid', {})
-            options = grid.get('columns') or question.get('answers', [])
-            for row in grid.get('rows', []):
-                row_options = [{**col, 'score': row['scores'].get(str(col.get('id')))}
-                               for col in options] if 'scores' in row else options
-                score_question(question, row.get('question_id') or row.get('id'), row_options,
-                               row.get('scoring_criteria', row.get('criteria', criteria)),
-                               row.get('score_enabled', True))
-        else:
-            score_question(question, question.get('id'),
-                           question.get('answers', question.get('options', [])), criteria)
+    _score_template_questions(content, score_question)
     if remaining:
         raise ValueError('Có câu trả lời không thuộc mã câu hỏi của mẫu khảo sát')
     if any(not math.isfinite(value) for value in totals.values()):
@@ -202,46 +215,7 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
-def validate_survey_content(content):
-    """Require a runnable configuration before saving/publishing; never invent scores."""
-    questions = questions_from_content(content)
-    if not questions:
-        raise ValueError('Mẫu khảo sát phải có ít nhất một câu hỏi')
-    normalize_survey_content(content)  # Detect duplicate identities.
-    keys = set()
-    for index, q in enumerate(questions, 1):
-        if not _has_id(q.get('id')) or not str(q.get('text', q.get('question', ''))).strip():
-            raise ValueError(f'Câu {index} thiếu mã hoặc nội dung')
-        kind = q.get('type', 'multiple_choice')
-        if kind in ('multiple_choice_grid', 'checkbox_grid'):
-            grid = q.get('grid', {})
-            options = grid.get('columns', [])
-            rows = grid.get('rows', [])
-            if not options or not rows:
-                raise ValueError(f'Câu {index} cần có hàng và cột')
-            for row in rows:
-                if not _has_id(row.get('id')) or not row.get('text'):
-                    raise ValueError(f'Câu {index} thiếu mã hoặc nội dung hàng')
-                keys.add(str(row.get('question_id') or row['id']))
-                if row.get('score_enabled', True):
-                    for col in options:
-                        score = row['scores'].get(str(col.get('id'))) if 'scores' in row else col.get('score', col.get('value'))
-                        if not _number(score):
-                            raise ValueError(f'Câu {index}, hàng “{row["text"]}”: chưa cấu hình đủ điểm')
-        elif kind in ('multiple_choice', 'checkboxes', 'dropdown'):
-            options = q.get('answers', q.get('options', []))
-            if len(options) < 2:
-                raise ValueError(f'Câu {index} cần ít nhất hai đáp án')
-            if any(not _number(a.get('score', a.get('value'))) for a in options):
-                raise ValueError(f'Câu {index} chưa cấu hình đủ điểm đáp án')
-        elif kind in ('short_answer', 'paragraph', 'date', 'time', 'linear_scale'):
-            options = []
-        else:
-            raise ValueError(f'Câu {index}: loại câu hỏi chưa được hỗ trợ')
-        keys.add(str(q['id']))
-        for option in options:
-            if not _has_id(option.get('id')) or not str(option.get('label', option.get('text', ''))).strip():
-                raise ValueError(f'Câu {index} thiếu mã hoặc nội dung đáp án/cột')
+def _validate_result_config(content, keys):
     config = content.get('result_config', {}) if isinstance(content, dict) else {}
     if not isinstance(config, dict) or not isinstance(config.get('conditions', []), list) or not isinstance(config.get('group_configs', {}), dict) or not isinstance(config.get('special_alerts', []), list):
         raise ValueError('Cấu hình kết quả không hợp lệ')
@@ -266,6 +240,53 @@ def validate_survey_content(content):
     for alert in config.get('special_alerts', []):
         if not isinstance(alert, dict) or str(alert.get('question_id')) not in keys or not _number(alert.get('threshold')) or alert.get('operator') not in ('>', '>=', '<', '<=', '='):
             raise ValueError('Lưu ý đặc biệt phải gắn với câu hỏi và điều kiện hợp lệ')
+
+
+def _validate_question_options(index, keys, q):
+    kind = q.get('type', 'multiple_choice')
+    if kind in ('multiple_choice_grid', 'checkbox_grid'):
+        grid = q.get('grid', {})
+        options = grid.get('columns', [])
+        rows = grid.get('rows', [])
+        if not options or not rows:
+            raise ValueError(f'Câu {index} cần có hàng và cột')
+        for row in rows:
+            if not _has_id(row.get('id')) or not row.get('text'):
+                raise ValueError(f'Câu {index} thiếu mã hoặc nội dung hàng')
+            keys.add(str(row.get('question_id') or row['id']))
+            if row.get('score_enabled', True):
+                for col in options:
+                    score = row['scores'].get(str(col.get('id'))) if 'scores' in row else col.get('score', col.get('value'))
+                    if not _number(score):
+                        raise ValueError(f'Câu {index}, hàng “{row["text"]}”: chưa cấu hình đủ điểm')
+    elif kind in ('multiple_choice', 'checkboxes', 'dropdown'):
+        options = q.get('answers', q.get('options', []))
+        if len(options) < 2:
+            raise ValueError(f'Câu {index} cần ít nhất hai đáp án')
+        if any(not _number(a.get('score', a.get('value'))) for a in options):
+            raise ValueError(f'Câu {index} chưa cấu hình đủ điểm đáp án')
+    elif kind in ('short_answer', 'paragraph', 'date', 'time', 'linear_scale'):
+        options = []
+    else:
+        raise ValueError(f'Câu {index}: loại câu hỏi chưa được hỗ trợ')
+    keys.add(str(q['id']))
+    for option in options:
+        if not _has_id(option.get('id')) or not str(option.get('label', option.get('text', ''))).strip():
+            raise ValueError(f'Câu {index} thiếu mã hoặc nội dung đáp án/cột')
+
+
+def validate_survey_content(content):
+    """Require a runnable configuration before saving/publishing; never invent scores."""
+    questions = questions_from_content(content)
+    if not questions:
+        raise ValueError('Mẫu khảo sát phải có ít nhất một câu hỏi')
+    normalize_survey_content(content)  # Detect duplicate identities.
+    keys = set()
+    for index, q in enumerate(questions, 1):
+        if not _has_id(q.get('id')) or not str(q.get('text', q.get('question', ''))).strip():
+            raise ValueError(f'Câu {index} thiếu mã hoặc nội dung')
+        _validate_question_options(index, keys, q)
+    _validate_result_config(content, keys)
 
 
 def evaluate_survey_results(content, responses):
