@@ -15,6 +15,11 @@ def test_no_source_file_exceeds_line_limit() -> None:
     assert health.oversized() == []
 
 
+def test_no_template_exceeds_line_limit() -> None:
+    assert health.template_files()
+    assert health.oversized_templates() == []
+
+
 def test_no_stylesheet_exceeds_line_limit() -> None:
     assert health.stylesheet_files()
     assert health.oversized_stylesheets() == []

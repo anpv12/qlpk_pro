@@ -4,6 +4,7 @@ const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readCssSource } = require('./helpers/css-source');
+const { readTemplateSource } = require('./helpers/template-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -85,7 +86,7 @@ test('save enables once preview applies; one submit preserves preview versions a
 
 test('review modal follows content height with one bounded scrolling body and an aligned comparison table', () => {
     const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
-    const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
+    const template = readTemplateSource('medicine-management.html');
     assert.match(css, /\.modal\.qlpk-medicine-reference-review-modal \.modal-content\s*\{[^}]*max-height:\s*calc\(100dvh - 1rem\)/);
     assert.doesNotMatch(css, /\.modal\.qlpk-medicine-reference-review-modal \.(?:modal-dialog|modal-content)\s*\{[^}]*(?:\s|;)height:/);
     assert.match(css, /\.modal\.qlpk-medicine-reference-review-modal \.modal-body\s*\{[^}]*overflow-y:\s*auto/);

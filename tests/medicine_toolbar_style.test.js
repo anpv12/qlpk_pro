@@ -5,8 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource, stylesheetOwner } = require('./helpers/css-source');
+const { readTemplateSource } = require('./helpers/template-source');
 
-const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
+const template = readTemplateSource('medicine-management.html');
 const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
 
 test('stock receipt count uses the user-approved brand badge rather than neutral action styling', () => {
@@ -69,7 +70,8 @@ test('the shared gradient has one owner available without loading the doctor que
     for (const filename of fs.readdirSync(root, { recursive: true }).filter(name => name.endsWith('.css') && stylesheetOwner(root, name) !== 'shared/color-tokens.css')) {
         assert.doesNotMatch(fs.readFileSync(path.join(root, filename), 'utf8'), /--qlpk-workflow-context-header-bg\s*:/, filename);
     }
-    assert.match(template, /include 'partials\/brand-theme.html'/);
+    // The page itself (not a partial) opts into the shared brand theme.
+    assert.match(fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8'), /include 'partials\/brand-theme.html'/);
 });
 
 test('medicine gradients are never used as text, border or shadow colors', () => {

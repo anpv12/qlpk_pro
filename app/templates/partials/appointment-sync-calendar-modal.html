@@ -1,0 +1,111 @@
+<!-- Modal Đồng bộ lịch hẹn Google Calendar -->
+	<div class="modal fade qlpk-sync-calendar-modal" id="syncCalendarModal" tabindex="-1" aria-labelledby="syncCalendarModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header sync-modal-header">
+					<h5 class="modal-title" id="syncCalendarModalLabel">
+						<i class="bi bi-google"></i>Quản lý đồng bộ lịch Google
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+						aria-label="Close"></button>
+				</div>
+				<div class="modal-body sync-modal-body">
+					<!-- Filter Bar - theo style PHKG -->
+					<div class="filter-bar appointment-sync-filter-bar">
+						<!-- Tìm kiếm -->
+						<div class="filter-group">
+							<label class="form-label">
+								<i class="bi bi-search"></i> Tìm kiếm
+							</label>
+							<input type="text" class="form-control form-control-sm qlpk-sync-search-input" id="syncSearchInput"
+								aria-label="Tìm kiếm lịch đồng bộ" placeholder="Nhập nội dung...">
+						</div>
+						<!-- Từ ngày -->
+						<div class="filter-group">
+							<label class="form-label">
+								<i class="bi bi-calendar3"></i> Từ ngày
+							</label>
+							<input type="text" class="form-control form-control-sm js-datepicker sync-datepicker"
+								id="syncDateFrom">
+						</div>
+						<!-- Đến ngày -->
+						<div class="filter-group">
+							<label class="form-label">
+								<i class="bi bi-calendar3"></i> Đến ngày
+							</label>
+							<input type="text" class="form-control form-control-sm js-datepicker sync-datepicker"
+								id="syncDateTo">
+						</div>
+						<!-- Trạng thái -->
+						<div class="filter-group">
+							<label class="form-label">
+								<i class="bi bi-funnel"></i> Trạng thái
+							</label>
+							<select class="form-control form-control-sm" id="syncStatusFilter">
+								<option value="all">Tất cả</option>
+								<option value="synced">Đã đồng bộ</option>
+								<option value="missing">Thiếu</option>
+								<option value="error">Lỗi</option>
+							</select>
+						</div>
+						<!-- Nút làm mới -->
+						<div class="filter-group">
+							<label class="form-label">&nbsp;</label>
+							<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--primary appointment-button--sm" id="syncRefreshBtn"
+								title="Làm mới" aria-label="Làm mới">
+								<i class="bi bi-arrow-clockwise"></i>
+							</button>
+						</div>
+						<!-- Badges thống kê -->
+						<div class="sync-stats">
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--info" id="syncBadgeTotal">Tổng: 0</span>
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" id="syncBadgeSynced">Đã đồng bộ: 0</span>
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning" id="syncBadgeMissing">Thiếu: 0</span>
+							<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" id="syncBadgeError">Lỗi: 0</span>
+						</div>
+					</div>
+
+					<!-- Table -->
+					<div class="table-responsive appointment-sync-table-wrap">
+						<table class="table table-bordered table-hover align-middle" id="syncCalendarTable">
+							<thead class="table-light sticky-top">
+								<tr>
+									<th scope="col" class="appointment-col-select">
+										<input type="checkbox" class="form-check-input" id="syncSelectAll" aria-label="Chọn tất cả">
+									</th>
+									<th scope="col" class="appointment-col-time">Giờ</th>
+									<th scope="col" class="appointment-col-duration">Thời gian khám</th>
+									<th scope="col" class="appointment-col-doctor">Bác sĩ/Tâm lý gia</th>
+									<th scope="col" class="appointment-col-patient">Bệnh nhân</th>
+									<th scope="col" class="appointment-col-google-status">Trạng thái Google</th>
+									<th scope="col" class="appointment-col-action">Thao tác</th>
+								</tr>
+							</thead>
+							<tbody id="syncCalendarTableBody">
+								<!-- Data sẽ được load bằng JS, group theo ngày -->
+								<tr>
+									<td colspan="7" class="appointment-sync-empty-cell">
+										<i class="bi bi-arrow-clockwise appointment-empty-icon appointment-sync-empty-icon"></i>
+										Nhấn "Làm mới" để tải dữ liệu đồng bộ
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer appointment-footer-flush">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--danger appointment-button--md appointment-hidden" id="deleteAllCalendarEventsBtn">
+						<i class=" bi bi-trash"></i> Xóa tất cả
+					</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--success appointment-button--md" id="syncAllMissingBtn" disabled>
+						<i class="bi bi-arrow-repeat"></i> Đồng bộ tất cả lịch thiếu
+					</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn appointment-button appointment-button--primary appointment-button--md" id="syncSelectedBtn" disabled>
+						<i class="bi bi-check2-all"></i> Đồng bộ đã chọn
+					</button>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--neutral appointment-button--md" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>

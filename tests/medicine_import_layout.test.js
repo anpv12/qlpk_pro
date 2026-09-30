@@ -6,8 +6,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource } = require('./helpers/css-source');
+const { readTemplateSource } = require('./helpers/template-source');
 
-const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
+const template = readTemplateSource('medicine-management.html');
 const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
 const actions = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/button-actions.css'), 'utf8');
 test('missing-price action keeps edit semantics with approved red tokens and standard font size', () => {

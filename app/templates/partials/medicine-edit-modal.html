@@ -1,0 +1,343 @@
+{#- Modal thêm/sửa thuốc của trang Quản lý thuốc (medicine-management.html). -#}
+<div class="modal fade qlpk-medicine-modal" id="medicineModal" tabindex="-1" aria-labelledby="medicineModalLabel" aria-hidden="true">
+		<div class="modal-dialog mm-dialog-wide">
+			<div class="modal-content mm-modal-content-full">
+				<form id="medicineForm" class="qlpk-medicine-form">
+				 <div class="modal-header mm-medicine-header">
+				  <span aria-hidden="true" class="mm-medicine-hero-icon" data-medicine-icon="medicine">
+				  </span>
+				  <div class="mm-medicine-heading">
+				   <h4 class="modal-title mm-modal-title-main" id="medicineModalLabel">
+				    THÊM THUỐC MỚI
+				   </h4>
+				   <p id="medicineFlowGuide" class="qlpk-medicine-flow-guide">
+				    Chọn thuốc trong danh mục DAV, sau đó kiểm tra thông tin phòng khám.
+				   </p>
+				  </div>
+				  <div class="mm-medicine-motto">
+				   <span aria-hidden="true" class="mm-medicine-branch">
+				    <span>
+				    </span>
+				    <span>
+				    </span>
+				    <span>
+				    </span>
+				   </span>
+				   <span>
+				    Vì một cộng đồng
+				    <br/>
+				    khỏe mạnh hơn
+				   </span>
+				  </div>
+				  <button aria-label="Đóng" class="btn-close" data-bs-dismiss="modal" type="button">
+				  </button>
+				 </div>
+				 <div class="modal-body mm-medicine-body">
+				  <section aria-label="Thông tin từ danh mục thuốc" class="mm-dav-source" id="davSourceSection">
+				   <div id="davSearchControls">
+				    <label class="form-label fw-semibold" for="davSearchInput" id="davSearchLabel">
+				     Tìm thuốc trong danh mục
+				    </label>
+                    {{ render_autocomplete_field(
+                        input_id='davSearchInput', tags_id='davSearchTags', list_id='davSearchResults',
+                        root_id='davSearchField', dropdown_id='davDropdown', input_class='',
+                        placeholder='Gõ tên thuốc, hoạt chất hoặc số đăng ký…',
+                        aria_label='Tìm thuốc trong danh mục DAV', list_attrs={'aria-label': 'Thuốc từ DAV'}
+                    ) }}
+				   </div>
+				   <div class="mm-dav-selected" hidden="" id="davSelectedRow">
+				    <div id="davSelection" class="qlpk-dav-selection">
+				    </div>
+				    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-outline-secondary btn-sm text-nowrap" id="davChangeButton" type="button">
+				     Đổi thuốc
+				    </button>
+				   </div>
+				   <p class="small mt-2 mb-0" hidden="" id="davContext">
+				   </p>
+				  </section>
+				  <fieldset class="mm-medicine-fields qlpk-medicine-edit-fields" disabled="" id="medicineEditFields">
+				   <section aria-labelledby="medicineSection-basic" class="mm-medicine-section mm-medicine-section--basic">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="basic">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-basic">
+				       Thông tin cơ bản
+				      </h6>
+				      <p>
+				       Mã thuốc, đường dùng và đơn vị dùng tại phòng khám.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <input id="medicine-name" name="name" type="hidden"/>
+				      <input id="genericNameInput" type="hidden"/>
+				      <input id="genericNameValue" name="generic_name" type="hidden"/>
+				      <input id="medicine-origin" name="origin" type="hidden"/>
+				      <input id="medicine-strength" name="strength" type="hidden"/>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-internal_code">
+				        Mã thuốc
+				       </label>
+				       <input class="form-control" disabled="" id="medicine-internal_code" maxlength="50" name="internal_code" placeholder="Tự sinh khi lưu" type="text"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-national_code">
+				        Mã DQG
+				       </label>
+				       <input class="form-control" id="medicine-national_code" maxlength="50" name="national_code" placeholder="Nhập mã DQG" type="text"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="administrationMethod">
+				        Phương thức dùng
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="administrationMethod" placeholder="Chọn đường dùng" type="text"/>
+				        <div class="occupation-dropdown mm-hidden qlpk-administration-method-dropdown" id="administrationMethodDropdown">
+				        </div>
+				        <input id="administrationMethodValue" name="administration_method" type="hidden"/>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="saleUnit">
+				        Đơn vị dùng
+				        <span class="text-danger">
+				         *
+				        </span>
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="saleUnit" placeholder="Chọn đơn vị dùng" required="" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="saleUnitDropdown">
+				        </div>
+				        <input id="saleUnitValue" name="unit" type="hidden"/>
+				       </div>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-packaging" class="mm-medicine-section mm-medicine-section--packaging">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="packaging">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-packaging">
+				       Quy cách đóng gói
+				      </h6>
+				      <p>
+				       Số lượng, giá vốn và hạn dùng được ghi khi nhập lô.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field mm-field--full">
+				       <div class="mm-package-quantities">
+				        <div class="mm-field">
+				         <label class="form-label" for="packagingUnit">
+				          Đóng gói
+				         </label>
+				         <select class="form-select" id="packagingUnit" name="packaging_unit" data-qlpk-call="updatePackagingInfo" data-qlpk-on="change">
+				          <option value="">
+				           Chọn đơn vị
+				          </option>
+				          <option value="vỉ">
+				           vỉ
+				          </option>
+				          <option value="lọ">
+				           lọ
+				          </option>
+				          <option value="gói">
+				           gói
+				          </option>
+				          <option value="chai">
+				           chai
+				          </option>
+				          <option value="tuýp">
+				           tuýp
+				          </option>
+				          <option value="ống">
+				           ống
+				          </option>
+				          <option value="hộp">
+				           hộp
+				          </option>
+				         </select>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="unitsPerBox">
+				          Số đơn vị
+				         </label>
+				         <input class="form-control" id="unitsPerBox" min="1" name="units_per_box" data-qlpk-call="updatePackagingInfo" data-qlpk-on="input" placeholder="Nhập số đơn vị" step="1" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantitySummaryDisplay">
+				          Tổng (viên)
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantitySummaryDisplay" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantityBoxes" id="stockQuantityBoxesLabel">
+				          Hộp tồn
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantityBoxes" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="stockQuantityRemaining" id="stockQuantityRemainingLabel">
+				          Viên tồn
+				         </label>
+				         <input aria-readonly="true" class="form-control" disabled="" id="stockQuantityRemaining" min="0" placeholder="Chưa có" readonly="" step="0.01" type="number"/>
+				        </div>
+				        <div class="mm-field">
+				         <label class="form-label" for="medicineImportOpen">
+				          Tồn kho
+				         </label>
+				         <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicineImportOpen" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" data-qlpk-call="showImportFromMedicineForm"><i id="medicineImportIcon" class="bi bi-box-arrow-in-down" aria-hidden="true" hidden></i><span id="medicineImportLabel">Lưu thuốc trước</span></button>
+				        </div>
+				       </div>
+				       <input aria-hidden="true" id="stockQuantityInput" type="hidden"/>
+				       <input id="packagingDisplay" name="packaging" type="hidden"/>
+				       <input id="pillsPerUnit" name="pills_per_unit" type="hidden" value="0"/>
+				      </div>
+				      <div class="mm-field mm-field--full">
+				       <label class="form-label">
+				        Quy cách
+				       </label>
+				       <div class="form-control mm-packaging-info-display" id="packagingInfoDisplay">
+				        <span id="davPackagingText" hidden=""></span>
+				        <span class="text-muted mm-text-form" id="packagingInfoText">
+				         Nhập đơn vị đóng gói và số đơn vị
+				        </span>
+				       </div>
+				       <p class="small mb-0 mt-2" hidden="" id="medicineConversionNote">
+				        Thuốc đã có tồn hoặc lịch sử nhập xuất; đơn vị dùng và quy đổi được giữ nguyên.
+				       </p>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-pricing" class="mm-medicine-section mm-medicine-section--pricing">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="pricing">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-pricing">
+				       Giá cả &amp; Phân loại
+				      </h6>
+				      <p>
+				       Giá vốn theo lô nhập gần nhất; nhập giá bán và phân loại thuốc.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-import_price">Giá vốn theo lần nhập</label>
+				       <input class="form-control" id="medicine-import_price" name="import_price" type="number" min="0" step="0.01" placeholder="Chưa có" disabled readonly aria-readonly="true"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-unit_price">Đơn giá bán</label>
+				       <div class="mm-price-control">
+				        <input class="form-control" id="medicine-unit_price" name="unit_price" type="number" min="0" step="0.01" placeholder="Chưa có" disabled readonly/>
+				        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" type="button" class="btn btn-primary mm-action-price" id="medicinePriceOpen" aria-haspopup="dialog" aria-controls="medicinePricePanel">Cập nhật giá</button>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="importedType">
+				        Thuốc Nội/Ngoại
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control" id="importedType" placeholder="Chọn Nội/Ngoại" type="text"/>
+				        <div class="occupation-dropdown mm-hidden qlpk-imported-type-dropdown" id="importedTypeDropdown">
+				        </div>
+				        <input id="importedTypeValue" name="is_imported" type="hidden"/>
+				       </div>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label mm-prescription-type-label" for="prescriptionType">
+				        <span aria-hidden="true" data-medicine-action-icon="warning">
+				        </span>
+				        Loại đơn thuốc
+				        <span class="text-danger">
+				         *
+				        </span>
+				       </label>
+				       <div class="position-relative">
+				        <input autocomplete="off" class="form-control mm-prescription-type" id="prescriptionType" placeholder="Chọn loại đơn" required="" type="text"/>
+				        <div class="occupation-dropdown mm-hidden" id="prescriptionTypeDropdown">
+				        </div>
+				        <input id="prescriptionTypeValue" name="prescription_type" type="hidden"/>
+				       </div>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				   <section aria-labelledby="medicineSection-warnings" class="mm-medicine-section mm-medicine-section--warnings">
+				    <header class="mm-medicine-section-header">
+				     <span aria-hidden="true" class="mm-medicine-section-symbol" data-medicine-icon="warnings">
+				     </span>
+				     <div>
+				      <h6 id="medicineSection-warnings">
+				       Cảnh báo &amp; Thông tin khác
+				      </h6>
+				      <p>
+				       Thiết lập cảnh báo tồn kho, hạn dùng và thông tin bổ sung.
+				      </p>
+				     </div>
+				    </header>
+				    <div class="mm-medicine-section-body">
+				     <div class="mm-medicine-field-grid">
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-expiry_date">
+				        Hạn dùng theo lô
+				       </label>
+				       <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicine-expiry_date" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" data-qlpk-call="showMedicineExpiry"><i id="medicineExpiryIcon" class="bi bi-calendar3" aria-hidden="true" hidden></i><span id="medicineExpiryLabel">Chưa có lô</span></button>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-low_stock_threshold">
+				        Cảnh báo SL tồn
+				       </label>
+				       <input class="form-control" id="medicine-low_stock_threshold" min="0" name="low_stock_threshold" placeholder="Nhập ngưỡng" step="1" type="number"/>
+				      </div>
+				      <div class="mm-field">
+				       <label class="form-label" for="medicine-expiry_warning_days">
+				        Cảnh báo hết hạn
+				       </label>
+				       <input class="form-control" id="medicine-expiry_warning_days" min="0" name="expiry_warning_days" placeholder="Nhập số ngày" step="1" type="number"/>
+				      </div>
+				      <div class="mm-field mm-field--full">
+				       <label class="form-label" for="medicine-description">
+				        Ghi chú
+				       </label>
+				       <input class="form-control" id="medicine-description" name="description" placeholder="Nhập ghi chú" type="text"/>
+				      </div>
+				     </div>
+				    </div>
+				   </section>
+				  </fieldset>
+				  <div class="alert alert-danger mt-3 d-none" id="medicineFormError">
+				  </div>
+				 </div>
+				 <div class="modal-footer mm-medicine-footer qlpk-medicine-edit-actions" id="medicineEditActions">
+				  <div class="mm-medicine-footer-actions">
+				   <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary qlpk-icon-text-button qlpk-medicine-save-button" disabled="" id="medicineSaveButton" type="submit">
+				    <span aria-hidden="true" class="qlpk-button-icon" data-medicine-action-icon="save">
+				    </span>
+				    <span>
+				     Lưu thông tin
+				    </span>
+				   </button>
+				   <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-primary qlpk-icon-text-button" data-bs-dismiss="modal" type="button">
+				    Huỷ
+				   </button>
+				  </div>
+				  <span class="mm-medicine-footer-motto">
+				   <span aria-hidden="true" class="mm-medicine-leaf">
+				   </span>
+				   Vì một cộng đồng khỏe mạnh hơn
+				  </span>
+				 </div>
+				</form>
+			</div>
+		</div>
+	</div>

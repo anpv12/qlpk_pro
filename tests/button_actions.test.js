@@ -7,6 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource, stylesheetOwner } = require('./helpers/css-source');
+const { readTemplateSource } = require('./helpers/template-source');
 const root = path.join(__dirname, '..');
 const read = name => readCssSource(path.join(root, name));
 const css = read('app/static/css/shared/button-actions.css');
@@ -70,7 +71,7 @@ test('medicine buttons keep non-action badges and navigation outside action colo
     assert.match(source, /<button data-qlpk-button="edit"[^>]*editMedicine/);
     assert.match(source, /supplement\.dataset\.qlpkButton = 'edit'/);
     assert.doesNotMatch(source, /<button data-qlpk-button=[^>]*mm-reference-button/);
-    const template = read('app/templates/medicine-management.html');
+    const template = readTemplateSource('medicine-management.html');
     assert.match(template, /<button data-qlpk-button="neutral"[^>]*id="exportDataBtn"/);
     assert.match(template, /<button data-qlpk-button="danger"[^>]*id="confirmDeleteBtn"/);
     assert.doesNotMatch(template, /<button data-qlpk-button=[^>]*role="tab"/);

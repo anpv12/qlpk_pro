@@ -1,0 +1,182 @@
+{#- Modal nhập kho theo đơn hàng và xuất kho theo phiếu của trang Quản lý thuốc. -#}
+<!-- Modal Nhập kho theo đơn hàng -->
+	<div class="modal fade qlpk-import-batch-modal" id="importBatchModal" tabindex="-1" aria-labelledby="importBatchModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog mm-dialog-wide">
+			<div class="modal-content mm-radius-20">
+				<div class="modal-header">
+					<div>
+						<h4 class="modal-title" id="importBatchModalLabel">Nhập kho theo đơn hàng</h4>
+						<p class="mm-import-subtitle">Nhập thuốc theo lô, hạn dùng và đơn giá thực tế.</p>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng nhập kho"></button>
+				</div>
+				<div class="mm-import-tabs" role="tablist" aria-label="Chế độ nhập kho">
+					<button type="button" class="mm-import-tab is-active" id="importTabOrder" role="tab"
+						aria-selected="true" aria-controls="importOrderPane">Nhập kho</button>
+					<button type="button" class="mm-import-tab" id="importTabLedger" role="tab"
+						aria-selected="false" aria-controls="importLedgerPane">Lịch sử nhập</button>
+				</div>
+				<div class="modal-body">
+					<div id="importOrderPane" class="mm-import-pane qlpk-import-order-pane" role="tabpanel" aria-labelledby="importTabOrder">
+					<!-- Thông tin chung đơn hàng -->
+					<div class="mm-import-fields">
+						<div>
+							<label class="form-label" for="batchSupplier">
+								Nhà cung cấp <span class="text-danger">*</span>
+							</label>
+							<div class="input-group">
+								<input type="text" class="form-control" id="batchSupplier"
+									placeholder="Chọn nhà cung cấp từ danh sách" required readonly>
+								<input type="hidden" id="batchSupplierId">
+								<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary"
+									data-qlpk-call="showSupplierManagement" title="Quản lý và chọn nhà cung cấp">
+									<i class="bi bi-building" aria-hidden="true"></i> Chọn
+								</button>
+							</div>
+						</div>
+						<div>
+							<label class="form-label" for="batchInvoiceNumber">
+								Số hóa đơn
+							</label>
+							<input type="text" class="form-control" id="batchInvoiceNumber" placeholder="Số hóa đơn">
+						</div>
+						<div>
+							<label class="form-label" for="batchImportDate">
+								Ngày nhập kho <span class="text-danger">*</span>
+							</label>
+							<input type="text" class="form-control js-datepicker" id="batchImportDate"
+								placeholder="dd/mm/yyyy" autocomplete="off" required>
+						</div>
+						<div>
+							<label class="form-label" for="batchImportUser">
+								Người thực hiện
+							</label>
+							<input type="text" class="form-control" id="batchImportUser" placeholder="Tài khoản đăng nhập" readonly disabled>
+						</div>
+					</div>
+
+					<!-- Bảng danh sách thuốc nhập -->
+					<section class="mm-import-list" aria-labelledby="batchImportListTitle">
+						<div class="mm-import-toolbar">
+							<h5 id="batchImportListTitle">Danh sách thuốc nhập</h5>
+							<button data-qlpk-button="execute" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary" id="addBatchRowBtn">
+								<i class="bi bi-plus-circle"></i> Thêm thuốc
+							</button>
+						</div>
+						<div class="table-responsive mm-import-table-scroll">
+							<table class="table qlpk-batch-import-table" id="batchImportTable" aria-label="Thuốc nhập kho theo lô">
+								<thead class="mm-sticky-head">
+									<tr>
+										<th scope="col">Tên thuốc <span class="text-danger">*</span></th>
+										<th scope="col">Số lô <span class="text-danger">*</span></th>
+										<th scope="col">Hạn dùng <span class="text-danger">*</span></th>
+										<th scope="col">Số lượng <span class="text-danger">*</span></th>
+										<th scope="col">Đơn giá nhập <span class="text-danger">*</span></th>
+										<th scope="col">Giá lần trước</th>
+										<th scope="col">Thành tiền</th>
+										<th scope="col"><span class="visually-hidden">Thao tác</span></th>
+									</tr>
+								</thead>
+								<tbody id="batchImportTableBody">
+									<!-- Dòng mẫu sẽ được thêm bằng JS -->
+								</tbody>
+							</table>
+						</div>
+					</section>
+
+					<div class="mm-import-support">
+						<div>
+							<label class="form-label" for="batchNote">Ghi chú đơn hàng <span class="mm-import-optional">(không bắt buộc)</span></label>
+							<textarea class="form-control qlpk-batch-note" id="batchNote" rows="2"
+								placeholder="Thông tin bổ sung về đơn hàng"></textarea>
+						</div>
+						<div id="batchTotalByLot" class="mm-import-lots">
+							<h6 class="form-label">Chi tiết giá trị theo lô</h6>
+							<div id="batchLotBreakdown" class="mm-import-lot-list qlpk-batch-lot-breakdown" tabindex="0" role="region" aria-label="Giá trị theo lô">Chưa có dữ liệu lô</div>
+						</div>
+					</div>
+					</div>
+					<div id="importLedgerPane" class="mm-import-pane qlpk-import-ledger-pane" role="tabpanel" aria-labelledby="importTabLedger" hidden>
+						<div class="mm-import-ledger-toolbar">
+							<input type="text" class="form-control form-control-sm qlpk-import-ledger-search" id="importLedgerSearch"
+								placeholder="Tìm theo tên thuốc hoặc số lô…" aria-label="Tìm trong lịch sử nhập và lô">
+							<select class="form-select form-select-sm qlpk-import-ledger-status" id="importLedgerStatus" aria-label="Lọc theo trạng thái tồn">
+								<option value="">Tất cả trạng thái</option>
+								<option value="Bình thường">Bình thường</option>
+								<option value="Sắp hết">Sắp hết</option>
+								<option value="Sắp hết hạn">Sắp hết hạn</option>
+								<option value="Đã hết hạn">Đã hết hạn</option>
+							</select>
+						</div>
+						<div class="table-responsive mm-import-ledger-scroll">
+							<table class="table table-sm mm-import-ledger-table">
+								<thead>
+									<tr>
+										<th scope="col" class="text-center">Thuốc</th>
+										<th scope="col" class="text-center">Số lô</th>
+										<th scope="col" class="text-center">Hạn dùng</th>
+										<th scope="col" class="text-center">SL nhập</th>
+										<th scope="col" class="text-center">Còn lại</th>
+										<th scope="col" class="text-center">Đơn giá</th>
+										<th scope="col" class="text-center">Số hóa đơn</th>
+										<th scope="col" class="text-center">Ngày nhập</th>
+										<th scope="col" class="text-center">Lịch sử</th>
+									</tr>
+								</thead>
+								<tbody id="importLedgerTableBody"></tbody>
+							</table>
+						</div>
+						<div class="mm-import-ledger-pager">
+							<span id="importLedgerPageInfo" aria-live="polite"></span>
+							<div class="mm-import-ledger-pager-actions">
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="importLedgerPrev">Trước</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="importLedgerNext">Sau</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer mm-import-footer">
+					<div class="mm-import-total">
+						<span>Tổng giá trị đơn hàng</span>
+						<strong id="batchTotalValue" class="qlpk-batch-total-value" aria-live="polite">0 ₫</strong>
+					</div>
+					<div class="mm-import-actions">
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Hủy</button>
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="confirmImportBatchBtn">
+							<i class="bi bi-check-circle" aria-hidden="true"></i> Xác nhận nhập kho
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade qlpk-receipt-dispensing-modal" id="receiptDispensingModal" tabindex="-1" aria-labelledby="receiptDispensingTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered mm-dialog-wide">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="receiptDispensingTitle">Lịch sử kê đơn</h4>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng lịch sử kê đơn"></button>
+				</div>
+				<div class="modal-body">
+					<form id="receiptDispensingFilters" class="mm-dispensing-filters qlpk-receipt-dispensing-filters" role="search" aria-label="Tìm lịch sử kê đơn">
+						<div class="mm-dispensing-search"><label for="receiptDispensingSearch">Bệnh nhân</label><input id="receiptDispensingSearch" type="search" class="form-control form-control-sm" placeholder="Tìm theo tên bệnh nhân" autocomplete="off"></div>
+						<div><label for="receiptDispensingType">Loại giao dịch</label><select id="receiptDispensingType" class="form-select form-select-sm"><option value="">Tất cả</option><option value="export">Cấp thuốc</option><option value="return">Hoàn thuốc</option><option value="price_adjustment">Điều chỉnh giá</option></select></div>
+						<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="submit" class="btn btn-sm btn-primary">Tìm kiếm</button>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" id="receiptDispensingReset" class="btn btn-sm btn-outline-secondary">Xóa lọc</button>
+					</form>
+					<p class="mm-dispensing-note">Mới nhất trước · Cấp thuốc: trừ kho (−) · Hoàn thuốc: cộng lại kho (+)</p>
+					<div class="mm-dispensing-scroll" role="region" aria-label="Chi tiết cấp hoàn theo lượt khám" tabindex="0">
+						<table class="table table-sm"><thead><tr><th>Thời điểm thao tác</th><th>Loại</th><th>Bệnh nhân / Ngày khám</th><th>Thay đổi kho</th><th>Tồn lô<span>Sau thao tác</span></th><th>Tồn tổng<span>Sau thao tác</span></th><th>Người thực hiện</th></tr></thead><tbody id="receiptDispensingRows"></tbody></table>
+					</div>
+					<p class="mm-dispensing-note">Tồn sau thao tác là số đã lưu tại thời điểm đó, không phải tồn hiện tại. “Chưa ghi nhận” không có nghĩa là 0. Giao dịch chưa liên kết lượt khám không thể tìm theo tên bệnh nhân.</p>
+				</div>
+				<div class="modal-footer">
+						<span id="receiptDispensingPage" class="qlpk-receipt-dispensing-page" aria-live="polite"></span>
+						<div id="receiptDispensingPagination" hidden><button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingPrev">Trước</button> <button type="button" class="btn btn-sm btn-outline-secondary" id="receiptDispensingNext">Sau</button></div>
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>

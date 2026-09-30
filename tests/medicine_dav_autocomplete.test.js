@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { readTemplateSource } = require('./helpers/template-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -84,7 +85,7 @@ test('selected DAV summary titles the modal guide and shows labeled identity row
         'Nhà sản xuất: Chưa ghi nhận',
         'Nước sản xuất: Việt Nam'
     ]);
-    const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
+    const template = readTemplateSource('medicine-management.html');
     for (const field of ['id="medicine-name" name="name"', 'id="genericNameInput"',
         'id="medicine-origin" name="origin"', 'id="medicine-strength" name="strength"']) {
         assert.match(template, new RegExp(`<input ${field} type="hidden"/>`));

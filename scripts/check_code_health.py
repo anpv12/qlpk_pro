@@ -9,6 +9,7 @@
   McCabe complexity (same counting as ruff C901) at or under MAX_PY_COMPLEXITY.
 - No app Python handler catches Exception/BaseException (or bare except) silently: it must
   re-raise or log with the traceback (logger.exception / exc_info=True), as ruff BLE001 requires.
+- Every page template/partial stays at or under MAX_LINES; large ones compose partials via {% include %}.
 - Every app stylesheet (vendor excluded) stays at or under MAX_CSS_LINES; large sheets are split by
   topic into <stem>/ and the entry keeps the @import order (the cascade order).
 - The number of distinct window.X globals assigned by page scripts never exceeds MAX_WINDOW_GLOBALS.
@@ -26,7 +27,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MAX_LINES = 600
+MAX_LINES = 500
 # Size/complexity metrics stay advisory below the hard limits; every other ESLint warning is a finding.
 METRIC_RULES = {"complexity", "max-lines-per-function", "max-lines"}
 MAX_COMPLEXITY = 16
@@ -83,6 +84,19 @@ def blind_except_findings() -> list[str]:
             if isinstance(node, ast.ExceptHandler) and _is_blind(node) and not _reports_failure(node):
                 findings.append(f"{path.relative_to(ROOT)}:{node.lineno}: except Exception nuốt lỗi; bắt đúng loại lỗi hoặc log kèm traceback")
     return findings
+
+
+def template_files() -> list[Path]:
+    return sorted((ROOT / "app" / "templates").rglob("*.html"))
+
+
+def oversized_templates() -> list[str]:
+    out = []
+    for path in template_files():
+        count = path.read_text(encoding="utf-8", errors="ignore").count("\n")
+        if count > MAX_LINES:
+            out.append(f"{path.relative_to(ROOT)}: {count} dòng (> {MAX_LINES}); tách modal/khối thành partial")
+    return out
 
 
 def stylesheet_files() -> list[Path]:
@@ -203,7 +217,7 @@ def eslint_findings() -> list[str] | None:
 
 
 def main() -> int:
-    failures = oversized() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings()
+    failures = oversized() + oversized_templates() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")

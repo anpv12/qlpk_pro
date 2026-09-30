@@ -8,8 +8,7 @@ function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
     const {window, document, context, Element} = env;
     const nodes = {}, requests = [];
-    const markup = ['medicine-management.html', 'partials/medicine-price-editor.html']
-        .map(file => fs.readFileSync(path.join(__dirname, '../app/templates', file), 'utf8')).join('\n');
+    const markup = require('./helpers/template-source').readTemplateSource('medicine-management.html');
     const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
     const get = id => ids.has(id) ? (nodes[id] ||= new Element()) : null;
     document.getElementById = get;

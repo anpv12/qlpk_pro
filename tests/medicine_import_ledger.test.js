@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource } = require('./helpers/css-source');
+const { readTemplateSource } = require('./helpers/template-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -181,7 +182,7 @@ test('loading and failure states span the nine receipt columns', async () => {
 
 test('receipt history uses a separate modal, not an inline expander', () => {
     const source = readMedicineManagementSource();
-    const template = fs.readFileSync('app/templates/medicine-management.html', 'utf8');
+    const template = readTemplateSource('medicine-management.html');
     const css = readCssSource('app/static/css/pages/medicine-management.css');
     for (const content of [source, template, css]) {
         assert.doesNotMatch(content, /mm-ledger-(?:expander|history)|medicine-transactions|toggleLedgerBatchHistory|loadLedgerBatchHistory|collapseLedgerHistoryRow|importLedgerOpenBatchRow/);
@@ -209,7 +210,7 @@ test('missing invoices never fall back to generated NK references', () => {
 
 test('receipt headings are centered and only medicine and lot values stay left-aligned', () => {
     const harness = setup();
-    const template = fs.readFileSync('app/templates/medicine-management.html', 'utf8');
+    const template = readTemplateSource('medicine-management.html');
     const header = template.match(/mm-import-ledger-table[\s\S]*?<thead>([\s\S]*?)<\/thead>/)[1];
     const headings = Array.from(header.matchAll(/<th\b[^>]*class="([^"]+)"[^>]*>([^<]+)<\/th>/g));
     assert.deepEqual(headings.map(heading => heading[2]), [
@@ -238,7 +239,7 @@ test('history opens for exact receipt, keeps filter, renders zero and unknown se
     const cells = harness.get('receiptDispensingRows').children[0].children;
     assert.match(cells[2].children[1].textContent, /Ngày khám:/);
     assert.doesNotMatch(cells[2].children[1].textContent, /#12/);
-    const template = fs.readFileSync('app/templates/medicine-management.html', 'utf8');
+    const template = readTemplateSource('medicine-management.html');
     assert.doesNotMatch(template, /receiptDispensingContext|receiptDispensingMedicine|mm-dispensing-context/);
     assert.equal(cells[3].children[0].textContent, '−60 viên');
     assert.equal(cells[4].children[0].textContent, '0 viên');
