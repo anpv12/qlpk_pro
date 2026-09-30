@@ -21,8 +21,8 @@
 				const name = u.full_name || u.username || ('User #' + u.id);
 				moduleState.userNameById[u.id] = name;
 			});
-			ctx.userSelect.innerHTML = '<option value="">-- Chọn user --</option>' + (users || [])
-				.map(u => `<option value="${u.id}">${window.QLPKHtml.escape(u.full_name || u.username || ('User #' + u.id))}</option>`).join('');
+			ctx.userSelect.replaceChildren(new Option('-- Chọn user --', ''), ...(users || [])
+				.map(u => new Option(u.full_name || u.username || ('User #' + u.id), String(u.id))));
 		};
 
 		const fetchRowsForDisplay = async () => {

@@ -201,7 +201,7 @@
 	}
 	function renderRows(rows, tbody, context = {}) {
 		if (!tbody) return;
-		tbody.innerHTML = '';
+		tbody.replaceChildren();
 		if (!rows.length) {
 			const tr = document.createElement('tr');
 			const td = document.createElement('td');
@@ -286,8 +286,7 @@
 	}
 	function initRouteOptions(routeSelect) {
 		if (!routeSelect) return;
-		routeSelect.innerHTML = '<option value="">-- Chọn màn hình --</option>';
-		routeSelect.innerHTML += moduleState.ROUTE_OPTIONS.map(r => `<option value="${window.QLPKHtml.escape(r.url)}">${window.QLPKHtml.escape(r.label)}</option>`).join('');
+		routeSelect.replaceChildren(new Option('-- Chọn màn hình --', ''), ...moduleState.ROUTE_OPTIONS.map(r => new Option(r.label, r.url)));
 	}
 	function isAdminUser() {
 		const role = String(currentUser().role || '').toLowerCase();
