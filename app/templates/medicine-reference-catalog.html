@@ -13,10 +13,8 @@
     <link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
   {% include 'partials/brand-theme.html' %}
     <link href="/static/css/medicines/reference-catalog.css?v={{ app_version }}" rel="stylesheet">
-    <script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
     <script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-    <script src="/static/js/utils.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 <script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
 </head>
@@ -98,7 +96,7 @@
     </div>
 
     <script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-    <script src="/static/js/medicines/reference-catalog.js?v={{ app_version }}"></script>
+    <script type="module" src="/static/js/medicines/reference-catalog.js?v={{ app_version }}"></script>
 </body>
 
 </html>

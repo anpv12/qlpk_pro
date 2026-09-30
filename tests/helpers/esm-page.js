@@ -15,9 +15,11 @@ function fetchRecorder(window) {
     window.fetch = (url, init = {}) => new Promise((resolve, reject) => {
         const headers = new Headers(init.headers);
         const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
-        requests.push({ url, init, headers, body, fail: reject,
+        init.signal?.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
+        requests.push({ url, init, headers, body, fail: reject, signal: init.signal,
             respond: (status, data, responseHeaders = {}) => resolve(new Response(data === undefined ? '' : JSON.stringify(data), { status, headers: responseHeaders })) });
     });
+    globalThis.fetch = window.fetch;
     return requests;
 }
 
@@ -31,8 +33,20 @@ async function loadPage(entry, { html = '', url, before } = {}) {
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
+// Manual timers for window.setTimeout/clearTimeout: tick(delay) fires every pending timer with that delay.
+function manualTimers(window) {
+    const timers = new Map();
+    let next = 0;
+    window.setTimeout = (fn, delay) => { timers.set(++next, { fn, delay }); return next; };
+    window.clearTimeout = id => timers.delete(id);
+    return async delay => {
+        for (const [id, timer] of [...timers]) if (timer.delay === delay) { timers.delete(id); timer.fn(); }
+        await flush();
+    };
+}
+
 function submit(form) {
     form.dispatchEvent(new Event('submit'));
 }
 
-module.exports = { loadPage, flush, submit, Event };
+module.exports = { loadPage, flush, submit, manualTimers, Event };
