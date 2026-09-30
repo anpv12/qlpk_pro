@@ -121,11 +121,9 @@ def nonnegative_number(value, field, *, integer=False, default=None):
     return int(number) if integer else number
 
 
-def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_mapping=False, human_review=False):
-    """Reference migration is opt-in for internal callers, never request data."""
+def _normalize_catalog_request(data, medicine, creating):
     if not isinstance(data, dict):
         raise CatalogValidationError('Thông tin thuốc không hợp lệ. Hãy mở lại và thử lại.')
-    creating = medicine is None
     if not creating and 'unit_price' in data:
         price = nonnegative_number(data['unit_price'], 'unit_price', default=0)
         if price != medicine.unit_price:
@@ -141,9 +139,10 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
         raise CatalogValidationError('Chỉ thêm thuốc vào Tủ thuốc.')
     if 'expiry_date' in data:
         raise CatalogValidationError('Hạn dùng được ghi nhận khi nhập lô, không sửa trong danh mục thuốc.')
-    if creating:
-        medicine = Medicine(stock_quantity=0, category_type='DRUG', unit_price=0, prescription_type='BASIC')
+    return data
 
+
+def _resolve_requested_reference(data, medicine, creating, allow_reference_mapping):
     requested_id = data.get('reference_catalog_id', medicine.reference_catalog_id)
     if requested_id is not None and (isinstance(requested_id, bool) or not isinstance(requested_id, int) or requested_id <= 0):
         raise CatalogValidationError('Hãy chọn thuốc hợp lệ trong danh mục DAV.')
@@ -162,86 +161,107 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
     if medicine.reference_catalog_id and requested_id != medicine.reference_catalog_id and not relinking:
         raise CatalogValidationError('Hãy dùng Liên kết lại DAV để đối chiếu trước khi đổi thuốc danh mục.', 409)
     linking = requested_id is not None and (medicine.reference_catalog_id is None or relinking)
-    if linking:
-        if isinstance(requested_id, bool) or not isinstance(requested_id, int) or requested_id <= 0:
-            raise CatalogValidationError('Thuốc DAV được chọn không hợp lệ.')
-        reference = db.query(MedicineReferenceCatalog).filter_by(id=requested_id).populate_existing().with_for_update().first()
-        if not selectable_reference(reference):
-            raise CatalogValidationError('Không tìm thấy thuốc DAV còn hiệu lực. Hãy đồng bộ và chọn lại.')
-        if creating:
-            preview = reference_preview(medicine, reference, human_review=human_review)
-            if not preview['can_apply']:
-                raise CatalogValidationError(preview['message'])
-        if 'reference_version' in data and data['reference_version'] != (reference.updated_at.isoformat() if reference.updated_at else None):
-            raise CatalogValidationError('Dữ liệu DAV đã thay đổi sau khi chọn. Hãy tìm và đối chiếu lại.', 409)
-        duplicate = db.query(Medicine).filter(Medicine.reference_catalog_id == requested_id, Medicine.id != medicine.id).first() if medicine.id else db.query(Medicine).filter_by(reference_catalog_id=requested_id).first()
-        if duplicate:
-            raise CatalogValidationError('Thuốc DAV này đã có trong Tủ thuốc. Hãy mở bản ghi hiện có.', 409, duplicate.id)
-        if not creating and data.get('reference_link_confirmed') is not True:
-            raise CatalogValidationError('Hãy dùng Liên kết DAV để tìm và đối chiếu thuốc trước khi xác nhận.')
-        if not creating:
-            allowed = {'reference_catalog_id', 'reference_version', 'reference_link_confirmed',
-                       'reference_registration_number', 'reference_medicine_version'}
-            if set(data) - allowed:
-                raise CatalogValidationError('Hãy lưu phần thông tin phòng khám riêng trước khi liên kết DAV.')
-            registration = str(data.get('reference_registration_number') or '').strip().upper()
-            numbers = {str(value).strip().upper() for value in (reference.registration_number, reference.old_registration_number) if value}
-            if not registration or registration not in numbers:
-                raise CatalogValidationError('Số đăng ký không khớp thuốc đã chọn. Hãy kiểm tra số trên hộp thuốc.')
-            preview = reference_preview(medicine, reference, human_review=human_review)
-            if 'reference_medicine_version' not in data or data['reference_medicine_version'] != preview['medicine_version']:
-                raise CatalogValidationError('Thông tin trong kho vừa thay đổi. Hãy mở lại Liên kết DAV để xem bản mới.', 409)
-            if not preview['can_apply']:
-                raise CatalogValidationError(preview['message'], 409)
-        previous = {field: getattr(medicine, field) for field in IDENTITY_FIELDS} if not creating else None
-        previous_reference_id = medicine.reference_catalog_id
-        history = list((medicine.reference_snapshot or {}).get('mapping_history') or [])
-        if not creating:
-            history.append({'reference_catalog_id': previous_reference_id, 'identity': previous,
-                            'source_identity': (medicine.reference_snapshot or {}).get('identity'),
-                            'human_review': (medicine.reference_snapshot or {}).get('human_review'),
-                            'mapping_acceptance': (medicine.reference_snapshot or {}).get('mapping_acceptance'),
-                            'changed_by': actor_id, 'changed_at': datetime.now(timezone.utc).isoformat()})
-        for field, source_field in IDENTITY_FIELDS.items():
-            value = getattr(reference, source_field)
-            if field in data and (data[field] or None) != (value or None):
-                raise CatalogValidationError('Thông tin nhận diện phải lấy từ DAV, không nhập tên hoặc hàm lượng khác.')
-            setattr(medicine, field, value)
-        medicine.reference_catalog = reference
-        medicine.reference_catalog_id = reference.id
-        medicine.reference_snapshot = {'identity': source_identity(reference), 'linked_by': actor_id,
-                                       'linked_at': datetime.now(timezone.utc).isoformat(), 'previous_identity': previous,
-                                       'previous_category_type': medicine.category_type, 'mapping_history': history}
-        if human_review or creating:
-            medicine.reference_snapshot['human_review'] = {
-                'reviewed_by': actor_id, 'reviewed_at': datetime.now(timezone.utc).isoformat()}
-        medicine.category_type = 'DRUG'
-        mapped_settings = source_settings(source_identity(reference))
-        for field, value in mapped_settings.items():
-            if field in data and data[field] != value:
-                raise CatalogValidationError('Thông tin từ danh mục không được sửa trực tiếp. Hãy kiểm tra thuốc đã chọn.')
-            setattr(medicine, field, value)
-        if creating:
-            defaults = clinic_defaults(reference)
-            data = dict(data)
-            if not data.get('administration_method') and defaults['administration_method']:
-                data['administration_method'] = defaults['administration_method']
-            # The current DB requires a boolean. Missing source country must
-            # be classified explicitly, never silently treated as domestic.
-            if defaults['is_imported'] is not None:
-                data['is_imported'] = defaults['is_imported']
-            elif data.get('is_imported') is not True and data.get('is_imported') is not False:
-                raise CatalogValidationError('DAV chưa có nước sản xuất. Hãy xác nhận thuốc Nội/Ngoại trước khi lưu.')
-    else:
-        for field in source_settings((medicine.reference_snapshot or {}).get('identity') or {}):
-            if field in data and data[field] != getattr(medicine, field):
-                raise CatalogValidationError('Thông tin từ danh mục không được sửa trực tiếp.', 409)
-        for field in IDENTITY_FIELDS:
-            if field in data and (data[field] or None) != (getattr(medicine, field) or None):
-                raise CatalogValidationError('Thông tin nhận diện thuốc không được sửa trực tiếp.', 409)
-        if 'category_type' in data and data['category_type'] != medicine.category_type:
-            raise CatalogValidationError('Phân loại thuốc này cần được quản trị kiểm tra.', 409)
+    return requested_id, linking
 
+
+def _load_link_reference(db, data, medicine, requested_id, creating, human_review):
+    if isinstance(requested_id, bool) or not isinstance(requested_id, int) or requested_id <= 0:
+        raise CatalogValidationError('Thuốc DAV được chọn không hợp lệ.')
+    reference = db.query(MedicineReferenceCatalog).filter_by(id=requested_id).populate_existing().with_for_update().first()
+    if not selectable_reference(reference):
+        raise CatalogValidationError('Không tìm thấy thuốc DAV còn hiệu lực. Hãy đồng bộ và chọn lại.')
+    if creating:
+        preview = reference_preview(medicine, reference, human_review=human_review)
+        if not preview['can_apply']:
+            raise CatalogValidationError(preview['message'])
+    if 'reference_version' in data and data['reference_version'] != (reference.updated_at.isoformat() if reference.updated_at else None):
+        raise CatalogValidationError('Dữ liệu DAV đã thay đổi sau khi chọn. Hãy tìm và đối chiếu lại.', 409)
+    duplicate = db.query(Medicine).filter(Medicine.reference_catalog_id == requested_id, Medicine.id != medicine.id).first() if medicine.id else db.query(Medicine).filter_by(reference_catalog_id=requested_id).first()
+    if duplicate:
+        raise CatalogValidationError('Thuốc DAV này đã có trong Tủ thuốc. Hãy mở bản ghi hiện có.', 409, duplicate.id)
+    if not creating and data.get('reference_link_confirmed') is not True:
+        raise CatalogValidationError('Hãy dùng Liên kết DAV để tìm và đối chiếu thuốc trước khi xác nhận.')
+    if not creating:
+        allowed = {'reference_catalog_id', 'reference_version', 'reference_link_confirmed',
+                   'reference_registration_number', 'reference_medicine_version'}
+        if set(data) - allowed:
+            raise CatalogValidationError('Hãy lưu phần thông tin phòng khám riêng trước khi liên kết DAV.')
+        registration = str(data.get('reference_registration_number') or '').strip().upper()
+        numbers = {str(value).strip().upper() for value in (reference.registration_number, reference.old_registration_number) if value}
+        if not registration or registration not in numbers:
+            raise CatalogValidationError('Số đăng ký không khớp thuốc đã chọn. Hãy kiểm tra số trên hộp thuốc.')
+        preview = reference_preview(medicine, reference, human_review=human_review)
+        if 'reference_medicine_version' not in data or data['reference_medicine_version'] != preview['medicine_version']:
+            raise CatalogValidationError('Thông tin trong kho vừa thay đổi. Hãy mở lại Liên kết DAV để xem bản mới.', 409)
+        if not preview['can_apply']:
+            raise CatalogValidationError(preview['message'], 409)
+    return reference
+
+
+def _apply_reference_identity(data, medicine, reference, creating, actor_id, human_review):
+    previous = {field: getattr(medicine, field) for field in IDENTITY_FIELDS} if not creating else None
+    previous_reference_id = medicine.reference_catalog_id
+    history = list((medicine.reference_snapshot or {}).get('mapping_history') or [])
+    if not creating:
+        history.append({'reference_catalog_id': previous_reference_id, 'identity': previous,
+                        'source_identity': (medicine.reference_snapshot or {}).get('identity'),
+                        'human_review': (medicine.reference_snapshot or {}).get('human_review'),
+                        'mapping_acceptance': (medicine.reference_snapshot or {}).get('mapping_acceptance'),
+                        'changed_by': actor_id, 'changed_at': datetime.now(timezone.utc).isoformat()})
+    for field, source_field in IDENTITY_FIELDS.items():
+        value = getattr(reference, source_field)
+        if field in data and (data[field] or None) != (value or None):
+            raise CatalogValidationError('Thông tin nhận diện phải lấy từ DAV, không nhập tên hoặc hàm lượng khác.')
+        setattr(medicine, field, value)
+    medicine.reference_catalog = reference
+    medicine.reference_catalog_id = reference.id
+    medicine.reference_snapshot = {'identity': source_identity(reference), 'linked_by': actor_id,
+                                   'linked_at': datetime.now(timezone.utc).isoformat(), 'previous_identity': previous,
+                                   'previous_category_type': medicine.category_type, 'mapping_history': history}
+    if human_review or creating:
+        medicine.reference_snapshot['human_review'] = {
+            'reviewed_by': actor_id, 'reviewed_at': datetime.now(timezone.utc).isoformat()}
+
+
+def _apply_reference_settings(data, medicine, reference, creating):
+    medicine.category_type = 'DRUG'
+    mapped_settings = source_settings(source_identity(reference))
+    for field, value in mapped_settings.items():
+        if field in data and data[field] != value:
+            raise CatalogValidationError('Thông tin từ danh mục không được sửa trực tiếp. Hãy kiểm tra thuốc đã chọn.')
+        setattr(medicine, field, value)
+    if creating:
+        defaults = clinic_defaults(reference)
+        data = dict(data)
+        if not data.get('administration_method') and defaults['administration_method']:
+            data['administration_method'] = defaults['administration_method']
+        # The current DB requires a boolean. Missing source country must
+        # be classified explicitly, never silently treated as domestic.
+        if defaults['is_imported'] is not None:
+            data['is_imported'] = defaults['is_imported']
+        elif data.get('is_imported') is not True and data.get('is_imported') is not False:
+            raise CatalogValidationError('DAV chưa có nước sản xuất. Hãy xác nhận thuốc Nội/Ngoại trước khi lưu.')
+    return data
+
+
+def _link_reference(db, data, medicine, requested_id, creating, actor_id, human_review):
+    reference = _load_link_reference(db, data, medicine, requested_id, creating, human_review)
+    _apply_reference_identity(data, medicine, reference, creating, actor_id, human_review)
+    return _apply_reference_settings(data, medicine, reference, creating)
+
+
+def _guard_linked_fields(data, medicine):
+    for field in source_settings((medicine.reference_snapshot or {}).get('identity') or {}):
+        if field in data and data[field] != getattr(medicine, field):
+            raise CatalogValidationError('Thông tin từ danh mục không được sửa trực tiếp.', 409)
+    for field in IDENTITY_FIELDS:
+        if field in data and (data[field] or None) != (getattr(medicine, field) or None):
+            raise CatalogValidationError('Thông tin nhận diện thuốc không được sửa trực tiếp.', 409)
+    if 'category_type' in data and data['category_type'] != medicine.category_type:
+        raise CatalogValidationError('Phân loại thuốc này cần được quản trị kiểm tra.', 409)
+
+
+def _apply_text_settings(data, medicine, creating):
     for field, limit in TEXT_SETTINGS.items():
         if field not in data:
             continue
@@ -254,6 +274,9 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
         setattr(medicine, field, value or None)
     if not medicine.unit:
         raise CatalogValidationError('Đơn vị quản lý là bắt buộc.')
+
+
+def _apply_numeric_settings(data, medicine, creating):
     for field in ('unit_price', 'low_stock_threshold', 'expiry_warning_days', 'units_per_box'):
         if field in data:
             value = nonnegative_number(data[field], field, integer=field != 'unit_price', default=0 if field == 'unit_price' else None)
@@ -264,6 +287,9 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
         if data['prescription_type'] not in ('BASIC', 'H', 'N'):
             raise CatalogValidationError('Hãy chọn loại đơn Cơ bản, Thuốc H hoặc Thuốc N.')
         medicine.prescription_type = data['prescription_type']
+
+
+def _ensure_unique_internal_code(db, medicine):
     if not medicine.internal_code:
         medicine.internal_code = generate_medicine_code(db)
     duplicate_code = db.query(Medicine).filter(Medicine.internal_code == medicine.internal_code)
@@ -271,6 +297,9 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
         duplicate_code = duplicate_code.filter(Medicine.id != medicine.id)
     if duplicate_code.first():
         raise CatalogValidationError('Mã thuốc nội bộ đã tồn tại.', 409)
+
+
+def _apply_origin_and_packaging(data, medicine):
     if 'is_imported' in data:
         if data['is_imported'] is None:
             raise CatalogValidationError('Hãy chọn thuốc Nội/Ngoại trước khi lưu.')
@@ -280,6 +309,23 @@ def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_
             medicine.packaging = f'1 {medicine.packaging_unit} = {medicine.units_per_box} {medicine.unit}'
         else:
             medicine.packaging = f'1 {medicine.packaging_unit}' if medicine.packaging_unit else None
+
+
+def write_clinic_medicine(db, data, actor_id, medicine=None, *, allow_reference_mapping=False, human_review=False):
+    """Reference migration is opt-in for internal callers, never request data."""
+    creating = medicine is None
+    data = _normalize_catalog_request(data, medicine, creating)
+    if creating:
+        medicine = Medicine(stock_quantity=0, category_type='DRUG', unit_price=0, prescription_type='BASIC')
+    requested_id, linking = _resolve_requested_reference(data, medicine, creating, allow_reference_mapping)
+    if linking:
+        data = _link_reference(db, data, medicine, requested_id, creating, actor_id, human_review)
+    else:
+        _guard_linked_fields(data, medicine)
+    _apply_text_settings(data, medicine, creating)
+    _apply_numeric_settings(data, medicine, creating)
+    _ensure_unique_internal_code(db, medicine)
+    _apply_origin_and_packaging(data, medicine)
     db.add(medicine)
     db.flush()
     if creating:
