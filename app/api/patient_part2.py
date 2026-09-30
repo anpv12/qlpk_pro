@@ -26,6 +26,122 @@ from app.api.patient import (  # noqa: E402 — module gốc đã khởi tạo x
 )
 
 
+def _patient_created_response(patient):
+    # Return a more comprehensive response for the created patient
+    return jsonify({
+        'id': patient.id,
+        'patient_code': patient.patient_code,
+        'full_name': patient.full_name,
+        'phone': patient.phone,
+        'address': patient.address,
+        'is_active': patient.is_active,
+        'emergency_contact': patient.emergency_contact,
+        'allergies': patient.allergies,
+        # Address components
+        'address_detail': patient.address_detail,
+        'ward': patient.ward,
+        'district': patient.district,
+        'province': patient.province,
+        # Personal info
+        'nationality': patient.nationality,
+        'religion': patient.religion,
+        'ethnicity': patient.ethnicity,
+        'education_level': patient.education_level,
+        'occupation': patient.occupation,
+        'don_vi_cong_tac': patient.don_vi_cong_tac,
+        'dia_chi_cong_ty': patient.dia_chi_cong_ty,
+        'marital_status': patient.marital_status,
+        'sexual_orientation': patient.sexual_orientation,
+        'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+        'age': patient.age
+    }), 201, {'Content-Type': 'application/json; charset=utf-8'} # 201 Created
+
+
+def _build_new_patient(age, data, date_of_birth, db, expected_delivery_date, full_address, referral_source_fields, so_tuan_thai):
+    patient = Patient(
+        patient_code=data.get('patient_code'),
+        full_name=data.get('full_name'),
+        phone=data.get('phone'),
+        date_of_birth=date_of_birth,
+        age=age,
+        address=full_address,
+        # Address components
+        address_detail=data.get('address_detail'),
+        ward=data.get('ward'),
+        district=data.get('district'),
+        province=data.get('province'),
+        # Personal info
+        nationality=data.get('nationality'),
+        religion=data.get('religion'),
+        ethnicity=data.get('ethnicity'),
+        education_level=data.get('education_level'),
+        occupation=data.get('occupation'),
+        don_vi_cong_tac=data.get('don_vi_cong_tac'),
+        dia_chi_cong_ty=data.get('dia_chi_cong_ty'),
+        marital_status=data.get('marital_status'),
+        sexual_orientation=data.get('sexual_orientation'),
+        # Other fields
+        emergency_contact=data.get('emergency_contact'),
+        allergies=normalize_allergy_entries(data.get('allergies')),
+        # Missing fields - BỔ SUNG
+        nickname=data.get('nickname'),
+        gender=data.get('gender'),
+        mang_thai=data.get('mang_thai', False),
+        so_tuan_thai=so_tuan_thai,
+        expected_delivery_date=expected_delivery_date,
+        id_number=data.get('id_number'),
+        email=data.get('email'),
+        current_medication=data.get('current_medication'),
+        # New fields from modal "Hỏi bệnh"
+        referral_source=referral_source_fields['referral_source'],
+        referral_source_tag=referral_source_fields['referral_source_tag'],
+        referral_source_detail=referral_source_fields['referral_source_detail'],
+        problem_start_time=data.get('problem_start_time'),
+        symptom_progression=data.get('symptom_progression'),
+        family_history=normalize_family_history(data.get('family_history')),
+        physical_history=normalize_physical_history(db, data.get('physical_history')),
+        severity_level=data.get('severity_level'),
+        current_behavior=data.get('current_behavior'),
+        substance_use_history=normalize_substance_use_history(data.get('substance_use_history', {})),
+        safety_plan=normalize_safety_plan(data.get('safety_plan', {})),
+        is_active=data.get('is_active', True) # Default to True if not provided
+    )
+    return patient
+
+
+def _parse_new_patient_dates(data):
+    # Parse date_of_birth if provided
+    date_of_birth = None
+    if data.get('date_of_birth'):
+        try:
+            date_of_birth = datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
+        except ValueError:
+            return (jsonify({'detail': 'Invalid date format for date_of_birth. Use YYYY-MM-DD'}), 400, {'Content-Type': 'application/json; charset=utf-8'}), None, None, None, None
+
+    # Calculate age from date_of_birth
+    age = calculate_age(date_of_birth) if date_of_birth else None
+
+    # Parse expected_delivery_date if provided and calculate so_tuan_thai
+    expected_delivery_date = None
+    so_tuan_thai = data.get('so_tuan_thai')
+    if data.get('expected_delivery_date'):
+        try:
+            expected_delivery_date = datetime.strptime(data['expected_delivery_date'], '%Y-%m-%d').date()
+            # Tính lại so_tuan_thai từ expected_delivery_date
+            from datetime import date
+            today = date.today()
+            days_until_delivery = (expected_delivery_date - today).days
+            weeks_remaining = (days_until_delivery + 6) // 7  # Làm tròn lên
+            pregnancy_week = 40 - weeks_remaining
+            if 0 <= pregnancy_week <= 42:
+                so_tuan_thai = pregnancy_week
+            else:
+                so_tuan_thai = None
+        except ValueError as exc:
+            logger.warning("Bỏ qua ngày dự sinh không hợp lệ khi tính tuần thai: %s", exc)
+    return None, age, date_of_birth, expected_delivery_date, so_tuan_thai
+
+
 # Tạo mới bệnh nhân
 @router.route('/', methods=['POST'])
 @require_auth
@@ -49,35 +165,9 @@ def create_patient(user):
         if not data.get('patient_code'):
             data['patient_code'] = generate_patient_code(db) # Use the utility function
 
-        # Parse date_of_birth if provided
-        date_of_birth = None
-        if data.get('date_of_birth'):
-            try:
-                date_of_birth = datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
-            except ValueError:
-                return jsonify({'detail': 'Invalid date format for date_of_birth. Use YYYY-MM-DD'}), 400, {'Content-Type': 'application/json; charset=utf-8'}
-
-        # Calculate age from date_of_birth
-        age = calculate_age(date_of_birth) if date_of_birth else None
-
-        # Parse expected_delivery_date if provided and calculate so_tuan_thai
-        expected_delivery_date = None
-        so_tuan_thai = data.get('so_tuan_thai')
-        if data.get('expected_delivery_date'):
-            try:
-                expected_delivery_date = datetime.strptime(data['expected_delivery_date'], '%Y-%m-%d').date()
-                # Tính lại so_tuan_thai từ expected_delivery_date
-                from datetime import date
-                today = date.today()
-                days_until_delivery = (expected_delivery_date - today).days
-                weeks_remaining = (days_until_delivery + 6) // 7  # Làm tròn lên
-                pregnancy_week = 40 - weeks_remaining
-                if 0 <= pregnancy_week <= 42:
-                    so_tuan_thai = pregnancy_week
-                else:
-                    so_tuan_thai = None
-            except ValueError as exc:
-                logger.warning("Bỏ qua ngày dự sinh không hợp lệ khi tính tuần thai: %s", exc)
+        error_response, age, date_of_birth, expected_delivery_date, so_tuan_thai = _parse_new_patient_dates(data)
+        if error_response is not None:
+            return error_response
 
         # Remove skip_duplicate_check flag from data before creating Patient object
         data.pop('skip_duplicate_check', None)
@@ -93,87 +183,13 @@ def create_patient(user):
             )
         referral_source_fields = build_referral_source_fields(data.get('referral_source'))
 
-        patient = Patient(
-            patient_code=data.get('patient_code'),
-            full_name=data.get('full_name'),
-            phone=data.get('phone'),
-            date_of_birth=date_of_birth,
-            age=age,
-            address=full_address,
-            # Address components
-            address_detail=data.get('address_detail'),
-            ward=data.get('ward'),
-            district=data.get('district'),
-            province=data.get('province'),
-            # Personal info
-            nationality=data.get('nationality'),
-            religion=data.get('religion'),
-            ethnicity=data.get('ethnicity'),
-            education_level=data.get('education_level'),
-            occupation=data.get('occupation'),
-            don_vi_cong_tac=data.get('don_vi_cong_tac'),
-            dia_chi_cong_ty=data.get('dia_chi_cong_ty'),
-            marital_status=data.get('marital_status'),
-            sexual_orientation=data.get('sexual_orientation'),
-            # Other fields
-            emergency_contact=data.get('emergency_contact'),
-            allergies=normalize_allergy_entries(data.get('allergies')),
-            # Missing fields - BỔ SUNG
-            nickname=data.get('nickname'),
-            gender=data.get('gender'),
-            mang_thai=data.get('mang_thai', False),
-            so_tuan_thai=so_tuan_thai,
-            expected_delivery_date=expected_delivery_date,
-            id_number=data.get('id_number'),
-            email=data.get('email'),
-            current_medication=data.get('current_medication'),
-            # New fields from modal "Hỏi bệnh"
-            referral_source=referral_source_fields['referral_source'],
-            referral_source_tag=referral_source_fields['referral_source_tag'],
-            referral_source_detail=referral_source_fields['referral_source_detail'],
-            problem_start_time=data.get('problem_start_time'),
-            symptom_progression=data.get('symptom_progression'),
-            family_history=normalize_family_history(data.get('family_history')),
-            physical_history=normalize_physical_history(db, data.get('physical_history')),
-            severity_level=data.get('severity_level'),
-            current_behavior=data.get('current_behavior'),
-            substance_use_history=normalize_substance_use_history(data.get('substance_use_history', {})),
-            safety_plan=normalize_safety_plan(data.get('safety_plan', {})),
-            is_active=data.get('is_active', True) # Default to True if not provided
-        )
+        patient = _build_new_patient(age, data, date_of_birth, db, expected_delivery_date, full_address, referral_source_fields, so_tuan_thai)
         db.add(patient)
         db.commit()
         db.refresh(patient)
         emit_patient_changed('created', patient=patient)
 
-        # Return a more comprehensive response for the created patient
-        return jsonify({
-            'id': patient.id,
-            'patient_code': patient.patient_code,
-            'full_name': patient.full_name,
-            'phone': patient.phone,
-            'address': patient.address,
-            'is_active': patient.is_active,
-            'emergency_contact': patient.emergency_contact,
-            'allergies': patient.allergies,
-            # Address components
-            'address_detail': patient.address_detail,
-            'ward': patient.ward,
-            'district': patient.district,
-            'province': patient.province,
-            # Personal info
-            'nationality': patient.nationality,
-            'religion': patient.religion,
-            'ethnicity': patient.ethnicity,
-            'education_level': patient.education_level,
-            'occupation': patient.occupation,
-            'don_vi_cong_tac': patient.don_vi_cong_tac,
-            'dia_chi_cong_ty': patient.dia_chi_cong_ty,
-            'marital_status': patient.marital_status,
-            'sexual_orientation': patient.sexual_orientation,
-            'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
-            'age': patient.age
-        }), 201, {'Content-Type': 'application/json; charset=utf-8'} # 201 Created
+        return _patient_created_response(patient)
     except MedicalHistoryContractError as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
@@ -183,6 +199,124 @@ def create_patient(user):
         return jsonify({'detail': f'Internal server error: {str(e)}'}), 500, {'Content-Type': 'application/json; charset=utf-8'}
     finally:
         db.close()
+
+
+def _apply_patient_field_updates(data, db, patient):
+    # Update other fields
+    # Chỉ update field nếu có giá trị (không phải None và không phải empty string)
+    for field in [
+        'patient_code', 'full_name', 'phone', 'email',
+        'emergency_contact',
+        'allergies', 'current_medication', 'is_active', 'occupation', 'don_vi_cong_tac', 'dia_chi_cong_ty', 'marital_status', 'sexual_orientation',
+        'nationality', 'religion', 'ethnicity', 'education_level',
+        # Missing fields - BỔ SUNG
+        'nickname', 'gender', 'mang_thai', 'id_number',
+        # New fields from form
+        'reminder', 'reminder_time',
+        # New fields from modal "Hỏi bệnh"
+        'physical_history', 'severity_level',
+        # Medical history fields from modal "Hỏi bệnh"
+        'referral_source', 'problem_start_time', 'symptom_progression',
+        'family_history',
+        'current_behavior', 'substance_use_history', 'safety_plan'
+    ]:
+        if field in data:
+            value = data[field]
+            if field == 'referral_source':
+                apply_referral_source(patient, value)
+                continue
+            if field == 'physical_history':
+                value = normalize_physical_history(db, value)
+            if field == 'family_history':
+                value = normalize_family_history(value)
+            if field == 'substance_use_history':
+                value = normalize_substance_use_history(value)
+            if field == 'safety_plan':
+                value = normalize_safety_plan(value)
+            if field == 'allergies':
+                value = normalize_allergy_entries(value)
+            # Chỉ update nếu có giá trị (không phải None, không phải empty string)
+            # Cho phép 0 và False (có thể là giá trị hợp lệ)
+            if value is not None and value != '':
+                setattr(patient, field, value)
+            # Nếu là empty string, set thành None để clear field
+            elif value == '':
+                setattr(patient, field, None)
+
+
+def _apply_patient_date_updates(data, patient):
+    # Update date_of_birth (accept 'YYYY-MM-DD' or 'DD/MM/YYYY') if provided
+    if 'date_of_birth' in data and data['date_of_birth']:
+        dob_raw = data['date_of_birth']
+        parsed_dob = None
+        try:
+            # Try ISO format first
+            parsed_dob = datetime.strptime(dob_raw, '%Y-%m-%d').date()
+        except Exception:
+            try:
+                parsed_dob = datetime.strptime(dob_raw, '%d/%m/%Y').date()
+            except Exception:
+                parsed_dob = None
+        if parsed_dob:
+            patient.date_of_birth = parsed_dob
+            # Tính lại age khi date_of_birth thay đổi
+            patient.age = calculate_age(parsed_dob)
+
+    # Update expected_delivery_date if provided and recalculate so_tuan_thai
+    if 'expected_delivery_date' in data and data['expected_delivery_date']:
+        try:
+            expected_delivery_date = datetime.strptime(data['expected_delivery_date'], '%Y-%m-%d').date()
+            patient.expected_delivery_date = expected_delivery_date
+            # Tính lại so_tuan_thai từ expected_delivery_date
+            from datetime import date
+            today = date.today()
+            days_until_delivery = (expected_delivery_date - today).days
+            weeks_remaining = (days_until_delivery + 6) // 7  # Làm tròn lên
+            pregnancy_week = 40 - weeks_remaining
+            if 0 <= pregnancy_week <= 42:
+                patient.so_tuan_thai = pregnancy_week
+            else:
+                patient.so_tuan_thai = None
+        except ValueError as exc:
+            logger.warning("Bỏ qua ngày dự sinh không hợp lệ khi tính tuần thai: %s", exc)
+    elif 'expected_delivery_date' in data and data['expected_delivery_date'] is None:
+        # Clear expected_delivery_date if explicitly set to None
+        patient.expected_delivery_date = None
+        patient.so_tuan_thai = None
+
+
+def _patient_updated_response(patient):
+    return jsonify({
+        'id': patient.id,
+        'patient_code': patient.patient_code,
+        'full_name': patient.full_name,
+        'phone': patient.phone,
+        'address': patient.address,
+        'is_active': patient.is_active,
+        'emergency_contact': patient.emergency_contact,
+        'allergies': patient.allergies,
+        # Address components
+        'address_detail': patient.address_detail,
+        'ward': patient.ward,
+        'district': patient.district,
+        'province': patient.province,
+        # Personal info
+        'nationality': patient.nationality,
+        'religion': patient.religion,
+        'ethnicity': patient.ethnicity,
+        'education_level': patient.education_level,
+        'occupation': patient.occupation,
+        'don_vi_cong_tac': patient.don_vi_cong_tac,
+        'dia_chi_cong_ty': patient.dia_chi_cong_ty,
+        'marital_status': patient.marital_status,
+        'sexual_orientation': patient.sexual_orientation,
+        'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+        'age': patient.age,
+        'mang_thai': patient.mang_thai,
+        'so_tuan_thai': patient.so_tuan_thai,
+        'expected_delivery_date': patient.expected_delivery_date.isoformat() if patient.expected_delivery_date else None,
+        'substance_use_history': patient.substance_use_history or {}
+    }), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 
 # Cập nhật thông tin bệnh nhân
@@ -201,44 +335,7 @@ def update_patient(user, patient_id):
 
         apply_patient_address_update(patient, data)
 
-        # Update date_of_birth (accept 'YYYY-MM-DD' or 'DD/MM/YYYY') if provided
-        if 'date_of_birth' in data and data['date_of_birth']:
-            dob_raw = data['date_of_birth']
-            parsed_dob = None
-            try:
-                # Try ISO format first
-                parsed_dob = datetime.strptime(dob_raw, '%Y-%m-%d').date()
-            except Exception:
-                try:
-                    parsed_dob = datetime.strptime(dob_raw, '%d/%m/%Y').date()
-                except Exception:
-                    parsed_dob = None
-            if parsed_dob:
-                patient.date_of_birth = parsed_dob
-                # Tính lại age khi date_of_birth thay đổi
-                patient.age = calculate_age(parsed_dob)
-
-        # Update expected_delivery_date if provided and recalculate so_tuan_thai
-        if 'expected_delivery_date' in data and data['expected_delivery_date']:
-            try:
-                expected_delivery_date = datetime.strptime(data['expected_delivery_date'], '%Y-%m-%d').date()
-                patient.expected_delivery_date = expected_delivery_date
-                # Tính lại so_tuan_thai từ expected_delivery_date
-                from datetime import date
-                today = date.today()
-                days_until_delivery = (expected_delivery_date - today).days
-                weeks_remaining = (days_until_delivery + 6) // 7  # Làm tròn lên
-                pregnancy_week = 40 - weeks_remaining
-                if 0 <= pregnancy_week <= 42:
-                    patient.so_tuan_thai = pregnancy_week
-                else:
-                    patient.so_tuan_thai = None
-            except ValueError as exc:
-                logger.warning("Bỏ qua ngày dự sinh không hợp lệ khi tính tuần thai: %s", exc)
-        elif 'expected_delivery_date' in data and data['expected_delivery_date'] is None:
-            # Clear expected_delivery_date if explicitly set to None
-            patient.expected_delivery_date = None
-            patient.so_tuan_thai = None
+        _apply_patient_date_updates(data, patient)
 
         # safety_plan: MERGE thay vì replace để không mất uploaded_file khi auto-save
         if 'safety_plan' in data:
@@ -246,83 +343,14 @@ def update_patient(user, patient_id):
             current.update(normalize_safety_plan(data.get('safety_plan')))
             data['safety_plan'] = current
 
-        # Update other fields
-        # Chỉ update field nếu có giá trị (không phải None và không phải empty string)
-        for field in [
-            'patient_code', 'full_name', 'phone', 'email',
-            'emergency_contact',
-            'allergies', 'current_medication', 'is_active', 'occupation', 'don_vi_cong_tac', 'dia_chi_cong_ty', 'marital_status', 'sexual_orientation',
-            'nationality', 'religion', 'ethnicity', 'education_level',
-            # Missing fields - BỔ SUNG
-            'nickname', 'gender', 'mang_thai', 'id_number',
-            # New fields from form
-            'reminder', 'reminder_time',
-            # New fields from modal "Hỏi bệnh"
-            'physical_history', 'severity_level',
-            # Medical history fields from modal "Hỏi bệnh"
-            'referral_source', 'problem_start_time', 'symptom_progression',
-            'family_history',
-            'current_behavior', 'substance_use_history', 'safety_plan'
-        ]:
-            if field in data:
-                value = data[field]
-                if field == 'referral_source':
-                    apply_referral_source(patient, value)
-                    continue
-                if field == 'physical_history':
-                    value = normalize_physical_history(db, value)
-                if field == 'family_history':
-                    value = normalize_family_history(value)
-                if field == 'substance_use_history':
-                    value = normalize_substance_use_history(value)
-                if field == 'safety_plan':
-                    value = normalize_safety_plan(value)
-                if field == 'allergies':
-                    value = normalize_allergy_entries(value)
-                # Chỉ update nếu có giá trị (không phải None, không phải empty string)
-                # Cho phép 0 và False (có thể là giá trị hợp lệ)
-                if value is not None and value != '':
-                    setattr(patient, field, value)
-                # Nếu là empty string, set thành None để clear field
-                elif value == '':
-                    setattr(patient, field, None)
+        _apply_patient_field_updates(data, db, patient)
 
         db.commit()
 
         db.refresh(patient)
         emit_patient_changed('updated', patient=patient)
 
-        return jsonify({
-            'id': patient.id,
-            'patient_code': patient.patient_code,
-            'full_name': patient.full_name,
-            'phone': patient.phone,
-            'address': patient.address,
-            'is_active': patient.is_active,
-            'emergency_contact': patient.emergency_contact,
-            'allergies': patient.allergies,
-            # Address components
-            'address_detail': patient.address_detail,
-            'ward': patient.ward,
-            'district': patient.district,
-            'province': patient.province,
-            # Personal info
-            'nationality': patient.nationality,
-            'religion': patient.religion,
-            'ethnicity': patient.ethnicity,
-            'education_level': patient.education_level,
-            'occupation': patient.occupation,
-            'don_vi_cong_tac': patient.don_vi_cong_tac,
-            'dia_chi_cong_ty': patient.dia_chi_cong_ty,
-            'marital_status': patient.marital_status,
-            'sexual_orientation': patient.sexual_orientation,
-            'date_of_birth': patient.date_of_birth.isoformat() if patient.date_of_birth else None,
-            'age': patient.age,
-            'mang_thai': patient.mang_thai,
-            'so_tuan_thai': patient.so_tuan_thai,
-            'expected_delivery_date': patient.expected_delivery_date.isoformat() if patient.expected_delivery_date else None,
-            'substance_use_history': patient.substance_use_history or {}
-        }), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        return _patient_updated_response(patient)
     except MedicalHistoryContractError as e:
         db.rollback()
         return jsonify({'detail': str(e)}), 400, {'Content-Type': 'application/json; charset=utf-8'}
