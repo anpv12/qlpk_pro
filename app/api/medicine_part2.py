@@ -162,6 +162,136 @@ def get_dashboard(user):
         db.close()
 
 
+def _summary_visit_totals(db, doctor_id, from_date, to_date):
+    from app.models.appointment import Appointment
+    # Count total examinations (lượt khám thật — cùng logic với tab prescriptions)
+    from app.models.examination import Examination
+    exam_count_query = db.query(func.count(Examination.id)).join(
+        Appointment, Examination.appointment_id == Appointment.id
+    ).filter(
+        Examination.is_active == True,
+        Appointment.status == 'CONFIRMED'
+    )
+    if from_date:
+        try:
+            exam_count_query = exam_count_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if to_date:
+        try:
+            exam_count_query = exam_count_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if doctor_id:
+        exam_count_query = exam_count_query.filter(Examination.doctor_id == int(doctor_id))
+    total_examinations = exam_count_query.scalar() or 0
+
+    # Calculate total service revenue (nguồn: appointments.service_id → services.default_price)
+    from app.models.service import Service as SvcModel
+    svc_rev_query = db.query(func.sum(SvcModel.default_price)).join(
+        Appointment, Appointment.service_id == SvcModel.id
+    ).filter(
+        Appointment.status == 'CONFIRMED',
+        Appointment.service_id.isnot(None)
+    )
+    if from_date:
+        try:
+            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if to_date:
+        try:
+            svc_rev_query = svc_rev_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+    if doctor_id:
+        svc_rev_query = svc_rev_query.join(
+            Examination, Examination.appointment_id == Appointment.id
+        ).filter(Examination.doctor_id == int(doctor_id))
+    total_service_revenue = int(float(svc_rev_query.scalar() or 0))
+    return total_examinations, total_service_revenue
+
+
+def _summary_item_totals(db, medicine_type, prescriptions):
+    total_dispensed = 0
+    total_medicine_items = 0
+    total_revenue = 0
+
+    for pres in prescriptions:
+        for item in pres.items:
+            # Filter by medicine type if specified
+            if medicine_type:
+                med = db.query(Medicine).filter(Medicine.id == item.medicine_id).first() if item.medicine_id else None
+                if not med or med.prescription_type != medicine_type:
+                    continue
+
+            total_medicine_items += 1
+            qty = float(item.quantity) if item.quantity else 0
+            price = 0 if item.is_external else (float(item.unit_price) if item.unit_price else 0)
+            total_dispensed += qty
+            total_revenue += qty * price
+    return total_dispensed, total_medicine_items, total_revenue
+
+
+def _summary_prescriptions(db, doctor_id, from_date, search, to_date):
+    from app.models.appointment import Appointment
+    from app.models.prescription import Prescription, PrescriptionItem
+    from sqlalchemy.orm import joinedload
+    # Base query for prescriptions
+    prescriptions_query = db.query(Prescription).join(
+        Appointment, Prescription.appointment_id == Appointment.id
+    ).options(joinedload(Prescription.items))
+
+    # Join Patient/UserModel nếu cần search
+    if search:
+        from app.models.user import User as UserModel
+        from app.models.patient import Patient
+        prescriptions_query = prescriptions_query.join(
+            Patient, Appointment.patient_id == Patient.id
+        ).join(
+            UserModel, Appointment.doctor_id == UserModel.id
+        )
+
+    # Filter by date
+    if from_date:
+        try:
+            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
+            prescriptions_query = prescriptions_query.filter(
+                Appointment.appointment_date >= from_date_obj
+            )
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+
+    if to_date:
+        try:
+            to_date_obj = datetime.strptime(to_date, '%Y-%m-%d')
+            to_date_obj = to_date_obj.replace(hour=23, minute=59, second=59)
+            prescriptions_query = prescriptions_query.filter(
+                Appointment.appointment_date <= to_date_obj
+            )
+        except ValueError as exc:
+            logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
+
+    # Filter by doctor
+    if doctor_id:
+        prescriptions_query = prescriptions_query.filter(
+            Appointment.doctor_id == int(doctor_id)
+        )
+
+    # Filter by search (patient, doctor, medicine — accent-insensitive)
+    if search:
+        prescriptions_query = prescriptions_query.filter(
+            or_(
+                normalized_contains(Patient.full_name, search),
+                normalized_contains(UserModel.full_name, search),
+                Prescription.items.any(normalized_contains(PrescriptionItem.medicine_name, search)),
+            )
+        )
+
+    prescriptions = prescriptions_query.all()
+    return prescriptions
+
+
 @medicine_router.route('/medicine/statistics/summary', methods=['GET'])
 @require_auth
 def get_statistics_summary(user):
@@ -169,9 +299,6 @@ def get_statistics_summary(user):
     Lấy thống kê tổng quan: Tổng đơn thuốc, Thuốc đã bốc, Tồn kho, Doanh thu
     Query params: from_date, to_date, doctor_id, medicine_type
     """
-    from app.models.prescription import Prescription, PrescriptionItem
-    from app.models.appointment import Appointment
-    from sqlalchemy.orm import joinedload
 
     db = next(get_db())
     try:
@@ -182,78 +309,11 @@ def get_statistics_summary(user):
         medicine_type = request.args.get('medicine_type')  # BASIC, H, N
         search = request.args.get('search', '').strip().lower()
 
-        # Base query for prescriptions
-        prescriptions_query = db.query(Prescription).join(
-            Appointment, Prescription.appointment_id == Appointment.id
-        ).options(joinedload(Prescription.items))
-
-        # Join Patient/UserModel nếu cần search
-        if search:
-            from app.models.user import User as UserModel
-            from app.models.patient import Patient
-            prescriptions_query = prescriptions_query.join(
-                Patient, Appointment.patient_id == Patient.id
-            ).join(
-                UserModel, Appointment.doctor_id == UserModel.id
-            )
-
-        # Filter by date
-        if from_date:
-            try:
-                from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
-                prescriptions_query = prescriptions_query.filter(
-                    Appointment.appointment_date >= from_date_obj
-                )
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-
-        if to_date:
-            try:
-                to_date_obj = datetime.strptime(to_date, '%Y-%m-%d')
-                to_date_obj = to_date_obj.replace(hour=23, minute=59, second=59)
-                prescriptions_query = prescriptions_query.filter(
-                    Appointment.appointment_date <= to_date_obj
-                )
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-
-        # Filter by doctor
-        if doctor_id:
-            prescriptions_query = prescriptions_query.filter(
-                Appointment.doctor_id == int(doctor_id)
-            )
-
-        # Filter by search (patient, doctor, medicine — accent-insensitive)
-        if search:
-            prescriptions_query = prescriptions_query.filter(
-                or_(
-                    normalized_contains(Patient.full_name, search),
-                    normalized_contains(UserModel.full_name, search),
-                    Prescription.items.any(normalized_contains(PrescriptionItem.medicine_name, search)),
-                )
-            )
-
-        prescriptions = prescriptions_query.all()
+        prescriptions = _summary_prescriptions(db, doctor_id, from_date, search, to_date)
 
         # Calculate stats
         total_prescriptions = len(prescriptions)
-        total_dispensed = 0
-        total_medicine_items = 0
-        total_revenue = 0
-
-        for pres in prescriptions:
-            for item in pres.items:
-                # Filter by medicine type if specified
-                if medicine_type:
-                    med = db.query(Medicine).filter(Medicine.id == item.medicine_id).first() if item.medicine_id else None
-                    if not med or med.prescription_type != medicine_type:
-                        continue
-
-                total_medicine_items += 1
-                qty = float(item.quantity) if item.quantity else 0
-                price = 0 if item.is_external else (float(item.unit_price) if item.unit_price else 0)
-                total_dispensed += qty
-                total_revenue += qty * price
+        total_dispensed, total_medicine_items, total_revenue = _summary_item_totals(db, medicine_type, prescriptions)
 
         # Get remaining stock
         remaining_stock = db.query(func.sum(Medicine.stock_quantity)).filter(
@@ -265,51 +325,7 @@ def get_statistics_summary(user):
             Medicine.is_active == True
         ).count()
 
-        # Count total examinations (lượt khám thật — cùng logic với tab prescriptions)
-        from app.models.examination import Examination
-        exam_count_query = db.query(func.count(Examination.id)).join(
-            Appointment, Examination.appointment_id == Appointment.id
-        ).filter(
-            Examination.is_active == True,
-            Appointment.status == 'CONFIRMED'
-        )
-        if from_date:
-            try:
-                exam_count_query = exam_count_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-        if to_date:
-            try:
-                exam_count_query = exam_count_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-        if doctor_id:
-            exam_count_query = exam_count_query.filter(Examination.doctor_id == int(doctor_id))
-        total_examinations = exam_count_query.scalar() or 0
-
-        # Calculate total service revenue (nguồn: appointments.service_id → services.default_price)
-        from app.models.service import Service as SvcModel
-        svc_rev_query = db.query(func.sum(SvcModel.default_price)).join(
-            Appointment, Appointment.service_id == SvcModel.id
-        ).filter(
-            Appointment.status == 'CONFIRMED',
-            Appointment.service_id.isnot(None)
-        )
-        if from_date:
-            try:
-                svc_rev_query = svc_rev_query.filter(Appointment.appointment_date >= datetime.strptime(from_date, '%Y-%m-%d'))
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-        if to_date:
-            try:
-                svc_rev_query = svc_rev_query.filter(Appointment.appointment_date <= datetime.strptime(to_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-            except ValueError as exc:
-                logger.warning("Bỏ qua bộ lọc ngày không hợp lệ: %s", exc)
-        if doctor_id:
-            svc_rev_query = svc_rev_query.join(
-                Examination, Examination.appointment_id == Appointment.id
-            ).filter(Examination.doctor_id == int(doctor_id))
-        total_service_revenue = int(float(svc_rev_query.scalar() or 0))
+        total_examinations, total_service_revenue = _summary_visit_totals(db, doctor_id, from_date, to_date)
 
         return jsonify({
             'success': True,
