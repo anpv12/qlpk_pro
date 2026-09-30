@@ -6,8 +6,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { readCssSource, stylesheetOwner } = require('./helpers/css-source');
 const root = path.join(__dirname, '..');
-const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const read = name => readCssSource(path.join(root, name));
 const css = read('app/static/css/shared/button-actions.css');
 
 test('shared action renderer uses explicit roles, not displayed labels', () => {
@@ -86,12 +87,13 @@ test('button tokens have one owner and future designers are routed to the contra
         for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
             const file = path.join(directory, entry.name);
             if (entry.isDirectory()) inspect(file);
-            else if (file.endsWith('.css') && !file.endsWith('shared/color-tokens.css')) {
+            else if (file.endsWith('.css') && stylesheetOwner(cssRoot, path.relative(cssRoot, file)) !== 'shared/color-tokens.css') {
                 assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /--qlpk-button-[\w-]+\s*:/, file);
             }
         }
     }
-    inspect(path.join(root, 'app/static/css'));
+    const cssRoot = path.join(root, 'app/static/css');
+    inspect(cssRoot);
     for (const file of ['CONTEXT.md', 'rule.md', 'references/context-files.md', 'references/ui/brand-theme.md']) {
         assert.ok(read(file).includes('button-system.md'), file);
     }

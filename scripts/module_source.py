@@ -49,9 +49,32 @@ def python_split_files(path: Path) -> list[Path]:
     return files
 
 
-def read_source(path: Path) -> str:
-    """Text of a file; split JS entries and split Python modules include their parts."""
+CSS_PART_IMPORT = re.compile(r"""^@import url\(['"]?\./([\w-]+)/([\w-]+\.css)['"]?\);$""", re.M)
+
+
+def css_split_files(path: Path) -> list[Path]:
+    """A stylesheet's own topic parts (``@import url('./<stem>/<topic>.css')``), in cascade order."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    parts = [path.with_name(folder) / name for folder, name in CSS_PART_IMPORT.findall(text) if folder == path.stem]
+    return parts or [path]
+
+
+def read_css_source(path: Path) -> str:
+    """Stylesheet text with its topic parts inlined in cascade order; other ``@import`` rules stay."""
     path = Path(path)
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return CSS_PART_IMPORT.sub(
+        lambda match: (path.with_name(match[1]) / match[2]).read_text(encoding="utf-8", errors="ignore")
+        if match[1] == path.stem else match[0],
+        text,
+    )
+
+
+def read_source(path: Path) -> str:
+    """Text of a file; split JS entries, split Python modules and split stylesheets include their parts."""
+    path = Path(path)
+    if path.suffix == ".css":
+        return read_css_source(path)
     if path.suffix == ".js":
         return read_module_source(path)
     if path.suffix == ".py":

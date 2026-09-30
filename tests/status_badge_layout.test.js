@@ -3,8 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readCssSource } = require('./helpers/css-source');
 
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/feedback-tokens.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/shared/feedback-tokens.css'));
 
 test('shared and legacy semantic status badges keep their intrinsic single-line width', () => {
     const rule = css.match(/\.qlpk-status,\s*\.badge:is\([^}]+\)\s*\{([^}]+)\}/);

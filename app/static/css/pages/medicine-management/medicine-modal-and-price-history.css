@@ -1,0 +1,448 @@
+/* Compact content fits desktop; the body retains overflow access on small viewports. */
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .625rem 1rem;
+  border: 0;
+  background: linear-gradient(115deg, var(--qlpk-color-white), var(--qlpk-color-page-bg));
+}
+.medicine-management-page .mm-medicine-hero-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.75rem;
+  block-size: 2.75rem;
+  border-radius: .875rem;
+  background: var(--qlpk-brown-100);
+  color: var(--qlpk-brown-600);
+  font-size: var(--qlpk-font-size-3xl);
+}
+.medicine-management-page .mm-medicine-heading { min-inline-size: 0; }
+.medicine-management-page .qlpk-medicine-flow-guide {
+  margin: .125rem 0 0;
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-md);
+}
+.medicine-management-page .modal.qlpk-medicine-modal .btn-close {
+  align-self: flex-start;
+  flex-shrink: 0;
+  margin: 0 0 0 auto;
+}
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-body {
+  min-block-size: 0;
+  padding: 0 1rem .625rem;
+  background: var(--qlpk-color-white);
+}
+.medicine-management-page .mm-medicine-section {
+  container-type: inline-size;
+  min-inline-size: 0;
+  border: 1px solid color-mix(in srgb, var(--mm-section-color) 22%, white);
+  border-radius: .75rem;
+  background: var(--qlpk-color-white);
+}
+.medicine-management-page .mm-medicine-section--basic {
+  grid-area: basic;
+  --mm-section-color: var(--qlpk-feedback-warning);
+}
+.medicine-management-page .mm-medicine-section--packaging {
+  grid-area: packaging;
+  --mm-section-color: var(--qlpk-brown-600);
+}
+.medicine-management-page .mm-medicine-section--pricing {
+  grid-area: pricing;
+  --mm-section-color: var(--mm-medicine-green);
+}
+.medicine-management-page .mm-medicine-section--warnings {
+  grid-area: warnings;
+  --mm-section-color: var(--qlpk-feedback-critical);
+}
+.medicine-management-page .mm-medicine-section-header {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .375rem .75rem;
+  border-inline-start: .3125rem solid var(--mm-section-color);
+  border-radius: .75rem .75rem 0 0;
+  background: color-mix(in srgb, var(--mm-section-color) 6%, white);
+}
+.medicine-management-page .mm-medicine-section-header > div {
+  min-inline-size: 0;
+  display: flex;
+  align-items: baseline;
+  column-gap: .625rem;
+  flex-wrap: wrap;
+}
+.medicine-management-page .mm-medicine-section-header h6 {
+  margin: 0;
+  color: var(--qlpk-brown-900);
+  font-size: var(--qlpk-font-size-lg);
+  font-weight: var(--qlpk-font-weight-semibold);
+  line-height: var(--qlpk-line-height-tight);
+}
+.medicine-management-page .mm-medicine-section--warnings h6 { color: var(--mm-section-color); }
+.medicine-management-page .mm-medicine-section-header p {
+  margin: 0;
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-sm);
+  line-height: var(--qlpk-line-height-normal);
+}
+.medicine-management-page .mm-medicine-section-symbol {
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  color: var(--mm-section-color);
+  background: color-mix(in srgb, var(--mm-section-color) 12%, white);
+  font-size: var(--qlpk-font-size-xl);
+}
+.medicine-management-page .mm-medicine-section-body { padding: .5rem .75rem; }
+.medicine-management-page .mm-medicine-field-grid,
+.medicine-management-page .mm-package-quantities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .375rem .625rem;
+}
+.medicine-management-page .mm-field { min-inline-size: 0; }
+.medicine-management-page .mm-field--half,
+.medicine-management-page .mm-field--full { grid-column: 1 / -1; }
+.medicine-management-page .modal.qlpk-medicine-modal .form-label {
+  display: block;
+  margin-block-end: .1875rem;
+  line-height: var(--qlpk-line-height-tight);
+  color: var(--qlpk-brown-900);
+  overflow-wrap: anywhere;
+}
+.medicine-management-page .modal.qlpk-medicine-modal .mm-prescription-type-label { color: var(--qlpk-feedback-critical); }
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select) {
+  min-block-size: 2.125rem;
+  padding: .3125rem .625rem;
+  min-inline-size: 0;
+  font-size: var(--clinic-control-font-size);
+  font-weight: var(--qlpk-font-weight-regular);
+  line-height: var(--qlpk-line-height-normal);
+}
+.medicine-management-page .qlpk-medicine-edit-fields .form-select { padding-inline-end: 2rem; }
+.medicine-management-page .qlpk-medicine-edit-fields :is(input, select, textarea):not(:disabled):not([readonly]) {
+  background-color: var(--qlpk-color-white);
+  border-color: var(--qlpk-color-neutral-400);
+  color: var(--qlpk-color-neutral-700);
+}
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select):is(:disabled, [readonly]),
+.medicine-management-page .qlpk-medicine-edit-fields .mm-packaging-info-display {
+  border-style: solid;
+}
+.medicine-management-page .qlpk-medicine-edit-fields :is(.form-control, .form-select):is(:disabled, [readonly]):not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .qlpk-medicine-edit-fields .mm-packaging-info-display {
+  background-color: color-mix(in srgb, var(--qlpk-color-neutral-400) 20%, var(--qlpk-color-white));
+  border-color: color-mix(in srgb, var(--qlpk-color-neutral-400) 45%, var(--qlpk-color-white));
+  color: var(--qlpk-color-neutral-600);
+  opacity: 1;
+}
+.medicine-management-page .qlpk-medicine-edit-fields :is(input, select, textarea):not(:disabled):not([readonly]):focus {
+  border-color: var(--qlpk-color-neutral-500);
+  box-shadow: 0 0 0 .1875rem color-mix(in srgb, var(--qlpk-color-neutral-400) 18%, transparent);
+}
+.medicine-management-page .qlpk-medicine-edit-fields input::placeholder {
+  color: var(--qlpk-color-text-muted);
+  font-style: italic;
+  font-weight: var(--qlpk-font-weight-regular);
+  opacity: 1;
+}
+
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action {
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled) {
+  cursor: pointer;
+}
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled):not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-color-white);
+  border-color: var(--qlpk-brown-400);
+  color: var(--qlpk-brown-700);
+}
+.medicine-management-page .qlpk-medicine-edit-fields .mm-field-action:not(:disabled):is(:hover, :focus-visible):not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-brown-50);
+  border-color: var(--qlpk-color-primary);
+}
+
+.medicine-management-page .mm-price-control { display: flex; flex-wrap: wrap; gap: .375rem; }
+.medicine-management-page .mm-price-control input { flex: 1 1 5rem; width: 0; }
+.medicine-management-page .mm-price-control button { flex: 0 0 auto; }
+.medicine-management-page .modal.qlpk-medicine-price-panel { --clinic-modal-title-size: var(--qlpk-font-size-xl); }
+.medicine-management-page .modal.qlpk-medicine-price-panel .modal-dialog {
+  width: calc(100% - 1rem);
+  max-width: 42rem;
+  min-height: calc(100dvh - 1rem);
+  height: auto;
+  justify-content: center;
+}
+.medicine-management-page .modal.qlpk-medicine-price-panel .modal-body { min-height: 0; }
+.medicine-management-page .mm-price-heading { min-width: 0; }
+.medicine-management-page .mm-price-medicine {
+  margin-top: .375rem;
+  color: var(--mm-medicine-green);
+  font-size: var(--qlpk-font-size-md);
+  overflow-wrap: anywhere;
+}
+.medicine-management-page .mm-price-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+.medicine-management-page .mm-price-field {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: .375rem;
+  min-width: 0;
+}
+.medicine-management-page .mm-price-field .form-label { display: block; margin: 0; }
+.medicine-management-page .mm-price-value {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: .375rem .625rem;
+  border: 1px solid var(--qlpk-color-border);
+  border-radius: var(--clinic-control-radius);
+  background: var(--qlpk-color-page-bg);
+  font-size: var(--clinic-control-font-size);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.medicine-management-page .mm-price-period {
+  margin-top: 1rem;
+  padding: .75rem;
+  border: 1px solid var(--qlpk-color-border);
+  border-radius: var(--clinic-control-radius);
+  background: var(--qlpk-color-surface);
+}
+.medicine-management-page .mm-price-period-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  font-size: var(--qlpk-font-size-sm);
+}
+.medicine-management-page .mm-price-period-values dt { margin-bottom: .25rem; }
+@media (max-width: 480px) {
+  .medicine-management-page .mm-price-values,
+  .medicine-management-page .mm-price-period-values { grid-template-columns: minmax(0, 1fr); }
+}
+.medicine-management-page .mm-price-history {
+  margin-top: 1rem;
+  border: 1px solid var(--qlpk-color-border);
+  border-radius: var(--clinic-control-radius);
+  background: var(--qlpk-color-surface);
+}
+.medicine-management-page .mm-price-history > summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem .75rem;
+  border-radius: inherit;
+  color: var(--qlpk-brown-700);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  cursor: pointer;
+  list-style: none;
+}
+.medicine-management-page .mm-price-history > summary::-webkit-details-marker { display: none; }
+.medicine-management-page .mm-price-history > summary::before {
+  content: "";
+  flex: 0 0 auto;
+  inline-size: .4375rem;
+  block-size: .4375rem;
+  margin-inline: .125rem .25rem;
+  border-block-end: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s ease;
+}
+.medicine-management-page .mm-price-history[open] > summary::before { transform: rotate(45deg); }
+.medicine-management-page .mm-price-history > summary:hover,
+.medicine-management-page .mm-price-history > summary:focus-visible { background: var(--qlpk-brown-50); }
+.medicine-management-page .mm-price-history[open] > summary {
+  border-bottom: 1px solid var(--qlpk-brown-100);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+.medicine-management-page .mm-price-history-body {
+  display: grid;
+  gap: .625rem;
+  padding: .625rem .75rem .75rem;
+}
+.medicine-management-page .mm-price-history-body .table-responsive { margin: 0; }
+.medicine-management-page .mm-price-history-table {
+  margin: 0;
+  min-width: 38rem;
+  font-size: var(--qlpk-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+.medicine-management-page .mm-price-history-table th,
+.medicine-management-page .mm-price-history-table td {
+  padding: .5rem .625rem;
+  border: 0;
+}
+.medicine-management-page .mm-price-history-table td:nth-child(-n+3) { white-space: nowrap; }
+.medicine-management-page .mm-price-history-table thead th {
+  background: var(--qlpk-brown-150);
+  color: var(--qlpk-brown-700);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  white-space: nowrap;
+}
+.medicine-management-page .mm-price-history-table thead th:first-child { border-radius: .5rem 0 0 .5rem; }
+.medicine-management-page .mm-price-history-table thead th:last-child { border-radius: 0 .5rem .5rem 0; }
+.medicine-management-page .mm-price-history-table tbody td { border-bottom: 1px solid var(--qlpk-brown-100); }
+.medicine-management-page .mm-price-history-table tbody tr:last-child td { border-bottom: 0; }
+.medicine-management-page .mm-price-history-table td.mm-price-history-empty {
+  padding: 1rem .75rem;
+  color: var(--qlpk-color-text-muted);
+  text-align: center;
+}
+.medicine-management-page .mm-price-delta-up {
+  color: var(--qlpk-feedback-success);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+.medicine-management-page .mm-price-delta-down {
+  color: var(--qlpk-feedback-error);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+.medicine-management-page .mm-price-active-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .125rem .5rem;
+  border: 1px solid color-mix(in srgb, var(--mm-medicine-green) 35%, var(--qlpk-color-white));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mm-medicine-green) 9%, var(--qlpk-color-white));
+  color: var(--mm-medicine-green);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  white-space: nowrap;
+}
+.medicine-management-page .mm-price-history-more { justify-self: start; }
+.medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: .625rem;
+  padding: .375rem 1rem;
+  background: var(--qlpk-color-white);
+  border-block-start: 1px solid var(--qlpk-brown-150);
+}
+.medicine-management-page .mm-medicine-footer-actions {
+  grid-column: 2;
+  display: flex;
+  justify-content: center;
+  gap: .75rem;
+}
+.medicine-management-page .mm-medicine-footer-actions .btn {
+  padding: .375rem clamp(1rem, 2.5vw, 2.75rem);
+  white-space: nowrap;
+}
+.medicine-management-page .qlpk-medicine-save-button {
+  gap: .625rem;
+}
+.medicine-management-page .qlpk-medicine-save-button:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-white);
+  box-shadow: 0 .1875rem .5rem color-mix(in srgb, var(--qlpk-brown-700) 12%, transparent);
+}
+.medicine-management-page .qlpk-medicine-save-button:not(:disabled):hover:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-color-primary);
+}
+.medicine-management-page .mm-medicine-motto,
+.medicine-management-page .mm-medicine-footer-motto {
+  display: none;
+  align-items: center;
+  gap: .75rem;
+  color: var(--mm-medicine-green);
+  font-size: var(--qlpk-font-size-base);
+  font-style: italic;
+}
+.medicine-management-page .mm-medicine-motto { margin-inline-start: auto; text-align: center; }
+.medicine-management-page .mm-medicine-footer-motto { justify-self: end; margin: 0; }
+.medicine-management-page .mm-medicine-leaf,
+.medicine-management-page .mm-medicine-branch > span {
+  display: block;
+  background: color-mix(in srgb, var(--mm-medicine-green) 45%, white);
+  border-radius: 100% 0 100% 0;
+  inline-size: 1.5rem;
+  block-size: 1rem;
+  transform: rotate(-20deg);
+}
+.medicine-management-page .mm-medicine-branch { position: relative; inline-size: 3rem; block-size: 2.5rem; flex-shrink: 0; }
+.medicine-management-page .mm-medicine-branch > span { position: absolute; opacity: .5; }
+.medicine-management-page .mm-medicine-branch > span:nth-child(1) { inline-size: 75%; block-size: 50%; inset: .125rem 0 auto auto; }
+.medicine-management-page .mm-medicine-branch > span:nth-child(2) { inline-size: 55%; block-size: 37.5%; inset: auto 0 0 auto; transform: rotate(5deg); }
+.medicine-management-page .mm-medicine-branch > span:nth-child(3) { inline-size: 50%; block-size: 31.25%; inset: 37.5% auto auto 0; transform: rotate(-75deg); }
+@container (min-width: 28rem) {
+  .medicine-management-page .mm-medicine-field-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .medicine-management-page .mm-field--half { grid-column: span 2; }
+  .medicine-management-page :is(.mm-medicine-section--basic, .mm-medicine-section--pricing) .mm-medicine-field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .medicine-management-page .mm-medicine-section--warnings .mm-medicine-field-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .medicine-management-page .mm-package-quantities { grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)) auto; }
+}
+@media (min-width: 64rem) {
+  .medicine-management-page .modal.qlpk-medicine-modal .modal-dialog { width: 96%; }
+  .medicine-management-page .qlpk-medicine-edit-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "basic pricing" "packaging warnings";
+  }
+  .medicine-management-page .qlpk-dav-selection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 72rem) {
+  .medicine-management-page .mm-medicine-motto,
+  .medicine-management-page .mm-medicine-footer-motto { display: flex; }
+}
+@media (max-width: 36rem) {
+  .medicine-management-page .modal.qlpk-medicine-modal { --clinic-modal-title-size: var(--qlpk-font-size-3xl); }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-header { gap: .75rem; padding-inline: .75rem; }
+  .medicine-management-page .mm-medicine-hero-icon { flex-basis: 2.75rem; block-size: 2.75rem; border-radius: .875rem; font-size: var(--qlpk-font-size-3xl); }
+  .medicine-management-page .qlpk-medicine-flow-guide { font-size: var(--qlpk-font-size-md); }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-body { padding-inline: .75rem; }
+  .medicine-management-page .mm-medicine-section-header { gap: .75rem; padding-inline: .75rem; }
+  .medicine-management-page .mm-medicine-section-body { padding: .75rem; }
+  .medicine-management-page .modal.qlpk-medicine-modal .mm-medicine-footer { display: flex; justify-content: center; padding-inline: .75rem; }
+  .medicine-management-page .mm-dav-selected:not([hidden]) { flex-wrap: wrap; }
+}
+.medicine-management-page .mm-btn-pill-lg {
+  border-radius: var(--clinic-control-radius, 30px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-xl, 18px));
+}
+.medicine-management-page .mm-radius-20 {
+  border-radius: 20px;
+}
+.medicine-management-page .mm-modal-title-import {
+  color: var(--qlpk-color-primary);
+  font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-5xl, 32px));
+  letter-spacing: 1px;
+}
+.medicine-management-page .mm-gap-16 {
+  gap: 16px;
+}
+.medicine-management-page .mm-radius-18 {
+  border-radius: 18px;
+}
+.medicine-management-page .mm-text-lg {
+  font-size: var(--qlpk-font-size-xl, 18px);
+}
+.medicine-management-page .mm-btn-pill-md {
+  border-radius: var(--clinic-control-radius, 30px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-lg, 16px));
+}
+.medicine-management-page .mm-dialog-stock-detail {
+  max-width: 1400px;
+  width: calc(100% - 2rem);
+  max-height: 95vh;
+}
+.medicine-management-page .qlpk-batch-import-table {
+  min-width: 1100px;
+}
+.medicine-management-page .mm-modal-content-95 {
+  border-radius: var(--clinic-surface-radius, 20px);
+  max-height: 95vh;
+}

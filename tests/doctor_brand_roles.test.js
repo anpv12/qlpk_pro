@@ -3,8 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readCssSource } = require('./helpers/css-source');
 
-const readCss = filename => fs.readFileSync(path.join(__dirname, '../app/static/css', filename), 'utf8');
+const readCss = filename => readCssSource(path.join(__dirname, '../app/static/css', filename));
 const doctor = readCss('pages/doctor-examination.css');
 
 test('doctor inherits header gradients without flattening their shared stops', () => {

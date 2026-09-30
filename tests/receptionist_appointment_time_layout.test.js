@@ -3,8 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readCssSource } = require('./helpers/css-source');
 
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/receptionist-new.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/pages/receptionist-new.css'));
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/receptionist-new.html'), 'utf8');
 
 test('native appointment time keeps room for hours, minutes and picker', () => {
@@ -14,7 +15,7 @@ test('native appointment time keeps room for hours, minutes and picker', () => {
 });
 
 test('intake typography matches doctor sizes and laptop breakpoint', () => {
-    const doctor = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'), 'utf8');
+    const doctor = readCssSource(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'));
     const breakpoint = '@media (min-width: 48rem) and (max-width: 96rem)';
     assert.doesNotMatch(css, /--receptionist-font-scale:/);
     assert.doesNotMatch(css, /--qlpk-font-size-(?:base|sm|xs|md|lg):/);
@@ -52,8 +53,8 @@ test('receptionist headers size naturally with shared text and spacing metrics',
 });
 
 test('paired intake cards share content-driven alignment only in two-column layout', () => {
-    const shared = fs.readFileSync(path.join(__dirname, '../app/static/css/components/patient-info-form.css'), 'utf8');
-    const doctor = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'), 'utf8');
+    const shared = readCssSource(path.join(__dirname, '../app/static/css/components/patient-info-form.css'));
+    const doctor = readCssSource(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'));
     const stacked = shared.split('@container receptionist-intake (min-width: 60rem)')[0];
     const paired = shared.split('@container receptionist-intake (min-width: 60rem)')[1].split('/* Shared patient administrative')[0];
     assert.match(stacked, /align-items: start/);

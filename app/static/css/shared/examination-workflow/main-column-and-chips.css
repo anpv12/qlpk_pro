@@ -1,0 +1,233 @@
+.exam-main-column {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	flex: none;
+	padding-right: 0;
+}
+
+@media (min-width: 48rem) {
+	.exam-workspace-row {
+		--qlpk-exam-queue-block-size: calc(100dvh - var(--qlpk-shell-header-height, 0rem) - 0.75rem);
+	}
+
+	.qlpk-exam-queue-column {
+		align-self: start;
+		block-size: var(--qlpk-exam-queue-block-size);
+		max-block-size: var(--qlpk-exam-queue-block-size);
+		position: sticky;
+		top: 0;
+	}
+
+	.qlpk-exam-queue-column > .qlpk-queue-panel {
+		block-size: 100%;
+		max-block-size: 100%;
+	}
+}
+
+.exam-card-header-roomy {
+	padding: 15px;
+}
+
+.exam-patient-header-compact {
+	padding: 8px 15px;
+}
+
+.exam-inline-center {
+	display: flex;
+	align-items: center;
+}
+
+.exam-heading-reset {
+	margin: 0;
+}
+
+.exam-clickable-icon {
+	cursor: pointer;
+}
+
+.exam-initially-hidden {
+	display: none;
+}
+
+.exam-select-compact {
+	padding: 0.375rem 0.25rem 0.375rem 0.75rem;
+}
+
+.exam-previous-vital-hint {
+	display: block;
+	color: var(--qlpk-palette-gray-46);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-align: left;
+}
+
+.exam-bmi-classification-hint {
+	display: none;
+	color: var(--qlpk-palette-gray-46);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-style: italic;
+}
+
+.exam-inline-full {
+	width: 100%;
+}
+
+.exam-inline-top {
+	width: 100%;
+	align-items: flex-start;
+}
+
+.exam-label-top {
+	margin-top: 8px;
+}
+
+.exam-flex-field {
+	flex: 1;
+	position: relative;
+}
+
+.exam-textarea-fluid {
+	width: 100%;
+	height: auto;
+	resize: vertical;
+}
+
+.exam-textarea-flex {
+	flex: 1;
+	height: auto;
+	resize: vertical;
+}
+
+@media (max-width: 47.99875rem) {
+	.exam-workspace-row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	.qlpk-exam-queue-column,
+	.exam-main-column {
+		width: 100%;
+		max-width: 100%;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+}
+
+.exam-passive-icon {
+	pointer-events: none;
+}
+
+.exam-chip-input-container {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	min-height: 36px;
+	cursor: text;
+	padding: 4px 8px;
+}
+
+.exam-chip-input-container--tall {
+	min-height: 38px;
+}
+
+.exam-chip-tags {
+	display: contents;
+}
+
+.exam-chip-search {
+	border: none;
+	outline: none;
+	flex: 1;
+	min-width: 100px;
+	background: transparent;
+	box-shadow: none;
+	font-size: var(--qlpk-font-size-base, 13px);
+	padding: 0;
+}
+
+.exam-chip-search--wide {
+	min-width: 120px;
+}
+
+.exam-dropdown-panel {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: var(--qlpk-color-white);
+	border: 1px solid var(--qlpk-palette-gray-89);
+	border-radius: 8px;
+	box-shadow: 0 0.5rem 1rem rgba(var(--qlpk-color-black-rgb), 0.15);
+	max-height: 400px;
+	overflow-y: auto;
+}
+
+.exam-dropdown-panel--compact {
+	max-height: 300px;
+	margin-top: 4px;
+}
+
+.exam-dropdown-search {
+	padding: 8px;
+}
+
+.exam-dropdown-list {
+	max-height: 350px;
+	overflow-y: auto;
+}
+
+.exam-dropdown-list--compact {
+	max-height: 240px;
+}
+
+.exam-detail-modal-dialog {
+	width: 90vw;
+	height: 100vh;
+	max-width: none;
+	margin-top: 0;
+}
+
+.exam-detail-modal-content {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.exam-modal-header-compact {
+	padding: 10px;
+}
+
+.exam-modal-body-scroll {
+	flex: 1;
+	overflow-y: auto;
+}
+
+.exam-medical-history-dialog {
+	max-width: 100%;
+	width: 90%;
+	margin-top: 5px;
+}
+
+.exam-order-dialog {
+	max-width: 100%;
+	width: 95%;
+	margin-top: 35px;
+}
+
+.exam-document-upload-icon {
+	font-size: var(--qlpk-font-size-5xl, 32px);
+}
+
+.exam-document-empty-icon {
+	font-size: var(--qlpk-font-size-display-md, 48px);
+}
+
+.exam-input-group-compact {
+	max-width: 280px;
+}

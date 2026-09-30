@@ -1,0 +1,429 @@
+/* Function Tab List */
+.function-tab-list {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0.35rem;
+	flex-shrink: 0;
+	border-bottom: 0;
+	align-items: flex-end;
+}
+
+.function-tab-list .nav-item {
+	display: inline-flex;
+	align-items: center;
+	flex: 0 0 auto;
+	gap: 0.15rem;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.function-tab-list .nav-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	border: 0.0625rem solid transparent;
+	border-bottom-color: var(--patient-modal-line-strong);
+	border-radius: 0.45rem 0.45rem 0 0;
+	color: var(--patient-modal-primary);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	white-space: nowrap;
+	margin-block-end: -0.0625rem;
+}
+
+.patient-search-modal .function-tab-list .nav-link:hover,
+.patient-search-modal .function-tab-list .nav-link:focus-visible {
+	background: var(--patient-modal-primary-soft);
+	border-color: var(--patient-modal-line-strong);
+	border-bottom-color: var(--patient-modal-primary-soft);
+	color: var(--patient-modal-primary-strong);
+}
+
+.patient-search-modal .function-tab-list .nav-link:focus {
+	outline: 0;
+	box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--patient-modal-accent) 58%, transparent);
+}
+
+.patient-search-modal .function-tab-list .nav-link.active {
+	background: var(--patient-modal-surface);
+	border-color: var(--patient-modal-line-strong);
+	border-bottom-color: var(--patient-modal-surface);
+	color: var(--qlpk-palette-gray-15);
+}
+
+.patient-search-modal .function-tab-list .nav-link.active i {
+	color: var(--qlpk-palette-gray-15);
+}
+
+.patient-search-modal .function-tab-list .nav-item:has(.nav-link.active) {
+	border-color: transparent;
+	background: transparent;
+}
+.patient-search-modal .function-tab-list .nav-link.active + .tab-print-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--qlpk-color-text-muted);
+}
+
+.function-tab-list .tab-print-btn {
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.25rem 0.4rem;
+	border-radius: 0.4rem;
+}
+.function-tab-list .tab-print-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: var(--qlpk-color-text-muted);
+	transition: all 0.15s ease-in-out;
+}
+.function-tab-list .tab-print-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--patient-modal-primary-strong);
+	background: var(--patient-modal-primary-soft);
+}
+
+.function-tab-list .tab-print-btn:active {
+	transform: scale(0.95);
+}
+
+.patient-search-modal .modal-patient-item:not(.patient-search-modal__table-head-row),
+.patient-search-modal .modal-history-item:not(.patient-search-modal__table-head-row) {
+	margin-inline: 0;
+	border-block-end-color: var(--patient-modal-line);
+	background: var(--patient-modal-surface);
+	color: var(--patient-modal-text);
+	transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.patient-search-modal .modal-patient-item:not(.patient-search-modal__table-head-row):hover,
+.patient-search-modal .modal-history-item:not(.patient-search-modal__table-head-row):hover {
+	background: var(--patient-modal-surface-soft);
+}
+
+.patient-search-modal__patient-code {
+	color: var(--patient-modal-coral);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.patient-search-modal .modal-history-item:not(.patient-search-modal__table-head-row) > [class*="col-"] {
+	color: var(--patient-modal-text);
+}
+
+.patient-search-modal__exam-status-badge {
+	--qlpk-status-color: var(--patient-modal-primary);
+	--qlpk-status-text: var(--qlpk-color-white);
+	--qlpk-status-radius: 0.3rem;
+	--qlpk-status-padding: 0.2rem 0.45rem;
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	white-space: nowrap;
+}
+
+.patient-search-modal__exam-status-badge--examining {
+	--qlpk-status-color: var(--qlpk-feedback-info);
+}
+
+.patient-search-modal__exam-status-badge--waiting-payment {
+	--qlpk-status-color: var(--qlpk-feedback-warning);
+}
+
+.vital-view-mode-selector {
+	border: 1px solid var(--patient-modal-line-strong);
+	border-radius: 6px;
+	overflow: hidden;
+	background: var(--patient-modal-cream);
+}
+
+.vital-view-mode-selector .btn {
+	border: none;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	padding: 3px 8px;
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.vital-signs-layout {
+	display: none;
+	flex: 1;
+	min-height: 0;
+	flex-direction: row;
+	overflow: hidden;
+	border: 1px solid var(--patient-modal-line-strong);
+	border-radius: 6px;
+}
+
+.vital-signs-yaxis-fixed {
+	width: 165px;
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	background: var(--patient-modal-cream);
+	border-right: 1px solid var(--patient-modal-line-strong);
+	position: relative;
+	z-index: var(--qlpk-z-sticky-header);
+}
+
+.vital-signs-chart-scrollable {
+	flex: 1;
+	overflow-x: auto;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	background: var(--patient-modal-surface);
+}
+
+.vital-chart-header-table {
+	position: relative;
+	height: 62px;
+	background: var(--patient-modal-cream);
+	border-bottom: 1px solid var(--patient-modal-line-strong);
+	flex-shrink: 0;
+	width: 100%;
+}
+
+.canvas-container {
+	flex: 1;
+	position: relative;
+	min-height: 320px;
+}
+
+.patient-search-modal__vitals-chart {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	display: none;
+}
+
+.patient-search-modal__vitals-table {
+	display: none;
+	width: 100%;
+	overflow-x: auto;
+	padding: 2px;
+}
+
+.vital-signs-grid-table {
+	border-collapse: collapse;
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	font-size: var(--qlpk-font-size-base, 13px);
+	margin-top: 5px;
+	table-layout: fixed;
+	width: 100%;
+}
+
+.vital-signs-grid-table th,
+.vital-signs-grid-table td {
+	border: 1px solid var(--patient-modal-line);
+	padding: 8px 10px;
+	text-align: center;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.vital-signs-grid-table tr:hover,
+.vital-signs-grid-table tr:nth-child(even) {
+	background-color: var(--patient-modal-brown-soft);
+}
+
+.vital-signs-grid-table th {
+	background-color: var(--patient-modal-cream);
+	color: var(--patient-modal-brown);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.vital-signs-grid-table td.vital-label-col {
+	background-color: var(--patient-modal-cream);
+	box-shadow: 2px 0 5px rgba(var(--qlpk-color-black-rgb), 0.05);
+	box-sizing: border-box;
+	color: var(--patient-modal-text);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	left: 0;
+	max-width: 165px;
+	min-width: 165px;
+	position: sticky;
+	text-align: left;
+	white-space: nowrap;
+	width: 165px;
+	z-index: var(--qlpk-z-sticky-header);
+}
+
+.vital-signs-grid-table th.vital-label-col {
+	background-color: var(--patient-modal-brown-soft);
+	box-shadow: 2px 0 5px rgba(var(--qlpk-color-black-rgb), 0.05);
+	box-sizing: border-box;
+	left: 0;
+	max-width: 165px;
+	min-width: 165px;
+	position: sticky;
+	white-space: nowrap;
+	width: 165px;
+	z-index: var(--qlpk-z-sticky-corner);
+}
+
+.vital-hidden {
+	display: none;
+}
+
+.vital-display-flex {
+	display: flex;
+}
+
+.vital-display-block {
+	display: block;
+}
+
+.vital-axis-date-header {
+	align-items: center;
+	background: var(--patient-modal-cream);
+	border-bottom: 1px solid var(--patient-modal-line-strong);
+	color: var(--patient-modal-brown);
+	display: flex;
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	height: 26px;
+	justify-content: center;
+}
+
+.vital-axis-metric-header {
+	background: var(--patient-modal-cream);
+	border-bottom: 1px solid var(--patient-modal-line-strong);
+	color: var(--patient-modal-text);
+	display: flex;
+	font-size: var(--qlpk-font-size-2xs, 10px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	height: 36px;
+	text-align: center;
+}
+
+.vital-axis-metric-cell {
+	align-items: center;
+	display: flex;
+	flex: 1;
+	justify-content: center;
+	line-height: 1.2;
+	padding: 2px;
+	white-space: nowrap;
+}
+
+.vital-axis-metric-cell--border {
+	border-right: 1px solid var(--patient-modal-line-strong);
+}
+
+.vital-y-ticks {
+	flex: 1;
+	position: relative;
+}
+
+.vital-y-tick {
+	color: var(--patient-modal-muted);
+	display: flex;
+	font-size: var(--qlpk-font-size-2xs, 10px);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	left: 0;
+	position: absolute;
+	right: 0;
+	text-align: center;
+	transform: translateY(-50%);
+}
+
+.vital-y-tick-cell {
+	align-items: center;
+	display: flex;
+	flex: 1;
+	height: 16px;
+	justify-content: center;
+}
+
+.vital-y-tick-cell--border {
+	border-right: 1px dashed var(--patient-modal-line);
+}
+
+.vital-x-date-row {
+	border-bottom: 1px solid var(--patient-modal-line-strong);
+	height: 26px;
+	position: relative;
+	width: 100%;
+}
+
+.vital-x-time-row {
+	height: 36px;
+	position: relative;
+	width: 100%;
+}
+
+.vital-x-date-label,
+.vital-x-time-label {
+	position: absolute;
+	text-align: center;
+	transform: translateX(-50%);
+	white-space: nowrap;
+	width: 60px;
+}
+
+.vital-x-date-label {
+	color: var(--patient-modal-brown);
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 26px;
+}
+
+.vital-x-time-label {
+	color: var(--patient-modal-muted);
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	line-height: 36px;
+}
+
+.vital-grid-col-label {
+	width: 165px;
+}
+
+.vital-grid-col-data {
+	width: 5rem;
+}
+
+.vital-grid-empty-date {
+	color: var(--patient-modal-muted);
+	font-weight: var(--qlpk-font-weight-regular, 400);
+}
+
+.vital-grid-empty-time,
+.vital-grid-empty-cell {
+	color: var(--patient-modal-line-strong);
+}
+
+.vital-grid-empty-time {
+	font-weight: var(--qlpk-font-weight-regular, 400);
+}
+
+/* Prescription Footer */
+.prescription-preview__footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 16px;
+}
+
+.clinic-name {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: var(--qlpk-font-size-lg, 16px);
+	text-transform: uppercase;
+	color: var(--patient-modal-brown);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	line-height: 1.5;
+}
+
+.clinic-details {
+	font-size: var(--qlpk-font-size-base, 13px);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	line-height: 1.5;
+}
+
+.prescription-code-badge {
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	line-height: 1.5;
+}

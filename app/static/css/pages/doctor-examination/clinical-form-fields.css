@@ -1,0 +1,327 @@
+.doctor-support-dropdown__item {
+	-webkit-appearance: none;
+	appearance: none;
+	box-sizing: border-box;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	inline-size: 100%;
+	min-block-size: 2.75rem;
+	margin: 0;
+	padding: 0.5rem 0.65rem;
+	gap: 0.15rem;
+	border: 0;
+	border-block-end: 0.0625rem solid var(--doctor-dropdown-line);
+	border-inline-start: 0.18rem solid transparent;
+	border-radius: 0.45rem;
+	background: transparent;
+	color: var(--doctor-dropdown-text);
+	cursor: pointer;
+	font: inherit;
+	text-align: start;
+	transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.doctor-support-dropdown__item:last-child {
+	border-block-end: 0;
+}
+
+.doctor-support-dropdown__item:hover,
+.doctor-support-dropdown__item.is-active {
+	background: var(--doctor-dropdown-soft);
+	border-inline-start-color: var(--doctor-dropdown-accent);
+}
+
+.doctor-support-dropdown__item:focus-visible {
+	outline: 0.125rem solid var(--doctor-dropdown-accent);
+	outline-offset: -0.125rem;
+}
+
+.doctor-support-dropdown__title {
+	display: block;
+	min-width: 0;
+	overflow: hidden;
+	color: var(--doctor-dropdown-text);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.25;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doctor-support-dropdown__meta {
+	display: block;
+	min-width: 0;
+	overflow: hidden;
+	color: var(--doctor-dropdown-muted);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doctor-support-dropdown__item--rx-h {
+	--doctor-dropdown-accent: var(--doctor-dropdown-rx-h);
+	border-inline-start-color: var(--doctor-dropdown-rx-h);
+}
+
+.doctor-support-dropdown__item--rx-n {
+	--doctor-dropdown-accent: var(--doctor-dropdown-rx-n);
+	border-inline-start-color: var(--doctor-dropdown-rx-n);
+}
+
+.doctor-support-dropdown__flag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: 1.15rem;
+	margin-inline-end: 0.4rem;
+	padding: 0 0.3rem;
+	border-radius: 0.35rem;
+	background: var(--doctor-dropdown-accent);
+	color: var(--qlpk-color-white);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.35;
+	vertical-align: 0.0925em;
+}
+
+.doctor-support-empty {
+	padding: 0.9rem 0.8rem;
+	color: var(--doctor-muted);
+	font-size: var(--qlpk-font-size-sm);
+	text-align: center;
+}
+
+.doctor-support-dropdown__empty {
+	padding: 0.7rem 0.75rem;
+	color: var(--doctor-dropdown-muted);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-semibold);
+	text-align: center;
+}
+
+.doctor-field {
+	display: grid;
+	gap: 0.24rem;
+	min-width: 0;
+	margin: 0;
+	align-content: start;
+}
+
+.doctor-field--full {
+	grid-column: 1 / -1;
+}
+
+.doctor-field span,
+.doctor-field__label {
+	color: var(--doctor-muted);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.doctor-clinical-main .doctor-field textarea,
+.doctor-clinical-main .doctor-field input,
+.doctor-clinical-main .doctor-field select {
+	width: 100%;
+	min-width: 0;
+	min-block-size: 2.12rem;
+	padding: 0.42rem 0.56rem;
+	border: 0.0625rem solid var(--doctor-line-strong);
+	border-radius: 0.4rem;
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-text);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.35;
+}
+
+.doctor-clinical-main .doctor-field textarea {
+	resize: vertical;
+}
+
+.doctor-clinical-main .doctor-field input:disabled {
+	background: var(--doctor-surface-soft);
+	color: var(--doctor-muted);
+}
+
+.doctor-clinical-workspace[data-history-view='true'] :where(input, textarea, select):disabled {
+	background: var(--doctor-surface-soft);
+	color: var(--doctor-text);
+	cursor: default;
+	opacity: 1;
+}
+
+.doctor-clinical-main .doctor-field textarea:focus,
+.doctor-clinical-main .doctor-field input:focus,
+.doctor-clinical-main .doctor-field select:focus {
+	border-color: var(--doctor-interactive);
+	outline: 0;
+	box-shadow: 0 0 0 0.15rem var(--qlpk-color-focus);
+}
+
+/* The clinical decision form reuses the single-frame paper card from intake. */
+.doctor-clinical-form-card {
+	gap: var(--qlpk-patient-visit-gap);
+}
+
+.doctor-clinical-form-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--qlpk-patient-visit-inline-gap);
+	min-width: 0;
+	margin-inline: calc(var(--qlpk-patient-visit-pad) * -1);
+	padding-inline: var(--qlpk-patient-visit-pad);
+	border-block-end: 0.0625rem solid var(--doctor-section-header-border);
+}
+
+.doctor-clinical-form-card__header-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.35rem;
+	min-width: 0;
+	margin-inline-start: auto;
+}
+
+.doctor-clinical-section-jump {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-block-size: 1.9rem;
+	margin-inline-start: auto;
+	padding: 0.28rem 0.55rem;
+	border-width: 0.0625rem;
+	border-style: solid;
+	border-radius: 0.4rem;
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1;
+	white-space: nowrap;
+}
+.doctor-clinical-section-jump:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid color-mix(in srgb, var(--doctor-brown) 34%, transparent);
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-interactive);
+}
+
+.doctor-clinical-form-card__header-actions .doctor-clinical-section-jump {
+	margin-inline-start: 0;
+}
+
+.doctor-clinical-section-jump strong {
+	min-inline-size: 1.2rem;
+	padding-inline: 0.2rem;
+	color: var(--doctor-text);
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+}
+.doctor-clinical-section-jump:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-clinical-section-jump:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-interactive);
+	background: var(--doctor-interactive-soft);
+	color: var(--doctor-interactive-strong);
+	outline: 0;
+}
+
+.doctor-clinical-form-card .qlpk-patient-visit-card__title {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-block-size: 2.2rem;
+	margin: 0;
+	padding-block: 0.3rem;
+}
+
+.doctor-clinical-form-card__fields {
+	display: grid;
+	gap: var(--qlpk-patient-visit-gap);
+	min-width: 0;
+}
+
+.doctor-clinical-form-card .doctor-field.receptionist-paper-field {
+	row-gap: 0.25rem;
+}
+
+.doctor-clinical-form-card .doctor-field > span,
+.doctor-clinical-form-card .doctor-field > .doctor-field__label {
+	margin-block-start: 0.28rem;
+	color: var(--doctor-clinical-label);
+	font-size: var(--receptionist-font-label, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.3;
+	text-transform: none;
+}
+
+/* Restored values need a clear,
+compact warning without adding label chrome. */
+	.doctor-clinical-workspace :is(input:not([type="hidden"]), textarea, select).is-draft-restored,
+	.doctor-service-selection__row.is-draft-restored,
+	.doctor-history-workspace.is-draft-restored .medical-history-panel {
+	border-color: var(--qlpk-feedback-error);
+	outline: 0.125rem solid var(--qlpk-feedback-error);
+	outline-offset: 0.1rem;
+	animation: doctor-draft-restored-pulse 0.9s ease-in-out 3;
+}
+
+.doctor-clinical-workspace .is-draft-restored-focus {
+	outline-width: 0.18rem;
+	outline-offset: 0.16rem;
+	scroll-margin-block: 2rem;
+}
+
+@keyframes doctor-draft-restored-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 var(--qlpk-feedback-error);
+	}
+
+	50% {
+		box-shadow: 0 0 0 0.22rem var(--qlpk-feedback-error);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.doctor-clinical-workspace :is(input:not([type="hidden"]), textarea, select).is-draft-restored,
+	.doctor-service-selection__row.is-draft-restored,
+	.doctor-history-workspace.is-draft-restored .medical-history-panel {
+		animation: none;
+	}
+
+	.doctor-clinical-workspace .is-draft-restored-focus {
+		outline-width: 0.18rem;
+	}
+}
+
+/* The numbered clinical decisions use the same dark text hierarchy as their detail fields. */
+.doctor-clinical-workspace--doctor .doctor-clinical-section--decision .doctor-field > span,
+.doctor-clinical-workspace--doctor .doctor-clinical-section--decision .doctor-field > .doctor-field__label {
+	color: var(--doctor-clinical-heading);
+}
+
+.doctor-clinical-form-card .receptionist-paper-field .form-control:not([data-autocomplete-input]) {
+	min-block-size: 1.65rem;
+	padding: var(--receptionist-underline-input-padding-block, 0.22rem) var(--receptionist-underline-input-padding-inline, 0.42rem);
+	border-width: 0 0 0.0625rem;
+	border-radius: 0;
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+}
+.doctor-clinical-form-card .receptionist-paper-field .form-control:not([data-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-patient-visit-line-strong);
+	background: transparent;
+	color: var(--qlpk-patient-visit-text);
+	box-shadow: none;
+}
+.doctor-clinical-form-card .receptionist-paper-field .form-control:not([data-autocomplete-input]):focus:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-brown);
+	box-shadow: 0 0.125rem 0 0 color-mix(in srgb, var(--doctor-brown) 24%, transparent);
+}
+
+.doctor-clinical-form-card .receptionist-paper-field textarea.form-control {
+	min-block-size: 1.65rem;
+	resize: vertical;
+	overflow-y: auto;
+}

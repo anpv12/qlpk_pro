@@ -1,0 +1,446 @@
+body[data-doctor-ui] {
+	margin: 0;
+	background: var(--qlpk-color-page-bg);
+	font-family: var(--qlpk-font-family);
+}
+
+body[data-doctor-ui] > .container-fluid,
+body[data-doctor-ui] > .container-fluid > .row,
+body[data-doctor-ui] .main-content {
+	background: var(--qlpk-color-page-bg);
+}
+
+body[data-doctor-ui] .main-content {
+	min-width: 0;
+}
+
+@media (min-width: 48rem) {
+	body[data-doctor-ui] {
+		block-size: 100dvh;
+		min-block-size: 0;
+		overflow: hidden;
+	}
+
+	body[data-doctor-ui] > .container-fluid,
+	body[data-doctor-ui] > .container-fluid > .row,
+	body[data-doctor-ui] .main-content {
+		block-size: 100%;
+		min-block-size: 0;
+		overflow: hidden;
+	}
+
+	body[data-doctor-ui] .main-content {
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+.doctor-workspace {
+	--doctor-context-header-block-size: var(--qlpk-workflow-context-header-block-size, 4.5rem);
+	--doctor-brown: var(--qlpk-doctor-primary);
+	--doctor-interactive: var(--doctor-brown);
+	--doctor-interactive-strong: var(--doctor-brown);
+	--doctor-interactive-soft: var(--qlpk-doctor-primary-soft);
+	--doctor-section-header-bg: var(--qlpk-workflow-context-header-bg, var(--qlpk-doctor-primary));
+	--doctor-section-header-border: var(--doctor-brown, var(--qlpk-doctor-primary));
+	--doctor-section-header-text: var(--qlpk-doctor-on-primary);
+	--doctor-bg: var(--qlpk-doctor-page-bg);
+	--doctor-surface: var(--qlpk-doctor-surface);
+	--doctor-surface-soft: var(--qlpk-doctor-surface-soft);
+	--doctor-text: var(--qlpk-doctor-text);
+	--doctor-muted: var(--qlpk-doctor-muted);
+	--doctor-line: var(--qlpk-doctor-line);
+	--doctor-line-strong: var(--qlpk-doctor-line-strong);
+	--doctor-danger: var(--qlpk-doctor-danger);
+	--doctor-warning: var(--qlpk-doctor-warning);
+	--doctor-shadow: var(--qlpk-doctor-shadow-color);
+	--qlpk-color-page-bg: var(--doctor-bg);
+	--qlpk-color-surface: var(--doctor-surface);
+	--qlpk-color-surface-muted: var(--doctor-surface-soft);
+	--qlpk-color-surface-subtle: rgba(var(--qlpk-brown-800-rgb), 0.04);
+	--qlpk-color-text: var(--doctor-text);
+	--qlpk-color-text-muted: var(--doctor-muted);
+	--qlpk-color-line: var(--doctor-line);
+	--qlpk-color-line-strong: var(--doctor-line-strong);
+	--qlpk-color-brown-soft: rgba(var(--qlpk-brown-800-rgb), 0.1);
+	--qlpk-color-primary-soft: var(--doctor-interactive-soft);
+	--qlpk-color-primary-subtle: var(--doctor-interactive-soft);
+	--qlpk-color-focus: var(--doctor-interactive);
+	--qlpk-header-text: var(--qlpk-doctor-on-primary);
+	--qlpk-header-accent: var(--qlpk-doctor-on-primary);
+	--qlpk-workflow-context-header-text: var(--qlpk-doctor-on-primary);
+	--qlpk-workflow-context-header-muted: var(--qlpk-doctor-header-muted);
+	--qlpk-workflow-context-header-accent: var(--qlpk-doctor-on-primary);
+	--qlpk-workflow-context-header-border: var(--qlpk-doctor-header-border);
+	--qlpk-page-bg: var(--doctor-bg);
+	--qlpk-surface: var(--doctor-surface);
+	--qlpk-surface-soft: var(--doctor-surface-soft);
+	--receptionist-page-bg: var(--doctor-bg);
+	--receptionist-tone-bg: var(--doctor-brown);
+	--receptionist-tone-surface: var(--doctor-surface);
+	--receptionist-tone-surface-muted: var(--doctor-surface-soft);
+	--receptionist-tone-surface-strong: var(--doctor-surface);
+	--receptionist-tone-line: var(--doctor-line);
+	--receptionist-tone-line-strong: var(--doctor-line-strong);
+	--receptionist-tone-text: var(--doctor-text);
+	--receptionist-tone-muted: var(--doctor-muted);
+	--receptionist-tone-accent: var(--doctor-interactive);
+	--receptionist-section-header-bg: var(--receptionist-tone-surface);
+	--receptionist-section-header-border: var(--doctor-line-strong);
+	--receptionist-section-header-accent: var(--doctor-brown);
+	--receptionist-section-header-text: var(--doctor-brown);
+	--receptionist-section-header-icon: var(--doctor-brown);
+	--receptionist-layout-gap: var(--qlpk-doctor-space-2);
+	--receptionist-intake-gap: var(--receptionist-layout-gap);
+	--receptionist-field-gap: var(--qlpk-doctor-space-3);
+	--receptionist-intake-pad: var(--receptionist-field-gap);
+	--receptionist-card-padding-x: var(--receptionist-layout-gap);
+	--receptionist-card-padding-y: 0;
+	--receptionist-card-padding: var(--receptionist-card-padding-y) var(--receptionist-card-padding-x);
+	--receptionist-inline-gap: var(--qlpk-doctor-space-2);
+	--receptionist-paper-label-width: 9.25rem;
+	--receptionist-underline-input-padding-block: 0.22rem;
+	--receptionist-underline-input-padding-inline: 0.42rem;
+	--receptionist-font-text: var(--qlpk-font-size-base);
+	--receptionist-font-label: var(--qlpk-font-size-base);
+	--receptionist-font-meta: var(--qlpk-font-size-base);
+	--receptionist-font-chip: var(--qlpk-font-size-base);
+	--receptionist-font-counter: var(--qlpk-font-size-xs);
+	--receptionist-font-section-title: var(--qlpk-font-size-base);
+	--receptionist-font-panel-title: var(--qlpk-font-size-lg, 1rem);
+	--qlpk-workflow-bg: var(--doctor-bg);
+	--qlpk-workflow-surface: var(--doctor-surface);
+	--qlpk-workflow-line: var(--doctor-line);
+	--qlpk-workflow-text: var(--doctor-text);
+	--qlpk-workflow-switch-active-bg: var(--doctor-interactive);
+	--qlpk-workflow-switch-active-text: var(--qlpk-doctor-on-primary);
+	block-size: calc(100dvh - var(--qlpk-shell-header-height, 0rem));
+	max-block-size: calc(100dvh - var(--qlpk-shell-header-height, 0rem));
+	min-block-size: 0;
+	align-items: stretch;
+	background: var(--doctor-bg);
+	overflow: hidden;
+}
+
+@media (min-width: 48rem) and (max-width: 96rem) {
+	.doctor-workspace {
+		--receptionist-layout-gap: 0.5rem;
+		--receptionist-field-gap: 0.5rem;
+		--receptionist-inline-gap: 0.36rem;
+		--receptionist-paper-label-width: 8.25rem;
+		--receptionist-underline-input-padding-block: 0.16rem;
+		--receptionist-underline-input-padding-inline: 0.34rem;
+		--receptionist-font-text: var(--qlpk-font-size-sm);
+		--receptionist-font-label: var(--qlpk-font-size-sm);
+		--receptionist-font-meta: var(--qlpk-font-size-sm);
+		--receptionist-font-chip: var(--qlpk-font-size-sm);
+		--receptionist-font-section-title: var(--qlpk-font-size-sm);
+		--receptionist-font-panel-title: var(--qlpk-font-size-base);
+	}
+}
+
+.doctor-workspace .qlpk-workflow-two-pane__switch,
+.doctor-workspace .qlpk-queue-panel,
+.doctor-workspace .qlpk-queue-panel__body,
+.doctor-workspace .qlpk-queue-panel--exam .qlpk-queue-panel__body,
+.doctor-workspace .qlpk-waiting-card__schedule {
+	background: var(--qlpk-doctor-surface);
+}
+
+.doctor-workspace .qlpk-queue-panel {
+	--qlpk-queue-panel-body-bg: var(--qlpk-doctor-surface);
+	--qlpk-queue-panel-search-bg: var(--qlpk-doctor-surface);
+}
+
+.doctor-workspace .qlpk-waiting-card--timeline .qlpk-waiting-card__timeline-content::after {
+	box-shadow: 0 0 0 0.1875rem var(--qlpk-color-white);
+}
+
+.doctor-workspace .qlpk-waiting-card--timeline.is-selected .qlpk-waiting-card__avatar,
+.doctor-workspace .qlpk-waiting-card--timeline.selected .qlpk-waiting-card__avatar {
+	border-color: color-mix(in srgb, var(--doctor-brown) 58%, transparent);
+	background: var(--qlpk-workflow-context-header-bg);
+	box-shadow: 0 0.5rem 1.125rem color-mix(in srgb, var(--doctor-brown) 24%, transparent);
+	color: var(--qlpk-color-white);
+}
+
+.doctor-exam-surface {
+	min-block-size: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+}
+
+.doctor-exam-surface__inner {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.5rem;
+	width: 100%;
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	overflow: hidden;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.doctor-exam-surface__inner.has-selected-appointment {
+	grid-template-rows: minmax(0, 1fr);
+	align-content: stretch;
+}
+
+.doctor-clinical-workspace[hidden] {
+	display: none;
+}
+
+.doctor-exam-empty-state {
+	display: grid;
+	place-items: center;
+	align-content: center;
+	gap: 0.5rem;
+	min-block-size: 18rem;
+	padding: 1.25rem;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.625rem;
+	background: var(--doctor-surface);
+	color: var(--doctor-muted);
+	text-align: center;
+}
+
+.doctor-exam-surface__inner.has-selected-appointment .doctor-exam-empty-state {
+	display: none;
+}
+
+.doctor-exam-empty-state__icon {
+	color: var(--doctor-brown);
+	font-size: var(--qlpk-font-size-3xl);
+	line-height: 1;
+}
+
+.doctor-exam-empty-state__text {
+	margin: 0;
+	font-size: var(--qlpk-font-size-base);
+	font-weight: var(--qlpk-font-weight-semibold);
+	line-height: 1.35;
+}
+
+.doctor-clinical-workspace {
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	overflow: hidden;
+}
+
+.doctor-clinical-form {
+	--doctor-section-rail-inline-size: clamp(1.75rem, 2vw, 2rem);
+	--doctor-section-rail-item-block-size: clamp(4.125rem, 6.25dvh, 4.25rem);
+	--doctor-section-rail-item-block-padding: clamp(0.2rem, 0.35dvh, 0.3rem);
+	--doctor-section-rail-gap: clamp(0.125rem, 0.2dvh, 0.2rem);
+	--doctor-section-rail-letter-spacing: 0;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) var(--doctor-section-rail-inline-size);
+	grid-template-rows: auto minmax(0, 1fr);
+	column-gap: clamp(0.16rem, 0.18vw, 0.28rem);
+	row-gap: clamp(0.35rem, 0.45vw, 0.5rem);
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	margin: 0;
+	overflow: hidden;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.625rem;
+	background: var(--qlpk-doctor-surface);
+	box-shadow: 0 0.18rem 0.7rem var(--doctor-shadow);
+}
+
+.doctor-clinical-layout {
+	display: grid;
+	grid-column: 1;
+	grid-row: 2;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	column-gap: clamp(0.16rem, 0.18vw, 0.28rem);
+	row-gap: clamp(0.35rem, 0.45vw, 0.5rem);
+	padding: 0 clamp(0.16rem, 0.18vw, 0.28rem) clamp(0.4rem, 0.45vw, 0.6rem) clamp(0.4rem, 0.45vw, 0.6rem);
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	overflow: hidden;
+	align-items: stretch;
+}
+
+.doctor-clinical-main {
+	display: grid;
+	grid-column: 1;
+	grid-template-rows: auto minmax(0, 1fr);
+	align-content: start;
+	gap: 0.55rem;
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	padding: 0;
+	overflow: hidden;
+	overscroll-behavior: contain;
+	scrollbar-gutter: auto;
+}
+
+.doctor-clinical-main > .doctor-workbench {
+	grid-row: 2;
+}
+
+.doctor-draft-recovery {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem;
+	min-inline-size: 0;
+	padding: 0.42rem 0.55rem;
+	border: 0.0625rem solid var(--doctor-interactive-strong);
+	border-radius: 0.42rem;
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+.doctor-draft-recovery[hidden] {
+	display: none;
+}
+
+.doctor-draft-recovery[data-state="restored"] {
+	border-color: var(--doctor-interactive-strong);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+.doctor-draft-recovery__message,
+.doctor-draft-recovery__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-inline-size: 0;
+}
+
+.doctor-draft-recovery__message {
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-semibold);
+	line-height: 1.35;
+}
+
+.doctor-draft-recovery__message i {
+	flex: 0 0 auto;
+	font-size: var(--qlpk-font-size-base);
+}
+
+.doctor-draft-recovery__draft-count {
+	display: inline-grid;
+	place-items: center;
+	min-inline-size: 1.35rem;
+	block-size: 1.35rem;
+	margin-inline: 0.22rem;
+	border-radius: 999rem;
+	background: var(--qlpk-feedback-error);
+	color: var(--qlpk-color-white);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1;
+}
+
+.doctor-draft-recovery__action {
+	flex: 0 0 auto;
+	min-block-size: 1.8rem;
+	padding: 0.22rem 0.55rem;
+	border-width: 0.0625rem;
+	border-style: solid;
+	border-radius: 0.32rem;
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1;
+}
+.doctor-draft-recovery__action:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid currentColor;
+	background: transparent;
+	color: inherit;
+}
+.doctor-draft-recovery__action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-draft-recovery__action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: rgba(var(--qlpk-color-white-rgb), 0.14);
+	outline: 0;
+}
+
+.doctor-workspace-stage {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	align-content: stretch;
+	align-items: stretch;
+	overflow: hidden;
+	container: receptionist-intake / inline-size;
+}
+
+.doctor-workspace-section {
+	grid-column: 1;
+	grid-row: 1;
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: auto;
+}
+
+.doctor-workspace-section[hidden] {
+	display: none;
+}
+
+.doctor-history-workspace {
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	max-block-size: 100%;
+	padding: 0;
+	background: transparent;
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: auto;
+}
+
+.doctor-patient-hero {
+	box-sizing: border-box;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	align-items: stretch;
+	column-gap: 0;
+	row-gap: 0;
+	block-size: var(--doctor-context-header-block-size);
+	min-block-size: var(--doctor-context-header-block-size);
+	padding: 0;
+	border: 0;
+	border-block-end: 0.0625rem solid var(--qlpk-workflow-context-header-border, rgba(var(--qlpk-color-gold-rgb), 0.28));
+	border-radius: 0;
+	background: var(--qlpk-workflow-context-header-bg, var(--qlpk-color-primary));
+	box-shadow: none;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	overflow: hidden;
+	grid-column: 1 / -1;
+	grid-row: 1;
+}
+
+.doctor-patient-hero__summary {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 1rem;
+	min-width: 0;
+	block-size: 100%;
+	min-block-size: 0;
+	padding: var(--qlpk-workflow-context-header-padding-block, 0.5rem) var(--qlpk-workflow-context-header-padding-inline, 0.75rem);
+	background: transparent;
+}

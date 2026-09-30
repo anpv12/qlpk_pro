@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { readCssSource } = require('./helpers/css-source');
 
 function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
@@ -181,7 +182,7 @@ test('loading and failure states span the nine receipt columns', async () => {
 test('receipt history uses a separate modal, not an inline expander', () => {
     const source = readMedicineManagementSource();
     const template = fs.readFileSync('app/templates/medicine-management.html', 'utf8');
-    const css = fs.readFileSync('app/static/css/pages/medicine-management.css', 'utf8');
+    const css = readCssSource('app/static/css/pages/medicine-management.css');
     for (const content of [source, template, css]) {
         assert.doesNotMatch(content, /mm-ledger-(?:expander|history)|medicine-transactions|toggleLedgerBatchHistory|loadLedgerBatchHistory|collapseLedgerHistoryRow|importLedgerOpenBatchRow/);
     }

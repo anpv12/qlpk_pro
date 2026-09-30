@@ -1,5 +1,24 @@
 # QLPK Refactor Progress
 
+## Dọn nợ kỹ thuật mục 1–6 — 30/09/2026
+
+1. Hàm Python dài/phức tạp: 56 → 0 (≤80 dòng code, McCabe ≤15), gate
+   `python_function_findings()` trong `scripts/check_code_health.py`. Đối chiếu
+   base/new: diff GET API, diff ghi trên 2 bản sao DB, chấm điểm khảo sát, kho/ledger đơn thuốc.
+2. CSS: 24 file >500 dòng tách theo chủ đề vào thư mục cùng tên; file gốc là
+   manifest `@import` giữ thứ tự cascade (template/JS không đổi đường dẫn).
+   Gate `oversized_stylesheets()` ≤500 dòng. Browser 29 trang: danh sách rule CSS
+   sau tách trùng khớp trước tách, 0 CSS 404/CSP. `!important` giữ ratchet 45 (thực 43).
+3. Đổi tên file tách `*_partN` / `part-N` / `*-N` sang tên chủ đề.
+4. Frontend: `QLPKHtml.escape` cho 147 chỗ nội suy HTML (stored/reflected XSS);
+   gỡ 7 window global không dùng, ratchet `MAX_WINDOW_GLOBALS = 226`.
+5. Bare `except` trong `medicine_batch.py`; bỏ trường giả `total_amount`/`service_count`
+   và endpoint giả `/api/payment-waiting/print`.
+6. Nâng 15 pin có lỗ hổng, thay `python-jose` bằng PyJWT; `pip-audit` sạch.
+   Máy dev cần `pip install -r requirements.txt`.
+- Ngoài phạm vi, chưa làm: lên lịch worker Google Calendar; import thừa (ruff F401)
+  và biến không dùng (F841); file JS/Python >500 dòng nhưng ≤600.
+
 ## Thống kê bốc thuốc theo thời gian — 27/09/2026
 
 - Giữ lưu đơn=cấp thuốc. `ledger_report.py` thêm `view=medicines`, nhóm theo

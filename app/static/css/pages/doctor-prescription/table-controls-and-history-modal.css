@@ -1,0 +1,441 @@
+.doctor-prescription-table__quantity-control--calculated {
+	border-color: var(--prescription-line);
+	background: var(--qlpk-doctor-primary-soft);
+}
+
+.doctor-prescription-table__quantity-control:focus-within {
+	border-color: var(--prescription-accent);
+	box-shadow: 0 0 0 0.12rem color-mix(in srgb, var(--prescription-accent) 12%, transparent);
+}
+
+.doctor-prescription-table__quantity-control input {
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	text-align: center;
+}
+
+.doctor-prescription-table__quantity-control .doctor-prescription-table__quantity-value {
+	flex: 1 1 auto;
+	inline-size: 0;
+}
+
+.doctor-prescription-table__quantity-control input[readonly] {
+	color: var(--prescription-accent-strong);
+	cursor: default;
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-table__quantity-control small {
+	padding-inline-end: 0.42rem;
+	color: var(--prescription-muted);
+	font-size: var(--qlpk-font-size-xs);
+	white-space: nowrap;
+}
+
+.doctor-prescription-table__quantity-control .doctor-prescription-table__quantity-unit-input {
+	flex: 0 1 3.8rem;
+	inline-size: 3.8rem;
+	width: auto;
+	padding-inline: 0.3rem;
+	border-block-end: 0;
+	border-inline-start: 0.0625rem solid var(--prescription-line);
+	color: var(--prescription-muted);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-semibold);
+	text-align: center;
+}
+
+.doctor-prescription-table__quantity-control .doctor-prescription-table__quantity-unit-input:focus {
+	border-block-end: 0;
+	background: color-mix(in srgb, var(--prescription-accent) 6%, var(--qlpk-doctor-surface));
+	box-shadow: none;
+}
+
+.doctor-prescription-table__total-cell {
+	white-space: nowrap;
+	text-align: center;
+}
+
+.doctor-prescription-table__total-cell strong {
+	color: var(--prescription-accent-strong);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-table__remove {
+	display: inline-grid;
+	place-items: center;
+	inline-size: 1.65rem;
+	block-size: 1.65rem;
+	padding: 0;
+	border-width: 0.0625rem;
+	border-style: solid;
+	border-radius: 0.45rem;
+}
+.doctor-prescription-table__remove:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid transparent;
+	background: transparent;
+	color: var(--doctor-danger);
+}
+.doctor-prescription-table__remove:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-prescription-table__remove:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: color-mix(in srgb, var(--doctor-danger) 35%, var(--qlpk-color-white));
+	background: color-mix(in srgb, var(--doctor-danger) 8%, var(--qlpk-doctor-surface));
+	outline: 0;
+}
+
+.doctor-prescription-editor__empty {
+	display: grid;
+	justify-items: center;
+	gap: 0.35rem;
+	padding: 2rem 1rem;
+	color: var(--doctor-muted);
+	font-size: var(--qlpk-font-size-sm);
+	text-align: center;
+}
+
+.doctor-prescription-editor__empty i {
+	display: grid;
+	place-items: center;
+	inline-size: 2.35rem;
+	block-size: 2.35rem;
+	margin-block-end: 0.15rem;
+	border-radius: 50%;
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-interactive);
+	font-size: var(--qlpk-font-size-lg);
+}
+
+.doctor-prescription-editor__empty strong {
+	color: var(--doctor-text);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-editor__empty span {
+	line-height: 1.35;
+}
+
+.doctor-prescription-editor__footer {
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 1rem;
+	min-width: 0;
+	padding: 0.45rem 0.8rem 0.5rem;
+	border-block-start: 0.0625rem solid var(--doctor-line);
+	color: var(--doctor-muted);
+	font-size: var(--qlpk-font-size-xs);
+}
+
+.doctor-prescription-editor__total {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.75rem;
+	white-space: nowrap;
+}
+
+.doctor-prescription-editor__total span {
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.doctor-prescription-editor__total strong {
+	color: var(--doctor-interactive-strong);
+	font-size: var(--qlpk-font-size-xl);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-history-modal-open {
+	overflow: hidden;
+}
+
+body[data-doctor-ui].qlpk-workspace-shell.doctor-prescription-history-modal-open {
+	overflow: hidden;
+}
+
+.doctor-prescription-history-modal:not([hidden]) {
+	position: fixed;
+	inset: 0;
+	z-index: var(--qlpk-z-toast);
+	display: grid;
+	place-items: center;
+	padding: clamp(0.65rem, 2vw, 1.5rem);
+}
+
+.doctor-prescription-history-modal__backdrop {
+	position: absolute;
+	inset: 0;
+	background: var(--qlpk-doctor-backdrop);
+}
+
+.doctor-prescription-history-modal__dialog {
+	position: relative;
+	z-index: var(--qlpk-z-base);
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
+	inline-size: min(94vw, 90rem);
+	block-size: min(88vh, 56rem);
+	min-block-size: min(28rem, calc(100vh - 1.3rem));
+	max-block-size: calc(100vh - 1.3rem);
+	min-width: 0;
+	overflow: hidden;
+	border: 0.0625rem solid var(--doctor-line-strong);
+	border-radius: 0.9rem;
+	background: var(--qlpk-doctor-surface);
+	box-shadow: var(--qlpk-doctor-shadow-modal);
+}
+
+.doctor-prescription-history-modal__header,
+.doctor-prescription-history-modal__footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: 0;
+}
+
+.doctor-prescription-history-modal__header {
+	padding: 0.9rem 1.1rem;
+	background: var(--doctor-section-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+.doctor-prescription-history-modal__title {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
+	min-width: 0;
+}
+
+.doctor-prescription-history-modal__icon {
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+	inline-size: 2.35rem;
+	block-size: 2.35rem;
+	border: 0.0625rem solid rgba(var(--qlpk-color-white-rgb), 0.54);
+	border-radius: 0.65rem;
+	background: rgba(var(--qlpk-color-white-rgb), 0.12);
+	color: var(--qlpk-color-white);
+	font-size: var(--qlpk-font-size-lg);
+}
+
+.doctor-prescription-history-modal__title h3 {
+	margin: 0;
+	color: var(--qlpk-color-white);
+	font-size: var(--qlpk-font-size-xl);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.15;
+}
+
+.doctor-prescription-history-modal__title p {
+	margin: 0.2rem 0 0;
+	color: var(--qlpk-color-on-dark);
+	font-size: var(--qlpk-font-size-sm);
+	line-height: 1.3;
+}
+
+.doctor-prescription-history-modal__close {
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+	inline-size: 2rem;
+	block-size: 2rem;
+	padding: 0;
+	border-width: 0.0625rem;
+	border-style: solid;
+	border-radius: 0.5rem;
+	cursor: pointer;
+}
+.doctor-prescription-history-modal__close:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid rgba(var(--qlpk-color-white-rgb), 0.6);
+	background: transparent;
+	color: var(--qlpk-color-white);
+}
+.doctor-prescription-history-modal__close:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-prescription-history-modal__close:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-color-white);
+	background: var(--qlpk-doctor-surface);
+	color: var(--qlpk-color-primary);
+	outline: 0;
+}
+
+.doctor-prescription-history-modal__body {
+	display: grid;
+	grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+	min-width: 0;
+	min-height: 0;
+	background: var(--qlpk-doctor-surface);
+}
+
+.doctor-prescription-history-modal__visits {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	min-width: 0;
+	min-height: 0;
+	border-inline-end: 0.0625rem solid var(--doctor-line);
+	background: var(--qlpk-doctor-primary-soft);
+}
+
+.doctor-prescription-history-modal__section-header {
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	gap: 0.6rem;
+	padding: 0.85rem 0.9rem 0.7rem;
+	border-block-end: 0.0625rem solid var(--doctor-line);
+	background: var(--qlpk-doctor-surface);
+}
+
+.doctor-prescription-history-modal__section-header h4 {
+	margin: 0;
+	color: var(--doctor-text);
+	font-size: var(--qlpk-font-size-base);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-history-modal__section-header p {
+	margin: 0.2rem 0 0;
+	color: var(--doctor-muted);
+	font-size: var(--qlpk-font-size-xs);
+	line-height: 1.3;
+}
+
+.doctor-prescription-history-modal__section-header > strong {
+	flex: 0 0 auto;
+	color: var(--qlpk-color-primary);
+	font-size: var(--qlpk-font-size-sm);
+	white-space: nowrap;
+}
+
+.doctor-prescription-history-modal__list {
+	display: grid;
+	align-content: start;
+	gap: 0.5rem;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 0.7rem;
+}
+
+.doctor-prescription-history-modal__visit {
+	display: grid;
+	gap: 0.35rem;
+	inline-size: 100%;
+	min-width: 0;
+	padding: 0.7rem;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.65rem;
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-text);
+	cursor: pointer;
+	font: inherit;
+	text-align: start;
+	transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.doctor-prescription-history-modal__visit:hover,
+.doctor-prescription-history-modal__visit:focus-visible,
+.doctor-prescription-history-modal__visit.is-selected {
+	border-color: var(--qlpk-color-primary);
+	background: var(--qlpk-doctor-surface);
+	box-shadow: inset 0.2rem 0 0 var(--qlpk-color-primary);
+	outline: 0;
+}
+
+.doctor-prescription-history-modal__visit-date,
+.doctor-prescription-history-modal__visit-doctor,
+.doctor-prescription-history-modal__visit-diagnosis {
+	display: flex;
+	align-items: start;
+	gap: 0.35rem;
+	min-width: 0;
+	line-height: 1.3;
+}
+
+.doctor-prescription-history-modal__visit-date {
+	color: var(--qlpk-color-primary);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-history-modal__visit-doctor,
+.doctor-prescription-history-modal__visit-diagnosis {
+	color: var(--doctor-text);
+	font-size: var(--qlpk-font-size-xs);
+}
+
+.doctor-prescription-history-modal__visit-date i,
+.doctor-prescription-history-modal__visit-doctor i,
+.doctor-prescription-history-modal__visit-diagnosis i {
+	flex: 0 0 auto;
+	color: var(--qlpk-color-primary);
+}
+
+.doctor-prescription-history-modal__visit-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+
+.doctor-prescription-history-modal__visit-badges strong {
+	padding: 0.16rem 0.4rem;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.35rem;
+	background: var(--qlpk-doctor-primary-soft);
+	color: var(--qlpk-color-primary);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.doctor-prescription-history-modal__visit-diagnosis {
+	overflow-wrap: anywhere;
+}
+
+.doctor-prescription-history-modal__detail {
+	min-width: 0;
+	min-height: 0;
+	overflow-y: auto;
+	padding: clamp(0.9rem, 1.5vw, 1.5rem);
+	background: var(--qlpk-doctor-surface);
+}
+
+.doctor-prescription-history-modal__detail-header {
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: 0;
+	padding-block-end: 0.85rem;
+	border-block-end: 0.0625rem solid var(--doctor-line);
+}
+
+.doctor-prescription-history-modal__detail-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	color: var(--qlpk-color-primary);
+	font-size: var(--qlpk-font-size-xs);
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.doctor-prescription-history-modal__detail-header h4 {
+	margin: 0.25rem 0 0;
+	color: var(--doctor-text);
+	font-size: var(--qlpk-font-size-lg);
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-prescription-history-modal__detail-header p {
+	display: flex;
+	align-items: start;
+	gap: 0.35rem;
+	margin: 0.25rem 0 0;
+	color: var(--doctor-text);
+	font-size: var(--qlpk-font-size-sm);
+	line-height: 1.35;
+}
+
+.doctor-prescription-history-modal__detail-header p i {
+	flex: 0 0 auto;
+	color: var(--qlpk-color-primary);
+}

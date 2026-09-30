@@ -4,8 +4,11 @@ from pathlib import Path
 import colorsys
 import math
 import re
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_source import css_split_files, read_source  # noqa: E402
 
 # Explicit opt-in protects the clinical, financial and public screens from
 # administrative presentation changes, including future shared-theme edits.
@@ -92,7 +95,8 @@ def strip_style_comments(source):
 def check_chocolate_source(css_root, source_root=None):
     errors = []
     token_path = css_root / 'shared/color-tokens.css'
-    tokens = strip_style_comments(token_path.read_text())
+    token_files = {token_path, *css_split_files(token_path)}
+    tokens = strip_style_comments(read_source(token_path))
     for name, expected in BRAND_DEFINITIONS.items():
         values = re.findall(rf'{re.escape(name)}\s*:\s*([^;{{}}]+);', tokens)
         if len(values) != 1 or re.sub(r'\s+', '', values[0]).lower() != re.sub(r'\s+', '', expected).lower():
@@ -102,7 +106,7 @@ def check_chocolate_source(css_root, source_root=None):
         if source_path.suffix not in {'.css', '.html', '.js', '.svg'} or not source_path.is_file():
             continue
         source = strip_style_comments(source_path.read_text())
-        if source_path == token_path:
+        if source_path in token_files:
             for name in BRAND_DEFINITIONS:
                 source = re.sub(rf'{re.escape(name)}\s*:\s*[^;{{}}]+;', '', source)
         else:
@@ -135,18 +139,18 @@ def main():
             errors.append(f'{page.name}: expected one brand theme include')
         if '/static/css/shared/color-tokens.css' in source:
             errors.append(f'{page.name}: duplicate token stylesheet outside shared include')
-    tokens = (ROOT / 'app/static/css/shared/color-tokens.css').read_text()
+    tokens = read_source(ROOT / 'app/static/css/shared/color-tokens.css')
     if '--qlpk-color-primary: var(--qlpk-brand-primary);' not in tokens:
         errors.append('Primary must resolve to the shared header-light brand source')
     if min(contrast_on_white('#4b2719'), contrast_on_white('#6d3d27')) < 4.5:
         errors.append('Primary must retain 4.5:1 contrast for white action text')
     for filename, prefix in [('admin-management-ui.css', 'admin-accent'),
                              ('icon-tokens.css', 'qlpk-icon-action-view')]:
-        source = (ROOT / 'app/static/css/shared' / filename).read_text()
+        source = read_source(ROOT / 'app/static/css/shared' / filename)
         if f'--{prefix}: var(--qlpk-color-primary);' not in source:
             errors.append(f'{filename}: brand alias must use shared primary')
     # State colors are deliberately separate from branding.
-    feedback = (ROOT / 'app/static/css/shared/feedback-tokens.css').read_text()
+    feedback = read_source(ROOT / 'app/static/css/shared/feedback-tokens.css')
     for name, color in [('success', '#198754'), ('warning', '#b45309'), ('error', '#dc2626')]:
         if not re.search(rf'--qlpk-feedback-{name}:\s*{color};', feedback):
             errors.append(f'Feedback {name} must retain its semantic color')
@@ -176,6 +180,14 @@ def check_primary_background_contract(css_root):
     return errors
 
 
+def stylesheet_owner(css_root, filename):
+    """Stylesheet path relative to css_root; a topic part reports the stylesheet that imports it."""
+    owner = filename.parent.with_suffix('.css')
+    if owner.is_file() and filename in css_split_files(owner):
+        filename = owner
+    return filename.relative_to(css_root).as_posix()
+
+
 def check_brand_surfaces(css_root):
     errors = []
     old_channels = {(75, 39, 25), (50, 24, 14), (90, 48, 31), (113, 78, 61),
@@ -184,7 +196,7 @@ def check_brand_surfaces(css_root):
     allowed_header_files = {'components/app-header.css', 'components/waiting-queue-card.css',
                             'pages/receptionist-new.css'}
     for filename in sorted(css_root.rglob('*.css')):
-        relative = filename.relative_to(css_root).as_posix()
+        relative = stylesheet_owner(css_root, filename)
         if relative == 'shared/color-tokens.css' or relative.startswith('print/'):
             continue
         source = strip_style_comments(filename.read_text())

@@ -1,0 +1,447 @@
+/* ══════════════════════════════════════════════
+   INLINE TIỀN SỬ BỆNH — Component styles (prefix: medical-history-)
+   Scope: .inline-tien-su > .medical-history-*
+   ══════════════════════════════════════════════ */
+.inline-tien-su { width: 100%; }
+
+.inline-tien-su--doctor-flat {
+  margin: 0;
+  container-name: medical-history-doctor-history;
+  container-type: inline-size;
+}
+
+.inline-tien-su--doctor-flat .medical-history-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  background: transparent;
+}
+
+.inline-tien-su--doctor-flat .medical-history-panel-body {
+  padding: 0;
+  display: block;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench {
+  align-items: start;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-areas:
+    "status status"
+    "nav main";
+  grid-template-columns: minmax(10.5rem, 13rem) minmax(0, 1fr);
+  min-width: 0;
+  width: 100%;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__text {
+  color: var(--qlpk-palette-blue-19);
+  display: grid;
+  font-size: var(--qlpk-font-size-base, 13px);
+  font-weight: var(--qlpk-font-weight-medium, 500);
+  gap: 0.28rem;
+  grid-area: status;
+  line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row {
+  --medical-history-summary-accent: var(--qlpk-palette-blue-46);
+  --medical-history-summary-bg: var(--qlpk-palette-blue-97-a);
+  --medical-history-summary-border: var(--qlpk-palette-blue-88-a);
+  --medical-history-summary-label: var(--qlpk-palette-blue-27);
+  --medical-history-summary-text: var(--qlpk-palette-blue-19);
+  align-items: start;
+  background: var(--medical-history-summary-bg);
+  border: 0.0625rem solid var(--medical-history-summary-border);
+  border-radius: 0.55rem;
+  color: var(--medical-history-summary-text);
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: minmax(5.8rem, 7.2rem) minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.36rem 0.55rem 0.36rem 0.72rem;
+  position: relative;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row::before {
+  background: var(--medical-history-summary-accent);
+  content: "";
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 0.22rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row-label {
+  color: var(--medical-history-summary-label);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row-text {
+  color: var(--medical-history-summary-text);
+  min-width: 0;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--personal {
+  --medical-history-summary-accent: var(--qlpk-palette-orange-40);
+  --medical-history-summary-bg: var(--qlpk-color-surface-muted);
+  --medical-history-summary-border: var(--qlpk-palette-orange-83);
+  --medical-history-summary-label: var(--qlpk-palette-orange-28);
+  --medical-history-summary-text: var(--qlpk-palette-brown-16);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--family {
+  --medical-history-summary-accent: var(--qlpk-color-primary);
+  --medical-history-summary-bg: var(--qlpk-palette-blue-97);
+  --medical-history-summary-border: var(--qlpk-palette-blue-89);
+  --medical-history-summary-label: var(--qlpk-palette-blue-34);
+  --medical-history-summary-text: var(--qlpk-palette-blue-27-a);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--allergy {
+  --medical-history-summary-accent: var(--qlpk-palette-red-50);
+  --medical-history-summary-bg: var(--qlpk-feedback-critical-bg);
+  --medical-history-summary-border: var(--qlpk-palette-red-90);
+  --medical-history-summary-label: var(--qlpk-palette-red-35);
+  --medical-history-summary-text: var(--qlpk-palette-red-17);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--substance {
+  --medical-history-summary-accent: var(--qlpk-palette-violet-58);
+  --medical-history-summary-bg: var(--qlpk-palette-violet-98);
+  --medical-history-summary-border: var(--qlpk-palette-violet-92);
+  --medical-history-summary-label: var(--qlpk-palette-violet-42);
+  --medical-history-summary-text: var(--qlpk-palette-violet-23);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--risk {
+  --medical-history-summary-accent: var(--qlpk-feedback-error);
+  --medical-history-summary-bg: var(--qlpk-feedback-error-bg);
+  --medical-history-summary-border: var(--qlpk-palette-red-89);
+  --medical-history-summary-label: var(--qlpk-feedback-critical);
+  --medical-history-summary-text: var(--qlpk-palette-red-15);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--safety {
+  --medical-history-summary-accent: var(--qlpk-color-primary);
+  --medical-history-summary-bg: var(--qlpk-palette-green-96-b);
+  --medical-history-summary-border: var(--qlpk-color-border);
+  --medical-history-summary-label: var(--qlpk-color-primary-strong);
+  --medical-history-summary-text: var(--qlpk-palette-teal-10);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-summary__row--more {
+  --medical-history-summary-accent: var(--qlpk-color-text-muted);
+  --medical-history-summary-bg: var(--qlpk-color-page-bg);
+  --medical-history-summary-border: var(--qlpk-palette-blue-90);
+  --medical-history-summary-label: var(--qlpk-color-text-muted);
+  --medical-history-summary-text: var(--qlpk-color-text-muted);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav {
+  background: var(--qlpk-color-page-bg);
+  border: 0.0625rem solid var(--qlpk-palette-blue-91-a);
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  grid-area: nav;
+  min-width: 0;
+  padding: 0.45rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item {
+  align-items: center;
+  background: transparent;
+  border: 0.0625rem solid transparent;
+  border-radius: 0.55rem;
+  color: var(--qlpk-palette-blue-20);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  font-size: var(--qlpk-font-size-base, 13px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  gap: 0.5rem;
+  justify-content: space-between;
+  line-height: 1.25;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item:hover,
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item:focus-visible {
+  background: var(--qlpk-palette-green-93);
+  border-color: var(--qlpk-palette-teal-79);
+  color: var(--qlpk-color-primary);
+  outline: 0;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item:focus-visible {
+  box-shadow: 0 0 0 0.15rem var(--qlpk-alpha-teal-21-18);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
+  box-shadow: 0 0.45rem 0.9rem var(--qlpk-alpha-teal-21-16);
+  color: var(--qlpk-color-white);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item strong {
+  align-items: center;
+  background: var(--qlpk-color-primary-soft);
+  border-radius: 999px;
+  color: var(--qlpk-color-primary);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  justify-content: center;
+  min-width: 1.35rem;
+  padding: 0.08rem 0.35rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item.is-active strong {
+  background: var(--qlpk-color-white);
+  color: var(--qlpk-color-primary);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-nav__item:not(.is-active) strong.has-data {
+  background: var(--qlpk-color-primary-soft);
+  color: var(--qlpk-color-primary);
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.inline-tien-su--doctor-flat .medical-history-workbench-pane[hidden] {
+  display: none;
+}
+
+.inline-tien-su--doctor-flat .medical-history-section {
+  /* The ICD control owns its own interactive frame. Keep this section flat
+   * so the history form does not render a card around a bordered control. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  overflow: visible;
+}
+
+.inline-tien-su--doctor-flat .medical-history-section:not(:last-child) {
+  border-bottom: 0.0625rem solid var(--qlpk-palette-blue-91-a);
+}
+
+.inline-tien-su--doctor-flat .medical-history-section-head {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-bottom: 0.0625rem solid var(--qlpk-palette-teal-17);
+  color: var(--qlpk-color-white);
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  text-transform: none;
+}
+
+.inline-tien-su--doctor-flat .medical-history-section-body {
+  gap: 0.55rem;
+  padding: 0.7rem;
+}
+
+.inline-tien-su--doctor-flat.is-showing-advanced-history .medical-history-section--personal > .medical-history-section-body > .icd-autocomplete,
+.inline-tien-su--doctor-flat.is-showing-advanced-history .medical-history-section--personal > .medical-history-section-body > .medical-history-micro-row,
+.inline-tien-su--doctor-flat.is-showing-advanced-history .medical-history-section--personal > .medical-history-section-body > .medical-history-tabs,
+.inline-tien-su--doctor-flat.is-showing-advanced-history .medical-history-section--personal > .medical-history-section-body > .medical-history-suggestion-box {
+  display: none;
+}
+
+@container medical-history-doctor-history (max-width: 52rem) {
+  .inline-tien-su--doctor-flat .medical-history-workbench {
+    grid-template-areas:
+      "status"
+      "nav"
+      "main";
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inline-tien-su--doctor-flat .medical-history-workbench-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .inline-tien-su--doctor-flat .medical-history-workbench-nav__item {
+    flex: 0 0 auto;
+    width: max-content;
+  }
+}
+
+@container medical-history-doctor-history (max-width: 36rem) {
+  .inline-tien-su--doctor-flat .medical-history-workbench-summary__row {
+    gap: 0.12rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inline-tien-su--doctor-flat .medical-history-workbench-summary__row-label {
+    white-space: normal;
+  }
+}
+
+.medical-history-allergy-row--filtered {
+  display: none;
+}
+
+.medical-history-hidden {
+  display: none;
+}
+
+.medical-history-tab-warn-icon.medical-history-hidden,
+.safety-plan-file-status.medical-history-hidden {
+  display: none;
+}
+
+.medical-history-nowrap {
+  white-space: nowrap;
+}
+
+.medical-history-micro-row {
+  margin-top: 4px;
+}
+
+.medical-history-thoi-quen-cols {
+  background: var(--qlpk-color-brown-soft);
+  display: grid;
+  gap: 1px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  width: 100%;
+}
+
+.medical-history-thoi-quen-col {
+  background: var(--qlpk-color-white);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.medical-history-col-check {
+  width: 4%;
+}
+
+.medical-history-col-symbol {
+  width: 28%;
+}
+
+.medical-history-col-note {
+  width: 18%;
+}
+
+.medical-history-col-suicide-code {
+  width: 8%;
+}
+
+.medical-history-col-suicide-content {
+  width: 30%;
+}
+
+.medical-history-col-risk-tight {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.medical-history-allergy-col-name {
+  width: 32%;
+}
+
+.medical-history-allergy-col-certainty {
+  width: 13%;
+}
+
+.medical-history-allergy-col-manifest {
+  width: 34%;
+}
+
+.medical-history-allergy-col-action {
+  width: 8%;
+}
+
+.medical-history-panel {
+  background: var(--qlpk-color-white);
+  border: 1px solid var(--qlpk-palette-gray-91);
+  border-radius: 12px;
+  box-shadow: 0 8px 22px var(--qlpk-alpha-blue-11-04);
+  overflow: hidden;
+}
+
+.medical-history-panel-header {
+  background: var(--qlpk-color-white);
+  color: var(--qlpk-color-text);
+  padding: 12px 16px;
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--qlpk-palette-gray-91);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.medical-history-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.medical-history-panel-toggle {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--qlpk-palette-orange-92);
+  color: var(--qlpk-palette-orange-29);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+  flex-shrink: 0;
+}
+
+.medical-history-panel-toggle:hover {
+  background: var(--qlpk-palette-orange-87);
+}
+
+.medical-history-panel-toggle:focus-visible {
+  outline: 2px solid var(--qlpk-alpha-orange-29-35);
+  outline-offset: 2px;
+}
+
+.medical-history-panel-toggle i {
+  font-size: var(--qlpk-font-size-lg, 16px);
+  line-height: 1;
+  transition: transform .18s ease;
+}
+
+.medical-history-panel.is-collapsed .medical-history-panel-toggle i {
+  transform: rotate(-90deg);
+}

@@ -15,6 +15,24 @@ def test_no_source_file_exceeds_line_limit() -> None:
     assert health.oversized() == []
 
 
+def test_no_stylesheet_exceeds_line_limit() -> None:
+    assert health.stylesheet_files()
+    assert health.oversized_stylesheets() == []
+
+
+def test_split_stylesheet_entries_import_existing_topic_parts_in_order() -> None:
+    import re
+    part_import = re.compile(r"^@import url\('\./([\w-]+)/([\w-]+\.css)'\);$", re.M)
+    for folder in (path for path in health.CSS_ROOT.rglob("*") if path.is_dir() and path.with_suffix(".css").is_file()):
+        entry = folder.with_suffix(".css")
+        imports = [folder / name for stem, name in part_import.findall(entry.read_text(encoding="utf-8")) if stem == folder.name]
+        if not imports:
+            continue
+        assert all(path.is_file() for path in imports), entry
+        assert sorted(imports) == sorted(folder.glob("*.css")), f"{entry}: every topic part is imported exactly once"
+        assert len(set(imports)) == len(imports), entry
+
+
 def test_python_functions_stay_short_and_simple() -> None:
     assert health.python_function_findings() == []
 

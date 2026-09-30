@@ -1,0 +1,429 @@
+.appointment-sync-date-icon {
+	margin-inline-end: 0.25rem;
+}
+
+.appointment-sync-date-count {
+	margin-inline-start: 0.5rem;
+}
+
+.modal.qlpk-sync-calendar-modal .sync-status-cell {
+	text-align: center;
+}
+
+.modal.qlpk-sync-calendar-modal .verify-icons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.25rem;
+}
+
+.modal.qlpk-sync-calendar-modal .table tbody td .btn,
+.modal.qlpk-sync-calendar-modal .table tbody td .action-btn {
+	padding: 0.25rem 0.625rem;
+	font-size: var(--appointment-font-size);
+	white-space: nowrap;
+}
+
+.modal.qlpk-sync-calendar-modal .modal-footer {
+	flex: 0 0 auto;
+	gap: 0.5rem;
+	padding: 0.5rem 0.875rem;
+	border-top: var(--appointment-border-width) solid var(--appointment-color-border);
+	background: var(--appointment-color-surface);
+}
+
+.appointment-sync-empty-cell {
+	padding: 1.5rem 0.75rem;
+	color: var(--appointment-color-muted);
+	text-align: center;
+}
+
+.appointment-sync-loading-cell,
+.appointment-sync-error-cell {
+	padding: 1.5rem 0.75rem;
+	text-align: center;
+}
+
+.appointment-sync-error-cell {
+	color: var(--appointment-color-error);
+}
+
+.appointment-sync-empty-icon {
+	display: block;
+	margin-bottom: 0.5rem;
+}
+
+.appointment-sync-spinner {
+	color: var(--appointment-color-primary);
+}
+
+.appointment-sync-loading-text {
+	margin-top: 0.5rem;
+	color: var(--appointment-color-text);
+	font-weight: var(--appointment-font-weight-medium);
+}
+
+.appointment-sync-table-wrap {
+	flex: 1;
+	overflow-y: auto;
+}
+
+.appointment-col-select {
+	width: 3%;
+}
+
+.appointment-col-time {
+	width: 7%;
+}
+
+.appointment-col-duration {
+	width: 8%;
+}
+
+.appointment-col-doctor {
+	width: 18%;
+}
+
+.appointment-col-patient {
+	width: 17%;
+}
+
+.appointment-col-google-status {
+	width: 18%;
+	white-space: nowrap;
+}
+
+.appointment-col-action {
+	width: 11%;
+}
+
+/* Custom tooltip styles for doctor avatars */
+.tooltip {
+	font-size: var(--appointment-font-size);
+}
+
+.tooltip .tooltip-inner {
+	background-color: var(--appointment-color-tooltip-bg);
+	color: var(--appointment-color-white);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-medium);
+	padding: var(--appointment-space-xl) var(--appointment-space-3xl);
+	border-radius: var(--appointment-space-lg);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-3xl) rgba(var(--qlpk-color-black-rgb), 0.15);
+	max-width: 15.625rem;
+	text-align: center;
+	line-height: 1.4;
+}
+
+.tooltip .tooltip-arrow {
+	border-bottom-color: var(--appointment-color-tooltip-bg);
+}
+
+.tooltip.show {
+	opacity: 1;
+}
+
+/* Conflict popup styles */
+.conflict-popup-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(var(--qlpk-color-black-rgb), 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: var(--appointment-z-top);
+}
+
+.conflict-popup {
+	background: var(--appointment-color-white);
+	border-radius: var(--appointment-space-xl);
+	box-shadow: 0 var(--appointment-space-sm) var(--appointment-space-6xl) rgba(var(--qlpk-color-black-rgb), 0.15);
+	max-width: 25rem;
+	width: 90%;
+	animation: popupSlideIn 0.3s ease-out;
+}
+
+.conflict-popup--patient-duplicate {
+	max-width: 43.75rem;
+}
+
+.conflict-popup-content {
+	padding: var(--appointment-space-md);
+	text-align: center;
+}
+
+.conflict-popup-icon {
+	font-size: var(--appointment-font-size);
+	color: var(--appointment-color-error);
+}
+
+.conflict-popup-message {
+	font-size: var(--appointment-font-size);
+	color: var(--appointment-color-text);
+	margin-bottom: var(--appointment-space-2xl);
+	line-height: 1.4;
+	font-weight: var(--appointment-font-weight-medium);
+}
+
+.conflict-popup-buttons {
+	display: flex;
+	justify-content: center;
+}
+
+.conflict-popup-buttons .btn {
+	min-width: 6.25rem;
+	padding: var(--appointment-space-2xl) var(--appointment-space-6xl);
+	border-radius: var(--appointment-space-lg);
+	font-weight: var(--appointment-font-weight-medium);
+}
+
+.patient-duplicate-summary {
+	display: flex;
+	align-items: center;
+	gap: var(--appointment-space-4xl);
+	margin-bottom: var(--appointment-space-6xl);
+}
+
+.patient-duplicate-summary-icon {
+	color: var(--appointment-color-amber);
+	flex-shrink: 0;
+}
+
+.patient-duplicate-summary-icon i {
+	font-size: var(--appointment-font-size);
+}
+
+.patient-duplicate-summary-message {
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-semibold);
+	flex: 1;
+}
+
+.patient-duplicate-details {
+	text-align: left;
+	font-size: var(--appointment-font-size);
+}
+
+.patient-duplicate-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: var(--appointment-space-2xl);
+}
+
+.patient-duplicate-table__header-row {
+	background-color: var(--appointment-color-surface-muted);
+}
+
+.patient-duplicate-table__header {
+	padding: var(--appointment-space-2xl);
+	border: var(--appointment-border-width) solid var(--appointment-color-border);
+	text-align: left;
+	width: 50%;
+}
+
+.patient-duplicate-table__cell {
+	padding: var(--appointment-space-xl);
+	border: var(--appointment-border-width) solid var(--appointment-color-border);
+}
+
+.patient-duplicate-table__value--changed {
+	color: var(--appointment-color-error);
+	font-weight: var(--appointment-font-weight-bold);
+}
+
+.patient-duplicate-appointments {
+	margin-top: var(--appointment-space-4xl);
+	padding: var(--appointment-space-2xl);
+	background-color: var(--appointment-color-primary-subtle);
+	border-radius: var(--appointment-space-md);
+}
+
+.patient-duplicate-appointments__count {
+	color: var(--appointment-color-primary-strong);
+}
+
+.patient-duplicate-appointments__list {
+	margin-top: var(--appointment-space-2xl);
+	max-height: 12.5rem;
+	overflow-y: auto;
+}
+
+.patient-duplicate-appointment {
+	font-size: var(--appointment-font-size);
+	margin-top: var(--appointment-space-md);
+	padding: var(--appointment-space-md);
+	border-left: var(--appointment-space-xs) solid var(--appointment-color-primary);
+}
+
+.patient-duplicate-appointment__status {
+	color: var(--appointment-color-muted);
+}
+
+.patient-duplicate-note {
+	margin-top: var(--appointment-space-4xl);
+	padding: var(--appointment-space-2xl);
+	background-color: var(--appointment-color-warning-soft);
+	border-radius: var(--appointment-space-md);
+	font-size: var(--appointment-font-size);
+	color: var(--appointment-color-warning-text);
+}
+
+.patient-duplicate-buttons {
+	margin-top: var(--appointment-space-6xl);
+}
+
+@keyframes popupSlideIn {
+	from {
+		opacity: 0;
+		transform: scale(0.8) translateY(-1.25rem);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.breadcrumb {
+	background: none;
+	padding: 0;
+	margin-bottom: 0;
+	font-size: var(--appointment-font-size);
+}
+
+.breadcrumb-item+.breadcrumb-item::before {
+	content: '>';
+	color: var(--appointment-color-primary);
+}
+
+/* Calendar container styles */
+.calendar-container {
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: var(--appointment-color-white);
+}
+
+.appointment-fullscreen .fc-timegrid-slot {
+	height: 2.75rem;
+}
+
+/* === WEEK VIEW — match reexam-calendar style === */
+
+/* Day header: tên ngày nhỏ + số ngày to bold */
+.appointment-fullscreen .fc-timegrid .fc-col-header-cell {
+	padding: var(--appointment-space-sm) var(--appointment-space-2xs) var(--appointment-space-lg);
+	border-bottom: var(--appointment-border-width) solid var(--appointment-calendar-border);
+	background: var(--appointment-color-white);
+}
+
+.appointment-fullscreen .fc-timegrid .fc-col-header-cell-cushion {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--appointment-border-width);
+	text-decoration: none;
+	color: var(--appointment-color-neutral);
+	font-weight: var(--appointment-font-weight-semibold);
+	font-size: var(--appointment-font-size-compact);
+}
+
+/* Today column header highlight */
+.appointment-fullscreen .fc-timegrid .fc-day-today .fc-col-header-cell-cushion {
+	color: var(--appointment-calendar-accent);
+}
+
+.appointment-fullscreen .fc-timegrid .fc-col-header-cell.fc-day-today {
+	background: var(--appointment-calendar-accent-soft);
+}
+
+/* Time labels */
+.appointment-fullscreen .fc-timegrid-slot-label-cushion {
+	font-size: var(--appointment-font-size-compact);
+	color: var(--appointment-color-muted-light);
+	font-weight: var(--appointment-font-weight-regular);
+}
+
+.appointment-fullscreen .fc-timegrid-axis {
+	width: 3.375rem;
+}
+
+/* Cell hover effect */
+.appointment-fullscreen .fc-timegrid-col:hover {
+	background: var(--appointment-calendar-accent-subtle);
+}
+
+/* FullCalendar event content styles */
+
+/* FullCalendar buttons */
+
+/* Nút "Hôm nay" */
+
+/* Nút điều hướng */
+
+/* Title hiển thị phạm vi ngày */
+
+/* Đảm bảo center section nằm cùng hàng */
+
+/* Nút view mode (Ngày, Tuần, Tháng) */
+
+/* Nút view mode đang active */
+
+/* Header cột trong chế độ tháng - hiện thứ trong tuần */
+
+/* Ẩn header cột trong chế độ ngày */
+
+/* Chỉ hiển thị header cột trong chế độ tuần */
+.appointment-fullscreen .fc-timeGridWeek-view .fc-col-header-cell {
+	display: table-cell;
+}
+
+/* Modal styles */
+.modal.qlpk-edit-appointment-modal {
+	--appointment-modal-body-padding: 0 1rem 1rem;
+}
+
+.modal.qlpk-edit-appointment-modal .modal-body {
+	max-height: 70vh;
+	overflow-y: auto;
+	padding: var(--appointment-modal-body-padding);
+}
+
+.modal.qlpk-edit-appointment-modal .form-control-sm:not([data-icd-autocomplete-input]),
+.modal.qlpk-edit-appointment-modal .form-select-sm {
+	padding: 0.25rem 0.5rem;
+	font-size: var(--appointment-font-size);
+}
+
+/* Responsive */
+@media (max-width: 48rem) {
+	.sidebar {
+		transform: translateX(-100%);
+		width: 12.5rem;
+	}
+
+	.sidebar.show {
+		transform: translateX(0);
+	}
+
+	.calendar-container {
+		min-height: 0;
+	}
+
+	.appointment-fullscreen .fc {
+		height: 100%;
+	}
+
+}
+
+/* Status Flag styles */
+.status-flag-dropdown .btn {
+	font-weight: var(--appointment-font-weight-semibold);
+	min-width: 8.75rem;
+	text-align: left;
+}

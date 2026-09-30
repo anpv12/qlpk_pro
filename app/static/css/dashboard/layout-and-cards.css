@@ -1,0 +1,355 @@
+/* ===== Dashboard V2 ===== */
+
+.dashboard-page .main-content {
+	padding: 0 12px;
+}
+
+.dashboard-hidden {
+	display: none;
+}
+
+.dashboard-date-label {
+	font-size: var(--qlpk-font-size-sm, 12px);
+	color: var(--qlpk-color-text-muted);
+	white-space: nowrap;
+}
+
+.dashboard-chart-fill {
+	width: 100%;
+	height: 100%;
+}
+
+.dashboard-export-btn {
+	border: none;
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	line-height: 1.4;
+}
+.dashboard-export-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+/* Flatpickr size override for dashboard */
+.flatpickr-calendar {
+	font-size: var(--qlpk-font-size-sm, 12px);
+	width: 240px;
+}
+
+.flatpickr-months .flatpickr-month {
+	height: 32px;
+}
+
+.flatpickr-current-month {
+	font-size: var(--qlpk-font-size-base, 13px);
+	padding-top: 6px;
+}
+
+.flatpickr-current-month select {
+	font-size: var(--qlpk-font-size-sm, 12px) !important;
+}
+
+.flatpickr-weekdays {
+	height: 26px;
+}
+
+.flatpickr-weekday {
+	font-size: var(--qlpk-font-size-xs, 11px) !important;
+}
+
+span.flatpickr-day,
+.flatpickr-day {
+	font-size: var(--qlpk-font-size-xs, 11px);
+	height: 28px;
+	line-height: 28px;
+	max-width: 28px;
+}
+
+.flatpickr-days .dayContainer {
+	min-width: 220px;
+	max-width: 220px;
+	width: 220px;
+}
+
+/* Page Title */
+.dashboard-page-title {
+	font-size: var(--qlpk-font-size-xl, 18px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--qlpk-color-primary);
+	padding: 14px 0 12px 0;
+	letter-spacing: 0.5px;
+	position: relative;
+	display: inline-block;
+}
+
+.dashboard-page-title::after {
+	content: '';
+	position: absolute;
+	bottom: 6px;
+	left: 0;
+	width: 40px;
+	height: 3px;
+	background: var(--qlpk-workflow-context-header-bg);
+	border-radius: 2px;
+}
+
+/* Grid Layout: Row 1 = 3 cols, Row 2 = full width */
+.dashboard-grid-v2 {
+	display: grid;
+	grid-template-columns: 2fr 1fr 2fr;
+	grid-template-rows: minmax(260px, 34vh) minmax(320px, 1fr) minmax(360px, auto);
+	gap: 14px;
+	min-height: calc(100vh - 100px);
+	overflow: visible;
+}
+
+/* Doanh thu — same width as ICD */
+.revenue-card-full {
+	grid-column: 1 / 3;
+}
+
+/* ICD chart — same span */
+.icd-chart-card {
+	grid-column: 1 / 3;
+}
+
+.referral-source-card {
+	grid-column: 1 / 4;
+	min-height: 360px;
+}
+
+/* Card */
+.dashboard-card {
+	background: var(--qlpk-color-white);
+	border: 1px solid var(--qlpk-palette-blue-93);
+	border-radius: 12px;
+	padding: 16px 18px;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 1px 3px rgba(var(--qlpk-color-black-rgb), 0.04), 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.03);
+	transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.dashboard-card:hover {
+	box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.06), 0 8px 24px rgba(var(--qlpk-color-black-rgb), 0.06);
+	transform: translateY(-1px);
+}
+
+.card-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--qlpk-color-brown-soft);
+}
+
+.card-title {
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--qlpk-color-text);
+	letter-spacing: 0.2px;
+}
+
+.card-subtitle {
+	font-size: var(--qlpk-font-size-sm, 12px);
+	color: var(--qlpk-color-text-muted);
+}
+
+/* Revenue Controls */
+.revenue-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.revenue-controls.dashboard-controls-tight {
+	gap: 6px;
+	align-items: center;
+}
+
+.year-input {
+	width: 80px;
+	padding: 4px 8px;
+	border: 1px solid var(--qlpk-palette-gray-84);
+	border-radius: 6px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	text-align: center;
+	outline: none;
+}
+
+.year-input.dashboard-date-input {
+	display: block;
+	width: 92px;
+	cursor: pointer;
+}
+
+.year-input:focus {
+	border-color: var(--qlpk-color-primary);
+}
+
+.chart-wrapper {
+	flex: 1;
+	min-height: 0;
+	position: relative;
+}
+
+/* ===== Dashboard Detail Modals ===== */
+.dashboard-modal-top {
+	z-index: 1060;
+}
+
+.dashboard-modal-content {
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.dashboard-modal-header-green {
+	background: var(--qlpk-workflow-context-header-bg);
+}
+
+.dashboard-detail-table-sm {
+	font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.dashboard-detail-table-head-green {
+	background: var(--qlpk-palette-green-97-a);
+	border-bottom: 2px solid var(--qlpk-palette-green-67);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.dashboard-row-alt {
+	background: var(--qlpk-color-page-bg);
+}
+
+.dashboard-row-green-alt {
+	background: var(--qlpk-palette-green-97-b);
+}
+
+.dashboard-row-psych {
+	background: var(--qlpk-alpha-rose-52-06);
+}
+
+.dashboard-cell-muted {
+	color: var(--qlpk-color-text-muted);
+}
+
+.dashboard-cell-accent {
+	color: var(--qlpk-color-primary);
+}
+
+.dashboard-cell-psych {
+	color: var(--qlpk-palette-rose-52);
+}
+
+.dashboard-cell-semibold {
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.dashboard-cell-accent-marker {
+	border-left: 3px solid var(--qlpk-color-primary);
+}
+
+.dashboard-cell-psych-marker {
+	border-left: 3px solid var(--qlpk-palette-rose-52);
+}
+
+.dashboard-status-pill--done {
+	--qlpk-status-color: var(--qlpk-feedback-success);
+}
+
+.dashboard-status-pill--active {
+	--qlpk-status-color: var(--qlpk-feedback-info);
+}
+
+.dashboard-status-pill--confirmed {
+	--qlpk-status-color: var(--qlpk-feedback-success);
+}
+
+.dashboard-status-pill--waiting {
+	--qlpk-status-color: var(--qlpk-feedback-warning);
+}
+
+.dashboard-status-pill--muted {
+	--qlpk-status-color: var(--qlpk-feedback-neutral);
+}
+
+.dashboard-tooltip-muted {
+	color: var(--qlpk-color-text-muted);
+	font-size: var(--qlpk-font-size-xs, 11px);
+}
+
+.dashboard-modal-scroll {
+	max-height: 460px;
+	overflow: auto;
+}
+
+.dashboard-modal-close-btn {
+	border-radius: 8px;
+}
+
+.dashboard-nowrap {
+	white-space: nowrap;
+}
+
+.dashboard-col-time {
+	width: 52px;
+}
+
+.dashboard-col-phone {
+	width: 120px;
+}
+
+.dashboard-col-status {
+	width: 110px;
+}
+
+.dashboard-col-index {
+	width: 35px;
+}
+
+.dashboard-col-date {
+	width: 85px;
+}
+
+.dashboard-col-hour {
+	width: 55px;
+}
+
+.dashboard-col-6 {
+	width: 6%;
+}
+
+.dashboard-col-7 {
+	width: 7%;
+}
+
+.dashboard-col-11 {
+	width: 11%;
+}
+
+.dashboard-col-12 {
+	width: 12%;
+}
+
+.dashboard-col-17 {
+	width: 17%;
+}
+
+.dashboard-col-18 {
+	width: 18%;
+}
+
+.dashboard-col-29 {
+	width: 29%;
+}

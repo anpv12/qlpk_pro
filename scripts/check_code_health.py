@@ -7,6 +7,8 @@
   longer than the max-lines-per-function limit (80).
 - Every app Python function stays at or under MAX_FUNCTION_LINES code lines and has
   McCabe complexity (same counting as ruff C901) at or under MAX_PY_COMPLEXITY.
+- Every app stylesheet (vendor excluded) stays at or under MAX_CSS_LINES; large sheets are split by
+  topic into <stem>/ and the entry keeps the @import order (the cascade order).
 - The number of distinct window.X globals assigned by page scripts never exceeds MAX_WINDOW_GLOBALS.
   Skipped with a notice when ESLint is unavailable.
 """
@@ -31,6 +33,8 @@ MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 15
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
 MAX_WINDOW_GLOBALS = 226
+CSS_ROOT = ROOT / "app" / "static" / "css"
+MAX_CSS_LINES = 500
 
 
 def source_files() -> list[Path]:
@@ -45,6 +49,19 @@ def oversized() -> list[str]:
         count = path.read_text(encoding="utf-8", errors="ignore").count("\n")
         if count > MAX_LINES:
             out.append(f"{path.relative_to(ROOT)}: {count} dòng (> {MAX_LINES})")
+    return out
+
+
+def stylesheet_files() -> list[Path]:
+    return sorted(p for p in CSS_ROOT.rglob("*.css") if "vendor" not in p.parts and ".min." not in p.name)
+
+
+def oversized_stylesheets() -> list[str]:
+    out = []
+    for path in stylesheet_files():
+        count = path.read_text(encoding="utf-8", errors="ignore").count("\n")
+        if count > MAX_CSS_LINES:
+            out.append(f"{path.relative_to(ROOT)}: {count} dòng (> {MAX_CSS_LINES}); tách theo chủ đề vào thư mục cùng tên")
     return out
 
 
@@ -153,7 +170,7 @@ def eslint_findings() -> list[str] | None:
 
 
 def main() -> int:
-    failures = oversized() + python_function_findings() + window_global_findings()
+    failures = oversized() + oversized_stylesheets() + python_function_findings() + window_global_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")
@@ -161,7 +178,7 @@ def main() -> int:
         failures += lint
     for line in failures:
         print("- " + line)
-    print(f"[{'FAIL' if failures else 'OK'}] code_health: files={len(source_files())} findings={len(failures)}")
+    print(f"[{'FAIL' if failures else 'OK'}] code_health: files={len(source_files())} stylesheets={len(stylesheet_files())} findings={len(failures)}")
     return 1 if failures else 0
 
 

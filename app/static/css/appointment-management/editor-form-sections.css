@@ -1,0 +1,243 @@
+.appointment-editor-summary-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--appointment-editor-summary-icon-size);
+	block-size: var(--appointment-editor-summary-icon-size);
+	border-radius: 999rem;
+}
+
+.appointment-editor-summary-icon--schedule,
+.appointment-editor-summary-icon--time {
+	background: var(--appointment-color-primary-soft);
+	color: var(--appointment-color-primary);
+}
+
+.appointment-editor-summary-icon--doctor {
+	background: var(--appointment-editor-clinical-bg);
+	color: var(--appointment-editor-clinical-text);
+}
+
+.appointment-editor-summary-icon--category {
+	background: var(--appointment-editor-doctor-bg);
+	color: var(--appointment-editor-doctor-text);
+}
+
+.appointment-editor-summary-icon--status {
+	background: var(--appointment-color-info-soft);
+	color: var(--appointment-color-info);
+}
+
+.appointment-editor-summary-item span:not(.appointment-editor-summary-icon) {
+	display: block;
+	margin-bottom: 0.12rem;
+	color: var(--appointment-color-ui-muted);
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-medium);
+	line-height: 1.25;
+}
+
+.appointment-editor-summary-item strong:not(.qlpk-status) {
+	display: block;
+	min-inline-size: 0;
+	color: var(--appointment-color-text-strong);
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-bold);
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.appointment-editor-summary-item strong.appointment-status-chip {
+	inline-size: fit-content;
+}
+
+.appointment-editor-reminder {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 0.55rem;
+	margin: auto 0.95rem 0.9rem;
+	padding: 0.62rem;
+	border: var(--appointment-border-width) solid var(--appointment-color-editor-reminder-border);
+	border-radius: 0.625rem;
+	background: linear-gradient(180deg, var(--appointment-color-success-soft) 0%, var(--appointment-color-editor-reminder-bg-end) 100%);
+	color: var(--appointment-color-primary);
+}
+
+.appointment-editor-reminder i {
+	font-size: var(--qlpk-font-size-lg, var(--appointment-font-size));
+	line-height: 1;
+}
+
+.appointment-editor-reminder strong,
+.appointment-editor-reminder span {
+	display: block;
+	font-size: var(--appointment-font-size-compact);
+	line-height: 1.35;
+}
+
+.appointment-editor-reminder strong {
+	font-weight: var(--appointment-font-weight-bold);
+}
+
+.appointment-editor-reminder span {
+	margin-top: 0.25rem;
+	color: var(--appointment-color-ui-muted);
+	font-weight: var(--appointment-font-weight-medium);
+}
+
+.appointment-editor-form-grid {
+	min-inline-size: 0;
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-grid-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row {
+	--bs-gutter-x: var(--appointment-editor-row-gap);
+	--bs-gutter-y: var(--appointment-editor-row-gap);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-grid-row--stacked,
+.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row--stacked {
+	margin-top: var(--appointment-editor-row-gap);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-section-card,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-card {
+	block-size: 100%;
+	overflow: hidden;
+	border: var(--appointment-border-width) solid var(--appointment-color-ui-border-muted);
+	border-radius: 0.875rem;
+	background: var(--appointment-color-white);
+	box-shadow: 0 0.75rem 1.75rem var(--appointment-shadow-ui-card);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header {
+	position: relative;
+	padding: var(--appointment-editor-section-header-pad-y) var(--appointment-editor-section-header-pad-x);
+	border-bottom: var(--appointment-border-width) solid var(--appointment-color-border-light);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header h6,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 {
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
+	color: inherit;
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-bold);
+	letter-spacing: 0;
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 i {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--appointment-editor-section-icon-size);
+	block-size: var(--appointment-editor-section-icon-size);
+	margin-inline-end: 0;
+	border-radius: 999rem;
+	color: var(--appointment-color-white);
+	box-shadow: 0 0.5rem 1rem var(--appointment-shadow-ui-icon);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--schedule,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--schedule {
+	background: linear-gradient(90deg, var(--appointment-color-primary-subtle) 0%, var(--appointment-editor-schedule-bg-end) 100%);
+	color: var(--appointment-color-primary);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--schedule h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--schedule h6 i {
+	background: var(--qlpk-workflow-context-header-bg);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--clinical,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--clinical {
+	background: linear-gradient(90deg, var(--appointment-editor-clinical-bg) 0%, var(--appointment-editor-clinical-bg-end) 100%);
+	color: var(--appointment-editor-clinical-text);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--clinical h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--clinical h6 i {
+	background: linear-gradient(135deg, var(--appointment-editor-clinical-text) 0%, var(--appointment-editor-clinical-icon-end) 100%);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--patient,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--patient {
+	background: linear-gradient(90deg, var(--appointment-editor-patient-bg) 0%, var(--appointment-editor-patient-bg-end) 100%);
+	color: var(--appointment-color-warning);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--patient h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--patient h6 i {
+	background: linear-gradient(135deg, var(--appointment-color-warning) 0%, var(--appointment-color-amber) 100%);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--service,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--service {
+	background: linear-gradient(90deg, var(--appointment-editor-patient-bg) 0%, var(--appointment-editor-service-bg-end) 100%);
+	color: var(--appointment-editor-service-text);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-form-section-header--service h6 i,
+.modal.qlpk-edit-appointment-modal .appointment-form-section-header--service h6 i {
+	background: linear-gradient(135deg, var(--appointment-editor-service-icon-start) 0%, var(--appointment-color-warning) 100%);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-section-body,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-body {
+	padding: var(--appointment-editor-section-body-pad-y) var(--appointment-editor-section-body-pad-x);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-row,
+.modal.qlpk-add-appointment-modal .appointment-modal-field-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-row,
+.modal.qlpk-edit-appointment-modal .appointment-modal-field-row {
+	margin-bottom: var(--appointment-editor-row-gap);
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-section-body > :last-child,
+.modal.qlpk-edit-appointment-modal .appointment-modal-section-body > :last-child {
+	margin-bottom: 0;
+}
+
+.modal.qlpk-add-appointment-modal .form-label,
+.modal.qlpk-edit-appointment-modal .form-label {
+	margin-bottom: 0.25rem;
+	color: var(--appointment-color-text-strong);
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-bold);
+	line-height: 1.3;
+}
+
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+.modal.qlpk-add-appointment-modal .form-select,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+.modal.qlpk-edit-appointment-modal .form-select {
+	block-size: auto;
+	height: auto;
+	padding: var(--appointment-editor-control-pad-y) var(--appointment-editor-control-pad-x);
+	border-radius: 0.5rem;
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-semibold);
+	line-height: 1.35;
+}
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-add-appointment-modal .form-select,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *),
+.modal.qlpk-edit-appointment-modal .form-select {
+	border-color: var(--appointment-color-input-border);
+	background-color: var(--appointment-color-white);
+	color: var(--appointment-color-ui-text);
+	box-shadow: inset 0 0.0625rem 0.15rem var(--appointment-shadow-ui-xs);
+}
+
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input])::placeholder,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input])::placeholder {
+	font-weight: var(--appointment-font-weight-medium);
+}
+.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder,
+.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]):not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
+	color: var(--appointment-color-ui-soft);
+}

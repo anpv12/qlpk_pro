@@ -1,0 +1,404 @@
+/* Fix tab content height trong modal */
+.patient-search-modal .tab-content {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.patient-search-modal .tab-pane {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+.patient-search-modal .tab-pane:not(.active) {
+	display: none;
+}
+
+.patient-search-modal .tab-pane.active {
+	display: flex;
+}
+
+/* Vital Signs Chart Styles */
+.vital-chart-container {
+	padding: 15px;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.vital-chart-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.time-range-selector {
+	display: flex;
+	gap: 6px;
+}
+
+.time-range-btn {
+	padding: 5px 10px;
+	border: 1px solid var(--patient-modal-line-strong);
+	border-radius: 6px;
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: var(--patient-modal-surface);
+	color: var(--patient-modal-muted);
+}
+
+.time-range-btn:hover {
+	background: var(--patient-modal-brown-soft);
+	border-color: var(--patient-modal-brown);
+}
+
+.time-range-btn.active {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--patient-modal-on-primary);
+	border-color: var(--patient-modal-coral);
+}
+
+.vital-chart-wrapper {
+	flex: 1;
+	min-height: 380px;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+.vital-chart-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: var(--patient-modal-muted);
+}
+
+.vital-chart-empty i {
+	font-size: var(--qlpk-font-size-display-md, 48px);
+	margin-bottom: 10px;
+}
+
+/* Modal History Row */
+.modal-history-row {
+	--bs-gutter-x: 0;
+	display: grid;
+	grid-template-columns: 9rem minmax(0, 1fr) 8.5rem 4.5rem;
+	margin-inline: 0;
+}
+
+.modal-history-row > [class*="col-"] {
+	width: auto;
+	min-width: 0;
+	padding-inline: 0.4rem;
+}
+
+.modal-history-row .col-history-date,
+.modal-history-row .col-history-payment {
+	text-align: center;
+}
+
+.modal-history-row .col-history-diagnosis {
+	text-align: left;
+	overflow: visible;
+}
+
+.modal-history-row .col-history-diagnosis span {
+	display: block;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.modal-history-visit-label {
+	display: block;
+	margin-block-start: 0.2rem;
+	color: var(--patient-modal-info);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.3;
+}
+
+.modal-history-date-time {
+	white-space: nowrap;
+}
+
+@container (max-width: 36rem) {
+	.patient-search-modal__scroll-card > .patient-search-modal__table-head {
+		display: none;
+	}
+
+	.modal-history-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		gap: 0.25rem 0.5rem;
+		align-items: start;
+	}
+
+	.modal-history-row > [class*="col-"] {
+		width: auto;
+		max-width: none;
+		flex: initial;
+		padding-inline: 0.4rem;
+	}
+
+	.modal-history-row .col-history-date {
+		grid-column: 1;
+		grid-row: 1;
+	}
+
+	.modal-history-row .col-history-diagnosis {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		padding-block-start: 0.1rem;
+	}
+
+	.modal-history-row .col-history-payment {
+		grid-column: 2;
+		grid-row: 1;
+		justify-self: end;
+	}
+
+	.modal-history-row > div:last-child {
+		grid-column: 3;
+		grid-row: 1;
+		justify-self: end;
+	}
+
+	.modal-history-row .modal-history-date-time,
+	.modal-history-row .col-history-diagnosis span {
+		white-space: normal;
+		word-break: break-word;
+	}
+
+}
+
+/* Prescription Preview */
+.prescription-preview:not(.prescription-preview--moh) {
+	background: var(--patient-modal-surface);
+	border: 1px solid var(--patient-modal-line-strong);
+	border-radius: 12px;
+	padding: 24px;
+	padding-top: 10px;
+	color: var(--patient-modal-text);
+	font-size: var(--qlpk-font-size-md, 14px);
+	line-height: 1.6;
+	box-shadow: 0 0.375rem 1.25rem color-mix(in srgb, var(--patient-modal-brown) 8%, transparent);
+	box-sizing: border-box;
+	min-height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.prescription-preview__header {
+	display: flex;
+	justify-content: space-between;
+	gap: 24px;
+	border-bottom: none;
+}
+
+.prescription-preview__header--clinic {
+	align-items: flex-start;
+	gap: 20px;
+	justify-content: flex-start;
+}
+
+.clinic-logo {
+	flex-shrink: 0;
+}
+
+.clinic-logo__image {
+	height: auto;
+	object-fit: contain;
+	width: 120px;
+}
+
+.clinic-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.clinic-name-row {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+
+.clinic-details--loose {
+	line-height: 1.8;
+}
+
+.clinic-detail-line {
+	margin-bottom: 4px;
+}
+
+.prescription-code-section {
+	align-items: center;
+	align-self: flex-start;
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	gap: 0.1875rem;
+	margin-top: 0;
+}
+
+.barcode-svg--patient {
+	height: 35px;
+	width: 200px;
+}
+
+.patient-code {
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	text-align: center;
+}
+
+.prescription-gradient-separator {
+	background: var(--patient-modal-accent);
+	border-radius: 2px;
+	height: 3px;
+	margin: 5px 0;
+}
+
+.prescription-preview__title {
+	text-align: center;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: var(--qlpk-font-size-2xl, 20px);
+	letter-spacing: 1px;
+	margin: 0;
+	color: var(--patient-modal-brown);
+}
+
+.prescription-preview__title--document {
+	font-size: var(--qlpk-font-size-3xl, 24px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	padding: 1.25rem 0 2.8125rem;
+}
+
+.prescription-preview__diagnosis {
+	margin-bottom: 10px;
+}
+
+.prescription-preview__patient-info {
+	display: flex;
+	gap: 16px;
+}
+
+.prescription-preview__patient-info div>div {
+	margin-bottom: 6px;
+}
+
+.prescription-preview__patient-info-left {
+	flex: 0 0 66.6667%;
+	max-width: 66.6667%;
+}
+
+.prescription-preview__patient-info-right {
+	flex: 0 0 33.3333%;
+	max-width: 33.3333%;
+}
+
+@media (max-width: 768px) {
+	.prescription-preview__patient-info {
+		flex-direction: column;
+	}
+
+	.prescription-preview__patient-info-left,
+	.prescription-preview__patient-info-right {
+		flex: 0 0 100%;
+		max-width: 100%;
+	}
+}
+
+.prescription-preview__body {
+	margin-bottom: 20px;
+}
+
+.prescription-preview-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--qlpk-font-size-sm, 12px);
+}
+
+.prescription-preview-table th,
+.prescription-preview-table td {
+	border: 1px solid var(--patient-modal-line-strong);
+	padding: 10px 12px;
+	vertical-align: top;
+}
+
+.prescription-preview-table th {
+	background: var(--patient-modal-cream);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	letter-spacing: 0.5px;
+}
+
+.prescription-preview-table.table-centered th,
+.prescription-preview-table.table-centered td {
+	text-align: center;
+}
+
+.prescription-medicine-table th,
+.prescription-medicine-table td {
+	text-align: center;
+}
+
+.prescription-medicine-table .col-medicine-name,
+.prescription-medicine-table .col-medicine-usage,
+.prescription-medicine-table td:nth-child(2),
+.prescription-medicine-table td:nth-child(5) {
+	text-align: left;
+}
+
+.prescription-service-table__col-index {
+	width: 5%;
+}
+
+.prescription-service-table__col-name {
+	width: 30%;
+}
+
+.prescription-service-table__col-quantity {
+	width: 10%;
+}
+
+.prescription-service-table__col-duration {
+	width: 12%;
+}
+
+.prescription-service-table__col-price {
+	width: 18%;
+}
+
+.prescription-service-table__col-total {
+	width: 25%;
+}
+
+.prescription-preview__signature {
+	margin-left: auto;
+	margin-right: 0;
+	margin-top: auto;
+	max-width: 50%;
+	padding-top: 30px;
+	text-align: center;
+}
+
+.prescription-preview__signature--avoid-break {
+	break-inside: avoid;
+	page-break-inside: avoid;
+}
+
+.prescription-preview__signature-role {
+	margin-top: 8px;
+}
+
+.prescription-preview__signature-name {
+	margin-top: 64px;
+}

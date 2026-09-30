@@ -6,8 +6,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const { readCssSource } = require('./helpers/css-source');
 const root = path.join(__dirname, '..');
-const read = filename => fs.readFileSync(path.join(root, filename), 'utf8');
+const read = filename => readCssSource(path.join(root, filename));
 const SOURCE_FILE = path.join(root, 'app/static/js/components/modal-medical-history-list-ui.js');
 
 test('only explicit clicks mark one history row, not the default preview', async () => {

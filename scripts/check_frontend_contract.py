@@ -130,7 +130,7 @@ METRICS = [
 		roots=("app/static/css",),
 		suffixes=(".css",),
 		max_count=12,
-		exclude=("shared/color-tokens.css", "shared/feedback-tokens.css", "print/vat_invoice.css"),
+		exclude=("shared/color-tokens.css", "shared/color-tokens/", "shared/feedback-tokens.css", "shared/feedback-tokens/", "print/vat_invoice.css"),
 		description="Colours come from shared tokens; only 8-digit alpha hex legacy remains (12).",
 	),
 	Metric(

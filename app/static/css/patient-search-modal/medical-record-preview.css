@@ -1,0 +1,279 @@
+/* Medical Record Preview */
+.prescription-preview--document {
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	font-size: var(--qlpk-font-size-md, 14px);
+}
+
+.medical-record-section {
+	margin-bottom: 15px;
+}
+
+.medical-record-section-title {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	margin-bottom: 10px;
+}
+
+.medical-record-admin-grid {
+	align-items: flex-start;
+	display: flex;
+	flex-direction: row;
+	gap: 16px;
+}
+
+.medical-record-admin-main {
+	flex: 0 0 66.6667%;
+	max-width: 66.6667%;
+}
+
+.medical-record-admin-side {
+	flex: 0 0 33.3333%;
+	max-width: 33.3333%;
+}
+
+.medical-record-line {
+	margin-bottom: 8px;
+	max-width: 100%;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+}
+
+.medical-record-line--tight {
+	margin-bottom: 6px;
+}
+
+.medical-record-line--compact {
+	margin-bottom: 4px;
+}
+
+.medical-record-block {
+	margin-bottom: 8px;
+}
+
+.medical-record-indent {
+	margin-left: 20px;
+	margin-top: 5px;
+}
+
+.medical-record-indent-lg {
+	margin-left: 20px;
+}
+
+.medical-record-examination-grid {
+	align-items: start;
+	display: grid;
+	gap: 1.5rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.medical-record-examination-group {
+	min-width: 0;
+}
+
+.medical-record-subtitle {
+	margin-bottom: 5px;
+}
+
+.medical-record-subtitle--spaced {
+	margin-top: 10px;
+}
+
+.medical-record-treatment-list {
+	margin-top: 10px;
+}
+
+.medical-record-loi-dan {
+	margin-bottom: 8px;
+	margin-top: 10px;
+	max-width: 100%;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+}
+
+.medical-record-loi-dan-text {
+	margin-top: 4px;
+}
+
+.medical-record-medicine-item {
+	margin-bottom: 14px;
+}
+
+.medical-record-medicine-row {
+	align-items: baseline;
+	display: flex;
+	gap: 16px;
+}
+
+.medical-record-medicine-name {
+	flex: 0 0 66.6667%;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	max-width: 66.6667%;
+}
+
+.medical-record-medicine-quantity {
+	flex: 0 0 33.3333%;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	max-width: 33.3333%;
+}
+
+.medical-record-medicine-usage {
+	line-height: 1.5;
+	margin-top: 2px;
+	padding-left: 20px;
+}
+
+/* Prescription paper styles are shared with the print document. */
+
+.patient-search-modal .prescription-service-table__col-index { width: 5%; }
+.patient-search-modal .prescription-service-table__col-name { width: 30%; }
+.patient-search-modal .prescription-service-table__col-quantity { width: 10%; }
+.patient-search-modal .prescription-service-table__col-duration { width: 12%; }
+.patient-search-modal .prescription-service-table__col-price { width: 18%; }
+.patient-search-modal .prescription-service-table__col-total { width: 25%; }
+
+.patient-search-modal .modal-patient-item.modal-patient-item-active:not(.patient-search-modal__table-head-row),
+.patient-search-modal .modal-history-item.modal-history-item-user-selected:not(.patient-search-modal__table-head-row) {
+	background-color: var(--patient-modal-primary-soft);
+	box-shadow: inset 0.2rem 0 0 var(--patient-modal-coral);
+}
+
+.patient-search-modal .modal-history-item.current-exam-highlight:not(.patient-search-modal__table-head-row) {
+	position: relative;
+	background-color: var(--patient-modal-primary-soft);
+}
+
+.patient-search-modal .current-exam-highlight .col-history-date {
+	color: var(--patient-modal-deep);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.patient-search-modal .modal-history-item.current-exam-highlight.modal-history-item-active:not(.patient-search-modal__table-head-row) {
+	background-color: var(--patient-modal-primary-soft);
+}
+
+.patient-search-modal .modal-history-item.modal-history-item--examining:not(.patient-search-modal__table-head-row),
+.patient-search-modal .modal-history-item.modal-history-item--examining.modal-history-item-active:not(.patient-search-modal__table-head-row) {
+	background-color: var(--patient-modal-info-soft);
+}
+
+.patient-search-modal .modal-history-item.modal-history-item--examining:hover:not(.patient-search-modal__table-head-row) {
+	background-color: color-mix(in srgb, var(--patient-modal-info-soft) 78%, var(--qlpk-color-white));
+}
+
+.patient-search-modal .modal-history-item--examining .col-history-date {
+	color: var(--patient-modal-info);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.patient-search-modal .past-exam-history .col-history-date {
+	color: var(--patient-modal-muted);
+}
+
+@media (max-width: 48rem) {
+	.patient-search-modal .modal-content {
+		height: auto;
+		min-height: 100vh;
+	}
+
+	.patient-search-modal__body {
+		overflow-y: auto;
+	}
+
+	.patient-search-modal__row {
+		height: auto;
+		flex-direction: column;
+		flex-wrap: nowrap;
+	}
+
+	.patient-search-modal__left-column,
+	.patient-search-modal__right-column {
+		height: auto;
+		min-height: 0;
+	}
+
+	.patient-search-modal__left-column {
+		border-inline-end: 0;
+		border-block-end: 0.0625rem solid var(--patient-modal-line-strong);
+	}
+
+	.patient-search-modal__left-inner {
+		overflow: visible;
+	}
+
+	.patient-search-modal__history-section {
+		min-height: 18rem;
+	}
+
+	.patient-search-modal__right-column {
+		min-height: 30rem;
+	}
+
+	.patient-search-modal__left-inner,
+	.patient-search-modal__right-inner {
+		flex: none;
+	}
+
+	.patient-search-modal__function-bar {
+		align-items: flex-start;
+	}
+
+	.patient-search-modal__function-bar .function-tab-list {
+		padding-block-end: 0.1rem;
+	}
+
+	.patient-search-modal__function-bar .function-tab-list .nav-link {
+		padding-inline: 0.45rem;
+	}
+
+	.patient-search-modal__close-button {
+		margin-block-start: 0.1rem;
+	}
+}
+
+@media (max-width: 600px) {
+	.patient-search-modal .prescription-preview {
+		padding: 0.75rem;
+	}
+
+	.patient-search-modal .prescription-preview__header--clinic {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.patient-search-modal .prescription-preview__header--clinic .clinic-info,
+	.patient-search-modal .prescription-preview__header--clinic .prescription-code-section {
+		inline-size: 100%;
+		max-inline-size: 100%;
+	}
+
+	.patient-search-modal .prescription-preview__header--clinic .prescription-code-section {
+		align-items: flex-start;
+		align-self: stretch;
+	}
+
+	.patient-search-modal .prescription-preview__header--clinic .prescription-code-badge--rx {
+		max-inline-size: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.patient-search-modal .prescription-preview__header--clinic .clinic-logo__image {
+		inline-size: 5.5rem;
+	}
+
+	.patient-search-modal .medical-record-admin-grid {
+		flex-direction: column;
+	}
+
+	.patient-search-modal .medical-record-examination-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.patient-search-modal .medical-record-admin-main,
+	.patient-search-modal .medical-record-admin-side {
+		flex: 0 0 100%;
+		max-width: 100%;
+		width: 100%;
+	}
+
+}

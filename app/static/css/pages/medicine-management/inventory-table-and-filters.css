@@ -1,0 +1,372 @@
+.medicine-management-page .mm-sticky-head th {
+  position: sticky;
+  top: 0;
+  background: var(--qlpk-color-page-bg);
+  box-shadow: inset 0 -1px 0 var(--qlpk-palette-blue-90-b);
+  z-index: 100;
+  transform: translateZ(0);
+  isolation: isolate;
+}
+.medicine-management-page .mm-dialog-800 {
+  max-width: 800px;
+}
+.medicine-management-page .mm-title-primary-lg {
+  color: var(--qlpk-color-primary);
+  font-size: var(--qlpk-font-size-4xl, 28px);
+}
+.medicine-management-page .mm-w-70 {
+  width: 70px;
+}
+.medicine-management-page .mm-w-90 {
+  width: 90px;
+}
+.medicine-management-page .mm-w-100 {
+  width: 100px;
+}
+.medicine-management-page .mm-w-110 {
+  width: 110px;
+}
+.medicine-management-page .mm-w-120 {
+  width: 120px;
+}
+.medicine-management-page .mm-w-140 {
+  width: 140px;
+}
+.medicine-management-page .mm-w-150 {
+  width: 150px;
+}
+.medicine-management-page .mm-w-180 {
+  width: 180px;
+}
+.medicine-management-page .mm-w-200 {
+  width: 200px;
+}
+.medicine-management-page .mm-w-250 {
+  width: 250px;
+}
+.medicine-management-page .medicine-import-error-list {
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: var(--qlpk-font-size-md, 14px);
+}
+.medicine-management-page .batch-number-display {
+  background-color: var(--qlpk-color-page-bg);
+}
+.medicine-management-page .batch-price-comparison {
+  font-size: var(--qlpk-font-size-sm, 12px);
+}
+.medicine-management-page .batch-last-price {
+  margin-bottom: 4px;
+}
+.medicine-management-page .batch-medicine-dropdown--floating {
+  position: fixed;
+  top: var(--mm-batch-dropdown-top);
+  left: var(--mm-batch-dropdown-left);
+  right: auto;
+  width: var(--mm-batch-dropdown-width);
+}
+.medicine-management-page .batch-row-total,
+.medicine-management-page .lot-value {
+  color: var(--qlpk-color-primary);
+}
+.medicine-management-page .lot-item {
+  margin-top: 4px;
+}
+
+/* Inventory composes the shared clinic visual foundation. */
+.medicine-management-page .mm-main-content-shell {
+  padding: 0;
+  background: var(--qlpk-workspace-bg);
+  overflow-x: hidden;
+}
+
+.medicine-management-page .mm-page-header-copy {
+  position: relative;
+  max-inline-size: 42rem;
+}
+
+.medicine-management-page .mm-surface {
+  margin: 12px 20px 0;
+  padding: 14px;
+  border: 1px solid var(--qlpk-color-border);
+  border-radius: var(--clinic-surface-radius);
+  background: var(--qlpk-color-white);
+  box-shadow: var(--clinic-surface-shadow);
+}
+.medicine-management-page .btn.mm-action-secondary:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .btn.mm-action-secondary:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-brown-200);
+  background: var(--qlpk-brown-150);
+  color: var(--qlpk-brown-800);
+}
+.medicine-management-page .btn.mm-action-secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .btn.mm-action-secondary:active:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-brown-300);
+  background: var(--qlpk-brown-200);
+  color: var(--qlpk-brown-900);
+}
+.medicine-management-page .mm-action-row .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+  box-shadow: 0 2px 6px -1px rgba(var(--qlpk-brown-800-rgb), 0.35);
+}
+
+.medicine-management-page .mm-toolbar-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.medicine-management-page .qlpk-clinic-summary__item--warning .qlpk-clinic-summary__value {
+  color: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+}
+
+.medicine-management-page .mm-toolbar-surface {
+  padding-bottom: 14px;
+}
+
+.medicine-management-page .mm-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.medicine-management-page .mm-action-row .btn,
+.medicine-management-page .qlpk-search-btn {
+  border-radius: var(--clinic-control-radius, 9px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.medicine-management-page .mm-action-row .btn { min-height: 36px; }
+
+.medicine-management-page .mm-filter-row {
+  display: grid;
+  grid-template-columns: minmax(16.25rem, 1fr) 13.125rem 6rem;
+  gap: 10px;
+  align-items: end;
+}
+
+.medicine-management-page .mm-filter-field {
+  min-width: 0;
+}
+
+.medicine-management-page .mm-filter-field .form-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.medicine-management-page .mm-filter-field .form-control,
+.medicine-management-page .mm-filter-field .form-select {
+  min-height: 40px;
+  border-radius: var(--clinic-control-radius, 9px);
+  font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+}
+.medicine-management-page .mm-filter-field .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .mm-filter-field .form-select {
+  border-color: var(--qlpk-brown-200);
+  background-color: var(--qlpk-color-surface);
+  color: var(--qlpk-color-text);
+}
+.medicine-management-page .mm-filter-field .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .mm-filter-field .form-select:focus {
+  border-color: var(--qlpk-color-primary);
+  box-shadow: 0 0 0 0.18rem rgba(var(--qlpk-color-primary-rgb), 0.12);
+}
+
+/* Nút Xem đứng cùng hàng với input/select 40px nên phải cao bằng chúng,
+ * không dùng chiều cao 36px của toolbar. */
+.medicine-management-page .qlpk-search-btn {
+  min-height: 40px;
+}
+
+.medicine-management-page .mm-table-surface {
+  padding-bottom: 12px;
+}
+
+.medicine-management-page .mm-table-surface .table-responsive {
+  margin: 0;
+}
+
+.medicine-management-page .mm-inventory-table {
+  width: 100%;
+  min-width: 86rem;
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page .mm-inventory-table :is(th, td):nth-child(3) {
+  min-width: 16rem;
+}
+
+.medicine-management-page .mm-inventory-table :is(th, td):nth-child(8) {
+  min-width: 12rem;
+}
+
+.medicine-management-page .mm-inventory-table .mm-reference-column {
+  min-width: 12rem;
+  text-align: center;
+}
+
+.medicine-management-page .mm-inventory-table th {
+  padding: 11px 12px;
+  background: var(--qlpk-brown-150);
+  color: var(--qlpk-brown-700);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  white-space: nowrap;
+}
+
+.medicine-management-page .mm-inventory-table thead th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.medicine-management-page .mm-inventory-table thead th:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.medicine-management-page .mm-inventory-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--qlpk-brown-100);
+  vertical-align: middle;
+}
+
+.medicine-management-page .mm-inventory-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.medicine-management-page .mm-inventory-table tbody tr:hover td {
+  background: var(--qlpk-brown-50);
+}
+
+.medicine-management-page .mm-inventory-table .medicine-link {
+  color: var(--qlpk-color-text);
+  font-size: inherit;
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.medicine-management-page .mm-inventory-table .medicine-link:hover {
+  color: var(--qlpk-color-primary-strong);
+  text-decoration: underline;
+}
+
+.medicine-management-page .mm-inventory-table .action-btn {
+  margin-right: 6px;
+  padding: 2px 4px;
+  border: 0;
+  font-size: var(--qlpk-font-size-lg, 16px);
+}
+.medicine-management-page .mm-inventory-table .action-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: transparent;
+  color: var(--qlpk-color-primary);
+}
+.medicine-management-page .mm-inventory-table .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *) {
+  color: var(--qlpk-feedback-error);
+}
+
+.medicine-management-page .stock-detail-badge {
+  cursor: pointer;
+	border-width: 1px;
+	border-style: solid;
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+.medicine-management-page .stock-detail-badge:not([data-qlpk-button], [data-qlpk-button] *) {
+  border: 1px solid var(--mm-badge-border-color, var(--qlpk-brown-200));
+  background: var(--qlpk-color-surface);
+  color: var(--qlpk-brown-600);
+}
+.medicine-management-page .stock-detail-badge:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .stock-detail-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--mm-badge-active-border-color, var(--qlpk-color-primary));
+  outline: 1px solid var(--mm-badge-active-border-color, var(--qlpk-color-primary));
+}
+.medicine-management-page .mm-inventory-table .badge.stock-detail-badge:not([data-qlpk-button], [data-qlpk-button] *) {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-white);
+}
+.medicine-management-page .mm-inventory-table .badge.stock-detail-badge:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.medicine-management-page .mm-inventory-table .badge.stock-detail-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+  border-color: var(--qlpk-color-primary);
+}
+.medicine-management-page .mm-inventory-table .badge.stock-detail-badge:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+  outline: .125rem solid var(--qlpk-brown-400);
+  outline-offset: .125rem;
+}
+
+.medicine-management-page .qlpk-delete-selected-btn {
+  border-radius: 6px;
+}
+
+.medicine-management-page .mm-pagination-surface {
+  margin-bottom: 24px;
+  padding: 12px 14px;
+}
+
+.medicine-management-page .mm-pagination-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--qlpk-color-text-muted);
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.medicine-management-page .mm-pagination-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.medicine-management-page .qlpk-medicine-page-size {
+  inline-size: auto;
+  color: var(--qlpk-color-text);
+  background-color: var(--qlpk-color-surface);
+}
+
+@media (min-width: 56.25rem) {
+  .medicine-management-page .mm-page-header-copy {
+    max-inline-size: 52%;
+  }
+}
+
+@media (max-width: 900px) {
+  .medicine-management-page .mm-filter-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .medicine-management-page .mm-filter-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 576px) {
+  .medicine-management-page .mm-surface {
+    margin-right: 12px;
+    margin-left: 12px;
+    padding: 10px;
+  }
+
+  .medicine-management-page .mm-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .medicine-management-page .mm-filter-field:first-child,
+  .medicine-management-page .mm-filter-field:last-child {
+    grid-column: auto;
+  }
+
+  .medicine-management-page .mm-pagination-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

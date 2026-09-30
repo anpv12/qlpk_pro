@@ -2,8 +2,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { readCssSource } = require('./helpers/css-source');
 
-const css = fs.readFileSync('app/static/css/pages/doctor-prescription.css', 'utf8');
+const css = readCssSource('app/static/css/pages/doctor-prescription.css');
 const template = fs.readFileSync('app/templates/partials/doctor-clinical-workspace.html', 'utf8');
 const rule = selector => css.slice(css.indexOf(`${selector} {`)).split('}')[0];
 

@@ -4,8 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readCssSource } = require('./helpers/css-source');
 
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/color-tokens.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/shared/color-tokens.css'));
 const declarations = [...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)];
 const tokens = new Map(declarations.map(([, name, value]) => [name, value.trim()]));
 

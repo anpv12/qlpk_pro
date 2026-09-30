@@ -1,0 +1,419 @@
+/* Ô ICD (Tiền căn bệnh): khung autocomplete đóng vai ô nhập, cùng chiều cao với các ô khác. */
+.modal.qlpk-add-appointment-modal .icd-input-container,
+.modal.qlpk-edit-appointment-modal .icd-input-container {
+	padding: var(--appointment-editor-control-pad-y) var(--appointment-editor-control-pad-x);
+	border-radius: 0.5rem;
+}
+
+.modal.qlpk-add-appointment-modal [data-icd-autocomplete-input],
+.modal.qlpk-edit-appointment-modal [data-icd-autocomplete-input] {
+	min-block-size: 0;
+	block-size: auto;
+	padding: 0;
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-semibold);
+	line-height: 1.35;
+}
+
+.modal.qlpk-add-appointment-modal .appointment-modal-choice-group,
+.modal.qlpk-edit-appointment-modal .appointment-modal-choice-group {
+	gap: 0.7rem;
+}
+
+.modal.qlpk-add-appointment-modal .form-check,
+.modal.qlpk-edit-appointment-modal .form-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.28rem;
+	margin: 0;
+	padding-left: 0;
+}
+
+.modal.qlpk-add-appointment-modal .form-check-input,
+.modal.qlpk-edit-appointment-modal .form-check-input {
+	float: none;
+	margin: 0;
+	border-color: var(--appointment-color-radio-border);
+}
+
+.modal.qlpk-add-appointment-modal .form-check-input:checked,
+.modal.qlpk-edit-appointment-modal .form-check-input:checked {
+	background-image: var(--bs-form-check-bg-image), var(--qlpk-workflow-context-header-bg);
+	border-color: var(--appointment-color-primary);
+}
+
+.modal.qlpk-add-appointment-modal .form-check-label,
+.modal.qlpk-edit-appointment-modal .form-check-label {
+	color: var(--appointment-color-ui-text);
+	font-size: var(--appointment-font-size-compact);
+	font-weight: var(--appointment-font-weight-bold);
+}
+
+.appointment-editor-footer {
+	flex: 0 0 auto;
+	gap: var(--appointment-editor-gap);
+	padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
+	border-top: var(--appointment-border-width) solid var(--appointment-color-ui-border-card);
+	background: var(--appointment-editor-footer-bg);
+	box-shadow: 0 -0.5rem 1.25rem var(--appointment-shadow-ui-footer);
+}
+
+.appointment-editor-footer-left,
+.appointment-editor-footer-right {
+	display: flex;
+	align-items: center;
+}
+
+.appointment-editor-footer-right {
+	flex: 1 1 auto;
+	justify-content: flex-end;
+}
+
+.appointment-editor-footer-right .appointment-button {
+	inline-size: min(100%, 28rem);
+	min-block-size: 2.35rem;
+}
+.appointment-editor-footer-right .appointment-button:not([data-qlpk-button], [data-qlpk-button] *) {
+	box-shadow: 0 0.5rem 1.1rem color-mix(in srgb, var(--appointment-action-success) 24%, transparent);
+}
+
+.appointment-editor-footer .appointment-button {
+	padding: 0.45rem 0.95rem;
+}
+
+@media (max-width: 74rem) {
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header {
+		grid-template-columns: auto minmax(0, 1fr) auto;
+	}
+
+	.appointment-editor-header-actions {
+		grid-column: 1 / -1;
+		justify-content: flex-end;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header-actions {
+		grid-column: auto;
+	}
+
+	.appointment-editor-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.appointment-editor-profile-card {
+		min-block-size: 0;
+		position: relative;
+	}
+}
+
+@media (max-width: 48rem) {
+	.modal.qlpk-add-appointment-modal .appointment-editor-dialog,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-dialog {
+		--appointment-editor-margin-block: 0rem;
+		--appointment-editor-dialog-block: 100dvh;
+		--appointment-editor-shell-max-block: 100dvh;
+		inline-size: 100vw;
+		max-inline-size: 100vw;
+		block-size: 100dvh;
+		margin: 0;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-shell,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-shell {
+		height: 100dvh;
+		block-size: 100dvh;
+		max-block-size: 100dvh;
+		border-radius: 0;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
+		gap: 0.75rem;
+		padding: 0.75rem;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header {
+		grid-template-columns: auto minmax(0, 1fr) auto;
+	}
+
+	.appointment-editor-header-actions {
+		gap: 0.5rem;
+		justify-content: stretch;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header-actions {
+		grid-column: auto;
+		justify-content: flex-end;
+	}
+
+	.appointment-editor-action {
+		flex: 1 1 auto;
+		padding-inline: 0.75rem;
+	}
+
+	.appointment-editor-body {
+		padding: 0.75rem;
+	}
+
+	.appointment-editor-footer {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+		padding: 0.6rem;
+	}
+
+	.appointment-editor-footer-left,
+	.appointment-editor-footer-right,
+	.appointment-editor-footer .appointment-button,
+	.appointment-editor-footer-right .appointment-button {
+		inline-size: 100%;
+	}
+
+	.appointment-editor-footer .appointment-button,
+	.appointment-editor-footer-right .appointment-button {
+		min-block-size: 2.15rem;
+		padding: 0.4rem 0.75rem;
+	}
+}
+
+@media (min-width: 74rem) and (max-height: 52rem) {
+	.modal.qlpk-add-appointment-modal .appointment-editor-dialog,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-dialog {
+		--appointment-editor-margin-block: 0.5rem;
+		--appointment-editor-dialog-block: calc(100dvh - (var(--appointment-editor-margin-block) * 2));
+		--appointment-editor-shell-max-block: var(--appointment-editor-dialog-block);
+		--appointment-editor-gap: 0.55rem;
+		--appointment-editor-pad-x: 0.8rem;
+		--appointment-editor-pad-y: 0.5rem;
+		--appointment-editor-sidebar-inline: clamp(15rem, 23%, 19.5rem);
+		--appointment-editor-control-pad-y: 0.34rem;
+		--appointment-editor-control-pad-x: 0.55rem;
+		--appointment-editor-section-header-pad-y: 0.48rem;
+		--appointment-editor-section-header-pad-x: 0.75rem;
+		--appointment-editor-section-body-pad-y: 0.55rem;
+		--appointment-editor-section-body-pad-x: 0.75rem;
+		--appointment-editor-row-gap: 0.45rem;
+		--appointment-editor-section-icon-size: 1.65rem;
+		--appointment-editor-avatar-size: 2.9rem;
+		--appointment-editor-summary-icon-size: 1.45rem;
+		height: var(--appointment-editor-dialog-block);
+		block-size: var(--appointment-editor-dialog-block);
+		min-height: 0;
+		min-block-size: 0;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-shell,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-shell {
+		height: auto;
+		block-size: auto;
+		min-height: 0;
+		min-block-size: 0;
+		max-block-size: var(--appointment-editor-shell-max-block);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header {
+		gap: var(--appointment-editor-gap);
+		padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-title,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-title {
+		gap: 0.6rem;
+	}
+
+	.appointment-editor-title-icon {
+		inline-size: var(--appointment-editor-title-icon-size);
+		block-size: var(--appointment-editor-title-icon-size);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-header .appointment-editor-title h5,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-header .appointment-editor-title h5 {
+		font-size: var(--qlpk-font-size-lg, var(--appointment-font-size));
+		line-height: 1.15;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-editor-title p,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-title p {
+		margin-top: 0;
+		line-height: 1.2;
+	}
+
+	.appointment-editor-nav-button,
+	.appointment-editor-close-button {
+		inline-size: 2.05rem;
+		block-size: 2.05rem;
+	}
+
+	.appointment-editor-header-actions {
+		gap: var(--appointment-editor-gap);
+	}
+
+	.appointment-editor-action {
+		min-block-size: 2.05rem;
+		padding: 0.32rem 0.62rem;
+	}
+
+	.appointment-editor-body,
+	.modal.qlpk-edit-appointment-modal .appointment-editor-body {
+		padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
+	}
+
+	.appointment-editor-layout {
+		grid-template-columns: minmax(13.5rem, 16.75rem) minmax(0, 1fr);
+		gap: var(--appointment-editor-gap);
+	}
+
+	.appointment-editor-profile-card {
+		border-radius: 0.75rem;
+	}
+
+	.appointment-editor-profile-hero {
+		padding: 0.75rem 0.75rem 0.62rem;
+	}
+
+	.appointment-editor-avatar {
+		inline-size: var(--appointment-editor-avatar-size);
+		block-size: var(--appointment-editor-avatar-size);
+		margin-bottom: 0.45rem;
+		border-width: 0.25rem;
+	}
+
+	.appointment-editor-avatar i {
+		font-size: var(--qlpk-font-size-xl, var(--appointment-font-size));
+	}
+
+	.appointment-editor-profile-hero h6 {
+		font-size: var(--qlpk-font-size-md, var(--appointment-font-size));
+	}
+
+	.appointment-editor-profile-hero span {
+		margin-top: 0.3rem;
+		padding: 0.18rem 0.45rem;
+	}
+
+	.appointment-editor-summary {
+		padding: 0.55rem 0.75rem 0.25rem;
+	}
+
+	.appointment-editor-summary h6 {
+		margin-bottom: 0.42rem;
+		padding-top: 0.42rem;
+	}
+
+	.appointment-editor-summary-list {
+		gap: 0.42rem;
+	}
+
+	.appointment-editor-summary-item {
+		gap: 0.45rem;
+	}
+
+	.appointment-editor-summary-icon {
+		inline-size: var(--appointment-editor-summary-icon-size);
+		block-size: var(--appointment-editor-summary-icon-size);
+	}
+
+	.appointment-editor-summary-item span:not(.appointment-editor-summary-icon),
+	.appointment-editor-summary-item strong:not(.qlpk-status) {
+		line-height: 1.15;
+	}
+
+	.appointment-editor-reminder {
+		gap: 0.45rem;
+		margin: auto 0.75rem 0.7rem;
+		padding: 0.5rem;
+	}
+
+	.appointment-editor-reminder i {
+		font-size: var(--qlpk-font-size-lg, var(--appointment-font-size));
+	}
+
+	.appointment-editor-reminder strong,
+	.appointment-editor-reminder span {
+		line-height: 1.2;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-grid-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row {
+		--bs-gutter-x: var(--appointment-editor-row-gap);
+		--bs-gutter-y: var(--appointment-editor-row-gap);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-grid-row--stacked,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-grid-row--stacked {
+		margin-top: var(--appointment-editor-row-gap);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-section-card,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-section-card {
+		border-radius: 0.7rem;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header {
+		padding: var(--appointment-editor-section-header-pad-y) var(--appointment-editor-section-header-pad-x);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header h6,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 {
+		gap: 0.55rem;
+		font-size: var(--appointment-font-size);
+		line-height: 1.15;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-form-section-header h6 i,
+	.modal.qlpk-edit-appointment-modal .appointment-form-section-header h6 i {
+		inline-size: var(--appointment-editor-section-icon-size);
+		block-size: var(--appointment-editor-section-icon-size);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-section-body,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-section-body {
+		padding: var(--appointment-editor-section-body-pad-y) var(--appointment-editor-section-body-pad-x);
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-row,
+	.modal.qlpk-add-appointment-modal .appointment-modal-field-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-row,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-field-row {
+		margin-bottom: var(--appointment-editor-row-gap);
+	}
+
+	.modal.qlpk-add-appointment-modal .form-label,
+	.modal.qlpk-edit-appointment-modal .form-label {
+		margin-bottom: 0.22rem;
+		line-height: 1.15;
+	}
+
+	.modal.qlpk-add-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-add-appointment-modal .form-select,
+	.modal.qlpk-edit-appointment-modal .form-control:not([data-icd-autocomplete-input]),
+	.modal.qlpk-edit-appointment-modal .form-select {
+		padding: var(--appointment-editor-control-pad-y) var(--appointment-editor-control-pad-x);
+		line-height: 1.25;
+	}
+
+	.modal.qlpk-add-appointment-modal .appointment-modal-choice-group,
+	.modal.qlpk-edit-appointment-modal .appointment-modal-choice-group {
+		gap: 0.65rem;
+	}
+
+	.modal.qlpk-add-appointment-modal .form-check,
+	.modal.qlpk-edit-appointment-modal .form-check {
+		gap: 0.25rem;
+	}
+
+	.appointment-editor-footer {
+		padding: var(--appointment-editor-pad-y) var(--appointment-editor-pad-x);
+	}
+
+	.appointment-editor-footer-right .appointment-button {
+		inline-size: min(100%, 24rem);
+		min-block-size: 2.1rem;
+	}
+}

@@ -1,0 +1,449 @@
+/*
+ * Shared presentation contract for the administrative catalogue screens.
+ *
+ * The scope is deliberately page-local. These pages are embedded in the
+ * application shell, while clinical, reception, appointment and payment
+ * workspaces have their own visual owners and must not inherit this theme.
+ */
+
+.qlpk-admin-page {
+	--admin-bg: var(--qlpk-workspace-bg);
+	--admin-surface: var(--qlpk-color-white);
+	--admin-text: var(--qlpk-color-text);
+	--admin-muted: var(--qlpk-color-text-muted);
+	--admin-muted-strong: var(--qlpk-color-text-muted);
+	--admin-border: var(--qlpk-color-border);
+	--admin-border-strong: var(--qlpk-color-border);
+	--admin-accent: var(--qlpk-color-primary);
+	--admin-accent-strong: var(--qlpk-color-primary-strong);
+	--admin-accent-soft: var(--qlpk-color-primary-soft);
+	--admin-success: var(--qlpk-palette-green-29-a);
+	--admin-danger: var(--qlpk-feedback-error);
+	--admin-radius: var(--clinic-surface-radius);
+	background: var(--admin-bg);
+	color: var(--admin-text);
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	font-size: var(--qlpk-font-size-base, 13px);
+	line-height: var(--qlpk-line-height-normal, 1.45);
+}
+
+.qlpk-admin-page .container-fluid,
+.qlpk-admin-page .container-fluid > .row {
+	min-height: 100%;
+}
+
+.qlpk-admin-page .main-content {
+	min-height: 100vh;
+	background: var(--admin-bg);
+	overflow-x: hidden;
+}
+
+/* The injected application shell stylesheet is loaded after page assets and
+ * intentionally paints workspaces warm. Admin catalogue pages consume the same warm
+ * palette while keeping their own layout and scroll contracts. */
+body.qlpk-admin-page.qlpk-workspace-shell .main-content,
+body.qlpk-admin-page.qlpk-embedded-page .main-content {
+	background: var(--admin-bg);
+}
+
+/* The workspace shell owns the viewport. Admin content owns the vertical
+ * scroll so long tables/forms never clip below the app header. */
+.qlpk-admin-page.qlpk-workspace-shell .main-content,
+.qlpk-admin-page.qlpk-embedded-page .main-content {
+	height: 100vh;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.qlpk-admin-page .breadcrumb {
+	margin: 0 0 6px;
+	padding: 0;
+	background: transparent;
+	font-size: var(--qlpk-font-size-xs, 11px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.qlpk-admin-page .breadcrumb a {
+	color: var(--admin-muted-strong);
+	text-decoration: none;
+}
+
+.qlpk-admin-page .breadcrumb a:hover {
+	color: var(--admin-accent);
+}
+
+.qlpk-admin-page .breadcrumb-item.active {
+	color: var(--admin-accent);
+}
+
+.qlpk-admin-page .breadcrumb-item + .breadcrumb-item::before {
+	content: "/";
+	color: var(--admin-border-strong);
+}
+
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .card-wrap,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .qlpk-admin-surface,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .import-export-section,
+.qlpk-admin-page :is(.main-content, .qlpk-workspace-pane.qlpk-workspace-pane--native) > .stm-card {
+	margin: 12px 20px 0;
+}
+
+.qlpk-admin-page .card,
+.qlpk-admin-page .card-wrap,
+.qlpk-admin-page .qlpk-admin-surface,
+.qlpk-admin-page .import-export-section {
+	border: 1px solid var(--admin-border);
+	border-radius: var(--admin-radius);
+	background: var(--admin-surface);
+	box-shadow: var(--clinic-surface-shadow);
+}
+
+.qlpk-admin-page .card-header,
+.qlpk-admin-page .catalog-card-header,
+.qlpk-admin-page .service-card-header {
+	padding: 10px 14px;
+	background: var(--admin-surface);
+	border: 0;
+	border-bottom: 1px solid var(--admin-border);
+	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
+	color: var(--admin-text);
+}
+
+.qlpk-admin-page .card-header h5,
+.qlpk-admin-page .card-header h6 {
+	color: var(--admin-text);
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.qlpk-admin-page :is(.catalog-card-header, .service-card-header) {
+	flex-wrap: wrap;
+	gap: 0.625rem;
+}
+
+.qlpk-admin-page :is(.catalog-card-header, .service-card-header) .search-box {
+	min-width: 0;
+}
+
+@media (max-width: 36rem) {
+	.qlpk-admin-page :is(.catalog-card-header, .service-card-header) .search-box {
+		flex-basis: 100%;
+	}
+}
+
+.qlpk-admin-page .card-body {
+	padding: 14px;
+}
+
+/* Keep the visible Flatpickr field's outer corners even when generated
+ * hidden siblings trigger Bootstrap's input-group last-child reset. */
+.qlpk-admin-page .input-group:not(.has-validation) > .form-control:is(.qlpk-datepicker-alt-input, .flatpickr-mobile):not(.dropdown-toggle) {
+	border-top-right-radius: var(--clinic-control-radius, 0.5625rem);
+	border-bottom-right-radius: var(--clinic-control-radius, 0.5625rem);
+}
+
+.qlpk-admin-page .input-group > .input-group-text:first-child {
+	border-top-left-radius: var(--clinic-control-radius, 0.5625rem);
+	border-bottom-left-radius: var(--clinic-control-radius, 0.5625rem);
+}
+
+.qlpk-admin-page .card-footer {
+	padding: 10px 14px;
+	background: var(--admin-surface);
+	border-top: 1px solid var(--admin-border);
+}
+
+.qlpk-admin-page .filter-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 20px;
+	padding: 10px;
+	border: 1px solid var(--admin-border);
+	border-radius: var(--admin-radius);
+	background: var(--admin-surface);
+	box-shadow: var(--clinic-surface-shadow);
+}
+
+.qlpk-admin-page .filter-bar > * {
+	min-width: 0;
+}
+
+.qlpk-admin-page .filter-bar .form-control,
+.qlpk-admin-page .filter-bar .form-select {
+	max-width: none;
+	min-height: 36px;
+}
+.qlpk-admin-page .filter-bar .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .filter-bar .form-select {
+	background-color: var(--admin-surface);
+}
+
+.qlpk-admin-page .filter-bar .btn {
+	flex: 0 0 auto;
+	min-width: 76px;
+	padding-right: 12px;
+	padding-left: 12px;
+	white-space: nowrap;
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control,
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control {
+	border-width: 1px;
+	border-style: solid;
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+}
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 1px solid var(--admin-border-strong);
+	background: var(--admin-surface);
+	color: var(--admin-text);
+}
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page:not(.qlpk-clinic-page) .form-select:focus,
+.qlpk-admin-page:not(.qlpk-clinic-page) textarea.form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-accent);
+	box-shadow: 0 0 0 0.18rem rgba(var(--qlpk-color-primary-rgb), 0.12);
+}
+
+body.qlpk-admin-page .form-label,
+body.qlpk-admin-page .form-check-label {
+	color: var(--admin-muted-strong);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+body.qlpk-admin-page .modal.qlpk-user-modal .form-label,
+body.qlpk-admin-page .modal.qlpk-user-modal .form-check-label {
+	color: var(--admin-muted-strong);
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .btn {
+	border-radius: var(--clinic-control-radius, 0.5625rem);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+.qlpk-admin-page .btn-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-action:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-add:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-primary-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-save-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-accent);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+.qlpk-admin-page .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-add:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-primary-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-save-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-accent-strong);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+.qlpk-admin-page .btn-outline-primary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-success:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-brown-200);
+	background: var(--admin-surface);
+	color: var(--qlpk-brown-700);
+}
+.qlpk-admin-page .btn-outline-primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-success:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--qlpk-brown-300);
+	background: var(--qlpk-brown-100);
+	color: var(--qlpk-brown-700);
+}
+.qlpk-admin-page .btn-success:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-success);
+	background: var(--admin-success);
+	color: var(--qlpk-color-white);
+}
+.qlpk-admin-page .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-border-strong);
+	background: var(--admin-surface);
+	color: var(--admin-muted-strong);
+}
+.qlpk-admin-page .btn-secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .btn-outline-secondary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--admin-muted);
+	background: var(--qlpk-color-brown-soft);
+	color: var(--admin-text);
+}
+
+.qlpk-admin-page .table-responsive {
+	border-color: var(--admin-border);
+}
+
+.qlpk-admin-page .card-body.p-0 .table-responsive {
+	border-radius: 0 0 var(--admin-radius) var(--admin-radius);
+}
+
+.qlpk-admin-page table:has(.qlpk-service-table-body) :is(th, td):nth-child(n+4) {
+	white-space: nowrap;
+}
+
+.qlpk-admin-page .table,
+.qlpk-admin-page .ai-table,
+.qlpk-admin-page .di-table,
+.qlpk-admin-page .qlpk-survey-table {
+	width: 100%;
+	margin: 0;
+	border-collapse: collapse;
+	border-spacing: 0;
+	color: var(--admin-text);
+	font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.qlpk-admin-page .table thead th,
+.qlpk-admin-page .ai-table thead th,
+.qlpk-admin-page .di-table thead th,
+.qlpk-admin-page .qlpk-survey-table thead th {
+	padding: 9px 10px;
+	border: 1px solid var(--admin-border);
+	background: var(--qlpk-brown-150) !important;
+	color: var(--qlpk-brown-700) !important;
+	font-size: var(--qlpk-font-size-base, 13px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.qlpk-admin-page .table tbody td,
+.qlpk-admin-page .ai-table tbody td,
+.qlpk-admin-page .di-table tbody td,
+.qlpk-admin-page .qlpk-survey-table tbody td {
+	padding: 9px 10px;
+	border: 1px solid var(--qlpk-brown-100);
+	background: var(--admin-surface);
+	color: var(--qlpk-color-neutral-700);
+	vertical-align: middle;
+}
+
+.qlpk-admin-page .table tbody tr:hover td,
+.qlpk-admin-page .ai-table tbody tr:hover td,
+.qlpk-admin-page .di-table tbody tr:hover td,
+.qlpk-admin-page .qlpk-survey-table tbody tr:hover td {
+	background: var(--qlpk-brown-50);
+}
+
+.qlpk-admin-page .table .text-muted,
+.qlpk-admin-page .text-muted {
+	color: var(--admin-muted) !important;
+}
+
+.qlpk-admin-page .table a,
+.qlpk-admin-page .table .user-link,
+.qlpk-admin-page .table .medicine-link,
+.qlpk-admin-page .catalog-dict-name-cell,
+.qlpk-admin-page .drug-name {
+	color: var(--admin-accent);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.qlpk-admin-page .action-btn,
+.qlpk-admin-page .pw-action-btn,
+.qlpk-admin-page .stm-action-btn,
+.qlpk-admin-page .catalog-dict-action-cell button,
+.qlpk-admin-page .di-table button {
+	width: 30px;
+	height: 30px;
+	margin-right: 3px;
+	padding: 0;
+	border: 0;
+	border-radius: 0.5625rem;
+	font-size: var(--qlpk-font-size-md, 14px);
+	vertical-align: middle;
+}
+.qlpk-admin-page .action-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .pw-action-btn,
+.qlpk-admin-page .stm-action-btn:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-action-cell button:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-table button:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: var(--admin-muted);
+}
+.qlpk-admin-page .action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .pw-action-btn:hover,
+.qlpk-admin-page .stm-action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .catalog-dict-action-cell button:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .di-table button:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-color-primary-soft);
+	color: var(--admin-accent);
+}
+.qlpk-admin-page .action-btn.delete:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .stm-action-btn--danger:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-admin-page .action-btn[title*="óa"]:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--admin-danger);
+}
+
+body.qlpk-admin-page .table .action-btn:not(.delete) {
+	font-size: var(--qlpk-font-size-lg, 16px);
+}
+body.qlpk-admin-page .table .action-btn:not(.delete):not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--admin-accent);
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination {
+	gap: 2px;
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-link {
+	min-width: 30px;
+	padding: 5px 9px;
+	border: 1px solid var(--admin-border);
+	border-radius: 0.5625rem;
+	background: var(--admin-surface);
+	color: var(--admin-muted-strong);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	text-align: center;
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.active .page-link {
+	border-color: var(--admin-accent);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+.qlpk-admin-page:not(.qlpk-clinic-page) .pagination .page-item.disabled .page-link {
+	color: var(--qlpk-color-text-muted);
+}
+
+.qlpk-admin-page .modal-content {
+	border: 1px solid var(--admin-border);
+	border-radius: var(--clinic-surface-radius, var(--admin-radius));
+	box-shadow: 0 16px 40px var(--qlpk-alpha-blue-11-16);
+	overflow: hidden;
+}
+
+.qlpk-admin-page .modal-header {
+	flex: 0 0 auto;
+	padding: 10px 14px;
+	border: 0;
+	border-bottom: 1px solid rgba(var(--qlpk-color-white-rgb), 0.2);
+	border-radius: var(--admin-radius) var(--admin-radius) 0 0;
+	background: var(--qlpk-workflow-context-header-bg) !important;
+	color: var(--qlpk-color-white);
+}
+
+.qlpk-admin-page .modal-header .modal-title,
+.qlpk-admin-page .modal-header .modal-title i {
+	color: var(--qlpk-color-white);
+	font-size: var(--clinic-modal-title-size, var(--qlpk-font-size-md, 14px));
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.qlpk-admin-page .modal-header .btn-close,
+.qlpk-admin-page .modal-header .btn-close-white {
+	filter: brightness(0) invert(1);
+	opacity: 0.9;
+}

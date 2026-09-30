@@ -1,0 +1,428 @@
+.medical-history-panel-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.medical-history-panel.is-collapsed .medical-history-panel-body {
+  display: none;
+}
+
+.medical-history-section {
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.medical-history-section:not(:last-child) {
+  border-bottom: 1px solid var(--qlpk-palette-gray-91);
+}
+
+.medical-history-section-head {
+  background: var(--qlpk-color-surface-subtle);
+  padding: 8px 14px;
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  color: var(--qlpk-color-neutral-700);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--qlpk-palette-gray-91);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.medical-history-section-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+.medical-history-chip-area {
+  min-height: 32px;
+  border: 1.5px solid var(--qlpk-color-border);
+  border-radius: 5px;
+  padding: 4px 7px;
+  display: flex; flex-wrap: wrap; gap: 4px;
+  background: var(--qlpk-color-white);
+  cursor: text;
+  transition: border-color .2s;
+}
+
+.medical-history-chip-area:focus-within { border-color: var(--qlpk-color-primary); box-shadow: 0 0 0 2px var(--qlpk-alpha-teal-21-10); }
+
+.medical-history-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--qlpk-color-primary-soft); color: var(--qlpk-palette-green-20); border: 1px solid var(--qlpk-palette-green-80);
+  border-radius: 4px; padding: 2px 8px;
+  font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500); white-space: nowrap;
+}
+
+.medical-history-chip.medical-history-chip-suicide {
+  background: var(--qlpk-feedback-error-bg);
+  color: var(--qlpk-palette-red-42);
+  border-color: var(--qlpk-palette-red-82);
+}
+
+.medical-history-chip--gd { background: var(--qlpk-color-primary-soft); color: var(--qlpk-palette-green-20); border-color: var(--qlpk-palette-green-80); }
+
+.medical-history-chip-input {
+  border: none; outline: none; font-size: var(--qlpk-font-size-md, 14px); font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  flex: 1; min-width: 100px; padding: 1px 2px;
+  color: var(--qlpk-color-text); background: transparent;
+}
+
+.medical-history-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+
+.medical-history-tab-btn {
+  position: relative;
+  padding: 4px 12px; border-radius: 4px; font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500);
+  border: 1.5px solid var(--qlpk-color-border); background: var(--qlpk-color-white); color: var(--qlpk-color-text-muted);
+  cursor: pointer; transition: all .15s;
+}
+.medical-history-tab-btn:hover { border-color: var(--qlpk-color-primary); color: var(--qlpk-color-primary); }
+.medical-history-tab-btn.active { background: var(--qlpk-workflow-context-header-bg); color: var(--qlpk-color-white); border-color: var(--qlpk-color-primary); }
+
+.medical-history-tab-warn-icon {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--qlpk-palette-red-60);
+  color: var(--qlpk-color-white);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--qlpk-font-size-2xs, 10px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  box-shadow: 0 0 0 0 var(--qlpk-alpha-red-60-70);
+  animation: medicalHistoryPulse 1.5s infinite;
+  z-index: var(--qlpk-z-sticky-header);
+}
+
+@keyframes medicalHistoryPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 var(--qlpk-alpha-red-60-70);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px var(--qlpk-alpha-red-60-00);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 var(--qlpk-alpha-red-60-00);
+  }
+}
+
+.medical-history-suggestion-box {
+  border: 1px solid var(--qlpk-color-border); border-radius: 5px;
+  background: var(--qlpk-color-white);
+  overflow: hidden;
+}
+.medical-history-suggestion-box > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1px;
+  background: var(--qlpk-color-brown-soft);
+}
+
+.medical-history-suggestion-box > div.medical-history-hidden {
+  display: none;
+}
+
+.medical-history-suggestion-item {
+  background: var(--qlpk-color-white);
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 10px; cursor: pointer;
+
+  transition: background .12s;
+}
+
+@media (min-width: 64rem) {
+  .medical-history-suggestion-box > div,
+  .medical-history-thoi-quen-cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.medical-history-suggestion-item:hover { background: var(--qlpk-palette-green-95); }
+.medical-history-suggestion-item.medical-history-selected { background: var(--qlpk-color-primary-soft); }
+
+.medical-history-item-check {
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1.5px solid var(--qlpk-color-border); background: var(--qlpk-color-white);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s;
+}
+.medical-history-suggestion-item.medical-history-selected .medical-history-item-check { background: var(--qlpk-workflow-context-header-bg); border-color: var(--qlpk-color-primary); }
+.medical-history-suggestion-item.medical-history-selected .medical-history-item-check::after { content: '✓'; color: var(--qlpk-color-white); font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-bold, 700); }
+
+.medical-history-icd-badge {
+  background: var(--qlpk-color-surface-chip); color: var(--qlpk-brown-800);
+  border: 1px solid var(--qlpk-color-surface-chip); border-radius: 3px;
+  padding: 1px 4px; font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600);
+  white-space: nowrap; font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  margin-right: 2px;
+}
+
+.medical-history-icd-badge.medical-history-icd-suicide {
+  background: var(--qlpk-feedback-error-bg);
+  color: var(--qlpk-palette-red-42);
+  border-color: var(--qlpk-palette-red-82);
+}
+
+.medical-history-item-name { flex: 1; font-size: var(--qlpk-font-size-md, 14px); color: var(--qlpk-color-text); }
+
+.medical-history-group-label {
+  font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600); color: var(--qlpk-color-text-muted);
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 6px 10px; background: var(--qlpk-color-page-bg);
+  border-bottom: 1px solid var(--qlpk-color-brown-soft);
+  grid-column: 1 / -1;
+}
+
+/* Đồng bộ font-size bảng bên trong module về chuẩn 14px */
+.inline-tien-su .table {
+  font-size: var(--qlpk-font-size-md, 14px);
+  margin-bottom: 0;
+}
+.inline-tien-su .table th,
+.inline-tien-su .table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+.inline-tien-su .table input {
+  font-size: var(--qlpk-font-size-md, 14px);
+}
+
+/* ── ĐẶC ĐIỂM LIÊN QUAN BỆNH — Substance Table ── */
+.medical-history-substance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--qlpk-font-size-md, 14px);
+}
+.medical-history-substance-table thead th {
+  background: var(--qlpk-palette-green-95-a);
+  color: var(--qlpk-color-primary);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  font-size: var(--qlpk-font-size-md, 14px);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 5px 8px;
+  border-bottom: 2px solid var(--qlpk-palette-teal-77);
+}
+.medical-history-substance-table tbody tr {
+  border-bottom: 1px solid var(--qlpk-palette-blue-96-a);
+  transition: background .12s;
+}
+.medical-history-substance-table tbody tr:last-child { border-bottom: none; }
+.medical-history-substance-table tbody tr:hover { background: var(--qlpk-palette-green-98); }
+.medical-history-substance-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+  font-size: var(--qlpk-font-size-md, 14px);
+  color: var(--qlpk-color-text);
+}
+
+/* Checkbox custom teal */
+.medical-history-sub-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+.medical-history-sub-check input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0; height: 0;
+}
+.medical-history-sub-check span {
+  width: 15px; height: 15px;
+  border: 2px solid var(--qlpk-color-border);
+  border-radius: 3px;
+  background: var(--qlpk-color-white);
+  display: inline-block;
+  position: relative;
+  transition: border-color .15s, background .15s;
+  flex-shrink: 0;
+}
+.medical-history-sub-check input[type="checkbox"]:checked + span {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
+}
+.medical-history-sub-check input[type="checkbox"]:checked + span::after {
+  content: '';
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 7px;
+  border: 2px solid var(--qlpk-color-white);
+  border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
+
+/* Input ghi chú trong bảng substance */
+.medical-history-sub-input {
+  width: 100%;
+  border: 1px solid var(--qlpk-palette-blue-92);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  color: var(--qlpk-color-text);
+  background: var(--qlpk-palette-gray-98);
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.medical-history-sub-input:not(:disabled):focus {
+  border-color: var(--qlpk-color-primary);
+  background: var(--qlpk-color-white);
+  box-shadow: 0 0 0 2px var(--qlpk-alpha-teal-21-07);
+}
+.medical-history-sub-input:disabled { opacity: .45; cursor: not-allowed; }
+.medical-history-sub-input::placeholder { color: var(--qlpk-palette-gray-73); }
+
+/* ── DỊ ỨNG THUỐC — Chip area (summary badges) ── */
+.medical-history-chip-area--allergy {
+  min-height: 28px;
+  border: 1.5px solid var(--qlpk-palette-blue-84);
+  border-radius: 5px;
+  padding: 4px 7px;
+  display: flex; flex-direction: column; gap: 3px;
+  background: var(--qlpk-color-white);
+}
+.medical-history-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.medical-history-chip-row-label { font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-semibold, 600); white-space: nowrap; }
+.medical-history-chip--allergy {
+  display: inline-flex; align-items: center;
+  border-radius: 4px; padding: 2px 8px;
+  font-size: var(--qlpk-font-size-md, 14px); font-weight: var(--qlpk-font-weight-medium, 500); white-space: nowrap;
+  background: var(--qlpk-color-brown-soft); color: var(--qlpk-color-text-muted); border: 1px solid var(--qlpk-color-border);
+}
+.medical-history-chip--allergy.allergy-nghi { background: var(--qlpk-palette-amber-95); color: var(--qlpk-palette-orange-31); border-color: var(--qlpk-palette-amber-77); }
+.medical-history-chip-row-label.allergy-nghi { color: var(--qlpk-palette-orange-31); }
+.medical-history-chip--allergy.allergy-chac { background: var(--qlpk-feedback-error-bg); color: var(--qlpk-palette-red-42); border-color: var(--qlpk-palette-red-82); }
+.medical-history-chip-row-label.allergy-chac { color: var(--qlpk-palette-red-42); }
+
+/* ── DỊ ỨNG THUỐC — Table ── */
+.medical-history-allergy-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--qlpk-font-size-md, 14px);
+}
+
+.medical-history-allergy-table thead th {
+  background: var(--qlpk-palette-green-95-a);
+  color: var(--qlpk-color-primary);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  font-size: var(--qlpk-font-size-md, 14px);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-bottom: 2px solid var(--qlpk-palette-teal-77);
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.medical-history-allergy-table tbody tr {
+  border-bottom: 1px solid var(--qlpk-palette-blue-96-a);
+  transition: background .12s;
+}
+.medical-history-allergy-table tbody tr:last-child { border-bottom: none; }
+.medical-history-allergy-table tbody tr:hover { background: var(--qlpk-palette-green-98); }
+
+.medical-history-allergy-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Input trong bảng */
+.medical-history-allergy-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--qlpk-palette-blue-89-a);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: var(--qlpk-font-size-md, 14px);
+  font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  color: var(--qlpk-color-text);
+  background: var(--qlpk-color-white);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.medical-history-allergy-input:focus {
+  border-color: var(--qlpk-color-primary);
+  box-shadow: 0 0 0 2px var(--qlpk-alpha-teal-21-08);
+}
+.medical-history-allergy-input::placeholder { color: var(--qlpk-palette-gray-73); }
+
+@media (max-width: 47.99875rem) {
+  .medical-history-allergy-table thead th {
+    font-size: var(--qlpk-font-size-sm, 12px);
+    padding: 5px 4px;
+  }
+
+  .medical-history-allergy-table td {
+    padding: 4px;
+  }
+
+  .medical-history-allergy-input {
+    padding: 4px 5px;
+    font-size: var(--qlpk-font-size-base, 13px);
+  }
+}
+
+/* Radio custom */
+.medical-history-radio-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+.medical-history-radio-wrap input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0; height: 0;
+}
+.medical-history-radio-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--qlpk-color-border);
+  background: var(--qlpk-color-white);
+  display: inline-block;
+  transition: border-color .15s, background .15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.medical-history-radio-wrap input[type="radio"]:checked + .medical-history-radio-dot {
+  border-color: var(--qlpk-color-primary);
+  background: var(--qlpk-workflow-context-header-bg);
+}
+.medical-history-radio-wrap input[type="radio"]:checked + .medical-history-radio-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--qlpk-color-white);
+}
+
+/* Nút xóa dòng */
+.medical-history-row-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+	border-width: 1px;
+	border-style: solid;
+  border-radius: 50%;
+  font-size: var(--qlpk-font-size-md, 14px);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}

@@ -1,0 +1,186 @@
+/* Search dropdown styles */
+.joint-exam-search-dropdown {
+    display: none;
+    position: absolute;
+    z-index: var(--qlpk-z-legacy-floating);
+    background: white;
+    border: 1px solid var(--qlpk-palette-gray-87);
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
+    width: 100%;
+    margin-top: 2px;
+}
+
+.joint-exam-search-dropdown.is-open {
+    display: block;
+}
+
+.joint-exam-search-dropdown--floating {
+    position: fixed;
+    z-index: var(--qlpk-z-legacy-floating);
+}
+
+.relative-search-dropdown {
+    background: white;
+    border: 1px solid var(--qlpk-palette-gray-87);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(var(--qlpk-color-black-rgb), 0.15);
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: var(--qlpk-z-legacy-floating);
+}
+
+.relative-search-dropdown.is-open {
+    display: block;
+}
+
+.relative-search-dropdown--floating {
+    position: fixed;
+    z-index: var(--qlpk-z-legacy-floating);
+}
+
+.relative-search-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--qlpk-palette-gray-94);
+}
+
+.relative-search-item:hover {
+    background-color: var(--qlpk-button-secondary-bg);
+}
+
+.relative-search-item.active {
+    background-color: var(--qlpk-button-secondary-bg);
+}
+
+.relative-search-item.no-results {
+    color: var(--qlpk-palette-gray-46);
+    font-style: italic;
+    cursor: default;
+}
+
+.relative-search-item.no-results:hover {
+    background-color: transparent;
+}
+
+@media (max-width: 48rem) {
+    .joint-exam-modal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .joint-exam-modal .modal-body {
+        padding: 0.625rem;
+    }
+
+    .joint-exam-table-toolbar {
+        justify-content: stretch;
+    }
+
+    .joint-exam-add-btn {
+        width: 100%;
+    }
+
+    .joint-exam-table-body .joint-exam-table-scroll {
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+
+    .joint-exam-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .joint-exam-table thead {
+        display: none;
+    }
+
+    .joint-exam-table tbody {
+        display: grid;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .joint-exam-table tbody tr {
+        display: grid;
+        gap: 0.4rem;
+        padding: 0.5rem 0.625rem;
+        border: 0.0625rem solid var(--qlpk-toast-border);
+        border-left: 0.1875rem solid var(--qlpk-color-primary);
+        border-radius: 0.5rem;
+        background: var(--qlpk-color-white);
+    }
+
+    .joint-exam-table tbody tr.editing-row {
+        background: var(--qlpk-color-surface-subtle);
+    }
+
+    .joint-exam-table tbody td {
+        display: grid;
+        grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        text-align: left;
+    }
+
+    .joint-exam-table tbody td::before {
+        color: var(--qlpk-color-brown);
+        font-size: var(--qlpk-font-size-base, 13px);
+        font-weight: var(--qlpk-font-weight-bold, 700);
+        line-height: 1.25;
+    }
+
+    .joint-exam-table tbody td:nth-child(1)::before {
+        content: "STT";
+    }
+
+    .joint-exam-table tbody td:nth-child(2)::before {
+        content: "Họ tên";
+    }
+
+    .joint-exam-table tbody td:nth-child(3)::before {
+        content: "Quan hệ";
+    }
+
+    .joint-exam-table tbody td:nth-child(4)::before {
+        content: "CCCD/CMND";
+    }
+
+    .joint-exam-table tbody td:nth-child(5)::before {
+        content: "Số điện thoại";
+    }
+
+    .joint-exam-table tbody td:nth-child(6)::before {
+        content: "Ngày đi cùng";
+    }
+
+    .joint-exam-table tbody td:nth-child(7)::before {
+        content: "Thao tác";
+    }
+
+    .joint-exam-table tbody td:nth-child(1),
+    .joint-exam-table tbody td:nth-child(6),
+    .joint-exam-table tbody td:nth-child(7),
+    .relative-table-center {
+        text-align: left;
+    }
+
+    .joint-exam-table .relative-row-actions {
+        justify-content: flex-start;
+    }
+
+    .joint-exam-action-column {
+        min-width: 0;
+    }
+
+    .joint-exam-date-input {
+        text-align: left;
+    }
+}

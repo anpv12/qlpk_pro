@@ -1,0 +1,229 @@
+/* ==================== Data Table ==================== */
+.data-card {
+	background: white;
+	border-radius: 16px;
+	box-shadow: 0 4px 20px rgba(var(--qlpk-color-black-rgb), 0.06);
+	overflow: visible;
+}
+.data-card .table-responsive {
+	overflow: visible;
+}
+
+.data-card .dc-header {
+	background: var(--qlpk-color-white);
+	padding: 0.625rem 1rem;
+	border-bottom: 1px solid var(--qlpk-color-border);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	color: var(--primary-blue);
+	font-size: var(--qlpk-font-size-md, 14px);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.expense-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: var(--qlpk-color-surface);
+	color: var(--qlpk-color-neutral-700);
+}
+
+.expense-table thead th {
+	background: var(--qlpk-color-brown-soft);
+	color: var(--qlpk-color-neutral-700);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	padding: 8px 10px;
+	border: 1px solid var(--qlpk-color-border);
+	position: sticky;
+	top: 0;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.expense-table tbody td {
+	padding: 0;
+	border: 1px solid var(--qlpk-color-border);
+	font-size: var(--qlpk-font-size-base, 13px);
+	height: 38px;
+	vertical-align: middle;
+}
+
+.expense-table tbody tr {
+	transition: background 0.15s;
+}
+
+.expense-table tbody tr:hover {
+	background: var(--qlpk-color-primary-soft);
+}
+
+.expense-table tbody tr.highlight .row-num {
+	border-inline-start: 2px solid var(--bs-danger);
+	color: var(--bs-danger);
+}
+
+.cell-input {
+	width: 100%;
+	height: 100%;
+	border: none;
+	outline: none;
+	padding: 6px 10px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	background: transparent;
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+}
+
+.cell-input:focus {
+	background: var(--qlpk-color-primary-soft);
+	box-shadow: inset 0 0 0 2px var(--primary-blue);
+}
+
+.cell-input.readonly {
+	background: var(--qlpk-color-surface);
+	color: var(--qlpk-color-neutral-700);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	cursor: default;
+}
+
+.cell-input.num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.row-num {
+	width: 36px;
+	text-align: center;
+	color: var(--qlpk-color-text-muted);
+	font-size: var(--qlpk-font-size-xs, 11px);
+	background: var(--qlpk-color-surface);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.row-actions {
+	width: 36px;
+	text-align: center;
+}
+
+.row-actions button {
+	border: none;
+	cursor: pointer;
+	font-size: var(--qlpk-font-size-md, 14px);
+	padding: 2px;
+}
+.row-actions button:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: none;
+	color: var(--qlpk-color-border);
+	transition: color 0.15s;
+}
+.row-actions button:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--qlpk-palette-red-60);
+}
+
+.type-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	padding: 3px 8px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.add-row-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 16px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	cursor: pointer;
+	border: none;
+	width: 100%;
+	font-weight: var(--qlpk-font-weight-medium, 500);
+}
+.add-row-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--primary-blue);
+	background: none;
+	transition: background 0.15s;
+}
+.add-row-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-color-primary-soft);
+}
+
+.total-row td {
+	background: var(--qlpk-color-surface);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	border: 1px solid var(--qlpk-color-border);
+	border-top-width: 2px;
+}
+
+.total-row .cell-input {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--qlpk-color-neutral-700);
+}
+
+/* ==================== Autocomplete ==================== */
+.ac-wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+.ac-wrap input {
+	width: 100%;
+	height: 100%;
+	border: none;
+	outline: none;
+	padding: 6px 10px;
+	font-size: var(--qlpk-font-size-base, 13px);
+	background: transparent;
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+}
+
+.ac-wrap input:focus {
+	background: var(--qlpk-color-primary-soft);
+	box-shadow: inset 0 0 0 2px var(--primary-blue);
+}
+
+.ac-list {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 9999;
+	background: var(--qlpk-color-white);
+	border: 1px solid var(--qlpk-color-border);
+	border-top: none;
+	box-shadow: 0 4px 12px rgba(var(--qlpk-color-black-rgb), 0.1);
+	border-radius: 0 0 8px 8px;
+	max-height: 160px;
+	overflow-y: auto;
+	display: none;
+}
+
+.ac-list.show {
+	display: block;
+}
+
+.ac-item {
+	padding: 6px 10px;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	cursor: pointer;
+	transition: background 0.1s;
+}
+
+.ac-item:hover,
+.ac-item.active {
+	background: var(--qlpk-color-primary-soft);
+	color: var(--primary-blue);
+}
+
+.ac-item-new {
+	color: var(--qlpk-palette-green-30);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	border-top: 1px solid var(--qlpk-color-brown-soft);
+}
+
+.ac-item-muted {
+	color: var(--qlpk-color-text-muted);
+}

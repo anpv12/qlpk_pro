@@ -1,0 +1,423 @@
+/* ============================================
+   Patient Search Modal - DRY CSS
+   Di dời từ doctor-examination.html & psychologist-examination.html
+   ============================================ */
+
+/* Modal Layout */
+.patient-search-modal {
+	--patient-modal-primary: var(--qlpk-color-primary);
+	--patient-modal-primary-strong: var(--qlpk-color-primary-strong);
+	--patient-modal-primary-soft: var(--qlpk-color-brown-soft, var(--qlpk-color-brown-soft));
+	--patient-modal-accent: var(--qlpk-color-gold, var(--qlpk-color-gold));
+	--patient-modal-canvas: var(--qlpk-color-surface-warm, var(--qlpk-color-surface-warm));
+	--patient-modal-surface: var(--qlpk-color-surface, var(--qlpk-color-white));
+	--patient-modal-text: var(--qlpk-color-text, var(--qlpk-color-text));
+	--patient-modal-muted: var(--qlpk-toast-muted);
+	--patient-modal-on-primary: var(--qlpk-color-surface-subtle);
+	--patient-modal-control-border: var(--qlpk-palette-gray-54);
+	--patient-modal-line: rgba(var(--qlpk-brown-800-rgb), 0.14);
+	--patient-modal-line-strong: rgba(var(--qlpk-brown-800-rgb), 0.28);
+	--patient-modal-shadow: 0 0.5rem 1.25rem rgba(var(--qlpk-color-text-rgb), 0.1);
+	--patient-modal-info: var(--qlpk-feedback-info, var(--qlpk-color-primary));
+	--patient-modal-info-soft: var(--qlpk-feedback-info-bg, var(--qlpk-feedback-info-bg));
+	--patient-modal-error: var(--qlpk-feedback-error, var(--qlpk-feedback-error));
+	--patient-modal-error-soft: var(--qlpk-feedback-error-bg, var(--qlpk-feedback-error-bg));
+
+	/* Legacy aliases keep the document preview styles on the shared palette. */
+	--patient-modal-brown: var(--patient-modal-primary);
+	--patient-modal-brown-strong: var(--patient-modal-primary-strong);
+	--patient-modal-brown-soft: var(--patient-modal-primary-soft);
+	--patient-modal-deep: var(--patient-modal-primary-strong);
+	--patient-modal-coral: var(--patient-modal-primary);
+	--patient-modal-gold: var(--patient-modal-accent);
+	--patient-modal-pink: var(--patient-modal-accent);
+	--patient-modal-cream: var(--patient-modal-canvas);
+	--patient-modal-surface-soft: var(--patient-modal-primary-soft);
+	font-size: var(--qlpk-font-size-md, 14px);
+	color: var(--patient-modal-text);
+}
+
+.patient-search-modal .modal-dialog {
+	width: 100%;
+	max-width: none;
+	height: 100vh;
+	max-height: 100vh;
+	margin: 0;
+}
+
+.patient-search-modal .modal-content {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	max-height: 100vh;
+	border-radius: 0;
+	background: var(--patient-modal-cream);
+}
+
+.patient-search-modal__body {
+	flex: 1;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.patient-search-modal__row {
+	flex: 1;
+	min-height: 0;
+	background: var(--patient-modal-canvas);
+}
+
+.patient-search-modal__left-column,
+.patient-search-modal__right-column {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.patient-search-modal__left-column {
+	background: var(--patient-modal-cream);
+	border-inline-end-color: var(--patient-modal-line-strong);
+}
+
+.patient-search-modal__right-column {
+	/* Keep document surfaces neutral; brand accents inherit the shared brown/gold palette. */
+	--patient-modal-canvas: var(--qlpk-color-white);
+	--patient-modal-surface: var(--qlpk-color-white);
+	--patient-modal-text: var(--qlpk-palette-gray-15);
+	--patient-modal-muted: var(--qlpk-color-text-muted);
+	--patient-modal-control-border: var(--qlpk-color-border);
+	--patient-modal-line: var(--qlpk-alpha-blue-47-18);
+	--patient-modal-line-strong: var(--qlpk-palette-blue-88-a);
+	--patient-modal-shadow: 0 0.375rem 1.25rem var(--qlpk-alpha-blue-11-07);
+	--patient-modal-cream: var(--qlpk-color-page-bg);
+	--patient-modal-surface-soft: var(--qlpk-color-page-bg);
+	background: var(--patient-modal-canvas);
+}
+
+.patient-search-modal__left-column,
+.patient-search-modal__left-inner {
+	overflow: hidden;
+}
+
+.patient-search-modal__left-inner,
+.patient-search-modal__right-inner {
+	flex: 1;
+	min-height: 0;
+	padding: clamp(0.5rem, 0vw, 0.75rem);
+}
+
+.patient-search-modal__left-inner {
+	gap: 0.75rem;
+}
+
+.patient-search-modal__section-label,
+.patient-search-modal__history-heading {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	color: var(--patient-modal-brown);
+	font-size: var(--qlpk-font-size-lg, 16px);
+	line-height: var(--qlpk-line-height-tight, 1.2);
+}
+
+.patient-search-modal__section-label {
+	margin-block-end: 0.65rem;
+	padding-block-end: 0.55rem;
+	border-block-end: 0.125rem solid var(--patient-modal-accent);
+}
+
+.patient-search-modal__search-section {
+	flex-shrink: 0;
+}
+
+.patient-search-modal__section-label i,
+.patient-search-modal__history-heading i {
+	color: var(--patient-modal-coral);
+}
+
+.patient-search-modal__table-head {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--patient-modal-on-primary);
+}
+
+.patient-search-modal__table-head-row {
+	margin-inline: 0;
+	border-color: transparent;
+	color: var(--patient-modal-on-primary);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	letter-spacing: 0.01em;
+}
+.patient-search-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--patient-modal-control-border);
+	background: var(--patient-modal-surface);
+	color: var(--patient-modal-text);
+}
+.patient-search-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *)::placeholder {
+	color: var(--patient-modal-muted);
+}
+.patient-search-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--patient-modal-coral);
+	box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--patient-modal-coral) 22%, transparent);
+}
+.patient-search-modal__patient-action:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal__history-copy-button {
+	border-color: var(--patient-modal-control-border);
+	background: var(--patient-modal-surface);
+	color: var(--patient-modal-brown);
+	box-shadow: 0 0.125rem 0.35rem rgba(var(--qlpk-brown-800-rgb), 0.08);
+}
+.patient-search-modal__patient-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal__patient-action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal__history-copy-button:hover,
+.patient-search-modal__history-copy-button:focus-visible {
+	border-color: var(--patient-modal-coral);
+	background: var(--patient-modal-brown-soft);
+	color: var(--patient-modal-brown);
+}
+
+.patient-search-modal__history-copy-button--current {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--patient-modal-on-primary);
+}
+
+.patient-search-modal__history-copy-button--current:hover,
+.patient-search-modal__history-copy-button--current:focus-visible {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--patient-modal-on-primary);
+}
+
+.patient-search-modal__history-copy-button--examining,
+.patient-search-modal__history-copy-button--examining:hover,
+.patient-search-modal__history-copy-button--examining:focus-visible {
+	border-color: var(--patient-modal-info);
+	background: var(--patient-modal-info);
+	color: var(--patient-modal-on-primary);
+}
+
+.patient-search-modal__spinner {
+	color: var(--patient-modal-coral);
+}
+
+.patient-search-modal__function-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	flex-shrink: 0;
+	padding-block-end: 0;
+	border-block-end: 0.0625rem solid var(--patient-modal-line-strong);
+}
+
+.patient-search-modal__function-bar .function-tab-list {
+	min-width: 0;
+	flex: 1 1 auto;
+	gap: 0.25rem;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.patient-search-modal__function-bar .function-tab-list .nav-item {
+	gap: 0.25rem;
+}
+
+.patient-search-modal__function-bar .function-tab-list .nav-link {
+	padding-inline: 0.5rem;
+}
+
+.patient-search-modal__close-button {
+	flex: 0 0 auto;
+	margin-inline-start: auto;
+}
+.patient-search-modal .patient-modal-close-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--patient-modal-surface);
+	border-color: var(--patient-modal-control-border);
+	box-shadow: none;
+	color: var(--patient-modal-primary);
+}
+
+.patient-search-modal .patient-modal-close-btn:hover,
+.patient-search-modal .patient-modal-close-btn:focus-visible {
+	transform: none;
+}
+.patient-search-modal .patient-modal-close-btn:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.patient-search-modal .patient-modal-close-btn:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--patient-modal-primary-soft);
+	border-color: var(--patient-modal-primary);
+	color: var(--patient-modal-primary-strong);
+}
+
+.patient-search-modal__results-card {
+	max-height: 300px;
+	border-color: var(--patient-modal-line-strong);
+	box-shadow: var(--patient-modal-shadow);
+}
+
+.patient-search-modal__results-body {
+	max-height: 250px;
+	overflow-y: auto;
+	background: var(--patient-modal-surface);
+}
+
+.patient-search-modal__results-card .modal-patient-item > [class*="col-"],
+.patient-search-modal__results-card .patient-search-modal__table-head-row > [class*="col-"] {
+	min-width: 0;
+	padding-inline: 0.3rem;
+	white-space: nowrap;
+}
+
+.patient-search-modal__results-card .modal-patient-item > .patient-search-modal__patient-name {
+	overflow-wrap: anywhere;
+	white-space: normal;
+}
+
+.patient-search-modal__empty-icon {
+	font-size: var(--qlpk-font-size-5xl, 32px);
+}
+
+.patient-search-modal__empty-icon--sm {
+	font-size: var(--qlpk-font-size-3xl, 24px);
+}
+
+.patient-search-modal__empty-icon--md {
+	font-size: var(--qlpk-font-size-3xl, 24px);
+}
+
+.patient-search-modal__empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: 9rem;
+	padding: 1.25rem 1rem;
+	color: var(--patient-modal-text);
+	text-align: center;
+}
+
+.patient-search-modal__empty-state--panel {
+	min-height: 14rem;
+}
+
+.patient-search-modal__empty-icon-wrap {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 3rem;
+	block-size: 3rem;
+	margin-block-end: 0.35rem;
+	border: 0.0625rem solid color-mix(in srgb, var(--patient-modal-coral) 55%, transparent);
+	border-radius: 0.75rem;
+	background: var(--patient-modal-brown-soft);
+	color: var(--patient-modal-coral);
+}
+
+.patient-search-modal__empty-title {
+	margin: 0;
+	color: var(--patient-modal-deep);
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	line-height: var(--qlpk-line-height-tight, 1.2);
+}
+
+.patient-search-modal__empty-description {
+	max-width: 32rem;
+	color: var(--patient-modal-muted);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-medium, 500);
+}
+
+.patient-search-modal__empty-state--error .patient-search-modal__empty-icon-wrap {
+	border-color: var(--patient-modal-error);
+	background: var(--patient-modal-error-soft);
+	color: var(--patient-modal-error);
+}
+
+.patient-search-modal__empty-state--loading .patient-search-modal__empty-icon-wrap {
+	border-color: var(--patient-modal-line-strong);
+	background: var(--patient-modal-surface-soft);
+}
+
+.patient-search-modal__history-button-visible {
+	display: inline-flex;
+}
+
+.patient-search-modal__history-section {
+	container-type: inline-size;
+	gap: 0.5rem;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.patient-search-modal__history-heading {
+	margin: 0;
+}
+
+.patient-search-modal__shrink {
+	flex-shrink: 0;
+}
+
+.patient-search-modal__scroll-card {
+	min-height: 0;
+	overflow: hidden;
+	border-color: var(--patient-modal-line-strong);
+	box-shadow: var(--patient-modal-shadow);
+}
+
+.patient-search-modal__scroll-body {
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.patient-search-modal__tab-content,
+.patient-search-modal__tab-pane,
+.patient-search-modal__tab-card {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.patient-search-modal__tab-pane-soft,
+.patient-search-modal__tab-card-soft {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+.patient-search-modal__tab-card,
+.patient-search-modal__tab-card-soft {
+	border: 0;
+	box-shadow: none;
+	background: transparent;
+}
+
+.patient-search-modal__tab-body {
+	flex: 1;
+	min-height: 0;
+}
+
+.patient-search-modal__tab-body-scroll {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+}
+
+.patient-search-modal__tab-body-reset {
+	padding: 0;
+}
+
+.patient-search-modal__tab-body-scroll > .patient-search-modal__tab-content-area {
+	min-height: 100%;
+}
+
+.patient-search-modal__content-fill {
+	min-height: 0;
+}
+
+.patient-search-modal.show .modal-backdrop {
+	height: 100vh;
+}

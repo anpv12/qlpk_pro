@@ -3,8 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readCssSource } = require('./helpers/css-source');
 
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/pages/doctor-examination.css'));
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/partials/doctor-clinical-workspace.html'), 'utf8');
 const fields = [...template.matchAll(/<label class="doctor-clinical-detail-field\b[^>]*for="([^"]+)"[^>]*>([\s\S]*?)<\/label>/g)];
 const rule = selector => {

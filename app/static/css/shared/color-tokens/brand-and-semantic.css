@@ -1,0 +1,140 @@
+:root {
+	--qlpk-color-white: #ffffff;
+	--qlpk-color-black: #000000;
+
+	--qlpk-color-page-bg: #fbf8f2;
+	--qlpk-color-surface: #ffffff;
+	--qlpk-color-surface-muted: #fff7ed;
+	--qlpk-color-surface-subtle: #fffaf3;
+	--qlpk-color-surface-warm: #fffdf9;
+
+	--qlpk-color-text: #352821;
+	--qlpk-color-text-muted: var(--qlpk-warm-gray);
+	--qlpk-color-muted: var(--qlpk-warm-gray);
+	--qlpk-color-neutral-700: #374151;
+	--qlpk-color-neutral-600: #4b5563;
+	--qlpk-color-neutral-500: #6b7280;
+	--qlpk-color-neutral-400: #9ca3af;
+	--qlpk-color-slate-600: #475569;
+
+	--qlpk-brand-primary-rgb: var(--qlpk-brown-800-rgb);
+	--qlpk-brand-header-start-rgb: 109, 61, 39;
+	--qlpk-brand-primary: rgb(var(--qlpk-brand-primary-rgb));
+	--qlpk-color-primary: var(--qlpk-brand-primary);
+	--qlpk-workflow-context-header-bg: linear-gradient(180deg, var(--qlpk-header-surface-strong, var(--qlpk-color-header-light)) 0%, var(--qlpk-header-bg, var(--qlpk-brown-800)) 100%);
+	--qlpk-color-primary-strong-rgb: var(--qlpk-brand-primary-rgb);
+	--qlpk-color-primary-strong: var(--qlpk-brand-primary);
+	--qlpk-color-primary-soft: var(--qlpk-color-brown-soft);
+	--qlpk-color-primary-subtle: var(--qlpk-color-surface-subtle);
+	--qlpk-color-primary-border: rgba(var(--qlpk-brand-primary-rgb), 0.34);
+	--qlpk-color-focus: var(--qlpk-brand-primary);
+	--qlpk-color-primary-rgb: var(--qlpk-brand-primary-rgb);
+
+	--qlpk-button-primary-bg: #176b5b;
+	--qlpk-button-primary-hover: #125547;
+	--qlpk-button-primary-active: #0e4439;
+	--qlpk-button-primary-text: #ffffff;
+	--qlpk-button-secondary-bg: #f5f5f5;
+	--qlpk-button-secondary-hover: #ededed;
+	--qlpk-button-secondary-active: #e3e3e3;
+	--qlpk-button-secondary-text: #343b40;
+	--qlpk-button-on-dark-bg: #ffffff;
+	--qlpk-button-on-dark-hover: #f5f5f5;
+	--qlpk-button-on-dark-active: #ebebeb;
+	--qlpk-button-danger-bg: #b42332;
+	--qlpk-button-danger-hover: #991d2a;
+	--qlpk-button-danger-active: #801824;
+	--qlpk-button-danger-text: #ffffff;
+	--qlpk-button-danger-soft-hover: #fff0f1;
+	--qlpk-button-danger-soft-active: #ffe1e4;
+	--qlpk-button-disabled-bg: #e7e7e7;
+	--qlpk-button-disabled-text: #747474;
+	--qlpk-button-disabled-border: transparent;
+	--qlpk-button-disabled-image: none;
+	--qlpk-button-focus-light: #343b40;
+	--qlpk-button-focus-dark: #ffffff;
+	--qlpk-button-focus-width: 2px;
+	--qlpk-button-focus-offset: 3px;
+
+	--qlpk-color-border: #e8dfd6;
+	--qlpk-color-border-strong: #d8ccbb;
+	--qlpk-color-border-light: rgba(var(--qlpk-brown-800-rgb), 0.1);
+	--qlpk-color-line: rgba(var(--qlpk-brown-800-rgb), 0.16);
+	--qlpk-color-line-strong: rgba(var(--qlpk-brown-800-rgb), 0.28);
+
+	--qlpk-brown-50: #fff7ed;   /* L*97.6  1.06:1  nền trang */
+	--qlpk-brown-100: #fbf1e6;  /* L*95.6  1.12:1  nền vùng */
+	--qlpk-brown-150: #efe2d5;  /* L*90.6  1.27:1  nền chìm */
+	--qlpk-brown-200: #e0cfc0;  /* L*84.1  1.52:1  viền */
+	--qlpk-brown-300: #c4ac9b;  /* L*72.0  2.16:1  viền đậm, chỉ trang trí */
+	--qlpk-brown-400: #a68876;  /* L*59.0  3.28:1  icon phụ, đạt AA cho UI */
+	--qlpk-brown-500: #8a6856;  /* L*46.9  5.01:1  chữ phụ, đạt AA chữ thường */
+	--qlpk-brown-600: #714e3d;  /* L*36.6  7.34:1  chữ nhấn */
+	--qlpk-brown-700: #5b3829;  /* L*27.3 10.28:1  tiêu đề */
+	--qlpk-brown-800-rgb: 75, 39, 25;
+	--qlpk-brown-800: rgb(var(--qlpk-brown-800-rgb));
+	--qlpk-brown-900: #381708;  /* L*12.4 16.23:1  nhấn mạnh nhất */
+
+	/* Xám ấm. Thay #566366 (hue 191deg, lệch 150deg khỏi hệ nâu-kem).
+	 * Giữ đúng L*41 nên tương phản không đổi: 6.23:1 trên trắng. */
+	--qlpk-warm-gray: #675f5c;
+	--qlpk-warm-gray-soft: #8d8481;
+
+	--qlpk-color-chocolate: var(--qlpk-brown-800);
+	--qlpk-color-header-light: rgb(var(--qlpk-brand-header-start-rgb));
+	--qlpk-color-brown: #5a301f;
+	--qlpk-color-brown-soft: #f8f1e9;
+	--qlpk-color-gold: #d6a069;
+	--qlpk-color-gold-rgb: 214, 160, 105;
+	--qlpk-color-white-rgb: 255, 255, 255;
+	/* Chữ kem trên nền header nâu. */
+	--qlpk-color-on-dark: #fffaf3;
+	--qlpk-color-ink-rgb: 31, 26, 22;
+	--qlpk-color-ink: rgb(var(--qlpk-color-ink-rgb));
+	/* Nền chip/badge kem của Tiền sử. */
+	--qlpk-color-surface-chip: #faf6e6;
+
+	/* Màu nhóm đơn thuốc: thường, hướng thần (H), gây nghiện (N). */
+	--qlpk-rx-basic: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
+	--qlpk-rx-h: #7e57c2;
+	--qlpk-rx-n: #f4511e;
+
+	/* Doctor workspace semantic theme. Components consume these aliases rather
+	 * than owning a second, page-specific palette. */
+	--qlpk-doctor-page-bg: var(--qlpk-color-page-bg);
+	--qlpk-doctor-surface: var(--qlpk-color-surface);
+	--qlpk-doctor-surface-soft: var(--qlpk-color-brown-soft);
+	--qlpk-doctor-text: var(--qlpk-color-text);
+	--qlpk-doctor-muted: var(--qlpk-color-chocolate);
+	--qlpk-doctor-primary: var(--qlpk-brand-primary);
+	--qlpk-doctor-primary-strong: var(--qlpk-color-primary-strong);
+	--qlpk-doctor-primary-soft: #fbf8f2;
+	--qlpk-doctor-on-primary: var(--qlpk-color-white);
+	--qlpk-doctor-surface-strong: var(--qlpk-color-surface);
+	--qlpk-doctor-header-muted: rgb(255 255 255 / 86%);
+	--qlpk-doctor-header-border: rgb(255 255 255 / 26%);
+	--qlpk-doctor-danger-soft: #fff3f3;
+	/* High-contrast semantic status colors for the dark Doctor headers. */
+	--qlpk-doctor-success: #4ade80;
+	--qlpk-doctor-warning-soft: #fff2e6;
+	--qlpk-doctor-focus-ring: var(--qlpk-color-focus);
+	--qlpk-doctor-shadow-color: rgba(var(--qlpk-brown-800-rgb), 0.1);
+	--qlpk-doctor-line: var(--qlpk-color-line);
+	--qlpk-doctor-line-strong: var(--qlpk-color-line-strong);
+	--qlpk-doctor-danger: var(--qlpk-feedback-error);
+	--qlpk-doctor-warning: var(--qlpk-feedback-warning);
+	--qlpk-doctor-radius-sm: 0.375rem;
+	--qlpk-doctor-radius-md: 0.625rem;
+	--qlpk-doctor-radius-lg: 0.875rem;
+	--qlpk-doctor-space-1: 0.25rem;
+	--qlpk-doctor-space-2: 0.5rem;
+	--qlpk-doctor-space-3: 0.75rem;
+	--qlpk-doctor-space-4: 1rem;
+	--qlpk-doctor-shadow-sm: 0 0.125rem 0.5rem rgba(var(--qlpk-brown-800-rgb), 0.08);
+	--qlpk-doctor-shadow-md: 0 0.5rem 1.25rem rgba(var(--qlpk-brown-800-rgb), 0.12);
+	--qlpk-doctor-shadow-editor: 0 0.5rem 1.5rem rgba(26, 68, 61, 0.055);
+	--qlpk-doctor-shadow-dropdown: 0 0.55rem 1.2rem rgba(77, 38, 23, 0.18);
+	--qlpk-doctor-shadow-tabs: 0 0.375rem 0.875rem rgba(92, 48, 27, 0.06);
+	--qlpk-doctor-shadow-modal: 0 1.5rem 4rem rgba(var(--qlpk-color-ink-rgb), 0.24);
+	--qlpk-doctor-backdrop: rgba(var(--qlpk-color-ink-rgb), 0.58);
+}

@@ -1,0 +1,98 @@
+.toggle-icon {
+	display: inline-block;
+	transition: transform 0.2s;
+}
+
+.ct-toggle-icon-collapsed {
+	transform: rotate(-90deg);
+}
+
+.ct-month-label-cell {
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	color: var(--qlpk-color-text-muted);
+	padding: 6px 10px;
+}
+
+.ct-month-stat-cell {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--qlpk-color-neutral-700);
+	padding: 6px 10px;
+}
+
+.ct-month-amount-cell {
+	text-align: right;
+}
+
+.ct-type-cell {
+	background: var(--qlpk-color-surface);
+}
+
+.ct-type-cell .ct-type-input {
+	color: var(--qlpk-color-neutral-700);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+.ct-formula-summary {
+	font-size: var(--qlpk-font-size-2xs, 10px);
+	color: var(--qlpk-color-text-muted);
+	margin-left: 4px;
+}
+
+.ct-grip-icon {
+	color: var(--qlpk-color-border);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+/* Tablet & small desktop */
+@media (max-width: 1200px) {
+	.main-content { padding: 5px 6px; }
+	.data-card .table-responsive { overflow-x: auto; }
+	.expense-table { min-width: 850px; }
+}
+
+@media (max-width: 1024px) {
+	/* Toolbar: wrap buttons */
+	.dc-header { flex-wrap: wrap; gap: 6px !important; }
+	.dc-header > div { flex-wrap: wrap; gap: 6px; }
+
+	/* Charts stack vertically */
+	.chart-section .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+
+	/* Summary strip */
+	.ss-group { flex-wrap: wrap; }
+
+	/* Tab bar */
+	.tab-bar { flex-wrap: wrap; gap: 6px; }
+	.tab-bar .tab-right { flex-wrap: wrap; gap: 6px; }
+}
+
+@media (max-width: 767.98px) {
+	/* Hai cột biểu đồ xếp chồng: mỗi biểu đồ có chiều cao riêng, pane cuộn */
+	.ct-row-fill { flex: 0 0 auto; }
+	.chart-card .cc-body.ct-card-body-fill { flex: 0 0 auto; height: 300px; }
+}
+
+@media (max-width: 768px) {
+	.main-content { padding: 4px; }
+
+	/* Tab bar compact */
+	.tab-bar { padding: 8px 10px; }
+	.tab-bar .flatpickr-input { width: 100px; font-size: var(--qlpk-font-size-xs, 11px); }
+	.preset-btn { padding: 3px 8px; font-size: var(--qlpk-font-size-xs, 11px); }
+
+	/* Toolbar compact */
+	.dc-header { padding: 8px !important; }
+	.btn-import-xl, .btn-export-xl, .tb-btn { font-size: var(--qlpk-font-size-xs, 11px); padding: 5px 10px; }
+
+	/* Summary strip */
+	.ss-group-label { font-size: var(--qlpk-font-size-2xs, 10px); }
+	.ss-item { font-size: var(--qlpk-font-size-xs, 11px); }
+
+	/* Table */
+	.expense-table thead th { font-size: var(--qlpk-font-size-xs, 11px); padding: 6px 6px; }
+	.cell-input { font-size: var(--qlpk-font-size-sm, 12px); padding: 4px 6px; }
+
+	/* Footer */
+	.footer-bar { flex-direction: column; gap: 6px; padding: 8px 12px; font-size: var(--qlpk-font-size-sm, 12px); }
+}

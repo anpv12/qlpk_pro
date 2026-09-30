@@ -1,0 +1,335 @@
+/* Modal Buttons */
+	.qlpk-print-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--surface-dim);
+		border: 1px solid var(--border);
+		color: var(--text-primary);
+}
+.qlpk-print-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--border);
+}
+
+	.qlpk-export-invoice-btn {
+	border-width: 1px;
+	border-style: solid;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+}
+.qlpk-export-invoice-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--qlpk-workflow-context-header-bg);
+		border: 1px solid var(--accent);
+		color: var(--qlpk-color-white);
+}
+.qlpk-export-invoice-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--qlpk-workflow-context-header-bg);
+}
+
+	.modal.qlpk-examination-detail-modal .modal-footer .btn[data-bs-dismiss="modal"] {
+	border-width: 1px;
+	border-style: solid;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+}
+.modal.qlpk-examination-detail-modal .modal-footer .btn[data-bs-dismiss="modal"]:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+}
+
+	.financial-summary {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		align-items: flex-end;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.pw-financial-row {
+		height: 26px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		color: var(--qlpk-color-primary);
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		font-size: var(--qlpk-font-size-md, 14px);
+	}
+
+	.pw-financial-value {
+		margin-left: 10px;
+	}
+
+	.pw-money-input {
+		width: 80px;
+		height: 24px;
+		padding: 2px 4px;
+		font-size: var(--qlpk-font-size-xs, 11px);
+		text-align: right;
+		margin-left: 10px;
+	}
+
+	.pw-invoice-col-stt {
+		width: 60px;
+	}
+
+	.pw-invoice-col-name {
+		width: 200px;
+	}
+
+	.pw-invoice-col-price {
+		width: 120px;
+	}
+
+	.pw-invoice-col-percent {
+		width: 100px;
+	}
+
+	.pw-invoice-col-actions {
+		width: 80px;
+	}
+
+	.pw-readonly-input {
+		background-color: var(--qlpk-color-page-bg);
+	}
+
+	/* ── MODAL — Add Service ── */
+	.modal.qlpk-add-service-modal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.modal.qlpk-add-service-modal .modal-header {
+		border-bottom: 1px solid var(--border);
+		padding: 12px 16px;
+	}
+
+	.modal.qlpk-add-service-modal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--text-primary);
+	}
+
+	.modal.qlpk-add-service-modal .form-label {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-sm, 12px);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		color: var(--text-secondary);
+	}
+
+	.modal.qlpk-add-service-modal .form-control,
+	.modal.qlpk-add-service-modal .form-select {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		border-radius: var(--radius-sm);
+		font-size: var(--qlpk-font-size-base, 13px);
+	}
+
+	.modal.qlpk-add-service-modal .modal-footer {
+		border-top: 1px solid var(--border);
+		padding: 10px 16px;
+	}
+
+	/* ── MODAL — Edit Service (dynamic) ── */
+	.modal.qlpk-edit-service-modal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.modal.qlpk-edit-service-modal .modal-header {
+		background: var(--qlpk-workflow-context-header-bg);
+		border-bottom: none;
+		padding: 12px 16px;
+	}
+
+	.modal.qlpk-edit-service-modal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--qlpk-color-white);
+	}
+
+	.modal.qlpk-edit-service-modal .modal-header .btn-close {
+		filter: brightness(0) invert(1);
+	}
+
+	.modal.qlpk-edit-service-modal .modal-body {
+		padding: 20px;
+	}
+
+	.modal.qlpk-edit-service-modal .form-label {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-xs, 11px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--accent);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.modal.qlpk-edit-service-modal .form-control {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	border-width: 1px;
+	border-style: solid;
+		border-radius: var(--radius-sm);
+		font-size: var(--qlpk-font-size-base, 13px);
+		height: 36px;
+}
+.modal.qlpk-edit-service-modal .form-control:not([data-qlpk-button], [data-qlpk-button] *) {
+		border: 1px solid var(--border);
+		transition: var(--transition);
+}
+.modal.qlpk-edit-service-modal .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *) {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px rgba(var(--qlpk-color-primary-rgb), 0.1);
+}
+.modal.qlpk-edit-service-modal .form-control[readonly]:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--accent-pale);
+		color: var(--text-primary);
+}
+
+	.modal.qlpk-edit-service-modal .modal-footer {
+		border-top: 1px solid var(--border);
+		padding: 12px 16px;
+	}
+
+	.modal.qlpk-edit-service-modal .modal-footer .btn-secondary {
+	border-width: 1px;
+	border-style: solid;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+}
+.modal.qlpk-edit-service-modal .modal-footer .btn-secondary:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+}
+
+	.modal.qlpk-edit-service-modal .modal-footer .btn-primary {
+	border-width: 1px;
+	border-style: solid;
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+}
+.modal.qlpk-edit-service-modal .modal-footer .btn-primary:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--qlpk-workflow-context-header-bg);
+		border: 1px solid var(--accent);
+		color: var(--qlpk-color-white);
+}
+.modal.qlpk-edit-service-modal .modal-footer .btn-primary:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+		background: var(--qlpk-workflow-context-header-bg);
+}
+
+	/* ── MODAL — Action Selection (dynamic) ── */
+	.modal.qlpk-action-selection-modal .modal-content {
+		border: none;
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.modal.qlpk-action-selection-modal .modal-header {
+		background: var(--qlpk-workflow-context-header-bg);
+		border-bottom: none;
+		padding: 12px 16px;
+	}
+
+	.modal.qlpk-action-selection-modal .modal-title {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-size: var(--qlpk-font-size-md, 14px);
+		font-weight: var(--qlpk-font-weight-bold, 700);
+		color: var(--qlpk-color-white);
+	}
+
+	.modal.qlpk-action-selection-modal .modal-header .btn-close {
+		filter: brightness(0) invert(1);
+	}
+
+	.modal.qlpk-action-selection-modal .modal-body .btn {
+		font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+		font-weight: var(--qlpk-font-weight-semibold, 600);
+		font-size: var(--qlpk-font-size-base, 13px);
+		border-radius: var(--radius-sm);
+		padding: 10px 16px;
+	}
+
+	/* ── RESPONSIVE ── */
+	@media (max-width: 992px) {
+		.pw-filters {
+			flex-wrap: wrap;
+		}
+
+		.pw-input--search {
+			width: 100%;
+		}
+
+		.pw-filters-divider {
+			display: none;
+		}
+	}
+
+	@media (max-width: 768px) {
+
+		html,
+		body {
+			overflow: auto !important;
+		}
+
+		.pw-page .pw-main {
+			height: auto;
+			overflow: auto;
+		}
+
+		.pw-card {
+			margin: 6px;
+			border-radius: var(--radius-sm);
+		}
+
+		.pw-card-body {
+			padding: 10px 12px;
+		}
+
+		.pw-filters {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.pw-filter-group {
+			width: 100%;
+		}
+
+		.pw-input--search,
+		.pw-select--status,
+		.pw-input--date {
+			width: 100%;
+		}
+
+		.pw-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 8px;
+		}
+
+		.pw-toolbar-actions {
+			width: 100%;
+		}
+
+		.pw-toolbar-actions .pw-btn {
+			flex: 1;
+			justify-content: center;
+		}
+
+		.pw-pagination {
+			flex-direction: column;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.modal.qlpk-examination-detail-modal .modal-dialog {
+			max-width: 100%;
+			margin: 4px;
+		}
+
+		.modal.qlpk-examination-detail-modal .modal-content {
+			height: calc(100vh - 8px);
+		}
+	}

@@ -4,9 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { readCssSource, stylesheetOwner } = require('./helpers/css-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
 
 test('stock receipt count uses the user-approved brand badge rather than neutral action styling', () => {
     const source = readMedicineManagementSource();
@@ -55,17 +56,17 @@ test('medicine actions use shared button colors while navigation retains brand g
 
 test('the shared gradient has one owner available without loading the doctor queue stylesheet', () => {
     const root = path.join(__dirname, '../app/static/css');
-    const tokens = fs.readFileSync(path.join(root, 'shared/color-tokens.css'), 'utf8');
-    const queue = fs.readFileSync(path.join(root, 'components/waiting-queue-card.css'), 'utf8');
-    const header = fs.readFileSync(path.join(root, 'components/app-header.css'), 'utf8');
-    const doctor = fs.readFileSync(path.join(root, 'pages/doctor-examination.css'), 'utf8');
+    const tokens = readCssSource(path.join(root, 'shared/color-tokens.css'));
+    const queue = readCssSource(path.join(root, 'components/waiting-queue-card.css'));
+    const header = readCssSource(path.join(root, 'components/app-header.css'));
+    const doctor = readCssSource(path.join(root, 'pages/doctor-examination.css'));
     const gradient = tokens.match(/--qlpk-workflow-context-header-bg:\s*([^;]+);/)?.[1];
     assert.ok(gradient);
     assert.ok(header.includes(`background: ${gradient};`));
     assert.match(doctor, /background:\s*var\(--qlpk-workflow-context-header-bg,/);
     assert.doesNotMatch(queue, /--qlpk-workflow-context-header-bg\s*:/);
     assert.doesNotMatch(css, /--qlpk-workflow-context-header-bg\s*:/);
-    for (const filename of fs.readdirSync(root, { recursive: true }).filter(name => name.endsWith('.css') && name !== 'shared/color-tokens.css')) {
+    for (const filename of fs.readdirSync(root, { recursive: true }).filter(name => name.endsWith('.css') && stylesheetOwner(root, name) !== 'shared/color-tokens.css')) {
         assert.doesNotMatch(fs.readFileSync(path.join(root, filename), 'utf8'), /--qlpk-workflow-context-header-bg\s*:/, filename);
     }
     assert.match(template, /include 'partials\/brand-theme.html'/);

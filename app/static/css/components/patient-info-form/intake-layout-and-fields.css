@@ -1,0 +1,446 @@
+/* Shared intake layout used by receptionist and doctor screens. */
+.receptionist-intake-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--receptionist-intake-gap, 0.75rem);
+	min-width: 0;
+}
+
+.receptionist-intake-content > * {
+	flex: 0 0 auto;
+}
+
+.receptionist-intake-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--receptionist-intake-gap, 0.75rem);
+	align-items: start;
+	min-width: 0;
+}
+
+@container receptionist-intake (min-width: 60rem) {
+	.receptionist-intake-grid {
+		grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
+		align-items: stretch;
+	}
+
+	.receptionist-intake-grid > .qlpk-patient-info-card {
+		grid-template-rows: auto auto minmax(0, 1fr);
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals {
+		grid-template-rows: auto minmax(0, 1fr);
+		min-block-size: 0;
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals .receptionist-vital-fields {
+		grid-auto-rows: minmax(0, 1fr);
+		min-block-size: 0;
+	}
+
+	.receptionist-intake-grid .qlpk-patient-info-card__cluster--vitals .receptionist-vital-field {
+		align-content: center;
+	}
+
+	.receptionist-card--relatives,
+	.receptionist-card--documents {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Shared patient administrative form used by receptionist and doctor screens. */
+.qlpk-patient-info-card {
+	--qlpk-patient-info-surface: var(--receptionist-tone-surface, var(--qlpk-color-surface, var(--qlpk-color-white)));
+	--qlpk-patient-info-muted-surface: var(--receptionist-tone-surface-muted, var(--qlpk-color-surface-muted, var(--qlpk-color-surface-muted)));
+	--qlpk-patient-info-line: var(--receptionist-tone-line, var(--qlpk-color-line, rgba(var(--qlpk-brown-800-rgb), 0.16)));
+	--qlpk-patient-info-line-strong: var(--receptionist-tone-line-strong, var(--qlpk-color-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.28)));
+	--qlpk-patient-info-text: var(--receptionist-tone-text, var(--qlpk-color-text, var(--qlpk-color-text)));
+	--qlpk-patient-info-muted: var(--receptionist-tone-muted, var(--qlpk-color-text-muted, var(--qlpk-palette-gray-37)));
+	--qlpk-patient-info-accent: var(--receptionist-section-header-accent, var(--qlpk-color-primary));
+	--qlpk-patient-info-accent-strong: var(--receptionist-section-header-text, var(--qlpk-color-primary-strong));
+	--qlpk-patient-info-gap: var(--receptionist-field-gap, 0.625rem);
+	--qlpk-patient-info-inline-gap: var(--receptionist-inline-gap, 0.5rem);
+	--qlpk-patient-info-pad: var(--receptionist-intake-pad, 0.625rem);
+	--qlpk-patient-info-entry-block-start: var(--receptionist-underline-input-padding-block, 0.22rem);
+	display: grid;
+	gap: var(--qlpk-patient-info-gap);
+	align-content: start;
+	container: qlpk-patient-info / inline-size;
+	min-width: 0;
+	padding: 0 var(--qlpk-patient-info-pad) var(--qlpk-patient-info-pad);
+	border: 0.0625rem solid var(--qlpk-patient-info-line);
+	border-inline-start: 0.1875rem solid var(--qlpk-patient-info-accent);
+	border-radius: 0.5rem;
+	background: var(--qlpk-patient-info-surface);
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.qlpk-patient-info-card__heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--qlpk-patient-info-inline-gap);
+	min-width: 0;
+	min-block-size: 2.45rem;
+	margin: 0 calc(var(--qlpk-patient-info-pad) * -1);
+	padding: 0.34rem var(--qlpk-patient-info-pad);
+	border-block-end: 0;
+	background: var(--receptionist-section-header-bg, var(--qlpk-patient-info-surface));
+	color: var(--qlpk-patient-info-accent-strong);
+}
+
+.qlpk-patient-info-card__title,
+.qlpk-patient-info-card .receptionist-section-title {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin: 0;
+	color: var(--qlpk-patient-info-accent-strong);
+	font-size: var(--receptionist-font-section-title, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.25;
+	text-transform: uppercase;
+}
+
+.qlpk-patient-info-card__title i,
+.qlpk-patient-info-card .receptionist-section-title i {
+	color: var(--receptionist-section-header-icon, var(--qlpk-patient-info-accent));
+}
+
+.qlpk-patient-info-card__reexam-toggle {
+	display: flex;
+	align-items: center;
+	width: fit-content;
+	max-width: 100%;
+	gap: 0.375rem;
+	min-block-size: 1.65rem;
+	margin-block-start: 0;
+	padding: 0.18rem 0.55rem;
+	border: 0.0625rem solid rgba(var(--qlpk-color-gold-rgb), 0.38);
+	border-radius: 999rem;
+	background: var(--qlpk-patient-info-muted-surface);
+	color: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
+	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.qlpk-patient-info-card .qlpk-patient-info__re-exam-check {
+	border-color: var(--qlpk-palette-brown-41);
+}
+
+.qlpk-patient-info-card .qlpk-patient-info__re-exam-check:checked {
+	background-color: var(--qlpk-palette-brown-41);
+}
+
+.qlpk-patient-info-card__cluster {
+	display: grid;
+	gap: var(--qlpk-patient-info-gap);
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.qlpk-patient-info-card__fields,
+.qlpk-patient-info-card .receptionist-patient-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	row-gap: 0.7rem;
+	column-gap: 0.85rem;
+	min-width: 0;
+	padding: 0.2rem 0.1rem 0;
+}
+
+.qlpk-patient-info-card .receptionist-patient-column {
+	display: contents;
+}
+
+.qlpk-patient-info-card .receptionist-field {
+	min-width: 0;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="gender"] {
+	order: 10;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="age"] {
+	order: 20;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-inline-detail-panel--gender {
+	order: 30;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="dateOfBirth"] {
+	order: 40;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="idCard"] {
+	order: 50;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-inline-detail-panel--identity {
+	order: 60;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="phoneNumber"] {
+	order: 70;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="occupation"] {
+	order: 80;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-inline-detail-panel--occupation {
+	order: 90;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="nickname"] {
+	order: 100;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-field[data-patient-field="maritalStatus"] {
+	order: 110;
+}
+
+.qlpk-patient-info-card[data-patient-info-mode="receptionist"] .receptionist-patient-fields .receptionist-address-inline {
+	order: 120;
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields > .receptionist-field:not(.receptionist-inline-detail-panel),
+.qlpk-patient-info-card .receptionist-patient-column > .receptionist-field:not(.receptionist-inline-detail-panel) {
+	display: grid;
+	grid-template-columns: minmax(5.5rem, max-content) minmax(0, 1fr);
+	align-items: start;
+	column-gap: 0.55rem;
+	min-width: 0;
+}
+
+.qlpk-patient-info-card .receptionist-field--full {
+	grid-column: 1 / -1;
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields .receptionist-field--full:not(.receptionist-inline-detail-panel) {
+	grid-template-columns: minmax(5.5rem, max-content) minmax(0, 1fr);
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields .form-label {
+	margin: var(--qlpk-patient-info-entry-block-start) 0 0;
+	color: var(--qlpk-palette-brown-26);
+	font-size: var(--receptionist-font-label, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields .form-control,
+.qlpk-patient-info-card .receptionist-patient-fields .form-select {
+	width: 100%;
+	min-width: 0;
+	border-width: 0 0 0.0625rem;
+	border-radius: 0;
+	padding: var(--qlpk-patient-info-entry-block-start) var(--receptionist-underline-input-padding-inline, 0.42rem);
+	font-size: var(--receptionist-font-text, var(--qlpk-font-size-base));
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.35;
+}
+.qlpk-patient-info-card .receptionist-patient-fields .form-control:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-patient-fields .form-select {
+	border-color: var(--qlpk-alpha-brown-34-34);
+	background: transparent;
+	color: var(--qlpk-patient-info-text);
+	box-shadow: none;
+}
+.qlpk-patient-info-card .receptionist-patient-fields .form-control:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-patient-fields .form-select:focus {
+	border-color: var(--qlpk-palette-brown-46);
+	box-shadow: 0 0.125rem 0 0 var(--qlpk-alpha-brown-46-12);
+}
+
+.qlpk-patient-info-card .receptionist-input-with-action,
+.qlpk-patient-info-card .receptionist-smart-input-control {
+	position: relative;
+	min-width: 0;
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields .receptionist-input-with-action .form-control,
+.qlpk-patient-info-card .receptionist-patient-fields .receptionist-input-with-action .form-select {
+	padding-inline-end: 2.25rem;
+}
+
+.qlpk-patient-info-card .receptionist-icon-action {
+	position: absolute;
+	inset-block-start: 50%;
+	inset-inline-end: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 1.75rem;
+	block-size: 1.75rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.4375rem;
+	transform: translateY(-50%);
+	z-index: var(--qlpk-z-above);
+}
+.qlpk-patient-info-card .receptionist-icon-action:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: transparent;
+	color: var(--qlpk-palette-gray-42-a);
+}
+.qlpk-patient-info-card .receptionist-icon-action:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-icon-action:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-patient-info-card .receptionist-icon-action:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-alpha-brown-55-14);
+	color: var(--qlpk-palette-brown-30-a);
+	outline: 0;
+}
+
+.qlpk-patient-info-card .receptionist-icon-action::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 0.25rem;
+	inset-inline-end: 0.25rem;
+	inline-size: 0.45rem;
+	block-size: 0.45rem;
+	border-radius: 999rem;
+	animation: qlpkPatientInfoDetailDotPulse 1.35s ease-in-out infinite;
+}
+.qlpk-patient-info-card .receptionist-icon-action:not([data-qlpk-button], [data-qlpk-button] *)::after {
+	background: var(--qlpk-palette-green-38);
+	box-shadow: 0 0 0 0 var(--qlpk-alpha-green-38-50);
+}
+
+.qlpk-patient-info-card .receptionist-patient-fields [data-receptionist-inline-toggle][aria-expanded="true"] {
+	color: var(--receptionist-section-header-icon, var(--qlpk-patient-info-accent));
+}
+
+@keyframes qlpkPatientInfoDetailDotPulse {
+	0%,
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 var(--qlpk-alpha-green-38-45);
+	}
+
+	50% {
+		transform: scale(1.15);
+		box-shadow: 0 0 0 0.35rem var(--qlpk-alpha-green-38-00);
+	}
+}
+
+.qlpk-patient-info-card .receptionist-field--inline-detail-parent {
+	position: relative;
+}
+
+.qlpk-patient-info-card .receptionist-field--inline-detail-parent::after {
+	content: "";
+	position: absolute;
+	inset-block-end: -0.48rem;
+	inset-inline-start: 0.16rem;
+	inline-size: 0.35rem;
+	block-size: 0.35rem;
+	border-inline-start: 0.125rem solid var(--qlpk-patient-info-accent);
+	border-block-end: 0.125rem solid var(--qlpk-patient-info-accent);
+	opacity: 0;
+	transform: translateY(-0.12rem);
+	transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.qlpk-patient-info-card .receptionist-field--inline-detail-parent:has([data-receptionist-inline-toggle][aria-expanded="true"])::after {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel[hidden] {
+	display: none;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel {
+	grid-template-columns: minmax(0, 1fr);
+	margin-block-start: -0.15rem;
+	padding: 0.62rem 0 0.2rem 0.78rem;
+	border-inline-start: 0.1875rem solid var(--qlpk-patient-info-accent);
+	background: linear-gradient(90deg, rgba(var(--qlpk-color-primary-rgb), 0.08), rgba(var(--qlpk-color-surface-warm-rgb), 0));
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-caption {
+	margin-block: 0 0.3rem;
+	color: var(--qlpk-palette-teal-22);
+	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-semibold);
+	line-height: 1.2;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.56rem;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel--gender .receptionist-inline-detail-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.62rem;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel--gender {
+	padding-block: 0.65rem 0.5rem;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel--gender .receptionist-field[data-patient-field="sexualOrientation"] {
+	grid-column: 1 / -1;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-grid .receptionist-field {
+	display: grid;
+	grid-template-columns: minmax(5rem, max-content) minmax(0, 1fr);
+	align-items: start;
+	column-gap: 0.55rem;
+}
+
+.qlpk-patient-info-card .receptionist-field--checkbox-inline,
+.qlpk-patient-info-card .receptionist-inline-detail-grid .receptionist-field--checkbox-inline {
+	align-items: center;
+}
+
+.qlpk-patient-info-card .receptionist-field--checkbox-inline > .form-label {
+	margin: 0;
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-panel--gender .receptionist-field {
+	grid-template-columns: minmax(7.25rem, max-content) minmax(0, 1fr);
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-grid .form-label {
+	color: var(--qlpk-palette-teal-22);
+	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.qlpk-patient-info-card .receptionist-inline-detail-grid .form-control,
+.qlpk-patient-info-card .receptionist-inline-detail-grid .form-select,
+.qlpk-patient-info-card .receptionist-inline-detail-grid .form-control::placeholder {
+	font-size: var(--receptionist-font-meta, var(--qlpk-font-size-sm));
+}
+
+.qlpk-patient-info-card .receptionist-inline-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	min-block-size: 1.875rem;
+	margin: 0;
+	color: var(--qlpk-patient-info-text);
+	font-size: var(--qlpk-font-size-base);
+	font-weight: var(--qlpk-font-weight-semibold);
+}
+
+.qlpk-patient-info-card .qlpk-patient-info__pregnancy-check {
+	inline-size: 1.05rem;
+	block-size: 1.05rem;
+	margin: 0;
+	border: 0.125rem solid var(--qlpk-patient-info-accent);
+	border-radius: 0.25rem;
+	background-color: var(--qlpk-color-white);
+	box-shadow: 0 0 0 0.125rem rgba(var(--qlpk-color-primary-rgb), 0.08);
+}

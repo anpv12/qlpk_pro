@@ -1,0 +1,449 @@
+html,
+body {
+	inline-size: 100%;
+	block-size: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--appointment-color-page-bg);
+	color: var(--appointment-color-text);
+	font-family: var(--appointment-font-family);
+	overflow: hidden;
+}
+
+:root {
+	--appointment-font-family: var(--qlpk-font-family);
+	--appointment-font-size: var(--qlpk-font-size-base);
+	--appointment-font-size-compact: var(--qlpk-font-size-sm);
+	--appointment-font-size-mini: var(--qlpk-font-size-xs);
+	--appointment-font-weight-regular: var(--qlpk-font-weight-regular);
+	--appointment-font-weight-medium: var(--qlpk-font-weight-medium);
+	--appointment-font-weight-semibold: var(--qlpk-font-weight-semibold);
+	--appointment-font-weight-bold: var(--qlpk-font-weight-bold);
+	/* Shared brand tokens: appointment chrome follows the shared clinic brand. */
+	--appointment-color-primary: var(--qlpk-color-primary);
+	--appointment-color-primary-strong: var(--qlpk-color-primary-strong);
+	--appointment-color-primary-soft: var(--qlpk-color-primary-soft);
+	--appointment-color-primary-subtle: var(--qlpk-color-primary-subtle, var(--qlpk-color-primary-soft));
+	--appointment-calendar-accent: var(--qlpk-color-primary);
+	--appointment-calendar-accent-strong: var(--qlpk-color-primary-strong);
+	--appointment-calendar-accent-soft: var(--qlpk-color-primary-soft);
+	--appointment-calendar-accent-subtle: var(--qlpk-color-page-bg);
+	--appointment-calendar-border: var(--qlpk-color-border-strong);
+	--appointment-calendar-grid-border: var(--qlpk-color-border);
+	--appointment-calendar-grid-border-soft: var(--qlpk-color-border);
+	--appointment-calendar-header-bg: var(--qlpk-color-page-bg);
+	--appointment-calendar-cell-hover: var(--qlpk-color-surface-subtle);
+	--appointment-calendar-today-bg: var(--qlpk-color-primary-soft);
+	--appointment-calendar-today-border: var(--qlpk-color-primary-border);
+	--appointment-calendar-today-text: var(--qlpk-color-primary-strong);
+	--appointment-calendar-text-primary: var(--qlpk-color-text);
+	--appointment-calendar-text-secondary: var(--qlpk-color-text-muted);
+	--appointment-calendar-text-muted: var(--qlpk-color-text-muted);
+	--appointment-calendar-text-soft: var(--qlpk-color-text-muted);
+	--appointment-calendar-event-text-pending: var(--qlpk-palette-orange-27);
+	--appointment-calendar-event-text-confirmed: var(--qlpk-palette-green-24-a);
+	--appointment-calendar-event-text-no-show: var(--qlpk-palette-blue-17-a);
+	--appointment-calendar-event-text-cancelled: var(--qlpk-palette-red-42-a);
+	--appointment-color-focus-border: var(--qlpk-color-focus, var(--qlpk-palette-teal-53));
+	/* Feedback */
+	--appointment-color-info: var(--qlpk-feedback-info, var(--qlpk-color-primary));
+	--appointment-color-info-soft: var(--qlpk-feedback-info-bg, var(--qlpk-feedback-info-bg));
+	--appointment-color-success: var(--qlpk-feedback-success, var(--qlpk-palette-green-29-a));
+	--appointment-color-success-text: var(--qlpk-feedback-success, var(--qlpk-palette-green-29-a));
+	--appointment-color-success-soft: var(--qlpk-feedback-success-bg, var(--qlpk-feedback-success-bg));
+	--appointment-color-warning: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+	--appointment-color-warning-text: var(--qlpk-feedback-warning, var(--qlpk-feedback-warning));
+	--appointment-color-warning-soft: var(--qlpk-palette-amber-92);
+	--appointment-color-amber: var(--qlpk-color-gold, var(--qlpk-color-gold));
+	--appointment-color-error: var(--qlpk-feedback-error, var(--qlpk-feedback-error));
+	--appointment-color-error-strong: var(--qlpk-feedback-critical, var(--qlpk-feedback-critical));
+	--appointment-color-error-soft: var(--qlpk-feedback-error-bg, var(--qlpk-feedback-error-bg));
+	/* Status colors: calendar event background stays status-owned. */
+	--appointment-color-status-pending: var(--qlpk-feedback-warning);
+	--appointment-color-status-confirmed: var(--qlpk-feedback-success);
+	--appointment-color-status-no-show: var(--qlpk-feedback-neutral);
+	--appointment-color-status-cancelled: var(--qlpk-feedback-error);
+	--appointment-color-status-text: var(--appointment-color-text);
+	--appointment-color-status-pending-soft: var(--qlpk-palette-amber-87);
+	--appointment-color-status-confirmed-soft: var(--qlpk-palette-green-86);
+	--appointment-color-status-no-show-soft: var(--qlpk-palette-blue-88-b);
+	--appointment-color-status-cancelled-soft: var(--qlpk-palette-red-94);
+	/* Surface */
+	--appointment-color-page-bg: var(--qlpk-color-white);
+	--appointment-color-surface: var(--qlpk-color-surface, var(--qlpk-color-white));
+	--appointment-color-surface-muted: var(--qlpk-color-page-bg);
+	--appointment-color-white: var(--qlpk-color-white, var(--qlpk-color-white));
+	--appointment-color-black: var(--qlpk-color-black, var(--qlpk-color-black));
+	/* Border */
+	--appointment-color-border: var(--qlpk-palette-gray-91);
+	--appointment-color-border-strong: var(--qlpk-palette-gray-84);
+	--appointment-color-border-light: var(--qlpk-alpha-blue-11-08);
+	/* Text / neutral */
+	--appointment-color-text: var(--qlpk-color-text, var(--qlpk-color-text));
+	--appointment-color-neutral-700: var(--qlpk-color-text, var(--qlpk-color-text));
+	--appointment-color-neutral: var(--qlpk-color-slate-600, var(--qlpk-color-text-muted));
+	--appointment-color-muted: var(--qlpk-color-text-muted, var(--qlpk-palette-gray-37));
+	--appointment-color-muted-light: var(--qlpk-color-neutral-400, var(--qlpk-color-neutral-400));
+	--appointment-color-text-strong: var(--qlpk-palette-blue-17-a);
+	--appointment-color-ui-text: var(--qlpk-color-text-muted);
+	--appointment-color-ui-muted: var(--qlpk-color-text-muted);
+	--appointment-color-ui-soft: var(--qlpk-color-text-muted);
+	--appointment-color-ui-border: var(--qlpk-color-border);
+	--appointment-color-ui-border-muted: var(--qlpk-palette-blue-91-c);
+	--appointment-color-ui-border-card: var(--qlpk-palette-blue-91-d);
+	--appointment-color-ui-border-hover: var(--qlpk-color-border);
+	--appointment-color-input-border: var(--qlpk-palette-blue-88-c);
+	--appointment-color-radio-border: var(--qlpk-palette-blue-78-a);
+	--appointment-color-editor-bg: var(--appointment-color-surface-muted);
+	--appointment-color-editor-section-divider: var(--qlpk-palette-brown-87-c);
+	--appointment-color-editor-reminder-border: var(--qlpk-palette-green-87);
+	--appointment-color-editor-reminder-bg-end: var(--qlpk-palette-white-c);
+	--appointment-editor-title-icon-end: var(--qlpk-palette-green-39);
+	--appointment-editor-title-icon-shadow: rgba(var(--qlpk-color-black-rgb), 0.08);
+	--appointment-editor-body-gradient-start: rgba(var(--qlpk-palette-green-96-b-rgb), 0.36);
+	--appointment-editor-body-gradient-end: rgba(var(--qlpk-feedback-neutral-bg-rgb), 0);
+	--appointment-editor-profile-glow: var(--qlpk-alpha-orange-50-20);
+	--appointment-editor-profile-bg-start: var(--qlpk-palette-orange-94);
+	--appointment-editor-profile-bg-end: var(--qlpk-color-surface-subtle);
+	--appointment-editor-translucent-white-strong: rgba(var(--qlpk-color-white-rgb), 0.85);
+	--appointment-editor-translucent-white: rgba(var(--qlpk-color-white-rgb), 0.72);
+	--appointment-editor-footer-bg: rgba(var(--qlpk-color-white-rgb), 0.92);
+	--appointment-editor-avatar-start: var(--qlpk-palette-orange-71);
+	--appointment-editor-avatar-end: var(--qlpk-palette-orange-58);
+	--appointment-editor-schedule-bg-end: var(--qlpk-palette-white-d);
+	--appointment-editor-schedule-icon-end: var(--qlpk-color-primary);
+	--appointment-editor-clinical-bg: var(--qlpk-palette-teal-96);
+	--appointment-editor-clinical-bg-end: var(--qlpk-palette-white-e);
+	--appointment-editor-clinical-text: var(--qlpk-palette-teal-36);
+	--appointment-editor-clinical-icon-end: var(--qlpk-palette-teal-53-a);
+	--appointment-editor-doctor-bg: var(--qlpk-palette-violet-95);
+	--appointment-editor-doctor-text: var(--qlpk-palette-violet-58);
+	--appointment-editor-patient-bg: var(--qlpk-color-surface-muted);
+	--appointment-editor-patient-bg-end: var(--qlpk-palette-amber-98);
+	--appointment-editor-service-bg-end: var(--qlpk-palette-white-f);
+	--appointment-editor-service-text: var(--qlpk-palette-orange-40);
+	--appointment-editor-service-icon-start: var(--qlpk-palette-orange-53-a);
+	--appointment-shadow-ui-xs: var(--qlpk-alpha-blue-11-04-b);
+	--appointment-shadow-ui-sm: var(--qlpk-alpha-blue-11-06);
+	--appointment-shadow-ui-card: var(--qlpk-alpha-blue-11-07-a);
+	--appointment-shadow-ui-md: var(--qlpk-alpha-blue-11-08);
+	--appointment-shadow-ui-icon: var(--qlpk-alpha-blue-11-12);
+	--appointment-shadow-ui-footer: var(--qlpk-alpha-blue-11-05);
+	--appointment-shadow-ui-lg: var(--qlpk-alpha-blue-11-18);
+	--appointment-shadow-calendar-surface: var(--qlpk-alpha-blue-11-06);
+	--appointment-shadow-calendar-soft: var(--qlpk-alpha-blue-11-04-a);
+	--appointment-shadow-calendar-event: var(--qlpk-alpha-blue-11-12);
+	--appointment-shadow-calendar-event-hover: var(--qlpk-alpha-blue-11-18);
+	--appointment-calendar-event-radius: 0.3125rem;
+	--appointment-calendar-event-min-height: 1.0625rem;
+	--appointment-calendar-event-dot-size: 0.4375rem;
+	--appointment-calendar-cell-radius: 0.625rem;
+	--appointment-shadow-warm: rgba(var(--qlpk-feedback-warning-rgb), 0.18);
+	/* Warm / domain (giữ riêng) */
+	--appointment-color-brown: var(--qlpk-color-brown, var(--qlpk-color-brown));
+	--appointment-color-chocolate: var(--qlpk-color-chocolate, var(--qlpk-brown-800));
+	--appointment-color-brown-soft: var(--qlpk-color-brown-soft, var(--qlpk-color-brown-soft));
+	--appointment-color-toast-text: var(--qlpk-toast-text, var(--qlpk-color-text, var(--qlpk-color-text)));
+	--appointment-color-toast-muted: var(--qlpk-toast-muted, var(--qlpk-toast-muted));
+	--appointment-color-gold: var(--qlpk-color-gold, var(--qlpk-color-gold));
+	--appointment-color-schedule-soft: var(--qlpk-palette-green-94-a);
+	--appointment-color-schedule-text: var(--qlpk-palette-green-22);
+	--appointment-color-google-connected-start: var(--qlpk-palette-green-75);
+	--appointment-color-google-connected-end: var(--qlpk-palette-green-95-b);
+	--appointment-color-google-connected-text: var(--qlpk-palette-green-20-a);
+	--appointment-color-tooltip-bg: var(--qlpk-palette-blue-24);
+	--appointment-border-width: 0.0625rem;
+	--appointment-border-width-md: 0.125rem;
+	--appointment-border-width-accent: 0.25rem;
+	/* Thang z-index (giữ đúng giá trị cũ, chỉ đặt tên cho nhất quán) */
+	--appointment-z-base: 1;
+	--appointment-z-sticky: 100;
+	--appointment-z-dropdown: 1000;
+	--appointment-z-overlay: 1050;
+	--appointment-z-popover: 1100;
+	--appointment-z-top: 9999;
+	--appointment-letter-spacing-label: 0.03rem;
+	--appointment-space-3xs: 0.0625rem;
+	--appointment-space-2xs: 0.125rem;
+	--appointment-space-xs: 0.1875rem;
+	--appointment-space-sm: 0.25rem;
+	--appointment-space-md: 0.3125rem;
+	--appointment-space-lg: 0.375rem;
+	--appointment-space-xl: 0.5rem;
+	--appointment-space-2xl: 0.625rem;
+	--appointment-space-3xl: 0.75rem;
+	--appointment-space-4xl: 0.9375rem;
+	--appointment-space-5xl: 1rem;
+	--appointment-space-6xl: 1.25rem;
+	--appointment-radius-xs: 0.1875rem;
+	--appointment-radius-sm: 0.25rem;
+	--appointment-radius-md: 0.3125rem;
+	--appointment-radius-lg: 0.375rem;
+	--appointment-radius-xl: 0.5rem;
+	--appointment-radius-pill: 999rem;
+	--appointment-size-avatar: 2.1875rem;
+	--appointment-size-icon-button: 1.75rem;
+	--appointment-size-status-dot: 0.5625rem;
+	--appointment-size-today-marker: 1.375rem;
+	--appointment-action-primary: var(--appointment-color-primary);
+	--appointment-action-primary-hover: color-mix(in srgb, var(--appointment-action-primary) 84%, var(--appointment-color-black));
+	--appointment-action-success: var(--qlpk-feedback-success, var(--appointment-color-success));
+	--appointment-action-danger: var(--qlpk-feedback-error, var(--appointment-color-error));
+	--appointment-action-warning: var(--qlpk-feedback-warning, var(--appointment-color-warning));
+	--appointment-action-neutral: var(--qlpk-toast-text, var(--appointment-color-toast-text));
+	--appointment-action-neutral-border: color-mix(in srgb, var(--qlpk-toast-muted, var(--appointment-color-toast-muted)) 32%, transparent);
+	--appointment-action-neutral-surface: var(--qlpk-toast-bg, var(--appointment-color-surface));
+	--appointment-action-neutral-hover: var(--qlpk-feedback-neutral-bg, var(--appointment-color-surface-muted));
+}
+
+/* === Template cleanup utilities === */
+.appointment-hidden {
+	display: none;
+}
+
+.appointment-modal-content-rounded {
+	border-radius: 1.125rem;
+}
+
+.appointment-modal-content-tall {
+	max-height: 95vh;
+}
+
+.appointment-modal-header-tight {
+	padding: 0.625rem;
+}
+
+.appointment-modal-header {
+	border: 0;
+}
+
+.appointment-modal-header--flush {
+	padding-bottom: 0;
+}
+
+.appointment-modal-title-shell {
+	inline-size: 100%;
+}
+
+.appointment-modal-title-centered {
+	inline-size: 100%;
+	text-align: center;
+}
+
+.appointment-modal-title-edit {
+	color: var(--appointment-color-primary);
+	font-size: var(--appointment-font-size);
+	letter-spacing: 0.0625rem;
+	margin: 0;
+}
+
+:is(.appointment-modal-title-danger, .appointment-modal-title-primary) {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-bold);
+	line-height: 1.25;
+}
+
+.appointment-modal-title-danger {
+	color: var(--appointment-color-error);
+}
+
+.appointment-modal-title-primary {
+	color: var(--appointment-color-primary);
+	text-align: left;
+}
+
+.appointment-form-section-header {
+	padding: var(--appointment-modal-section-header-padding, 0.25rem 0.5rem);
+	border-bottom: var(--appointment-border-width) solid rgba(var(--qlpk-brown-800-rgb), 0.12);
+	font-weight: var(--appointment-font-weight-semibold);
+}
+
+.appointment-form-section-header--schedule {
+	background: var(--appointment-color-schedule-soft);
+	color: var(--appointment-color-schedule-text);
+}
+
+.appointment-form-section-header--clinical {
+	background: var(--appointment-color-primary-soft);
+	color: var(--appointment-color-primary);
+}
+
+.appointment-form-section-header--patient {
+	background: var(--appointment-color-brown-soft);
+	color: var(--appointment-color-brown);
+}
+
+.appointment-form-section-header--service {
+	background: var(--appointment-color-warning-soft);
+	color: var(--appointment-color-warning-text);
+}
+
+.appointment-section-title,
+.appointment-popup-title,
+.appointment-subsection-title {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-semibold);
+	line-height: 1.3;
+	margin: 0;
+}
+
+.appointment-modal-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	inline-size: 100%;
+	padding: 0.625rem;
+	padding-top: 0;
+}
+
+:is(.appointment-modal-action-group, .appointment-modal-choice-group, .appointment-modal-inline-options) {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+:is(.appointment-modal-action-group, .appointment-modal-choice-group) {
+	gap: 0.5rem;
+}
+
+.appointment-modal-inline-options {
+	gap: 1rem;
+	margin-bottom: 0.25rem;
+}
+
+.appointment-modal-body {
+	padding: var(--appointment-modal-body-padding, var(--bs-modal-padding));
+	padding-top: var(--appointment-modal-body-padding-top, 0);
+}
+
+.appointment-modal-grid-row {
+	--bs-gutter-x: 0.25rem;
+	--bs-gutter-y: 0.25rem;
+}
+
+.appointment-modal-grid-row--stacked {
+	margin-top: 0.25rem;
+}
+
+.appointment-modal-section-card {
+	border: 0;
+}
+
+.appointment-modal-section-body {
+	padding: var(--appointment-modal-section-body-padding, 0.5rem);
+}
+
+.appointment-modal-row,
+.appointment-modal-field-row {
+	margin-bottom: var(--appointment-modal-row-margin, 0.25rem);
+}
+
+.appointment-form-label--compact {
+	margin-bottom: 0;
+}
+
+.appointment-required-mark {
+	color: var(--appointment-color-error);
+}
+
+.appointment-icon-leading {
+	margin-inline-end: 0.5rem;
+}
+
+.appointment-icon-leading--sm {
+	margin-inline-end: 0.25rem;
+}
+
+.appointment-status-chip-spaced {
+	margin-inline-end: 0.5rem;
+}
+
+.appointment-modal-footer {
+	border: 0;
+}
+
+.appointment-modal-footer--between {
+	justify-content: space-between;
+}
+
+.appointment-form-label,
+.appointment-form-choice {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-semibold);
+	line-height: 1.35;
+}
+
+.appointment-form-label {
+	color: var(--appointment-color-text);
+}
+
+.appointment-muted-text {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	color: var(--appointment-color-neutral);
+	line-height: 1.35;
+}
+
+.appointment-field-feedback {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-medium);
+	line-height: 1.35;
+}
+
+.appointment-table-strong {
+	font-family: var(--appointment-font-family);
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-bold);
+	line-height: 1.35;
+}
+
+.appointment-empty-icon {
+	font-size: var(--appointment-font-size);
+	line-height: 1;
+}
+
+.appointment-action-btn-sm {
+	font-size: var(--appointment-font-size);
+	padding: 0.5rem 1rem;
+	border-width: 0.125rem;
+	font-weight: var(--appointment-font-weight-semibold);
+}
+
+.appointment-action-btn-plain {
+	border: none;
+}
+
+.appointment-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	border-width: 0.0625rem;
+	border-style: solid;
+	border-radius: 0.5rem;
+	font-size: var(--appointment-font-size);
+	font-weight: var(--appointment-font-weight-semibold);
+	line-height: 1.25;
+}
+.appointment-button:not([data-qlpk-button], [data-qlpk-button] *) {
+	border: 0.0625rem solid transparent;
+	transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.appointment-button:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--appointment-color-primary) 20%, transparent);
+	outline: 0;
+}
+
+.appointment-button--sm {
+	padding: 0.25rem 0.6rem;
+}
+
+.appointment-button--md {
+	padding: 0.45rem 0.9rem;
+}

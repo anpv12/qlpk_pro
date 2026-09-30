@@ -1,0 +1,415 @@
+.document-management-page {
+	--primary: var(--qlpk-color-primary);
+	--primary-hover: var(--qlpk-color-primary-strong);
+	--primary-light: var(--qlpk-color-primary-soft);
+	--primary-border: var(--qlpk-color-primary-soft);
+	--text-main: var(--qlpk-color-text);
+	--text-secondary: var(--qlpk-color-text-muted);
+	--border-color: var(--qlpk-color-border);
+	--bg-color: var(--qlpk-workspace-bg);
+}
+
+body {
+	font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+	background-color: var(--bg-color);
+	color: var(--text-main);
+}
+
+.qlpk-shell-sidebar.col-md-2 {
+	flex: 0 0 16.66667%;
+	max-width: 16.66667%;
+}
+
+.main-content.col-md-10 {
+	flex: 1 1 0%;
+	max-width: 100%;
+}
+
+.doc-container {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+	padding: 20px;
+	gap: 20px;
+}
+
+/* ==================== Cây thư mục ==================== */
+.tree-sidebar {
+	width: clamp(14rem, 23vw, 20rem);
+	background: white;
+	border-radius: var(--clinic-surface-radius);
+	border: 1px solid var(--border-color);
+	display: flex;
+	flex-direction: column;
+	box-shadow: var(--clinic-surface-shadow);
+	flex-shrink: 0;
+}
+
+.tree-header {
+	padding: 10px;
+	border-bottom: 1px solid var(--border-color);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.tree-header h3 {
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	margin: 0;
+	color: var(--text-main);
+	text-transform: uppercase;
+}
+
+.tree-content {
+	padding: 12px 8px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.tree-list {
+	list-style: none;
+	padding-left: 0;
+	margin: 0;
+}
+
+.tree-list .tree-list {
+	padding-left: 20px;
+	display: none;
+}
+
+.tree-list .tree-list.expanded {
+	display: block;
+}
+
+.tree-item {
+	margin-bottom: 2px;
+}
+
+.tree-node {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	color: var(--text-secondary);
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	transition: all 0.2s;
+	position: relative;
+}
+
+.tree-node:hover {
+	background-color: var(--primary-light);
+	color: var(--primary);
+}
+
+.tree-node.active {
+	background-color: var(--primary-light);
+	color: var(--primary);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	border-left: 3px solid var(--primary);
+}
+
+.tree-icon-toggle {
+	width: 20px;
+	display: inline-flex;
+	justify-content: center;
+	transition: transform 0.2s;
+}
+
+.tree-icon-toggle-placeholder {
+	opacity: 0;
+}
+
+.tree-node.expanded .tree-icon-toggle {
+	transform: rotate(90deg);
+}
+
+.tree-icon-folder {
+	color: var(--qlpk-brown-500);
+	margin-right: 8px;
+	font-size: var(--qlpk-font-size-lg, 16px);
+}
+
+.tree-node.active .tree-icon-folder {
+	color: var(--primary);
+}
+
+.tree-actions {
+	position: absolute;
+	right: 8px;
+	display: none;
+	gap: 4px;
+}
+
+.tree-node:hover .tree-actions {
+	display: flex;
+}
+
+.tree-action-btn {
+	border-width: 1px;
+	border-style: solid;
+	border-radius: 4px;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: var(--qlpk-font-size-sm, 12px);
+	cursor: pointer;
+}
+.tree-action-btn:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: white;
+	border: 1px solid var(--border-color);
+	color: var(--text-secondary);
+}
+.tree-action-btn:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	color: var(--primary);
+	border-color: var(--primary);
+}
+
+/* ==================== Workspace ==================== */
+.workspace {
+	flex: 1;
+	background: white;
+	border-radius: var(--clinic-surface-radius);
+	border: 1px solid var(--border-color);
+	display: flex;
+	flex-direction: column;
+	box-shadow: var(--clinic-surface-shadow);
+	min-width: 0;
+}
+
+.workspace-header {
+	padding: 10px 24px;
+	border-bottom: 1px solid var(--border-color);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.breadcrumb-custom {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: var(--qlpk-font-size-lg, 16px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--text-main);
+}
+
+.breadcrumb-custom i {
+	color: var(--text-secondary);
+	font-size: var(--qlpk-font-size-sm, 12px);
+}
+
+.breadcrumb-custom span:last-child {
+	color: var(--primary);
+}
+
+.workspace-content {
+	padding: 24px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+/* ==================== Bảng file ==================== */
+.table-custom {
+	font-size: var(--qlpk-font-size-base, 13px);
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	border: 1px solid var(--primary-border);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.table-custom th {
+	background-color: var(--qlpk-brown-150);
+	color: var(--qlpk-brown-700);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: inherit;
+	padding: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	border-right: 1px solid rgba(var(--qlpk-color-white-rgb), 0.2);
+}
+
+.table-custom th:last-child {
+	border-right: none;
+}
+
+.table-custom td {
+	padding: 10px;
+	font-size: inherit;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+	color: var(--text-main);
+	border-bottom: 1px solid var(--border-color);
+	border-right: 1px solid var(--border-color);
+	vertical-align: middle;
+}
+
+.table-custom td:last-child {
+	border-right: none;
+}
+
+.table-custom tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.table-custom tbody tr:hover td {
+	background-color: var(--primary-light);
+}
+
+.file-icon {
+	font-size: var(--qlpk-font-size-2xl, 20px);
+	margin-right: 10px;
+	vertical-align: middle;
+}
+
+.icon-pdf {
+	color: var(--qlpk-feedback-error);
+}
+
+.icon-word {
+	color: var(--qlpk-color-primary);
+}
+
+.icon-excel {
+	color: var(--qlpk-palette-green-36);
+}
+
+.icon-img {
+	color: var(--qlpk-palette-violet-56);
+}
+
+.icon-link {
+	color: var(--qlpk-palette-teal-48);
+	font-size: var(--qlpk-font-size-3xl, 24px);
+}
+
+.icon-default {
+	color: var(--qlpk-color-text-muted);
+}
+
+.doc-file-link {
+	color: var(--text-main);
+	text-decoration: none;
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.doc-muted-cell {
+	color: var(--text-secondary);
+}
+
+.doc-link-badge {
+	font-size: inherit;
+	background: var(--qlpk-color-primary-soft);
+	color: var(--qlpk-color-primary);
+	border: 1px solid var(--qlpk-color-border);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+/* ==================== Buttons ==================== */
+.btn-custom {
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+	padding: 5px 10px;
+	border-radius: var(--clinic-control-radius, 6px);
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+/* ==================== Buttons ==================== */
+.btn-custom:not([data-qlpk-button], [data-qlpk-button] *) {
+	background-color: var(--qlpk-brown-150);
+	color: var(--qlpk-brown-700);
+	transition: background 0.2s;
+}
+.btn-custom:hover:not([data-qlpk-button], [data-qlpk-button] *) {
+	background: var(--qlpk-workflow-context-header-bg);
+	color: white;
+}
+
+.btn-outline-custom {
+	background-color: transparent;
+	color: var(--primary);
+	border: 1px solid var(--primary);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	font-size: var(--clinic-control-font-size, var(--qlpk-font-size-base, 13px));
+	padding: 5px 10px;
+	border-radius: var(--clinic-control-radius, 6px);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.2s;
+	cursor: pointer;
+}
+
+.btn-outline-custom:hover {
+	background-color: var(--primary-light);
+}
+
+/* ==================== Upload Dropzone ==================== */
+.upload-dropzone {
+	border: 2px dashed var(--primary);
+	background-color: var(--primary-light);
+	border-radius: 8px;
+	padding: 10px 24px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 24px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.upload-dropzone:hover {
+	background-color: var(--qlpk-color-primary-soft);
+}
+
+.upload-dropzone.doc-dropzone-dragover {
+	border-color: var(--qlpk-palette-green-30);
+}
+
+.upload-dropzone-info {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.upload-dropzone i.upload-icon {
+	font-size: var(--qlpk-font-size-4xl, 28px);
+	color: var(--primary);
+}
+
+.upload-dropzone-text h4 {
+	font-size: var(--qlpk-font-size-md, 14px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	color: var(--primary);
+	margin: 0 0 4px 0;
+}
+
+.upload-dropzone-text p {
+	font-size: var(--qlpk-font-size-sm, 12px);
+	color: var(--text-secondary);
+	margin: 0;
+	font-weight: var(--qlpk-font-weight-semibold, 600);
+}
+
+/* ==================== Action Icons ==================== */
+.action-icon {
+	width: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	border-width: 1px;
+	border-style: solid;
+	cursor: pointer;
+	text-decoration: none;
+}

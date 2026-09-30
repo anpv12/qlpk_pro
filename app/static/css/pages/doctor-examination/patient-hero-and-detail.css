@@ -1,0 +1,446 @@
+.doctor-patient-hero__body,
+.doctor-patient-hero__title-row,
+.doctor-patient-hero__actions {
+	min-width: 0;
+}
+
+.doctor-patient-hero__body {
+	display: grid;
+	align-content: center;
+	gap: 0.12rem;
+	overflow: hidden;
+}
+
+.doctor-patient-hero__title-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 0.5rem;
+}
+
+.doctor-patient-hero h2 {
+	min-width: 0;
+	margin: 0;
+	overflow: hidden;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	font-size: var(--qlpk-font-size-md);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__latest-visit {
+	display: inline-flex;
+	align-items: center;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-semibold);
+	line-height: 1.2;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__history-view-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.2;
+	max-inline-size: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__history-view-label[hidden] {
+	display: none;
+}
+
+.doctor-patient-hero__code {
+	display: inline-flex;
+	align-items: center;
+	min-height: 1.75rem;
+	padding: 0.2rem 0.6rem;
+	border: 0.0625rem solid var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	border-radius: 999rem;
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-brown, var(--qlpk-brown-800));
+	font-size: var(--qlpk-font-size-md);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__history {
+	display: flex;
+	align-items: center;
+	gap: 0.38rem;
+	min-width: 0;
+	margin: 0;
+	overflow: hidden;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.25;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__history-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+}
+
+.doctor-patient-hero__history-item--diagnosis {
+	max-width: 68%;
+}
+
+.doctor-patient-hero__history-item strong {
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+	font-weight: var(--qlpk-font-weight-bold);
+}
+
+.doctor-patient-hero__history-value {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.doctor-patient-hero__history-divider {
+	flex: 0 0 auto;
+	color: var(--qlpk-workflow-context-header-text, var(--qlpk-color-on-dark));
+}
+
+.doctor-patient-hero__actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.doctor-patient-hero__action-buttons {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.doctor-patient-hero__actions .doctor-workspace-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	min-block-size: 1.75rem;
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.42rem;
+	font-size: var(--qlpk-font-size-md);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.doctor-patient-hero__actions .doctor-workspace-button i {
+	font-size: var(--qlpk-font-size-md);
+	line-height: 1;
+}
+.doctor-patient-hero__actions .doctor-workspace-button--secondary:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-line-strong);
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-text);
+	box-shadow: none;
+}
+.doctor-patient-hero__actions .doctor-workspace-button--secondary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-patient-hero__actions .doctor-workspace-button--secondary:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-brown);
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-text);
+}
+.doctor-patient-hero__actions .doctor-workspace-button--primary:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-interactive);
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-interactive);
+	box-shadow: none;
+}
+.doctor-patient-hero__actions .doctor-workspace-button--primary:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.doctor-patient-hero__actions .doctor-workspace-button--primary:focus-visible:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-interactive-strong);
+	background: var(--doctor-interactive-soft);
+	color: var(--doctor-interactive-strong);
+}
+
+.doctor-patient-hero__actions .doctor-workspace-button:disabled {
+	cursor: wait;
+}
+.doctor-patient-hero__actions .doctor-workspace-button:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: var(--doctor-line-strong);
+	background: var(--qlpk-doctor-surface);
+	color: var(--doctor-text);
+	opacity: 0.72;
+}
+
+.doctor-patient-hero__actions .doctor-workspace-button__spinner {
+	animation: doctor-workspace-save-spin 0.8s linear infinite;
+}
+
+@keyframes doctor-workspace-save-spin {
+	to {
+		transform: rotate(1turn);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.doctor-patient-hero__actions .doctor-workspace-button__spinner {
+		animation: none;
+	}
+}
+
+.doctor-workbench {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	gap: 0;
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	align-content: stretch;
+	align-items: stretch;
+}
+
+.doctor-workbench-panel {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	min-width: 0;
+	min-block-size: 0;
+	block-size: 100%;
+	overflow: hidden;
+	border: 0.0625rem solid var(--doctor-line);
+	border-radius: 0.55rem;
+	background: var(--doctor-surface);
+	box-shadow: 0 0.18rem 0.7rem var(--doctor-shadow);
+}
+
+.doctor-workbench-panel--clinical {
+	grid-template-rows: minmax(0, 1fr);
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.doctor-workbench-panel__body {
+	display: grid;
+	gap: 0.65rem;
+	min-width: 0;
+	min-block-size: 0;
+	padding: 0.75rem 0.8rem 0.85rem;
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
+.doctor-workbench-panel__body--clinical {
+	grid-template-rows: max-content max-content;
+	align-content: start;
+	/* This body owns vertical scrolling, including overlay scrollbars. */
+	padding: 0 0.65rem 0 0;
+	scrollbar-gutter: stable;
+}
+
+.doctor-clinical-flow {
+	display: grid;
+	gap: clamp(0.9rem, 1.2vw, 1.25rem);
+	min-width: 0;
+}
+
+.doctor-clinical-flow__clinical-grid {
+	display: grid;
+	align-content: start;
+	gap: clamp(0.9rem, 1.2vw, 1.25rem);
+	min-width: 0;
+}
+
+.doctor-clinical-workspace--doctor :is(.doctor-clinical-section--decision, .doctor-clinical-detail-panel) {
+	--doctor-clinical-heading: var(--doctor-interactive);
+	--doctor-clinical-content: var(--qlpk-patient-visit-text);
+	--doctor-clinical-label: var(--doctor-clinical-content);
+	--doctor-clinical-field-line: var(--doctor-line-strong);
+	--qlpk-patient-visit-line: var(--doctor-line);
+	--qlpk-patient-visit-line-strong: var(--doctor-clinical-field-line);
+}
+
+.doctor-clinical-detail-panel {
+	--doctor-clinical-detail-accent: var(--doctor-interactive);
+	--doctor-clinical-detail-line: var(--doctor-line);
+	--doctor-clinical-detail-entry-block-start: var(--receptionist-underline-input-padding-block);
+	align-content: start;
+}
+
+.doctor-clinical-detail-panel__header {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	margin-inline: calc(var(--qlpk-patient-visit-pad) * -1);
+	padding-inline: var(--qlpk-patient-visit-pad);
+	border-block-end-width: 0.0625rem;
+	border-block-end-style: solid;
+}
+
+.doctor-clinical-form-card__header,
+.doctor-clinical-detail-panel__header {
+	border-block-end-color: var(--doctor-section-header-border);
+	background: var(--doctor-section-header-bg);
+}
+
+.doctor-clinical-form-card__header .qlpk-patient-visit-card__title,
+.doctor-clinical-detail-panel__header .qlpk-patient-visit-card__title {
+	background: transparent;
+	color: var(--doctor-section-header-text);
+}
+
+.doctor-clinical-form-card__header .qlpk-patient-visit-card__title i,
+.doctor-clinical-detail-panel__header .qlpk-patient-visit-card__title i {
+	color: var(--doctor-section-header-text);
+}
+
+.doctor-clinical-detail-panel__header .qlpk-patient-visit-card__title {
+	min-block-size: 2.2rem;
+	margin: 0;
+	padding-block: 0.3rem;
+}
+
+.doctor-clinical-detail-panel__body,
+.doctor-clinical-detail-panel__group,
+.doctor-clinical-detail-panel__fields {
+	display: grid;
+	min-width: 0;
+}
+
+.doctor-clinical-detail-panel__body {
+	gap: 0.75rem;
+}
+
+.doctor-clinical-detail-panel__group {
+	gap: 0.5rem;
+}
+
+.doctor-clinical-detail-panel__group h4 {
+	margin: 0;
+	padding-block-end: 0.3rem;
+	border-block-end: 0.0625rem solid var(--doctor-clinical-detail-line);
+	color: var(--doctor-clinical-heading);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-bold);
+	line-height: 1.25;
+}
+
+.doctor-clinical-detail-panel__fields {
+	gap: 0.5rem 0.75rem;
+}
+
+.doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field {
+	grid-template-columns: minmax(0, 1fr);
+	row-gap: 0;
+}
+
+.doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field .form-label {
+	display: inline-flex;
+	align-items: center;
+	justify-self: start;
+	inline-size: fit-content;
+	max-inline-size: 100%;
+	margin: 0;
+	padding: 0;
+	color: var(--doctor-clinical-label);
+	font-size: var(--qlpk-font-size-sm);
+	font-weight: var(--qlpk-font-weight-medium);
+	line-height: 1.25;
+	white-space: normal;
+}
+
+.doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field .form-control {
+	min-block-size: 1.65rem;
+	padding: var(--doctor-clinical-detail-entry-block-start) 0;
+	border-width: 0 0 0.0625rem;
+	border-radius: 0;
+	font-weight: var(--qlpk-font-weight-regular);
+	resize: vertical;
+	border-color: var(--doctor-clinical-field-line);
+	background: transparent;
+	color: var(--doctor-clinical-content);
+	box-shadow: none;
+}
+.doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field .form-control:focus {
+	border-color: var(--doctor-clinical-detail-accent);
+	box-shadow: 0 0.125rem 0 0 color-mix(in srgb, var(--doctor-clinical-detail-accent) 24%, transparent);
+}
+
+.doctor-clinical-detail-panel .doctor-clinical-detail-field.receptionist-paper-field:focus-within .form-label {
+	color: var(--doctor-clinical-heading);
+}
+
+@media (min-width: 48rem) {
+	.doctor-clinical-detail-panel__fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.doctor-clinical-detail-field--full {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (min-width: 64rem) {
+	.doctor-clinical-flow__clinical-grid {
+		grid-template-columns: minmax(0, 0.95fr) minmax(22rem, 1.05fr);
+		align-items: stretch;
+	}
+
+	.doctor-clinical-form-card {
+		grid-template-rows: auto max-content;
+	}
+
+	.doctor-clinical-form-card__fields {
+		grid-template-rows: none;
+	}
+
+	.doctor-clinical-form-card .doctor-field--clinical-narrative {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto max-content;
+	}
+
+	.doctor-clinical-form-card .doctor-field--clinical-narrative > span {
+		margin-block-start: 0;
+	}
+
+	.doctor-clinical-form-card .doctor-field--clinical-narrative textarea.form-control {
+		block-size: auto;
+	}
+}
+
+.doctor-clinical-section:not(.doctor-clinical-form-card) {
+	display: grid;
+	gap: clamp(0.65rem, 0.8vw, 0.9rem);
+	min-width: 0;
+	padding-block-end: clamp(0.9rem, 1.1vw, 1.2rem);
+	border-block-end: 0.0625rem solid var(--doctor-line);
+}
+
+.doctor-clinical-section:not(.doctor-clinical-form-card):last-child {
+	padding-block-end: 0;
+	border-block-end: 0;
+}
+
+.doctor-icd-field {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	align-items: stretch;
+	min-width: 0;
+}
+
+.doctor-icd-field input {
+	min-width: 0;
+}

@@ -1,0 +1,124 @@
+@media (max-width: 47.99875rem) {
+	body[data-doctor-ui].qlpk-workspace-shell,
+	body[data-doctor-ui].qlpk-workspace-shell > .container-fluid,
+	body[data-doctor-ui].qlpk-workspace-shell > .container-fluid > .row,
+	body[data-doctor-ui].qlpk-workspace-shell .main-content,
+	body[data-doctor-ui].qlpk-workspace-shell .main-content.col-md-10,
+	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-main,
+	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-frame-host,
+	body[data-doctor-ui].qlpk-workspace-shell .qlpk-workspace-pane--native.is-active {
+		block-size: 100%;
+		background: var(--qlpk-doctor-surface);
+		height: 100%;
+		min-block-size: 0;
+		overflow: hidden;
+	}
+
+	body[data-doctor-ui].qlpk-workspace-shell:has(.qlpk-workspace-pane--native.is-active .qlpk-workflow-two-pane) .qlpk-workspace-pane--native.is-active {
+		overflow-x: hidden;
+		overflow-y: hidden;
+	}
+
+	/* A grid item's percentage height can resolve to its content at this breakpoint.
+	 * Let the fixed workspace track provide the available height instead. */
+	.doctor-workspace > .qlpk-workflow-two-pane__main.is-active {
+		block-size: auto;
+		height: auto;
+	}
+
+	.doctor-workspace,
+	.doctor-workspace .qlpk-workflow-two-pane__main,
+	.doctor-workspace .qlpk-workflow-two-pane__main > .doctor-exam-surface,
+	.doctor-exam-surface,
+	.doctor-exam-surface__inner,
+	.doctor-exam-surface__inner.has-selected-appointment,
+	.doctor-clinical-workspace,
+	.doctor-clinical-form,
+	.doctor-clinical-layout,
+	.doctor-clinical-main,
+	.doctor-workbench,
+	.doctor-workspace-stage,
+	.doctor-workspace-section,
+	.doctor-workbench-panel {
+		block-size: 100%;
+		max-block-size: 100%;
+		min-block-size: 0;
+		overflow: hidden;
+	}
+
+	.doctor-workbench {
+		grid-template-rows: minmax(0, 1fr);
+	}
+
+	.doctor-workbench-panel {
+		grid-template-rows: auto auto;
+	}
+
+	.doctor-workbench-panel--clinical {
+		grid-template-rows: minmax(0, 1fr);
+	}
+
+	.doctor-workspace {
+		grid-template-rows: auto minmax(0, 1fr);
+		align-content: stretch;
+		padding-inline: 0;
+	}
+
+	.doctor-workspace .qlpk-workflow-two-pane__main.is-active {
+		display: block;
+	}
+
+	.doctor-exam-surface {
+		min-block-size: 18rem;
+	}
+
+	.doctor-exam-surface__inner:not(.has-selected-appointment),
+	.doctor-exam-surface__inner:not(.has-selected-appointment) .doctor-exam-empty-state {
+		block-size: 100%;
+	}
+
+	.doctor-patient-hero {
+		block-size: auto;
+		min-block-size: 5.25rem;
+		overflow: visible;
+	}
+
+	.doctor-patient-hero__summary {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto auto;
+		row-gap: 0.35rem;
+		block-size: auto;
+		padding: 0.55rem 0.6rem;
+	}
+
+	.doctor-patient-hero__actions {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		justify-content: flex-start;
+	}
+
+	.doctor-patient-hero__history-item--diagnosis {
+		max-width: 58%;
+	}
+
+	.doctor-section-edge-nav {
+		gap: 0.35rem;
+		padding: 0.35rem;
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+
+	.doctor-patient-hero__action-buttons {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+		inline-size: 100%;
+	}
+
+	.doctor-workspace-button {
+		flex: 0 0 auto;
+	}
+
+	.doctor-icd-field {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

@@ -1,0 +1,280 @@
+/* Workspace application shell: header owns the full width; legacy sidebar is disabled. */
+body.qlpk-workspace-shell .qlpk-shell-sidebar,
+body.qlpk-workspace-shell .qlpk-shell-sidebar-disabled {
+	display: none;
+	width: 0;
+	max-width: 0;
+	flex: 0 0 0;
+	padding: 0;
+	margin: 0;
+}
+
+body.qlpk-workspace-shell .main-content,
+body.qlpk-workspace-shell .main-content.col-md-10,
+body.qlpk-workspace-shell .qlpk-workspace-main {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100%;
+	flex: 0 0 100%;
+	margin-left: 0;
+	padding-left: 0;
+	padding-right: 0;
+	height: 100vh;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--qlpk-workspace-bg, var(--qlpk-color-page-bg));
+}
+
+body.qlpk-workspace-shell .qlpk-app-header-host {
+	position: sticky;
+	top: 0;
+	z-index: 1040;
+	flex: 0 0 auto;
+	background: var(--qlpk-header-bg);
+}
+
+.qlpk-app-header__brand-area {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 0 0 auto;
+	min-width: 282px;
+}
+
+.qlpk-app-header__brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	color: var(--qlpk-header-text);
+	text-decoration: none;
+}
+
+.qlpk-app-header__brand:hover,
+.qlpk-app-header__brand:focus {
+	color: var(--qlpk-header-text);
+	text-decoration: none;
+}
+
+.qlpk-app-header__brand-logo-wrap {
+	display: inline-flex;
+	align-items: flex-start;
+	justify-content: center;
+	width: 56px;
+	height: 42px;
+	flex: 0 0 auto;
+	overflow: hidden;
+}
+
+.qlpk-app-header__brand-logo {
+	display: block;
+	width: 66px;
+	height: auto;
+	max-width: none;
+	object-fit: contain;
+	object-position: center top;
+	clip-path: inset(0 0 27% 0);
+	transform: translateY(-1px);
+	transform-origin: top center;
+}
+
+.qlpk-app-header__brand-copy {
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+	line-height: 1.06;
+}
+
+.qlpk-app-header__brand-copy strong {
+	font-size: var(--qlpk-font-size-xl, 18px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	white-space: nowrap;
+}
+
+.qlpk-app-header__brand-copy small {
+	color: var(--qlpk-header-muted);
+	font-size: var(--qlpk-font-size-sm, 12px);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.qlpk-app-header__launcher-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border: thin solid rgba(var(--qlpk-color-surface-subtle-rgb), 0.24);
+	border-radius: 12px;
+	background: rgba(var(--qlpk-color-surface-subtle-rgb), 0.16);
+	color: var(--qlpk-header-icon);
+	font-size: var(--qlpk-font-size-2xl, 20px);
+	cursor: pointer;
+	box-shadow: inset 0 1px 0 rgba(var(--qlpk-color-white-rgb), 0.1), 0 8px 18px var(--qlpk-alpha-brown-22-12);
+	transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.qlpk-app-header__launcher-btn i {
+	line-height: 1;
+	text-shadow: 0 1px 2px var(--qlpk-header-icon-shadow);
+	-webkit-text-stroke: 0.02rem currentColor;
+}
+
+.qlpk-app-header__launcher-btn:hover,
+.qlpk-app-header__launcher-btn[aria-expanded="true"] {
+	background: rgba(var(--qlpk-color-surface-subtle-rgb), 0.24);
+	border-color: rgba(var(--qlpk-color-surface-subtle-rgb), 0.42);
+	color: var(--qlpk-color-white);
+	box-shadow: inset 0 1px 0 rgba(var(--qlpk-color-white-rgb), 0.14), 0 10px 22px var(--qlpk-alpha-brown-22-16);
+}
+
+.qlpk-app-launcher {
+	position: fixed;
+	inset: var(--qlpk-shell-header-height, 3.375rem) 0 0 0;
+	z-index: 1035;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 140ms ease;
+}
+
+.qlpk-app-launcher.is-open {
+	pointer-events: auto;
+	opacity: 1;
+}
+
+.qlpk-app-launcher__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(var(--qlpk-color-primary-rgb), 0.22);
+}
+
+.qlpk-app-launcher__panel {
+	position: relative;
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	width: calc(100vw - 1rem);
+	height: calc(100dvh - var(--qlpk-shell-header-height, 3.375rem) - 0.75rem);
+	max-height: none;
+	margin: 0.375rem auto 0;
+	padding: clamp(0.375rem, 1.6vw, 0.75rem);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.18);
+	border-radius: 0.625rem;
+	background: linear-gradient(135deg, var(--qlpk-color-surface-warm) 0%, var(--qlpk-color-page-bg) 54%, var(--qlpk-color-brown-soft) 100%);
+	box-shadow: 0 1.5rem 4.375rem rgba(var(--qlpk-color-primary-rgb), 0.18);
+	overflow: hidden;
+}
+
+.qlpk-app-launcher__search {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+	height: clamp(2.25rem, 5dvh, 2.5rem);
+	padding: 0 clamp(0.5rem, 2vw, 0.75rem);
+	border: thin solid rgba(var(--qlpk-color-primary-rgb), 0.2);
+	border-radius: 0.5rem;
+	background: var(--qlpk-color-surface);
+	color: var(--qlpk-color-primary);
+}
+
+.qlpk-app-launcher__search input {
+	width: 100%;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--qlpk-color-text);
+	font-size: var(--qlpk-font-size-md, 0.875rem);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+}
+
+.qlpk-app-launcher__search input::placeholder {
+	color: var(--qlpk-color-text-muted);
+}
+
+.qlpk-app-launcher__body {
+	display: block;
+	min-height: 0;
+	margin-top: clamp(0.375rem, 1.6vw, 0.625rem);
+	overflow: hidden;
+}
+
+.qlpk-app-launcher__grid {
+	display: grid;
+	--qlpk-launcher-tile-bg: rgba(var(--qlpk-color-surface-warm-rgb), 0.82);
+	--qlpk-launcher-tile-hover-bg: var(--qlpk-color-primary-soft);
+	--qlpk-launcher-tile-border: rgba(var(--qlpk-color-primary-rgb), 0.28);
+	--qlpk-launcher-tile-border-hover: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-start: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-end: var(--qlpk-color-primary);
+	--qlpk-launcher-icon-shadow: rgba(var(--qlpk-color-primary-rgb), 0.22);
+	--qlpk-launcher-caption: var(--qlpk-color-primary);
+	/* Tier mặc định. Mỗi nhóm ghi đè để có định danh thị giác riêng bằng
+	 * sắc độ, không bằng hue mới. */
+	--qlpk-launcher-tier-ink: var(--qlpk-brown-800);
+	--qlpk-launcher-tier-chip: var(--qlpk-brown-150);
+	--qlpk-launcher-tier-chip-hover: var(--qlpk-brown-200);
+	--qlpk-launcher-group-bg: rgba(var(--qlpk-color-surface-warm-rgb), 0.72);
+	--qlpk-launcher-group-border: rgba(var(--qlpk-color-primary-rgb), 0.2);
+	grid-template-rows: auto minmax(0, 1fr);
+	gap: clamp(0.375rem, 1.6vw, 0.625rem);
+	min-height: 0;
+	height: 100%;
+}
+
+.qlpk-app-launcher__grid.is-searching {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-rows: none;
+	align-content: start;
+}
+
+.qlpk-app-launcher__tabs {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: clamp(0.25rem, 1.4vw, 0.5rem);
+}
+
+.qlpk-app-launcher__tab {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	--qlpk-launcher-tab-bg: rgba(var(--qlpk-color-surface-warm-rgb), 0.74);
+	--qlpk-launcher-tab-border: rgba(var(--qlpk-color-primary-rgb), 0.2);
+	--qlpk-launcher-tab-color: var(--qlpk-color-primary);
+	--qlpk-launcher-tab-active-bg: var(--qlpk-color-primary);
+	--qlpk-launcher-tab-active-border: var(--qlpk-color-primary);
+	height: clamp(1.875rem, 4.5dvh, 2.25rem);
+	padding: 0 clamp(0.375rem, 1.6vw, 0.625rem);
+	border: thin solid var(--qlpk-launcher-tab-border);
+	border-radius: 0.5rem;
+	background: var(--qlpk-launcher-tab-bg);
+	color: var(--qlpk-launcher-tab-color);
+	font-size: var(--qlpk-font-size-xs, 0.6875rem);
+	font-weight: var(--qlpk-font-weight-bold, 700);
+	line-height: 1.1;
+	text-align: center;
+	cursor: pointer;
+}
+
+.qlpk-app-launcher__tab.is-active {
+	border-color: var(--qlpk-launcher-tab-active-border);
+	background: var(--qlpk-workflow-context-header-bg);
+	color: var(--qlpk-color-white);
+}
+
+.qlpk-app-launcher__group {
+	display: none;
+	grid-template-rows: auto minmax(0, 1fr);
+	gap: clamp(0.25rem, 1.4vw, 0.5rem);
+	min-height: 0;
+	padding: clamp(0.375rem, 1.6vw, 0.625rem);
+	border: thin solid var(--qlpk-launcher-group-border);
+	border-radius: 0.75rem;
+	background: var(--qlpk-launcher-group-bg);
+	overflow: hidden;
+}
+
+.qlpk-app-launcher__group.is-active {
+	display: grid;
+}

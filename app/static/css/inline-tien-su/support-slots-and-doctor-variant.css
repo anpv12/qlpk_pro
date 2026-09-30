@@ -1,0 +1,256 @@
+/* Slot người hỗ trợ */
+.safety-plan-support-slots {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.safety-plan-support-slot {
+  align-items: center;
+  background: var(--safety-plan-field-soft);
+  border-radius: 0.6rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 0.45rem;
+}
+
+.safety-plan-slot-order {
+  align-items: center;
+  background: var(--qlpk-palette-orange-32-a);
+  border-radius: 50%;
+  color: var(--qlpk-color-white);
+  display: flex;
+  flex-shrink: 0;
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  height: 1.7rem;
+  justify-content: center;
+  width: 1.7rem;
+}
+
+.safety-plan-slot-select-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.safety-plan-member-select {
+  appearance: none;
+  background: var(--qlpk-color-white);
+  border: 0.0625rem solid var(--qlpk-palette-blue-81);
+  border-radius: 0.55rem;
+  color: var(--qlpk-color-text);
+  cursor: pointer;
+  font-family: var(--qlpk-font-family, "Roboto", Arial, sans-serif);
+  font-size: var(--qlpk-font-size-base, 13px);
+  min-height: 2.15rem;
+  overflow: hidden;
+  padding: 0.45rem 2.15rem 0.45rem 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--qlpk-palette-blue-35) 50%),
+    linear-gradient(135deg, var(--qlpk-palette-blue-35) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) 50%,
+    calc(100% - 0.72rem) 50%;
+  background-repeat: no-repeat;
+  background-size: 0.32rem 0.32rem, 0.32rem 0.32rem;
+}
+.safety-plan-member-select:focus {
+  border-color: var(--qlpk-palette-orange-32-a);
+  box-shadow: 0 0 0 0.15rem var(--qlpk-alpha-orange-32-16);
+  outline: none;
+}
+
+@container medical-history-doctor-history (max-width: 60rem) {
+  .safety-plan-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .safety-plan-field-row:nth-child(3),
+  .safety-plan-field-row:nth-child(4) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@container medical-history-doctor-history (max-width: 46rem) {
+  .safety-plan-actions-copy {
+    flex-basis: 100%;
+    margin-right: 0;
+  }
+
+  .safety-plan-actions-bar {
+    justify-content: flex-start;
+  }
+
+  .safety-plan-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .safety-plan-field-row:nth-child(3),
+  .safety-plan-field-row:nth-child(4) {
+    grid-column: auto;
+  }
+}
+
+/* ── DOCTOR VARIANT — Medical History Workbench ── */
+.inline-tien-su--doctor-flat .form-control-sm,
+.inline-tien-su--doctor-flat .medical-history-chip-input,
+.inline-tien-su--doctor-flat .medical-history-sub-input,
+.inline-tien-su--doctor-flat .medical-history-allergy-input {
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.inline-tien-su--doctor-flat .form-control-sm:not([data-icd-autocomplete-input]) {
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  border-color: var(--qlpk-palette-blue-89-c);
+  border-radius: 0.5rem;
+}
+
+/* The shared ICD container owns the frame. The search input stays a
+ * borderless child so the history field cannot render two nested frames. */
+.inline-tien-su--doctor-flat .icd-autocomplete [data-icd-autocomplete-input] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.inline-tien-su--doctor-flat .medical-history-micro-row {
+  margin-top: 0.25rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+  scrollbar-width: thin;
+}
+
+.inline-tien-su--doctor-flat .medical-history-tab-btn {
+  background: var(--qlpk-color-primary-soft);
+  border-color: var(--qlpk-palette-teal-80);
+  border-width: 0.0625rem;
+  border-radius: 0.5rem;
+  color: var(--qlpk-color-primary);
+  flex: 0 0 auto;
+  font-size: var(--qlpk-font-size-base, 13px);
+  font-weight: var(--qlpk-font-weight-semibold, 600);
+  line-height: 1.2;
+  min-height: 2rem;
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+}
+
+.inline-tien-su--doctor-flat .medical-history-tab-btn:hover,
+.inline-tien-su--doctor-flat .medical-history-tab-btn:focus-visible {
+  background: var(--qlpk-palette-green-89);
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-primary);
+}
+
+.inline-tien-su--doctor-flat .medical-history-tab-btn.active {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-color: var(--qlpk-color-primary);
+  color: var(--qlpk-color-white);
+}
+
+.inline-tien-su--doctor-flat .medical-history-suggestion-box {
+  border-color: var(--qlpk-palette-blue-90-a);
+  border-radius: 0.65rem;
+  max-height: none;
+  overflow: visible;
+}
+
+.inline-tien-su--doctor-flat .medical-history-section--family .medical-history-suggestion-box > div {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-tien-su--doctor-flat .medical-history-suggestion-item {
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.42rem 0.55rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-item-check {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-icd-badge {
+  font-size: var(--qlpk-font-size-base, 13px);
+  margin-right: 0.1rem;
+  padding: 0.06rem 0.28rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-item-name {
+  color: var(--qlpk-palette-blue-20);
+  font-size: var(--qlpk-font-size-base, 13px);
+  line-height: 1.25;
+}
+
+.inline-tien-su--doctor-flat .medical-history-group-label {
+  background: var(--qlpk-workflow-context-header-bg);
+  border-bottom: 0.0625rem solid var(--qlpk-palette-teal-17);
+  color: var(--qlpk-color-white);
+  font-size: var(--qlpk-font-size-sm, 12px);
+  font-weight: var(--qlpk-font-weight-bold, 700);
+  letter-spacing: 0.02em;
+  padding: 0.4rem 0.55rem;
+  position: sticky;
+  top: 0;
+  z-index: var(--qlpk-z-base);
+}
+
+.inline-tien-su--doctor-flat .medical-history-chip,
+.inline-tien-su--doctor-flat .medical-history-chip--allergy {
+  border-radius: 0.45rem;
+  font-size: var(--qlpk-font-size-base, 13px);
+  line-height: 1.2;
+  padding: 0.18rem 0.45rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-chip-area--allergy {
+  border-color: var(--qlpk-palette-blue-89-c);
+  border-radius: 0.5rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-table-wrap {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.inline-tien-su--doctor-flat .medical-history-substance-table,
+.inline-tien-su--doctor-flat .medical-history-allergy-table {
+  font-size: var(--qlpk-font-size-base, 13px);
+}
+
+.inline-tien-su--doctor-flat .medical-history-substance-table thead th,
+.inline-tien-su--doctor-flat .medical-history-allergy-table thead th {
+  font-size: var(--qlpk-font-size-sm, 12px);
+  letter-spacing: 0.02em;
+  padding: 0.35rem 0.45rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-substance-table td,
+.inline-tien-su--doctor-flat .medical-history-allergy-table td {
+  font-size: var(--qlpk-font-size-base, 13px);
+  padding: 0.3rem 0.4rem;
+}
+
+.inline-tien-su--doctor-flat .medical-history-add-row-btn {
+  border-radius: 0.5rem;
+  font-size: var(--qlpk-font-size-base, 13px);
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+}

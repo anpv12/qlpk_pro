@@ -5,9 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { readCssSource } = require('./helpers/css-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/medicine-management.html'), 'utf8');
-const css = fs.readFileSync(path.join(__dirname, '../app/static/css/pages/medicine-management.css'), 'utf8');
+const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
 const actions = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/button-actions.css'), 'utf8');
 test('missing-price action keeps edit semantics with approved red tokens and standard font size', () => {
     const source = readMedicineManagementSource();
@@ -71,7 +72,7 @@ test('the inventory palette reuses shared brand tokens within the import modal',
     for (const [token, color] of Object.entries(colors)) {
         assert.ok(palette.includes(`${token}: ${color};`), token);
     }
-    const sharedTokens = fs.readFileSync(path.join(__dirname, '../app/static/css/shared/color-tokens.css'), 'utf8');
+    const sharedTokens = readCssSource(path.join(__dirname, '../app/static/css/shared/color-tokens.css'));
     assert.match(sharedTokens, /--qlpk-color-primary:\s*var\(--qlpk-brand-primary\)/);
     assert.doesNotMatch(palette, /--qlpk-color-primary(?:-strong|-rgb)?\s*:/);
     assert.doesNotMatch(palette, /#[0-9a-f]{3,8}\b/i);

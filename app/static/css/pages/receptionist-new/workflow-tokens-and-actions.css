@@ -1,0 +1,276 @@
+.qlpk-save-info-btn:disabled:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-save-info-btn.is-loading:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn:disabled:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:not([data-qlpk-button], [data-qlpk-button] *) {
+	opacity: 1;
+}
+.qlpk-save-info-btn.is-loading:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-save-info-btn.is-loading:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-save-info-btn.is-loading:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.qlpk-save-info-btn:disabled:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:hover:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn.is-loading:focus:not([data-qlpk-button], [data-qlpk-button] *),
+.receptionist-intake-panel-header .receptionist-document-upload-btn:disabled:not([data-qlpk-button], [data-qlpk-button] *) {
+	border-color: rgba(var(--qlpk-color-white-rgb), 0.9);
+	background: var(--qlpk-color-white);
+	color: var(--receptionist-tone-bg, var(--qlpk-brown-800));
+	box-shadow: inset 0 0 0 0.0625rem rgba(var(--qlpk-color-gold-rgb), 0.24);
+}
+
+.qlpk-button-spinner {
+	display: inline-block;
+	flex: 0 0 auto;
+	inline-size: 0.9em;
+	block-size: 0.9em;
+	border: 0.12em solid currentColor;
+	border-inline-end-color: transparent;
+	border-radius: 999rem;
+	animation: receptionist-button-loading-spin 0.75s linear infinite;
+}
+
+.service-autocomplete-wrapper,
+.service-autocomplete-wrapper .qlpk-service-type {
+	width: 100%;
+}
+
+@media (min-width: 48rem) {
+	.receptionist-appointment-fields {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+		justify-content: stretch;
+	}
+
+	.receptionist-field--appointment-date .form-control {
+		inline-size: min(100%, 7.25rem);
+	}
+
+	.receptionist-field--appointment-doctor .form-select {
+		inline-size: 100%;
+	}
+
+	.receptionist-field--appointment-service .service-autocomplete-wrapper {
+		inline-size: 100%;
+	}
+}
+
+@container receptionist-intake (min-width: 36rem) {
+	.receptionist-intake-panel-header {
+		grid-template-columns: max-content minmax(0, 1fr) max-content;
+		grid-template-areas:
+			"title . actions"
+			"schedule schedule schedule";
+	}
+
+	.receptionist-intake-actions {
+		align-self: center;
+		justify-content: flex-end;
+	}
+}
+
+@container receptionist-intake (min-width: 44rem) {
+	.receptionist-appointment-fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.32rem 0.4rem;
+		justify-content: stretch;
+	}
+
+	.receptionist-appointment-fields .receptionist-field {
+		column-gap: 0.32rem;
+	}
+
+	.receptionist-appointment-fields .receptionist-field--appointment-date,
+	.receptionist-appointment-fields .receptionist-field--appointment-time {
+		display: grid;
+		width: auto;
+	}
+
+	.receptionist-field--appointment-date .form-control {
+		inline-size: 100%;
+	}
+}
+
+@container receptionist-intake (min-width: 62rem) {
+	.receptionist-intake-panel-header {
+		grid-template-columns: max-content minmax(0, 1fr) max-content;
+		grid-template-areas:
+			"title . actions"
+			"schedule schedule schedule";
+		gap: var(--receptionist-header-row-gap) clamp(0.48rem, 0.7cqi, 0.85rem);
+		padding-block: var(--receptionist-header-padding-block);
+	}
+
+	.receptionist-appointment-card,
+	.receptionist-intake-actions {
+		align-self: center;
+	}
+
+	.receptionist-appointment-card {
+		display: grid;
+		inline-size: 100%;
+		justify-self: center;
+	}
+
+	.receptionist-appointment-fields {
+		inline-size: 100%;
+		grid-template-columns:
+			minmax(10.2rem, 1fr)
+			max-content
+			minmax(11.2rem, 1.55fr)
+			minmax(13rem, 1.9fr);
+		align-items: center;
+		justify-content: center;
+		justify-self: center;
+		gap: 0.24rem clamp(0.42rem, 0.55cqi, 0.72rem);
+	}
+
+	.receptionist-appointment-fields .receptionist-field {
+		column-gap: clamp(0.22rem, 0.35cqi, 0.34rem);
+	}
+
+	.receptionist-appointment-fields .receptionist-field--appointment-date,
+	.receptionist-appointment-fields .receptionist-field--appointment-time {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		width: auto;
+	}
+
+	.receptionist-field--appointment-date .form-control {
+		inline-size: 100%;
+	}
+
+	.receptionist-field--appointment-doctor .form-select,
+	.receptionist-field--appointment-service .service-autocomplete-wrapper {
+		inline-size: 100%;
+	}
+
+	.receptionist-intake-actions {
+		flex-wrap: nowrap;
+	}
+}
+
+@media (max-width: 47.99rem) {
+	.receptionist-document-upload-btn {
+		width: 100%;
+	}
+
+	.receptionist-intake-actions {
+		width: 100%;
+	}
+
+	.qlpk-save-info-btn {
+		flex: 1 1 auto;
+	}
+
+}
+
+/* Receptionist workflow tokens. Layout geometry is owned by workflow-two-pane.css. */
+.receptionist-workspace {
+	/* Surface contract: descendants consume these tokens instead of declaring one-off cream/brown backgrounds. */
+	--receptionist-page-bg: var(--qlpk-color-page-bg, var(--qlpk-color-page-bg));
+	--receptionist-tone-bg: var(--qlpk-color-primary);
+	--receptionist-tone-surface: var(--qlpk-color-surface, var(--qlpk-color-white));
+	--receptionist-tone-surface-muted: var(--qlpk-color-surface-muted, var(--qlpk-color-surface-muted));
+	--receptionist-tone-surface-strong: var(--qlpk-color-surface, var(--qlpk-color-white));
+	--receptionist-tone-line: var(--qlpk-color-line, rgba(var(--qlpk-brown-800-rgb), 0.16));
+	--receptionist-tone-line-strong: var(--qlpk-color-line-strong, rgba(var(--qlpk-brown-800-rgb), 0.28));
+	--receptionist-tone-text: var(--qlpk-color-text, var(--qlpk-color-text));
+	--receptionist-tone-muted: var(--qlpk-color-text-muted, var(--qlpk-palette-gray-37));
+	--receptionist-tone-accent: var(--qlpk-header-accent, var(--qlpk-color-gold, var(--qlpk-color-gold)));
+	--receptionist-section-header-bg: var(--receptionist-tone-surface, var(--qlpk-color-white));
+	--receptionist-section-header-border: var(--qlpk-color-primary-border, var(--qlpk-alpha-teal-29-34));
+	--receptionist-section-header-accent: var(--qlpk-color-primary);
+	--receptionist-section-header-text: var(--qlpk-color-primary-strong);
+	--receptionist-section-header-icon: var(--qlpk-color-primary);
+	--receptionist-layout-gap: 0.5rem;
+	--qlpk-workflow-gap: var(--receptionist-layout-gap);
+	--receptionist-card-padding-x: var(--receptionist-layout-gap);
+	--receptionist-card-padding-y: 0;
+	--receptionist-card-padding: var(--receptionist-card-padding-y) var(--receptionist-card-padding-x);
+	--receptionist-field-gap: 0.625rem;
+	--receptionist-inline-gap: 0.5rem;
+	--receptionist-header-padding-block: 0.22em;
+	--receptionist-header-row-gap: 0.24em;
+	--receptionist-header-action-padding-block: 0.12em;
+	--receptionist-header-control-padding-block: 0.22em;
+	--receptionist-header-button-padding-inline: 0.86em;
+	--receptionist-header-action-gap: 0.4rem;
+	--receptionist-paper-label-width: 9.25rem;
+	--receptionist-underline-input-padding-block: 0.22rem;
+	--receptionist-underline-input-padding-inline: 0.42rem;
+	--receptionist-font-text: var(--qlpk-font-size-base);
+	--receptionist-font-label: var(--qlpk-font-size-base);
+	--receptionist-font-meta: var(--qlpk-font-size-base);
+	--receptionist-font-chip: var(--qlpk-font-size-base);
+	--receptionist-font-counter: var(--qlpk-font-size-xs);
+	--receptionist-font-section-title: var(--qlpk-font-size-base);
+	--receptionist-font-panel-title: var(--qlpk-font-size-base);
+	--receptionist-queue-header-bg: linear-gradient(180deg, var(--qlpk-header-surface-strong, var(--qlpk-color-header-light)) 0%, var(--qlpk-header-bg, var(--qlpk-brown-800)) 100%);
+	--receptionist-queue-header-border: rgba(var(--qlpk-color-gold-rgb), 0.28);
+	--receptionist-queue-header-text: var(--qlpk-header-text, var(--qlpk-color-surface-subtle));
+	--receptionist-queue-search-bg: var(--receptionist-tone-surface);
+	--receptionist-queue-search-border: rgba(var(--qlpk-color-gold-rgb), 0.48);
+}
+
+.receptionist-shell-placeholder {
+	display: none;
+}
+
+.receptionist-workspace .qlpk-queue-panel__title {
+	font-size: var(--receptionist-font-panel-title);
+}
+
+.receptionist-workspace .qlpk-queue-panel__header {
+	block-size: auto;
+	font-size: var(--receptionist-font-panel-title);
+	padding-block: var(--receptionist-header-padding-block);
+}
+
+.receptionist-workspace .qlpk-queue-panel__header-inner {
+	row-gap: var(--receptionist-header-row-gap);
+}
+
+.receptionist-workspace .qlpk-queue-panel__title,
+.receptionist-workspace .receptionist-intake-panel-title {
+	line-height: 1.25;
+	padding-block: var(--receptionist-header-action-padding-block);
+	border-block: 0.0625rem solid transparent;
+}
+
+.receptionist-workspace .qlpk-queue-panel__search-input,
+.receptionist-workspace .receptionist-appointment-fields .form-control,
+.receptionist-workspace .receptionist-appointment-fields .form-select,
+.receptionist-workspace .receptionist-document-upload-btn,
+.receptionist-workspace .qlpk-save-info-btn {
+	block-size: auto;
+	min-block-size: 2.2em;
+	font-size: var(--receptionist-font-text);
+	line-height: 1.25;
+	padding-block: var(--receptionist-header-control-padding-block);
+}
+
+.receptionist-workspace .receptionist-document-upload-btn,
+.receptionist-workspace .qlpk-save-info-btn {
+	min-block-size: 0;
+	padding-block: var(--receptionist-header-action-padding-block);
+}
+
+@media (min-width: 48rem) and (max-width: 96rem) {
+	.receptionist-workspace {
+		--receptionist-layout-gap: 0.5rem;
+		--receptionist-field-gap: 0.5rem;
+		--receptionist-inline-gap: 0.36rem;
+		--receptionist-header-action-gap: 0.3rem;
+		--receptionist-paper-label-width: 8.25rem;
+		--receptionist-underline-input-padding-block: 0.16rem;
+		--receptionist-underline-input-padding-inline: 0.34rem;
+		--receptionist-font-text: var(--qlpk-font-size-sm);
+		--receptionist-font-label: var(--qlpk-font-size-sm);
+		--receptionist-font-meta: var(--qlpk-font-size-sm);
+		--receptionist-font-chip: var(--qlpk-font-size-sm);
+		--receptionist-font-section-title: var(--qlpk-font-size-sm);
+	}
+
+	.receptionist-intake-actions {
+		justify-content: flex-end;
+	}
+}
