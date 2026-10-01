@@ -1,4 +1,6 @@
-/* global RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, currentOrderDetail, escapeHtml, formatDateOnly, loadOrderDetail, showConfirmDialog, showCustomToast */
+import { state } from './order-management-state.js';
+import { RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, escapeHtml, formatDateOnly, showConfirmDialog, showCustomToast } from '../order-management.js';
+import { loadOrderDetail } from './order-management-detail.js';
 
 // Render result files
 function renderResultFiles(files) {
@@ -70,14 +72,14 @@ function renderResultFiles(files) {
 	document.querySelectorAll('.result-file-download').forEach(btn => {
 		btn.addEventListener('click', async function () {
 			const fileId = this.dataset.fileId;
-			await downloadResultFile(currentOrderDetail.id, fileId);
+			await downloadResultFile(state.currentOrderDetail.id, fileId);
 		});
 	});
 
 	document.querySelectorAll('.result-file-delete').forEach(btn => {
 		btn.addEventListener('click', async function () {
 			const fileId = this.dataset.fileId;
-			await deleteResultFile(currentOrderDetail.id, fileId);
+			await deleteResultFile(state.currentOrderDetail.id, fileId);
 		});
 	});
 }
@@ -108,7 +110,7 @@ async function handleDrop(e) {
 
 	if (files.length === 0) return;
 
-	if (!currentOrderDetail || !currentOrderDetail.id) {
+	if (!state.currentOrderDetail || !state.currentOrderDetail.id) {
 		showCustomToast('error', 'Vui lòng chọn chỉ định trước');
 		return;
 	}
@@ -118,7 +120,7 @@ async function handleDrop(e) {
 
 	if (!validateResultFile(file)) return;
 
-	await uploadResultFile(currentOrderDetail.id, file);
+	await uploadResultFile(state.currentOrderDetail.id, file);
 }
 
 // Format file size
@@ -141,13 +143,13 @@ async function handleFileSelect(event) {
 	const file = event.target.files[0];
 	if (!file) return;
 
-	if (!currentOrderDetail || !currentOrderDetail.id) {
+	if (!state.currentOrderDetail || !state.currentOrderDetail.id) {
 		showCustomToast('error', 'Vui lòng chọn chỉ định trước');
 		return;
 	}
 	if (!validateResultFile(file)) return;
 
-	await uploadResultFile(currentOrderDetail.id, file);
+	await uploadResultFile(state.currentOrderDetail.id, file);
 	event.target.value = ''; // Reset input
 }
 
@@ -156,8 +158,8 @@ async function refreshResultFiles(orderId) {
 		const refreshResponse = await apiCall(`/api/chi-dinh/${orderId}`);
 		if (!refreshResponse.ok) return;
 		const order = await refreshResponse.json();
-		if (currentOrderDetail) {
-			currentOrderDetail.result_files = order.result_files || [];
+		if (state.currentOrderDetail) {
+			state.currentOrderDetail.result_files = order.result_files || [];
 		}
 		renderResultFiles(order.result_files || []);
 	} catch (error) {
@@ -187,8 +189,8 @@ async function uploadResultFile(orderId, file) {
 		// Update danh sách file ngay từ response
 		if (data.chi_dinh && data.chi_dinh.result_files) {
 			// Cập nhật currentOrderDetail
-			if (currentOrderDetail) {
-				currentOrderDetail.result_files = data.chi_dinh.result_files;
+			if (state.currentOrderDetail) {
+				state.currentOrderDetail.result_files = data.chi_dinh.result_files;
 			}
 			// Render lại danh sách file từ dữ liệu mới
 			renderResultFiles(data.chi_dinh.result_files);
@@ -226,9 +228,9 @@ async function deleteResultFile(orderId, fileId) {
 		showCustomToast('success', 'Xóa file thành công');
 
 		// Update result files list without reloading entire modal
-		if (currentOrderDetail && currentOrderDetail.result_files) {
-			currentOrderDetail.result_files = currentOrderDetail.result_files.filter(f => f.id !== fileId);
-			renderResultFiles(currentOrderDetail.result_files);
+		if (state.currentOrderDetail && state.currentOrderDetail.result_files) {
+			state.currentOrderDetail.result_files = state.currentOrderDetail.result_files.filter(f => f.id !== fileId);
+			renderResultFiles(state.currentOrderDetail.result_files);
 		} else {
 			// Fallback: reload order detail if currentOrderDetail is not available
 			await loadOrderDetail(orderId);
@@ -275,3 +277,5 @@ async function downloadResultFile(orderId, fileId) {
 		showCustomToast('error', 'Lỗi khi tải file');
 	}
 }
+
+export { renderResultFiles };

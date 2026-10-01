@@ -1,5 +1,9 @@
-/* global apiCall, copySurveyLink, currentOrderDetail, escapeHtml, formatDisplayDate, getStatusBadge, loadOrderSurvey, loadOrders, loadSavedSurveyLevels, refreshCurrentOrderStatus, renderSingleSurveyResultCard, showConfirmDialog, showCustomToast */
-/* exported renderSurveyResults */
+import { state } from './order-management-state.js';
+import { apiCall, escapeHtml, formatDisplayDate, getStatusBadge, loadOrders, showConfirmDialog, showCustomToast } from '../order-management.js';
+import { copySurveyLink, loadSavedSurveyLevels } from './order-management-survey-level.js';
+import { loadOrderSurvey } from './order-management-detail.js';
+import { refreshCurrentOrderStatus } from './order-management-actions.js';
+import { renderSingleSurveyResultCard } from './order-management-survey-results.js';
 
 // Render the survey section
 function renderOrderSurveyContent(html, qrCode = '') {
@@ -22,7 +26,7 @@ function renderOrderSurveyContent(html, qrCode = '') {
 }
 
 function renderSurveyActions(examinationId, patientId, hasResult = false, hasLink = false) {
-    const order = currentOrderDetail;
+    const order = state.currentOrderDetail;
     const target = document.getElementById('orderSurveyActions');
     if (!order?.survey_template_id) { target.replaceChildren(); return; }
     target.innerHTML = `
@@ -35,7 +39,7 @@ function renderSurveyActions(examinationId, patientId, hasResult = false, hasLin
 
 // Render survey selection UI (when no survey results yet)
 function renderSurveySelectionUI(examinationId, templates, surveySession) {
-	const patient = currentOrderDetail.patient || {};
+	const patient = state.currentOrderDetail.patient || {};
 	const patientId = patient.id;
 
 	// Get survey session details (URL and QR code)
@@ -81,12 +85,12 @@ function renderSurveySelectionUI(examinationId, templates, surveySession) {
 
     renderSurveyActions(examinationId, patientId, false, Boolean(surveyUrl));
     const html = `
-        <div class="om-survey-heading"><div><h3>Khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
+        <div class="om-survey-heading"><div><h3>Khảo sát <span id="orderSurveyStatus">${getStatusBadge(state.currentOrderDetail.status)}</span></h3>
             <p class="om-survey-helper-text">Mẫu: ${escapeHtml(linkedTemplate.name || '—')}</p></div></div>
-        ${currentOrderDetail.status === 'completed' ? '<p class="om-survey-empty">Chưa có bài nộp. Bấm “Xem kết quả” để xem phần trả lời đã lưu.</p>' : qrAndLinkHtml || '<p class="om-survey-empty">Chưa tạo link khảo sát. Bấm “Tạo link khảo sát” để bệnh nhân bắt đầu làm bài.</p>'}
+        ${state.currentOrderDetail.status === 'completed' ? '<p class="om-survey-empty">Chưa có bài nộp. Bấm “Xem kết quả” để xem phần trả lời đã lưu.</p>' : qrAndLinkHtml || '<p class="om-survey-empty">Chưa tạo link khảo sát. Bấm “Tạo link khảo sát” để bệnh nhân bắt đầu làm bài.</p>'}
     `;
 
-	renderOrderSurveyContent(html, currentOrderDetail.status !== 'completed' && surveyUrl ? qrCode : '');
+	renderOrderSurveyContent(html, state.currentOrderDetail.status !== 'completed' && surveyUrl ? qrCode : '');
 
     document.getElementById('copySurveyLinkBtn')?.addEventListener('click', copySurveyLink);
 }
@@ -94,13 +98,13 @@ function renderSurveySelectionUI(examinationId, templates, surveySession) {
 // Send survey link
 function surveyTemplateError(templateId) {
 	if (!templateId) return 'Vui lòng chọn mẫu khảo sát';
-	const linkedTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
+	const linkedTemplateId = Number(state.currentOrderDetail?.survey_template_id) || null;
 	if (linkedTemplateId && Number(templateId) !== linkedTemplateId) return 'Mẫu khảo sát không khớp với chỉ định.';
 	return '';
 }
 
 async function sendSurveyLink(examinationId, patientId, templateId) {
-    const orderId = currentOrderDetail?.id;
+    const orderId = state.currentOrderDetail?.id;
     if (!orderId) return;
 	try {
 		const templateError = surveyTemplateError(templateId);
@@ -136,7 +140,7 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 
 		// Clear any previous response data and reload survey content
 		// This ensures the section shows the selection UI instead of results
-		if (currentOrderDetail?.id === orderId) await loadOrderSurvey();
+		if (state.currentOrderDetail?.id === orderId) await loadOrderSurvey();
 
 	} catch (error) {
 		console.error('Error sending survey link:', error);
@@ -146,7 +150,7 @@ async function sendSurveyLink(examinationId, patientId, templateId) {
 
 // Close survey session
 async function closeSurveySession() {
-	const orderId = currentOrderDetail?.id;
+	const orderId = state.currentOrderDetail?.id;
 	if (!orderId) return;
 	try {
 		const confirmed = await showConfirmDialog({title: 'Kết thúc khảo sát', text: 'Chỉ định sẽ chuyển sang Hoàn thành và ngừng nhận bài nộp. Kết quả đã có vẫn được giữ nguyên.', confirmText: 'Kết thúc khảo sát', variant: 'warning'});
@@ -175,7 +179,7 @@ async function closeSurveySession() {
 
 			// Reload survey content - will now show results if available
 			await loadOrders();
-			if (currentOrderDetail?.id === orderId) {
+			if (state.currentOrderDetail?.id === orderId) {
 				await refreshCurrentOrderStatus();
 				await loadOrderSurvey();
 			}
@@ -204,10 +208,10 @@ function uniqueResponsesLatestFirst(surveyResponses) {
 }
 
 function buildSurveyResultHeading(latestTemplate) {
-	const expires = currentOrderDetail.status !== 'completed' && currentOrderDetail.survey_expires_at
-		? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(currentOrderDetail.survey_expires_at)}</p>` : '';
+	const expires = state.currentOrderDetail.status !== 'completed' && state.currentOrderDetail.survey_expires_at
+		? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(state.currentOrderDetail.survey_expires_at)}</p>` : '';
 	return `
-        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(currentOrderDetail.status)}</span></h3>
+        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(state.currentOrderDetail.status)}</span></h3>
         <p class="om-survey-helper-text">Mẫu: ${escapeHtml(latestTemplate.name || '—')}</p></div>
         ${expires}</div>`;
 }
@@ -222,7 +226,7 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 
 
 	const uniqueResponses = uniqueResponsesLatestFirst(surveyResponses);
-	const indicationTemplateId = Number(currentOrderDetail?.survey_template_id) || null;
+	const indicationTemplateId = Number(state.currentOrderDetail?.survey_template_id) || null;
 	const linkedResponses = indicationTemplateId
 		? uniqueResponses.filter(response => Number(response.survey_template_id) === indicationTemplateId)
 		: [];
@@ -246,7 +250,7 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 
 	// Debug: Log template match
 
-    renderSurveyActions(latestResponse.examination_id, currentOrderDetail.patient?.id, true);
+    renderSurveyActions(latestResponse.examination_id, state.currentOrderDetail.patient?.id, true);
     let html = `<div>${buildSurveyResultHeading(latestTemplate)}`;
 	// Render chỉ 1 card cho response mới nhất
 	const cardHtml = await renderSingleSurveyResultCard(latestTemplate, latestResponse);
@@ -267,3 +271,5 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 
 
 }
+
+export { renderOrderSurveyContent, renderSurveyResults, renderSurveySelectionUI };

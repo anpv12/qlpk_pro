@@ -1,8 +1,10 @@
-/* global apiCall, currentExaminationId: writable, currentOrderDetail, currentSurveySession: writable, initializePage, lastKnownSurveyStatus: writable, loadOrderSurvey, refreshCurrentOrderStatus, renderTimeline, showCustomToast */
-/* exported copySurveyLink, currentExaminationId, currentSurveySession, initializeSurveyRealtimeContext, loadSavedSurveyLevels, saveSurveyLevelForOrder */
+import { state } from './order-management-state.js';
+import { apiCall, showCustomToast } from '../order-management.js';
+import { refreshCurrentOrderStatus, renderTimeline } from './order-management-actions.js';
+import { loadOrderSurvey } from './order-management-detail.js';
 
 // Function để cập nhật alignment của input dựa trên giá trị (số thì căn phải, text thì căn trái)
-window.updateLevelInputAlignment = function (inputElement) {
+function updateLevelInputAlignment(inputElement) {
 	if (!inputElement) return;
 
 	const value = inputElement.value.trim();
@@ -78,7 +80,7 @@ async function saveSurveyLevelForOrder(criteriaName, examinationId, inputElement
 
 // Function để load mức độ ghi nhận đã lưu (dynamic criteria support)
 async function loadSavedSurveyLevels(examinationId) {
-    const orderId = currentOrderDetail?.id;
+    const orderId = state.currentOrderDetail?.id;
 	if (!examinationId) {
 		return;
 	}
@@ -88,7 +90,7 @@ async function loadSavedSurveyLevels(examinationId) {
 
 		if (response.ok) {
 			const data = await response.json();
-            if (currentOrderDetail?.id !== orderId) return;
+            if (state.currentOrderDetail?.id !== orderId) return;
 			if (data && data.data && Array.isArray(data.data)) {
 				// Load old format (survey_level) for backward compatibility
 				const surveyLevelItem = data.data.find(item => item.field_name === 'survey_level');
@@ -96,7 +98,7 @@ async function loadSavedSurveyLevels(examinationId) {
 				if (inputElement) {
 					inputElement.value = surveyLevelItem.field_value;
 					// Update alignment sau khi set value
-					window.updateLevelInputAlignment(inputElement);
+					updateLevelInputAlignment(inputElement);
 				}
 
 				// Load all survey_level_* fields dynamically
@@ -118,7 +120,7 @@ async function loadSavedSurveyLevels(examinationId) {
 					inputElements.forEach(input => {
 						input.value = fieldItem.field_value;
 						// Update alignment sau khi set value
-						window.updateLevelInputAlignment(input);
+						updateLevelInputAlignment(input);
 					});
 				});
 			}
@@ -156,14 +158,14 @@ function copySurveyLink() {
 // Initialize survey context for realtime status updates
 async function initializeSurveyRealtimeContext() {
 	clearSurveyRealtimeContext();
-    const orderId = currentOrderDetail?.id;
+    const orderId = state.currentOrderDetail?.id;
 
 	// Get examination_id from current order detail
-	if (!currentOrderDetail || !currentOrderDetail.appointment) {
+	if (!state.currentOrderDetail || !state.currentOrderDetail.appointment) {
 		return;
 	}
 
-	const appointment = currentOrderDetail.appointment;
+	const appointment = state.currentOrderDetail.appointment;
 	const appointmentId = appointment.id;
 
 	if (!appointmentId) {
@@ -191,42 +193,42 @@ async function initializeSurveyRealtimeContext() {
 		return;
 	}
 
-	if (currentOrderDetail?.id !== orderId) return;
-	currentExaminationId = examinationId;
-	lastKnownSurveyStatus = null;
+	if (state.currentOrderDetail?.id !== orderId) return;
+	state.currentExaminationId = examinationId;
+	state.lastKnownSurveyStatus = null;
 
 	await checkSurveyStatusUpdate(examinationId);
 }
 
 function clearSurveyRealtimeContext() {
-	lastKnownSurveyStatus = null;
-	currentExaminationId = null;
-	currentSurveySession = null;
+	state.lastKnownSurveyStatus = null;
+	state.currentExaminationId = null;
+	state.currentSurveySession = null;
 }
 
 // Check survey status and reload if changed
 async function applySurveyStatusUpdate(orderId, surveySession) {
 	await refreshCurrentOrderStatus();
-	if (currentOrderDetail?.id !== orderId) return;
-	const currentStatus = currentOrderDetail.status;
-	const previousStatus = lastKnownSurveyStatus;
-	currentSurveySession = surveySession;
-	if (currentOrderDetail) renderTimeline(currentOrderDetail, surveySession);
+	if (state.currentOrderDetail?.id !== orderId) return;
+	const currentStatus = state.currentOrderDetail.status;
+	const previousStatus = state.lastKnownSurveyStatus;
+	state.currentSurveySession = surveySession;
+	if (state.currentOrderDetail) renderTimeline(state.currentOrderDetail, surveySession);
 
 	// Check if status has changed
-	lastKnownSurveyStatus = currentStatus;
+	state.lastKnownSurveyStatus = currentStatus;
 	if (previousStatus === null) return;
 
 	if (previousStatus !== currentStatus) {
 		await loadOrderSurvey();
-		if (currentOrderDetail?.id === orderId && ['has_result', 'completed'].includes(currentStatus)) {
+		if (state.currentOrderDetail?.id === orderId && ['has_result', 'completed'].includes(currentStatus)) {
 			showCustomToast('success', currentStatus === 'has_result' ? 'Khảo sát đã có kết quả.' : 'Chỉ định đã hoàn thành.');
 		}
 	}
 }
 
 async function checkSurveyStatusUpdate(examinationId) {
-    const orderId = currentOrderDetail?.id;
+    const orderId = state.currentOrderDetail?.id;
     if (!orderId) return;
 	try {
 		// Check if modal is still open
@@ -245,13 +247,13 @@ async function checkSurveyStatusUpdate(examinationId) {
 		}
 
 		const sessionData = await sessionResponse.json();
-        if (currentOrderDetail?.id !== orderId) return;
+        if (state.currentOrderDetail?.id !== orderId) return;
 		const surveySession = sessionData.data || sessionData;
 
 		if (!surveySession || surveySession.status === 'not_started') {
 			// No active session yet.
-			currentSurveySession = null;
-			if (currentOrderDetail) renderTimeline(currentOrderDetail, null);
+			state.currentSurveySession = null;
+			if (state.currentOrderDetail) renderTimeline(state.currentOrderDetail, null);
 			return;
 		}
 
@@ -261,9 +263,7 @@ async function checkSurveyStatusUpdate(examinationId) {
 	}
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', initializePage);
-} else {
-	initializePage();
-}
+
+window.QLPKInlineActions.register({ saveSurveyLevelForOrder, updateLevelInputAlignment });
+
+export { checkSurveyStatusUpdate, clearSurveyRealtimeContext, copySurveyLink, initializeSurveyRealtimeContext, loadSavedSurveyLevels };

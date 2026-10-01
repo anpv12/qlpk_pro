@@ -1,5 +1,9 @@
-/* global apiCall, clearSurveyRealtimeContext, currentOrderDetail: writable, currentSurveySession: writable, escapeHtml, formatDateOnly, initializeSurveyRealtimeContext, loadOrders, orderStatusChangeHandler: writable, refreshCurrentOrderStatus, renderOrderSurveyContent, renderResultFiles, renderSurveyResults, renderSurveySelectionUI, renderTimeline, saveCustomOrderNote: writable, showCustomToast, updateOrderNote */
-/* exported currentSurveySession, loadOrderDetail */
+import { state } from './order-management-state.js';
+import { clearSurveyRealtimeContext, initializeSurveyRealtimeContext } from './order-management-survey-level.js';
+import { renderOrderSurveyContent, renderSurveyResults, renderSurveySelectionUI } from './order-management-survey.js';
+import { apiCall, escapeHtml, formatDateOnly, loadOrders, showCustomToast } from '../order-management.js';
+import { refreshCurrentOrderStatus, renderTimeline, updateOrderNote } from './order-management-actions.js';
+import { renderResultFiles } from './order-management-files.js';
 
 // Load order detail
 let detailRequestVersion = 0;
@@ -9,8 +13,8 @@ async function loadOrderDetail(orderId) {
     const version = ++detailRequestVersion;
     ++surveyLoadVersion;
     clearSurveyRealtimeContext();
-    currentOrderDetail = null;
-    saveCustomOrderNote = null;
+    state.currentOrderDetail = null;
+    state.saveCustomOrderNote = null;
     renderOrderSurveyContent('<p>Đang tải thông tin khảo sát…</p>');
     document.getElementById('orderSurveyActions').replaceChildren();
     try {
@@ -18,7 +22,7 @@ async function loadOrderDetail(orderId) {
         if (!response.ok) throw new Error('Không tải được chỉ định');
         const order = await response.json();
         if (version !== detailRequestVersion) return;
-        currentOrderDetail = order;
+        state.currentOrderDetail = order;
         renderOrderDetailModal(order);
         const modalEl = document.getElementById('orderDetailModal');
         if (!modalEl._detailCloseHandler) {
@@ -33,8 +37,8 @@ async function loadOrderDetail(orderId) {
                     ++detailRequestVersion;
                     ++surveyLoadVersion;
                     clearSurveyRealtimeContext();
-                    currentOrderDetail = null;
-                    saveCustomOrderNote = null;
+                    state.currentOrderDetail = null;
+                    state.saveCustomOrderNote = null;
                     renderOrderSurveyContent('');
                     document.getElementById('orderSurveyActions').replaceChildren();
                 }
@@ -85,9 +89,9 @@ function renderOrderDetailModal(order) {
 	const orderStatusSelect = document.getElementById('orderStatusSelect');
 	if (orderStatusSelect) {
 		// Remove listener cũ nếu có (tránh duplicate)
-		if (orderStatusChangeHandler) {
-			orderStatusSelect.removeEventListener('change', orderStatusChangeHandler);
-			orderStatusChangeHandler = null;
+		if (state.orderStatusChangeHandler) {
+			orderStatusSelect.removeEventListener('change', state.orderStatusChangeHandler);
+			state.orderStatusChangeHandler = null;
 		}
 
 		// Set value
@@ -96,9 +100,9 @@ function renderOrderDetailModal(order) {
         [...orderStatusSelect.options].forEach(option => { option.hidden = ['survey_sent', 'has_result'].includes(option.value) && !order.survey_template_id; });
 
 		// Tạo handler mới và lưu reference
-		orderStatusChangeHandler = async function () {
-			if (currentOrderDetail) {
-				const order = currentOrderDetail;
+		state.orderStatusChangeHandler = async function () {
+			if (state.currentOrderDetail) {
+				const order = state.currentOrderDetail;
 				const version = detailRequestVersion;
 				const newValue = this.value;
 				const oldValue = order.status || 'sent';
@@ -107,26 +111,26 @@ function renderOrderDetailModal(order) {
 				if (newValue !== oldValue) {
 					try {
 						this.disabled = true;
-						if (saveCustomOrderNote) await saveCustomOrderNote();
-						if (version !== detailRequestVersion || currentOrderDetail !== order) return;
+						if (state.saveCustomOrderNote) await state.saveCustomOrderNote();
+						if (version !== detailRequestVersion || state.currentOrderDetail !== order) return;
 						await updateOrderNote(order.id, 'status', newValue);
-						if (version !== detailRequestVersion || currentOrderDetail !== order) return;
+						if (version !== detailRequestVersion || state.currentOrderDetail !== order) return;
 						order.status = newValue;
 						// Reload timeline để hiển thị status mới
-						renderTimeline(currentOrderDetail);
+						renderTimeline(state.currentOrderDetail);
 					} catch (error) {
 						console.error('Error auto-saving status:', error);
 						// Revert về giá trị cũ nếu lỗi
-						if (version === detailRequestVersion && currentOrderDetail === order) this.value = oldValue;
+						if (version === detailRequestVersion && state.currentOrderDetail === order) this.value = oldValue;
 					} finally {
-						if (version === detailRequestVersion && currentOrderDetail === order) this.disabled = order.status === 'completed';
+						if (version === detailRequestVersion && state.currentOrderDetail === order) this.disabled = order.status === 'completed';
 					}
 				}
 			}
 		};
 
 		// Gắn listener mới
-		orderStatusSelect.addEventListener('change', orderStatusChangeHandler);
+		orderStatusSelect.addEventListener('change', state.orderStatusChangeHandler);
 	}
 
 	// Render result files
@@ -152,7 +156,7 @@ function renderCustomOrderNote(order) {
     const feedback = document.getElementById('customOrderNoteStatus');
     const button = document.getElementById('saveCustomOrderNoteBtn');
     const version = detailRequestVersion;
-    const isCurrent = () => version === detailRequestVersion && currentOrderDetail === order && input.isConnected;
+    const isCurrent = () => version === detailRequestVersion && state.currentOrderDetail === order && input.isConnected;
     let savedValue = order.note_nurse || '';
     let pending = Promise.resolve();
     input.value = savedValue;
@@ -178,7 +182,7 @@ function renderCustomOrderNote(order) {
         });
         return pending;
     };
-    saveCustomOrderNote = save;
+    state.saveCustomOrderNote = save;
     input.addEventListener('input', () => { feedback.textContent = 'Chưa lưu — tự lưu khi rời ô.'; });
     input.addEventListener('change', () => { save().catch(() => {}); });
     button.addEventListener('click', () => { save().catch(() => {}); });
@@ -190,20 +194,20 @@ const SURVEY_NO_EXAMINATION_HTML = '<div class="text-center text-navy py-5"><p>C
 
 async function loadOrderSurvey() {
     const version = ++surveyLoadVersion;
-    const loadingOrderId = currentOrderDetail?.id;
-    const isCurrent = () => version === surveyLoadVersion && currentOrderDetail?.id === loadingOrderId;
-	if (!currentOrderDetail || !currentOrderDetail.appointment || !currentOrderDetail.appointment.id) {
+    const loadingOrderId = state.currentOrderDetail?.id;
+    const isCurrent = () => version === surveyLoadVersion && state.currentOrderDetail?.id === loadingOrderId;
+	if (!state.currentOrderDetail || !state.currentOrderDetail.appointment || !state.currentOrderDetail.appointment.id) {
 		renderOrderSurveyContent(SURVEY_NO_INFO_HTML);
 		return;
 	}
-	const appointment = currentOrderDetail.appointment;
+	const appointment = state.currentOrderDetail.appointment;
 
-	const indicationTemplateId = Number(currentOrderDetail.survey_template_id) || null;
+	const indicationTemplateId = Number(state.currentOrderDetail.survey_template_id) || null;
 	if (!indicationTemplateId) {
-		renderCustomOrderNote(currentOrderDetail);
+		renderCustomOrderNote(state.currentOrderDetail);
 		return;
 	}
-	saveCustomOrderNote = null;
+	state.saveCustomOrderNote = null;
 
 	// Show loading
 	renderOrderSurveyContent(`
@@ -238,11 +242,11 @@ async function loadOrderSurveyForTemplate(appointment, indicationTemplateId, isC
 
 	const surveySession = await loadSurveySessionStatus(examinationId, isCurrent);
 	if (!isCurrent()) return;
-	currentSurveySession = surveySession;
-	renderTimeline(currentOrderDetail, surveySession);
+	state.currentSurveySession = surveySession;
+	renderTimeline(state.currentOrderDetail, surveySession);
 
 	// Only fetch and display results if the indication has a survey template
-	if (currentOrderDetail.survey_template_id) {
+	if (state.currentOrderDetail.survey_template_id) {
 		const allSurveyResponses = await loadExaminationSurveyResponses(examinationId, isCurrent);
 		if (!isCurrent()) return;
 		// If we have responses, render results
@@ -302,7 +306,7 @@ async function loadIndicationSurveyTemplates(indicationTemplateId, isCurrent) {
 // No session ('not_started', 404 or a failed request) is a valid state and yields null.
 async function loadSurveySessionStatus(examinationId, isCurrent) {
 	try {
-		const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status?order_id=${currentOrderDetail.id}`);
+		const sessionResponse = await apiCall(`/api/survey-sessions/${examinationId}/status?order_id=${state.currentOrderDetail.id}`);
 		if (!isCurrent()) return null;
 		if (sessionResponse && sessionResponse.ok) {
 			const sessionData = await sessionResponse.json();
@@ -321,8 +325,10 @@ async function loadSurveySessionStatus(examinationId, isCurrent) {
 }
 
 async function loadExaminationSurveyResponses(examinationId, isCurrent) {
-	const surveyResponse = await apiCall(`/api/survey-responses/examination/${examinationId}?order_id=${currentOrderDetail.id}`);
+	const surveyResponse = await apiCall(`/api/survey-responses/examination/${examinationId}?order_id=${state.currentOrderDetail.id}`);
 	if (!isCurrent() || !surveyResponse.ok) return [];
 	const surveyData = await surveyResponse.json();
 	return surveyData.data || surveyData.responses || [];
 }
+
+export { loadOrderDetail, loadOrderSurvey };

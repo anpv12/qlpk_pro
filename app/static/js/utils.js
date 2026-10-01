@@ -171,4 +171,4 @@ const AppointmentUtils = {
 window.AppointmentUtils = AppointmentUtils;
 window.formatDateDisplay = AppointmentUtils.formatDateDisplay;
 
-window.QLPKApiTransport.installJQuery($);
+if (typeof $ === "function") window.QLPKApiTransport.installJQuery($);

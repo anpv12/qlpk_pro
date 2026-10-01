@@ -8,6 +8,7 @@ fail before a browser smoke is attempted.
 
 from __future__ import annotations
 
+import posixpath
 import re
 import subprocess
 import sys
@@ -129,10 +130,18 @@ def test_survey_order_performer_and_source_contract() -> None:
 
 
 def read_order_management() -> str:
-    """Order page JS: entry plus classic slices, in template load order."""
-    template = read("app/templates/order-management.html")
-    scripts = re.findall(r'<script src="/static/js/((?:order-management|orders/order-management-[\w-]+)\.js)', template)
-    return "\n".join(read(f"app/static/js/{script}") for script in scripts)
+    """Order page JS: the ES module entry and every slice it imports."""
+    seen: list[str] = []
+
+    def walk(rel: str) -> None:
+        if rel in seen:
+            return
+        seen.append(rel)
+        for spec in re.findall(r"^import\s+(?:[^'\"]*?from\s+)?['\"](\.{1,2}/[^'\"]+)['\"]", read(f"app/static/js/{rel}"), re.M):
+            walk(posixpath.normpath(posixpath.join(posixpath.dirname(rel), spec)))
+
+    walk("order-management.js")
+    return "\n".join(read(f"app/static/js/{script}") for script in seen)
 
 def test_clinical_order_scope_and_validation_contract() -> None:
     order_api = read("app/modules/orders/api/chi_dinh.py")
@@ -151,7 +160,7 @@ def test_clinical_order_scope_and_validation_contract() -> None:
     assert "def _safe_result_path" in result_files
     assert "_get_accessible_examination" in survey_sessions
     assert "om-survey-helper-text\">Mẫu: ${escapeHtml(linkedTemplate.name" in order_management
-    assert "if (!indicationTemplateId) {\n\t\trenderCustomOrderNote(currentOrderDetail);" in order_management
+    assert "if (!indicationTemplateId) {\n\t\trenderCustomOrderNote(state.currentOrderDetail);" in order_management
     assert "/api/survey-templates/active/public" not in order_management
     assert "surveyTemplateSelectResults.addEventListener('change'" not in order_management
 
@@ -164,7 +173,7 @@ def test_order_management_survey_completion_contract() -> None:
 
     assert "questions_by_criteria" in survey_templates
     assert "const completionTimestamp = response.updated_at || response.created_at;" in order_management
-    assert "currentSurveySession = surveySession;" in order_management
+    assert "state.currentSurveySession = surveySession;" in order_management
     assert "if (previousStatus !== currentStatus)" in order_management
     assert "create_clinical_order_assignment_notifications" in notifications
     assert "create_survey_completed_notifications" in notifications

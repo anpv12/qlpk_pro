@@ -1,5 +1,4 @@
-/* global attrJson, escapeHtml */
-/* exported renderSingleSurveyResultCard */
+import { attrJson, escapeHtml } from '../order-management.js';
 
 function resolveSurveyAnswerText(question, answerValue) {
 	const answers = question.answers || question.options || [];
@@ -162,3 +161,5 @@ async function renderSingleSurveyResultCard(template, response) {
         </div>
     `;
 }
+
+export { renderSingleSurveyResultCard };

@@ -1,5 +1,5 @@
-/* global FILTER_INPUT_DEBOUNCE_MS, apiCall, currentOrderDetail, currentPage: writable, filterInputTimer: writable, filterState, formatDisplayDate, getStatusBadge, loadOrders, patientInputHandler: writable, patientInputKeydownHandler: writable, selectedOrderIds, showConfirmDialog, showCustomToast */
-/* exported batchDeleteOrders, currentPage, deleteOrder, refreshCurrentOrderStatus, selectOrderGroup, setupAutoFilterListeners, updateOrderNote */
+import { state } from './order-management-state.js';
+import { FILTER_INPUT_DEBOUNCE_MS, apiCall, filterState, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast } from '../order-management.js';
 
 // Render timeline
 function surveyClosureText(order) {
@@ -32,17 +32,17 @@ function renderTimeline(order) {
 }
 
 async function refreshCurrentOrderStatus() {
-    const id = currentOrderDetail?.id;
+    const id = state.currentOrderDetail?.id;
     if (!id) return;
     const response = await apiCall(`/api/chi-dinh/${id}`);
     if (!response.ok) throw new Error('Không tải được trạng thái chỉ định');
     const order = await response.json();
-    if (currentOrderDetail?.id !== id) return;
+    if (state.currentOrderDetail?.id !== id) return;
     const data = order.data || order;
-    Object.assign(currentOrderDetail, data);
+    Object.assign(state.currentOrderDetail, data);
     const select = document.getElementById('orderStatusSelect');
     if (select) select.value = data.status;
-    renderTimeline(currentOrderDetail);
+    renderTimeline(state.currentOrderDetail);
 }
 
 // Update order note
@@ -156,15 +156,15 @@ function applyFilters() {
 	filterState.to_date = document.getElementById('filterToDate')?.value || '';
 	filterState.location_type = ''; // Thay đổi từ 'in' thành '' để không filter mặc định
 
-	currentPage = 1;
+	state.currentPage = 1;
 	loadOrders();
 }
 
 function scheduleFilterApply() {
-	if (filterInputTimer) {
-		clearTimeout(filterInputTimer);
+	if (state.filterInputTimer) {
+		clearTimeout(state.filterInputTimer);
 	}
-	filterInputTimer = setTimeout(() => {
+	state.filterInputTimer = setTimeout(() => {
 		applyFilters();
 	}, FILTER_INPUT_DEBOUNCE_MS);
 }
@@ -173,9 +173,9 @@ function scheduleFilterApply() {
 function handlePatientInputKeydown(event) {
 	if (event.key === 'Enter') {
 		// Cancel debounce timer
-		if (filterInputTimer) {
-			clearTimeout(filterInputTimer);
-			filterInputTimer = null;
+		if (state.filterInputTimer) {
+			clearTimeout(state.filterInputTimer);
+			state.filterInputTimer = null;
 		}
 		// Search ngay lập tức
 		applyFilters();
@@ -192,18 +192,18 @@ function setupAutoFilterListeners() {
 
 	if (patientInput) {
 		// Remove existing listener if any
-		if (patientInputHandler) {
-			patientInput.removeEventListener('input', patientInputHandler);
+		if (state.patientInputHandler) {
+			patientInput.removeEventListener('input', state.patientInputHandler);
 		}
-		if (patientInputKeydownHandler) {
-			patientInput.removeEventListener('keydown', patientInputKeydownHandler);
+		if (state.patientInputKeydownHandler) {
+			patientInput.removeEventListener('keydown', state.patientInputKeydownHandler);
 		}
 		// Create new handlers
-		patientInputHandler = scheduleFilterApply;
-		patientInputKeydownHandler = handlePatientInputKeydown;
-		patientInput.addEventListener('input', patientInputHandler);
+		state.patientInputHandler = scheduleFilterApply;
+		state.patientInputKeydownHandler = handlePatientInputKeydown;
+		patientInput.addEventListener('input', state.patientInputHandler);
 		// Thêm Enter key để search ngay lập tức
-		patientInput.addEventListener('keydown', patientInputKeydownHandler);
+		patientInput.addEventListener('keydown', state.patientInputKeydownHandler);
 	} else {
 		console.error('[Filter Setup] filterPatientName element not found!');
 	}
@@ -227,3 +227,5 @@ function selectOrderGroup(group) {
 	selectedOrderIds.clear();
 	applyFilters();
 }
+
+export { applyFilters, batchDeleteOrders, deleteOrder, refreshCurrentOrderStatus, renderTimeline, selectOrderGroup, setupAutoFilterListeners, updateOrderNote };

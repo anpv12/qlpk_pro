@@ -1,5 +1,7 @@
-/* global applyFilters, batchDeleteOrders, checkSurveyStatusUpdate, currentExaminationId, currentPage: writable, filterState, loadOrders, selectOrderGroup, selectedOrderIds, setupAutoFilterListeners, showCustomToast, updateSelectedCount */
-/* exported currentPage, initializePage */
+import { state } from './order-management-state.js';
+import { applyFilters, batchDeleteOrders, selectOrderGroup, setupAutoFilterListeners } from './order-management-actions.js';
+import { filterState, loadOrders, selectedOrderIds, showCustomToast, updateSelectedCount } from '../order-management.js';
+import { checkSurveyStatusUpdate } from './order-management-survey-level.js';
 
 // Initialize page
 function runOrderPageInit1(ctx) {
@@ -116,7 +118,7 @@ function runOrderPageInit2(ctx) {
 			filterState.location_type = '';
 
 			// Reload danh sách
-			currentPage = 1;
+			state.currentPage = 1;
 			loadOrders();
 			showCustomToast('success', 'Đã làm mới bộ lọc và danh sách');
 		});
@@ -137,12 +139,12 @@ function runOrderPageInit2(ctx) {
 			debounceMs: 500,
 			handler: async function (event) {
 				loadOrders();
-				if (event.type === 'catalog.changed' && currentExaminationId) {
-					await checkSurveyStatusUpdate(currentExaminationId);
+				if (event.type === 'catalog.changed' && state.currentExaminationId) {
+					await checkSurveyStatusUpdate(state.currentExaminationId);
 					return;
 				}
-				if (currentExaminationId && (!event.payload || !event.payload.examination_id || Number(event.payload.examination_id) === Number(currentExaminationId))) {
-					await checkSurveyStatusUpdate(currentExaminationId);
+				if (state.currentExaminationId && (!event.payload || !event.payload.examination_id || Number(event.payload.examination_id) === Number(state.currentExaminationId))) {
+					await checkSurveyStatusUpdate(state.currentExaminationId);
 				}
 			}
 		});
@@ -182,3 +184,5 @@ function initializePage() {
 	runOrderPageInit2(ctx);
 	runOrderPageInit3(ctx);
 }
+
+export { initializePage };

@@ -12,7 +12,7 @@ function setup(note = '') {
     const calls = [];
     const order = { id: 41, note_nurse: note };
     const context = vm.createContext({
-        currentOrderDetail: order, detailRequestVersion: 1, saveCustomOrderNote: null,
+        state: { currentOrderDetail: order, saveCustomOrderNote: null }, detailRequestVersion: 1,
         document: { getElementById: id => elements[id] },
         renderOrderSurveyContent() {
             for (const element of Object.values(elements)) element.isConnected = false;
@@ -32,12 +32,12 @@ test('load does not write; preserves Vietnamese, line breaks and explicit cleari
     assert.equal(state.input.value, 'Ghi chú cũ');
     assert.equal(state.calls.length, 0);
     state.input.value = 'Kết quả\nDòng thứ hai </textarea>';
-    await state.context.saveCustomOrderNote();
+    await state.context.state.saveCustomOrderNote();
     assert.deepEqual(state.calls[0], [41, 'note_nurse', state.input.value]);
     state.context.renderCustomOrderNote(state.order);
     assert.equal(state.elements.customOrderResultNote.value, 'Kết quả\nDòng thứ hai </textarea>');
     state.elements.customOrderResultNote.value = '';
-    await state.context.saveCustomOrderNote();
+    await state.context.state.saveCustomOrderNote();
     assert.equal(state.order.note_nurse, '');
 });
 
@@ -49,11 +49,11 @@ test('serializes rapid edits and does not duplicate the same save', async () => 
         return state.calls.length === 1 ? new Promise(resolve => { release = resolve; }) : Promise.resolve();
     };
     state.input.value = 'Bản đầu';
-    const first = state.context.saveCustomOrderNote();
+    const first = state.context.state.saveCustomOrderNote();
     await new Promise(setImmediate);
     state.input.value = 'Bản cuối';
-    const second = state.context.saveCustomOrderNote();
-    const duplicate = state.context.saveCustomOrderNote();
+    const second = state.context.state.saveCustomOrderNote();
+    const duplicate = state.context.state.saveCustomOrderNote();
     assert.equal(state.calls.length, 1);
     release();
     await Promise.all([first, second, duplicate]);
@@ -65,12 +65,12 @@ test('failed save keeps draft and can be retried', async () => {
     const state = setup('Cũ');
     state.context.updateOrderNote = async () => { throw new Error('offline'); };
     state.input.value = 'Mới';
-    await assert.rejects(state.context.saveCustomOrderNote());
+    await assert.rejects(state.context.state.saveCustomOrderNote());
     assert.equal(state.order.note_nurse, 'Cũ');
     assert.equal(state.input.value, 'Mới');
     assert.match(state.elements.customOrderNoteStatus.textContent, /Chưa lưu được/);
     state.context.updateOrderNote = async () => {};
-    await state.context.saveCustomOrderNote();
+    await state.context.state.saveCustomOrderNote();
     assert.equal(state.order.note_nurse, 'Mới');
 });
 
@@ -79,10 +79,10 @@ test('late response cannot overwrite the next order or its feedback', async () =
     let release;
     state.context.updateOrderNote = () => new Promise(resolve => { release = resolve; });
     state.input.value = 'Ca A';
-    const save = state.context.saveCustomOrderNote();
+    const save = state.context.state.saveCustomOrderNote();
     await new Promise(setImmediate);
     const next = { id: 42, note_nurse: 'Ca B' };
-    state.context.currentOrderDetail = next;
+    state.context.state.currentOrderDetail = next;
     state.context.detailRequestVersion++;
     state.context.renderCustomOrderNote(next);
     release();

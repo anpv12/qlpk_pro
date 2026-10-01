@@ -1,27 +1,30 @@
-/* global checkSurveyStatusUpdate, deleteOrder, loadOrderDetail */
-/* exported FILTER_INPUT_DEBOUNCE_MS, RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, attrJson, currentExaminationId, currentOrderDetail, currentPage, currentSurveySession, filterInputTimer, formatDateOnly, lastKnownSurveyStatus, orderStatusChangeHandler, patientInputHandler, patientInputKeydownHandler, saveCustomOrderNote, showConfirmDialog */
+import { state } from './orders/order-management-state.js';
+import { checkSurveyStatusUpdate } from './orders/order-management-survey-level.js';
+import { loadOrderDetail } from './orders/order-management-detail.js';
+import { deleteOrder } from './orders/order-management-actions.js';
+import { initializePage } from './orders/order-management-init.js';
 
 // Order Management - Quản lý chỉ định CLS
 
 // Configuration constants for DASS-21 survey
 
 // Global variables
-let currentPage = 1;
+state.currentPage = 1;
 const perPage = 50;
 let totalPages = 1;
 let totalOrders = 0;
 const selectedOrderIds = new Set();
-let currentOrderDetail = null;
-let saveCustomOrderNote = null;
+state.currentOrderDetail = null;
+state.saveCustomOrderNote = null;
 
 // Survey realtime context for modal refresh
-let lastKnownSurveyStatus = null;
-let currentExaminationId = null;
-let currentSurveySession = null;
+state.lastKnownSurveyStatus = null;
+state.currentExaminationId = null;
+state.currentSurveySession = null;
 
 
 // Handler reference cho orderStatusSelect autosave (để có thể remove listener)
-let orderStatusChangeHandler = null;
+state.orderStatusChangeHandler = null;
 
 // Filter state
 const filterState = {
@@ -37,9 +40,9 @@ let expiryRefreshTimer = null;
 const RESULT_FILE_MAX_BYTES = 25 * 1024 * 1024;
 const RESULT_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']);
 const FILTER_INPUT_DEBOUNCE_MS = 200; // Giảm từ 400ms xuống 200ms để search nhanh hơn
-let filterInputTimer = null;
-let patientInputHandler = null; // Store handler reference for cleanup
-let patientInputKeydownHandler = null; // Store keydown handler reference for cleanup
+state.filterInputTimer = null;
+state.patientInputHandler = null; // Store handler reference for cleanup
+state.patientInputKeydownHandler = null; // Store keydown handler reference for cleanup
 
 // API call wrapper
 function apiCall(url, options = {}) {
@@ -159,7 +162,7 @@ function buildOrdersQuery() {
 	if (filterState.to_date) params.append('to_date', filterState.to_date);
 	params.append('status_group', filterState.status_group);
 	if (filterState.location_type) params.append('location_type', filterState.location_type);
-	params.append('page', currentPage);
+	params.append('page', state.currentPage);
 	params.append('per_page', perPage);
 	return params;
 }
@@ -179,7 +182,7 @@ async function readOrdersError(response) {
 function applyOrdersPage(data) {
 	totalOrders = data.total || 0;
 	totalPages = data.total_pages || 1;
-	currentPage = data.page || 1;
+	state.currentPage = data.page || 1;
 	document.getElementById('ordersActiveCount').textContent = data.group_counts.active;
 	document.getElementById('ordersCompletedCount').textContent = data.group_counts.completed;
 }
@@ -190,7 +193,7 @@ function scheduleOrderExpiryRefresh(nextExpiryAt) {
 	const delay = Math.max(100, Math.min(2147483647, new Date(nextExpiryAt).getTime() - Date.now() + 100));
 	expiryRefreshTimer = setTimeout(async () => {
 		await loadOrders();
-		if (currentExaminationId) await checkSurveyStatusUpdate(currentExaminationId);
+		if (state.currentExaminationId) await checkSurveyStatusUpdate(state.currentExaminationId);
 	}, delay);
 }
 
@@ -247,7 +250,7 @@ function renderOrdersTable(orders) {
 
 		return `
             <tr data-order-id="${orderId}">
-                <td>${(currentPage - 1) * perPage + index + 1}</td>
+                <td>${(state.currentPage - 1) * perPage + index + 1}</td>
                 <td>
                     <div class="fw-semibold">
                         <a href="#" class="text-decoration-none order-detail-link" data-order-id="${orderId}">${escapeHtml(patientName)}</a>
@@ -348,22 +351,28 @@ function updateSelectedCount() {
 		footer.innerHTML = `
             <span>${totalOrders} chỉ định / ${totalPages} trang</span>
             ${totalPages > 1 ? `<nav class="d-flex align-items-center gap-2" aria-label="Phân trang chỉ định">
-                <button type="button" class="om-button om-button--secondary" id="ordersPrevPage" ${currentPage === 1 ? 'disabled' : ''}>Trước</button>
-                <label class="d-flex align-items-center gap-2">Trang <input id="ordersPageNumber" class="form-control form-control-sm om-page-number" type="number" min="1" max="${totalPages}" value="${currentPage}"></label>
-                <button type="button" class="om-button om-button--secondary" id="ordersNextPage" ${currentPage === totalPages ? 'disabled' : ''}>Sau</button>
+                <button type="button" class="om-button om-button--secondary" id="ordersPrevPage" ${state.currentPage === 1 ? 'disabled' : ''}>Trước</button>
+                <label class="d-flex align-items-center gap-2">Trang <input id="ordersPageNumber" class="form-control form-control-sm om-page-number" type="number" min="1" max="${totalPages}" value="${state.currentPage}"></label>
+                <button type="button" class="om-button om-button--secondary" id="ordersNextPage" ${state.currentPage === totalPages ? 'disabled' : ''}>Sau</button>
             </nav>` : ''}
         `;
 		const go = value => {
 			const page = Number(value);
 			if (!Number.isInteger(page) || page < 1 || page > totalPages) {
-				document.getElementById('ordersPageNumber').value = currentPage;
+				document.getElementById('ordersPageNumber').value = state.currentPage;
 				return;
 			}
-			currentPage = page;
+			state.currentPage = page;
 			loadOrders();
 		};
-		document.getElementById('ordersPrevPage')?.addEventListener('click', () => go(currentPage - 1));
-		document.getElementById('ordersNextPage')?.addEventListener('click', () => go(currentPage + 1));
+		document.getElementById('ordersPrevPage')?.addEventListener('click', () => go(state.currentPage - 1));
+		document.getElementById('ordersNextPage')?.addEventListener('click', () => go(state.currentPage + 1));
 		document.getElementById('ordersPageNumber')?.addEventListener('change', event => go(event.target.value));
 	}
 }
+
+export { FILTER_INPUT_DEBOUNCE_MS, RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, attrJson, escapeHtml, filterState, formatDateOnly, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast, updateSelectedCount };
+
+// Entry evaluates after every slice it imports; start after DOMContentLoaded so classic page helpers
+// (datepicker-init sets the default date range on that event) are ready first.
+document.addEventListener('DOMContentLoaded', initializePage);
