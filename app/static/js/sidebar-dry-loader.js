@@ -99,7 +99,6 @@
 		if (typeof window.checkPermissions === 'function') {
 			window.checkPermissions();
 		}
-		triggerCompatibilityEvents();
 	}
 
 	function ensureAppHeaderLoader() {
@@ -123,12 +122,6 @@
 		);
 	}
 
-	function triggerCompatibilityEvents() {
-		if (!window.jQuery) return;
-		window.jQuery(document).trigger('sidebarLoaded');
-		window.jQuery(document).trigger('workspaceShellLoaded');
-	}
-
 	async function initializeWorkspaceShell() {
 		await ensureShortcutManagerLoaded();
 		if (window.ShortcutManager && typeof window.ShortcutManager.initGlobal === 'function') {
@@ -138,7 +131,6 @@
 		if (typeof window.checkPermissions === 'function') {
 			window.checkPermissions();
 		}
-		triggerCompatibilityEvents();
 	}
 
 	function loadSidebar() {
@@ -152,7 +144,8 @@
 		applyWorkspaceShellLayout();
 		ensureAppHeaderLoader()
 			.then(initializeWorkspaceShell)
-			.catch(() => triggerCompatibilityEvents());
+			// A header/shortcut load failure leaves the page itself usable.
+			.catch(() => {});
 	}
 
 	if (document.readyState === 'loading') {
