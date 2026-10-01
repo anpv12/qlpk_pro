@@ -1,36 +1,19 @@
-/* global applyFilters, debounce, formatMoney, formatNumber, getAuthHeaders, getFilterParams, hideLoading, loadPrescriptionHistory, renderInventoryTable, renderPrescriptionsTable, showLoading, showToast, switchTab */
-/* exported currentTab, expandedDoctors, ledgerMedicineId, loadDispensingLedger, loadDispensingMedicines, loadInventory, loadPrescriptions, loadStatistics, renderMedicineDetailTable, renderMedicineSummary, renderStatusBadge */
+// Medicine statistics page: summary cards, prescriptions by doctor, inventory, prescription history and the
+// dispensing ledger (per-medicine totals + transactions), with date/doctor/type/search filters and Excel export.
+import { delegate } from './shared/dom.js';
+import { authHeaders, formatMoney, formatNumber, getFilterParams, hideLoading, showLoading, showToast, state } from './medicine-statistics/shared.js';
+import { renderInventoryTable, renderPrescriptionHistoryTable, renderPrescriptionsTable } from './medicine-statistics/tables.js';
 
-// Continued in (nạp ngay sau file này, cùng scope trang): medicine-statistics/tables.js, medicine-statistics/helpers.js
-/**
- * Medicine Statistics JavaScript
- * Xử lý logic cho trang thống kê thuốc
- */
+function debounce(fn, wait) {
+	let timer;
+	return (...args) => {
+		clearTimeout(timer);
+		timer = setTimeout(() => fn(...args), wait);
+	};
+}
 
-// ==================== CONSTANTS ====================
-
-const STATUS_MAP = {
-	'sufficient': { label: 'Đủ hàng', class: 'status-sufficient' },
-	'low': { label: 'Sắp hết', class: 'status-low' },
-	'restock': { label: 'Cần nhập', class: 'status-restock' },
-	// Fallback cho backend trả text tiếng Việt
-	'Đủ hàng': { label: 'Đủ hàng', class: 'status-sufficient' },
-	'Sắp hết': { label: 'Sắp hết', class: 'status-low' },
-	'Cần nhập': { label: 'Cần nhập', class: 'status-restock' }
-};
-
-// ==================== GLOBAL STATE ====================
-
-let currentTab = 'prescriptions'; // 'prescriptions' | 'inventory' | 'prescription-history'
-let expandedDoctors = new Set();
-let ledgerPage = 1;
-let ledgerRequest = 0;
-let ledgerMedicinePage = 1;
-let ledgerMedicineRequest = 0;
-let ledgerMedicineId = null;
-
-async function loadDispensingMedicines(page = 1) {
-	const requestId = ++ledgerMedicineRequest;
+export async function loadDispensingMedicines(page = 1) {
+	const requestId = ++state.ledgerMedicineRequest;
 	const params = new URLSearchParams(getFilterParams());
 	params.set('view', 'medicines');
 	params.set('page', page);
@@ -43,11 +26,11 @@ async function loadDispensingMedicines(page = 1) {
 	document.getElementById('ledgerMedicinePrevious').disabled = true;
 	document.getElementById('ledgerMedicineNext').disabled = true;
 	try {
-		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: getAuthHeaders() });
+		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: authHeaders() });
 		if (!response.ok) throw new Error('Không tải được thống kê');
 		const data = await response.json();
-		if (requestId !== ledgerMedicineRequest) return;
-		ledgerMedicinePage = data.page;
+		if (requestId !== state.ledgerMedicineRequest) return;
+		state.ledgerMedicinePage = data.page;
 		status.textContent = data.medicines.length ? 'Chọn tên thuốc để xem từng lần bốc, giá và lô. Số tiền chỉ cộng phần có dữ liệu; thiếu dữ liệu không có nghĩa là 0đ.' : 'Không có thuốc trong khoảng ngày này.';
 		const money = value => value == null ? 'Chưa rõ' : formatMoney(value);
 		data.medicines.forEach(item => {
@@ -58,7 +41,7 @@ async function loadDispensingMedicines(page = 1) {
 			button.className = 'btn btn-sm';
 			button.textContent = `${item.medicine_name} / ${item.unit || 'Chưa rõ đơn vị'}`;
 			button.addEventListener('click', () => {
-				ledgerMedicineId = item.medicine_id;
+				state.ledgerMedicineId = item.medicine_id;
 				document.getElementById('ledgerAllMedicines').hidden = false;
 				loadDispensingLedger();
 			});
@@ -72,16 +55,16 @@ async function loadDispensingMedicines(page = 1) {
 		document.getElementById('ledgerMedicinePrevious').disabled = data.page <= 1;
 		document.getElementById('ledgerMedicineNext').disabled = data.page >= data.total_pages;
 	} catch (error) {
-		if (requestId === ledgerMedicineRequest) status.textContent = 'Không tải được thống kê; kiểm tra khoảng ngày và thử lại.';
+		if (requestId === state.ledgerMedicineRequest) status.textContent = 'Không tải được thống kê; kiểm tra khoảng ngày và thử lại.';
 	}
 }
 
 async function loadDispensingLedger(page = 1) {
-	const requestId = ++ledgerRequest;
+	const requestId = ++state.ledgerRequest;
 	const params = new URLSearchParams(getFilterParams());
 	params.set('page', page);
 	const summary = document.getElementById('ledgerSummary');
-	if (ledgerMedicineId !== null) params.set('medicine_id', ledgerMedicineId);
+	if (state.ledgerMedicineId !== null) params.set('medicine_id', state.ledgerMedicineId);
 	const rows = document.getElementById('ledgerRows');
 	rows.replaceChildren();
 	summary.textContent = 'Đang tải giao dịch...';
@@ -89,11 +72,11 @@ async function loadDispensingLedger(page = 1) {
 	document.getElementById('ledgerPrevious').disabled = true;
 	document.getElementById('ledgerNext').disabled = true;
 	try {
-		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: getAuthHeaders() });
+		const response = await fetch(`/api/medicine/statistics/ledger?${params}`, { headers: authHeaders() });
 		if (!response.ok) throw new Error('Không tải được giao dịch');
 		const data = await response.json();
-		if (requestId !== ledgerRequest) return;
-		ledgerPage = data.page;
+		if (requestId !== state.ledgerRequest) return;
+		state.ledgerPage = data.page;
 		const money = value => value == null ? 'Chưa rõ' : formatMoney(value);
 		const balance = (value, unit) => value == null ? 'Chưa rõ' : `${value} ${unit || ''}`;
 		const totals = data.summary;
@@ -112,30 +95,9 @@ async function loadDispensingLedger(page = 1) {
 		document.getElementById('ledgerPrevious').disabled = data.page <= 1;
 		document.getElementById('ledgerNext').disabled = data.page >= data.total_pages;
 	} catch (error) {
-		if (requestId === ledgerRequest) summary.textContent = 'Không tải được giao dịch; vui lòng thử lại.';
+		if (requestId === state.ledgerRequest) summary.textContent = 'Không tải được giao dịch; vui lòng thử lại.';
 	}
 }
-
-// ==================== INITIALIZATION ====================
-
-document.addEventListener('DOMContentLoaded', function () {
-	initDatePickers();
-	loadDoctorsFilter();
-
-	const savedTab = sessionStorage.getItem('medicineStatsActiveTab') || 'prescriptions';
-	switchTab(savedTab);
-
-	setupEventListeners();
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
-			types: ['inventory.changed'],
-			debounceMs: 500,
-			handler: function () {
-				applyFilters();
-			}
-		});
-	}
-});
 
 function initDatePickers() {
 	const today = new Date();
@@ -149,17 +111,17 @@ function initDatePickers() {
 		}
 	};
 
-	if (typeof flatpickr !== 'undefined') {
-		flatpickr('#dateFrom', { ...baseConfig, defaultDate: oneWeekAgo });
-		flatpickr('#dateTo', { ...baseConfig, defaultDate: today });
+	if (typeof window.flatpickr !== 'undefined') {
+		window.flatpickr('#dateFrom', { ...baseConfig, defaultDate: oneWeekAgo });
+		window.flatpickr('#dateTo', { ...baseConfig, defaultDate: today });
 	}
 }
 
-function setupEventListeners() {
-	document.getElementById('ledgerMedicinePrevious')?.addEventListener('click', () => loadDispensingMedicines(ledgerMedicinePage - 1));
-	document.getElementById('ledgerMedicineNext')?.addEventListener('click', () => loadDispensingMedicines(ledgerMedicinePage + 1));
+export function setupEventListeners() {
+	document.getElementById('ledgerMedicinePrevious')?.addEventListener('click', () => loadDispensingMedicines(state.ledgerMedicinePage - 1));
+	document.getElementById('ledgerMedicineNext')?.addEventListener('click', () => loadDispensingMedicines(state.ledgerMedicinePage + 1));
 	document.getElementById('ledgerAllMedicines')?.addEventListener('click', () => {
-		ledgerMedicineId = null;
+		state.ledgerMedicineId = null;
 		document.getElementById('ledgerAllMedicines').hidden = true;
 		loadDispensingLedger();
 	});
@@ -173,20 +135,20 @@ function setupEventListeners() {
 		});
 		applyFilters();
 	});
-	document.getElementById('ledgerPrevious')?.addEventListener('click', () => loadDispensingLedger(ledgerPage - 1));
-	document.getElementById('ledgerNext')?.addEventListener('click', () => loadDispensingLedger(ledgerPage + 1));
+	document.getElementById('ledgerPrevious')?.addEventListener('click', () => loadDispensingLedger(state.ledgerPage - 1));
+	document.getElementById('ledgerNext')?.addEventListener('click', () => loadDispensingLedger(state.ledgerPage + 1));
 	// Tab switching - Hook into Bootstrap tabs
 	document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
 		tab.addEventListener('shown.bs.tab', function (e) {
 			const targetId = e.target.getAttribute('href');
 			if (targetId === '#tab-medicine') {
-				currentTab = 'inventory';
+				state.currentTab = 'inventory';
 				loadInventory();
 			} else if (targetId === '#tab-prescription') {
-				currentTab = 'prescriptions';
+				state.currentTab = 'prescriptions';
 				loadPrescriptions();
 			} else if (targetId === '#tab-prescription-history') {
-				currentTab = 'prescription-history';
+				state.currentTab = 'prescription-history';
 				loadPrescriptionHistory();
 			}
 		});
@@ -210,7 +172,7 @@ async function loadStatistics() {
 
 	try {
 		const response = await fetch(`/api/medicine/statistics/summary?${params}`, {
-			headers: getAuthHeaders()
+			headers: authHeaders()
 		});
 
 		if (!response.ok) throw new Error('Failed to load statistics');
@@ -232,7 +194,7 @@ async function loadPrescriptions() {
 		showLoading('prescriptionsTable');
 
 		const response = await fetch(`/api/medicine/statistics/prescriptions?${params}`, {
-			headers: getAuthHeaders()
+			headers: authHeaders()
 		});
 
 		if (!response.ok) throw new Error('Failed to load prescriptions');
@@ -256,7 +218,7 @@ async function loadInventory() {
 		showLoading('inventoryTable');
 
 		const response = await fetch(`/api/medicine/statistics/inventory?${params}`, {
-			headers: getAuthHeaders()
+			headers: authHeaders()
 		});
 
 		if (!response.ok) throw new Error('Failed to load inventory');
@@ -276,7 +238,7 @@ async function loadInventory() {
 async function loadDoctorsFilter() {
 	try {
 		const response = await fetch('/api/medicine/statistics/doctors', {
-			headers: getAuthHeaders()
+			headers: authHeaders()
 		});
 
 		if (!response.ok) return;
@@ -299,7 +261,7 @@ async function loadDoctorsFilter() {
 }
 
 async function exportExcel() {
-	if (currentTab === 'ledger') {
+	if (state.currentTab === 'ledger') {
 		showToast('Sổ giao dịch chưa hỗ trợ xuất Excel; không xuất thay bằng số liệu đơn hiện tại.', 'info');
 		return;
 	}
@@ -309,7 +271,7 @@ async function exportExcel() {
 		showToast('Đang xuất Excel...', 'info');
 
 		const response = await fetch(`/api/medicine/statistics/export?${params}`, {
-			headers: getAuthHeaders()
+			headers: authHeaders()
 		});
 
 		if (!response.ok) throw new Error('Export failed');
@@ -329,58 +291,6 @@ async function exportExcel() {
 	}
 }
 
-// ==================== RENDER HELPERS ====================
-
-function renderMedicineSummary({ total, types, qty }) {
-	return `
-		<div class="d-flex align-items-center justify-content-between">
-			<span><strong class="summary-qty">${total}</strong> <small class="fw-semibold">Thuốc</small></span>
-			<span class="badge badge-type">${types} Loại</span>
-		</div>
-		<div class="medicine-summary"><strong class="summary-qty">${formatNumber(qty)}</strong> <small class="fw-semibold">Viên</small></div>
-	`;
-}
-
-function renderMedicineDetailTable(medicines) {
-	if (!medicines || medicines.length === 0) return '<em>Không có dữ liệu thuốc</em>';
-
-	const rows = medicines.map(med => `
-		<tr>
-			<td>${med.stt}</td>
-			<td>${window.QLPKHtml.escape(med.name)}</td>
-			<td>${med.purchase_location}</td>
-			<td>${window.QLPKHtml.escape(med.medicine_type)}</td>
-			<td>${med.quantity} ${window.QLPKHtml.escape(med.unit || '')}</td>
-			<td>${formatMoney(med.unit_price)}</td>
-			<td>${formatMoney(med.total_price)}</td>
-		</tr>
-	`).join('');
-
-	return `
-		<table class="detail-table">
-			<thead>
-				<tr>
-					<th>STT</th>
-					<th>Tên thuốc</th>
-					<th>Mua tại</th>
-					<th>Loại thuốc</th>
-					<th>Số lượng</th>
-					<th>Đơn giá</th>
-					<th>Thành tiền</th>
-				</tr>
-			</thead>
-			<tbody>${rows}</tbody>
-		</table>
-	`;
-}
-
-function renderStatusBadge(status) {
-	const mapped = STATUS_MAP[status] || { label: status, class: 'bg-secondary' };
-	return `<span class="qlpk-status ${mapped.class}">${mapped.label}</span>`;
-}
-
-// ==================== SUMMARY CARDS (nguồn duy nhất: /summary API) ====================
-
 function updateSummaryCards(data) {
 	const el = (id) => document.getElementById(id);
 
@@ -398,4 +308,80 @@ function updateSummaryCards(data) {
 	if (qtyEl) qtyEl.textContent = formatNumber(data.total_dispensed_qty || 0);
 }
 
-// ==================== RENDER FUNCTIONS ====================
+function switchTab(tabName) {
+	state.currentTab = tabName;
+	const currentSummary = document.getElementById('currentPrescriptionSummary');
+	if (currentSummary) currentSummary.classList.toggle('d-none', tabName === 'ledger');
+	sessionStorage.setItem('medicineStatsActiveTab', tabName);
+
+	// Update tab UI
+	document.querySelectorAll('[data-tab]').forEach(tab => {
+		tab.classList.toggle('active', tab.dataset.tab === tabName);
+	});
+
+	// Show/hide panels
+	const panes = {
+		'prescriptions': document.getElementById('tab-prescription'),
+		'inventory': document.getElementById('tab-medicine'),
+		'prescription-history': document.getElementById('tab-prescription-history'),
+		'ledger': document.getElementById('tab-ledger')
+	};
+	Object.entries(panes).forEach(([key, pane]) => {
+		if (pane) {
+			pane.classList.toggle('show', tabName === key);
+			pane.classList.toggle('active', tabName === key);
+		}
+	});
+
+	// Load data for active tab
+	applyFilters();
+}
+
+async function loadPrescriptionHistory() {
+	const params = getFilterParams();
+	try {
+		showLoading('historyMasterTableBody');
+		const response = await fetch(`/api/medicine/statistics/prescription-history?${params}`, {
+			headers: authHeaders()
+		});
+		if (!response.ok) throw new Error('Failed to load prescription history');
+		const data = await response.json();
+		if (data.success) {
+			renderPrescriptionHistoryTable(data.medicines);
+		}
+	} catch (error) {
+		console.error('Error loading prescription history:', error);
+		showToast('Lỗi khi tải lịch sử kê thuốc', 'error');
+	} finally {
+		hideLoading('historyMasterTableBody');
+	}
+}
+
+export function applyFilters() {
+	if (state.currentTab === 'ledger') {
+		state.ledgerMedicineId = null;
+		document.getElementById('ledgerAllMedicines').hidden = true;
+		loadDispensingMedicines();
+		loadDispensingLedger();
+		return;
+	}
+	// Summary cards luôn lấy từ /summary (nguồn duy nhất)
+	loadStatistics();
+
+	// Chỉ load data cho tab đang active
+	if (state.currentTab === 'prescriptions') {
+		loadPrescriptions();
+	} else if (state.currentTab === 'inventory') {
+		loadInventory();
+	} else if (state.currentTab === 'prescription-history') {
+		loadPrescriptionHistory();
+	}
+}
+
+
+initDatePickers();
+loadDoctorsFilter();
+switchTab(sessionStorage.getItem('medicineStatsActiveTab') || 'prescriptions');
+setupEventListeners();
+delegate(document, 'click', '[data-stats-tab]', (event, link) => switchTab(link.dataset.statsTab));
+window.QLPKRealtimePageHooks?.register({ types: ['inventory.changed'], debounceMs: 500, handler: () => applyFilters() });

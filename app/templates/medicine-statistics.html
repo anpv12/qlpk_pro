@@ -13,7 +13,6 @@
 	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
@@ -128,30 +127,30 @@
 				<!-- Tabs -->
 				<ul class="nav nav-tabs-custom mb-2" role="tablist">
 					<li class="nav-item" role="presentation">
-						<a class="nav-link" data-tab="ledger" data-bs-toggle="tab" href="#tab-ledger" data-qlpk-call="switchTab" data-qlpk-args='["ledger"]' role="tab" aria-selected="false">Bốc thuốc theo thời gian</a>
+						<a class="nav-link" data-tab="ledger" data-bs-toggle="tab" href="#tab-ledger" data-stats-tab="ledger" role="tab" aria-selected="false">Bốc thuốc theo thời gian</a>
 					</li>
 					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="prescriptions" data-bs-toggle="tab" href="#tab-prescription"
-						 data-qlpk-call="switchTab" data-qlpk-args='["prescriptions"]' role="tab" aria-selected="false">
+						 data-stats-tab="prescriptions" role="tab" aria-selected="false">
 							<i class="bi bi-list-ul me-1"></i> Bác sĩ, Tâm lý gia khám
 						</a>
 					</li>
 					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="inventory" data-bs-toggle="tab" href="#tab-medicine"
-						 data-qlpk-call="switchTab" data-qlpk-args='["inventory"]' role="tab" aria-selected="false">
+						 data-stats-tab="inventory" role="tab" aria-selected="false">
 							<i class="bi bi-capsule me-1"></i> Thống kê thuốc
 						</a>
 					</li>
 					<li class="nav-item" role="presentation">
 						<a class="nav-link" data-tab="prescription-history" data-bs-toggle="tab"
-							href="#tab-prescription-history" data-qlpk-call="switchTab" data-qlpk-args='["prescription-history"]' role="tab"
+							href="#tab-prescription-history" data-stats-tab="prescription-history" role="tab"
 							aria-selected="false">
 							<i class="bi bi-clock-history me-1"></i> Lịch sử kê thuốc
 						</a>
 					</li>
 				</ul>
 
-				<p class="small text-muted">Các tổng quan/đơn thuốc bên trên phản ánh đơn hiện tại, không phải sổ doanh thu. Đối soát tiền thuốc theo thời điểm cấp/hoàn tại <button type="button" class="btn btn-link btn-sm" data-tab="ledger" data-qlpk-call="switchTab" data-qlpk-args='["ledger"]'>Giao dịch cấp/hoàn</button>.</p>
+				<p class="small text-muted">Các tổng quan/đơn thuốc bên trên phản ánh đơn hiện tại, không phải sổ doanh thu. Đối soát tiền thuốc theo thời điểm cấp/hoàn tại <button type="button" class="btn btn-link btn-sm" data-tab="ledger" data-stats-tab="ledger">Giao dịch cấp/hoàn</button>.</p>
 				<!-- Tab Content -->
 				<div class="tab-content">
 					<div class="tab-pane fade" id="tab-ledger" role="tabpanel" aria-label="Giao dịch cấp hoàn thuốc">
@@ -340,10 +339,7 @@
 	<script src="/static/vendor/flatpickr@4.6.13/l10n/vn.js"></script>
 	<!-- Load medicine statistics JS -->
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicine-statistics.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicine-statistics/tables-parts/detail-rows.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicine-statistics/tables.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicine-statistics/helpers.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/medicine-statistics.js?v={{ app_version }}"></script>
 </body>
 
 </html>

@@ -173,6 +173,10 @@ class Element extends Node {
             else field.value = field.localName === 'textarea' ? field.defaultText : field.getAttribute('value') || '';
         });
     }
+    get rows() { return this.children.filter(node => node.localName === 'tr'); }
+    get cells() { return this.children.filter(node => ['td', 'th'].includes(node.localName)); }
+    insertRow() { return this.appendChild(this.ownerDocument.createElement('tr')); }
+    insertCell() { return this.appendChild(this.ownerDocument.createElement('td')); }
     getBoundingClientRect() { return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }; }
     scrollIntoView() {}
 }
@@ -182,7 +186,7 @@ reflectBoolean.forEach(prop => Object.defineProperty(Element.prototype, prop, {
     get() { return this.hasAttribute(prop.toLowerCase()); },
     set(value) { this.toggleAttribute(prop.toLowerCase(), Boolean(value)); },
 }));
-['type', 'name', 'placeholder', 'title', 'href', 'src', 'htmlFor', 'download', 'accept', 'min', 'max', 'step', 'colSpan', 'rows'].forEach(prop => {
+['type', 'name', 'placeholder', 'title', 'href', 'src', 'htmlFor', 'download', 'accept', 'min', 'max', 'step', 'colSpan'].forEach(prop => {
     const attr = { htmlFor: 'for', colSpan: 'colspan' }[prop] || prop.toLowerCase();
     Object.defineProperty(Element.prototype, prop, {
         get() { return this.getAttribute(attr) ?? (prop === 'type' && this.localName === 'input' ? 'text' : ''); },
