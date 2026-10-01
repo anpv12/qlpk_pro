@@ -307,8 +307,8 @@
 
   /* Loading and survey content */
   .loading-spinner{text-align:center;padding:2.5rem}
-  .qlpk-survey-content{display:block}
-  .qlpk-no-survey-message{display:none}
+  .qlpk-survey-content,.qlpk-no-survey-message{display:block}
+  :is(.loading-spinner,.qlpk-survey-content,.qlpk-no-survey-message,.actions)[hidden]{display:none}
 
   /* Form controls */
   .form-control {

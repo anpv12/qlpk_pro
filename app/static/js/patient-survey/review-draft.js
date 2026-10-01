@@ -1,20 +1,25 @@
-/* global allQuestions, currentQuestionIndex: writable, displayPatientInfo, draftBlockMessage: writable, draftBlocked: writable, draftData: writable, draftRevision: writable, draftSaving: writable, draftTimer: writable, formatDateTime, isSurveyClosed: writable, isSurveyCompleted: writable, isSurveyExpired: writable, lastSavedDraft: writable, prepareQuestions, restoreSavedSurveyResponses, reviewData: writable, reviewOrderId, reviewTimer: writable, showClosedSurveyMessage, showQuestion, surveyResponses, surveyTemplates: writable */
-/* exported loadOrderSurveyResult, reviewSummary, surveyTemplates */
+import { state } from './state.js';
+import { disableSurveyInputs, setShown, setText, showNoSurveyMessage, showResultSummary } from './view.js';
+import { displayPatientInfo, formatDateTime } from '../patient-survey-parts/display.js';
+import { prepareQuestions, showQuestion } from './questions.js';
+import { restoreSavedSurveyResponses } from './interaction-parts/grid-and-restore.js';
+import { reviewOrderId, showClosedSurveyMessage } from '../patient-survey.js';
 
 // Use the same question renderer for live progress and submitted results.
 async function loadOrderSurveyResult(orderId, refresh = false) {
-    clearTimeout(reviewTimer);
-    isSurveyClosed = true;
+    clearTimeout(state.reviewTimer);
+    state.isSurveyClosed = true;
     document.body.classList.add('survey-review');
     if (!refresh) {
-        $('.actions, #survey-content, #no-survey-message').hide();
-        $('#title').text('Kết quả khảo sát');
+        setShown('.actions, #survey-content, #no-survey-message', false);
+        setText('title', 'Kết quả khảo sát');
     }
     const fail = message => {
-        $('#loading-spinner, #survey-content, .actions').hide();
-        $('#survey-name').text('Không thể xem kết quả');
-        $('#patient-name, #patient-phone').text('—');
-        $('#no-survey-message').text(message).show();
+        setShown('#loading-spinner, #survey-content, .actions', false);
+        setText('survey-name', 'Không thể xem kết quả');
+        setText('patient-name', '—');
+        setText('patient-phone', '—');
+        showNoSurveyMessage(message);
     };
     if (!window.QLPKApiTransport.hasSession()) { fail('Vui lòng đăng nhập tài khoản phòng khám rồi mở lại Xem kết quả.'); return; }
     try {
@@ -26,18 +31,18 @@ async function loadOrderSurveyResult(orderId, refresh = false) {
             throw new Error(message);
         }
         const {data} = await response.json();
-        const changed = JSON.stringify(data) !== JSON.stringify(reviewData);
-        reviewData = data;
-        $('#survey-result-summary').html(window.renderSurveyResultSummary?.(data.result_summary) || '');
+        const changed = JSON.stringify(data) !== JSON.stringify(state.reviewData);
+        state.reviewData = data;
+        showResultSummary(data.result_summary);
         if (changed && !renderOrderSurveyReview(data)) {
             fail('Không có cấu trúc câu hỏi hợp lệ để hiển thị.'); return;
         }
-        $('#survey-sync-state').text(reviewSyncStateText(data));
-        if (data.can_live) reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
+        setText('survey-sync-state', reviewSyncStateText(data));
+        if (data.can_live) state.reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
     } catch (error) {
         if (!refresh) fail('Không tải được kết quả khảo sát. Hệ thống đang thử kết nối lại.');
-        $('#survey-sync-state').text('Mất kết nối — dữ liệu có thể chưa mới nhất. Đang thử lại…');
-        reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
+        setText('survey-sync-state', 'Mất kết nối — dữ liệu có thể chưa mới nhất. Đang thử lại…');
+        state.reviewTimer = setTimeout(() => loadOrderSurveyResult(orderId, true), 3000);
     }
 }
 
@@ -49,14 +54,14 @@ const REVIEW_RESULT_ERRORS = {
 
 // Returns false when the template has no renderable questions.
 function renderOrderSurveyReview(data) {
-    surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
+    state.surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
     displayPatientInfo(data.patient);
-    $('#survey-name').text(data.template_name);
-    if (prepareQuestions() === false || !allQuestions.length) return false;
+    setText('survey-name', data.template_name);
+    if (prepareQuestions() === false || !state.allQuestions.length) return false;
     restoreSavedSurveyResponses(data.responses || {});
-    currentQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, allQuestions.length - 1));
-    $('#loading-spinner, #no-survey-message').hide();
-    $('.actions').show();
+    state.currentQuestionIndex = Math.max(0, Math.min(state.currentQuestionIndex, state.allQuestions.length - 1));
+    setShown('#loading-spinner, #no-survey-message', false);
+    setShown('.actions', true);
     showClosedSurveyMessage();
     return true;
 }
@@ -69,13 +74,13 @@ function reviewSyncStateText(data) {
 }
 
 function reviewSummary() {
-    if (reviewData?.review_state === 'submitted') {
+    if (state.reviewData?.review_state === 'submitted') {
         return {title: 'Bài đã nộp — chỉ xem', text: 'Đây là đáp án đã nộp và lưu thành công.'};
     }
-    if (reviewData?.order_status === 'completed') {
+    if (state.reviewData?.order_status === 'completed') {
         return {title: 'Đã kết thúc — chưa nộp bài', text: 'Chỉ hiển thị phần đã được lưu trước khi khảo sát kết thúc.'};
     }
-    if (reviewData?.review_state === 'empty') {
+    if (state.reviewData?.review_state === 'empty') {
         return {title: 'Chưa có câu trả lời — chưa nộp', text: 'Màn hình sẽ tự cập nhật khi bệnh nhân bắt đầu trả lời.'};
     }
     return {title: 'Đang làm — chưa nộp', text: 'Đáp án đang được cập nhật. Câu chưa trả lời sẽ để trống; đây chưa phải kết quả chính thức.'};
@@ -84,8 +89,8 @@ function reviewSummary() {
 // Flatten one template's answers once for both autosave and final submission.
 function collectTemplateResponses(templateId) {
     const answers = {};
-    allQuestions.filter(question => String(question.template_id) === String(templateId)).forEach(question => {
-        const response = surveyResponses[`q_${question.id}`];
+    state.allQuestions.filter(question => String(question.template_id) === String(templateId)).forEach(question => {
+        const response = state.surveyResponses[`q_${question.id}`];
         if (!response) return;
         if (response.grid_responses) {
             (question.grid?.rows || []).forEach((row, index) => {
@@ -108,8 +113,8 @@ function draftStorageKey() {
 }
 
 async function loadSessionSurveyDraft(token) {
-    $('.actions, #survey-content, #no-survey-message').hide();
-    $('#loading-spinner').show();
+    setShown('.actions, #survey-content, #no-survey-message', false);
+    setShown('#loading-spinner', true);
     try {
         const response = await fetch(`/api/survey-sessions/draft?session_token=${encodeURIComponent(token)}`, {cache: 'no-store'});
         if (!response.ok) throw new Error('Không tải được tiến độ khảo sát. Vui lòng tải lại trang.');
@@ -117,33 +122,33 @@ async function loadSessionSurveyDraft(token) {
         if (!draftMatchesSurveyLink(data)) {
             throw new Error('Liên kết không khớp phiên khảo sát.');
         }
-        draftData = data; draftRevision = data.revision;
-        $('#survey-result-summary').html(window.renderSurveyResultSummary?.(data.result_summary) || '');
-        isSurveyCompleted = data.submitted;
-        isSurveyClosed = data.session_status === 'closed';
-        isSurveyExpired = data.session_status === 'expired';
-        const isReadOnly = isSurveyCompleted || isSurveyClosed || isSurveyExpired;
+        state.draftData = data; state.draftRevision = data.revision;
+        showResultSummary(data.result_summary);
+        state.isSurveyCompleted = data.submitted;
+        state.isSurveyClosed = data.session_status === 'closed';
+        state.isSurveyExpired = data.session_status === 'expired';
+        const isReadOnly = state.isSurveyCompleted || state.isSurveyClosed || state.isSurveyExpired;
         if (data.validation_message && !isReadOnly) {
-            $('#loading-spinner').hide();
-            $('#no-survey-message').text('Mẫu khảo sát cần được cấu hình đầy đủ trước khi làm bài. Vui lòng liên hệ phòng khám để cập nhật liên kết.').show();
+            setShown('#loading-spinner', false);
+            showNoSurveyMessage('Mẫu khảo sát cần được cấu hình đầy đủ trước khi làm bài. Vui lòng liên hệ phòng khám để cập nhật liên kết.');
             return;
         }
-        surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
-        $('#survey-name').text(data.template_name);
+        state.surveyTemplates = [{id: data.survey_template_id, name: data.template_name, content: data.template_content}];
+        setText('survey-name', data.template_name);
         if (prepareQuestions() === false) return;
         restoreSavedSurveyResponses(data.responses || {});
-        lastSavedDraft = JSON.stringify(collectTemplateResponses(data.survey_template_id));
+        state.lastSavedDraft = JSON.stringify(collectTemplateResponses(data.survey_template_id));
         if (!isReadOnly) restoreLocalSurveyDraft();
-        $('#loading-spinner').hide(); $('.actions').show();
+        setShown('#loading-spinner', false); setShown('.actions', true);
         if (isReadOnly) {
             showClosedSurveyMessage();
         } else {
             showQuestion(0);
-            $('#survey-sync-state').text('Tiến độ tự động lưu để bác sĩ theo dõi.');
+            setText('survey-sync-state', 'Tiến độ tự động lưu để bác sĩ theo dõi.');
         }
     } catch (error) {
-        $('#loading-spinner').hide();
-        $('#no-survey-message').text('Không tải được tiến độ khảo sát. Vui lòng kiểm tra liên kết hoặc tải lại trang.').show();
+        setShown('#loading-spinner', false);
+        showNoSurveyMessage('Không tải được tiến độ khảo sát. Vui lòng kiểm tra liên kết hoặc tải lại trang.');
     }
 }
 
@@ -157,64 +162,66 @@ function draftMatchesSurveyLink(data) {
 function restoreLocalSurveyDraft() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(draftStorageKey()) || 'null'); } catch (_) { /* Server draft is still usable. */ }
-    if (saved && saved.revision === draftRevision) {
+    if (saved && saved.revision === state.draftRevision) {
         restoreSavedSurveyResponses(saved.responses); queueSurveyDraft();
     }
 }
 
 function queueSurveyDraft() {
-    if (!draftData || draftBlocked || reviewOrderId !== null || isSurveyCompleted || isSurveyClosed || isSurveyExpired) return;
-    const responses = collectTemplateResponses(draftData.survey_template_id);
-    localStorage.setItem(draftStorageKey(), JSON.stringify({revision: draftRevision, responses}));
-    clearTimeout(draftTimer);
-    $('#survey-sync-state').text('Đang lưu tiến độ…');
-    draftTimer = setTimeout(() => flushSurveyDraft(), 500);
+    if (!state.draftData || state.draftBlocked || reviewOrderId !== null || state.isSurveyCompleted || state.isSurveyClosed || state.isSurveyExpired) return;
+    const responses = collectTemplateResponses(state.draftData.survey_template_id);
+    localStorage.setItem(draftStorageKey(), JSON.stringify({revision: state.draftRevision, responses}));
+    clearTimeout(state.draftTimer);
+    setText('survey-sync-state', 'Đang lưu tiến độ…');
+    state.draftTimer = setTimeout(() => flushSurveyDraft(), 500);
 }
 
 async function flushSurveyDraft() {
-    clearTimeout(draftTimer);
-    if (!draftData || reviewOrderId !== null) return true;
-    if (draftBlocked || isSurveyClosed || isSurveyExpired) return false;
-    if (isSurveyCompleted) return true;
-    if (draftSaving) { await draftSaving; return flushSurveyDraft(); }
-    const responses = collectTemplateResponses(draftData.survey_template_id);
+    clearTimeout(state.draftTimer);
+    if (!state.draftData || reviewOrderId !== null) return true;
+    if (state.draftBlocked || state.isSurveyClosed || state.isSurveyExpired) return false;
+    if (state.isSurveyCompleted) return true;
+    if (state.draftSaving) { await state.draftSaving; return flushSurveyDraft(); }
+    const responses = collectTemplateResponses(state.draftData.survey_template_id);
     const sent = JSON.stringify(responses);
-    if (sent === lastSavedDraft) { $('#survey-sync-state').text('Đã lưu tiến độ'); return true; }
-    draftSaving = (async () => {
+    if (sent === state.lastSavedDraft) { setText('survey-sync-state', 'Đã lưu tiến độ'); return true; }
+    state.draftSaving = (async () => {
         try {
             const response = await fetch('/api/survey-sessions/draft', {method: 'PUT', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({session_token: new URLSearchParams(window.location.search).get('session_token'),
-                    patient_id: draftData.patient_id, examination_id: draftData.examination_id,
-                    survey_template_id: draftData.survey_template_id, revision: draftRevision, responses})});
+                    patient_id: state.draftData.patient_id, examination_id: state.draftData.examination_id,
+                    survey_template_id: state.draftData.survey_template_id, revision: state.draftRevision, responses})});
             const payload = await response.json();
             if (!response.ok) {
                 if (response.status === 409 || response.status === 410) {
-                    draftBlocked = true;
-                    draftBlockMessage = response.status === 409
+                    state.draftBlocked = true;
+                    state.draftBlockMessage = response.status === 409
                         ? 'Bài đang được thay đổi ở phiên khác. Vui lòng tải lại trước khi tiếp tục.'
                         : 'Khảo sát đã nộp hoặc đã kết thúc. Không nhận thêm thay đổi.';
                     if (response.status === 410) {
-                        isSurveyClosed = true;
-                        $('#survey-content input, #survey-content select, #survey-content textarea').prop('disabled', true);
+                        state.isSurveyClosed = true;
+                        disableSurveyInputs();
                         loadSessionSurveyDraft(new URLSearchParams(window.location.search).get('session_token'));
                     }
                 }
                 throw new Error(payload.message || 'Không lưu được tiến độ');
             }
-            draftRevision = payload.data.revision; lastSavedDraft = sent;
-            const latest = collectTemplateResponses(draftData.survey_template_id);
-            localStorage.setItem(draftStorageKey(), JSON.stringify({revision: draftRevision, responses: latest}));
-            $('#survey-sync-state').text('Đã lưu tiến độ');
+            state.draftRevision = payload.data.revision; state.lastSavedDraft = sent;
+            const latest = collectTemplateResponses(state.draftData.survey_template_id);
+            localStorage.setItem(draftStorageKey(), JSON.stringify({revision: state.draftRevision, responses: latest}));
+            setText('survey-sync-state', 'Đã lưu tiến độ');
             if (JSON.stringify(latest) !== sent) queueSurveyDraft();
             return true;
         } catch (error) {
-            $('#survey-sync-state').text(draftBlocked ? draftBlockMessage : 'Chưa đồng bộ — đang giữ trên máy và thử lại.');
-            if (!draftBlocked) draftTimer = setTimeout(() => flushSurveyDraft(), 3000);
+            setText('survey-sync-state', state.draftBlocked ? state.draftBlockMessage : 'Chưa đồng bộ — đang giữ trên máy và thử lại.');
+            if (!state.draftBlocked) state.draftTimer = setTimeout(() => flushSurveyDraft(), 3000);
             return false;
-        } finally { draftSaving = null; }
+        } finally { state.draftSaving = null; }
     })();
-    return draftSaving;
+    return state.draftSaving;
 }
 
-window.addEventListener('online', () => { if (draftData && !draftBlocked) queueSurveyDraft(); });
-window.addEventListener('pagehide', () => { clearTimeout(reviewTimer); clearTimeout(draftTimer); });
+window.addEventListener('online', () => { if (state.draftData && !state.draftBlocked) queueSurveyDraft(); });
+window.addEventListener('pagehide', () => { clearTimeout(state.reviewTimer); clearTimeout(state.draftTimer); });
+
+export { collectTemplateResponses, draftStorageKey, flushSurveyDraft, loadOrderSurveyResult, loadSessionSurveyDraft, queueSurveyDraft, reviewSummary };

@@ -1,4 +1,5 @@
 import { attrJson, escapeHtml } from '../order-management.js';
+import { surveyResultSummary } from '../shared/survey-result-summary.js';
 
 function resolveSurveyAnswerText(question, answerValue) {
 	const answers = question.answers || question.options || [];
@@ -156,7 +157,7 @@ async function renderSingleSurveyResultCard(template, response) {
 
     return `
         <div class="survey-result-card">
-            ${window.renderSurveyResultSummary?.(response.result_summary) || ''}
+            ${surveyResultSummary(response.result_summary)?.outerHTML || ''}
             ${criteriaResultsHtml}
         </div>
     `;

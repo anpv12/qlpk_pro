@@ -1,168 +1,102 @@
-/* global allQuestions, clearSurveyResponsesFromStorage, currentQuestionIndex: writable, handleGridQuestionResponse, isSurveyClosed, isSurveyCompleted, isSurveyExpired, reviewOrderId, saveSurveyResponsesToStorage, setSurveyProgressBar, showQuestion, submitSurvey, surveyResponses: writable, totalQuestions, updateProgressForAllQuestions, validateGridQuestion */
-/* exported bindNavigationEvents, bindQuestionEvents, updateProgress */
-// Parts (nạp trước file này): grid-and-restore.js
+import { state } from './state.js';
+import { byId, delegate, on } from '../shared/dom.js';
+import { setText } from './view.js';
+import { handleGridQuestionResponse, validateGridQuestion } from './interaction-parts/grid-and-restore.js';
+import { clearSurveyResponsesFromStorage, reviewOrderId, saveSurveyResponsesToStorage, updateProgressForAllQuestions } from '../patient-survey.js';
+import { showQuestion } from './questions.js';
+import { submitSurvey } from './submit.js';
+import { setSurveyProgressBar } from '../patient-survey-parts/display.js';
 
-// Bind question events
-function runSurveyQuestionEvents1() {
-	// Radio button change event
-	$('#survey-content').off('change', 'input[type="radio"]').on('change', 'input[type="radio"]', function() {
-	    const questionId = $(this).attr('name');
-	    const answerId = $(this).val();
-	    const score = $(this).data('score');
-
-	    // Check if this is a grid question - dùng data attributes thay vì parse string
-	    const $this = $(this);
-	    const questionIdAttr = $this.data('question-id');
-	    const rowIdAttr = $this.data('row-id');
-
-	    if (questionIdAttr && rowIdAttr) {
-	        // Handle grid question response với data attributes
-	        handleGridQuestionResponse(questionIdAttr, rowIdAttr, answerId, 'radio');
-	    } else if (questionId.includes('_row_')) {
-	        // Fallback: parse string nếu không có data attributes (backward compatibility)
-	        handleGridQuestionResponse(null, null, answerId, 'radio', questionId);
-	    } else {
-	        // Regular question response
-	        surveyResponses[questionId] = {
-	            answer_id: answerId,
-	            score: score
-	        };
-	    }
-
-	    // Save to localStorage for persistence
-	    saveSurveyResponsesToStorage();
-
-	    // Update navigation buttons
-	    updateNavigationButtons();
-
-	    // Update progress for all questions view if in preview mode
-	    updateProgressIfPreview();
-	});
-	// Checkbox change event
-	$('#survey-content').off('change', 'input[type="checkbox"]').on('change', 'input[type="checkbox"]', function() {
-	    const questionId = $(this).attr('name').replace('[]', '');
-
-	    // Check if this is a grid question - dùng data attributes
-	    const $this = $(this);
-	    const questionIdAttr = $this.data('question-id');
-	    const rowIdAttr = $this.data('row-id');
-
-	    if (questionIdAttr && rowIdAttr) {
-	        // Handle grid question response với data attributes
-	        handleGridQuestionResponse(questionIdAttr, rowIdAttr, $this.val(), 'checkbox');
-	    } else if (questionId.includes('_row_')) {
-	        // Fallback: parse string nếu không có data attributes
-	        handleGridQuestionResponse(null, null, $this.val(), 'checkbox', questionId);
-	    } else {
-	        // Regular checkbox question
-	        const checkedBoxes = $(`input[name="${questionId}[]"]:checked`);
-	        const selectedValues = checkedBoxes.map(function() { return $(this).val(); }).get();
-	        const selectedScores = checkedBoxes.map(function() { return $(this).data('score'); }).get();
-
-	        // Store response
-	        surveyResponses[questionId] = {
-	            answer_ids: selectedValues,
-	            scores: selectedScores
-	        };
-	    }
-
-	    // Save to localStorage for persistence
-	    saveSurveyResponsesToStorage();
-
-	    // Update navigation buttons
-	    updateNavigationButtons();
-
-	    // Update progress for all questions view if in preview mode
-	    updateProgressIfPreview();
-	});
-	// Dropdown change event
-	$('#survey-content').off('change', 'select').on('change', 'select', function() {
-	    const questionId = $(this).attr('name');
-	    const answerId = $(this).val();
-
-	    // Store response
-	    surveyResponses[questionId] = {
-	        answer_id: answerId,
-	        score: 0
-	    };
-
-	    // Save to localStorage for persistence
-	    saveSurveyResponsesToStorage();
-
-	    // Update navigation buttons
-	    updateNavigationButtons();
-
-	    // Update progress for all questions view if in preview mode
-	    updateProgressIfPreview();
-	});
-	// Text input change event (Short Answer, Paragraph)
-	$('#survey-content').off('input', 'input[type="text"], textarea').on('input', 'input[type="text"], textarea', function() {
-	    const questionId = $(this).attr('name');
-	    const answerText = $(this).val();
-
-	    // Store response
-	    surveyResponses[questionId] = {
-	        answer_text: answerText,
-	        score: 0
-	    };
-
-	    // Save to localStorage for persistence
-	    saveSurveyResponsesToStorage();
-
-	    // Update navigation buttons
-	    updateNavigationButtons();
-
-	    // Update character counter
-	    updateCharacterCounter($(this));
-
-	    // Update progress for all questions view if in preview mode
-	    updateProgressIfPreview();
-	});
+// data-* values coerced the way the former jQuery .data() did ("3" -> 3, "true" -> true), so stored scores keep their types.
+function dataValue(node, name) {
+    const raw = node.getAttribute(`data-${name}`);
+    if (raw === null) return undefined;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    if (raw === 'null') return null;
+    if (raw === String(Number(raw))) return Number(raw);
+    if (/^(?:\{[\w\W]*\}|\[[\w\W]*\])$/.test(raw)) {
+        try { return JSON.parse(raw); } catch { return raw; }
+    }
+    return raw;
 }
 
-function runSurveyQuestionEvents2() {
-	// Date/Time input change event
-	$('#survey-content').off('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]').on('change', 'input[type="date"], input[type="time"], input[type="datetime-local"]', function() {
-	    const questionId = $(this).attr('name');
-	    const answerValue = $(this).val();
-
-	    // Store response
-	    surveyResponses[questionId] = {
-	        answer_value: answerValue,
-	        score: 0
-	    };
-
-	    // Save to localStorage for persistence
-	    saveSurveyResponsesToStorage();
-
-	    // Update navigation buttons
-	    updateNavigationButtons();
-
-	    // Update progress for all questions view if in preview mode
-	    updateProgressIfPreview();
-	});
-	// Keyboard shortcuts for multiple choice
-	$(document).off('keydown.survey').on('keydown.survey', function(e) {
-	    const key = e.key;
-	    const currentCard = $('.card:visible').first();
-	    const radioInputs = currentCard.find('input[type="radio"]');
-
-	    if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(key)) {
-	        const index = parseInt(key) - 1;
-
-	        if (radioInputs[index]) {
-	            radioInputs[index].checked = true;
-	            // Use vanilla JavaScript event dispatch
-	            radioInputs[index].dispatchEvent(new Event('change', { bubbles: true }));
-	        }
-	    }
-	});
+function afterAnswerChange() {
+    saveSurveyResponsesToStorage();
+    updateNavigationButtons();
+    updateProgressIfPreview();
 }
 
+// Grid inputs carry data-question-id/data-row-id; older markup is resolved from the "q_<id>_row_<index>" name.
+function recordGridAnswer(input, questionId, inputType) {
+    const questionIdAttr = dataValue(input, 'question-id');
+    const rowIdAttr = dataValue(input, 'row-id');
+    if (questionIdAttr && rowIdAttr) {
+        handleGridQuestionResponse(questionIdAttr, rowIdAttr, input.value, inputType);
+        return true;
+    }
+    if (questionId.includes('_row_')) {
+        handleGridQuestionResponse(null, null, input.value, inputType, questionId);
+        return true;
+    }
+    return false;
+}
+
+const QUESTION_HANDLERS = [
+    ['change', 'input[type="radio"]', input => {
+        const questionId = input.getAttribute('name');
+        if (!recordGridAnswer(input, questionId, 'radio')) {
+            state.surveyResponses[questionId] = { answer_id: input.value, score: dataValue(input, 'score') };
+        }
+    }],
+    ['change', 'input[type="checkbox"]', input => {
+        const questionId = input.getAttribute('name').replace('[]', '');
+        if (!recordGridAnswer(input, questionId, 'checkbox')) {
+            const checkedBoxes = [...document.querySelectorAll(`input[name="${CSS.escape(questionId)}[]"]:checked`)];
+            state.surveyResponses[questionId] = {
+                answer_ids: checkedBoxes.map(box => box.value),
+                scores: checkedBoxes.map(box => dataValue(box, 'score'))
+            };
+        }
+    }],
+    ['change', 'select', select => {
+        state.surveyResponses[select.getAttribute('name')] = { answer_id: select.value, score: 0 };
+    }],
+    ['input', 'input[type="text"], textarea', input => {
+        state.surveyResponses[input.getAttribute('name')] = { answer_text: input.value, score: 0 };
+        updateCharacterCounter(input);
+    }],
+    ['change', 'input[type="date"], input[type="time"], input[type="datetime-local"]', input => {
+        state.surveyResponses[input.getAttribute('name')] = { answer_value: input.value, score: 0 };
+    }],
+];
+
+const isVisible = node => Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length);
+
+// Keyboard shortcuts 1-9 pick an option in the first visible question card
+function handleShortcutKey(event) {
+    if (!['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(event.key)) return;
+    const currentCard = [...document.querySelectorAll('.card')].find(isVisible);
+    const radio = currentCard?.querySelectorAll('input[type="radio"]')[parseInt(event.key, 10) - 1];
+    if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+let questionEventsBound = false;
+
+// Delegated once on #survey-content, so re-rendered questions keep working
 function bindQuestionEvents() {
-    if (reviewOrderId !== null || isSurveyClosed || isSurveyCompleted || isSurveyExpired) return;
-    runSurveyQuestionEvents1();
-    runSurveyQuestionEvents2();
+    if (reviewOrderId !== null || state.isSurveyClosed || state.isSurveyCompleted || state.isSurveyExpired) return;
+    if (questionEventsBound) return;
+    questionEventsBound = true;
+    const content = byId('survey-content');
+    QUESTION_HANDLERS.forEach(([type, selector, record]) => delegate(content, type, selector, (event, input) => {
+        record(input);
+        afterAnswerChange();
+    }));
+    document.addEventListener('keydown', handleShortcutKey);
 }
 
 // Helper function to check if in preview mode
@@ -178,55 +112,40 @@ function updateProgressIfPreview() {
     }
 }
 
-// Update character counter
+// Update character counter next to a text input/textarea
 function updateCharacterCounter(input) {
-    const counter = input.siblings('.character-counter');
-    if (counter.length) {
-        const currentCount = input.val().length;
-        const maxLength = input.attr('maxlength');
-
-        counter.find('.current-count').text(currentCount);
-
-        // Change color based on usage
-        if (maxLength) {
-            const percentage = (currentCount / parseInt(maxLength)) * 100;
-            if (percentage >= 90) {
-                counter.removeClass('character-counter--warning').addClass('character-counter--danger');
-            } else if (percentage >= 75) {
-                counter.removeClass('character-counter--danger').addClass('character-counter--warning');
-            } else {
-                counter.removeClass('character-counter--danger character-counter--warning');
-            }
-        }
-    }
+    const counter = [...(input.parentElement?.children || [])].find(node => node !== input && node.classList.contains('character-counter'));
+    if (!counter) return;
+    const currentCount = input.value.length;
+    const maxLength = input.getAttribute('maxlength');
+    const count = counter.querySelector('.current-count');
+    if (count) count.textContent = currentCount;
+    if (!maxLength) return;
+    const percentage = (currentCount / parseInt(maxLength, 10)) * 100;
+    counter.classList.toggle('character-counter--danger', percentage >= 90);
+    counter.classList.toggle('character-counter--warning', percentage >= 75 && percentage < 90);
 }
 
 // Bind navigation events
 function bindNavigationEvents() {
-
-    // Next button - navigation dùng allQuestions.length
-    $('#next').off('click').on('click', function() {
-        if (currentQuestionIndex < allQuestions.length - 1) {
-            currentQuestionIndex++;
+    // Next button - navigation dùng allQuestions.length; câu cuối thì nộp bài
+    on(byId('next'), 'click', () => {
+        if (state.currentQuestionIndex < state.allQuestions.length - 1) {
+            state.currentQuestionIndex++;
             saveSurveyResponsesToStorage();
-            showQuestion(currentQuestionIndex);
+            showQuestion(state.currentQuestionIndex);
         } else {
-            // Last question - submit survey
             submitSurvey();
         }
     });
-
-    // Previous button
-    $('#previous').off('click').on('click', function() {
-        if (currentQuestionIndex > 0) {
-            currentQuestionIndex--;
+    on(byId('previous'), 'click', () => {
+        if (state.currentQuestionIndex > 0) {
+            state.currentQuestionIndex--;
             saveSurveyResponsesToStorage();
-            showQuestion(currentQuestionIndex);
+            showQuestion(state.currentQuestionIndex);
         }
     });
-
-    // Start over button
-    $('#start-over').off('click').on('click', async function() {
+    on(byId('start-over'), 'click', async () => {
         const confirmed = await window.QLPKConfirmationDialog.confirm({
             text: 'Bạn có chắc muốn bắt đầu lại? Tất cả câu trả lời sẽ bị mất.',
             confirmText: 'Bắt đầu lại',
@@ -234,24 +153,23 @@ function bindNavigationEvents() {
             showToast: (type, message) => window.QLPKUserFeedback?.show(type, message)
         });
         if (confirmed) {
-            surveyResponses = {};
-            currentQuestionIndex = 0;
+            state.surveyResponses = {};
+            state.currentQuestionIndex = 0;
             clearSurveyResponsesFromStorage();
             saveSurveyResponsesToStorage();
             showQuestion(0);
         }
     });
-
 }
 
 // Update progress
 function updateProgress() {
     // Safety check: if totalQuestions is not set yet, don't update progress
-    if (!totalQuestions || totalQuestions === 0) {
+    if (!state.totalQuestions || state.totalQuestions === 0) {
         // Set default values - show 0% progress when questions not loaded yet
-        $('#cur').text(1);
-        $('#total').text('?');
-        $('#kpi').text('0%');
+        setText('cur', 1);
+        setText('total', '?');
+        setText('kpi', '0%');
         setSurveyProgressBar(0);
         return; // Exit early
     }
@@ -259,8 +177,8 @@ function updateProgress() {
     // Count actual responses (including grid_responses)
     // Only count responses that have valid answers
     let actualResponseCount = 0;
-    Object.keys(surveyResponses).forEach(key => {
-        const response = surveyResponses[key];
+    Object.keys(state.surveyResponses).forEach(key => {
+        const response = state.surveyResponses[key];
         if (response && response.grid_responses) {
             // For grid questions, count each subquestion that has a valid answer
             Object.keys(response.grid_responses).forEach(subKey => {
@@ -289,12 +207,12 @@ function updateProgress() {
     });
 
     // Clamp actualResponseCount to prevent overflow (should never exceed totalQuestions)
-    actualResponseCount = Math.min(actualResponseCount, totalQuestions);
+    actualResponseCount = Math.min(actualResponseCount, state.totalQuestions);
 
     // Calculate percentage with safety checks
     let percentage = 0;
-    if (totalQuestions > 0) {
-        const rawPercentage = (actualResponseCount / totalQuestions) * 100;
+    if (state.totalQuestions > 0) {
+        const rawPercentage = (actualResponseCount / state.totalQuestions) * 100;
         // Ensure percentage is a valid number and doesn't exceed 100%
         if (isNaN(rawPercentage) || !isFinite(rawPercentage)) {
             percentage = 0;
@@ -310,9 +228,9 @@ function updateProgress() {
     }
 
     // cur = số câu đã trả lời (actualResponseCount), không phải index hiện tại
-    $('#cur').text(actualResponseCount);
-    $('#total').text(totalQuestions);
-    $('#kpi').text(percentage + '%');
+    setText('cur', actualResponseCount);
+    setText('total', state.totalQuestions);
+    setText('kpi', percentage + '%');
 
     // Update progress bar
     // insetInlineEnd: 100% = empty bar (0% filled), 0% = full bar (100% filled)
@@ -322,33 +240,33 @@ function updateProgress() {
 // Update navigation buttons
 function updateNavigationButtons() {
     // Safety check: ensure currentQuestionIndex is within bounds
-    if (currentQuestionIndex >= allQuestions.length) {
+    if (state.currentQuestionIndex >= state.allQuestions.length) {
 
-        currentQuestionIndex = allQuestions.length - 1; // Set to last valid index
+        state.currentQuestionIndex = state.allQuestions.length - 1; // Set to last valid index
     }
 
-    const currentQuestion = allQuestions[currentQuestionIndex];
+    const currentQuestion = state.allQuestions[state.currentQuestionIndex];
     if (!currentQuestion) {
         return;
     }
 
     // Navigation dùng allQuestions.length, không dùng totalQuestions
     const mainQuestionId = `q_${currentQuestion.id}`;
-    const response = surveyResponses[mainQuestionId];
-    const isFirstQuestion = currentQuestionIndex === 0;
-    const isLastQuestion = currentQuestionIndex === allQuestions.length - 1;
+    const response = state.surveyResponses[mainQuestionId];
+    const isFirstQuestion = state.currentQuestionIndex === 0;
+    const isLastQuestion = state.currentQuestionIndex === state.allQuestions.length - 1;
 
     // Check if question has a valid answer
     const hasAnswer = canProceedSurveyQuestion(currentQuestion, response);
 
     // Previous button
-    $('#previous').prop('disabled', isFirstQuestion);
-
-    // Next button - isLastQuestion đã được tính ở trên
-    if (isLastQuestion) {
-        $('#next').text('Hoàn thành').prop('disabled', !hasAnswer);
-    } else {
-        $('#next').text('Tiếp theo').prop('disabled', !hasAnswer);
+    // The buttons are gone once hideActionButtons() replaced the action row.
+    const previousButton = byId('previous');
+    if (previousButton) previousButton.disabled = isFirstQuestion;
+    const nextButton = byId('next');
+    if (nextButton) {
+        nextButton.textContent = isLastQuestion ? 'Hoàn thành' : 'Tiếp theo';
+        nextButton.disabled = !hasAnswer;
     }
 
 }
@@ -370,3 +288,4 @@ function validateRegularQuestion(response) {
         response.answer_text, response.answer_value].some(hasSurveyAnswer);
 }
 
+export { bindNavigationEvents, bindQuestionEvents, canProceedSurveyQuestion, hasSurveyAnswer, isPreviewMode, updateCharacterCounter, updateNavigationButtons, updateProgress };

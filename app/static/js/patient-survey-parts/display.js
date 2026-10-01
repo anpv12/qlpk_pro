@@ -1,6 +1,4 @@
-/* exported appendSurveyTimeInfo, buildSurveyExpiresText, displayPatientInfo, formatDuration, setSurveyProgressBar, showPreviewNotice */
-// patient-survey.js: setSurveyProgressBar, displayPatientInfo, formatDateTime, formatDuration, appendSurveyTimeInfo, buildSurveyExpiresText, showPreviewNotice (nạp trước patient-survey.js, cùng scope trang).
-
+import { el } from '../shared/dom.js';
 function setSurveyProgressBar(percentage) {
     const bar = document.getElementById('bar');
     if (!bar) return;
@@ -12,13 +10,13 @@ function setSurveyProgressBar(percentage) {
 function displayPatientInfo(patient) {
     const patientName = document.getElementById('patient-name');
     const patientPhone = document.getElementById('patient-phone');
-    
+
     if (patient.full_name) {
         patientName.textContent = patient.full_name;
     } else {
         patientName.textContent = 'Không có tên';
     }
-    
+
     if (patient.phone) {
         patientPhone.textContent = patient.phone;
     } else {
@@ -42,13 +40,13 @@ function formatDuration(startTime, endTime) {
         const start = new Date(startTime);
         const end = new Date(endTime);
         const durationMs = end - start;
-        
+
         if (durationMs < 0) return null; // Invalid duration
-        
+
         const totalSeconds = Math.floor(durationMs / 1000);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        
+
         if (minutes === 0) {
             return `${seconds} giây`;
         } else if (seconds === 0) {
@@ -61,13 +59,11 @@ function formatDuration(startTime, endTime) {
     }
 }
 
-function appendSurveyTimeInfo(parent, id, className, html) {
-    const div = document.createElement('div');
-    div.id = id;
-    div.className = className;
-    div.innerHTML = html;
-    parent.appendChild(div);
+function appendSurveyTimeInfo(parent, id, className, ...content) {
+    parent.append(el('div', { id, class: className }, ...content));
 }
+
+const warning = text => el('span', { class: 'survey-time-warning' }, text);
 
 function buildSurveyExpiresText(expiresAt) {
     // Check nếu đã hết hạn (so sánh ở UTC, convert sang GMT+7 để hiển thị)
@@ -79,26 +75,20 @@ function buildSurveyExpiresText(expiresAt) {
     const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
     const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
     const when = formatDateTime(expiresAt);
-    if (nowUTC > expiresDateUTC) return `<span class="survey-time-warning">⏰ Đã hết hạn: ${when}</span>`;
-    if (hoursRemaining < 1) return `<span class="survey-time-warning">⏰ Còn ${minutesRemaining} phút: ${when}</span>`;
-    if (hoursRemaining < 6) return `<span class="survey-time-warning">⏰ Còn ${hoursRemaining} giờ: ${when}</span>`;
-    return `⏰ Hết hạn: <span class="survey-time-value">${when}</span>`;
+    if (nowUTC > expiresDateUTC) return [warning(`⏰ Đã hết hạn: ${when}`)];
+    if (hoursRemaining < 1) return [warning(`⏰ Còn ${minutesRemaining} phút: ${when}`)];
+    if (hoursRemaining < 6) return [warning(`⏰ Còn ${hoursRemaining} giờ: ${when}`)];
+    return ['⏰ Hết hạn: ', el('span', { class: 'survey-time-value' }, when)];
 }
 
 // Show preview notice with full interaction
 function showPreviewNotice() {
-    // Add preview notice
-    const previewNotice = `
-        <div class="preview-notice">
-            <div class="preview-notice-content">
-                <div class="preview-notice-icon">🎯</div>
-                <div>
-                    <h4>Chế độ trải nghiệm</h4>
-                    <p>Đây là bản trải nghiệm mẫu khảo sát. Bạn có thể tương tác đầy đủ như người dùng thật!</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    $('.container').append(previewNotice);
+    document.querySelector('.container')?.append(el('div', { class: 'preview-notice' },
+        el('div', { class: 'preview-notice-content' },
+            el('div', { class: 'preview-notice-icon' }, '🎯'),
+            el('div', {},
+                el('h4', {}, 'Chế độ trải nghiệm'),
+                el('p', {}, 'Đây là bản trải nghiệm mẫu khảo sát. Bạn có thể tương tác đầy đủ như người dùng thật!')))));
 }
+
+export { appendSurveyTimeInfo, buildSurveyExpiresText, displayPatientInfo, formatDateTime, formatDuration, setSurveyProgressBar, showPreviewNotice };

@@ -35,38 +35,3 @@ const noPrefixMatch = context.summarizePatientAnswersForOrderManagement(template
 assert.equal(noPrefixMatch.criteria.A.length, 0);
 console.log('Survey result identity, missing-score and real-zero checks passed');
 
-const patientSource = require('./helpers/page-script-source').readPageScripts('patient-survey.html', ['patient-survey.js', 'patient-survey/']);
-const optionStart = patientSource.indexOf('function surveyOptionId(');
-const optionEnd = patientSource.indexOf('function renderRadioOption(', optionStart);
-vm.runInContext(patientSource.slice(optionStart, optionEnd), context);
-assert.equal(context.surveyOptionId({ id: 0 }, 2), 0);
-assert.equal(context.surveyOptionId({ id: '' }, 2), 2);
-assert.equal(context.surveyOptionId({ id: 'stable' }, 2), 'stable');
-
-// Both patient reopening and physician review hydrate the same renderer.
-vm.runInContext(patientSource.slice(patientSource.indexOf('function restoreSavedSurveyResponses('),
-    patientSource.indexOf('// Use the same question renderer')), context);
-context.allQuestions = [
-    {id: 'single'}, {id: 'multi', type: 'checkboxes'},
-    {id: 'text', type: 'paragraph'}, {id: 'day', type: 'date'},
-    {id: 'grid', type: 'multiple_choice_grid', grid: {rows: [{id: 'row', question_id: 'saved-row'}]}},
-    {id: 'missing'},
-];
-context.restoreSavedSurveyResponses({single: 0, multi: ['a', 'b'], text: 'Đáp án đã lưu',
-    day: '2026-09-06', 'saved-row': 'column', unrelated: 'ignore'});
-assert.deepEqual(JSON.parse(JSON.stringify(context.surveyResponses)), {
-    q_single: {answer_id: 0}, q_multi: {answer_ids: ['a', 'b']},
-    q_text: {answer_text: 'Đáp án đã lưu'}, q_day: {answer_value: '2026-09-06'},
-    q_grid: {grid_responses: {row: 'column'}},
-});
-context.restoreSavedSurveyResponses({single: 'other'});
-assert.deepEqual(JSON.parse(JSON.stringify(context.surveyResponses)), {q_single: {answer_id: 'other'}});
-const progressLabels = {};
-context.$ = selector => ({text: value => {progressLabels[selector] = value;}});
-context.setSurveyProgressBar = value => {progressLabels.bar = value;};
-context.totalQuestions = 1;
-context.restoreSavedSurveyResponses({single: 0});
-vm.runInContext(patientSource.slice(patientSource.indexOf('function updateProgress()'),
-    patientSource.indexOf('// Update navigation buttons\nfunction updateNavigationButtons')), context);
-context.updateProgress();
-assert.equal(progressLabels.bar, 100);

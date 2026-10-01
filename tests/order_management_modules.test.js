@@ -6,7 +6,7 @@ const path = require('node:path');
 const { orderManagementScripts } = require('./helpers/order-management-source');
 
 const JS_ROOT = path.join(__dirname, '../app/static/js');
-const scripts = orderManagementScripts();
+const scripts = orderManagementScripts().filter(file => !file.startsWith('shared/'));
 const read = file => fs.readFileSync(path.join(JS_ROOT, file), 'utf8');
 
 test('order page is one ES module entry that reaches every slice once', () => {

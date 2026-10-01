@@ -1,10 +1,8 @@
-/* global allQuestions, currentQuestionIndex, hasSurveyAnswer, surveyResponses: writable, updateCharacterCounter */
-/* exported handleGridQuestionResponse, restoreAnswer, restoreSavedSurveyResponses, validateGridQuestion */
-// interaction.js: validateGridQuestion, handleGridQuestionResponse, resolveGridResponseTarget, restoreAnswer, restoreSavedSurveyResponses (nạp trước interaction.js, cùng scope trang).
+import { state } from '../state.js';
+import { hasSurveyAnswer, updateCharacterCounter } from '../interaction.js';
 
 // Validate grid question (DASS-21 with subquestions)
 function validateGridQuestion(question, response) {
-
 
     if (!response || !response.grid_responses) {
         return false;
@@ -21,7 +19,6 @@ function validateGridQuestion(question, response) {
     for (let i = 0; i < subquestions.length; i++) {
         const subquestionId = subquestions[i].id ?? i.toString();
         const subquestionResponse = response.grid_responses[subquestionId];
-
 
         // Check if this subquestion has been answered
         if (!hasSurveyAnswer(subquestionResponse)) {
@@ -48,24 +45,20 @@ function handleGridQuestionResponse(questionId, rowId, answerId, inputType, fall
     const { mainQuestionId, actualSubquestionId } = target;
 
     // Initialize grid_responses if not exists
-    if (!surveyResponses[mainQuestionId]) {
-        surveyResponses[mainQuestionId] = {};
+    if (!state.surveyResponses[mainQuestionId]) {
+        state.surveyResponses[mainQuestionId] = {};
     }
-    if (!surveyResponses[mainQuestionId].grid_responses) {
-        surveyResponses[mainQuestionId].grid_responses = {};
+    if (!state.surveyResponses[mainQuestionId].grid_responses) {
+        state.surveyResponses[mainQuestionId].grid_responses = {};
     }
 
     // Store the response for this specific row using the actualSubquestionId
     if (inputType === 'radio') {
-        surveyResponses[mainQuestionId].grid_responses[actualSubquestionId] = answerId;
+        state.surveyResponses[mainQuestionId].grid_responses[actualSubquestionId] = answerId;
     } else if (inputType === 'checkbox') {
         // Tìm tất cả checkbox cùng row bằng data attributes
-        const checkedBoxes = $(`input[data-question-id="${questionId}"][data-row-id="${rowId}"]:checked`);
-        const checkedValues = [];
-        checkedBoxes.each(function() {
-            checkedValues.push($(this).val());
-        });
-        surveyResponses[mainQuestionId].grid_responses[actualSubquestionId] = checkedValues;
+        const checkedBoxes = queryAll(`input[data-question-id="${attr(questionId)}"][data-row-id="${attr(rowId)}"]:checked`);
+        state.surveyResponses[mainQuestionId].grid_responses[actualSubquestionId] = checkedBoxes.map(box => box.value);
     }
 }
 
@@ -79,10 +72,10 @@ function resolveGridResponseTarget(questionId, rowId, fallbackQuestionId) {
     const parts = fallbackQuestionId.split('_row_');
     let mainQuestionId = parts[0];
     const rowIndex = parseInt(parts[1], 10);
-    let targetQuestion = allQuestions.find(q => `q_${q.id}` === mainQuestionId) || null;
+    let targetQuestion = state.allQuestions.find(q => `q_${q.id}` === mainQuestionId) || null;
     // Fallback: dùng currentQuestionIndex
     if (!targetQuestion) {
-        targetQuestion = allQuestions[currentQuestionIndex];
+        targetQuestion = state.allQuestions[state.currentQuestionIndex];
         if (targetQuestion && targetQuestion.id) {
             mainQuestionId = `q_${targetQuestion.id}`;
         }
@@ -91,71 +84,42 @@ function resolveGridResponseTarget(questionId, rowId, fallbackQuestionId) {
     return { mainQuestionId, actualSubquestionId: gridRow ? (gridRow.id || rowIndex.toString()) : rowIndex.toString() };
 }
 
-// Restore previous answer
+const queryAll = selector => [...document.querySelectorAll(selector)];
+const attr = value => CSS.escape(String(value));
+const check = nodes => nodes.forEach(node => { node.checked = true; });
+
+// Restore previous answer into the rendered question
 function restoreAnswer(questionId) {
-    const response = surveyResponses[`q_${questionId}`];
-    if (response) {
-        // Handle grid questions first (like DASS-21 with subquestions)
-        if (response.grid_responses) {
-            Object.keys(response.grid_responses).forEach(rowId => {
-                const value = response.grid_responses[rowId];
-                if (Array.isArray(value)) {
-                    // Checkbox grid: restore multiple selections
-                    value.forEach(v => {
-                        const checkbox = $(`input[data-row-id="${rowId}"][value="${v}"]`);
-                        if (checkbox.length) {
-                            checkbox.prop('checked', true);
-                        }
-                    });
-                } else {
-                    // Radio grid: restore single selection
-                    const radio = $(`input[data-row-id="${rowId}"][value="${value}"]`);
-                    if (radio.length) {
-                        radio.prop('checked', true);
-                    }
-                }
-            });
-        }
-        // Handle different response types for regular questions
-        else if (response.answer_id !== undefined && response.answer_id !== null) {
-            // Radio button or dropdown
-            const input = $(`input[name="q_${questionId}"][value="${response.answer_id}"], select[name="q_${questionId}"]`);
-            if (input.length) {
-                if (input.is('select')) {
-                    input.val(response.answer_id);
-                } else {
-                    input.prop('checked', true);
-                }
-            }
-        } else if (response.answer_ids) {
-            // Checkboxes
-            response.answer_ids.forEach(answerId => {
-                const checkbox = $(`input[name="q_${questionId}[]"][value="${answerId}"]`);
-                if (checkbox.length) {
-                    checkbox.prop('checked', true);
-                }
-            });
-        } else if (response.answer_text) {
-            // Text input or textarea
-            const textInput = $(`input[name="q_${questionId}"], textarea[name="q_${questionId}"]`);
-            if (textInput.length) {
-                textInput.val(response.answer_text);
-                updateCharacterCounter(textInput);
-            }
-        } else if (response.answer_value !== undefined && response.answer_value !== null) {
-            // Date, time, or datetime-local
-            const dateInput = $(`input[name="q_${questionId}"]`);
-            if (dateInput.length) {
-                dateInput.val(response.answer_value);
-            }
-        }
+    const response = state.surveyResponses[`q_${questionId}`];
+    if (!response) return;
+    const name = attr(`q_${questionId}`);
+    if (response.grid_responses) {
+        // Grid questions (like DASS-21 with subquestions): checkbox rows hold arrays, radio rows a single value
+        Object.entries(response.grid_responses).forEach(([rowId, value]) => {
+            (Array.isArray(value) ? value : [value]).forEach(v => check(queryAll(`input[data-row-id="${attr(rowId)}"][value="${attr(v)}"]`)));
+        });
+    } else if (response.answer_id !== undefined && response.answer_id !== null) {
+        // Radio button or dropdown
+        const inputs = queryAll(`input[name="${name}"][value="${attr(response.answer_id)}"], select[name="${name}"]`);
+        if (inputs.some(node => node.tagName === 'SELECT')) inputs.forEach(node => { node.value = String(response.answer_id); });
+        else check(inputs);
+    } else if (response.answer_ids) {
+        response.answer_ids.forEach(answerId => check(queryAll(`input[name="${name}[]"][value="${attr(answerId)}"]`)));
+    } else if (response.answer_text) {
+        // Text input or textarea
+        const textInputs = queryAll(`input[name="${name}"], textarea[name="${name}"]`);
+        textInputs.forEach(node => { node.value = response.answer_text; });
+        if (textInputs.length) updateCharacterCounter(textInputs[0]);
+    } else if (response.answer_value !== undefined && response.answer_value !== null) {
+        // Date, time, or datetime-local
+        queryAll(`input[name="${name}"]`).forEach(node => { node.value = response.answer_value; });
     }
 }
 
 // Hydrate stored answer IDs into the existing question renderer's state.
 function restoreSavedSurveyResponses(answers) {
-    surveyResponses = {};
-    allQuestions.forEach(question => {
+    state.surveyResponses = {};
+    state.allQuestions.forEach(question => {
         const key = `q_${question.id}`;
         if (['multiple_choice_grid', 'checkbox_grid'].includes(question.type)) {
             const gridResponses = {};
@@ -165,13 +129,15 @@ function restoreSavedSurveyResponses(answers) {
                     gridResponses[String(row.id ?? index)] = answers[savedKey];
                 }
             });
-            if (Object.keys(gridResponses).length) surveyResponses[key] = {grid_responses: gridResponses};
+            if (Object.keys(gridResponses).length) state.surveyResponses[key] = {grid_responses: gridResponses};
         } else if (Object.prototype.hasOwnProperty.call(answers, String(question.id))) {
             const value = answers[String(question.id)];
             let field = Array.isArray(value) ? 'answer_ids' : 'answer_id';
             if (['short_answer', 'paragraph'].includes(question.type)) field = 'answer_text';
             else if (['date', 'time'].includes(question.type)) field = 'answer_value';
-            surveyResponses[key] = {[field]: value};
+            state.surveyResponses[key] = {[field]: value};
         }
     });
 }
+
+export { handleGridQuestionResponse, restoreAnswer, restoreSavedSurveyResponses, validateGridQuestion };

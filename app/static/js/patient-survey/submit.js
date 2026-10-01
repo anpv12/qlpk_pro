@@ -1,87 +1,68 @@
-/* global allQuestions, canProceedSurveyQuestion, checkSessionStatus, clearSurveyResponsesFromStorage, collectTemplateResponses, currentQuestionIndex: writable, displaySurveyTimeInfo, draftStorageKey, draftTimer, flushSurveyDraft, isPreviewMode, isSurveyClosed, isSurveyCompleted: writable, isSurveyExpired, reviewData, reviewOrderId, reviewSummary, showQuestion, surveyResponses, surveySessionData, surveyTemplates, updateProgress */
-/* exported submitSurvey */
+import { state } from './state.js';
+import { byId, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
+import { disableSurveyInputs, showResultSummary } from './view.js';
+import { collectTemplateResponses, draftStorageKey, flushSurveyDraft, reviewSummary } from './review-draft.js';
+import { checkSessionStatus, clearSurveyResponsesFromStorage, displaySurveyTimeInfo, reviewOrderId } from '../patient-survey.js';
+import { canProceedSurveyQuestion, isPreviewMode, updateProgress } from './interaction.js';
+import { showQuestion } from './questions.js';
 
-// Submit survey
-function runSurveySubmit1(ctx) {
-	ctx.submitBtn = $('#next');
-	ctx.originalText = ctx.submitBtn.text();
-	// Disable button and show loading
-	ctx.submitBtn.prop('disabled', true).text('Đang gửi...');
-	const examinationId = localStorage.getItem('current_examination_id');
-	const patientId = localStorage.getItem('current_patient_id');
-	// Prepare data for each template
-	ctx.submissions = [];
-	surveyTemplates.forEach(template => {
-	    const templateResponses = collectTemplateResponses(template.id);
-	    const hasResponses = Object.keys(templateResponses).length > 0;
-	    if (hasResponses) {
-	        ctx.submissions.push({
-	            examination_id: parseInt(examinationId),
-	            survey_template_id: parseInt(template.id),
-	            patient_id: parseInt(patientId),
-	            session_token: new URLSearchParams(window.location.search).get('session_token'),
-	            responses: templateResponses
-	        });
-	    }
-	});
-	// Submit each template response
-	ctx.submittedCount = 0;
-	ctx.totalSubmissions = ctx.submissions.length;
+function setSubmitButton(button, text, disabled) {
+    if (!button) return;
+    button.textContent = text;
+    button.disabled = disabled;
 }
 
-function runSurveySubmit2(ctx) {
-	ctx.submissions.forEach((submission) => {
+// One submission per template that has answers
+function buildSubmissions() {
+    const examinationId = localStorage.getItem('current_examination_id');
+    const patientId = localStorage.getItem('current_patient_id');
+    const sessionToken = new URLSearchParams(window.location.search).get('session_token');
+    return state.surveyTemplates
+        .map(template => ({ template, responses: collectTemplateResponses(template.id) }))
+        .filter(({ responses }) => Object.keys(responses).length > 0)
+        .map(({ template, responses }) => ({
+            examination_id: parseInt(examinationId),
+            survey_template_id: parseInt(template.id),
+            patient_id: parseInt(patientId),
+            session_token: sessionToken,
+            responses
+        }));
+}
 
+function finishSubmission(submitBtn) {
+    setSubmitButton(submitBtn, 'Hoàn thành!', true);
+    showAlert('success', 'Khảo sát đã được gửi thành công!');
+    state.isSurveyCompleted = true;
+    clearTimeout(state.draftTimer);
+    localStorage.removeItem(draftStorageKey());
+    // Reload session data để hiển thị thời gian hoàn thành
+    checkSessionStatus(new URLSearchParams(window.location.search).get('session_token')).then(() => {
+        if (state.surveySessionData) displaySurveyTimeInfo();
+    });
+    clearSurveyResponsesFromStorage();
+    // Update progress TRƯỚC KHI hideActionButtons để đảm bảo progress hiển thị đúng
+    updateProgress();
+    hideActionButtons();
+}
 
-	    $.ajax({
-	        url: '/api/survey-responses/public',
-	        method: 'POST',
-	        headers: {
-	            'Content-Type': 'application/json'
-	        },
-	        data: JSON.stringify(submission),
-	        success: function(response) {
-	            ctx.submittedCount++;
-	            $('#survey-result-summary').html(window.renderSurveyResultSummary?.(response.data?.result_summary) || '');
-
-	            if (ctx.submittedCount === ctx.totalSubmissions) {
-	                // All submissions completed
-	                ctx.submitBtn.text('Hoàn thành!');
-	                showAlert('success', 'Khảo sát đã được gửi thành công!');
-
-	                // Set flag completed trước
-	                isSurveyCompleted = true;
-	                clearTimeout(draftTimer);
-	                localStorage.removeItem(draftStorageKey());
-
-	                // Update session status to completed và đợi reload session data
-	                checkSessionStatus(new URLSearchParams(window.location.search).get('session_token')).then(() => {
-	                    // Đảm bảo hiển thị thời gian hoàn thành ngay lập tức
-	                    if (surveySessionData) {
-	                        displaySurveyTimeInfo();
-	                    }
-	                });
-
-	                // Clear localStorage since survey is completed
-	                clearSurveyResponsesFromStorage();
-
-	                // Update progress TRƯỚC KHI hideActionButtons để đảm bảo progress hiển thị đúng
-	                updateProgress();
-
-	                // Hide action buttons and show completion state
-	                hideActionButtons();
-	            }
-	        },
-	        error: function() {
-	            ctx.submitBtn.prop('disabled', false).text(ctx.originalText);
-	            showAlert('error', 'Lỗi khi gửi kết quả khảo sát. Vui lòng thử lại.');
-	        }
-	    });
-	});
+// Each template is posted independently; the page completes when every post succeeded
+function postSubmissions(submissions, submitBtn, originalText) {
+    let submittedCount = 0;
+    submissions.forEach(async submission => {
+        try {
+            const response = await requestJson('/api/survey-responses/public', { method: 'POST', json: submission });
+            submittedCount++;
+            showResultSummary(response?.data?.result_summary);
+            if (submittedCount === submissions.length) finishSubmission(submitBtn);
+        } catch {
+            setSubmitButton(submitBtn, originalText, false);
+            showAlert('error', 'Lỗi khi gửi kết quả khảo sát. Vui lòng thử lại.');
+        }
+    });
 }
 
 async function submitSurvey() {
-    const ctx = {};
     if (reviewOrderId !== null) return;
     // Check if this is preview mode
     if (isPreviewMode()) {
@@ -92,23 +73,23 @@ async function submitSurvey() {
         hideActionButtons();
         return;
     }
-    if (isSurveyClosed) {
+    if (state.isSurveyClosed) {
         showAlert('info', 'Khảo sát đã được đóng và không thể gửi thêm kết quả.');
         return; // Ngăn chặn gửi nếu khảo sát đã đóng
     }
-    if (isSurveyCompleted) {
+    if (state.isSurveyCompleted) {
         showAlert('info', 'Bài khảo sát đã được nộp. Bạn có thể xem lại nhưng không thể gửi thêm.');
         return; // Ngăn chặn gửi nếu khảo sát đã hoàn thành
     }
-    if (isSurveyExpired) {
+    if (state.isSurveyExpired) {
         showAlert('error', 'Khảo sát đã hết hạn và ngừng nhận bài nộp. Vui lòng liên hệ cơ sở y tế nếu cần làm khảo sát mới.');
         return; // Ngăn chặn gửi nếu khảo sát đã hết hạn
     }
-    const missingRequired = allQuestions.find(question =>
-        !canProceedSurveyQuestion(question, surveyResponses[`q_${question.id}`]));
+    const missingRequired = state.allQuestions.find(question =>
+        !canProceedSurveyQuestion(question, state.surveyResponses[`q_${question.id}`]));
     if (missingRequired) {
-        currentQuestionIndex = allQuestions.indexOf(missingRequired);
-        showQuestion(currentQuestionIndex);
+        state.currentQuestionIndex = state.allQuestions.indexOf(missingRequired);
+        showQuestion(state.currentQuestionIndex);
         showAlert('error', 'Vui lòng trả lời đủ các câu hỏi bắt buộc trước khi nộp bài.');
         return;
     }
@@ -116,100 +97,69 @@ async function submitSurvey() {
         showAlert('error', 'Chưa đồng bộ được bài khảo sát. Vui lòng kiểm tra thông báo lưu tiến độ.');
         return;
     }
-    runSurveySubmit1(ctx);
-    if (ctx.totalSubmissions === 0) {
-        ctx.submitBtn.prop('disabled', false).text(ctx.originalText);
+    const submitBtn = byId('next');
+    const originalText = submitBtn?.textContent || '';
+    setSubmitButton(submitBtn, 'Đang gửi...', true);
+    const submissions = buildSubmissions();
+    if (!submissions.length) {
+        setSubmitButton(submitBtn, originalText, false);
         showAlert('error', 'Vui lòng trả lời ít nhất một câu hỏi trước khi nộp bài.');
         return;
     }
-    runSurveySubmit2(ctx);
+    postSubmissions(submissions, submitBtn, originalText);
 }
 
-// Show alert message
+// Show alert message (one at a time, auto-dismissed after 5 seconds)
 function showAlert(type, message) {
-    const alertClass = type === 'error' ? 'error' : '';
-    const alertHtml = `
-        <div class="custom-alert ${alertClass}" role="alert">
-            <div class="alert-message">${window.QLPKHtml.escape(message)}</div>
-            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="alert-close" data-qlpk-call="closeAlert" data-qlpk-args='["$this"]'>×</button>
-        </div>
-    `;
-
-    // Remove existing alerts
-    $('#alert-container').empty();
-
-    // Add new alert
-    $('#alert-container').html(alertHtml);
-
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        closeAlert($('.custom-alert .alert-close')[0]);
-    }, 5000);
+    const closeButton = el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'alert-close' }, '×');
+    const alertNode = el('div', { class: type === 'error' ? 'custom-alert error' : 'custom-alert', role: 'alert' }, el('div', { class: 'alert-message' }, message), ' ', closeButton);
+    closeButton.addEventListener('click', () => closeAlert(alertNode));
+    replace(byId('alert-container'), alertNode);
+    setTimeout(() => closeAlert(document.querySelector('.custom-alert')), 5000);
 }
 
-// Close alert function
-function closeAlert(button) {
-    const alert = $(button).closest('.custom-alert');
-    alert.addClass('fade-out');
-    setTimeout(() => {
-        alert.remove();
-    }, 300);
+function closeAlert(alertNode) {
+    if (!alertNode) return;
+    alertNode.classList.add('fade-out');
+    setTimeout(() => alertNode.remove(), 300);
 }
 
 // Hide action buttons and show completion state
 function completionCopy() {
     if (reviewOrderId !== null) return reviewSummary();
-    if (isSurveyCompleted) return { title: 'Nộp bài thành công!', text: 'Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.' };
+    if (state.isSurveyCompleted) return { title: 'Nộp bài thành công!', text: 'Cảm ơn bạn đã tham gia khảo sát tâm lý. Kết quả đã được gửi đến bác sĩ.' };
     return { title: 'Khảo sát đã kết thúc', text: 'Các câu trả lời đã lưu được giữ lại. Khảo sát không nhận thêm thay đổi.' };
 }
 
 function hideActionButtons() {
-    // Hide all action buttons
-    $('.btn-start-over, .btn-previous, .btn-next, .btn-submit').hide();
-
-    // Show completion message
+    document.querySelectorAll('.btn-start-over, .btn-previous, .btn-next, .btn-submit').forEach(button => { button.hidden = true; });
     const completion = completionCopy();
-    const completionHtml = `
-        <div class="completion-message">
-            <div class="completion-content">
-                <div class="completion-icon ${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? 'completion-icon--pending' : ''}">${reviewOrderId !== null && reviewData?.review_state !== 'submitted' ? '…' : '✓'}</div>
-                <div class="completion-text">
-                    <h4>${window.QLPKHtml.escape(completion.title)}</h4>
-                    <p>${window.QLPKHtml.escape(completion.text)}</p>
-                </div>
-            </div>
-            <div class="completion-buttons">
-                <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-outline btn-return-to-view ${currentQuestionIndex === 0 ? 'survey-action-hidden' : ''}">Trở lại</button>
-                <button type="button" class="btn btn-primary btn-next-to-view ${currentQuestionIndex === allQuestions.length - 1 ? 'survey-action-hidden' : ''}">Tiếp theo</button>
-            </div>
-        </div>
-    `;
-
+    const pending = reviewOrderId !== null && state.reviewData?.review_state !== 'submitted';
+    const returnButton = el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: ['btn btn-outline btn-return-to-view', state.currentQuestionIndex === 0 && 'survey-action-hidden'].filter(Boolean).join(' ') }, 'Trở lại');
+    const nextButton = el('button', { type: 'button', class: ['btn btn-primary btn-next-to-view', state.currentQuestionIndex === state.allQuestions.length - 1 && 'survey-action-hidden'].filter(Boolean).join(' ') }, 'Tiếp theo');
     // Replace action buttons with completion message
-    $('.actions .row').html(completionHtml);
+    const row = document.querySelector('.actions .row');
+    if (row) replace(row, el('div', { class: 'completion-message' },
+        el('div', { class: 'completion-content' },
+            el('div', { class: pending ? 'completion-icon completion-icon--pending' : 'completion-icon' }, pending ? '…' : '✓'),
+            el('div', { class: 'completion-text' }, el('h4', {}, completion.title), el('p', {}, completion.text))),
+        el('div', { class: 'completion-buttons' }, returnButton, ' ', nextButton)));
 
     // Only disable inputs if survey is closed (not if just completed - allow review)
-    if (isSurveyClosed) {
-        $('#survey-content input, #survey-content select, #survey-content textarea').prop('disabled', true);
-    }
+    if (state.isSurveyClosed) disableSurveyInputs();
 
-    // KHÔNG gọi updateProgress() ở đây nữa vì đã được gọi trước đó trong showClosedSurveyMessage()
-    // Progress sẽ được update trong showQuestion() mỗi khi chuyển câu hỏi
-
-    // Bind events for navigation buttons
-    $('.btn-return-to-view').on('click', function() {
-        // Go to previous question
-        if (currentQuestionIndex > 0) {
-            currentQuestionIndex--;
-            showQuestion(currentQuestionIndex);
+    returnButton.addEventListener('click', () => {
+        if (state.currentQuestionIndex > 0) {
+            state.currentQuestionIndex--;
+            showQuestion(state.currentQuestionIndex);
         }
     });
-
-    $('.btn-next-to-view').on('click', function() {
-        // Go to next question
-        if (currentQuestionIndex < allQuestions.length - 1) {
-            currentQuestionIndex++;
-            showQuestion(currentQuestionIndex);
+    nextButton.addEventListener('click', () => {
+        if (state.currentQuestionIndex < state.allQuestions.length - 1) {
+            state.currentQuestionIndex++;
+            showQuestion(state.currentQuestionIndex);
         }
     });
 }
+
+export { hideActionButtons, showAlert, submitSurvey };
