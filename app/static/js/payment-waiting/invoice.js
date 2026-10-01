@@ -1,333 +1,133 @@
-/* global buildPaymentConfirmOptions, getSafeApiErrorMessage, handleSmartMoneyInput, isConfirmInvoiceSubmitting: writable, loadPaymentData, showCustomToast */
-/* exported confirmInvoice, deletePayment, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist, toggleAllPrescriptions */
+import { state } from './state.js';
+import { byId, el, icon } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
+import { getSafeApiErrorMessage, showCustomToast } from '../payment-waiting.js';
+import { handleSmartMoneyInput } from './output.js';
+import { loadPaymentData } from './list.js';
+
+const moneyValue = id => handleSmartMoneyInput(byId(id)?.value) || 0;
+const moneyText = id => handleSmartMoneyInput(byId(id)?.textContent) || 0;
+
+function setExportButton(disabled, label) {
+	const button = byId('exportInvoiceBtn');
+	if (!button) return;
+	if (label) button.textContent = label;
+	button.disabled = disabled;
+}
 
 // Confirm invoice
-function confirmInvoice(examinationId) {
-	if (isConfirmInvoiceSubmitting) return;
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
+async function confirmInvoice(examinationId) {
+	if (state.isConfirmInvoiceSubmitting) return;
+	if (!window.QLPKApiTransport.hasSession()) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại');
 		return;
 	}
 
-	// Lấy thông tin thanh toán từ form
-	const advancePayment = handleSmartMoneyInput($('#advancePayment').val()) || 0;
-	const amountPaid = handleSmartMoneyInput($('#amountPaid').val()) || 0;
-	const actualPrice = handleSmartMoneyInput($('#total').text()) || 0; // Tổng tiền sau thuế
-	const finalAmount = handleSmartMoneyInput($('#finalAmount').text()) || 0;
-	const changeAmount = handleSmartMoneyInput($('#changeAmount').text()) || 0;
+	const advancePayment = moneyValue('advancePayment');
+	const amountPaid = moneyValue('amountPaid');
+	const actualPrice = moneyText('total'); // Tổng tiền sau thuế
+	const finalAmount = moneyText('finalAmount');
+	const changeAmount = moneyText('changeAmount');
 
-	if (advancePayment < 0 || amountPaid < 0 || actualPrice < 0) {
-		showCustomToast('error', 'Số tiền không được âm');
-		return;
-	}
-	if (advancePayment > actualPrice) {
-		showCustomToast('error', 'Đã nhận trước không được lớn hơn tổng tiền');
-		return;
-	}
-	if (amountPaid < finalAmount) {
-		showCustomToast('error', 'Số tiền trả chưa đủ để xác nhận hóa đơn');
-		return;
-	}
-	if (changeAmount < 0) {
-		showCustomToast('error', 'Tiền thối không hợp lệ');
-		return;
-	}
+	if (advancePayment < 0 || amountPaid < 0 || actualPrice < 0) return showCustomToast('error', 'Số tiền không được âm');
+	if (advancePayment > actualPrice) return showCustomToast('error', 'Đã nhận trước không được lớn hơn tổng tiền');
+	if (amountPaid < finalAmount) return showCustomToast('error', 'Số tiền trả chưa đủ để xác nhận hóa đơn');
+	if (changeAmount < 0) return showCustomToast('error', 'Tiền thối không hợp lệ');
 
-	// Hiển thị confirm dialog
-	Swal.fire(buildPaymentConfirmOptions({
+	const confirmed = await window.QLPKConfirmationDialog.confirm({
 		title: 'Xác nhận hóa đơn?',
 		text: 'Bạn có chắc chắn muốn xác nhận hóa đơn này? Sau khi xác nhận, không thể chỉnh sửa nữa.',
 		icon: 'question',
-		confirmText: 'Xác nhận',
-		cancelText: 'Hủy',
-		variant: 'success'
-	})).then((result) => {
-		if (result.isConfirmed) {
-			isConfirmInvoiceSubmitting = true;
-			$('#exportInvoiceBtn').prop('disabled', true);
-
-			// Gọi API để xác nhận
-			$.ajax({
-				url: `/api/payment-waiting/${examinationId}/confirm`,
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				data: JSON.stringify({
-					advance_payment: advancePayment,
-					amount_paid: amountPaid,
-					actual_price: actualPrice
-				}),
-				success: function () {
-					showCustomToast('success', 'Xác nhận hóa đơn thành công');
-
-					// Disable tất cả form fields
-					disableInvoiceForm();
-
-					// Đổi text nút thành "Đã xác nhận"
-					$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true);
-
-					// Refresh danh sách sau khi xác nhận
-					loadPaymentData();
-				},
-				error: function () {
-					$('#exportInvoiceBtn').prop('disabled', false);
-					showCustomToast('error', 'Có lỗi xảy ra khi xác nhận hóa đơn');
-				},
-				complete: function () {
-					isConfirmInvoiceSubmitting = false;
-				}
-			});
-		}
+		variant: 'success',
+		showToast: (type, message) => showCustomToast(type, message)
 	});
+	if (!confirmed) return;
+
+	state.isConfirmInvoiceSubmitting = true;
+	setExportButton(true);
+	try {
+		await requestJson(`/api/payment-waiting/${examinationId}/confirm`, { method: 'PUT', json: {
+			advance_payment: advancePayment,
+			amount_paid: amountPaid,
+			actual_price: actualPrice
+		} });
+		showCustomToast('success', 'Xác nhận hóa đơn thành công');
+		disableInvoiceForm();
+		setExportButton(true, 'Đã xác nhận');
+		loadPaymentData();
+	} catch {
+		setExportButton(false);
+		showCustomToast('error', 'Có lỗi xảy ra khi xác nhận hóa đơn');
+	} finally {
+		state.isConfirmInvoiceSubmitting = false;
+	}
 }
 
-// Disable tất cả form fields trong invoice
+// Khóa toàn bộ form hóa đơn sau khi xác nhận
 function disableInvoiceForm() {
-	// Disable các input fields chính + financial summary
-	$('#examinationDetailContent #examinationDate, #examinationDetailContent #examinationTime, #examinationDetailContent #examinationType').prop('disabled', true);
-	$('#examinationDetailContent #patientName, #examinationDetailContent #patientPhone, #examinationDetailContent #patientBirthDate').prop('disabled', true);
-	$('#examinationDetailContent #advancePayment, #examinationDetailContent #amountPaid').prop('disabled', true);
-
-	// Disable tất cả buttons trong nội dung modal
-	$('#examinationDetailContent button').prop('disabled', true);
-	$('#addServiceBtn').prop('disabled', true);
-
-	// Disable checkboxes
-	$('#examinationDetailContent input[type="checkbox"]').prop('disabled', true);
-
-	// Disable select dropdowns
-	$('#examinationDetailContent select').prop('disabled', true);
-
-	// Thêm class để hiển thị trạng thái disabled
-	$('#examinationDetailContent').addClass('invoice-confirmed');
+	const content = byId('examinationDetailContent');
+	if (!content) return;
+	const fieldIds = ['examinationDate', 'examinationTime', 'examinationType', 'patientName', 'patientPhone', 'patientBirthDate', 'advancePayment', 'amountPaid'];
+	const fields = fieldIds.map(id => content.querySelector(`#${id}`));
+	const controls = content.querySelectorAll('button, input[type="checkbox"], select');
+	[...fields, ...controls, byId('addServiceBtn')].forEach(node => { if (node) node.disabled = true; });
+	content.classList.add('invoice-confirmed');
 }
 
-
-// Toggle all prescriptions
 function toggleAllPrescriptions() {
-	const isChecked = $('#selectAllPrescriptions').is(':checked');
-	$('.prescription-checkbox').prop('checked', isChecked);
+	const isChecked = Boolean(byId('selectAllPrescriptions')?.checked);
+	document.querySelectorAll('.prescription-checkbox').forEach(box => { box.checked = isChecked; });
 }
-
 
 // Delete payment - hiển thị modal chọn hành động trả lại
-function deletePayment(paymentId) {
-	// Hiển thị modal với các options trả lại
-	window.CustomModal.confirm(
-		'Bạn muốn thực hiện hành động gì?',
-		'Chọn hành động'
-	).then((confirmed) => {
-		if (confirmed) {
-			// Hiển thị modal chọn hành động
-			showActionSelectionModal(paymentId);
-		}
-	});
+async function deletePayment(paymentId) {
+	const confirmed = await window.CustomModal.confirm('Bạn muốn thực hiện hành động gì?', 'Chọn hành động');
+	if (confirmed) showActionSelectionModal(paymentId);
 }
 
-function buildActionSelectionModalHtml(safePaymentId) {
-	return `
-        <div class="modal fade qlpk-action-selection-modal" id="actionSelectionModal" tabindex="-1" aria-labelledby="actionSelectionModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Chọn hành động</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="d-grid gap-2">
-                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-warning js-return-action" data-return-action="receptionist" data-payment-id="${safePaymentId}">
-                                <i class="bi bi-arrow-left-circle"></i> Trả về lễ tân
-                            </button>
-                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-info js-return-action" data-return-action="doctor" data-payment-id="${safePaymentId}">
-                                <i class="bi bi-arrow-left-circle"></i> Trả về bác sĩ
-                            </button>
-                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-secondary js-return-action" data-return-action="psychologist" data-payment-id="${safePaymentId}">
-                                <i class="bi bi-arrow-left-circle"></i> Trả về tâm lý gia
-                            </button>
-                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-danger js-return-action" data-return-action="appointment" data-payment-id="${safePaymentId}">
-                                <i class="bi bi-arrow-left"></i> Trả về lịch hẹn
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Hiển thị modal chọn hành động trả lại
-function showActionSelectionModal(paymentId) {
-	const safePaymentId = Number(paymentId) || 0;
-	// Tạo lại modal mỗi lần để tránh giữ paymentId cũ
-	$('#actionSelectionModal').remove();
-
-	const modalHtml = buildActionSelectionModalHtml(safePaymentId);
-	$('body').append(modalHtml);
-
-	// Hiển thị modal
-	const modal = new bootstrap.Modal(document.getElementById('actionSelectionModal'));
-	modal.show();
-}
-
-// Trả về lễ tân
-function returnToReceptionist(paymentId) {
-	// Đóng modal
-	const modal = bootstrap.Modal.getInstance(document.getElementById('actionSelectionModal'));
-	modal.hide();
-
-	window.CustomModal.confirm(
-		'Bạn có chắc chắn muốn trả bệnh nhân này về lễ tân?',
-		'Trả về lễ tân'
-	).then((confirmed) => {
-		if (confirmed) {
-			executeReturnToReceptionist(paymentId);
-		}
-	});
-}
-
-// Trả về bác sĩ
-function returnToDoctor(paymentId) {
-	// Đóng modal
-	const modal = bootstrap.Modal.getInstance(document.getElementById('actionSelectionModal'));
-	modal.hide();
-
-	window.CustomModal.confirm(
-		'Bạn có chắc chắn muốn trả bệnh nhân này về bác sĩ?',
-		'Trả về bác sĩ'
-	).then((confirmed) => {
-		if (confirmed) {
-			executeReturnToDoctor(paymentId);
-		}
-	});
-}
-
-// Trả về tâm lý gia
-function returnToPsychologist(paymentId) {
-	// Đóng modal
-	const modal = bootstrap.Modal.getInstance(document.getElementById('actionSelectionModal'));
-	modal.hide();
-
-	window.CustomModal.confirm(
-		'Bạn có chắc chắn muốn trả bệnh nhân này về tâm lý gia?',
-		'Trả về tâm lý gia'
-	).then((confirmed) => {
-		if (confirmed) {
-			executeReturnToPsychologist(paymentId);
-		}
-	});
-}
-
-// Trả về lịch hẹn
-function returnToAppointment(paymentId) {
-	// Đóng modal
-	const modal = bootstrap.Modal.getInstance(document.getElementById('actionSelectionModal'));
-	modal.hide();
-
-	window.CustomModal.confirm(
-		'Bạn có chắc chắn muốn trả bệnh nhân này về lịch hẹn?',
-		'Trả về lịch hẹn'
-	).then((confirmed) => {
-		if (confirmed) {
-			executeReturnToAppointment(paymentId);
-		}
-	});
-}
-
-// Thực hiện trả về lễ tân
-function executeReturnToReceptionist(paymentId) {
-
-	// Sử dụng API update status trực tiếp: WAITING_TRANSFER (chờ chuyển khám)
-	$.ajax({
-		url: `/examinations/${paymentId}/status`,
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			status: 'WAITING_TRANSFER'
-		}),
-		success: function () {
-			showCustomToast('success', 'Trả về lễ tân thành công!');
-			loadPaymentData(); // Reload data
-		},
-		error: function (xhr) {
-			const errorMsg = getSafeApiErrorMessage(xhr, 'Có lỗi xảy ra khi trả về lễ tân');
-			showCustomToast('error', errorMsg);
-		}
-	});
-}
-
-// Thực hiện trả về bác sĩ
-function executeReturnToDoctor(paymentId) {
-
-	// Sử dụng API update status trực tiếp: DOCTOR_EXAM (bác sĩ khám)
-	$.ajax({
-		url: `/examinations/${paymentId}/status`,
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			status: 'DOCTOR_EXAM'
-		}),
-		success: function () {
-			showCustomToast('success', 'Trả về bác sĩ thành công!');
-			loadPaymentData(); // Reload data
-		},
-		error: function (xhr) {
-			const errorMsg = getSafeApiErrorMessage(xhr, 'Có lỗi xảy ra khi trả về bác sĩ');
-			showCustomToast('error', errorMsg);
-		}
-	});
-}
-
-// Thực hiện trả về tâm lý gia
-function executeReturnToPsychologist(paymentId) {
-
-	// Sử dụng API update status trực tiếp: PSYCHOLOGIST_EXAM (tâm lý gia khám)
-	$.ajax({
-		url: `/examinations/${paymentId}/status`,
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			status: 'PSYCHOLOGIST_EXAM'
-		}),
-		success: function () {
-			showCustomToast('success', 'Trả về tâm lý gia thành công!');
-			loadPaymentData(); // Reload data
-		},
-		error: function (xhr) {
-			const errorMsg = getSafeApiErrorMessage(xhr, 'Có lỗi xảy ra khi trả về tâm lý gia');
-			showCustomToast('error', errorMsg);
-		}
-	});
-}
-
-// Thực hiện trả về lịch hẹn
-function executeReturnToAppointment(paymentId) {
-
+const RETURN_TARGETS = {
+	receptionist: { label: 'Trả về lễ tân', buttonClass: 'btn-warning', iconName: 'bi-arrow-left-circle', status: 'WAITING_TRANSFER', target: 'lễ tân' },
+	doctor: { label: 'Trả về bác sĩ', buttonClass: 'btn-info', iconName: 'bi-arrow-left-circle', status: 'DOCTOR_EXAM', target: 'bác sĩ' },
+	psychologist: { label: 'Trả về tâm lý gia', buttonClass: 'btn-secondary', iconName: 'bi-arrow-left-circle', status: 'PSYCHOLOGIST_EXAM', target: 'tâm lý gia' },
 	// Tạm thời dùng cùng WAITING_TRANSFER như luồng trả lễ tân theo backend hiện tại.
-	// Nếu backend tách trạng thái lịch hẹn riêng, cập nhật lại mapping tại đây.
-	$.ajax({
-		url: `/examinations/${paymentId}/status`,
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			status: 'WAITING_TRANSFER'
-		}),
-		success: function () {
-			showCustomToast('success', 'Trả về lịch hẹn thành công!');
-			loadPaymentData(); // Reload data
-		},
-		error: function (xhr) {
-			const errorMsg = getSafeApiErrorMessage(xhr, 'Có lỗi xảy ra khi trả về lịch hẹn');
-			showCustomToast('error', errorMsg);
-		}
-	});
+	appointment: { label: 'Trả về lịch hẹn', buttonClass: 'btn-danger', iconName: 'bi-arrow-left', status: 'WAITING_TRANSFER', target: 'lịch hẹn' },
+};
+
+function buildActionSelectionModal(paymentId) {
+	const actions = Object.entries(RETURN_TARGETS).map(([action, { label, buttonClass, iconName }]) =>
+		el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: `btn ${buttonClass} js-return-action`, 'data-return-action': action, 'data-payment-id': paymentId },
+			icon(iconName), ` ${label}`));
+	return el('div', { class: 'modal fade qlpk-action-selection-modal', id: 'actionSelectionModal', tabindex: '-1', 'aria-labelledby': 'actionSelectionModalLabel', 'aria-hidden': 'true' },
+		el('div', { class: 'modal-dialog modal-dialog-centered' }, el('div', { class: 'modal-content' },
+			el('div', { class: 'modal-header' }, el('h5', { class: 'modal-title' }, 'Chọn hành động'), el('button', { type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' })),
+			el('div', { class: 'modal-body' }, el('div', { class: 'd-grid gap-2' }, actions)))));
 }
+
+// Tạo lại modal mỗi lần để tránh giữ paymentId cũ
+function showActionSelectionModal(paymentId) {
+	byId('actionSelectionModal')?.remove();
+	const modalNode = buildActionSelectionModal(Number(paymentId) || 0);
+	document.body.append(modalNode);
+	new window.bootstrap.Modal(modalNode).show();
+}
+
+async function returnTo(action, paymentId) {
+	const { status, target, label } = RETURN_TARGETS[action];
+	window.bootstrap.Modal.getInstance(byId('actionSelectionModal'))?.hide();
+	const confirmed = await window.CustomModal.confirm(`Bạn có chắc chắn muốn trả bệnh nhân này về ${target}?`, label);
+	if (!confirmed) return;
+	try {
+		await requestJson(`/examinations/${paymentId}/status`, { method: 'PUT', json: { status } });
+		showCustomToast('success', `${label} thành công!`);
+		loadPaymentData();
+	} catch (error) {
+		showCustomToast('error', getSafeApiErrorMessage(error, `Có lỗi xảy ra khi trả về ${target}`));
+	}
+}
+
+const returnToReceptionist = paymentId => returnTo('receptionist', paymentId);
+const returnToDoctor = paymentId => returnTo('doctor', paymentId);
+const returnToPsychologist = paymentId => returnTo('psychologist', paymentId);
+const returnToAppointment = paymentId => returnTo('appointment', paymentId);
+
+export { confirmInvoice, deletePayment, disableInvoiceForm, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist, toggleAllPrescriptions };

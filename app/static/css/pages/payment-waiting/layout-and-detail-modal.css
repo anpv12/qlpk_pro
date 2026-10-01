@@ -296,7 +296,6 @@
 
 	/* ── LOADING ── */
 	.loading-spinner {
-		display: none;
 		text-align: center;
 		padding: 20px;
 	}

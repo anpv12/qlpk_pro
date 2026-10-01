@@ -1,0 +1,138 @@
+{# Invoice detail form for the payment modal; payment-waiting/detail.js clones it and fills the values. #}
+<template id="invoiceDetailFormTemplate">
+	<div id="invoiceDetailForm">
+	    <div class="mb-3">
+		<h5 class="section-title">I. Thông tin ca khám</h5>
+
+		<div class="row g-2">
+		    <div class="col-md-6">
+			<label class="form-label required-field">Ngày khám</label>
+			<input type="date" class="form-control" id="examinationDate" required>
+		    </div>
+		    <div class="col-md-6">
+			<label class="form-label">Người khám</label>
+			<input type="text" class="form-control" id="doctorName" readonly>
+		    </div>
+		    <div class="col-md-6">
+			<label class="form-label required-field">Giờ khám</label>
+			<input type="time" class="form-control" id="examinationTime" required>
+		    </div>
+		    <div class="col-md-6">
+			<label class="form-label required-field">Loại khám</label>
+			<select class="form-select" id="examinationType" required>
+			    <option value="">Chọn loại khám</option>
+			    <option value="SERVICE">Theo dịch vụ</option>
+			    <option value="PACKAGE">Theo gói</option>
+			</select>
+		    </div>
+		</div>
+	    </div>
+	
+	    <div class="mb-3">
+		<h5 class="section-title">II. Thông tin bệnh nhân</h5>
+
+		<div class="patient-section">
+		    <div class="row g-2">
+			<div class="col-md-6">
+			    <label class="form-label required-field">Họ và tên</label>
+			    <input type="text" class="form-control" id="patientName" required>
+			</div>
+			<div class="col-md-6">
+			    <label class="form-label">Giới tính</label>
+			    <input type="text" class="form-control" id="patientGender" readonly>
+			</div>
+			<div class="col-md-6">
+			    <label class="form-label required-field">Số điện thoại</label>
+			    <input type="text" class="form-control" id="patientPhone" required>
+			</div>
+			<div class="col-md-6">
+			    <label class="form-label required-field">Ngày sinh</label>
+			    <input type="text" class="form-control js-datepicker" id="patientBirthDate"
+			       
+				data-alt-format="d/m/Y" data-date-format="Y-m-d"
+				placeholder="Chọn ngày sinh..." required>
+			</div>
+		    </div>
+		</div>
+	    </div>
+	
+	    <div class="mb-3">
+		<h5 class="section-title">III. Các dịch vụ đã sử dụng</h5>
+
+		<div class="service-header">
+		    <div class="service-controls">
+			<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="addServiceBtn">
+			    <i class="bi bi-plus"></i> Thêm dịch vụ
+			</button>
+		    </div>
+		</div>
+
+		<div class="table-responsive">
+		    <table class="table">
+			<thead>
+			    <tr>
+				<th class="text-center pw-invoice-col-stt">STT</th>
+				<th class="pw-invoice-col-name">Tên dịch vụ</th>
+				<th class="pw-invoice-col-price">Đơn giá</th>
+				<th class="text-center pw-invoice-col-percent">Chiết khấu</th>
+				<th class="text-center pw-invoice-col-percent">Thuế GTGT</th>
+				<th class="text-end pw-invoice-col-price">Thành tiền</th>
+				<th class="text-center pw-invoice-col-actions">Thao tác</th>
+			    </tr>
+			</thead>
+			<tbody id="servicesTableBody">
+			    <tr>
+				<td colspan="7" class="text-center text-muted py-4">
+				    <i class="bi bi-inbox pw-empty-icon"></i>
+				    <p class="mt-2">Chưa có dịch vụ nào</p>
+				</td>
+			    </tr>
+			</tbody>
+		    </table>
+		</div>
+	    </div>
+
+	    <div class="mb-4">
+		<h5 class="section-title">IV. Đơn thuốc</h5>
+
+		<div class="table-responsive">
+		    <table class="table">
+			<thead>
+			    <tr>
+				<th class="text-center pw-invoice-col-stt">STT</th>
+				<th class="pw-invoice-col-name">Tên thuốc</th>
+				<th class="pw-invoice-col-price">Liều lượng</th>
+				<th class="pw-invoice-col-percent">Số lượng</th>
+				<th class="pw-invoice-col-percent">Ghi chú</th>
+				<th class="pw-invoice-col-price"></th>
+			    </tr>
+			</thead>
+			<tbody id="prescriptionsTableBody">
+			    <tr>
+				<td colspan="6" class="text-center text-muted py-4">
+				    <i class="bi bi-inbox pw-empty-icon"></i>
+				    <p class="mt-2">Chưa có đơn thuốc nào</p>
+				</td>
+			    </tr>
+			</tbody>
+		    </table>
+		</div>
+	    </div>
+
+	    <div class="mb-4">
+		<h5 class="section-title">V. THÔNG TIN THANH TOÁN</h5>
+	    </div>
+
+	    <div class="financial-summary">
+		<div class="pw-financial-row">Tổng tiền trước thuế: <span id="subtotal" class="pw-financial-value">0 ₫</span></div>
+		<div class="pw-financial-row">Chiết khấu: <span id="discount" class="pw-financial-value">0 ₫</span></div>
+		<div class="pw-financial-row">Thuế GTGT: <span id="vat" class="pw-financial-value">0 ₫</span></div>
+		<div class="pw-financial-row">Tổng tiền sau thuế: <span id="total" class="pw-financial-value">0 ₫</span></div>
+		<div class="pw-financial-row">Đã nhận trước: <input type="text" id="advancePayment" class="form-control form-control-sm money-input pw-money-input" placeholder="0"></div>
+		<div class="pw-financial-row">Cần thanh toán: <span id="finalAmount" class="pw-financial-value">0 ₫</span></div>
+		<div class="pw-financial-row">Số tiền trả: <input type="text" id="amountPaid" class="form-control form-control-sm money-input pw-money-input" placeholder="0"></div>
+		<div class="pw-financial-row">Tiền thối: <span id="changeAmount" class="pw-financial-value">0 ₫</span></div>
+	    </div>
+	
+	</div>
+</template>

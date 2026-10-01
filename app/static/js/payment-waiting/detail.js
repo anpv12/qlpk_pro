@@ -1,299 +1,90 @@
-/* global calculateFinancials, confirmInvoice, disableInvoiceForm, escapeAttr, escapeHtml, financialSummaryCache: writable, formatCurrency, formatCurrencyInput, getSafeApiErrorMessage, isExaminationConfirmed, loadFinancialSummaryFromDB, renderPrescriptionsTable, renderServicesTable, showAddServiceModal, toVietnameseGender, toggleAllPrescriptions */
-/* exported editPayment, financialSummaryCache */
+import { state } from './state.js';
+import { byId, el, icon, replace } from '../shared/dom.js';
+import { HttpError, requestJson } from '../shared/http-json.js';
+import { getSafeApiErrorMessage, isExaminationConfirmed, toVietnameseGender } from '../payment-waiting.js';
+import { calculateFinancials, loadFinancialSummaryFromDB } from './services-parts/financials.js';
+import { formatCurrency, formatCurrencyInput } from './output.js';
+import { confirmInvoice, disableInvoiceForm, toggleAllPrescriptions } from './invoice.js';
+import { renderPrescriptionsTable, renderServicesTable, showAddServiceModal } from './services.js';
 
-// Edit payment - mở modal chi tiết hóa đơn
+const modal = () => window.bootstrap.Modal.getOrCreateInstance(byId('examinationDetailModal'));
+const content = (...nodes) => replace(byId('examinationDetailContent'), ...nodes);
+const loginButton = (label, extra = '') => el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', class: `btn ${extra} js-go-login`.replace(/\s+/g, ' ') },
+	icon('bi-box-arrow-in-right', 'me-2'), label);
+
+function errorState(title, message, ...actions) {
+	return el('div', { class: 'text-center py-5' }, icon('bi-exclamation-triangle', 'text-danger pw-error-icon'),
+		el('h5', { class: 'mt-3 text-danger' }, title), el('p', { class: 'text-muted' }, message), ...actions);
+}
+
+// Edit payment - mở modal chi tiết hóa đơn (payment ID là examination ID)
 function editPayment(paymentId) {
-	// Payment ID chính là Examination ID
 	loadExaminationDetailModal(paymentId);
 }
 
-// Load examination detail modal
-function loadExaminationDetailModal(paymentId) {
-	financialSummaryCache = null;
-
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
-		$('#examinationDetailContent').html(`
-            <div class="text-center py-5">
-                <i class="bi bi-exclamation-triangle text-danger pw-error-icon"></i>
-                <h5 class="mt-3 text-danger">Lỗi xác thực</h5>
-                <p class="text-muted">Vui lòng đăng nhập lại để tiếp tục</p>
-                <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary js-go-login">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
-                </button>
-            </div>
-        `);
-		$('#examinationDetailModal').modal('show');
+async function loadExaminationDetailModal(paymentId) {
+	state.financialSummaryCache = null;
+	if (!window.QLPKApiTransport.hasSession()) {
+		content(errorState('Lỗi xác thực', 'Vui lòng đăng nhập lại để tiếp tục', loginButton('Đăng nhập', 'btn-primary')));
+		modal().show();
 		return;
 	}
-
-	$('#examinationDetailContent').html(`
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang tải...</span>
-            </div>
-            <p class="mt-3 text-muted">Đang tải thông tin hóa đơn...</p>
-        </div>
-    `);
-
-	// Reset trạng thái nút "Xác nhận hoá đơn" về mặc định khi mở modal mới
-	$('#exportInvoiceBtn')
-		.text('Xác nhận hoá đơn')
-		.prop('disabled', false);
-
-	$('#examinationDetailModal').modal('show');
-
-	// Load examination detail data
-	$.ajax({
-		url: `/api/examination-detail/${paymentId}`,
-		method: 'GET',
-		success: function (data) {
-			// Lưu examination ID vào modal và global variable
-			$('#examinationDetailModal').data('examination-id', paymentId);
-			window.currentExaminationId = paymentId;
-			renderExaminationDetailContent(data, paymentId);
-		},
-		error: function (xhr) {
-			let errorMessage = 'Không thể tải thông tin hóa đơn';
-			if (xhr.status === 401) {
-				errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-			} else if (xhr.responseJSON?.detail) {
-				errorMessage = getSafeApiErrorMessage(xhr, errorMessage);
-			}
-			const safeErrorMessage = escapeHtml(errorMessage);
-
-			$('#examinationDetailContent').html(`
-                <div class="text-center py-5">
-                    <i class="bi bi-exclamation-triangle text-danger pw-error-icon"></i>
-                    <h5 class="mt-3 text-danger">Lỗi khi tải thông tin</h5>
-                    <p class="text-muted">${safeErrorMessage}</p>
-                    <div class="mt-3">
-                        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-primary me-2 js-retry-load-invoice" data-payment-id="${Number(paymentId) || 0}">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Thử lại
-                        </button>
-                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn js-go-login">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập lại
-                        </button>
-                    </div>
-                </div>
-            `);
-		}
-	});
+	content(el('div', { class: 'text-center py-5' }, el('div', { class: 'spinner-border text-primary', role: 'status' }, el('span', { class: 'visually-hidden' }, 'Đang tải...')),
+		el('p', { class: 'mt-3 text-muted' }, 'Đang tải thông tin hóa đơn...')));
+	const exportButton = byId('exportInvoiceBtn');
+	exportButton.textContent = 'Xác nhận hoá đơn';
+	exportButton.disabled = false;
+	modal().show();
+	try {
+		const data = await requestJson(`/api/examination-detail/${paymentId}`);
+		byId('examinationDetailModal').dataset.examinationId = paymentId;
+		window.currentExaminationId = paymentId;
+		renderExaminationDetailContent(data, paymentId);
+	} catch (error) {
+		let message = 'Không thể tải thông tin hóa đơn';
+		if (error instanceof HttpError && error.status === 401) message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+		else if (error instanceof HttpError && error.data?.detail) message = getSafeApiErrorMessage(error, message);
+		content(errorState('Lỗi khi tải thông tin', message, el('div', { class: 'mt-3' },
+			el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'btn btn-primary me-2 js-retry-load-invoice', 'data-payment-id': Number(paymentId) || 0 },
+				icon('bi-arrow-clockwise', 'me-2'), 'Thử lại'), ' ', loginButton('Đăng nhập lại'))));
+	}
 }
 
-function buildExaminationVisitSectionHtml({ safeExaminationDate, safeDoctorName, safeExaminationTime, examinationType }) {
-	return `
-            <!-- Section I: Thông tin ca khám -->
-            <div class="mb-3">
-                <h5 class="section-title">I. Thông tin ca khám</h5>
-
-                <div class="row g-2">
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Ngày khám</label>
-                        <input type="date" class="form-control" id="examinationDate" value="${safeExaminationDate}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Người khám</label>
-                        <input type="text" class="form-control" id="doctorName" value="${safeDoctorName}" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Giờ khám</label>
-                        <input type="time" class="form-control" id="examinationTime" value="${safeExaminationTime}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Loại khám</label>
-                        <select class="form-select" id="examinationType" required>
-                            <option value="">Chọn loại khám</option>
-                            <option value="SERVICE" ${examinationType === 'SERVICE' ? 'selected' : ''}>Theo dịch vụ</option>
-                            <option value="PACKAGE" ${examinationType === 'PACKAGE' ? 'selected' : ''}>Theo gói</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-	`;
-}
-
-function buildExaminationPatientSectionHtml({ safePatientName, safePatientGender, safePatientPhone, safePatientBirthDate }) {
-	return `
-            <!-- Section II: Thông tin bệnh nhân -->
-            <div class="mb-3">
-                <h5 class="section-title">II. Thông tin bệnh nhân</h5>
-
-                <div class="patient-section">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label required-field">Họ và tên</label>
-                            <input type="text" class="form-control" id="patientName" value="${safePatientName}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Giới tính</label>
-                            <input type="text" class="form-control" id="patientGender" value="${safePatientGender}" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label required-field">Số điện thoại</label>
-                            <input type="text" class="form-control" id="patientPhone" value="${safePatientPhone}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label required-field">Ngày sinh</label>
-                            <input type="text" class="form-control js-datepicker" id="patientBirthDate"
-                                value="${safePatientBirthDate}"
-                                data-alt-format="d/m/Y" data-date-format="Y-m-d"
-                                placeholder="Chọn ngày sinh..." required>
-                        </div>
-                    </div>
-                </div>
-            </div>
-	`;
-}
-
-const EXAMINATION_DETAIL_STATIC_SECTIONS_HTML = `
-            <!-- Section III: Các dịch vụ đã sử dụng -->
-            <div class="mb-3">
-                <h5 class="section-title">III. Các dịch vụ đã sử dụng</h5>
-
-                <div class="service-header">
-                    <div class="service-controls">
-                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" id="addServiceBtn">
-                            <i class="bi bi-plus"></i> Thêm dịch vụ
-                        </button>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="text-center pw-invoice-col-stt">STT</th>
-                                <th class="pw-invoice-col-name">Tên dịch vụ</th>
-                                <th class="pw-invoice-col-price">Đơn giá</th>
-                                <th class="text-center pw-invoice-col-percent">Chiết khấu</th>
-                                <th class="text-center pw-invoice-col-percent">Thuế GTGT</th>
-                                <th class="text-end pw-invoice-col-price">Thành tiền</th>
-                                <th class="text-center pw-invoice-col-actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="servicesTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox pw-empty-icon"></i>
-                                    <p class="mt-2">Chưa có dịch vụ nào</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Section IV: Đơn thuốc -->
-            <div class="mb-4">
-                <h5 class="section-title">IV. Đơn thuốc</h5>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="text-center pw-invoice-col-stt">STT</th>
-                                <th class="pw-invoice-col-name">Tên thuốc</th>
-                                <th class="pw-invoice-col-price">Liều lượng</th>
-                                <th class="pw-invoice-col-percent">Số lượng</th>
-                                <th class="pw-invoice-col-percent">Ghi chú</th>
-                                <th class="pw-invoice-col-price"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="prescriptionsTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox pw-empty-icon"></i>
-                                    <p class="mt-2">Chưa có đơn thuốc nào</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Section V: Thông tin thanh toán -->
-            <div class="mb-4">
-                <h5 class="section-title">V. THÔNG TIN THANH TOÁN</h5>
-            </div>
-
-            <!-- Financial Summary -->
-            <div class="financial-summary">
-                <div class="pw-financial-row">Tổng tiền trước thuế: <span id="subtotal" class="pw-financial-value">0 ₫</span></div>
-                <div class="pw-financial-row">Chiết khấu: <span id="discount" class="pw-financial-value">0 ₫</span></div>
-                <div class="pw-financial-row">Thuế GTGT: <span id="vat" class="pw-financial-value">0 ₫</span></div>
-                <div class="pw-financial-row">Tổng tiền sau thuế: <span id="total" class="pw-financial-value">0 ₫</span></div>
-                <div class="pw-financial-row">Đã nhận trước: <input type="text" id="advancePayment" class="form-control form-control-sm money-input pw-money-input" placeholder="0"></div>
-                <div class="pw-financial-row">Cần thanh toán: <span id="finalAmount" class="pw-financial-value">0 ₫</span></div>
-                <div class="pw-financial-row">Số tiền trả: <input type="text" id="amountPaid" class="form-control form-control-sm money-input pw-money-input" placeholder="0"></div>
-                <div class="pw-financial-row">Tiền thối: <span id="changeAmount" class="pw-financial-value">0 ₫</span></div>
-            </div>
-	`;
-
-function buildExaminationDetailContentHtml(viewModel) {
-	return `
-        <div id="invoiceDetailForm">
-		${buildExaminationVisitSectionHtml(viewModel)}
-		${buildExaminationPatientSectionHtml(viewModel)}
-		${EXAMINATION_DETAIL_STATIC_SECTIONS_HTML}
-        </div>
-    `;
-}
-
-// Render examination detail content
-function buildExaminationDetailViewModel(data) {
+// Clones the invoice form from templates/partials/payment-invoice-form-template.html and fills it.
+function buildInvoiceForm(data) {
+	const form = byId('invoiceDetailFormTemplate').content.firstElementChild.cloneNode(true);
 	const patient = data.patient || {};
-	return {
-		safeExaminationDate: escapeAttr(data.examination_date?.split('T')[0] || ''),
-		safeDoctorName: escapeAttr(data.doctor?.full_name || ''),
-		safeExaminationTime: escapeAttr(data.examination_time || ''),
-		safePatientName: escapeAttr(patient.full_name || ''),
-		safePatientGender: escapeAttr(toVietnameseGender(patient.gender) || ''),
-		safePatientPhone: escapeAttr(patient.phone_number || ''),
-		safePatientBirthDate: escapeAttr(patient.date_of_birth?.split('T')[0] || ''),
-		examinationType: data.examination_type
+	const values = {
+		examinationDate: data.examination_date?.split('T')[0] || '', doctorName: data.doctor?.full_name || '', examinationTime: data.examination_time || '',
+		examinationType: data.examination_type || '', patientName: patient.full_name || '', patientGender: toVietnameseGender(patient.gender) || '',
+		patientPhone: patient.phone_number || '', patientBirthDate: patient.date_of_birth?.split('T')[0] || '',
 	};
+	Object.entries(values).forEach(([id, value]) => {
+		const field = form.querySelector(`#${id}`);
+		if (field) field.value = value;
+	});
+	return form;
 }
 
 function renderExaminationDetailContent(data, examinationId) {
-	// Kiểm tra trạng thái examination/payment để khóa form
 	const isConfirmed = isExaminationConfirmed(data);
-	const content = buildExaminationDetailContentHtml(buildExaminationDetailViewModel(data));
-
-	$('#examinationDetailContent').html(content);
-
-
-
-	// Load services and prescriptions
+	content(buildInvoiceForm(data));
 	loadServicesForModal(examinationId);
 	loadPrescriptionsForModal(examinationId);
-
-	// Bind event handlers
 	bindExaminationDetailEvents(examinationId);
-
-	// Đảm bảo financial summary hiển thị và nạp tổng tiền 1 lần
 	setTimeout(() => {
-		$('.financial-summary').show();
+		document.querySelectorAll('.financial-summary').forEach(node => { node.style.display = ''; });
 		loadFinancialSummaryFromDB(examinationId);
 	}, 100);
-
-	// Load thông tin thanh toán từ database
-	if (data.advance_payment) {
-		$('#advancePayment').val(formatCurrency(data.advance_payment));
-	}
-	if (data.amount_paid) {
-		$('#amountPaid').val(formatCurrency(data.amount_paid));
-	}
-
-	// Nếu đã xác nhận, disable form (sau khi load data)
+	if (data.advance_payment) byId('advancePayment').value = formatCurrency(data.advance_payment);
+	if (data.amount_paid) byId('amountPaid').value = formatCurrency(data.amount_paid);
 	if (isConfirmed) {
 		disableInvoiceForm();
-		$('#exportInvoiceBtn').text('Đã xác nhận').prop('disabled', true);
+		const exportButton = byId('exportInvoiceBtn');
+		exportButton.textContent = 'Đã xác nhận';
+		exportButton.disabled = true;
 	}
-
-	// ===== KHỞI TẠO FLATPICKR SAU KHI RENDER HTML XONG =====
 	setTimeout(initDetailBirthDatePicker, 150);
-
 }
 
 function initDetailBirthDatePicker() {
@@ -309,7 +100,7 @@ function initDetailBirthDatePicker() {
 	const currentValue = birthDateInput.value;
 
 	// Khởi tạo Flatpickr mới
-	flatpickr(birthDateInput, {
+	window.flatpickr(birthDateInput, {
 		dateFormat: 'Y-m-d',
 		altInput: true,
 		altFormat: 'd/m/Y',
@@ -323,133 +114,71 @@ function initDetailBirthDatePicker() {
 	}
 }
 
-// Load services for modal
-function loadServicesForModal(examinationId) {
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
-		return;
-	}
-
-	$.ajax({
-		url: `/api/examination-detail/${examinationId}/services`,
-		method: 'GET',
-		success: function (data) {
-			renderServicesTable(data);
-			loadFinancialSummaryFromDB(examinationId);
-		},
-		error: function () {
-			// Silent fail
-		}
-	});
+async function loadServicesForModal(examinationId) {
+	if (!window.QLPKApiTransport.hasSession()) return;
+	try {
+		renderServicesTable(await requestJson(`/api/examination-detail/${examinationId}/services`));
+		loadFinancialSummaryFromDB(examinationId);
+	} catch { /* bảng dịch vụ giữ trạng thái trống khi lỗi */ }
 }
 
-// Load prescriptions for modal
-function loadPrescriptionsForModal(examinationId) {
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
-		return;
-	}
-
-	$.ajax({
-		url: `/api/prescription/appointment/${examinationId}`,
-		method: 'GET',
-		success: function (data) {
-			const rows = (data?.medicines || []).map(medicine => ({
-				medicine_name: medicine.name || '',
-				unit: medicine.unit || '',
-				quantity: medicine.quantity ?? '',
-				usage_instructions: medicine.usage || data.usage_instructions || ''
-			}));
-			renderPrescriptionsTable(rows);
-		},
-		error: function () {
-			// Silent fail
-		}
-	});
+async function loadPrescriptionsForModal(examinationId) {
+	if (!window.QLPKApiTransport.hasSession()) return;
+	try {
+		const data = await requestJson(`/api/prescription/appointment/${examinationId}`);
+		renderPrescriptionsTable((data?.medicines || []).map(medicine => ({ medicine_name: medicine.name || '', unit: medicine.unit || '',
+			quantity: medicine.quantity ?? '', usage_instructions: medicine.usage || data.usage_instructions || '' })));
+	} catch { /* bảng đơn thuốc giữ trạng thái trống khi lỗi */ }
 }
 
-// Bind event handlers for examination detail modal
-function bindExaminationDetailEvents(examinationId) {
-	// Add service button
-	$('#addServiceBtn').off('click').on('click', function () {
-		showAddServiceModal();
-	});
-
-	// Money input events
-	$('.money-input').off('input focus blur click').on('input', function () {
-		const input = $(this);
-		const cursorPosition = input[0].selectionStart;
-		const value = input.val();
-
-		// Store cursor position before formatting
-		const beforeFormat = value.substring(0, cursorPosition).replace(/[^\d]/g, '').length;
-
-		// Format the value
-		const formatted = formatCurrencyInput(value);
-		input.val(formatted);
-
-		// Restore cursor position after formatting
-		if (formatted) {
-			let newPosition = 0;
-			let digitCount = 0;
-			for (let i = 0; i < formatted.length; i++) {
-				if (/^\d$/.test(formatted[i])) {
-					digitCount++;
-					if (digitCount === beforeFormat) {
-						newPosition = i + 1;
-						break;
-					}
-				}
+// Keeps the caret on the same digit after reformatting a money input.
+function formatMoneyInput(input) {
+	const digitsBefore = input.value.substring(0, input.selectionStart).replace(/[^\d]/g, '').length;
+	const formatted = formatCurrencyInput(input.value);
+	input.value = formatted;
+	if (formatted) {
+		let position = 0;
+		let digits = 0;
+		for (let i = 0; i < formatted.length; i++) {
+			if (/^\d$/.test(formatted[i]) && ++digits === digitsBefore) {
+				position = i + 1;
+				break;
 			}
-			input[0].setSelectionRange(newPosition, newPosition);
 		}
-
-		calculateFinancials();
-	}).on('focus', function () {
-		const input = $(this);
-		const value = input.val();
-		if (value && value !== '0') {
-			input.select();
-		}
-	}).on('blur', function () {
-		const input = $(this);
-		const value = input.val();
-		if (!value || value === '0') {
-			input.val('0');
-			calculateFinancials();
-		}
-	}).on('click', function () {
-		const input = $(this);
-		const value = input.val();
-		if (value && value !== '0') {
-			input.select();
-		}
-	});
-
-	// Quick buttons for money input
-	$('.quick-btn').off('click').on('click', function () {
-		const value = $(this).data('value');
-		const input = $(this).closest('.financial-value').find('.money-input');
-		input.val(formatCurrencyInput(value.toString()));
-		calculateFinancials();
-	});
-
-	// Clear buttons for money input
-	$('.clear-btn').off('click').on('click', function () {
-		const input = $(this).closest('.financial-value').find('.money-input');
-		input.val('0').focus();
-		calculateFinancials();
-	});
-
-	// Confirm invoice button
-	$('#exportInvoiceBtn').off('click').on('click', function () {
-		confirmInvoice(examinationId);
-	});
-
-
-
-	// Select all prescriptions
-	$('#selectAllPrescriptions').off('change').on('change', function () {
-		toggleAllPrescriptions();
-	});
+		input.setSelectionRange(position, position);
+	}
+	calculateFinancials();
 }
+
+function bindExaminationDetailEvents(examinationId) {
+	byId('addServiceBtn')?.addEventListener('click', () => showAddServiceModal());
+	const selectNonZero = event => { if (event.target.value && event.target.value !== '0') event.target.select(); };
+	document.querySelectorAll('#examinationDetailContent .money-input').forEach(input => {
+		input.addEventListener('input', () => formatMoneyInput(input));
+		input.addEventListener('focus', selectNonZero);
+		input.addEventListener('click', selectNonZero);
+		input.addEventListener('blur', () => {
+			if (!input.value || input.value === '0') {
+				input.value = '0';
+				calculateFinancials();
+			}
+		});
+	});
+	document.querySelectorAll('#examinationDetailContent .quick-btn').forEach(button => button.addEventListener('click', () => {
+		const input = button.closest('.financial-value')?.querySelector('.money-input');
+		if (input) input.value = formatCurrencyInput(String(button.dataset.value));
+		calculateFinancials();
+	}));
+	document.querySelectorAll('#examinationDetailContent .clear-btn').forEach(button => button.addEventListener('click', () => {
+		const input = button.closest('.financial-value')?.querySelector('.money-input');
+		if (input) {
+			input.value = '0';
+			input.focus();
+		}
+		calculateFinancials();
+	}));
+	byId('exportInvoiceBtn').onclick = () => confirmInvoice(examinationId);
+	byId('selectAllPrescriptions')?.addEventListener('change', () => toggleAllPrescriptions());
+}
+
+export { editPayment, loadExaminationDetailModal, loadServicesForModal };

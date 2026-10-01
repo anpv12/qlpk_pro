@@ -1,46 +1,36 @@
-/* global openInvoiceWindow, selectedItems, showCustomToast */
-/* exported exportPaymentData, formatCurrency, formatCurrencyInput, formatDateTime, handleSmartMoneyInput, printInvoice, printInvoices, showLoading */
+import { state } from './state.js';
+import { byId, setVisible } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
+import { openInvoiceWindow, showCustomToast } from '../payment-waiting.js';
 
 // Export payment data
-function exportPaymentData() {
-	if (selectedItems.length === 0) {
+async function exportPaymentData() {
+	if (state.selectedItems.length === 0) {
 		showCustomToast('warning', 'Vui lòng chọn ít nhất một bản ghi trên trang hiện tại để xuất');
 		return;
 	}
 
-	$.ajax({
-		url: '/api/payment-waiting/export',
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			payment_ids: selectedItems
-		}),
-		success: function (response) {
-			// Create download link
-			const link = document.createElement('a');
-			link.href = response.download_url;
-			link.download = `payment_data_${new Date().toISOString().split('T')[0]}.xlsx`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-
-			showCustomToast('success', 'Xuất dữ liệu thành công');
-		},
-		error: function () {
-			showCustomToast('error', 'Có lỗi xảy ra khi xuất dữ liệu');
-		}
-	});
+	try {
+		const response = await requestJson('/api/payment-waiting/export', { method: 'POST', json: { payment_ids: state.selectedItems } });
+		const link = document.createElement('a');
+		link.href = response.download_url;
+		link.download = `payment_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		showCustomToast('success', 'Xuất dữ liệu thành công');
+	} catch {
+		showCustomToast('error', 'Có lỗi xảy ra khi xuất dữ liệu');
+	}
 }
 
 // Print invoices
 function printInvoices() {
-	if (selectedItems.length === 0) {
+	if (state.selectedItems.length === 0) {
 		showCustomToast('warning', 'Vui lòng chọn ít nhất một hóa đơn trên trang hiện tại để in');
 		return;
 	}
-	selectedItems.forEach((id) => {
+	state.selectedItems.forEach((id) => {
 		openInvoiceWindow(id);
 	});
 	showCustomToast('info', 'Đang mở hóa đơn trong tab mới');
@@ -48,13 +38,8 @@ function printInvoices() {
 
 // Show/hide loading spinner
 function showLoading(show) {
-	if (show) {
-		$('#loadingSpinner').show();
-		$('#paymentTable').hide();
-	} else {
-		$('#loadingSpinner').hide();
-		$('#paymentTable').show();
-	}
+	setVisible(byId('loadingSpinner'), show);
+	setVisible(byId('paymentTable'), !show);
 }
 
 // Hàm hiển thị ngày giờ (dd/mm/yyyy HH:mm:ss)
@@ -76,8 +61,6 @@ function formatDateTime(dateString) {
 	return `${hours}:${minutes}:${seconds} ${dateFormatted}`;
 }
 
-
-
 // Format currency
 function formatCurrency(amount) {
 	const numeric = Number(amount) || 0;
@@ -90,7 +73,7 @@ function formatCurrency(amount) {
 // Print invoice function
 function printInvoice() {
 	try {
-		let examinationId = $('#examinationDetailModal').data('examination-id');
+		let examinationId = byId('examinationDetailModal')?.dataset.examinationId;
 		if (!examinationId) {
 			const urlParams = new URLSearchParams(window.location.search);
 			examinationId = urlParams.get('examination_id');
@@ -154,3 +137,5 @@ function handleSmartMoneyInput(input) {
 	const parsedCurrency = parseCurrencyInput(value);
 	return Number.isFinite(parsedCurrency) ? parsedCurrency : 0;
 }
+
+export { exportPaymentData, formatCurrency, formatCurrencyInput, formatDateTime, handleSmartMoneyInput, printInvoice, printInvoices, showLoading };

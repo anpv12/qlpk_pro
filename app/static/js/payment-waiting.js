@@ -1,16 +1,22 @@
-/* global applyFilters, changePage, deletePayment, deleteService, editPayment, editService, exportPaymentData, loadExaminationDetailModal, loadPaymentData, performSearch, printInvoice, printInvoices, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist, saveEditService, saveNewService, updateSelectedItems */
-/* exported buildPaymentConfirmOptions, currentPage, escapeAttr, filteredData, financialSummaryCache, getSafeApiErrorMessage, isConfirmInvoiceSubmitting, isExaminationConfirmed, isInvoiceLocked, isPaymentPaid, openInvoiceWindow, paymentData, perPage, selectedItems, toVietnameseGender, totalItems, totalPages */
+import { state } from './payment-waiting/state.js';
+import { byId, debounce, delegate, on } from './shared/dom.js';
+import { HttpError } from './shared/http-json.js';
+import { applyFilters, changePage, loadPaymentData, performSearch, updateSelectedItems } from './payment-waiting/list.js';
+import { exportPaymentData, printInvoice, printInvoices } from './payment-waiting/output.js';
+import { deleteService, editService, saveEditService, saveNewService } from './payment-waiting/services.js';
+import { editPayment, loadExaminationDetailModal } from './payment-waiting/detail.js';
+import { deletePayment, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist } from './payment-waiting/invoice.js';
 
 // Payment Waiting Management JavaScript
-let currentPage = 1;
+state.currentPage = 1;
 let perPage = 10;
-let totalItems = 0;
-let totalPages = 0;
-let paymentData = [];
-let filteredData = [];
-let selectedItems = [];
-let isConfirmInvoiceSubmitting = false;
-let financialSummaryCache = null;
+state.totalItems = 0;
+state.totalPages = 0;
+state.paymentData = [];
+state.filteredData = [];
+state.selectedItems = [];
+state.isConfirmInvoiceSubmitting = false;
+state.financialSummaryCache = null;
 
 function getDefaultDateRange() {
 	const today = new Date();
@@ -36,25 +42,15 @@ function isExaminationConfirmed(data) {
 }
 
 function isInvoiceLocked() {
-	return $('#examinationDetailContent').hasClass('invoice-confirmed');
+	return Boolean(byId('examinationDetailContent')?.classList.contains('invoice-confirmed'));
 }
 
-function escapeHtml(value) {
-	if (value === null || value === undefined) return '';
-	return String(value)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
-
-function escapeAttr(value) {
-	return escapeHtml(value).replace(/`/g, '&#96;');
-}
-
-function getSafeApiErrorMessage(xhr, fallback = 'Không thể xử lý lúc này. Vui lòng thử lại.') {
-	return window.QLPKUserFeedback?.resolveError(xhr, { fallback }) || fallback;
+// HttpError (status + parsed body) or a network failure, mapped to the user-feedback error contract.
+function getSafeApiErrorMessage(error, fallback = 'Không thể xử lý lúc này. Vui lòng thử lại.') {
+	let normalized = { status: 0 };
+	if (error instanceof HttpError) normalized = { status: error.status, responseJSON: error.data };
+	else if (error?.status !== undefined) normalized = error;
+	return window.QLPKUserFeedback?.resolveError(normalized, { fallback }) || fallback;
 }
 
 async function openInvoiceWindow(examinationId) {
@@ -69,7 +65,7 @@ async function openInvoiceWindow(examinationId) {
 	invoiceWindow.document.close();
 
 	try {
-		const response = await fetch(`/payment-waiting/invoice/${encodeURIComponent(examinationId)}`);
+		const response = await window.fetch(`/payment-waiting/invoice/${encodeURIComponent(examinationId)}`);
 
 		if (!response.ok) {
 			throw new Error('Không thể tải hóa đơn');
@@ -82,70 +78,30 @@ async function openInvoiceWindow(examinationId) {
 	}
 }
 
-function buildPaymentConfirmOptions({ title, text, icon = 'warning', confirmText = 'Xác nhận', cancelText = 'Hủy', variant = 'primary' }) {
-	const allowedVariants = new Set(['danger', 'warning', 'primary', 'success']);
-	const confirmVariant = allowedVariants.has(variant) ? variant : 'primary';
-	return {
-		title,
-		text,
-		icon,
-		showCancelButton: true,
-		confirmButtonText: confirmText,
-		cancelButtonText: cancelText,
-		buttonsStyling: false,
-		reverseButtons: true,
-		focusCancel: true,
-		customClass: {
-			container: 'qlpk-confirm-container',
-			popup: `qlpk-confirm-dialog qlpk-confirm-dialog--${confirmVariant}`,
-			icon: 'qlpk-confirm-dialog__icon',
-			title: 'qlpk-confirm-dialog__title',
-			htmlContainer: 'qlpk-confirm-dialog__text',
-			actions: 'qlpk-confirm-dialog__actions',
-			confirmButton: `qlpk-confirm-dialog__button qlpk-confirm-dialog__button--${confirmVariant}`,
-			cancelButton: 'qlpk-confirm-dialog__button qlpk-confirm-dialog__button--ghost'
-		}
-	};
+function setDefaultFilters() {
+	const { startDateDefault, endDateDefault } = getDefaultDateRange();
+	byId('searchInput').value = '';
+	byId('statusFilter').value = 'UNPAID';
+	byId('startDate').value = startDateDefault;
+	byId('endDate').value = endDateDefault;
+	byId('startDate')._flatpickr?.setDate(startDateDefault, true);
+	byId('endDate')._flatpickr?.setDate(endDateDefault, true);
 }
 
-// Document ready
-$(document).ready(function () {
-	const { startDateDefault, endDateDefault } = getDefaultDateRange();
-
-	// Set giá trị mặc định
-	$('#startDate').val(startDateDefault);
-	$('#endDate').val(endDateDefault);
-
-	// Trigger Flatpickr to update display
-	if ($('#startDate')[0] && $('#startDate')[0]._flatpickr) {
-		$('#startDate')[0]._flatpickr.setDate(startDateDefault, true);
-	}
-	if ($('#endDate')[0] && $('#endDate')[0]._flatpickr) {
-		$('#endDate')[0]._flatpickr.setDate(endDateDefault, true);
-	}
-
-	// Reset checkbox state (browser giữ sau F5)
-	$('#selectAll').prop('checked', false);
-	$('.payment-checkbox').prop('checked', false);
-	selectedItems = [];
-
-	// Clear other filters
-	$('#searchInput').val('');
-	$('#statusFilter').val('UNPAID');
-
-	// Load initial data with default date range
+// Started after DOMContentLoaded so datepicker-init has attached Flatpickr to the date inputs.
+document.addEventListener('DOMContentLoaded', () => {
+	setDefaultFilters();
+	// Reset checkbox state (the browser keeps it across reloads)
+	byId('selectAll').checked = false;
+	document.querySelectorAll('.payment-checkbox').forEach(box => { box.checked = false; });
+	state.selectedItems = [];
 	loadPaymentData();
 	bindEvents();
-
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
-			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed'],
-			debounceMs: 500,
-			handler: function () {
-				loadPaymentData();
-			}
-		});
-	}
+	window.QLPKRealtimePageHooks?.register({
+		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed'],
+		debounceMs: 500,
+		handler: () => loadPaymentData(),
+	});
 });
 
 // Chuyển đổi giới tính sang tiếng Việt để hiển thị
@@ -159,150 +115,67 @@ function toVietnameseGender(gender) {
 	return gender;
 }
 
-// Bind all event handlers
-function runPaymentWaitingEvents1() {
-	// Debounce timer for search input
-	let searchDebounceTimer;
-	// Realtime search on input (debounced 300ms)
-	$('#searchInput').on('input', function () {
-		clearTimeout(searchDebounceTimer);
-		searchDebounceTimer = setTimeout(function () {
-			performSearch();
-		}, 300);
-	});
-	// Also support Enter key for immediate search
-	$('#searchInput').on('keypress', function (e) {
-		if (e.which === 13) {
-			clearTimeout(searchDebounceTimer);
-			performSearch();
-		}
-	});
-	// Filter functionality
-	$('#statusFilter').on('change', function () {
-		applyFilters();
-	});
-	$('#startDate').on('change', function () {
-		applyFilters();
-	});
-	$('#endDate').on('change', function () {
-		applyFilters();
-	});
-	// Refresh button
-	$('#refreshListBtn').on('click', function () {
-		const { startDateDefault, endDateDefault } = getDefaultDateRange();
+const RETURN_ACTIONS = { receptionist: returnToReceptionist, doctor: returnToDoctor, psychologist: returnToPsychologist, appointment: returnToAppointment };
 
-		// Clear search và trả status về mặc định
-		$('#searchInput').val('');
-		$('#statusFilter').val('UNPAID');
-
-		// Set lại date range mặc định
-		$('#startDate').val(startDateDefault);
-		$('#endDate').val(endDateDefault);
-
-		// Trigger Flatpickr to update display
-		if ($('#startDate')[0] && $('#startDate')[0]._flatpickr) {
-			$('#startDate')[0]._flatpickr.setDate(startDateDefault, true);
-		}
-		if ($('#endDate')[0] && $('#endDate')[0]._flatpickr) {
-			$('#endDate')[0]._flatpickr.setDate(endDateDefault, true);
-		}
-
-		// Reset về trang đầu tiên
-		currentPage = 1;
-
-		// Load lại data
-		loadPaymentData();
-	});
-	// Export button
-	$('#exportTableBtn').on('click', function () {
-		exportPaymentData();
-	});
-	// Delegated handlers for dynamically rendered modal controls
-	$(document).off('change', '#serviceSelect').on('change', '#serviceSelect', function () {
-		const selectedOption = $(this).find('option:selected');
-		const price = selectedOption.data('price') || 0;
-		$('#servicePrice').val(price);
-	});
-	$(document).off('click', '#saveServiceBtn').on('click', '#saveServiceBtn', function () {
-		saveNewService();
-	});
-	$(document).off('click', '.js-edit-payment').on('click', '.js-edit-payment', function () {
-		const paymentId = Number($(this).data('payment-id')) || 0;
-		if (paymentId) editPayment(paymentId);
-	});
-	$(document).off('click', '.js-delete-payment').on('click', '.js-delete-payment', function () {
-		const paymentId = Number($(this).data('payment-id')) || 0;
-		if (paymentId) deletePayment(paymentId);
-	});
-	$(document).off('click', '.js-change-page').on('click', '.js-change-page', function (e) {
-		e.preventDefault();
-		const page = Number($(this).data('page')) || 0;
+// Delegated handlers for the list and for controls rendered inside the invoice modal.
+function bindDelegatedActions() {
+	const numberAttr = (node, name) => Number(node.getAttribute(name)) || 0;
+	const byClass = {
+		'.js-edit-payment': node => numberAttr(node, 'data-payment-id') && editPayment(numberAttr(node, 'data-payment-id')),
+		'.js-delete-payment': node => numberAttr(node, 'data-payment-id') && deletePayment(numberAttr(node, 'data-payment-id')),
+		'.js-retry-load-invoice': node => numberAttr(node, 'data-payment-id') && loadExaminationDetailModal(numberAttr(node, 'data-payment-id')),
+		'.js-edit-service': node => numberAttr(node, 'data-service-id') && editService(numberAttr(node, 'data-service-id')),
+		'.js-delete-service': node => numberAttr(node, 'data-service-id') && deleteService(numberAttr(node, 'data-service-id')),
+		'.js-save-edit-service': node => numberAttr(node, 'data-service-id') && saveEditService(numberAttr(node, 'data-service-id')),
+		'.js-go-login': () => { window.location.href = '/login.html'; },
+		'#saveServiceBtn': () => saveNewService(),
+		'.js-return-action': node => {
+			const id = numberAttr(node, 'data-payment-id');
+			const action = RETURN_ACTIONS[node.getAttribute('data-return-action')];
+			if (id && action) action(id);
+		},
+	};
+	Object.entries(byClass).forEach(([selector, handler]) => delegate(document, 'click', selector, (event, node) => handler(node)));
+	delegate(document, 'click', '.js-change-page', (event, node) => {
+		event.preventDefault();
+		const page = numberAttr(node, 'data-page');
 		if (page) changePage(page);
 	});
-	$(document).off('click', '.js-retry-load-invoice').on('click', '.js-retry-load-invoice', function () {
-		const paymentId = Number($(this).data('payment-id')) || 0;
-		if (paymentId) loadExaminationDetailModal(paymentId);
+	delegate(document, 'change', '#serviceSelect', (event, select) => {
+		byId('servicePrice').value = select.selectedOptions[0]?.dataset.price || 0;
 	});
-}
-
-function runPaymentWaitingEvents2() {
-	$(document).off('click', '.js-edit-service').on('click', '.js-edit-service', function () {
-		const serviceId = Number($(this).data('service-id')) || 0;
-		if (serviceId) editService(serviceId);
-	});
-	$(document).off('click', '.js-delete-service').on('click', '.js-delete-service', function () {
-		const serviceId = Number($(this).data('service-id')) || 0;
-		if (serviceId) deleteService(serviceId);
-	});
-	$(document).off('click', '.js-save-edit-service').on('click', '.js-save-edit-service', function () {
-		const serviceId = Number($(this).data('service-id')) || 0;
-		if (serviceId) saveEditService(serviceId);
-	});
-	$(document).off('click', '.js-return-action').on('click', '.js-return-action', function () {
-		const paymentId = Number($(this).data('payment-id')) || 0;
-		const action = $(this).data('return-action');
-		if (!paymentId || !action) return;
-
-		if (action === 'receptionist') returnToReceptionist(paymentId);
-		if (action === 'doctor') returnToDoctor(paymentId);
-		if (action === 'psychologist') returnToPsychologist(paymentId);
-		if (action === 'appointment') returnToAppointment(paymentId);
-	});
-	$(document).off('click', '.js-go-login').on('click', '.js-go-login', function () {
-		window.location.href = '/login.html';
-	});
-	// Print button
-	$('#printBtn').on('click', function () {
-		printInvoices();
-	});
-	// Select all checkbox
-	$('#selectAll').on('change', function () {
-		const isChecked = $(this).is(':checked');
-		$('.payment-checkbox').prop('checked', isChecked);
-		updateSelectedItems();
-	});
-	// Per page selector
-	$('#perPageSelect').on('change', function () {
-		perPage = parseInt($(this).val());
-		currentPage = 1;
-		loadPaymentData();
-	});
-	// Print invoice button (always active)
-	$('#printInvoiceBtn').on('click', function () {
-		printInvoice();
-	});
-	// Reload danh sách hóa đơn khi modal đóng (bind 1 lần)
-	$('#examinationDetailModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
-		loadPaymentData();
-	});
+	delegate(byId('paymentTableBody'), 'change', '.payment-checkbox', () => updateSelectedItems());
 }
 
 function bindEvents() {
-	runPaymentWaitingEvents1();
-	runPaymentWaitingEvents2();
+	const search = debounce(performSearch, 300);
+	on(byId('searchInput'), 'input', search);
+	on(byId('searchInput'), 'keypress', event => { if (event.key === 'Enter') performSearch(); });
+	['statusFilter', 'startDate', 'endDate'].forEach(id => on(byId(id), 'change', applyFilters));
+	on(byId('refreshListBtn'), 'click', () => {
+		setDefaultFilters();
+		state.currentPage = 1;
+		loadPaymentData();
+	});
+	on(byId('exportTableBtn'), 'click', exportPaymentData);
+	on(byId('printBtn'), 'click', printInvoices);
+	on(byId('selectAll'), 'change', event => {
+		document.querySelectorAll('.payment-checkbox').forEach(box => { box.checked = event.target.checked; });
+		updateSelectedItems();
+	});
+	on(byId('perPageSelect'), 'change', event => {
+		perPage = parseInt(event.target.value, 10);
+		state.currentPage = 1;
+		loadPaymentData();
+	});
+	on(byId('printInvoiceBtn'), 'click', printInvoice);
+	on(byId('examinationDetailModal'), 'hidden.bs.modal', () => loadPaymentData());
+	bindDelegatedActions();
 }
 
 // Show custom toast
 function showCustomToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
 }
+
+export { getSafeApiErrorMessage, isExaminationConfirmed, isInvoiceLocked, isPaymentPaid, openInvoiceWindow, perPage, showCustomToast, toVietnameseGender };

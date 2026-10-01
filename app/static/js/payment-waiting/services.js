@@ -1,420 +1,242 @@
-/* global buildPaymentConfirmOptions, escapeAttr, escapeHtml, financialSummaryCache: writable, formatCurrency, getSafeApiErrorMessage, isInvoiceLocked, loadServicesForModal, showCustomToast */
-/* exported deleteService, editService, financialSummaryCache, renderPrescriptionsTable, renderServicesTable, saveEditService, saveNewService, showAddServiceModal */
-// Parts (nạp trước file này): financials.js
+import { state } from './state.js';
+import { byId, el, icon, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
+import { getSafeApiErrorMessage, isInvoiceLocked, showCustomToast } from '../payment-waiting.js';
+import { formatCurrency } from './output.js';
+import { loadServicesForModal } from './detail.js';
+
+const LOCKED_MESSAGE = 'Hóa đơn đã xác nhận, không thể chỉnh sửa';
+const modalOf = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+
+function emptyRow(colspan, message) {
+	return el('tr', {}, el('td', { colspan, class: 'text-center text-muted py-4' }, icon('bi-inbox', 'pw-empty-icon'), el('p', { class: 'mt-2' }, message)));
+}
+
+// Thành tiền = (đơn giá sau chiết khấu) + thuế
+function serviceAmounts(unitPrice, discountPercent, taxPercent) {
+	const preTaxAmount = unitPrice * (1 - (discountPercent / 100));
+	const taxAmount = preTaxAmount * (taxPercent / 100);
+	return { preTaxAmount, taxAmount, totalAmount: preTaxAmount + taxAmount };
+}
+
+// Lấy examination id của hóa đơn đang mở; báo lỗi nếu hóa đơn đã khóa hoặc chưa mở
+function editableExaminationId() {
+	if (isInvoiceLocked()) {
+		showCustomToast('warning', LOCKED_MESSAGE);
+		return null;
+	}
+	const examinationId = byId('examinationDetailModal')?.dataset.examinationId;
+	if (!examinationId) {
+		showCustomToast('error', 'Không tìm thấy thông tin khám');
+		return null;
+	}
+	return examinationId;
+}
+
+function serviceActionButton(variant, className, title, iconName, serviceId) {
+	return el('button', { 'data-qlpk-button': variant, 'data-qlpk-button-variant': 'soft', class: `btn btn-sm ${className}`, 'data-service-id': serviceId, title }, icon(iconName));
+}
 
 // Render services table
 function renderServicesTable(services) {
-	const tbody = $('#servicesTableBody');
-	tbody.empty();
-
-	if (services.length === 0) {
-		tbody.append(`
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox pw-empty-icon"></i>
-                    <p class="mt-2">Chưa có dịch vụ nào</p>
-                </td>
-            </tr>
-        `);
+	const tbody = byId('servicesTableBody');
+	if (!services.length) {
+		replace(tbody, emptyRow(7, 'Chưa có dịch vụ nào'));
 		return;
 	}
-
-	services.forEach((service, index) => {
-		const safeServiceId = Number(service.id) || 0;
+	replace(tbody, services.map((service, index) => {
+		const serviceId = Number(service.id) || 0;
 		const unitPrice = parseFloat(service.unit_price) || 0;
 		const discountPercent = parseFloat(service.discount_percent) || 0;
 		const taxPercent = parseFloat(service.tax_percent) || 0;
-		const safeServiceName = escapeHtml(service.service_name || '');
-		// Tiền trước thuế sau chiết khấu
-		const preTaxAmount = unitPrice * (1 - (discountPercent / 100));
-		// Thuế
-		const taxAmount = preTaxAmount * (taxPercent / 100);
-		// Thành tiền = trước thuế + thuế
-		const totalAmount = preTaxAmount + taxAmount;
-		const row = `
-            <tr data-pre-tax="${preTaxAmount}" data-tax="${taxAmount}" data-total-amount="${totalAmount}" data-service-id="${safeServiceId}">
-                <td class="text-center pw-invoice-col-stt">${index + 1}</td>
-                <td class="pw-invoice-col-name">${safeServiceName}</td>
-                <td class="pw-invoice-col-price">${formatCurrency(unitPrice)}</td>
-                <td class="text-center pw-invoice-col-percent">${discountPercent}%</td>
-                <td class="text-center pw-invoice-col-percent">${taxPercent}%</td>
-                <td class="text-end pw-invoice-col-price">${formatCurrency(totalAmount)}</td>
-                <td class="text-center pw-invoice-col-actions">
-                    <div class="d-flex gap-1 justify-content-center">
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm js-edit-service" data-service-id="${safeServiceId}" title="Chỉnh sửa">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-danger js-delete-service" data-service-id="${safeServiceId}" title="Xóa dịch vụ">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-		tbody.append(row);
-	});
-
+		const { preTaxAmount, taxAmount, totalAmount } = serviceAmounts(unitPrice, discountPercent, taxPercent);
+		return el('tr', { 'data-pre-tax': preTaxAmount, 'data-tax': taxAmount, 'data-total-amount': totalAmount, 'data-service-id': serviceId },
+			el('td', { class: 'text-center pw-invoice-col-stt' }, index + 1),
+			el('td', { class: 'pw-invoice-col-name' }, service.service_name || ''),
+			el('td', { class: 'pw-invoice-col-price' }, formatCurrency(unitPrice)),
+			el('td', { class: 'text-center pw-invoice-col-percent' }, `${discountPercent}%`),
+			el('td', { class: 'text-center pw-invoice-col-percent' }, `${taxPercent}%`),
+			el('td', { class: 'text-end pw-invoice-col-price' }, formatCurrency(totalAmount)),
+			el('td', { class: 'text-center pw-invoice-col-actions' }, el('div', { class: 'd-flex gap-1 justify-content-center' },
+				serviceActionButton('edit', 'js-edit-service', 'Chỉnh sửa', 'bi-pencil', serviceId), ' ',
+				serviceActionButton('danger', 'btn-danger js-delete-service', 'Xóa dịch vụ', 'bi-trash', serviceId))));
+	}));
 }
 
 // Render prescriptions table
 function renderPrescriptionsTable(prescriptions) {
-	const tbody = $('#prescriptionsTableBody');
-	tbody.empty();
-
-	if (prescriptions.length === 0) {
-		tbody.append(`
-            <tr>
-                <td colspan="6" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox pw-empty-icon"></i>
-                    <p class="mt-2">Chưa có đơn thuốc nào</p>
-                </td>
-            </tr>
-        `);
+	const tbody = byId('prescriptionsTableBody');
+	if (!prescriptions.length) {
+		replace(tbody, emptyRow(6, 'Chưa có đơn thuốc nào'));
 		return;
 	}
-
-	prescriptions.forEach((prescription, index) => {
-		const safeMedicineName = escapeHtml(prescription.medicine_name || '');
-		const safeUnit = escapeHtml(prescription.unit || '');
-		const safeQuantity = escapeHtml(prescription.quantity || '');
-		const safeUsageInstructions = escapeHtml(prescription.usage_instructions || '');
-		const row = `
-            <tr>
-                <td class="text-center pw-invoice-col-stt">${index + 1}</td>
-                <td class="pw-invoice-col-name">${safeMedicineName}</td>
-                <td class="pw-invoice-col-price">${safeUnit}</td>
-                <td class="pw-invoice-col-percent">${safeQuantity}</td>
-                <td class="pw-invoice-col-percent">${safeUsageInstructions}</td>
-                <td class="pw-invoice-col-price"></td>
-            </tr>
-        `;
-		tbody.append(row);
-	});
+	replace(tbody, prescriptions.map((prescription, index) => el('tr', {},
+		el('td', { class: 'text-center pw-invoice-col-stt' }, index + 1),
+		el('td', { class: 'pw-invoice-col-name' }, prescription.medicine_name || ''),
+		el('td', { class: 'pw-invoice-col-price' }, prescription.unit || ''),
+		el('td', { class: 'pw-invoice-col-percent' }, prescription.quantity || ''),
+		el('td', { class: 'pw-invoice-col-percent' }, prescription.usage_instructions || ''),
+		el('td', { class: 'pw-invoice-col-price' }))));
 }
 
 // Show add service modal
 function showAddServiceModal() {
-	// Load service options
 	loadServiceOptions();
-	$('#addServiceModal').modal('show');
+	modalOf('addServiceModal').show();
 }
 
-// Load service options
-function loadServiceOptions() {
-	$.ajax({
-		url: '/services/',
-		method: 'GET',
-		success: function (response) {
-			const services = response || [];
-			const select = $('#serviceSelect');
-			select.empty();
-			select.append('<option value="">Chọn dịch vụ</option>');
+async function loadServiceOptions() {
+	try {
+		const services = (await requestJson('/services/')) || [];
+		replace(byId('serviceSelect'), el('option', { value: '' }, 'Chọn dịch vụ'), services.map(service => {
+			const price = service.default_price || 0;
+			return el('option', { value: service.id ?? '', 'data-price': price, 'data-service-name': service.name || '' }, `${service.name || ''} - ${formatCurrency(price)}`);
+		}));
+	} catch {
+		showCustomToast('error', 'Không thể tải danh sách dịch vụ');
+	}
+}
 
-			services.forEach(service => {
-				const price = service.default_price || 0;
-				const safeServiceId = escapeAttr(service.id);
-				const safePrice = escapeAttr(price);
-				const safeServiceName = escapeHtml(service.name || '');
-				const safeServiceNameAttr = escapeAttr(service.name || '');
-				select.append(`<option value="${safeServiceId}" data-price="${safePrice}" data-service-name="${safeServiceNameAttr}">${safeServiceName} - ${formatCurrency(price)}</option>`);
-			});
-		},
-		error: function () {
-			showCustomToast('error', 'Không thể tải danh sách dịch vụ');
-		}
-	});
+const numberValue = id => parseFloat(byId(id)?.value) || 0;
+
+function newServiceError(serviceIdRaw, serviceId, price, discount, taxPercent) {
+	if (!serviceIdRaw || !Number.isFinite(serviceId) || serviceId <= 0) return 'Vui lòng chọn dịch vụ hợp lệ';
+	if (price <= 0) return 'Đơn giá phải lớn hơn 0';
+	if (discount < 0 || discount > 100) return 'Chiết khấu phải trong khoảng 0-100%';
+	if (taxPercent < 0) return 'Thuế GTGT không được âm';
+	return '';
 }
 
 // Save new service
-function saveNewService() {
+async function saveNewService() {
 	if (isInvoiceLocked()) {
-		showCustomToast('warning', 'Hóa đơn đã xác nhận, không thể chỉnh sửa');
+		showCustomToast('warning', LOCKED_MESSAGE);
 		return;
 	}
-	const serviceIdRaw = $('#serviceSelect').val();
+	const select = byId('serviceSelect');
+	const serviceIdRaw = select.value;
 	const serviceId = Number(serviceIdRaw);
-	const price = parseFloat($('#servicePrice').val()) || 0;
-	const discount = parseFloat($('#serviceDiscount').val()) || 0;
-	const taxPercentInput = parseFloat($('#serviceTax').val()) || 0;
+	const price = numberValue('servicePrice');
+	const discount = numberValue('serviceDiscount');
+	const taxPercent = numberValue('serviceTax');
 
-	if (!serviceIdRaw || !Number.isFinite(serviceId) || serviceId <= 0) {
-		showCustomToast('error', 'Vui lòng chọn dịch vụ hợp lệ');
-		return;
-	}
-	if (price <= 0) {
-		showCustomToast('error', 'Đơn giá phải lớn hơn 0');
-		return;
-	}
-	if (discount < 0 || discount > 100) {
-		showCustomToast('error', 'Chiết khấu phải trong khoảng 0-100%');
-		return;
-	}
-	if (taxPercentInput < 0) {
-		showCustomToast('error', 'Thuế GTGT không được âm');
-		return;
-	}
+	const invalid = newServiceError(serviceIdRaw, serviceId, price, discount, taxPercent);
+	if (invalid) return showCustomToast('error', invalid);
 
-	const examinationId = $('#examinationDetailModal').data('examination-id');
-	if (!examinationId) {
-		showCustomToast('error', 'Không tìm thấy thông tin khám');
-		return;
-	}
+	const examinationId = byId('examinationDetailModal')?.dataset.examinationId;
+	if (!examinationId) return showCustomToast('error', 'Không tìm thấy thông tin khám');
 
-	// Gọi API để lưu dịch vụ
-	const priceAfterDiscount = price * (1 - (discount / 100));
-	const totalAmount = priceAfterDiscount + (priceAfterDiscount * (taxPercentInput / 100));
-
-	$.ajax({
-		url: `/api/examination-detail/${examinationId}/services`,
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			service_id: Number(serviceId),
-			service_name: $('#serviceSelect option:selected').data('service-name') || $('#serviceSelect option:selected').text(),
+	const selected = select.selectedOptions[0];
+	try {
+		await requestJson(`/api/examination-detail/${examinationId}/services`, { method: 'POST', json: {
+			service_id: serviceId,
+			service_name: selected?.dataset.serviceName || selected?.textContent || '',
 			unit_price: price,
 			discount_percent: discount,
-			tax_percent: taxPercentInput,
-			total_amount: totalAmount,
+			tax_percent: taxPercent,
+			total_amount: serviceAmounts(price, discount, taxPercent).totalAmount,
 			patient_id: null // Sẽ được lấy từ examination
-		}),
-		success: function () {
-			showCustomToast('success', 'Thêm dịch vụ thành công');
-			$('#addServiceModal').modal('hide');
-			financialSummaryCache = null;
-
-			// Reload services table
-			loadServicesForModal(examinationId);
-		},
-		error: function (xhr) {
-			const errorMessage = getSafeApiErrorMessage(xhr, 'Không thể thêm dịch vụ. Vui lòng kiểm tra lại.');
-			showCustomToast('error', errorMessage);
-		}
-	});
+		} });
+		showCustomToast('success', 'Thêm dịch vụ thành công');
+		modalOf('addServiceModal').hide();
+		state.financialSummaryCache = null;
+		loadServicesForModal(examinationId);
+	} catch (error) {
+		showCustomToast('error', getSafeApiErrorMessage(error, 'Không thể thêm dịch vụ. Vui lòng kiểm tra lại.'));
+	}
 }
 
-// Edit service
+// Edit service: đọc giá trị hiện tại từ dòng trong bảng
 function editService(serviceId) {
-	if (isInvoiceLocked()) {
-		showCustomToast('warning', 'Hóa đơn đã xác nhận, không thể chỉnh sửa');
-		return;
-	}
-	const examinationId = $('#examinationDetailModal').data('examination-id');
-	if (!examinationId) {
-		showCustomToast('error', 'Không tìm thấy thông tin khám');
-		return;
-	}
-
-	// Tìm service trong table để lấy thông tin hiện tại
-	const serviceRow = $(`tr[data-service-id="${serviceId}"]`);
-	if (serviceRow.length === 0) {
+	if (!editableExaminationId()) return;
+	const serviceRow = document.querySelector(`tr[data-service-id="${Number(serviceId) || 0}"]`);
+	if (!serviceRow) {
 		showCustomToast('error', 'Không tìm thấy thông tin dịch vụ');
 		return;
 	}
-
-	// Lấy thông tin từ table
-	const serviceName = serviceRow.find('td:nth-child(2)').text();
-	const unitPrice = serviceRow.find('td:nth-child(3)').text().replace(/[^\d]/g, '');
-	const discountPercent = serviceRow.find('td:nth-child(4)').text().replace('%', '');
-	const taxPercent = serviceRow.find('td:nth-child(5)').text().replace('%', '');
-
-	showEditServiceModal(serviceId, serviceName, unitPrice, discountPercent, taxPercent);
+	const cellText = column => serviceRow.querySelector(`td:nth-child(${column})`)?.textContent || '';
+	showEditServiceModal(serviceId, cellText(2), cellText(3).replace(/[^\d]/g, ''), cellText(4).replace('%', ''), cellText(5).replace('%', ''));
 }
 
-function buildEditServiceModalHtml(viewModel) {
-	const {
-		safeServiceId,
-		safeServiceName,
-		safeUnitPrice,
-		safeDiscountPercent,
-		safeTaxPercent
-	} = viewModel;
-	return `
-        <div class="modal fade qlpk-edit-service-modal" id="editServiceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Chỉnh sửa dịch vụ</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">TÊN DỊCH VỤ</label>
-                            <input type="text" class="form-control" id="editServiceName" value="${safeServiceName}" readonly>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">ĐƠN GIÁ</label>
-                                    <input type="number" class="form-control" id="editServicePrice" value="${safeUnitPrice}" min="0" step="1000">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">CHIẾT KHẤU (%)</label>
-                                    <input type="number" class="form-control" id="editServiceDiscount" value="${safeDiscountPercent}" min="0" max="100" step="1">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">THUẾ GTGT</label>
-                                    <input type="number" class="form-control" id="editServiceTax" value="${safeTaxPercent}" min="0" step="1">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">THÀNH TIỀN</label>
-                                    <input type="text" class="form-control pw-readonly-input" id="editServiceTotal" readonly>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary js-save-edit-service" data-service-id="${safeServiceId}">Lưu thay đổi</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+function editField(label, input) {
+	return el('div', { class: 'mb-3' }, el('label', { class: 'form-label fw-bold' }, label), input);
 }
 
-// Show edit service modal
+function buildEditServiceModal({ serviceId, serviceName, unitPrice, discountPercent, taxPercent }) {
+	const half = child => el('div', { class: 'col-md-6' }, child);
+	return el('div', { class: 'modal fade qlpk-edit-service-modal', id: 'editServiceModal', tabindex: '-1', 'data-bs-backdrop': 'static', 'data-bs-keyboard': 'false' },
+		el('div', { class: 'modal-dialog modal-lg' }, el('div', { class: 'modal-content' },
+			el('div', { class: 'modal-header' }, el('h5', { class: 'modal-title' }, 'Chỉnh sửa dịch vụ'), el('button', { type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' })),
+			el('div', { class: 'modal-body' },
+				editField('TÊN DỊCH VỤ', el('input', { type: 'text', class: 'form-control', id: 'editServiceName', value: serviceName, readonly: true })),
+				el('div', { class: 'row' },
+					half(editField('ĐƠN GIÁ', el('input', { type: 'number', class: 'form-control', id: 'editServicePrice', value: unitPrice, min: '0', step: '1000' }))),
+					half(editField('CHIẾT KHẤU (%)', el('input', { type: 'number', class: 'form-control', id: 'editServiceDiscount', value: discountPercent, min: '0', max: '100', step: '1' })))),
+				el('div', { class: 'row' },
+					half(editField('THUẾ GTGT', el('input', { type: 'number', class: 'form-control', id: 'editServiceTax', value: taxPercent, min: '0', step: '1' }))),
+					half(editField('THÀNH TIỀN', el('input', { type: 'text', class: 'form-control pw-readonly-input', id: 'editServiceTotal', readonly: true }))))),
+			el('div', { class: 'modal-footer' },
+				el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }, 'Hủy'),
+				el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', class: 'btn btn-primary js-save-edit-service', 'data-service-id': serviceId }, 'Lưu thay đổi')))));
+}
+
+// Show edit service modal (tạo mới mỗi lần, xóa khỏi DOM khi đóng)
 function showEditServiceModal(serviceId, serviceName, unitPrice, discountPercent, taxPercent) {
-	// Remove existing modal if any
-	const existingModal = $('#editServiceModal');
-	if (existingModal.length > 0) {
-		existingModal.remove();
-	}
-
-	const modalHtml = buildEditServiceModalHtml({
-		safeServiceId: Number(serviceId) || 0,
-		safeServiceName: escapeAttr(serviceName),
-		safeUnitPrice: escapeAttr(unitPrice),
-		safeDiscountPercent: escapeAttr(discountPercent),
-		safeTaxPercent: escapeAttr(taxPercent)
-	});
-
-	$('body').append(modalHtml);
-	const modal = new bootstrap.Modal(document.getElementById('editServiceModal'));
-	modal.show();
-
-	// Calculate total when inputs change
-	$('#editServicePrice, #editServiceDiscount, #editServiceTax').on('input', calculateEditServiceTotal);
+	byId('editServiceModal')?.remove();
+	const modalNode = buildEditServiceModal({ serviceId: Number(serviceId) || 0, serviceName, unitPrice, discountPercent, taxPercent });
+	document.body.append(modalNode);
+	new window.bootstrap.Modal(modalNode).show();
+	['editServicePrice', 'editServiceDiscount', 'editServiceTax'].forEach(id => byId(id).addEventListener('input', calculateEditServiceTotal));
 	calculateEditServiceTotal();
-
-	// Clean up modal when hidden
-	$('#editServiceModal').on('hidden.bs.modal', function () {
-		$(this).remove();
-	});
+	modalNode.addEventListener('hidden.bs.modal', () => modalNode.remove());
 }
 
-// Calculate total for edit service modal
 function calculateEditServiceTotal() {
-	const price = parseFloat($('#editServicePrice').val()) || 0;
-	const discountPercent = parseFloat($('#editServiceDiscount').val()) || 0;
-	const taxPercent = parseFloat($('#editServiceTax').val()) || 0;
-
-	// Tiền trước thuế sau chiết khấu
-	const preTaxAmount = price * (1 - (discountPercent / 100));
-	// Thuế
-	const taxAmount = preTaxAmount * (taxPercent / 100);
-	// Thành tiền = trước thuế + thuế
-	const totalAmount = preTaxAmount + taxAmount;
-
-	$('#editServiceTotal').val(formatCurrency(totalAmount));
+	const { totalAmount } = serviceAmounts(numberValue('editServicePrice'), numberValue('editServiceDiscount'), numberValue('editServiceTax'));
+	byId('editServiceTotal').value = formatCurrency(totalAmount);
 }
 
 // Save edited service
-function saveEditService(serviceId) {
-	if (isInvoiceLocked()) {
-		showCustomToast('warning', 'Hóa đơn đã xác nhận, không thể chỉnh sửa');
-		return;
-	}
-	const examinationId = $('#examinationDetailModal').data('examination-id');
-	if (!examinationId) {
-		showCustomToast('error', 'Không tìm thấy thông tin khám');
-		return;
-	}
-
-	const price = parseFloat($('#editServicePrice').val()) || 0;
-	const discountPercent = parseFloat($('#editServiceDiscount').val()) || 0;
-	const taxPercent = parseFloat($('#editServiceTax').val()) || 0;
-	const serviceName = $('#editServiceName').val();
-
+async function saveEditService(serviceId) {
+	const examinationId = editableExaminationId();
+	if (!examinationId) return;
+	const price = numberValue('editServicePrice');
 	if (price <= 0) {
 		showCustomToast('error', 'Đơn giá phải lớn hơn 0');
 		return;
 	}
-
-	// Gọi API để cập nhật dịch vụ
-	$.ajax({
-		url: `/api/examination-detail/${examinationId}/services/${serviceId}`,
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify({
-			service_name: serviceName,
+	try {
+		await requestJson(`/api/examination-detail/${examinationId}/services/${serviceId}`, { method: 'PUT', json: {
+			service_name: byId('editServiceName')?.value,
 			unit_price: price,
-			discount_percent: discountPercent,
-			tax_percent: taxPercent
-		}),
-		success: function () {
-			showCustomToast('success', 'Cập nhật dịch vụ thành công');
-			$('#editServiceModal').modal('hide');
-			financialSummaryCache = null;
-
-			// Reload services table với delay nhỏ để đảm bảo database đã được cập nhật
-			setTimeout(() => {
-				loadServicesForModal(examinationId);
-			}, 500);
-		},
-		error: function () {
-			const errorMessage = 'Không thể cập nhật dịch vụ. Vui lòng kiểm tra lại.';
-			showCustomToast('error', errorMessage);
-		}
-	});
+			discount_percent: numberValue('editServiceDiscount'),
+			tax_percent: numberValue('editServiceTax')
+		} });
+		showCustomToast('success', 'Cập nhật dịch vụ thành công');
+		const editModal = byId('editServiceModal');
+		if (editModal) modalOf('editServiceModal').hide();
+		state.financialSummaryCache = null;
+		// Reload services table với delay nhỏ để đảm bảo database đã được cập nhật
+		setTimeout(() => loadServicesForModal(examinationId), 500);
+	} catch {
+		showCustomToast('error', 'Không thể cập nhật dịch vụ. Vui lòng kiểm tra lại.');
+	}
 }
 
 // Delete service
-function deleteService(serviceId) {
-	if (isInvoiceLocked()) {
-		showCustomToast('warning', 'Hóa đơn đã xác nhận, không thể chỉnh sửa');
-		return;
+async function deleteService(serviceId) {
+	const examinationId = editableExaminationId();
+	if (!examinationId) return;
+	const confirmed = await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa dịch vụ này?', { title: 'Xác nhận xóa?', showToast: (type, message) => showCustomToast(type, message) });
+	if (!confirmed) return;
+	try {
+		await requestJson(`/api/examination-detail/${examinationId}/services/${serviceId}`, { method: 'DELETE' });
+		showCustomToast('success', 'Xóa dịch vụ thành công');
+		state.financialSummaryCache = null;
+		loadServicesForModal(examinationId);
+	} catch {
+		showCustomToast('error', 'Không thể xóa dịch vụ. Vui lòng thử lại.');
 	}
-	const examinationId = $('#examinationDetailModal').data('examination-id');
-	if (!examinationId) {
-		showCustomToast('error', 'Không tìm thấy thông tin khám');
-		return;
-	}
-
-	Swal.fire(buildPaymentConfirmOptions({
-		title: 'Xác nhận xóa?',
-		text: 'Bạn có chắc chắn muốn xóa dịch vụ này?',
-		icon: 'warning',
-		confirmText: 'Xóa',
-		cancelText: 'Hủy',
-		variant: 'danger'
-	})).then((result) => {
-		if (result.isConfirmed) {
-			$.ajax({
-				url: `/api/examination-detail/${examinationId}/services/${serviceId}`,
-				method: 'DELETE',
-				success: function () {
-					showCustomToast('success', 'Xóa dịch vụ thành công');
-					financialSummaryCache = null;
-					// Reload services table
-					loadServicesForModal(examinationId);
-				},
-				error: function () {
-					const errorMessage = 'Không thể xóa dịch vụ. Vui lòng thử lại.';
-					showCustomToast('error', errorMessage);
-				}
-			});
-		}
-	});
 }
+
+export { deleteService, editService, renderPrescriptionsTable, renderServicesTable, saveEditService, saveNewService, showAddServiceModal };
