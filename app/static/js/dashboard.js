@@ -1,440 +1,229 @@
-// Continued in (nạp ngay sau file này, cùng scope trang): dashboard-methods.js
-/**
- * Dashboard V2 — Lượt khám / Lịch hẹn / Top ICD
- */
+// Admin dashboard: today's appointments, exam visits per day, top ICD treemap, referral sources,
+// staff presence, detail modals and Excel exports. Non-admin users see the welcome view only.
+import { byId, delegate, el, icon, replace } from './shared/dom.js';
+import { bindExamStatsChartInteractions, buildExamStatsChartOption, buildICDChartOption } from './dashboard/charts.js';
+import { emptyState, examDetailRows, icdDetailRows, referralDetailRows, renderAppointments, renderReferralSources, renderStaffOnline } from './dashboard/panels.js';
 
-const EXAM_STATS_DOCTOR_COLOR = '#0F766E';
-const EXAM_STATS_PSYCH_COLOR = '#E91E90';
+const state = { charts: {} };
+const fmtISO = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const setVisible = (id, visible) => byId(id)?.classList.toggle('dashboard-hidden', !visible);
 
-function formatExamStatsTooltip(params) {
-	let html = `<strong>${window.QLPKHtml.escape(params[0].name)}</strong><br/>`;
-	let dayTotal = 0;
-	params.forEach(p => {
-		html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
-		dayTotal += p.value;
-	});
-	html += `<b>Tổng: ${dayTotal}</b>`;
-	return html;
+async function getJson(url) {
+	const response = await fetch(url);
+	return response.ok ? response.json() : null;
 }
 
-function buildExamStatsLineSeries(name, data, color, areaRgb, areaTopAlpha) {
-	return {
-		name,
-		type: 'line',
-		data,
-		smooth: 0.4,
-		symbol: 'circle',
-		symbolSize: d => { if (d <= 0) return 0; return d === Math.max(...data) ? 8 : 5; },
-		lineStyle: { color, width: 2.5 },
-		itemStyle: { color, borderColor: '#fff', borderWidth: 2 },
-		areaStyle: {
-			color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-				colorStops: [
-					{ offset: 0, color: `rgba(${areaRgb},${areaTopAlpha})` },
-					{ offset: 1, color: `rgba(${areaRgb},0.02)` }
-				]
-			}
-		},
-		label: {
-			show: true,
-			position: 'top',
-			formatter: p => p.value > 0 ? p.value : '',
-			fontSize: 10, color
-		},
-		animationDuration: 800,
-		animationEasing: 'cubicOut'
-	};
+function resetChart(name) {
+	state.charts[name]?.dispose();
+	state.charts[name] = null;
 }
 
-function buildExamStatsChartOption({ labels, doctorCounts, psychCounts, total }) {
-	return {
-		tooltip: { trigger: 'axis', confine: true, formatter: formatExamStatsTooltip },
-		legend: {
-			show: true,
-			top: 4,
-			left: 'center',
-			textStyle: { fontSize: 11 },
-			data: ['Bác sĩ', 'Tâm lý gia']
-		},
-		graphic: [{
-			type: 'text', right: 16, top: 8,
-			style: {
-				text: `Tổng: ${total} lượt`,
-				font: 'bold 12px sans-serif',
-				fill: '#0F766E'
-			}
-		}],
-		grid: { left: 42, right: 16, top: 42, bottom: 28 },
-		xAxis: {
-			type: 'category', data: labels,
-			axisLabel: { fontSize: 11, color: '#64748B', interval: Math.floor(labels.length / 15) },
-			axisTick: { show: false },
-			axisLine: { lineStyle: { color: '#E5E7EB' } }
-		},
-		yAxis: {
-			type: 'value', minInterval: 1,
-			axisLabel: { fontSize: 11, color: '#94A3B8' },
-			splitLine: { lineStyle: { color: '#F1F5F9' } }
-		},
-		series: [
-			buildExamStatsLineSeries('Bác sĩ', doctorCounts, EXAM_STATS_DOCTOR_COLOR, '15,118,110', '0.22'),
-			buildExamStatsLineSeries('Tâm lý gia', psychCounts, EXAM_STATS_PSYCH_COLOR, '233,30,144', '0.18')
-		]
-	};
+function mountChart(name, dom, option) {
+	const chart = window.echarts.init(dom);
+	state.charts[name] = chart;
+	chart.setOption(option);
+	window.addEventListener('resize', () => chart.resize());
+	return chart;
 }
 
-function bindExamStatsChartInteractions(chart, { items, totalDoctor, totalPsych, onDayClick }) {
-	// Cập nhật tổng khi toggle legend
-	chart.on('legendselectchanged', (params) => {
-		const sel = params.selected;
-		let filteredTotal = 0;
-		if (sel['Bác sĩ']) filteredTotal += totalDoctor;
-		if (sel['Tâm lý gia']) filteredTotal += totalPsych;
-		chart.setOption({
-			graphic: [{ style: { text: `Tổng: ${filteredTotal} lượt` } }]
-		});
-	});
-
-	// Click vào vùng grid → show chi tiết ngày
-	chart.getZr().on('click', (event) => {
-		const pt = [event.offsetX, event.offsetY];
-		if (!chart.containPixel('grid', pt)) return;
-		const idx = Math.round(chart.convertFromPixel('grid', pt)[0]);
-		if (idx >= 0 && idx < items.length) onDayClick(items[idx]);
-	});
-
-	// Cursor pointer khi vào vùng grid
-	chart.getZr().on('mousemove', (event) => {
-		const pt = [event.offsetX, event.offsetY];
-		const inGrid = chart.containPixel('grid', pt);
-		chart.getZr().setCursorStyle(inGrid ? 'pointer' : 'default');
-	});
+async function loadAppointments() {
+	try {
+		const today = fmtISO(new Date());
+		const data = await getJson(`/api/?per_page=1000&date_from=${today}&date_to=${today}`);
+		const container = byId('appointmentList');
+		if (data && container) renderAppointments(container, data.appointments || []);
+	} catch (error) {
+		console.error('Error loading appointments:', error);
+	}
 }
 
-function formatAppointmentCountdown(diffMinutes) {
-	if (!(diffMinutes > 0)) return '';
-	if (diffMinutes < 60) return `Còn ${diffMinutes} phút`;
-	const totalHours = Math.floor(diffMinutes / 60);
-	const remMinutes = diffMinutes % 60;
-	if (totalHours < 24) return remMinutes > 0 ? `Còn ${totalHours} giờ ${remMinutes} phút` : `Còn ${totalHours} giờ`;
-	const days = Math.floor(totalHours / 24);
-	const remHours = totalHours % 24;
-	return remHours > 0 ? `Còn ${days} ngày ${remHours} giờ` : `Còn ${days} ngày`;
+const examToDate = () => (state.revToDate > fmtISO(new Date()) ? fmtISO(new Date()) : state.revToDate);
+
+async function loadExamStats() {
+	try {
+		const data = await getJson(`/api/dashboard/exam-stats-by-day?from_date=${state.revFromDate}&to_date=${examToDate()}`);
+		if (data) renderExamStatsChart(data.items || []);
+	} catch (error) {
+		console.error('Error loading exam stats:', error);
+	}
 }
 
-class DashboardManager {
-	constructor() {
-		this.appointments = [];
-		this.examStatsChart = null;
-		this.icdChart = null;
-		this.referralSourceChart = null;
+function renderExamStatsChart(items) {
+	const dom = byId('examStatsChart');
+	if (!dom) return;
+	resetChart('exam');
+	const doctorCounts = items.map(item => item.doctor_count || 0);
+	const psychCounts = items.map(item => item.psychologist_count || 0);
+	const totalDoctor = doctorCounts.reduce((sum, value) => sum + value, 0);
+	const totalPsych = psychCounts.reduce((sum, value) => sum + value, 0);
+	const chart = mountChart('exam', dom, buildExamStatsChartOption({ labels: items.map(item => item.label), doctorCounts, psychCounts, total: totalDoctor + totalPsych }));
+	bindExamStatsChartInteractions(chart, { items, totalDoctor, totalPsych, onDayClick: item => showExamDetail(item.date, item.label, item.count) });
+}
 
-		this.init();
-	}
-
-	async init() {
-		// Kiểm tra quyền hiển thị
-		const user = await window.QLPKApiTransport.currentUser();
-		const userRole = user.role ? String(user.role).toLowerCase() : null;
-
-		if (userRole !== 'admin') {
-			this.setElementVisible('user-welcome-view', true);
-			this.setElementVisible('admin-dashboard-view', false);
-			return; // Dừng tại đây, không nạp biểu đồ, không gọi API thống kê
-		}
-
-		this.setElementVisible('admin-dashboard-view', true);
-		this.setElementVisible('user-welcome-view', false);
-
-		const todayRev = new Date();
-		const thirtyAgo = new Date(todayRev);
-		thirtyAgo.setDate(todayRev.getDate() - 6);
-		const yearStart = new Date(todayRev.getFullYear(), 0, 1);
-		const fmtISO = d => {
-			const y = d.getFullYear();
-			const m = String(d.getMonth() + 1).padStart(2, '0');
-			const day = String(d.getDate()).padStart(2, '0');
-			return `${y}-${m}-${day}`;
-		};
-		this.fmtISO = fmtISO;
-		this.revFromDate = fmtISO(thirtyAgo);
-		this.revToDate   = fmtISO(todayRev);
-
-		// Exam stats date range pickers (dùng lại id revFromDate/revToDate)
-		const revFromEl = document.getElementById('revFromDate');
-		const revToEl   = document.getElementById('revToDate');
-		if (revFromEl && window.flatpickr) {
-			flatpickr(revFromEl, {
-				dateFormat: 'd/m/Y', defaultDate: thirtyAgo, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.revFromDate = fmtISO(dates[0]); this.loadExamStats(); } }
-			});
-		}
-		if (revToEl && window.flatpickr) {
-			flatpickr(revToEl, {
-				dateFormat: 'd/m/Y', defaultDate: todayRev, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.revToDate = fmtISO(dates[0]); this.loadExamStats(); } }
-			});
-		}
-
-		// ICD date range pickers
-		this.icdFromDate = fmtISO(thirtyAgo);
-		this.icdToDate   = fmtISO(todayRev);
-		const fromEl = document.getElementById('icdFromDate');
-		const toEl   = document.getElementById('icdToDate');
-		if (fromEl && window.flatpickr) {
-			flatpickr(fromEl, {
-				dateFormat: 'd/m/Y', defaultDate: thirtyAgo, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.icdFromDate = fmtISO(dates[0]); this.loadTopICD(); } }
-			});
-		}
-		if (toEl && window.flatpickr) {
-			flatpickr(toEl, {
-				dateFormat: 'd/m/Y', defaultDate: todayRev, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.icdToDate = fmtISO(dates[0]); this.loadTopICD(); } }
-			});
-		}
-
-		// Referral source date range pickers
-		this.referralSourceFromDate = fmtISO(yearStart);
-		this.referralSourceToDate = fmtISO(todayRev);
-		const referralFromEl = document.getElementById('referralSourceFromDate');
-		const referralToEl = document.getElementById('referralSourceToDate');
-		if (referralFromEl && window.flatpickr) {
-			flatpickr(referralFromEl, {
-				dateFormat: 'd/m/Y', defaultDate: yearStart, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.referralSourceFromDate = fmtISO(dates[0]); this.loadReferralSources(); } }
-			});
-		}
-		if (referralToEl && window.flatpickr) {
-			flatpickr(referralToEl, {
-				dateFormat: 'd/m/Y', defaultDate: todayRev, disableMobile: true,
-				onChange: (dates) => { if (dates[0]) { this.referralSourceToDate = fmtISO(dates[0]); this.loadReferralSources(); } }
-			});
-		}
-
-		await Promise.all([
-			this.loadAppointments(),
-			this.loadExamStats(),
-			this.loadTopICD(),
-			this.loadReferralSources(),
-			this.loadStaffOnline()
-		]);
-
-		this.registerRealtimeHandlers();
-	}
-
-	registerRealtimeHandlers() {
-		if (!window.QLPKRealtimePageHooks) return;
-
-		window.QLPKRealtimePageHooks.register({
-			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'presence.changed'],
-			debounceMs: 500,
-			handler: (event) => {
-				if (event.type === 'presence.changed') {
-					this.loadStaffOnline();
-					return;
-				}
-
-				Promise.all([
-					this.loadAppointments(),
-					this.loadExamStats(),
-					this.loadTopICD(),
-					this.loadReferralSources()
-				]);
-			}
-		});
-	}
-
-	_getRevToDate() {
-		const today = this.fmtISO(new Date());
-		return this.revToDate > today ? today : this.revToDate;
-	}
-
-	// ==================== APPOINTMENTS ====================
-	async loadAppointments() {
-		try {
-			const now = new Date();
-			const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-			const response = await fetch(`/api/?per_page=1000&date_from=${today}&date_to=${today}`, {
-			});
-			if (response.ok) {
-				const data = await response.json();
-				this.appointments = data.appointments || [];
-				this.renderAppointments();
-			}
-		} catch (e) {
-			console.error('Error loading appointments:', e);
-		}
-	}
-
-	renderAppointments() {
-		const container = document.getElementById('appointmentList');
-		if (!container) return;
-
-		const now = new Date();
-		const items = this.appointments
-			.filter(apt => ['SCHEDULED', 'CONFIRMED'].includes((apt.status || '').toUpperCase()))
-			.sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date));
-
-		if (items.length === 0) {
-			container.innerHTML = '<div class="empty-state"><i class="bi bi-calendar-x"></i>Không có lịch hẹn hôm nay</div>';
+// Opens a detail modal, shows its loading state, then fills its table from `url`.
+async function showDetail({ prefix, title, url, rows, logName }) {
+	const modalEl = byId(`${prefix}DetailModal`);
+	if (!modalEl) return;
+	byId(`${prefix}DetailTitle`).textContent = title;
+	setVisible(`${prefix}DetailLoading`, true);
+	setVisible(`${prefix}DetailContent`, false);
+	setVisible(`${prefix}DetailEmpty`, false);
+	new window.bootstrap.Modal(modalEl).show();
+	try {
+		const data = await getJson(url);
+		if (!data) throw new Error('API error');
+		const items = data.items || [];
+		setVisible(`${prefix}DetailLoading`, false);
+		if (!items.length) {
+			setVisible(`${prefix}DetailEmpty`, true);
 			return;
 		}
-
-		container.innerHTML = items.map(apt => {
-			const aptDate = new Date(apt.appointment_date);
-			const timeStr = aptDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-			const status = (apt.status || '').toUpperCase();
-			const statusClass = status === 'CONFIRMED' ? 'confirmed' : 'pending';
-			const statusText = status === 'CONFIRMED' ? 'Đã xác nhận' : 'Chờ xác nhận';
-			const infoText = [apt.patient_full_name || apt.full_name || 'Bệnh nhân', apt.patient_phone, apt.service_name, apt.doctor_name]
-				.filter(Boolean).join(' - ');
-			const countdown = formatAppointmentCountdown(Math.round((aptDate - now) / 60000));
-
-			return `
-				<div class="apt-item">
-					<div class="apt-time">${timeStr}</div>
-					<div class="apt-dot ${statusClass}"></div>
-					<div class="apt-info">
-						${window.QLPKHtml.escape(infoText)}
-						${countdown ? `<div class="apt-countdown">${countdown}</div>` : ''}
-					</div>
-					<div class="apt-status ${statusClass}">${window.QLPKHtml.escape(statusText)}</div>
-				</div>
-			`;
-		}).join('');
+		replace(byId(`${prefix}DetailTableBody`), rows(items));
+		setVisible(`${prefix}DetailContent`, true);
+	} catch (error) {
+		console.error(`${logName} detail error:`, error);
+		setVisible(`${prefix}DetailLoading`, false);
+		setVisible(`${prefix}DetailEmpty`, true);
 	}
-
-	// ==================== EXAM STATS ====================
-	async loadExamStats() {
-		try {
-			const url = `/api/dashboard/exam-stats-by-day?from_date=${this.revFromDate}&to_date=${this._getRevToDate()}`;
-			const res = await fetch(url);
-			if (res.ok) {
-				const data = await res.json();
-				this.renderExamStatsChart(data.items || []);
-			}
-		} catch (e) {
-			console.error('Error loading exam stats:', e);
-		}
-	}
-
-	renderExamStatsChart(items) {
-		const dom = document.getElementById('examStatsChart');
-		if (!dom) return;
-		if (this.examStatsChart) { this.examStatsChart.dispose(); this.examStatsChart = null; }
-
-		const labels = items.map(i => i.label);
-		const doctorCounts = items.map(i => i.doctor_count || 0);
-		const psychCounts = items.map(i => i.psychologist_count || 0);
-		const totalDoctor = doctorCounts.reduce((s, v) => s + v, 0);
-		const totalPsych = psychCounts.reduce((s, v) => s + v, 0);
-		const total = totalDoctor + totalPsych;
-
-		const chart = echarts.init(dom);
-		this.examStatsChart = chart;
-
-		chart.setOption(buildExamStatsChartOption({ labels, doctorCounts, psychCounts, total }));
-
-		window.addEventListener('resize', () => chart.resize());
-		bindExamStatsChartInteractions(chart, {
-			items,
-			totalDoctor,
-			totalPsych,
-			onDayClick: item => this.showExamDetail(item.date, item.label, item.count)
-		});
-	}
-
-
-	async showExamDetail(dateISO, dateLabel, count) {
-		const modalEl = document.getElementById('examDetailModal');
-		if (!modalEl) return;
-		const modal = new bootstrap.Modal(modalEl);
-
-		document.getElementById('examDetailTitle').textContent =
-			`Ca khám ngày ${dateLabel} — ${count} ca`;
-		this.setElementVisible('examDetailLoading', true);
-		this.setElementVisible('examDetailContent', false);
-		this.setElementVisible('examDetailEmpty', false);
-		modal.show();
-
-		try {
-			const res = await fetch(`/api/dashboard/exam-detail-by-day?date=${dateISO}`, {
-			});
-			if (!res.ok) throw new Error('API error');
-			const data = await res.json();
-			const items = data.items || [];
-
-			this.setElementVisible('examDetailLoading', false);
-
-			if (items.length === 0) {
-				this.setElementVisible('examDetailEmpty', true);
-				return;
-			}
-
-			const tbody = document.getElementById('examDetailTableBody');
-			tbody.innerHTML = items.map((it, i) => {
-				const isPsych = (it.doctor_role || '').toUpperCase() === 'PSYCHOLOGIST';
-				const altClass = i % 2 === 0 ? '' : 'dashboard-row-alt';
-			const rowClass = isPsych ? 'dashboard-row-psych' : altClass;
-				const timeClass = isPsych ? 'dashboard-cell-psych dashboard-cell-psych-marker' : 'dashboard-cell-accent dashboard-cell-accent-marker';
-				return `<tr class="${rowClass}">
-					<td class="ps-3 py-2 text-center fw-semibold ${timeClass}">${it.time}</td>
-					<td class="py-2 fw-semibold">${window.QLPKHtml.escape(it.patient_name)}</td>
-					<td class="py-2 dashboard-cell-muted">${window.QLPKHtml.escape(it.phone)}</td>
-					<td class="py-2">${window.QLPKHtml.escape(it.doctor_name)}</td>
-					<td class="py-2 dashboard-cell-muted">${window.QLPKHtml.escape(it.service || '—')}</td>
-					<td class="pe-3 py-2 text-center">
-						<span class="qlpk-status dashboard-status-pill ${this.getExamStatusClass(it.status)}">${window.QLPKHtml.escape(it.status)}</span>
-					</td>
-				</tr>`;
-			}).join('');
-
-			this.setElementVisible('examDetailContent', true);
-		} catch (e) {
-			console.error('Exam detail error:', e);
-			this.setElementVisible('examDetailLoading', false);
-			this.setElementVisible('examDetailEmpty', true);
-		}
-	}
-
-	setElementVisible(id, visible) {
-		const element = document.getElementById(id);
-		if (element) element.classList.toggle('dashboard-hidden', !visible);
-	}
-
-	getExamStatusClass(status) {
-		const statusMap = {
-			'Hoàn thành': 'dashboard-status-pill--done',
-			'Đang khám': 'dashboard-status-pill--active',
-			'Đã xác nhận': 'dashboard-status-pill--confirmed',
-			'Chờ xác nhận': 'dashboard-status-pill--waiting'
-		};
-		return statusMap[status] || 'dashboard-status-pill--muted';
-	}
-
-	// ==================== REFERRAL SOURCES ====================
-	async loadReferralSources() {
-		try {
-			const url = `/api/dashboard/referral-sources?from_date=${this.referralSourceFromDate}&to_date=${this.referralSourceToDate}`;
-			const response = await fetch(url, {
-			});
-			if (response.ok) {
-				const data = await response.json();
-				this.renderReferralSourceChart(data.items || []);
-			}
-		} catch (e) {
-			console.error('Error loading referral source stats:', e);
-		}
-	}
-
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-	if (!window.QLPKApiTransport.hasSession()) {
-		window.location.href = '/login.html';
+const showExamDetail = (date, label, count) => showDetail({ prefix: 'exam', title: `Ca khám ngày ${label} — ${count} ca`,
+	url: `/api/dashboard/exam-detail-by-day?date=${date}`, rows: examDetailRows, logName: 'Exam' });
+
+async function loadTopICD() {
+	try {
+		const data = await getJson(`/api/dashboard/top-icd?from_date=${state.icdFromDate}&to_date=${state.icdToDate}`);
+		if (!data) return;
+		const items = data.items || [];
+		const dom = byId('icdChart');
+		if (!dom) return;
+		resetChart('icd');
+		if (!items.length) {
+			replace(dom, emptyState('bi-clipboard2-pulse', 'Chưa có dữ liệu ICD'));
+			return;
+		}
+		const chart = mountChart('icd', dom, buildICDChartOption(items));
+		chart.on('click', params => {
+			if (params.data && params.data.name) showDetail({ prefix: 'icd', title: `${params.data.name} — ${params.data._disease || ''} (${params.data.value} ca)`,
+				url: `/api/dashboard/icd-detail?icd_code=${encodeURIComponent(params.data.name)}&from_date=${state.icdFromDate}&to_date=${state.icdToDate}`, rows: icdDetailRows, logName: 'ICD' });
+		});
+	} catch (error) {
+		console.error('Error loading top ICD:', error);
+	}
+}
+
+async function loadReferralSources() {
+	try {
+		const data = await getJson(`/api/dashboard/referral-sources?from_date=${state.referralSourceFromDate}&to_date=${state.referralSourceToDate}`);
+		const dom = byId('referralSourceChart');
+		if (data && dom) renderReferralSources(dom, data.items || []);
+	} catch (error) {
+		console.error('Error loading referral source stats:', error);
+	}
+}
+
+async function loadStaffOnline() {
+	try {
+		const data = await getJson('/api/dashboard/staff-online');
+		const container = byId('staffOnlineList');
+		if (data && container) renderStaffOnline(container, byId('onlineCount'), data);
+	} catch (error) {
+		console.error('Error loading staff online:', error);
+	}
+}
+
+const EXPORTS = {
+	icd: { button: 'btnExportICD', fallback: 'icd.xlsx', failed: 'Không thể xuất danh sách ICD. Vui lòng thử lại.', log: 'Export ICD error:',
+		url: () => `/api/dashboard/export-icd-excel?from_date=${state.icdFromDate}&to_date=${state.icdToDate}` },
+	referral: { button: 'btnExportReferralSource', fallback: 'nguon_gioi_thieu.xlsx', failed: 'Không thể xuất nguồn giới thiệu. Vui lòng thử lại.', log: 'Export referral source error:',
+		url: () => `/api/dashboard/export-referral-source-excel?from_date=${state.referralSourceFromDate}&to_date=${state.referralSourceToDate}` },
+};
+
+async function exportExcel(kind) {
+	const config = EXPORTS[kind];
+	const button = byId(config.button);
+	if (button) {
+		button.disabled = true;
+		replace(button, icon('bi-hourglass-split'), ' Đang xuất...');
+	}
+	try {
+		const response = await fetch(config.url());
+		if (!response.ok) {
+			window.QLPKUserFeedback?.show('error', config.failed);
+			return;
+		}
+		const link = el('a', { href: URL.createObjectURL(await response.blob()) });
+		const match = (response.headers.get('Content-Disposition') || '').match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+		link.download = match ? match[1].replace(/['"]/g, '') : config.fallback;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		URL.revokeObjectURL(link.href);
+	} catch (error) {
+		console.error(config.log, error);
+		window.QLPKUserFeedback?.show('error', config.failed);
+	} finally {
+		if (button) {
+			button.disabled = false;
+			replace(button, icon('bi-file-earmark-excel'), ' Excel');
+		}
+	}
+}
+
+function bindPicker(id, initial, key, reload) {
+	const input = byId(id);
+	if (!input || !window.flatpickr) return;
+	window.flatpickr(input, { dateFormat: 'd/m/Y', defaultDate: initial, disableMobile: true, onChange: dates => {
+		if (!dates[0]) return;
+		state[key] = fmtISO(dates[0]);
+		reload();
+	} });
+}
+
+function setupRanges() {
+	const today = new Date();
+	const weekAgo = new Date(today);
+	weekAgo.setDate(today.getDate() - 6);
+	const yearStart = new Date(today.getFullYear(), 0, 1);
+	Object.assign(state, { revFromDate: fmtISO(weekAgo), revToDate: fmtISO(today), icdFromDate: fmtISO(weekAgo), icdToDate: fmtISO(today),
+		referralSourceFromDate: fmtISO(yearStart), referralSourceToDate: fmtISO(today) });
+	bindPicker('revFromDate', weekAgo, 'revFromDate', loadExamStats);
+	bindPicker('revToDate', today, 'revToDate', loadExamStats);
+	bindPicker('icdFromDate', weekAgo, 'icdFromDate', loadTopICD);
+	bindPicker('icdToDate', today, 'icdToDate', loadTopICD);
+	bindPicker('referralSourceFromDate', yearStart, 'referralSourceFromDate', loadReferralSources);
+	bindPicker('referralSourceToDate', today, 'referralSourceToDate', loadReferralSources);
+}
+
+function bind() {
+	delegate(document, 'click', '[data-dashboard-export]', (event, button) => exportExcel(button.dataset.dashboardExport));
+	delegate(byId('referralSourceChart') || document, 'click', '.referral-source-tag', (event, tag) => showDetail({ prefix: 'referralSource',
+		title: `${tag.dataset.sourceLabel} — ${Number(tag.dataset.sourceCount || 0) || 0} lượt khám`,
+		url: `/api/dashboard/referral-source-detail?source=${encodeURIComponent(tag.dataset.sourceKey)}&from_date=${state.referralSourceFromDate}&to_date=${state.referralSourceToDate}`,
+		rows: referralDetailRows, logName: 'Referral source' }));
+	window.QLPKRealtimePageHooks?.register({
+		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'presence.changed'],
+		debounceMs: 500,
+		handler(event) {
+			if (event.type === 'presence.changed') loadStaffOnline();
+			else Promise.all([loadAppointments(), loadExamStats(), loadTopICD(), loadReferralSources()]);
+		},
+	});
+}
+
+async function init() {
+	const user = await window.QLPKApiTransport.currentUser();
+	if ((user.role ? String(user.role).toLowerCase() : null) !== 'admin') {
+		setVisible('user-welcome-view', true);
+		setVisible('admin-dashboard-view', false);
 		return;
 	}
-	window.dashboardManager = new DashboardManager();
-});
+	setVisible('admin-dashboard-view', true);
+	setVisible('user-welcome-view', false);
+	setupRanges();
+	await Promise.all([loadAppointments(), loadExamStats(), loadTopICD(), loadReferralSources(), loadStaffOnline()]);
+	bind();
+}
+
+if (!window.QLPKApiTransport.hasSession()) window.location.href = '/login.html';
+else init();

@@ -15,14 +15,12 @@
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/dashboard.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/welcome-intro.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/echarts@5.6.0/echarts.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-	<script src="/static/js/dashboard.js?v={{ app_version }}"></script>
-	<script src="/static/js/dashboard-methods.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/dashboard.js?v={{ app_version }}"></script>
 </head>
 
 <body class="dashboard-page">
@@ -80,7 +78,7 @@
 									<input type="text" id="icdFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
 									<span class="dashboard-date-label">đến</span>
 									<input type="text" id="icdToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportICD" class="dashboard-export-btn" data-qlpk-call="dashboardManager.exportICDExcel"
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportICD" class="dashboard-export-btn" data-dashboard-export="icd"
 										title="Xuất Excel ICD">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
@@ -114,7 +112,7 @@
 									<input type="text" id="referralSourceFromDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
 									<span class="dashboard-date-label">đến</span>
 									<input type="text" id="referralSourceToDate" class="year-input dashboard-date-input" placeholder="dd/mm/yyyy" readonly>
-									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportReferralSource" class="dashboard-export-btn" data-qlpk-call="dashboardManager.exportReferralSourceExcel"
+									<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" id="btnExportReferralSource" class="dashboard-export-btn" data-dashboard-export="referral"
 										title="Xuất Excel nguồn giới thiệu">
 										<i class="bi bi-file-earmark-excel"></i> Excel
 									</button>
