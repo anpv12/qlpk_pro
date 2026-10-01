@@ -1,5 +1,7 @@
-/* global acBlurTimer: writable, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getFilteredRows, initGlobalDateFilter, loadExpenses, normalizeSearchText, render, rows: writable, saveColumnsToServer, setCtVisible, switchTab */
-/* exported acBlurTimer, addRow, appendFormulaToken, deleteCol, deleteRow, editCol, formatNumberCell, importCSV, saveCol, scheduleCloseAc, showAddCol, showRawNumberCell, toggleConfig, updateCell */
+import { state } from './state.js';
+import { el, icon, replace } from '../shared/dom.js';
+import { apiRequest, closeAllAc, columns, computeRow, fmtNum, loadExpenses, normalizeSearchText, render, saveColumnsToServer, setCtVisible } from '../chi-tieu.js';
+import { getFilteredRows } from './grid-and-filters.js';
 
 function importCSV(input) {
 	const file = input.files[0];
@@ -90,7 +92,7 @@ function processImportRows(raw, fileName) {
 	if (!items.length) { window.CustomModal.alert('File không có dữ liệu hợp lệ'); return; }
 
 	apiRequest('/api/expenses/bulk', 'POST', { items }).then(res => {
-		rows = res.items.concat(rows);
+		state.rows = res.items.concat(state.rows);
 		render();
 		window.CustomModal.alert(`Đã import <b>${res.items.length}</b> khoản chi từ file <b>${window.QLPKHtml.escape(fileName)}</b>`);
 	}).catch(e => {
@@ -124,11 +126,11 @@ const updateTimers = {};
 function updateCell(ri, colId, value) {
 	const col = columns.find(c => c.id === colId);
 	if (col && col.type === 'number') value = parseFloat(value) || 0;
-	rows[ri][colId] = value;
+	state.rows[ri][colId] = value;
 	// Update totals row without full re-render
 	updateTotals();
 	// Debounce API call 500ms
-	const row = rows[ri];
+	const row = state.rows[ri];
 	if (row.id) {
 		const key = row.id + '_' + colId;
 		clearTimeout(updateTimers[key]);
@@ -164,7 +166,7 @@ async function addRow() {
 	const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
 	try {
 		const newRow = await apiRequest('/api/expenses', 'POST', { date: dateStr });
-		rows.unshift(newRow);
+		state.rows.unshift(newRow);
 		render();
 		setTimeout(() => { const tb = document.getElementById('chiBody'); const fr = tb.firstElementChild; if (fr) { const inp = fr.querySelector('.cell-input'); if (inp) inp.focus(); } }, 50);
 	} catch (e) {
@@ -175,10 +177,10 @@ async function addRow() {
 function deleteRow(ri) {
 	window.CustomModal.confirm('Xóa khoản chi này?', 'Xác nhận xóa', 'warning', 'danger').then(async confirmed => {
 		if (!confirmed) return;
-		const row = rows[ri];
+		const row = state.rows[ri];
 		try {
 			if (row.id) await apiRequest('/api/expenses/' + row.id, 'DELETE');
-			rows.splice(ri, 1);
+			state.rows.splice(ri, 1);
 			render();
 		} catch (e) {
 			console.error('Delete error:', e);
@@ -197,10 +199,11 @@ function toggleConfig() {
 }
 function renderColList() {
 	const typeLabels = { number: 'Số', text: 'Văn bản', date: 'Ngày', time: 'Giờ', select: 'Dropdown', formula: 'Công thức', autocomplete: 'Tự động' };
-	document.getElementById('colList').innerHTML = columns.map(col => {
-		const fTag = col.type === 'formula' ? `<span class="ct-formula-summary">= ${col.formula}</span>` : '';
-		return `<li class="col-list-item"><i class="bi bi-grip-vertical ct-grip-icon"></i><span class="col-name">${window.QLPKHtml.escape(col.name)}${fTag}</span><span class="col-type">${typeLabels[col.type]}</span><div class="col-actions"><button data-qlpk-button="edit" data-qlpk-button-variant="soft" data-qlpk-call="editCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-pencil"></i></button><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="del-btn" data-qlpk-call="deleteCol" data-qlpk-args='["${col.id}"]'><i class="bi bi-trash"></i></button></div></li>`;
-	}).join('');
+	const actionButton = (kind, call, iconName, colId, extra) => el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: extra, 'data-qlpk-call': call, 'data-qlpk-args': JSON.stringify([colId]) }, icon(iconName));
+	replace(document.getElementById('colList'), columns.map(col => el('li', { class: 'col-list-item' }, icon('bi-grip-vertical', 'ct-grip-icon'),
+		el('span', { class: 'col-name' }, col.name, col.type === 'formula' ? el('span', { class: 'ct-formula-summary' }, `= ${col.formula}`) : null),
+		el('span', { class: 'col-type' }, typeLabels[col.type]),
+		el('div', { class: 'col-actions' }, actionButton('edit', 'editCol', 'bi-pencil', col.id), actionButton('danger', 'deleteCol', 'bi-trash', col.id, 'del-btn')))));
 }
 function showAddCol() {
 	editingColId = null;
@@ -232,7 +235,7 @@ function onTypeChange() {
 	setCtVisible('optionsGroup', t === 'select' || t === 'autocomplete');
 }
 function scheduleCloseAc() {
-	acBlurTimer = setTimeout(closeAllAc, 200);
+	state.acBlurTimer = setTimeout(closeAllAc, 200);
 }
 
 function showRawNumberCell(input) {
@@ -248,24 +251,21 @@ function formatNumberCell(input) {
 	}
 }
 
-function attrJson(values) {
-	return JSON.stringify(values).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
-
 function appendFormulaToken(token) {
 	const field = document.getElementById('colFormula');
 	if (field) field.value += token;
 }
 
-window.triggerImportFile = function () {
+function triggerImportFile () {
 	const input = document.getElementById('importFile');
 	if (input) input.click();
 };
 
 function renderFormulaPicker() {
 	const nc = columns.filter(c => c.type === 'number' || c.type === 'formula');
-	document.getElementById('formulaPicker').innerHTML = nc.map(c => `<span class="formula-tag" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson(['[' + c.name + ']'])}">${window.QLPKHtml.escape(c.name)}</span>`).join('') +
-		['+', '-', '*'].map((op, index) => `<span class="formula-op" data-qlpk-call="appendFormulaToken" data-qlpk-args="${attrJson([' ' + op + ' '])}">${['+', '−', '×'][index]}</span>`).join('');
+	const tag = (className, token, label) => el('span', { class: className, 'data-qlpk-call': 'appendFormulaToken', 'data-qlpk-args': JSON.stringify([token]) }, label);
+	replace(document.getElementById('formulaPicker'), nc.map(c => tag('formula-tag', `[${c.name}]`, c.name)),
+		['+', '-', '*'].map((op, index) => tag('formula-op', ` ${op} `, ['+', '−', '×'][index])));
 }
 function saveCol() {
 	const name = document.getElementById('colName').value.trim();
@@ -279,7 +279,7 @@ function saveCol() {
 	} else {
 		const id = 'col_' + Date.now();
 		columns.push({ id, name, type, formula, options, width: 90 });
-		rows.forEach(r => { r[id] = type === 'number' ? 0 : ''; });
+		state.rows.forEach(r => { r[id] = type === 'number' ? 0 : ''; });
 	}
 	hideAddCol(); render(); renderColList();
 	saveColumnsToServer();
@@ -289,7 +289,7 @@ function deleteCol(colId) {
 		if (!confirmed) return;
 		const idx = columns.findIndex(c => c.id === colId);
 		if (idx > -1) columns.splice(idx, 1);
-		rows.forEach(r => delete r[colId]);
+		state.rows.forEach(r => delete r[colId]);
 		render(); renderColList();
 		saveColumnsToServer();
 	});
@@ -324,6 +324,7 @@ function registerFinanceRealtime() {
 	});
 }
 
-initGlobalDateFilter();
-registerFinanceRealtime();
-switchTab(activeTab);
+
+window.QLPKInlineActions.register({ addRow, appendFormulaToken, deleteCol, deleteRow, editCol, formatNumberCell, hideAddCol, importCSV, onTypeChange, saveCol, scheduleCloseAc, showAddCol, showRawNumberCell, toggleConfig, triggerImportFile, updateCell });
+
+export { registerFinanceRealtime, updateCell };

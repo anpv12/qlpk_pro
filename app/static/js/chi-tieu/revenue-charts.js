@@ -1,14 +1,16 @@
-/* global _thuChiChartInstance: writable, apiRequest, clearActivePreset, loadExpenses, mountCtChart, render, setCtVisible, setPreset */
-/* exported activePreset, filterDateFrom, filterDateTo, fpFrom, fpTo, getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart */
+import { state } from './state.js';
+import { el, replace } from '../shared/dom.js';
+import { apiRequest, loadExpenses, mountCtChart, render, setCtVisible } from '../chi-tieu.js';
+import { clearActivePreset, setPreset } from './grid-and-filters.js';
 
 function renderThuChiChart(labels, thuValues, chiValues) {
 	const dom = document.getElementById('thuChiChart');
 	if (!dom) return;
 
-	if (_thuChiChartInstance) { _thuChiChartInstance.dispose(); _thuChiChartInstance = null; }
+	if (state._thuChiChartInstance) { state._thuChiChartInstance.dispose(); state._thuChiChartInstance = null; }
 
 	const chart = mountCtChart(dom);
-	_thuChiChartInstance = chart;
+	state._thuChiChartInstance = chart;
 
 	chart.setOption({
 		tooltip: {
@@ -73,7 +75,7 @@ function renderThuChiChart(labels, thuValues, chiValues) {
 
 // Last chart data, kept for export
 
-window.exportThuChiExcel = async function() {
+async function exportThuChiExcel() {
 	try {
 		const range = getRevDateRange();
 		if (!range) { window.QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu để xuất'); return; }
@@ -97,7 +99,7 @@ window.exportThuChiExcel = async function() {
 };
 
 // Export Chi tiêu Excel (reuse existing backend API)
-window.exportChiTieuExcel = async function() {
+async function exportChiTieuExcel() {
 	try {
 		const fromEl = document.getElementById('dateFrom');
 		const toEl = document.getElementById('dateTo');
@@ -243,7 +245,7 @@ function getRevDateRange() {
 	return { fromISO, toISO };
 }
 
-window.setRevView = function(view) {
+function setRevView(view) {
 	_revView = view;
 	['btnRevTime', 'btnRevService', 'btnRevMedicine'].forEach(id => {
 		const el = document.getElementById(id);
@@ -369,19 +371,15 @@ async function showRevenueDetail(type, dateLabel) {
 			const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'];
 
 			let totalQty = 0;
-			tbody.innerHTML = data.items.map((item, index) => {
+			replace(tbody, data.items.map((item, index) => {
 				totalQty += item.quantity;
-				const qtyDisplay = type === 'medicine' ? `${item.quantity} ${item.unit || ''}` : item.quantity;
-				const colorClass = `ct-revenue-dot-${index % COLORS.length}`;
-				return `<tr>
-					<td class="ps-3 py-2 border-bottom"><div class="d-flex align-items-center">
-						<span class="ct-revenue-dot ${colorClass}"></span>
-						<span class="fw-medium text-dark ct-revenue-cell-text">${window.QLPKHtml.escape(item.name)}</span>
-					</div></td>
-					<td class="py-2 text-center border-bottom text-secondary ct-revenue-cell-text">${window.QLPKHtml.escape(qtyDisplay)}</td>
-					<td class="pe-3 py-2 text-end border-bottom fw-medium text-dark ct-revenue-cell-text">${formatCurrency(item.total_amount)}</td>
-				</tr>`;
-			}).join('');
+				const cell = 'ct-revenue-cell-text';
+				return el('tr', {},
+					el('td', { class: 'ps-3 py-2 border-bottom' }, el('div', { class: 'd-flex align-items-center' },
+						el('span', { class: `ct-revenue-dot ct-revenue-dot-${index % COLORS.length}` }), el('span', { class: `fw-medium text-dark ${cell}` }, item.name))),
+					el('td', { class: `py-2 text-center border-bottom text-secondary ${cell}` }, type === 'medicine' ? `${item.quantity} ${item.unit || ''}` : item.quantity),
+					el('td', { class: `pe-3 py-2 text-end border-bottom fw-medium text-dark ${cell}` }, formatCurrency(item.total_amount)));
+			}));
 
 			document.getElementById('revenueDetailTotalQty').textContent = totalQty;
 			document.getElementById('revenueDetailTotalAmount').textContent = formatCurrency(data.total_sum);
@@ -416,7 +414,7 @@ async function showRevenueDetail(type, dateLabel) {
 }
 
 // Export Revenue Excel
-window.exportRevenueExcel = async function() {
+async function exportRevenueExcel() {
 	try {
 		const range = getRevDateRange();
 		if (!range) return;
@@ -441,19 +439,23 @@ window.exportRevenueExcel = async function() {
 
 
 let fpFrom = null, fpTo = null;
-let filterDateFrom = null, filterDateTo = null;
-let activePreset = 'month';
+state.filterDateFrom = null; state.filterDateTo = null;
+state.activePreset = 'month';
 
 function initGlobalDateFilter() {
 	const fpOpts = { locale: 'vn', dateFormat: 'd/m/Y', allowInput: false };
 	fpFrom = flatpickr('#dateFrom', {
 		...fpOpts,
-		onChange(sel) { if (sel[0]) { filterDateFrom = sel[0]; clearActivePreset(); render(); } }
+		onChange(sel) { if (sel[0]) { state.filterDateFrom = sel[0]; clearActivePreset(); render(); } }
 	});
 	fpTo = flatpickr('#dateTo', {
 		...fpOpts,
-		onChange(sel) { if (sel[0]) { filterDateTo = sel[0]; clearActivePreset(); render(); } }
+		onChange(sel) { if (sel[0]) { state.filterDateTo = sel[0]; clearActivePreset(); render(); } }
 	});
 	setPreset('month'); // Changed from 'year' to 'month'
 	loadExpenses();
 }
+
+window.QLPKInlineActions.register({ exportChiTieuExcel, exportRevenueExcel, exportThuChiExcel, setRevView });
+
+export { fpFrom, fpTo, getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart };

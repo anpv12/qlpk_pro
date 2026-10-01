@@ -14,11 +14,17 @@
 	// propagation, including later document-level listeners. One element can
 	// bind several events with data-qlpk-on-<event>="fn" and
 	// data-qlpk-on-<event>-args='[...]' (focus/blur use focusin/focusout).
+	// ES module pages register their handlers here instead of on window:
+	//   window.QLPKInlineActions.register({ editService, deleteService });
+	// Registered names win over window lookups; dotted paths still resolve from window.
 	const CALL_ATTR = 'data-qlpk-call';
+	const registry = new Map();
 	const EVENTS = ['click', 'mousedown', 'change', 'input', 'keyup', 'keydown', 'submit', 'focusin', 'focusout'];
 
 	function resolvePath(path) {
-		return String(path || '').split('.').reduce((owner, key) => (owner == null ? undefined : owner[key]), window);
+		const name = String(path || '');
+		if (registry.has(name)) return registry.get(name);
+		return name.split('.').reduce((owner, key) => (owner == null ? undefined : owner[key]), window);
 	}
 
 	function resolveArgs(element, event, argsAttr = 'data-qlpk-args') {
@@ -62,7 +68,7 @@
 			event.stopImmediatePropagation();
 		}
 		const ownerPath = path.includes('.') ? path.slice(0, path.lastIndexOf('.')) : '';
-		callee.apply(ownerPath ? resolvePath(ownerPath) : window, resolveArgs(element, event, binding.argsAttr));
+		callee.apply(ownerPath && !registry.has(path) ? resolvePath(ownerPath) : window, resolveArgs(element, event, binding.argsAttr));
 	}
 
 	function dispatch(event) {
@@ -74,4 +80,9 @@
 	}
 
 	EVENTS.forEach(type => document.addEventListener(type, dispatch));
+	window.QLPKInlineActions = Object.freeze({
+		register(actions) {
+			Object.entries(actions).forEach(([name, fn]) => registry.set(name, fn));
+		},
+	});
 })(window, document);

@@ -2,7 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const { runScriptFile } = require('./helpers/module-source');
+const PAGE_FILES = ['chi-tieu.js', 'chi-tieu/revenue-charts.js', 'chi-tieu/grid-and-filters.js', 'chi-tieu/import-and-edit.js'];
+const readScriptSource = () => PAGE_FILES.map(file => fs.readFileSync(`app/static/js/${file}`, 'utf8')).join('\n');
 
 function loadFormulaEngine() {
 	const source = readScriptSource('app/static/js/chi-tieu.js');

@@ -1,7 +1,10 @@
-/* global getRevDateRange, isInDateRange, loadAndRenderRevenue, parseDateStr, renderGrid, renderThuChiChart, updateCell */
-/* exported _thuChiChartInstance, acBlurTimer, activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, mountCtChart, normalizeSearchText, openAcList, render, rows, saveColumnsToServer, selectAc, setCtVisible, switchTab */
+import { state } from './chi-tieu/state.js';
+import { el, icon, replace } from './shared/dom.js';
+import { CAT, getCat } from './chi-tieu/categories.js';
+import { registerFinanceRealtime, updateCell } from './chi-tieu/import-and-edit.js';
+import { isInDateRange, parseDateStr, renderGrid } from './chi-tieu/grid-and-filters.js';
+import { getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart } from './chi-tieu/revenue-charts.js';
 
-// Continued in (nạp ngay sau file này, cùng scope trang): chi-tieu/revenue-charts.js, chi-tieu/grid-and-filters.js, chi-tieu/import-and-edit.js
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
 
 function normalizeSearchText(value) {
@@ -22,32 +25,6 @@ function setCtTabVisible(id, isVisible) {
 	el.classList.toggle('ct-hidden', !isVisible);
 }
 
-// ===== CATEGORY CONFIG =====
-const CAT = {
-	'Thuê nhà': { icon: 'bi-house', color: '#8b5cf6', bg: '#f5f3ff' },
-	'Tiền điện': { icon: 'bi-lightning', color: '#eab308', bg: '#fefce8' },
-	'Nước': { icon: 'bi-droplet', color: '#06b6d4', bg: '#ecfeff' },
-	'Rác': { icon: 'bi-trash', color: '#78716c', bg: '#fafaf9' },
-	'Tiền lương': { icon: 'bi-wallet2', color: '#ef4444', bg: '#fef2f2' },
-	'Sửa chữa vật tư': { icon: 'bi-tools', color: '#f97316', bg: '#fff7ed' },
-	'Mua sắm vật tư': { icon: 'bi-cart3', color: '#10b981', bg: '#ecfdf5' },
-	'Khác': { icon: 'bi-three-dots', color: '#64748b', bg: '#f8fafc' },
-	'Từ thiện': { icon: 'bi-heart', color: '#ec4899', bg: '#fdf2f8' },
-	'Quan hệ': { icon: 'bi-people', color: '#6366f1', bg: '#eef2ff' },
-	'Hàng ngày': { icon: 'bi-calendar-day', color: '#0ea5e9', bg: '#f0f9ff' },
-	'Hợp đồng': { icon: 'bi-file-earmark-text', color: '#14b8a6', bg: '#f0fdfa' },
-};
-function getCat(type) {
-	if (CAT[type]) return CAT[type];
-	// Generate unique color from category name hash
-	let hash = 0;
-	for (let i = 0; i < type.length; i++) hash = type.charCodeAt(i) + ((hash << 5) - hash);
-	const hue = ((hash % 360) + 360) % 360;
-	const color = `hsl(${hue}, 55%, 50%)`;
-	const bg = `hsl(${hue}, 40%, 95%)`;
-	return { icon: 'bi-tag', color, bg };
-}
-
 // ===== CHI COLUMNS =====
 const DEFAULT_COLUMNS = [
 	{ id: 'date', name: 'Ngày', type: 'date', width: 70 },
@@ -61,7 +38,7 @@ const DEFAULT_COLUMNS = [
 let columns = [...DEFAULT_COLUMNS];
 
 // ===== CHI DATA =====
-let rows = [];
+state.rows = [];
 
 // ===== API HELPER =====
 async function apiRequest(url, method = 'GET', body = null) {
@@ -97,7 +74,7 @@ async function saveColumnsToServer() {
 async function loadExpenses() {
 	try {
 		await loadColumns();
-		rows = await apiRequest('/api/expenses');
+		state.rows = await apiRequest('/api/expenses');
 		render();
 	} catch (e) {
 		console.error('Load expenses error:', e);
@@ -182,19 +159,15 @@ function computeRow(row) {
 function fmtNum(v) { return (!v && v !== 0) || v === 0 ? '0' : new Intl.NumberFormat('vi-VN').format(v); }
 
 // ===== AUTOCOMPLETE =====
-let acBlurTimer = null;
+state.acBlurTimer = null;
 function getAcOptions(col) {
-	const fromData = [...new Set(rows.map(r => r[col.id]).filter(Boolean))];
+	const fromData = [...new Set(state.rows.map(r => r[col.id]).filter(Boolean))];
 	const fromCol = col.options || [];
 	return [...new Set([...fromCol, ...fromData])];
 }
-// Delegated through shared/inline-actions.js (mousedown keeps the input from blurring first).
-function acSelectAttrs(ri, colId, value) {
-	const args = JSON.stringify([ri, colId, value]).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
-	return `data-qlpk-call="selectAc" data-qlpk-on="mousedown" data-qlpk-args='${args}'`;
-}
+// Options are delegated through shared/inline-actions.js (mousedown keeps the input from blurring first).
 function openAcList(ri, colId, inputEl) {
-	clearTimeout(acBlurTimer);
+	clearTimeout(state.acBlurTimer);
 	closeAllAc();
 	const col = columns.find(c => c.id === colId);
 	const allOpts = getAcOptions(col);
@@ -202,12 +175,10 @@ function openAcList(ri, colId, inputEl) {
 	const filtered = query ? allOpts.filter(o => normalizeSearchText(o).includes(query)) : allOpts;
 	const listEl = inputEl.parentElement.querySelector('.ac-list');
 	if (!listEl) return;
-	let html = filtered.map(o => `<div class="ac-item" ${acSelectAttrs(ri, colId, o)}> ${o}</div>`).join('');
-	if (query && !allOpts.some(o => normalizeSearchText(o) === query)) {
-		html += `<div class="ac-item ac-item-new" ${acSelectAttrs(ri, colId, query)}>
-			<i class="bi bi-plus-circle me-1"></i> Thêm "${inputEl.value.trim()}"</div>`;
-	}
-	listEl.innerHTML = html || '<div class="ac-item ac-item-muted">Không có gợi ý</div>';
+	const option = (className, value, ...label) => el('div', { class: className, 'data-qlpk-call': 'selectAc', 'data-qlpk-on': 'mousedown', 'data-qlpk-args': JSON.stringify([ri, colId, value]) }, ...label);
+	const items = filtered.map(o => option('ac-item', o, ` ${o}`));
+	if (query && !allOpts.some(o => normalizeSearchText(o) === query)) items.push(option('ac-item ac-item-new', query, icon('bi-plus-circle', 'me-1'), ` Thêm "${inputEl.value.trim()}"`));
+	replace(listEl, items.length ? items : el('div', { class: 'ac-item ac-item-muted' }, 'Không có gợi ý'));
 	listEl.classList.add('show');
 }
 function selectAc(ri, colId, value) {
@@ -261,7 +232,7 @@ function render() {
 
 // ==================== DASHBOARD ====================
 function renderDashboard() {
-	const dateRows = rows.filter(r => isInDateRange(r));
+	const dateRows = state.rows.filter(r => isInDateRange(r));
 	const validRows = dateRows.filter(r => parseFloat(r.amount) > 0);
 	const totalChi = validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
 	let chiCash = 0, chiTransfer = 0;
@@ -293,62 +264,31 @@ function renderDashboard() {
 	const mainPayment = chiCash >= chiTransfer ? 'Tiền mặt' : 'Chuyển khoản';
 	const mainPct = chiCash >= chiTransfer ? cashPct : transPct;
 
-	// Smart text
-	const todayText = todayRows.length > 0
-		? `<span class="sv ct-text-rose">${fmtNum(todayTotal)}</span> <span class="sm">(${todayRows.length} khoản)</span>`
-		: '<span class="sm">Chưa phát sinh</span>';
-
-	const topDateText = topDate.length > 0
-		? `Ngày <span class="sv ct-text-indigo">${topDate[0][0]}</span> <span class="sm">(${fmtNum(topDate[0][1])})</span>`
-		: '';
-
-	const topTypeText = topType.length > 0
-		? `<span class="sv ct-text-orange">${window.QLPKHtml.escape(topType[0][0])}</span> <span class="sm">(${fmtNum(topType[0][1])})</span>`
-		: '';
-
-	// Khoản nhỏ nhất
-	const minRow = validRows.length > 0
-		? validRows.reduce((m, r) => (parseFloat(r.amount) || 0) < (parseFloat(m.amount) || 0) ? r : m)
-		: null;
-	const minText = minRow
-		? `<span class="sv ct-text-cyan">${window.QLPKHtml.escape(minRow.type || 'Khác')}</span> <span class="sm">(${fmtNum(parseFloat(minRow.amount) || 0)})</span>`
-		: '';
-
-	// Số ngày có chi
-
-	// Loại chi nhiều nhất (theo số lượng khoản)
+	// Smart text (node lists; each is inserted once)
+	const sv = (tone, text) => el('span', { class: `sv ${tone}` }, text);
+	const sm = text => el('span', { class: 'sm' }, text);
+	const todayText = todayRows.length > 0 ? [sv('ct-text-rose', fmtNum(todayTotal)), ' ', sm(`(${todayRows.length} khoản)`)] : [sm('Chưa phát sinh')];
+	const topDateText = topDate.length > 0 ? ['Ngày ', sv('ct-text-indigo', topDate[0][0]), ' ', sm(`(${fmtNum(topDate[0][1])})`)] : [];
+	const topTypeText = topType.length > 0 ? [sv('ct-text-orange', topType[0][0]), ' ', sm(`(${fmtNum(topType[0][1])})`)] : [];
+	const minRow = validRows.length > 0 ? validRows.reduce((m, r) => (parseFloat(r.amount) || 0) < (parseFloat(m.amount) || 0) ? r : m) : null;
+	const minText = minRow ? [sv('ct-text-cyan', minRow.type || 'Khác'), ' ', sm(`(${fmtNum(parseFloat(minRow.amount) || 0)})`)] : [];
 	const typeCount = {};
 	validRows.forEach(r => { const t = r.type || 'Khác'; typeCount[t] = (typeCount[t] || 0) + 1; });
 	const topCountType = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
-	const topCountText = topCountType.length > 0
-		? `<span class="sv ct-text-purple">${window.QLPKHtml.escape(topCountType[0][0])}</span> <span class="sm">(${topCountType[0][1]} khoản)</span>`
-		: '';
+	const topCountText = topCountType.length > 0 ? [sv('ct-text-purple', topCountType[0][0]), ' ', sm(`(${topCountType[0][1]} khoản)`)] : [];
 
-		document.getElementById('summaryStrip').innerHTML = `
-		<div class="ss-title"><i class="bi bi-bar-chart-line"></i> Phân tích Thu - Chi</div>
-		<div class="ss-group">
-			<span class="ss-group-label ss-group-label--blue"><i class="bi bi-clipboard-data"></i> Tổng quan</span>
-			<div class="ss-items ss-items--inline" id="ssTongQuan">
-				<span class="ss-item ss-item--muted"><i class="bi bi-hourglass-split spinner-border spinner-border-sm ct-spinner-inline"></i> Đang tính toán...</span>
-			</div>
-		</div>
-		<div class="ss-group">
-			<span class="ss-group-label ss-group-label--green"><i class="bi bi-credit-card"></i> Cấu trúc khoản chi</span>
-			<div class="ss-items">
-				<span class="ss-item"><span class="ss-emoji">🏦</span> Chuyển khoản <span class="sv ct-text-success">${fmtNum(chiTransfer)}</span> <span class="sm">${transPct}%</span></span>
-				<span class="ss-item"><span class="ss-emoji">💵</span> Tiền mặt <span class="sv ct-text-blue">${fmtNum(chiCash)}</span> <span class="sm">${cashPct}%</span></span>
-				<span class="ss-item"><span class="ss-emoji">👉</span> Hình thức chính: <span class="sv ct-text-success">${mainPayment}</span> <span class="sm">${mainPct}%</span></span>
-			</div>
-		</div>
-		<div class="ss-group">
-			<span class="ss-group-label ss-group-label--amber"><i class="bi bi-star"></i> Chi tiêu nổi bật</span>
-			<div class="ss-items">
-				<span class="ss-item"><span class="ss-emoji">🔺</span> Lớn nhất ${topTypeText}</span>
-				<span class="ss-item"><span class="ss-emoji">🔻</span> Nhỏ nhất ${minText}</span>
-				<span class="ss-item"><span class="ss-emoji">🔁</span> Nhiều nhất ${topCountText}</span>
-			</div>
-		</div>
-	`;
+	const item = (emoji, ...content) => el('span', { class: 'ss-item' }, el('span', { class: 'ss-emoji' }, emoji), ' ', ...content);
+	const group = (tone, iconName, label, items) => el('div', { class: 'ss-group' }, el('span', { class: `ss-group-label ss-group-label--${tone}` }, icon(iconName), ` ${label}`), items);
+	replace(document.getElementById('summaryStrip'),
+		el('div', { class: 'ss-title' }, icon('bi-bar-chart-line'), ' Phân tích Thu - Chi'),
+		group('blue', 'bi-clipboard-data', 'Tổng quan', el('div', { class: 'ss-items ss-items--inline', id: 'ssTongQuan' },
+			el('span', { class: 'ss-item ss-item--muted' }, icon('bi-hourglass-split', 'spinner-border spinner-border-sm ct-spinner-inline'), ' Đang tính toán...'))),
+		group('green', 'bi-credit-card', 'Cấu trúc khoản chi', el('div', { class: 'ss-items' },
+			item('🏦', 'Chuyển khoản ', sv('ct-text-success', fmtNum(chiTransfer)), ' ', sm(`${transPct}%`)),
+			item('💵', 'Tiền mặt ', sv('ct-text-blue', fmtNum(chiCash)), ' ', sm(`${cashPct}%`)),
+			item('👉', 'Hình thức chính: ', sv('ct-text-success', mainPayment), ' ', sm(`${mainPct}%`)))),
+		group('amber', 'bi-star', 'Chi tiêu nổi bật', el('div', { class: 'ss-items' },
+			item('🔺', 'Lớn nhất ', topTypeText), item('🔻', 'Nhỏ nhất ', minText), item('🔁', 'Nhiều nhất ', topCountText))));
 
 	renderPieChart(totalChi, validRows);
 	loadAndRenderRevenue();
@@ -405,7 +345,7 @@ function renderPieChart(totalChi, dateRows) {
 }
 
 // ==================== THỐNG KÊ THU CHI CHART ====================
-let _thuChiChartInstance = null;
+state._thuChiChartInstance = null;
 const ctChartObservers = new WeakMap();
 function mountCtChart(dom) {
 	const existing = echarts.getInstanceByDom(dom);
@@ -477,15 +417,22 @@ function renderThuChiSummary(totalThu, totalChi, todayText, topDateText) {
 
 	// Update DOM for Summary Strip's Tổng quan
 	const ssTongQuan = document.getElementById('ssTongQuan');
-	if (ssTongQuan) {
-		ssTongQuan.innerHTML = `
-			<span class="ss-item tooltip-host"><span class="ss-emoji">💰</span> Tổng thu: <span class="sv ct-summary-value ct-text-revenue">${fmtNum(totalThu)}</span></span>
-			<span class="ss-item tooltip-host"><span class="ss-emoji">💸</span> Tổng chi: <span class="sv ct-summary-value ct-text-danger">${fmtNum(totalChi)}</span></span>
-			<span class="ss-item tooltip-host"><span class="ss-emoji">📈</span> Lợi nhuận: <span class="sv ct-summary-profit ${profitClass}">${profitSign}${fmtNum(profit)}</span></span>
-			<div class="ms-3 ps-3 border-start ct-summary-extra">
-				<span class="ss-item"><span class="ss-emoji">☀️</span> Hôm nay chi: ${todayText}</span>
-				<span class="ss-item"><span class="ss-emoji">📆</span> Chi nhiều nhất: ${topDateText}</span>
-			</div>
-		`;
-	}
+	if (!ssTongQuan) return;
+	const item = (emoji, label, value, extra = '') => el('span', { class: 'ss-item tooltip-host' }, el('span', { class: 'ss-emoji' }, emoji), ` ${label}: `, el('span', { class: `sv ${extra}` }, value));
+	replace(ssTongQuan,
+		item('💰', 'Tổng thu', fmtNum(totalThu), 'ct-summary-value ct-text-revenue'),
+		item('💸', 'Tổng chi', fmtNum(totalChi), 'ct-summary-value ct-text-danger'),
+		item('📈', 'Lợi nhuận', `${profitSign}${fmtNum(profit)}`, `ct-summary-profit ${profitClass}`),
+		el('div', { class: 'ms-3 ps-3 border-start ct-summary-extra' },
+			el('span', { class: 'ss-item' }, el('span', { class: 'ss-emoji' }, '☀️'), ' Hôm nay chi: ', todayText),
+			el('span', { class: 'ss-item' }, el('span', { class: 'ss-emoji' }, '📆'), ' Chi nhiều nhất: ', topDateText)));
 }
+
+window.QLPKInlineActions.register({ openAcList, render, selectAc, switchTab });
+
+export { activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, mountCtChart, normalizeSearchText, render, saveColumnsToServer, setCtVisible, switchTab };
+
+// Entry evaluates last (its imports run first), so page bootstrap lives here.
+initGlobalDateFilter();
+registerFinanceRealtime();
+switchTab(activeTab);

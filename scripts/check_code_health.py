@@ -35,7 +35,7 @@ JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 10
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
-MAX_WINDOW_GLOBALS = 216
+MAX_WINDOW_GLOBALS = 208
 CSS_ROOT = ROOT / "app" / "static" / "css"
 MAX_CSS_LINES = 500
 
