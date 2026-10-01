@@ -1,12 +1,14 @@
 // Survey template list: server search/pagination, preview/download, document upload/edit, delete.
-// Questionnaire templates open in window.surveyCreateModal (survey-template-create.js, shared with its page).
+// Questionnaire templates open in the shared create/edit modal (survey-template-create.js).
 import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
+import { surveyCreateModal } from './survey-template-create.js';
+import './survey-result-config.js';
 
 const state = { currentPage: 1, perPage: 10, searchTerm: '', templates: [], performers: [], currentTemplateId: null, documentTemplateId: null, canManage: false, mutating: false, revision: 0 };
 const toast = (type, message) => window.AppointmentUtils?.showToast(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const createModal = () => window.surveyCreateModal;
+const createModal = () => surveyCreateModal;
 
 function highlight(text) {
 	if (!state.searchTerm) return text;
@@ -299,5 +301,5 @@ function init() {
 	loadTemplates();
 }
 
-// Survey create modal scripts load after this module's tag; start once the document is parsed.
+// The create modal also initialises on DOMContentLoaded; keep the same start point.
 document.addEventListener('DOMContentLoaded', init);

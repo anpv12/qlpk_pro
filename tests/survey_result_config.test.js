@@ -1,13 +1,13 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const { runScriptFile } = require('./helpers/module-source');
 
 let root = null;
-const context = vm.createContext({ window: {}, structuredClone,
-    document: { getElementById: () => root } });
-runScriptFile('app/static/js/survey-result-config.js', context);
-const editor = context.window._scResultConfig;
+globalThis.window = {};
+globalThis.document = { getElementById: () => root };
+
+(async () => {
+await import('../app/static/js/survey-result-config.js');
+const { moduleState } = await import('../app/static/js/survey-template-create-parts/state.js');
+const editor = moduleState.resultConfig;
 const saved = { conditions: [{ operator: 'between', min_score: 0, max_score: 10,
     conclusion: 'Original' }], group_configs: { A: { conditions: [
     { id: 3, operator: '=', min_score: 0 }, { id: 3, operator: '=', min_score: 1 }
@@ -36,3 +36,4 @@ assert.equal(editor.validateConfig(), null);
 assert.equal(editor.collectConfig().conditions[0].conclusion, 'Edited');
 assert.equal(saved.conditions[0].conclusion, 'Original');
 console.log('Result config: legacy identities, snapshot isolation, blank and zero thresholds passed');
+})();
