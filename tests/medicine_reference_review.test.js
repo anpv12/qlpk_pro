@@ -6,7 +6,7 @@ const path = require('node:path');
 const { readCssSource } = require('./helpers/css-source');
 const { readTemplateSource } = require('./helpers/template-source');
 
-function setup() {
+async function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
     const {window, document, context, Element} = env;
     const nodes = {}, requests = [];
@@ -21,11 +21,12 @@ function setup() {
     const root = get('medicineReferenceReviewModal');
     let closes = 0, reloads = 0;
     const modal = {show() {}, hide() { root.fire('hide.bs.modal'); closes++; }};
-    Object.assign(window, {bootstrap: {Modal: {getOrCreateInstance: () => modal}}, loadMedicines() { reloads++; }});
+    Object.assign(window, {bootstrap: {Modal: {getOrCreateInstance: () => modal}}});
     Object.assign(context, {localStorage: {getItem: () => 'QA'},
         fetch: (url, options) => new Promise(resolve => requests.push({url, options, resolve}))});
     env.load('app/static/js/components/autocomplete-field.js');
-    env.load('app/static/js/medicines/reference-review.js');
+    const module = await env.loadModule('medicines/reference-review.js');
+    module.configureReferenceReview({ onLinked() { reloads++; } });
     document.fire('DOMContentLoaded');
     const flush = () => new Promise(resolve => setImmediate(resolve));
     const respond = async (index, data, ok = true) => {
@@ -35,7 +36,7 @@ function setup() {
         if (field.input.disabled) get('medicineReviewChange').fire('click');
         field.input.value = value; field.input.fire('input');
     };
-    return {window, get, requests, respond, input, root, field, flush,
+    return {window, module, get, requests, respond, input, root, field, flush,
         tick: async () => { env.tick(); await flush(); }, closed: () => closes, reloaded: () => reloads};
 }
 
@@ -44,8 +45,8 @@ const preview = (id = 1) => ({medicine_id: id, original: {name: 'Tên cũ '+id},
 }, medicine_version: 'medicine-v1', can_apply: true, review_status: 'pending', message: ''});
 
 test('allowed replacement hides advisory text but blocked replacement keeps its error', async () => {
-    const harness = setup();
-    harness.window.openMedicineReferenceReview(1);
+    const harness = await setup();
+    harness.module.openMedicineReferenceReview(1);
     await harness.respond(0, {...preview(), reference: null});
     harness.input('DAV');
     await harness.tick();
@@ -64,8 +65,8 @@ test('allowed replacement hides advisory text but blocked replacement keeps its 
 });
 
 test('save enables once preview applies; one submit preserves preview versions and blocks dismissal', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     assert.equal(h.get('medicineReviewSave').disabled, true);
     await h.respond(0, preview());
     assert.equal(h.get('medicineReviewSave').disabled, false);
@@ -106,8 +107,8 @@ test('review modal follows content height with one bounded scrolling body and an
 });
 
 test('comparison aligns shared fields and highlights only the differing DAV cells', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), original: {name: 'Tên cũ 1', generic_name: 'Hoạt chất A', origin: 'Việt Nam'},
         reference: {...preview().reference, active_ingredient: 'hoạt chất a ', manufacturer_country: 'Philippines'}});
     const rows = h.get('medicineReviewComparison').children;
@@ -119,13 +120,13 @@ test('comparison aligns shared fields and highlights only the differing DAV cell
 });
 
 test('switching medicines or closing discards late preview responses', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
-    h.window.openMedicineReferenceReview(2);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
+    h.module.openMedicineReferenceReview(2);
     await h.respond(1, preview(2));
     await h.respond(0, preview(1));
     assert.equal(h.get('medicineReviewComparison').children[0].children[1].textContent, 'Tên cũ 2');
-    h.window.openMedicineReferenceReview(3);
+    h.module.openMedicineReferenceReview(3);
     h.root.fire('hide.bs.modal');
     await h.respond(2, preview(3));
     assert.equal(h.get('medicineReviewSave').disabled, true);
@@ -133,8 +134,8 @@ test('switching medicines or closing discards late preview responses', async () 
 });
 
 test('search clears old DAV values and highlights but preserves the original identity', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, preview());
     h.input('Thuốc khác');
     const rows = h.get('medicineReviewComparison').children;
@@ -144,8 +145,8 @@ test('search clears old DAV values and highlights but preserves the original ide
 });
 
 test('missing source fields remain explicit and matching fields do not show a difference legend', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), original: {name: ' DAV 1 '}});
     const rows = h.get('medicineReviewComparison').children;
     assert.equal(rows[2].children[2].textContent, 'Chưa có thông tin');
@@ -153,8 +154,8 @@ test('missing source fields remain explicit and matching fields do not show a di
 });
 
 test('an unlinked medicine keeps its original identity without showing stale DAV details', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), reference: null, can_apply: false});
     assert.equal(h.get('medicineReviewComparison').children[0].children[1].textContent, 'Tên cũ 1');
     assert.equal(h.get('medicineReviewComparison').children[0].children[2].textContent, 'Chưa chọn thuốc');
@@ -162,8 +163,8 @@ test('an unlinked medicine keeps its original identity without showing stale DAV
 });
 
 test('search by medicine name returns choices and selection fetches fresh preview, resetting save state', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, preview());
     h.input('Diropam'); await h.tick();
     assert.equal(h.get('medicineReviewSave').disabled, true);
@@ -178,8 +179,8 @@ test('search by medicine name returns choices and selection fetches fresh previe
 });
 
 test('failed or stale save invalidates selection and requires a fresh review', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, preview());
     h.get('medicineReviewSave').fire('click');
     await h.respond(1, {error: 'Thông tin vừa thay đổi.'}, false);
@@ -189,8 +190,8 @@ test('failed or stale save invalidates selection and requires a fresh review', a
 });
 
 test('review shows current inventory identity and server-owned changes, not the historical name', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), current: {name: 'Thuốc đang lưu', strength: '5 mg'},
         rows: [{label: 'Tên thuốc', before: 'Thuốc đang lưu', after: 'DAV 1'},
             {label: 'Hàm lượng', before: '5 mg', after: null},
@@ -206,8 +207,8 @@ test('review shows current inventory identity and server-owned changes, not the 
 });
 
 test('existing link status stays distinct from a newly selected candidate and clears on reopen', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), review_status: 'confirmed'});
     assert.match(h.get('medicineReviewLinkStatus').textContent, /Đã liên kết DAV/);
     assert.equal(h.get('medicineReviewSearchSection').hidden, true);
@@ -216,7 +217,7 @@ test('existing link status stays distinct from a newly selected candidate and cl
     h.field.list.children[0].fire('click');
     await h.respond(h.requests.length - 1, {...preview(), reference: {...preview().reference, id: 20, name: 'Thuốc khác'}, review_status: 'confirmed'});
     assert.equal(h.get('medicineReviewStatus').hidden, true);
-    h.window.openMedicineReferenceReview(2);
+    h.module.openMedicineReferenceReview(2);
     assert.equal(h.get('medicineReviewLinkStatus').textContent, '');
     assert.equal(h.get('medicineReviewTargetDetails').textContent, '');
     assert.equal(h.get('medicineReviewTargetName').textContent, 'Đang tải thuốc trong kho…');
@@ -233,8 +234,8 @@ async function choose(h, reference) {
 }
 
 test('confirmed unchanged link opens as a summary and cannot submit redundantly', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     assert.equal(h.get('medicineReviewSearch').disabled, true);
     await h.respond(0, confirmedPreview());
     assert.equal(h.get('medicineReviewSearchSection').hidden, true);
@@ -248,8 +249,8 @@ test('confirmed unchanged link opens as a summary and cannot submit redundantly'
 });
 
 test('unlinked medicine only previews after selection and retains the link action', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...preview(), reference: null, review_status: 'unlinked', can_apply: false});
     assert.equal(h.get('medicineReviewSearchSection').hidden, false);
     assert.equal(h.get('medicineReviewCompareSection').hidden, true);
@@ -262,8 +263,8 @@ test('unlinked medicine only previews after selection and retains the link actio
 });
 
 test('same selected DAV stays a no-op but another ID with identical text is a real link change', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, confirmedPreview());
     let index = await choose(h, preview().reference);
     await h.respond(index, confirmedPreview());
@@ -281,27 +282,27 @@ test('same selected DAV stays a no-op but another ID with identical text is a re
 });
 
 test('same-source update and pending confirmation are distinct from changing the DAV medicine', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...confirmedPreview(), review_status: 'stale',
         rows: [{label: 'Tên thuốc', before: 'Tên cũ', after: 'Tên mới'}]});
     assert.equal(h.get('medicineReviewCompareSection').hidden, false);
     assert.equal(h.get('medicineReviewSave').textContent, 'Cập nhật từ DAV');
     assert.equal(h.get('medicineReviewAfterTitle').textContent, 'Dự kiến sau khi cập nhật');
-    h.window.openMedicineReferenceReview(2);
+    h.module.openMedicineReferenceReview(2);
     await h.respond(1, {...confirmedPreview(), review_status: 'pending'});
     assert.equal(h.get('medicineReviewSave').textContent, 'Xác nhận liên kết hiện tại');
     assert.equal(h.get('medicineReviewSave').disabled, false);
 });
 
 test('metadata-only stale source avoids an identical table, and unavailable sources remain blocked', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, {...confirmedPreview(), review_status: 'stale'});
     assert.equal(h.get('medicineReviewCompareSection').hidden, true);
     assert.equal(h.get('medicineReviewSave').textContent, 'Cập nhật từ DAV');
     assert.match(h.get('medicineReviewStatus').textContent, /các thông tin đối chiếu không đổi/);
-    h.window.openMedicineReferenceReview(2);
+    h.module.openMedicineReferenceReview(2);
     await h.respond(1, {...confirmedPreview(), review_status: 'stale', can_apply: false, message: 'Thuốc không còn được chọn'});
     assert.equal(h.get('medicineReviewSave').disabled, true);
     assert.equal(h.get('medicineReviewStatus').textContent, 'Thuốc không còn được chọn');
@@ -309,8 +310,8 @@ test('metadata-only stale source avoids an identical table, and unavailable sour
 });
 
 test('cancel change reloads saved link and rejects a late candidate response without writing', async () => {
-    const h = setup();
-    h.window.openMedicineReferenceReview(1);
+    const h = await setup();
+    h.module.openMedicineReferenceReview(1);
     await h.respond(0, confirmedPreview());
     const different = {...preview().reference, id: 20};
     const candidateIndex = await choose(h, different);

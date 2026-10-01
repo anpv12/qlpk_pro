@@ -10,12 +10,15 @@ const { readTemplateSource } = require('./helpers/template-source');
 const template = readTemplateSource('medicine-management.html');
 const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
 
-test('stock receipt count uses the user-approved brand badge rather than neutral action styling', () => {
-    const source = readMedicineManagementSource();
-    const badge = source.match(/<button[^>]*class="badge stock-detail-badge"[^>]*>/)?.[0];
+test('stock receipt count uses the user-approved brand badge rather than neutral action styling', async () => {
+    const { renderMedicineRows } = require('./helpers/medicine-page');
+    const page = await renderMedicineRows([{ id: 7, name: 'Paracetamol', batch_count: 3, stock_quantity: 5, unit: 'viên' }],
+        { html: '<div class="modal" id="importBatchModal"></div>' });
+    page.render();
+    const badge = page.tbody.querySelector('.stock-detail-badge');
     assert.ok(badge);
-    assert.doesNotMatch(badge, /data-qlpk-button/);
-    assert.match(badge, /data-qlpk-call="showStockDetail" data-qlpk-args='\[\$\{medicine\.id\}\]'/);
+    assert.equal(badge.hasAttribute('data-qlpk-button'), false);
+    assert.equal(badge.textContent, '3 lần');
     assert.match(css, /\.badge\.stock-detail-badge[^{}]*\{\s*background: var\(--qlpk-workflow-context-header-bg\)/);
 });
 

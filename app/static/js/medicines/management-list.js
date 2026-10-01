@@ -1,5 +1,11 @@
-/* global allMedicines: writable, canReviewMedicineReference: writable, currentPage: writable, escapeHtml, formatStockDisplay, getUserFacingResponseMessage, medicineListRequest: writable, medicinePageSize, medicines: writable, setElementVisible, showCustomToast, totalItems: writable, totalPages: writable, updateDashboard */
-/* exported allMedicines, changePage, deleteSelectedMedicines, filterMedicines, getUnitDisplay, loadAllMedicines, resetFilters, toggleMissingImportPriceFilter */
+import { state } from './management-state.js';
+import { byId, delegate, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
+import { confirmDelete, editMedicine } from './management-form.js';
+import { getUserFacingResponseMessage, medicinePageSize, setElementVisible, showCustomToast } from '../medicine-management.js';
+import { updateDashboard } from './management-overview.js';
+import { formatStockDisplay, showStockDetail } from './management-stock.js';
+import { openMedicineReferenceReview } from './reference-review.js';
 
 // Load categories from API
 
@@ -10,87 +16,62 @@ const REFERENCE_REVIEW_LABELS = { confirmed: 'Đã xác nhận DAV', unlinked: '
 
 function toggleMissingImportPriceFilter() {
 	missingImportPriceOnly = !missingImportPriceOnly;
-	$('#searchInput').val('');
+	byId('searchInput').value = '';
 	document.getElementById('missingImportPriceFilter').setAttribute('aria-pressed', String(missingImportPriceOnly));
 	document.getElementById('missingImportPriceFilterState').hidden = !missingImportPriceOnly;
-	currentPage = 1;
+	state.currentPage = 1;
 	loadMedicines();
 }
 
-function loadMedicines() {
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
+async function loadMedicines() {
+	if (!window.QLPKApiTransport.hasSession()) {
 		showCustomToast('error', 'Vui lòng đăng nhập lại!');
 		return;
 	}
-
-	// Lấy tham số tìm kiếm hiện tại
-	const searchTerm = $('#searchInput').val();
-	const sortBy = $('#sortByFilter').val() || 'updated_at'; // Mặc định sort theo updated_at
+	const searchTerm = byId('searchInput').value;
+	const sortBy = byId('sortByFilter')?.value || 'updated_at'; // Mặc định sort theo updated_at
 
 	// Tạo URL với tham số phân trang và tìm kiếm
-	const requestId = ++medicineListRequest;
-	let url = `/api/medicines/?page=${currentPage}&per_page=${medicinePageSize}`;
+	const requestId = ++state.medicineListRequest;
+	let url = `/api/medicines/?page=${state.currentPage}&per_page=${medicinePageSize}`;
 	if (missingImportPriceOnly) url += '&missing_import_price=true';
 	if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
 	url += `&sort_by=${encodeURIComponent(sortBy)}`; // Luôn gửi sort_by
 
-	$.ajax({
-		url: url,
-		method: 'GET',
-		success: function (data) {
-			if (requestId !== medicineListRequest) return;
-			medicines = data.medicines || [];
-			canReviewMedicineReference = data.can_review_reference === true;
-			totalPages = data.total_pages || 1;
-			totalItems = data.total || 0;
-			renderMedicineTable();
-			updateDashboard();
-			updateTableInfo();
-			renderPagination();
-		},
-			error: function (xhr) {
-				if (requestId !== medicineListRequest) return;
-				if (xhr.status === 401) {
-					// Handle unauthorized
-					showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
-				} else {
-					showCustomToast('error', 'Lỗi tải danh sách thuốc');
-				}
-				medicines = [];
-				totalPages = 1;
-				totalItems = 0;
-				renderMedicineTable();
-				updateDashboard();
-				updateTableInfo();
-				renderPagination();
-			}
-		});
+	try {
+		const data = await requestJson(url);
+		if (requestId !== state.medicineListRequest) return;
+		state.medicines = data.medicines || [];
+		state.canReviewMedicineReference = data.can_review_reference === true;
+		state.totalPages = data.total_pages || 1;
+		state.totalItems = data.total || 0;
+	} catch (error) {
+		if (requestId !== state.medicineListRequest) return;
+		showCustomToast('error', error?.status === 401 ? 'Phiên đăng nhập đã hết hạn' : 'Lỗi tải danh sách thuốc');
+		state.medicines = [];
+		state.totalPages = 1;
+		state.totalItems = 0;
+	}
+	renderMedicineTable();
+	updateDashboard();
+	updateTableInfo();
+	renderPagination();
 }
 
 // Load tất cả thuốc cho dropdown (không phân trang)
-function loadAllMedicines() {
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
-		return;
+async function loadAllMedicines() {
+	if (!window.QLPKApiTransport.hasSession()) return;
+	try {
+		state.allMedicines = (await requestJson('/api/medicines/?page=1&per_page=5000')).medicines || [];
+	} catch (error) {
+		console.error('Error loading all medicines:', error);
+		state.allMedicines = [];
 	}
-
-	$.ajax({
-		url: `/api/medicines/?page=1&per_page=5000`,
-		method: 'GET',
-		success: function (data) {
-			allMedicines = data.medicines || [];
-		},
-		error: function (xhr, status, error) {
-			console.error('Error loading all medicines:', error);
-			allMedicines = [];
-		}
-	});
 }
 
 // Filter medicines based on search criteria
 function filterMedicines() {
-	currentPage = 1; // Reset về trang đầu khi filter
+	state.currentPage = 1; // Reset về trang đầu khi filter
 	loadMedicines(); // Load lại dữ liệu từ server với filter mới
 }
 
@@ -99,10 +80,11 @@ function resetFilters() {
 	missingImportPriceOnly = false;
 	document.getElementById('missingImportPriceFilter').setAttribute('aria-pressed', 'false');
 	document.getElementById('missingImportPriceFilterState').hidden = true;
-	$('#searchInput').val('');
-	$('#sortByFilter').val('');
+	byId('searchInput').value = '';
+	const sortBy = byId('sortByFilter');
+	if (sortBy) sortBy.value = '';
 
-	currentPage = 1;
+	state.currentPage = 1;
 	loadMedicines(); // Load lại dữ liệu từ server
 }
 
@@ -148,17 +130,13 @@ function getMedicineWarnings(medicine) {
 
 // Hàm render badge cảnh báo
 function renderWarningBadges(warnings) {
-	if (!warnings || warnings.length === 0) return '';
-	return warnings.map(warning =>
-		`<span class="badge qlpk-status--${warning.color} ms-1 medicine-warning-badge" tabindex="0" role="img" aria-label="${escapeHtml(warning.text)}">
-            <i class="bi ${warning.icon}" aria-hidden="true"></i>
-        </span>`
-	).join('');
+	return (warnings || []).map(warning => [' ', el('span', { class: `badge qlpk-status--${warning.color} ms-1 medicine-warning-badge`, tabindex: '0', role: 'img', 'aria-label': warning.text },
+		el('i', { class: `bi ${warning.icon}`, 'aria-hidden': 'true' }))]);
 }
 
 function initializeMedicineWarningTooltips() {
 	document.querySelectorAll('#medicineTable .medicine-warning-badge').forEach(badge => {
-		const tooltip = new bootstrap.Tooltip(badge, {
+		const tooltip = new window.bootstrap.Tooltip(badge, {
 			title: badge.getAttribute('aria-label'),
 			trigger: 'hover focus',
 			delay: {show: 120, hide: 0},
@@ -175,144 +153,112 @@ function initializeMedicineWarningTooltips() {
 
 function disposeMedicineWarningTooltips() {
 	document.querySelectorAll('#medicineTable .medicine-warning-badge').forEach(badge => {
-		bootstrap.Tooltip.getInstance(badge)?.dispose();
+		window.bootstrap.Tooltip.getInstance(badge)?.dispose();
 	});
+}
+
+const onClick = (node, handler) => { node.addEventListener('click', handler); return node; };
+
+function referenceCell(medicine) {
+	if (!state.canReviewMedicineReference) return '—';
+	const className = medicine.reference_review_status === 'confirmed' ? 'stock-detail-badge mm-reference-button text-success' : 'stock-detail-badge mm-reference-button';
+	return onClick(el('button', { type: 'button', class: className, title: 'Xem hoặc đổi liên kết DAV' },
+		REFERENCE_REVIEW_LABELS[medicine.reference_review_status] || 'Cần xác nhận DAV'), () => openMedicineReferenceReview(medicine.id));
+}
+
+function medicineRow(medicine, index) {
+	const rowNumber = (state.currentPage - 1) * medicinePageSize + index + 1;
+	const batchCount = medicine.batch_count || 0;
+	// Highlight màu đỏ nếu tồn kho = 0
+	const stockQuantity = parseFloat(medicine.stock_quantity) || 0;
+	const stockDisplayClass = stockQuantity === 0 ? 'text-danger fw-bold medicine-stock-empty' : 'medicine-stock-normal';
+	const latestImportPrice = medicine.latest_batch_pricing?.import_price;
+	const edit = () => editMedicine(medicine.id);
+	return el('tr', {},
+		el('td', {}, el('input', { type: 'checkbox', class: 'form-check-input medicine-checkbox qlpk-row-select', value: medicine.id })),
+		el('td', {}, rowNumber),
+		el('td', {}, onClick(el('span', { class: 'medicine-link' }, medicine.name || ''), edit), renderWarningBadges(getMedicineWarnings(medicine))),
+		el('td', {}, medicine.nearest_expiry_date ? formatDate(medicine.nearest_expiry_date) : '-'),
+		el('td', {}, latestImportPrice != null ? formatCurrency(latestImportPrice) : '-'),
+		el('td', {}, formatCurrency(medicine.unit_price)),
+		el('td', {}, onClick(el('button', { type: 'button', class: 'badge stock-detail-badge', title: 'Xem chi tiết tồn kho', 'aria-label': `Xem chi tiết ${batchCount} lần nhập` }, `${batchCount} lần`),
+			() => showStockDetail(medicine.id))),
+		el('td', {}, el('div', { class: `medicine-stock-display ${stockDisplayClass}` }, formatStockDisplay(medicine))),
+		el('td', { class: 'mm-reference-column' }, referenceCell(medicine)),
+		el('td', {},
+			onClick(el('button', { 'data-qlpk-button': 'edit', 'data-qlpk-button-variant': 'soft', class: 'action-btn', title: 'Sửa' }, el('i', { class: 'bi bi-pencil' })), edit), ' ',
+			onClick(el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'action-btn delete', title: 'Xóa' }, el('i', { class: 'bi bi-trash' })),
+				() => confirmDelete(medicine.id))));
 }
 
 // Render medicine table
 function renderMedicineTable() {
-	const tbody = $('#medicineTable tbody');
+	const tbody = document.querySelector('#medicineTable tbody');
 	disposeMedicineWarningTooltips();
-	tbody.empty();
-
-	if (medicines.length === 0) {
-		tbody.html('<tr><td colspan="10" class="text-start text-muted py-4">Không có thuốc phù hợp.</td></tr>');
+	if (state.medicines.length === 0) {
+		replace(tbody, el('tr', {}, el('td', { colspan: 10, class: 'text-start text-muted py-4' }, 'Không có thuốc phù hợp.')));
 		return;
 	}
-
-	medicines.forEach((medicine, index) => {
-		const rowNumber = (currentPage - 1) * medicinePageSize + index + 1;
-		const batchCount = medicine.batch_count || 0;
-
-		// Kiểm tra cảnh báo
-		const warnings = getMedicineWarnings(medicine);
-		const warningBadges = renderWarningBadges(warnings);
-
-		// Highlight màu đỏ nếu tồn kho = 0
-		const stockQuantity = parseFloat(medicine.stock_quantity) || 0;
-		const stockDisplayClass = stockQuantity === 0 ? 'text-danger fw-bold medicine-stock-empty' : 'medicine-stock-normal';
-
-		const latestImportPrice = medicine.latest_batch_pricing?.import_price;
-
-		const row = `
-            <tr>
-                <td><input type="checkbox" class="form-check-input medicine-checkbox qlpk-row-select" value="${medicine.id}"></td>
-                <td>${rowNumber}</td>
-                <td>
-                    <span class="medicine-link" data-qlpk-call="editMedicine" data-qlpk-args='[${medicine.id}]'>${escapeHtml(medicine.name)}</span>
-                    ${warningBadges}
-                </td>
-                <td>${medicine.nearest_expiry_date ? formatDate(medicine.nearest_expiry_date) : '-'}</td>
-                <td>${latestImportPrice != null ? formatCurrency(latestImportPrice) : '-'}</td>
-                <td>${formatCurrency(medicine.unit_price)}</td>
-                <td>
-                    <button type="button" class="badge stock-detail-badge" data-qlpk-call="showStockDetail" data-qlpk-args='[${medicine.id}]' title="Xem chi tiết tồn kho" aria-label="Xem chi tiết ${batchCount} lần nhập">
-                        ${batchCount} lần
-                    </button>
-                </td>
-                <td>
-                    <div class="medicine-stock-display ${stockDisplayClass}">${formatStockDisplay(medicine)}</div>
-                </td>
-                <td class="mm-reference-column">
-                    ${canReviewMedicineReference ? `<button type="button" class="stock-detail-badge mm-reference-button ${medicine.reference_review_status === 'confirmed' ? 'text-success' : ''}" title="Xem hoặc đổi liên kết DAV" data-qlpk-call="openMedicineReferenceReview" data-qlpk-args='[${medicine.id}]'>${REFERENCE_REVIEW_LABELS[medicine.reference_review_status] || 'Cần xác nhận DAV'}</button>` : '—'}
-                </td>
-                <td>
-                    <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="action-btn" data-qlpk-call="editMedicine" data-qlpk-args='[${medicine.id}]' title="Sửa">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="action-btn delete" data-qlpk-call="confirmDelete" data-qlpk-args='[${medicine.id}]' title="Xóa">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-		tbody.append(row);
-	});
-
+	replace(tbody, state.medicines.map(medicineRow));
 	initializeMedicineWarningTooltips();
-	// Bind checkbox events
-	bindCheckboxEvents();
 }
 
-// Bind checkbox events
-function bindCheckboxEvents() {
-	// Select all checkbox
-	$('#selectAllCheckbox').off('change').on('change', function () {
-		const isChecked = $(this).is(':checked');
-		$('.medicine-checkbox').prop('checked', isChecked);
+const medicineCheckboxes = () => [...document.querySelectorAll('.medicine-checkbox')];
+
+// Select-all and row checkboxes, delegated once on the table
+function bindMedicineSelection() {
+	byId('selectAllCheckbox').addEventListener('change', event => {
+		medicineCheckboxes().forEach(box => { box.checked = event.target.checked; });
 		toggleDeleteButton();
 	});
-
-	// Individual checkboxes
-	$('.medicine-checkbox').off('change').on('change', function () {
-		const totalCheckboxes = $('.medicine-checkbox').length;
-		const checkedCheckboxes = $('.medicine-checkbox:checked').length;
-
-		$('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+	delegate(document.querySelector('#medicineTable tbody'), 'change', '.medicine-checkbox', () => {
+		const boxes = medicineCheckboxes();
+		byId('selectAllCheckbox').checked = boxes.length > 0 && boxes.every(box => box.checked);
 		toggleDeleteButton();
 	});
 }
 
 // Toggle delete button visibility
 function toggleDeleteButton() {
-	setElementVisible(document.getElementById('deleteSelectedBtn'), $('.medicine-checkbox:checked').length > 0);
+	setElementVisible(byId('deleteSelectedBtn'), medicineCheckboxes().some(box => box.checked));
 }
 
-// Delete selected medicines
-function deleteSelectedMedicines() {
-	const selectedIds = $('.medicine-checkbox:checked').map(function () {
-		return $(this).val();
-	}).get();
+let pendingBulkDeleteIds = [];
 
+// Delete selected medicines: open the bulk confirmation; confirmBulkDelete() runs on its button
+function deleteSelectedMedicines() {
+	const selectedIds = medicineCheckboxes().filter(box => box.checked).map(box => box.value);
 	if (selectedIds.length === 0) {
 		showCustomToast('warning', 'Vui lòng chọn thuốc cần xóa');
 		return;
 	}
+	pendingBulkDeleteIds = selectedIds;
+	byId('bulkDeleteCount').textContent = selectedIds.length;
+	window.bootstrap.Modal.getOrCreateInstance(byId('confirmBulkDeleteModal')).show();
+}
 
-	// Hiển thị modal xác nhận xóa nhiều thuốc
-	$('#bulkDeleteCount').text(selectedIds.length);
-	$('#confirmBulkDeleteModal').modal('show');
-
-	// Xử lý khi click xác nhận
-	$('#confirmBulkDeleteBtn').off('click').on('click', function () {
-		$('#confirmBulkDeleteModal').modal('hide');
-
-		const hasSession = window.QLPKApiTransport.hasSession();
-		if (!hasSession) {
-			showCustomToast('error', 'Vui lòng đăng nhập lại!');
-			return;
-		}
-
-		// Xóa từng thuốc; chờ đủ kết quả rồi mới tải lại để bảng không giữ dòng đã xóa.
-		const requests = selectedIds.map(id => new Promise(resolve => {
-			$.ajax({ url: `/api/medicines/${id}`, method: 'DELETE' })
-				.done(() => resolve({ ok: true }))
-				.fail(xhr => resolve({ ok: false, xhr }));
-		}));
-		Promise.all(requests).then(results => {
-			const deletedCount = results.filter(result => result.ok).length;
-			const failed = results.filter(result => !result.ok);
-			if (deletedCount) showCustomToast('success', `Đã xóa ${deletedCount} thuốc thành công`);
-			if (failed.length) {
-				const fallback = 'Có lỗi xảy ra khi xóa thuốc';
-				showCustomToast('error', getUserFacingResponseMessage(failed[0].xhr, [409], fallback));
-			}
-			if (deletedCount) {
-				loadMedicines();
-				updateDashboard();
-			}
-		});
-	});
+async function confirmBulkDelete() {
+	const selectedIds = pendingBulkDeleteIds;
+	pendingBulkDeleteIds = [];
+	window.bootstrap.Modal.getOrCreateInstance(byId('confirmBulkDeleteModal')).hide();
+	if (!selectedIds.length) return;
+	if (!window.QLPKApiTransport.hasSession()) {
+		showCustomToast('error', 'Vui lòng đăng nhập lại!');
+		return;
+	}
+	// Xóa từng thuốc; chờ đủ kết quả rồi mới tải lại để bảng không giữ dòng đã xóa.
+	const results = await Promise.all(selectedIds.map(id => requestJson(`/api/medicines/${id}`, { method: 'DELETE' })
+		.then(() => ({ ok: true }), error => ({ ok: false, error }))));
+	const deletedCount = results.filter(result => result.ok).length;
+	const failed = results.filter(result => !result.ok);
+	if (deletedCount) showCustomToast('success', `Đã xóa ${deletedCount} thuốc thành công`);
+	if (failed.length) {
+		showCustomToast('error', getUserFacingResponseMessage(failed[0].error, [409], 'Có lỗi xảy ra khi xóa thuốc'));
+	}
+	if (deletedCount) {
+		loadMedicines();
+		updateDashboard();
+	}
 }
 
 // Get unit display name (giữ backward compatibility cho dữ liệu cũ, nhưng mặc định return trực tiếp)
@@ -410,57 +356,42 @@ function formatDate(dateString) {
 
 // Update table info
 function updateTableInfo() {
-	const start = totalItems ? (currentPage - 1) * medicinePageSize + 1 : 0;
-	const end = Math.min(currentPage * medicinePageSize, totalItems);
-	$('#tableInfo').text(`${start}–${end} / ${totalItems} mục`);
+	const start = state.totalItems ? (state.currentPage - 1) * medicinePageSize + 1 : 0;
+	const end = Math.min(state.currentPage * medicinePageSize, state.totalItems);
+	byId('tableInfo').textContent = `${start}–${end} / ${state.totalItems} mục`;
 }
 
-// Render pagination
+function pageButton(label, page, { active = false, disabled = false } = {}) {
+	return el('li', { class: ['page-item', active && 'active', disabled && 'disabled'].filter(Boolean).join(' ') },
+		el('button', { type: 'button', class: 'page-link', 'data-page': page, disabled, 'aria-current': active ? 'page' : null }, label));
+}
+
+// Render pagination (clicks are delegated on #pagination by the page entry)
 function renderPagination() {
-	const pagination = $('#pagination');
-	pagination.empty();
-
-	if (totalPages <= 1) return;
-
-	// Previous button
-	const prevBtn = `
-        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <button type="button" class="page-link" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>Trước</button>
-        </li>
-    `;
-	pagination.append(prevBtn);
-
-	// Page numbers
-	for (let i = 1; i <= totalPages; i++) {
-		if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-			const pageBtn = `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <button type="button" class="page-link" data-page="${i}" ${i === currentPage ? 'aria-current="page"' : ''}>${i}</button>
-                </li>
-            `;
-			pagination.append(pageBtn);
-		} else if (i === currentPage - 3 || i === currentPage + 3) {
-			pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+	const items = [];
+	if (state.totalPages > 1) {
+		items.push(pageButton('Trước', state.currentPage - 1, { disabled: state.currentPage === 1 }));
+		for (let i = 1; i <= state.totalPages; i++) {
+			if (i === 1 || i === state.totalPages || (i >= state.currentPage - 2 && i <= state.currentPage + 2)) {
+				items.push(pageButton(i, i, { active: i === state.currentPage }));
+			} else if (i === state.currentPage - 3 || i === state.currentPage + 3) {
+				items.push(el('li', { class: 'page-item disabled' }, el('span', { class: 'page-link' }, '...')));
+			}
 		}
+		items.push(pageButton('Sau', state.currentPage + 1, { disabled: state.currentPage === state.totalPages }));
 	}
-
-	// Next button
-	const nextBtn = `
-        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-            <button type="button" class="page-link" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>Sau</button>
-        </li>
-    `;
-	pagination.append(nextBtn);
+	replace(byId('pagination'), items);
 }
 
 // Change page
 function changePage(page) {
-	if (page < 1 || page > totalPages) return;
-	currentPage = page;
+	if (page < 1 || page > state.totalPages) return;
+	state.currentPage = page;
 	loadMedicines(); // Load dữ liệu trang mới từ server
 }
 
 // Helpers
 
-
 // Edit medicine
+
+export { bindMedicineSelection, changePage, confirmBulkDelete, deleteSelectedMedicines, renderMedicineTable, filterMedicines, formatCurrency, formatDate, getUnitDisplay, loadAllMedicines, loadMedicines, resetFilters, toggleMissingImportPriceFilter };

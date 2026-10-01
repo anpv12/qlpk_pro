@@ -30,7 +30,7 @@
 									placeholder="Chọn nhà cung cấp từ danh sách" required readonly>
 								<input type="hidden" id="batchSupplierId">
 								<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="button" class="btn"
-									data-qlpk-call="showSupplierManagement" title="Quản lý và chọn nhà cung cấp">
+									id="batchSupplierPickBtn" title="Quản lý và chọn nhà cung cấp">
 									<i class="bi bi-building" aria-hidden="true"></i> Chọn
 								</button>
 							</div>
@@ -78,10 +78,49 @@
 										<th scope="col"><span class="visually-hidden">Thao tác</span></th>
 									</tr>
 								</thead>
-								<tbody id="batchImportTableBody">
-									<!-- Dòng mẫu sẽ được thêm bằng JS -->
-								</tbody>
+								<tbody id="batchImportTableBody"></tbody>
 							</table>
+							{# One import line; medicines/management-batch-import.js clones it per row. #}
+							<template id="batchImportRowTemplate">
+								<tr>
+									<td>
+										<div class="position-relative">
+											<input type="text" class="form-control form-control-sm batch-medicine-input" placeholder="Tìm và chọn thuốc" aria-label="Tên thuốc" required autocomplete="off">
+											<div class="occupation-dropdown batch-medicine-dropdown mm-hidden"></div>
+											<input type="hidden" class="batch-medicine-id" value="">
+										</div>
+									</td>
+									<td>
+										<input type="text" class="form-control form-control-sm batch-number-display" value="" placeholder="Số lô trên bao bì" aria-label="Số lô" required maxlength="50">
+									</td>
+									<td>
+										<input type="text" class="form-control form-control-sm batch-expiry-date js-datepicker" placeholder="dd/mm/yyyy" aria-label="Hạn dùng" autocomplete="off" required>
+									</td>
+									<td>
+										<div class="mm-import-qty">
+											<input type="number" class="form-control form-control-sm batch-quantity" min="0" step="0.01" required placeholder="0" aria-label="Số lượng">
+											<small class="batch-unit"></small>
+										</div>
+									</td>
+									<td>
+										<input type="number" class="form-control form-control-sm batch-price" min="0" step="0.01" placeholder="0" aria-label="Đơn giá nhập trên một đơn vị" required>
+									</td>
+									<td>
+										<div class="batch-price-comparison">
+											<div class="batch-last-price text-muted mm-hidden"></div>
+											<div class="batch-price-diff mm-hidden"></div>
+										</div>
+									</td>
+									<td>
+										<span class="batch-row-total fw-bold">0 ₫</span>
+									</td>
+									<td>
+										<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-sm mm-import-remove" aria-label="Xóa dòng thuốc" title="Xóa dòng thuốc">
+											<i class="bi bi-trash" aria-hidden="true"></i>
+										</button>
+									</td>
+								</tr>
+							</template>
 						</div>
 					</section>
 

@@ -1,5 +1,7 @@
-/* global debounce, escapeHtml, getUserFacingResponseMessage, showCustomToast, showInventoryOverlay */
-/* exported deleteSupplier, editSupplier, selectSupplierForBatch, showSupplierManagement */
+import { showInventoryOverlay } from './inventory-overlay.js';
+import { getUserFacingResponseMessage, showCustomToast } from '../medicine-management.js';
+import { byId, debounce, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
 
 // ========== QUẢN LÝ NHÀ CUNG CẤP ==========
 let suppliers = [];
@@ -12,78 +14,57 @@ function showSupplierManagement() {
 	resetSupplierForm();
 }
 
+const messageRow = (text, className) => el('tr', {}, el('td', { colspan: 8, class: `text-center ${className} py-4` }, text));
+
 // Hàm load danh sách nhà cung cấp
-function loadSuppliers() {
-	const tbody = document.getElementById('supplierTableBody');
+async function loadSuppliers() {
+	const tbody = byId('supplierTableBody');
 	if (!tbody) return;
-
-	tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Đang tải dữ liệu...</td></tr>';
-
-	const hasSession = window.QLPKApiTransport.hasSession();
-	if (!hasSession) {
+	replace(tbody, messageRow('Đang tải dữ liệu...', 'text-muted'));
+	if (!window.QLPKApiTransport.hasSession()) {
 		showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
 		return;
 	}
+	// search is always sent (possibly empty); is_active only when a status is chosen.
+	const params = new URLSearchParams({ search: byId('supplierSearchInput')?.value || '' });
+	const status = byId('supplierStatusFilter')?.value;
+	if (status) params.set('is_active', status);
+	try {
+		const response = await requestJson(`/api/suppliers/?${params}`);
+		suppliers = response.suppliers || [];
+		renderSuppliersTable(suppliers);
+	} catch (error) {
+		console.error('Error loading suppliers:', error);
+		replace(tbody, messageRow('Lỗi khi tải dữ liệu', 'text-danger'));
+		showCustomToast('error', 'Lỗi khi tải danh sách nhà cung cấp');
+	}
+}
 
-	const search = document.getElementById('supplierSearchInput')?.value || '';
-	const statusFilter = document.getElementById('supplierStatusFilter')?.value || '';
-
-	$.ajax({
-		url: '/api/suppliers/',
-		method: 'GET',
-		data: {
-			search: search,
-			is_active: statusFilter || undefined
-		},
-		dataType: 'json',
-		success: function (response) {
-			suppliers = response.suppliers || [];
-			renderSuppliersTable(suppliers);
-		},
-		error: function (xhr, status, error) {
-			console.error('Error loading suppliers:', error);
-			tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Lỗi khi tải dữ liệu</td></tr>';
-			showCustomToast('error', 'Lỗi khi tải danh sách nhà cung cấp');
-		}
-	});
+function supplierAction(variant, className, title, iconName, handler) {
+	const button = el('button', { 'data-qlpk-button': variant, 'data-qlpk-button-variant': variant === 'execute' ? 'solid' : 'soft', class: `btn btn-sm ${className}`, title }, el('i', { class: `bi ${iconName}` }));
+	button.addEventListener('click', handler);
+	return button;
 }
 
 // Hàm render bảng nhà cung cấp
 function renderSuppliersTable(suppliersList) {
-	const tbody = document.getElementById('supplierTableBody');
+	const tbody = byId('supplierTableBody');
 	if (!tbody) return;
-
 	if (!suppliersList || suppliersList.length === 0) {
-		tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Chưa có nhà cung cấp nào</td></tr>';
+		replace(tbody, messageRow('Chưa có nhà cung cấp nào', 'text-muted'));
 		return;
 	}
-
-	tbody.innerHTML = suppliersList.map(supplier => `
-        <tr>
-            <td>${escapeHtml(supplier.name || '')}</td>
-            <td>${escapeHtml(supplier.phone || '-')}</td>
-            <td>${escapeHtml(supplier.email || '-')}</td>
-            <td>${escapeHtml(supplier.tax_code || '-')}</td>
-            <td>${escapeHtml(supplier.contact_person || '-')}</td>
-            <td>${escapeHtml(supplier.address || '-')}</td>
-            <td class="mm-supplier-status-cell">
-                <span class="badge ${supplier.is_active === 1 ? 'qlpk-status--success' : 'qlpk-status--neutral'}">
-                    ${supplier.is_active === 1 ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                </span>
-            </td>
-            <td class="mm-supplier-actions-cell">
-                <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-sm me-1" data-qlpk-call="selectSupplierForBatch" data-qlpk-args='[${supplier.id}]' title="Chọn cho đơn nhập kho">
-                    <i class="bi bi-check-circle"></i>
-                </button>
-                <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="btn btn-sm btn-primary me-1" data-qlpk-call="editSupplier" data-qlpk-args='[${supplier.id}]' title="Sửa">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm btn-danger" data-qlpk-call="deleteSupplier" data-qlpk-args='[${supplier.id}]' title="Xóa">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+	replace(tbody, suppliersList.map(supplier => {
+		const active = supplier.is_active === 1;
+		return el('tr', {},
+			['name', 'phone', 'email', 'tax_code', 'contact_person', 'address'].map(field => el('td', {}, supplier[field] || (field === 'name' ? '' : '-'))),
+			el('td', { class: 'mm-supplier-status-cell' },
+				el('span', { class: `badge ${active ? 'qlpk-status--success' : 'qlpk-status--neutral'}` }, active ? 'Đang hoạt động' : 'Ngừng hoạt động')),
+			el('td', { class: 'mm-supplier-actions-cell' },
+				supplierAction('execute', 'me-1', 'Chọn cho đơn nhập kho', 'bi-check-circle', () => selectSupplierForBatch(supplier.id)), ' ',
+				supplierAction('edit', 'btn-primary me-1', 'Sửa', 'bi-pencil', () => editSupplier(supplier.id)), ' ',
+				supplierAction('danger', 'btn-danger', 'Xóa', 'bi-trash', () => deleteSupplier(supplier.id))));
+	}));
 }
 
 // Chọn nhà cung cấp cho đơn nhập kho
@@ -107,7 +88,7 @@ function selectSupplierForBatch(supplierId) {
 	// Đóng modal quản lý nhà cung cấp sau khi chọn
 	const modalEl = document.getElementById('supplierManagementModal');
 	if (modalEl) {
-		const modalInstance = bootstrap.Modal.getInstance(modalEl);
+		const modalInstance = window.bootstrap.Modal.getInstance(modalEl);
 		if (modalInstance) {
 			modalInstance.hide();
 		}
@@ -164,49 +145,30 @@ async function deleteSupplier(supplierId) {
 		return;
 	}
 
-	$.ajax({
-		url: `/api/suppliers/${supplierId}`,
-		method: 'DELETE',
-		dataType: 'json',
-		success: function () {
-			showCustomToast('success', 'Đã xóa nhà cung cấp thành công');
-			loadSuppliers();
-			if (editingSupplierId === supplierId) {
-				resetSupplierForm();
-			}
-		},
-		error: function (xhr) {
-			// 400 = nhà cung cấp đang có lô thuốc; backend trả lý do trong `detail`.
-			showCustomToast('error', getUserFacingResponseMessage(xhr, [400], 'Không thể xóa nhà cung cấp. Vui lòng thử lại.', 'detail'));
-		}
-	});
+	try {
+		await requestJson(`/api/suppliers/${supplierId}`, { method: 'DELETE' });
+		showCustomToast('success', 'Đã xóa nhà cung cấp thành công');
+		loadSuppliers();
+		if (editingSupplierId === supplierId) resetSupplierForm();
+	} catch (error) {
+		// 400 = nhà cung cấp đang có lô thuốc; backend trả lý do trong `detail`.
+		showCustomToast('error', getUserFacingResponseMessage(error, [400], 'Không thể xóa nhà cung cấp. Vui lòng thử lại.', 'detail'));
+	}
 }
 
 // Bind events cho form nhà cung cấp
-$(document).ready(function () {
-	// Form submit
-	$('#supplierForm').on('submit', function (e) {
-		e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+	byId('supplierForm').addEventListener('submit', event => {
+		event.preventDefault();
 		saveSupplier();
 	});
-
-	// Reset button
-	$('#supplierResetBtn').on('click', function () {
-		resetSupplierForm();
-	});
-
-	// Search và filter
-	$('#supplierSearchInput').on('input', debounce(function () {
-		loadSuppliers();
-	}, 500));
-
-	$('#supplierStatusFilter').on('change', function () {
-		loadSuppliers();
-	});
+	byId('supplierResetBtn').addEventListener('click', () => resetSupplierForm());
+	byId('supplierSearchInput').addEventListener('input', debounce(() => loadSuppliers(), 500));
+	byId('supplierStatusFilter').addEventListener('change', () => loadSuppliers());
 });
 
 // Hàm lưu nhà cung cấp
-function saveSupplier() {
+async function saveSupplier() {
 	const hasSession = window.QLPKApiTransport.hasSession();
 	if (!hasSession) {
 		showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
@@ -233,23 +195,16 @@ function saveSupplier() {
 	const url = isEdit ? `/api/suppliers/${editingSupplierId}` : '/api/suppliers/';
 	const method = isEdit ? 'PUT' : 'POST';
 
-	$.ajax({
-		url: url,
-		method: method,
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify(formData),
-		dataType: 'json',
-		success: function () {
-			showCustomToast('success', isEdit ? 'Đã cập nhật nhà cung cấp thành công' : 'Đã thêm nhà cung cấp thành công');
-			loadSuppliers();
-			resetSupplierForm();
-		},
-		error: function () {
-			showCustomToast('error', isEdit
-				? 'Không thể cập nhật nhà cung cấp. Vui lòng kiểm tra lại.'
-				: 'Không thể thêm nhà cung cấp. Vui lòng kiểm tra lại.');
-		}
-	});
+	try {
+		await requestJson(url, { method, json: formData });
+		showCustomToast('success', isEdit ? 'Đã cập nhật nhà cung cấp thành công' : 'Đã thêm nhà cung cấp thành công');
+		loadSuppliers();
+		resetSupplierForm();
+	} catch {
+		showCustomToast('error', isEdit
+			? 'Không thể cập nhật nhà cung cấp. Vui lòng kiểm tra lại.'
+			: 'Không thể thêm nhà cung cấp. Vui lòng kiểm tra lại.');
+	}
 }
+
+export { renderSuppliersTable, showSupplierManagement };

@@ -4,7 +4,7 @@ const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 
-function setup() {
+async function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
     const {window, document, context, Element} = env;
     const nodes = {}, requests = [];
@@ -17,11 +17,12 @@ function setup() {
         get('medicinePricePanel').fire('hide.bs.modal', {preventDefault:()=>{prevented=true;}});
         if (!prevented) get('medicinePricePanel').classList.remove('show');
     }};
-    Object.assign(window, {bootstrap:{Modal:{getOrCreateInstance:()=>modal}},
-        showInventoryOverlay: node=>node.classList.add('show')});
+    Object.assign(window, {bootstrap:{Modal:{getOrCreateInstance:node=>(node===get('medicinePricePanel') ? {...modal, show(){node.classList.add('show');}} : modal)}}});
+    document.querySelectorAll = () => [];
     Object.assign(context, {localStorage:{getItem:()=> 'QA'},
         fetch:(url, options)=>new Promise(resolve=>requests.push({url,options,resolve}))});
-    env.load('app/static/js/medicines/price-editor.js');
+    const { MedicinePriceEditor } = await env.loadModule('medicines/price-editor.js');
+    window.MedicinePriceEditor = MedicinePriceEditor;
     document.fire('DOMContentLoaded');
     const respond = async (index, data, status=200) => {
         requests[index].resolve({ok:status===200,status,json:async()=>data});
@@ -34,7 +35,7 @@ function setup() {
 const snapshot = (price='2000.00', revision=null) => ({current_price:price,revision,history:[],next_before_id:null});
 
 test('old/new/difference, zero price and one in-flight write with server revision', async()=>{
-    const h=setup(); h.open(1); await h.respond(0,snapshot());
+    const h = await setup(); h.open(1); await h.respond(0,snapshot());
     assert.equal(h.get('medicinePriceConfirm').disabled,true);
     assert.equal(h.get('medicinePriceFrom').textContent,'Khi xác nhận giá mới');
     h.input('2000'); assert.equal(h.get('medicinePriceConfirm').disabled,true);
@@ -62,7 +63,7 @@ test('old/new/difference, zero price and one in-flight write with server revisio
 });
 
 test('switching medicines and closing ignore stale responses',async()=>{
-    const h=setup(); h.open(1); h.open(2);
+    const h = await setup(); h.open(1); h.open(2);
     await h.respond(1,snapshot('4000.00',4));
     await h.respond(0,snapshot('1000.00',1));
     assert.equal(h.get('medicinePriceOld').textContent,'4.000 đ');
@@ -78,7 +79,7 @@ test('switching medicines and closing ignore stale responses',async()=>{
 });
 
 test('new medicine stages price without a premature request',async()=>{
-    const h=setup(); h.get('medicine-name').value='Thuốc DAV vừa chọn';
+    const h = await setup(); h.get('medicine-name').value='Thuốc DAV vừa chọn';
     assert.equal(h.get('name'),null);
     await h.get('medicinePriceOpen').fire('click');
     assert.equal(h.get('medicinePriceMedicine').textContent,'Thuốc DAV vừa chọn');
@@ -93,16 +94,16 @@ test('new medicine stages price without a premature request',async()=>{
 
 for (const failure of ['name lookup', 'overlay opening']) {
     test(`failed ${failure} releases the medicine save guard and allows retry`,async()=>{
-        const h=setup();
+        const h = await setup();
         h.get('medicine-unit_price').value='500';
         h.get('medicineFormError').classList.add('d-none');
-        const showOverlay=h.window.showInventoryOverlay;
+        const modals=h.window.bootstrap.Modal, openModal=modals.getOrCreateInstance;
         if (failure === 'name lookup') {
             Object.defineProperty(h.get('medicine-name'),'value',{
                 configurable:true,get(){throw new Error('internal detail');}
             });
         } else {
-            h.window.showInventoryOverlay=()=>{throw new Error('internal detail');};
+            modals.getOrCreateInstance=()=>{throw new Error('internal detail');};
         }
         await h.get('medicinePriceOpen').fire('click');
         assert.equal(h.window.MedicinePriceEditor.isOpen(),false);
@@ -115,7 +116,7 @@ for (const failure of ['name lookup', 'overlay opening']) {
         assert.equal(h.get('medicine-unit_price').value,'500');
         assert.equal(h.requests.length,0);
         Object.defineProperty(h.get('medicine-name'),'value',{configurable:true,writable:true,value:'Thuốc mới'});
-        h.window.showInventoryOverlay=showOverlay;
+        modals.getOrCreateInstance=openModal;
         await h.get('medicinePriceOpen').fire('click');
         assert.equal(h.window.MedicinePriceEditor.isOpen(),true);
         h.input('750'); await h.get('medicinePriceConfirm').fire('click');
@@ -126,7 +127,7 @@ for (const failure of ['name lookup', 'overlay opening']) {
 }
 
 test('stale-price rejection requires reload and hides technical errors',async()=>{
-    const h=setup(); h.open(1); await h.respond(0,snapshot());
+    const h = await setup(); h.open(1); await h.respond(0,snapshot());
     h.input('3000'); h.get('medicinePriceConfirm').fire('click');
     await h.respond(1,{error:'Giá đã được thay đổi.'},409);
     assert.equal(h.get('medicinePriceConfirm').disabled,true);

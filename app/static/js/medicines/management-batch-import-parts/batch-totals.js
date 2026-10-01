@@ -1,6 +1,5 @@
-/* global formatCurrency */
-/* exported calculateBatchRowTotal, updateBatchTotal */
-// management-batch-import.js: calculateBatchRowTotal, updateBatchTotal (nạp trước management-batch-import.js, cùng scope trang).
+import { formatCurrency } from '../management-list.js';
+import { el, replace } from '../../shared/dom.js';
 
 // Tính thành tiền từng dòng trong bảng nhập kho
 function calculateBatchRowTotal(rowId) {
@@ -45,20 +44,16 @@ function updateBatchTotal() {
 
 	// Hiển thị breakdown theo từng lô
 	const breakdownElement = document.getElementById('batchLotBreakdown');
-	if (breakdownElement) {
-		if (Object.keys(lotTotals).length === 0) {
-			breakdownElement.innerHTML = '<span class="text-muted">Chưa có dữ liệu</span>';
-		} else {
-			const breakdownHtml = Object.entries(lotTotals)
-				.sort((a, b) => a[0].localeCompare(b[0])) // Sắp xếp theo tên lô
-				.map(([lot, lotTotal]) => {
-						return `<div class="lot-item">
-	                      <span class="lot-name">Lô ${lot}:</span>
-	                      <span class="lot-value fw-bold">${formatCurrency(lotTotal)}</span>
-	                    </div>`;
-				})
-				.join('');
-			breakdownElement.innerHTML = breakdownHtml;
-		}
+	if (!breakdownElement) return;
+	if (Object.keys(lotTotals).length === 0) {
+		replace(breakdownElement, el('span', { class: 'text-muted' }, 'Chưa có dữ liệu'));
+		return;
 	}
+	replace(breakdownElement, Object.entries(lotTotals)
+		.sort((a, b) => a[0].localeCompare(b[0])) // Sắp xếp theo tên lô
+		.map(([lot, lotTotal]) => el('div', { class: 'lot-item' },
+			el('span', { class: 'lot-name' }, `Lô ${lot}:`), ' ',
+			el('span', { class: 'lot-value fw-bold' }, formatCurrency(lotTotal)))));
 }
+
+export { calculateBatchRowTotal, updateBatchTotal };

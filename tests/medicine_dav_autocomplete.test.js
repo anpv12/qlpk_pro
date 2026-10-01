@@ -7,7 +7,7 @@ const path = require('node:path');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readTemplateSource } = require('./helpers/template-source');
 
-function setup() {
+async function setup() {
     const env = require('./helpers/autocomplete-dom').createEnvironment();
     const {window, document, context, Element} = env;
     const nodes = {}, requests = [], modal = {};
@@ -33,16 +33,16 @@ function setup() {
     };
     Object.assign(window, {
         showCustomToast() {},
-        updatePackagingInfo: () => {window.packagingUpdated = true;},
-        jQuery: () => ({modal: () => {window.closed = true;}, on: (event, fn) => {modal[event] = fn;}}),
-        editMedicine: id => {window.edited = id;},
         QLPKRealtimePageHooks: {register: options => {realtime = options.handler;}},
         QLPKApiTransport: {hasSession: () => Boolean(token), sessionRevision: () => `legacy:${token}`}
     });
-    Object.assign(context, {Date:{now:()=>now}, localStorage:{getItem:()=>token},
+    Object.assign(context, {Date:class extends Date { static now() { return now; } }, localStorage:{getItem:()=>token},
         fetch:(url, options)=>new Promise(resolve=>requests.push({url, options, resolve}))});
     env.load('app/static/js/components/autocomplete-field.js');
-    env.load('app/static/js/medicines/clinic-catalog.js');
+    const { ClinicMedicineCatalog } = await env.loadModule('medicines/clinic-catalog.js', ['Date']);
+    ClinicMedicineCatalog.configure({ openExisting: id => {window.edited = id;}, packagingChanged: () => {window.packagingUpdated = true;} });
+    get('medicineModal').addEventListener = (event, fn) => {modal[event] = fn;};
+    window.ClinicMedicineCatalog = ClinicMedicineCatalog;
     document.fire('DOMContentLoaded');
     const input = text => {field.input.value = text; field.input.fire('input');};
     const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -58,7 +58,7 @@ function setup() {
 const item = (id, extra = {}) => ({id, name:`Thuốc ${id}`, active_ingredient:`Hoạt chất ${id}`, strength:'10mg', registration_number:`VD-${id}`, updated_at:'v1', ...extra});
 
 test('selected DAV summary titles the modal guide and shows labeled identity rows without duplicates', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('nhãn'); await h.tick();
     await h.respond(0, [item(31, {dosage_form:'Viên nén bao phim', packaging:'Hộp 05 vỉ x 10 viên',
         manufacturer_name:'Nhà máy Stada Việt Nam', manufacturer_country:'Việt Nam'})]);
@@ -94,8 +94,8 @@ test('selected DAV summary titles the modal guide and shows labeled identity row
     assert.doesNotMatch(template, /id="davSelectionTitle"/);
 });
 
-test('expiry action is available only for existing batches and clears when switching medicines', () => {
-    const h = setup();
+test('expiry action is available only for existing batches and clears when switching medicines', async () => {
+    const h = await setup();
     assert.equal(h.get('medicine-expiry_date').disabled, true);
     h.api.setExisting({id:1, name:'Thuốc', batch_count:2});
     assert.equal(h.get('medicine-expiry_date').disabled, false);
@@ -109,8 +109,8 @@ test('expiry action is available only for existing batches and clears when switc
     assert.equal(h.get('medicine-expiry_date').disabled, true);
 });
 
-test('edit displays readonly latest receipt cost and sale price and resets both', () => {
-    const h = setup();
+test('edit displays readonly latest receipt cost and sale price and resets both', async () => {
+    const h = await setup();
     h.api.setExisting({id:1, name:'Thuốc', unit_price:9000,
         latest_batch_pricing:{batch_id:2, import_price:0, sale_price:null}});
     assert.equal(h.get('medicine-import_price').value, 0);
@@ -130,7 +130,7 @@ test('edit displays readonly latest receipt cost and sale price and resets both'
 });
 
 test('liquid suggestions fill partial defaults, preserve DAV range and clear on change', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('FDG'); await h.tick();
     await h.respond(0, [item(31940, {name:'(18)F-FDG (FDG)', packaging:'Lọ 15,8-16ml',
         clinic_defaults:{administration_method:'', suggested_administration_method:'Tiêm',
@@ -155,7 +155,7 @@ test('liquid suggestions fill partial defaults, preserve DAV range and clear on 
 });
 
 test('original form stays visible; DAV selection unlocks settings and source values stay locked', async () => {
-    const h = setup();
+    const h = await setup();
     assert.equal(h.get('medicineEditFields').hidden, false);
     assert.equal(h.get('medicineEditFields').disabled, true);
     assert.equal(h.get('medicineSaveButton').disabled, true);
@@ -179,28 +179,29 @@ test('original form stays visible; DAV selection unlocks settings and source val
 
 
 
-test('editing waits for the latest medicine load and ignores stale responses', () => {
-    const source = readMedicineManagementSource();
-    const code = source.slice(source.indexOf('let medicineEditRevision ='), source.indexOf('// Populate medicine form with data'));
-    const requests = [], calls = [];
-    const context = vm.createContext({localStorage:{getItem:()=> 'test'}, resetForm(){}, showCustomToast(){},
-        $:{ajax: request=>requests.push(request)}, populateMedicineForm:(data,id)=>calls.push(['populate',id]),
-        window:{QLPKApiTransport:{hasSession:()=>true}}});
-    vm.runInContext(code, context);
-    context.editMedicine(1);
-    assert.deepEqual(calls, []);
-    context.editMedicine(2);
-    requests[0].success({id:1});
-    assert.deepEqual(calls, []);
-    requests[1].success({id:2});
-    assert.deepEqual(calls, [['populate',2]]);
-    context.editMedicine(3);
-    requests[2].success({id:3});
-    assert.deepEqual(calls.at(-1), ['populate',3]);
+test('editing waits for the latest medicine load and ignores stale responses', async () => {
+    const { loadMedicineForm } = require('./helpers/medicine-page');
+    const page = await loadMedicineForm();
+    const title = () => document.getElementById('medicineModalLabel').textContent;
+    const name = () => document.querySelector('input[name="name"]').value;
+    page.form.editMedicine(1);
+    page.form.editMedicine(2);
+    assert.deepEqual(page.requests.map(request => request.url), ['/api/medicines/1', '/api/medicines/2']);
+    page.requests[0].respond({ id: 1, name: 'Thuốc 1' }); await page.flush();
+    assert.equal(title(), 'THÊM THUỐC MỚI');
+    assert.equal(page.state.editingMedicineId, undefined);
+    page.requests[1].respond({ id: 2, name: 'Thuốc 2' }); await page.flush();
+    assert.equal(title(), 'CHỈNH SỬA THUỐC');
+    assert.equal(name(), 'Thuốc 2');
+    assert.equal(page.state.editingMedicineId, 2);
+    page.form.editMedicine(3);
+    page.requests[2].respond({ id: 3, name: 'Thuốc 3' }); await page.flush();
+    assert.equal(name(), 'Thuốc 3');
+    assert.equal(page.state.editingMedicineId, 3);
 });
 
 test('DAV defaults fill paired inputs; saving is not blocked by manual confirmation and changing drug clears all suggestions', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('mapped'); await h.tick();
     await h.respond(0, [item(20, {dosage_form:'Viên nén', packaging:'Hộp 3 vỉ x 10 viên', clinic_defaults:{
         unit:'viên', packaging_unit:'hộp', units_per_box:30, administration_method:'Uống', is_imported:false
@@ -223,7 +224,7 @@ test('DAV defaults fill paired inputs; saving is not blocked by manual confirmat
 
 
 test('debounce and stale responses cannot replace the current query or reopen a closed modal', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('ab'); h.input('abc'); await h.tick();
     assert.equal(h.requests.length, 1);
     assert.match(h.requests[0].url, /search=abc/);
@@ -240,7 +241,7 @@ test('debounce and stale responses cannot replace the current query or reopen a 
 });
 
 test('empty focus immediately loads choices; typing filters and clearing restores the full list', async () => {
-    const h = setup();
+    const h = await setup();
     h.get('davSearchInput').focus();
     assert.equal(h.requests.length, 1);
     assert.equal(h.get('davDropdown').hidden, false);
@@ -263,7 +264,7 @@ test('empty focus immediately loads choices; typing filters and clearing restore
 });
 
 test('keyboard selection fills identity and changing selection prevents saving an old DAV id', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('thuoc'); await h.tick(); await h.respond(0, [item(10), item(11)]);
     h.get('davSearchInput').fire('keydown', {key:'ArrowDown'});
     h.get('davSearchInput').fire('keydown', {key:'Enter'});
@@ -280,7 +281,7 @@ test('keyboard selection fills identity and changing selection prevents saving a
 });
 
 test('scroll appends pages once, keeps existing results, and stops at the last page', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('thuoc'); await h.tick(); await h.respond(0, [item(1)], 2);
     h.get('davSearchResults').scrollTop = 300;
     h.get('davSearchResults').fire('scroll'); h.get('davSearchResults').fire('scroll');
@@ -295,7 +296,7 @@ test('scroll appends pages once, keeps existing results, and stops at the last p
 
 
 test('Escape/blur cancel pending searches; Enter without an option cannot submit; errors stay readable', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('thuoc');
     h.get('davSearchInput').fire('keydown', {key:'Escape'}); await h.tick();
     assert.equal(h.requests.length, 0);
@@ -310,7 +311,7 @@ test('Escape/blur cancel pending searches; Enter without an option cannot submit
 });
 
 test('cached pages reopen without requests, expire, and clear on form/auth/inventory changes', async () => {
-    const h = setup();
+    const h = await setup();
     h.get('davSearchInput').focus();
     assert.match(h.requests[0].url, /mode=autocomplete/);
     await h.respond(0, [item(1)]);
@@ -334,7 +335,7 @@ test('cached pages reopen without requests, expire, and clear on form/auth/inven
 
 for (const referenceId of [null, 3]) {
     test(`editing ${referenceId ? 'linked' : 'legacy'} medicine cannot select DAV or write identity`, async () => {
-        const h = setup();
+        const h = await setup();
         h.api.setExisting({id:9, reference_catalog_id:referenceId, name:'Thuốc đang quản lý', conversion_locked:true});
         h.get('name').value = 'Thuốc đang quản lý';
         h.input('Diropam'); await h.tick();
@@ -351,7 +352,7 @@ for (const referenceId of [null, 3]) {
 }
 
 test('selecting a DAV medicine already in stock opens it instead of creating a duplicate', async () => {
-    const h = setup();
+    const h = await setup();
     h.input('drug'); await h.tick();
     await h.respond(0, [item(3, {clinic_medicine_id:9})]);
     h.get('davSearchResults').children[0].fire('click');

@@ -1,6 +1,14 @@
-/* global allMedicines, calculateBatchRowTotal, editMedicine, formatCurrency, formatDate, importLedgerMedicineId: writable, importLedgerSort: writable, loadMedicines, medicineSaving, medicines, normalizeSearchText, setElementVisible, showCustomToast, showInventoryOverlay, switchImportTab, updateBatchTotal, updateDashboard */
-/* exported confirmBatchImport, importLedgerMedicineId, importLedgerSort, onBatchAmountInput, onBatchPriceInput, removeBatchRow, removeBatchRowAndUpdateTotal, showImportFromMedicineForm, updatePriceComparison, validateBatchNumber */
-// Parts (nạp trước file này): batch-totals.js
+import { state } from './management-state.js';
+import { editMedicine, medicineSaving } from './management-form.js';
+import { switchImportTab } from './management-import-ledger.js';
+import { showInventoryOverlay } from './inventory-overlay.js';
+import { normalizeSearchText, setElementVisible, showCustomToast } from '../medicine-management.js';
+import { calculateBatchRowTotal, updateBatchTotal } from './management-batch-import-parts/batch-totals.js';
+import { formatCurrency, formatDate, loadMedicines } from './management-list.js';
+import { updateDashboard } from './management-overview.js';
+import { setProp } from '../shared/dom-query.js';
+import { byId, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
 
 // ========== FUNCTIONS CHO NHẬP KHO THEO ĐƠN HÀNG ==========
 let batchRowCounter = 0;
@@ -8,7 +16,7 @@ let batchRowCounter = 0;
 let importFormMedicineId = null;
 
 function showImportFromMedicineForm() {
-	const medicineId = $('#medicineForm').data('medicine-id');
+	const medicineId = state.editingMedicineId;
 	if (medicineSaving || !medicineId) return;
 	const element = document.getElementById('importBatchModal');
 	if (element.classList.contains('show') || element.dataset.inventoryModalLayer) return;
@@ -34,15 +42,15 @@ function showImportBatchModal(preselectMedicineId = null) {
 
 	// Xóa tất cả dòng trong bảng
 	const tbody = document.getElementById('batchImportTableBody');
-	if (tbody) tbody.innerHTML = '';
+	tbody?.replaceChildren();
 
 	// Thêm dòng đầu tiên
 	batchRowCounter = 0;
 	addBatchImportRow();
 
 	if (preselectMedicineId != null) {
-		const preselect = allMedicines.find(item => item.id === preselectMedicineId)
-			|| medicines.find(item => item.id === preselectMedicineId);
+		const preselect = state.allMedicines.find(item => item.id === preselectMedicineId)
+			|| state.medicines.find(item => item.id === preselectMedicineId);
 		const row = tbody?.lastElementChild;
 		if (preselect && row) {
 			row.querySelector('.batch-medicine-input').value = preselect.name;
@@ -60,8 +68,8 @@ function showImportBatchModal(preselectMedicineId = null) {
 	switchImportTab('order');
 	document.getElementById('importLedgerSearch').value = '';
 	document.getElementById('importLedgerStatus').value = '';
-	importLedgerMedicineId = null;
-	importLedgerSort = '';
+	state.importLedgerMedicineId = null;
+	state.importLedgerSort = '';
 
 	showInventoryOverlay(document.getElementById('importBatchModal'));
 }
@@ -73,55 +81,12 @@ function addBatchImportRow() {
 	batchRowCounter++;
 	const rowId = `batchRow_${batchRowCounter}`;
 
-	const row = document.createElement('tr');
+	const row = byId('batchImportRowTemplate').content.firstElementChild.cloneNode(true);
 	row.id = rowId;
-
-	row.innerHTML = `
-      <td>
-        <div class="position-relative">
-          <input type="text" class="form-control form-control-sm batch-medicine-input"
-                 placeholder="Tìm và chọn thuốc" aria-label="Tên thuốc" required autocomplete="off"
-                 data-row-id="${rowId}">
-	          <div class="occupation-dropdown batch-medicine-dropdown mm-hidden"></div>
-          <input type="hidden" class="batch-medicine-id" value="">
-        </div>
-      </td>
-      <td>
-        <input type="text" class="form-control form-control-sm batch-number-display"
-               value=""
-	               placeholder="Số lô trên bao bì" aria-label="Số lô" required maxlength="50"
-               data-qlpk-call="validateBatchNumber" data-qlpk-on="focusout" data-qlpk-args='["$this"]'>
-      </td>
-      <td>
-        <input type="text" class="form-control form-control-sm batch-expiry-date js-datepicker" placeholder="dd/mm/yyyy" aria-label="Hạn dùng" autocomplete="off" required>
-      </td>
-      <td>
-        <div class="mm-import-qty">
-          <input type="number" class="form-control form-control-sm batch-quantity" min="0" step="0.01" required
-                 placeholder="0" aria-label="Số lượng"
-                 data-qlpk-call="onBatchAmountInput" data-qlpk-on="input" data-qlpk-args='["${rowId}"]'>
-          <small class="batch-unit"></small>
-        </div>
-      </td>
-      <td>
-        <input type="number" class="form-control form-control-sm batch-price" min="0" step="0.01" placeholder="0" aria-label="Đơn giá nhập trên một đơn vị" required
-               data-qlpk-call="onBatchPriceInput" data-qlpk-on="input" data-qlpk-args='["${rowId}"]'>
-      </td>
-      <td>
-	        <div class="batch-price-comparison">
-	          <div class="batch-last-price text-muted mm-hidden"></div>
-	          <div class="batch-price-diff mm-hidden"></div>
-	        </div>
-	      </td>
-	      <td>
-	        <span class="batch-row-total fw-bold">0 ₫</span>
-      </td>
-      <td>
-        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="btn btn-sm mm-import-remove" aria-label="Xóa dòng thuốc" title="Xóa dòng thuốc" data-qlpk-call="removeBatchRowAndUpdateTotal" data-qlpk-args='["${rowId}"]'>
-          <i class="bi bi-trash" aria-hidden="true"></i>
-        </button>
-      </td>
-    `;
+	row.querySelector('.batch-medicine-input').dataset.rowId = rowId;
+	row.querySelector('.batch-quantity').addEventListener('input', () => onBatchAmountInput(rowId));
+	row.querySelector('.batch-price').addEventListener('input', () => onBatchPriceInput(rowId));
+	row.querySelector('.mm-import-remove').addEventListener('click', () => removeBatchRowAndUpdateTotal(rowId));
 
 	tbody.appendChild(row);
 
@@ -138,18 +103,6 @@ function addBatchImportRow() {
 	const expiryDateInput = row.querySelector('.batch-expiry-date');
 	if (expiryDateInput && typeof window.initDatepickers === 'function') {
 		window.initDatepickers(expiryDateInput);
-	}
-}
-
-// Hàm validate và chuẩn hóa số lô (tùy chọn, không bắt buộc)
-function validateBatchNumber(input) {
-	if (!input || !input.value) return;
-
-	const value = input.value.trim().toUpperCase();
-	// Nếu người dùng nhập format LOT-XX thì giữ nguyên, nếu không thì có thể chuẩn hóa
-	if (value && !value.match(/^LOT-\d+$/i)) {
-		// Có thể tự động chuẩn hóa hoặc để người dùng tự nhập
-		// Ở đây chỉ đảm bảo format khi tự động gen, còn người dùng có thể nhập tự do
 	}
 }
 
@@ -195,32 +148,28 @@ function showBatchMedicineDropdown(input, dropdown, hiddenId, rowId) {
 	let filtered;
 	if (!keyword) {
 		// Nếu chưa nhập từ khóa: hiển thị danh sách đầy đủ (giới hạn 5000 thuốc để tránh quá tải UI)
-		filtered = allMedicines.slice(0, 5000);
+		filtered = state.allMedicines.slice(0, 5000);
 	} else {
 		// Lọc theo tên thuốc khi có từ khóa
-		filtered = allMedicines.filter(m => normalizeSearchText(m.name).includes(keyword));
+		filtered = state.allMedicines.filter(m => normalizeSearchText(m.name).includes(keyword));
 	}
 
 	// Hiển thị dropdown
-	dropdown.innerHTML = '';
-	if (filtered.length === 0) {
-		setElementVisible(dropdown, false);
-		return;
-	}
-
-	filtered.forEach(medicine => {
-		const div = document.createElement('div');
-		div.className = 'occupation-item';
-		div.textContent = medicine.name;
-		div.onclick = () => {
+	replace(dropdown, filtered.map(medicine => {
+		const option = el('div', { class: 'occupation-item' }, medicine.name);
+		option.addEventListener('click', () => {
 			input.value = medicine.name;
 			hiddenId.value = medicine.id;
 			setElementVisible(dropdown, false);
 			// Gọi hàm cập nhật thông tin thuốc (bao gồm giá nhập lần trước)
 			onBatchMedicineSelect(medicine.id, rowId);
-		};
-		dropdown.appendChild(div);
-	});
+		});
+		return option;
+	}));
+	if (filtered.length === 0) {
+		setElementVisible(dropdown, false);
+		return;
+	}
 
 	setElementVisible(dropdown, true);
 
@@ -267,11 +216,9 @@ async function onBatchMedicineSelect(medicineId, rowId) {
     const row = document.getElementById(rowId);
     if (!row) return;
     rowResetPurchasePrice(rowId);
-    row.querySelector('.batch-unit').textContent = (allMedicines.find(m => String(m.id) === String(medicineId)) || {}).unit || '';
+    row.querySelector('.batch-unit').textContent = (state.allMedicines.find(m => String(m.id) === String(medicineId)) || {}).unit || '';
     try {
-        const response = await $.ajax({
-            url: `/api/medicines/${medicineId}/batches`,
-        });
+        const response = await requestJson(`/api/medicines/${medicineId}/batches`);
         if (!row.isConnected || row.querySelector('.batch-medicine-id').value !== String(medicineId)) return;
         const latest = [...(response.batches || [])].sort((a,b) => b.import_date.localeCompare(a.import_date) || b.id - a.id)[0];
         const label = row.querySelector('.batch-last-price');
@@ -361,14 +308,14 @@ function readBatchImportRow(row, note) {
 
 function refreshAfterBatchImport() {
 	// Đóng modal
-	const modal = bootstrap.Modal.getInstance(document.getElementById('importBatchModal'));
+	const modal = window.bootstrap.Modal.getInstance(document.getElementById('importBatchModal'));
 	if (modal) modal.hide();
 
 	// Reload danh sách thuốc
 	loadMedicines();
 	updateDashboard();
 
-	if (importFormMedicineId && $('#medicineForm').data('medicine-id') === importFormMedicineId
+	if (importFormMedicineId && state.editingMedicineId === importFormMedicineId
 		&& document.getElementById('medicineModal').classList.contains('show')) {
 		editMedicine(importFormMedicineId);
 	}
@@ -413,23 +360,15 @@ async function confirmBatchImport() {
 
 	// Gọi API nhập kho
 	isImportingBatch = true;
-	$('#confirmImportBatchBtn').prop('disabled', true);
+	setProp('#confirmImportBatchBtn', 'disabled', true);
 	try {
-		const response = await $.ajax({
-			url: '/api/medicine-batches/import-order',
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			dataType: 'json',
-			data: JSON.stringify({
-				supplier_id: supplierId,
-				invoice_number: invoiceNumber || null,
-				import_date: importDate,
-				items: items,
-				notes: note
-			})
-		});
+		const response = await requestJson('/api/medicine-batches/import-order', { method: 'POST', json: {
+			supplier_id: supplierId,
+			invoice_number: invoiceNumber || null,
+			import_date: importDate,
+			items: items,
+			notes: note
+		} });
 
 		refreshAfterBatchImport();
 
@@ -440,6 +379,8 @@ async function confirmBatchImport() {
 		window.QLPKUserFeedback.reportError(error, {fallback: 'Không thể nhập kho. Vui lòng kiểm tra dữ liệu và thử lại.'});
 	} finally {
 		isImportingBatch = false;
-		$('#confirmImportBatchBtn').prop('disabled', false);
+		setProp('#confirmImportBatchBtn', 'disabled', false);
 	}
 }
+
+export { addBatchImportRow, confirmBatchImport, showImportBatchModal, showImportFromMedicineForm };

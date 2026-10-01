@@ -1,4 +1,5 @@
 'use strict';
+const NativeFormData = globalThis.FormData;
 // Minimal DOM for node:test suites of ES module pages (no jsdom dependency). Covers what the
 // pages use: element tree + HTML fragment parser, attributes/dataset/classList, form values,
 // CSS selectors (tag, #id, .class, [attr], [attr="v"], :not(), descendant and child combinators,
@@ -61,6 +62,7 @@ class Node extends EventTarget {
         this.parentNode = null;
     }
     get parentElement() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; }
+    get isConnected() { let node = this; while (node.parentNode) node = node.parentNode; return node.nodeType === 9; }
     get firstChild() { return this.childNodes[0] || null; }
     get textContent() { return this.childNodes.map(child => child.textContent).join(''); }
     set textContent(value) { this.replaceChildren(); if (value !== '') this.append(String(value)); }
@@ -96,10 +98,14 @@ class Text extends Node {
     get textContent() { return this.data; }
     set textContent(value) { this.data = String(value); }
     get outerHTML() { return escapeText(this.data); }
+    cloneNode() { return this.ownerDocument.createTextNode(this.data); }
 }
 
 class DocumentFragment extends Node {
     constructor(ownerDocument) { super(11, ownerDocument); }
+    get children() { return this.childNodes.filter(node => node.nodeType === 1); }
+    get firstElementChild() { return this.children[0] || null; }
+    querySelector(selector) { return this.children.flatMap(child => [child, ...child.querySelectorAll('*')]).find(node => node.matches(selector)) || null; }
 }
 
 function classList(element) {
@@ -179,6 +185,21 @@ class Element extends Node {
     insertCell() { return this.appendChild(this.ownerDocument.createElement('td')); }
     getBoundingClientRect() { return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }; }
     scrollIntoView() {}
+    // <template> keeps its parsed children inert in .content, as in the browser.
+    get content() {
+        if (this.localName !== 'template') return undefined;
+        if (!this.templateContent) {
+            this.templateContent = this.ownerDocument.createDocumentFragment();
+            [...this.childNodes].forEach(child => this.templateContent.appendChild(child));
+        }
+        return this.templateContent;
+    }
+    cloneNode(deep = false) {
+        const copy = this.ownerDocument.createElement(this.localName);
+        this.attributes.forEach((value, name) => copy.setAttribute(name, value));
+        if (deep) this.childNodes.forEach(child => copy.appendChild(child.cloneNode(true)));
+        return copy;
+    }
 }
 
 const reflectBoolean = ['hidden', 'disabled', 'required', 'readOnly', 'multiple', 'selected'];
@@ -370,7 +391,20 @@ function installDom(options) {
         return option;
     }
     window.Option = Option;
-    Object.assign(globalThis, { Option, window, document: window.document, Node, Element, Text, Event, CustomEvent: Event, localStorage: window.localStorage, sessionStorage: window.sessionStorage });
+    // FormData(form) over the fake form's named, enabled controls (native FormData only accepts real forms).
+    class FakeFormData extends NativeFormData {
+        constructor(form) {
+            super();
+            if (!form) return;
+            for (const field of form.querySelectorAll('input, select, textarea')) {
+                if (!field.name || field.disabled || field.type === 'file') continue;
+                if ((field.type === 'checkbox' || field.type === 'radio') && !field.checked) continue;
+                this.append(field.name, field.value);
+            }
+        }
+    }
+    window.FormData = FakeFormData;
+    Object.assign(globalThis, { FormData: FakeFormData, Option, window, document: window.document, Node, Element, Text, Event, CustomEvent: Event, localStorage: window.localStorage, sessionStorage: window.sessionStorage });
     return window;
 }
 

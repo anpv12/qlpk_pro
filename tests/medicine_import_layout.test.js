@@ -3,7 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
+const { freshGraph } = require('./helpers/fresh-esm');
+const { installDom } = require('./helpers/fake-dom');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource } = require('./helpers/css-source');
 const { readTemplateSource } = require('./helpers/template-source');
@@ -139,10 +140,24 @@ test('note and lot boxes share height, padding and scrolling without independent
     assert.doesNotMatch(importStyles, /#(?:batchNote|batchLotBreakdown)\s*\{[^}]*max-height:/);
 });
 
-test('quantity unit stays inline with its input and rows align on one middle axis', () => {
-    const source = readMedicineManagementSource();
-    const renderer = source.slice(source.indexOf('function addBatchImportRow('), source.indexOf('function validateBatchNumber('));
-    assert.match(renderer, /mm-import-qty">\s*<input[^>]*batch-quantity[^>]*>\s*<small class="batch-unit">/);
+async function importRows(count = 1) {
+    const window = installDom({ html: importMarkup });
+    window.bootstrap = { Modal: { getInstance: () => null, getOrCreateInstance: () => ({ show() {}, hide() {} }) } };
+    const load = freshGraph();
+    const [batchImport, totals] = await Promise.all([load('medicines/management-batch-import.js'), load('medicines/management-batch-import-parts/batch-totals.js')]);
+    for (let index = 0; index < count; index++) batchImport.addBatchImportRow();
+    return { batchImport, totals, rows: [...document.querySelectorAll('#batchImportTableBody tr')] };
+}
+
+// Intl currency output separates the symbol with a no-break space.
+const money = node => node.textContent.replace(/\u00a0/g, ' ');
+
+test('quantity unit stays inline with its input and rows align on one middle axis', async () => {
+    const { rows } = await importRows();
+    const quantity = rows[0].querySelector('.mm-import-qty');
+    assert.deepEqual(quantity.children.map(node => node.localName), ['input', 'small']);
+    assert.ok(quantity.children[0].classList.contains('batch-quantity'));
+    assert.equal(quantity.children[1].className, 'batch-unit');
     assert.match(importStyles, /\.mm-import-qty\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center/);
     assert.match(importStyles, /\.qlpk-batch-import-table :is\(th, td\)\s*\{[^}]*vertical-align:\s*middle/);
     assert.doesNotMatch(importStyles, /\.qlpk-batch-import-table :is\(th, td\)\s*\{[^}]*vertical-align:\s*top/);
@@ -180,50 +195,43 @@ test('import workspace has a bounded white table surface, balanced columns and o
     }
 });
 
-test('existing calculation writer still updates the single footer total and separate lot breakdown', () => {
-    const source = readMedicineManagementSource();
-    const outputs = new Map(['batchTotalValue', 'batchLotBreakdown'].map(id => [id, {}]));
-    const rows = Array.from({length: 20}, (_, index) => {
-        const fields = {
-            '.batch-quantity': {value: '2.5'},
-            '.batch-price': {value: '1000'},
-            '.batch-number-display': {value: `LOT-${index % 2}`},
-            '.batch-row-total': {}
-        };
-        return {querySelector: selector => fields[selector]};
+test('existing calculation writer still updates the single footer total and separate lot breakdown', async () => {
+    const { rows, totals } = await importRows(20);
+    rows.forEach((row, index) => {
+        row.querySelector('.batch-quantity').value = '2.5';
+        row.querySelector('.batch-price').value = '1000';
+        row.querySelector('.batch-number-display').value = `LOT-${index % 2}<b>`;
     });
-    const context = vm.createContext({
-        document: {
-            getElementById: id => outputs.get(id),
-            querySelectorAll: selector => {
-                assert.equal(selector, '#batchImportTableBody tr');
-                return rows;
-            }
-        },
-        formatCurrency: value => `${value} ₫`
-    });
-    vm.runInContext(source.slice(source.indexOf('function calculateBatchRowTotal('), source.indexOf('function rowResetPurchasePrice(')), context);
-    context.updateBatchTotal();
-    assert.equal(outputs.get('batchTotalValue').textContent, '50000 ₫');
-    assert.match(outputs.get('batchLotBreakdown').innerHTML, /Lô LOT-0:/);
-    assert.match(outputs.get('batchLotBreakdown').innerHTML, /Lô LOT-1:/);
-    assert.equal(outputs.get('batchLotBreakdown').innerHTML.split('25000 ₫').length - 1, 2);
-    rows.length = 0;
-    context.updateBatchTotal();
-    assert.equal(outputs.get('batchTotalValue').textContent, '0 ₫');
-    assert.match(outputs.get('batchLotBreakdown').innerHTML, /Chưa có dữ liệu/);
+    totals.updateBatchTotal();
+    assert.equal(money(document.getElementById('batchTotalValue')), '50.000 ₫');
+    const lots = [...document.querySelectorAll('#batchLotBreakdown .lot-item')];
+    assert.deepEqual(lots.map(item => item.querySelector('.lot-name').textContent), ['Lô LOT-0<b>:', 'Lô LOT-1<b>:']);
+    assert.deepEqual(lots.map(item => money(item.querySelector('.lot-value'))), ['25.000 ₫', '25.000 ₫']);
+    assert.equal(document.querySelector('#batchLotBreakdown b'), null);
+    rows.forEach(row => row.remove());
+    totals.updateBatchTotal();
+    assert.equal(money(document.getElementById('batchTotalValue')), '0 ₫');
+    assert.equal(document.getElementById('batchLotBreakdown').textContent, 'Chưa có dữ liệu');
 });
 
-test('dynamic import rows expose accessible controls without changing calculation or remove bindings', () => {
-    const source = readMedicineManagementSource();
-    const renderer = source.slice(source.indexOf('function addBatchImportRow('), source.indexOf('function validateBatchNumber('));
+test('dynamic import rows expose accessible controls without changing calculation or remove bindings', async () => {
+    const { rows } = await importRows(2);
     for (const label of ['Tên thuốc', 'Số lô', 'Hạn dùng', 'Số lượng', 'Đơn giá nhập trên một đơn vị', 'Xóa dòng thuốc']) {
-        assert.ok(renderer.includes(`aria-label="${label}"`));
+        assert.ok(rows[0].querySelector(`[aria-label="${label}"]`), label);
     }
-    assert.match(renderer, /mm-import-remove[^]*data-qlpk-call="removeBatchRowAndUpdateTotal" data-qlpk-args='\["\$\{rowId\}"\]'/);
-    assert.match(renderer, /batch-quantity[^]*data-qlpk-call="onBatchAmountInput" data-qlpk-on="input"/);
-    assert.match(renderer, /batch-price[^]*data-qlpk-call="onBatchPriceInput" data-qlpk-on="input"/);
-    assert.match(source, /function onBatchPriceInput\(rowId\) \{\n\tcalculateBatchRowTotal\(rowId\);\n\tupdateBatchTotal\(\);\n\tupdatePriceComparison\(rowId\);/);
+    assert.notEqual(rows[0].id, rows[1].id);
+    rows[0].querySelector('.batch-quantity').value = '3';
+    rows[0].querySelector('.batch-price').value = '2000';
+    rows[0].querySelector('.batch-quantity').dispatchEvent(new Event('input'));
+    assert.equal(money(rows[0].querySelector('.batch-row-total')), '6.000 ₫');
+    assert.equal(money(document.getElementById('batchTotalValue')), '6.000 ₫');
+    rows[0].querySelector('.batch-price').value = '1000';
+    rows[0].querySelector('.batch-price').dispatchEvent(new Event('input'));
+    assert.equal(money(document.getElementById('batchTotalValue')), '3.000 ₫');
+    rows[0].querySelector('.mm-import-remove').click();
+    assert.equal(rows[0].parentNode, null);
+    assert.equal(document.querySelectorAll('#batchImportTableBody tr').length, 1);
+    assert.equal(money(document.getElementById('batchTotalValue')), '0 ₫');
 });
 
 test('Nhập kho modal has two tabs and no longer has the old Chi tiết tồn kho / Lịch sử giao dịch modals', () => {

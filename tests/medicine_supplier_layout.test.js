@@ -3,13 +3,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { importFresh } = require('./helpers/fresh-esm');
+const { installDom } = require('./helpers/fake-dom');
 const { readCssSource } = require('./helpers/css-source');
 const { readTemplateSource } = require('./helpers/template-source');
 
 const template = readTemplateSource('medicine-management.html');
 const css = readCssSource(path.join(__dirname, '../app/static/css/pages/medicine-management.css'));
-const script = readMedicineManagementSource();
 const supplierMarkup = template.slice(template.indexOf('id="supplierManagementModal"'), template.indexOf('<!-- Flatpickr JS -->'));
 
 test('supplier modal owns full available height and no longer uses a fixed table height deduction', () => {
@@ -35,10 +35,16 @@ test('supplier table takes remaining desktop space while compact screens retain 
     assert.doesNotMatch(supplierMarkup, /mm-w-250|mm-w-150" id="supplierStatusFilter"/);
 });
 
-test('supplier status and action columns use intrinsic content width while name and address take spare space', () => {
+test('supplier status and action columns use intrinsic content width while name and address take spare space', async () => {
+    installDom({ html: '<table><tbody id="supplierTableBody"></tbody></table>' });
+    const { renderSuppliersTable } = await importFresh('medicines/management-suppliers.js');
+    renderSuppliersTable([{ id: 3, name: 'NCC A', is_active: 1 }, { id: 4, name: 'NCC B', is_active: 0 }]);
+    const rows = document.querySelectorAll('#supplierTableBody tr');
+    assert.deepEqual([...rows].map(row => row.querySelector('.mm-supplier-status-cell .badge').textContent), ['Đang hoạt động', 'Ngừng hoạt động']);
+    assert.equal(rows[0].querySelector('.mm-supplier-status-cell .badge').className, 'badge qlpk-status--success');
+    assert.equal(rows[0].querySelectorAll('.mm-supplier-actions-cell button').length, 3);
+    assert.equal(rows[0].querySelector('.mm-supplier-actions-cell button').title, 'Chọn cho đơn nhập kho');
     assert.match(supplierMarkup, /<th class="mm-supplier-status-cell">Trạng thái<\/th>/);
-    assert.match(script, /<td class="mm-supplier-status-cell">\s*<span class="badge \$\{supplier\.is_active === 1/);
-    assert.match(script, /supplier\.is_active === 1 \? 'Đang hoạt động' : 'Ngừng hoạt động'/);
     const compactColumns = css.match(/\.mm-supplier-status-cell,\s*\.medicine-management-page \.mm-supplier-actions-cell\s*\{([^}]+)\}/);
     assert.ok(compactColumns);
     assert.match(compactColumns[1], /width:\s*0;[^}]*white-space:\s*nowrap/);
@@ -48,7 +54,6 @@ test('supplier status and action columns use intrinsic content width while name 
     assert.match(css, /\.mm-supplier-table-scroll :is\(th, td\)\s*\{[^}]*vertical-align:\s*middle/);
     assert.match(css, /\.mm-supplier-table-scroll\s*\{[^}]*overflow:\s*auto/);
     assert.match(supplierMarkup, /<th class="mm-supplier-actions-cell">Tác vụ<\/th>/);
-    assert.match(script, /<td class="mm-supplier-actions-cell">\s*<button[^>]+selectSupplierForBatch/);
 });
 
 test('shared sticky headers do not paint below their cells over the first data row', () => {

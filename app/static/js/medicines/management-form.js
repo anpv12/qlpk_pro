@@ -1,26 +1,27 @@
-/* global getUnitDisplay, getUserFacingResponseMessage, loadMedicines, normalizeSearchText, setElementVisible, setPackagingInfoActive, showCustomToast, updateBoxesInputFromStockQuantity, updatePackagingInfo, updateStockQuantityHint, updateStockQuantityLabels */
-/* exported confirmDelete, deleteMedicine, editMedicine, initializeAdministrationMethodAutocomplete, initializeImportedTypeAutocomplete, initializePrescriptionTypeAutocomplete, saveMedicine */
+import { state } from './management-state.js';
+import { getUserFacingResponseMessage, normalizeSearchText, setElementVisible, setPackagingInfoActive, showCustomToast } from '../medicine-management.js';
+import { getUnitDisplay, loadMedicines } from './management-list.js';
+import { updateBoxesInputFromStockQuantity, updatePackagingInfo, updateStockQuantityHint, updateStockQuantityLabels } from './management-stock.js';
+import { ClinicMedicineCatalog } from './clinic-catalog.js';
+import { MedicinePriceEditor } from './price-editor.js';
+import { addClass, fieldValue, focusFirst, hideModal, setFieldValue, setProp, setText, showModal } from '../shared/dom-query.js';
+import { byId, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
 
 let medicineEditRevision = 0;
 let medicineSaving = false;
 function editMedicine(id) {
-    if (window.MedicinePriceEditor?.isSaving()) return;
+    if (MedicinePriceEditor.isSaving()) return;
     if (medicineSaving) return;
     const hasSession = window.QLPKApiTransport.hasSession();
     if (!hasSession) { showCustomToast('error', 'Vui lòng đăng nhập lại!'); return; }
     resetForm();
     const requestId = ++medicineEditRevision;
-    $.ajax({
-        url: `/api/medicines/${id}`, method: 'GET',
-        success(data) {
-            if (requestId === medicineEditRevision) {
-                populateMedicineForm(data, id);
-            }
-        },
-        error(xhr) {
-            if (requestId !== medicineEditRevision) return;
-            showCustomToast('error', xhr.status === 401 ? 'Phiên đăng nhập đã hết hạn' : 'Không tải được thông tin thuốc mới nhất. Vui lòng thử lại.');
-        }
+    requestJson(`/api/medicines/${id}`).then(data => {
+        if (requestId === medicineEditRevision) populateMedicineForm(data, id);
+    }, error => {
+        if (requestId !== medicineEditRevision) return;
+        showCustomToast('error', error?.status === 401 ? 'Phiên đăng nhập đã hết hạn' : 'Không tải được thông tin thuốc mới nhất. Vui lòng thử lại.');
     });
 }
 
@@ -31,12 +32,12 @@ function populateMedicineForm(medicine, id) {
 		return;
 	}
 
-	$('#medicineModalLabel').text('CHỈNH SỬA THUỐC');
-	$('#medicineForm').data('medicine-id', id);
+	setText('#medicineModalLabel', 'CHỈNH SỬA THUỐC');
+	state.editingMedicineId = id;
 	fillMedicineTextFields(medicine);
 	fillMedicineChoiceFields(medicine);
 	fillMedicinePackagingFields(medicine);
-	$('#pillsPerUnit').val(0);
+	setFieldValue('#pillsPerUnit', 0);
 
 	const totalStock = medicine.stock_quantity || 0;
 	const populatedRevision = medicineEditRevision;
@@ -45,23 +46,23 @@ function populateMedicineForm(medicine, id) {
 		applyPopulatedStockQuantity(totalStock);
 	}, 150);
 
-	window.ClinicMedicineCatalog.setExisting(medicine);
-	$('#medicineModal').modal('show');
+	ClinicMedicineCatalog.setExisting(medicine);
+	showModal('#medicineModal');
 }
 
 function fillMedicineTextFields(medicine) {
-	$('input[name="name"]').val(medicine.name);
-	$('#genericNameInput').val(medicine.generic_name || '');
-	$('#genericNameValue').val(medicine.generic_name || '');
-	$('input[name="internal_code"]').val(medicine.internal_code || '');
-	$('input[name="national_code"]').val(medicine.national_code || '');
-	$('input[name="strength"]').val(medicine.strength);
-	$('#stockQuantitySummaryDisplay').val(medicine.stock_quantity ?? 0);
-	$('input[name="low_stock_threshold"]').val(medicine.low_stock_threshold ?? '');
-	$('input[name="expiry_warning_days"]').val(medicine.expiry_warning_days ?? '');
-	$('input[name="description"], textarea[name="description"]').val(medicine.description || '');
-	$('input[name="packaging"]').val(medicine.packaging || '');
-	$('input[name="origin"]').val(medicine.origin || '');
+	setFieldValue('input[name="name"]', medicine.name);
+	setFieldValue('#genericNameInput', medicine.generic_name || '');
+	setFieldValue('#genericNameValue', medicine.generic_name || '');
+	setFieldValue('input[name="internal_code"]', medicine.internal_code || '');
+	setFieldValue('input[name="national_code"]', medicine.national_code || '');
+	setFieldValue('input[name="strength"]', medicine.strength);
+	setFieldValue('#stockQuantitySummaryDisplay', medicine.stock_quantity ?? 0);
+	setFieldValue('input[name="low_stock_threshold"]', medicine.low_stock_threshold ?? '');
+	setFieldValue('input[name="expiry_warning_days"]', medicine.expiry_warning_days ?? '');
+	setFieldValue('input[name="description"], textarea[name="description"]', medicine.description || '');
+	setFieldValue('input[name="packaging"]', medicine.packaging || '');
+	setFieldValue('input[name="origin"]', medicine.origin || '');
 }
 
 function getImportedTypeLabel(isImported) {
@@ -71,25 +72,25 @@ function getImportedTypeLabel(isImported) {
 
 function fillMedicineChoiceFields(medicine) {
 	const prescriptionTypeMap = { 'BASIC': 'Cơ bản', 'H': 'Thuốc H', 'N': 'Thuốc N' };
-	$('#prescriptionType').val(prescriptionTypeMap[medicine.prescription_type] || 'Cơ bản');
-	$('#prescriptionTypeValue').val(medicine.prescription_type || 'BASIC');
-	$('select[name="unit"]').val(medicine.unit);
-	$('#importedType').val(getImportedTypeLabel(medicine.is_imported));
-	$('#importedTypeValue').val(medicine.is_imported == null ? '' : String(medicine.is_imported));
-	$('#administrationMethod').val(medicine.administration_method || '');
-	$('#administrationMethodValue').val(medicine.administration_method || '');
+	setFieldValue('#prescriptionType', prescriptionTypeMap[medicine.prescription_type] || 'Cơ bản');
+	setFieldValue('#prescriptionTypeValue', medicine.prescription_type || 'BASIC');
+	setFieldValue('select[name="unit"]', medicine.unit);
+	setFieldValue('#importedType', getImportedTypeLabel(medicine.is_imported));
+	setFieldValue('#importedTypeValue', medicine.is_imported == null ? '' : String(medicine.is_imported));
+	setFieldValue('#administrationMethod', medicine.administration_method || '');
+	setFieldValue('#administrationMethodValue', medicine.administration_method || '');
 	// Hiển thị và lưu trực tiếp tiếng Việt (tương thích dữ liệu cũ)
 	const unitDisplay = getUnitDisplay(medicine.unit);
-	$('#saleUnit').val(unitDisplay);
-	$('#saleUnitValue').val(unitDisplay);
+	setFieldValue('#saleUnit', unitDisplay);
+	setFieldValue('#saleUnitValue', unitDisplay);
 }
 
 function fillMedicinePackagingFields(medicine) {
 	if (medicine.packaging_unit) {
-		$('#packagingUnit').val((medicine.packaging_unit || '').toLowerCase().trim());
+		setFieldValue('#packagingUnit', (medicine.packaging_unit || '').toLowerCase().trim());
 	}
 	if (medicine.units_per_box !== undefined && medicine.units_per_box !== null) {
-		$('#unitsPerBox').val(medicine.units_per_box ?? '');
+		setFieldValue('#unitsPerBox', medicine.units_per_box ?? '');
 		return;
 	}
 	if (!medicine.packaging) return;
@@ -99,8 +100,8 @@ function fillMedicinePackagingFields(medicine) {
 	const unitsPerBox = parseInt(packagingMatch[1]) || 0;
 	const packagingUnit = (packagingMatch[2] || '').toLowerCase().trim();
 	if (unitsPerBox > 0 && packagingUnit) {
-		$('#unitsPerBox').val(unitsPerBox);
-		if (!medicine.packaging_unit) $('#packagingUnit').val(packagingUnit);
+		setFieldValue('#unitsPerBox', unitsPerBox);
+		if (!medicine.packaging_unit) setFieldValue('#packagingUnit', packagingUnit);
 	}
 }
 
@@ -129,25 +130,21 @@ function applyPopulatedStockQuantity(totalStock) {
 	setStockTotalInputs(totalStock === 0 ? '0' : String(totalStock));
 }
 
-// Save medicine
-function saveMedicine() {
-    if (window.MedicinePriceEditor?.isOpen()) return;
-	if (medicineSaving) return;
-	const formData = new FormData($('#medicineForm')[0]);
+// Form fields -> API payload (catalog only: stock and purchase prices are never sent from this form)
+function collectMedicinePayload() {
+	const formData = new FormData(byId('medicineForm'));
 	const medicineData = Object.fromEntries(formData.entries());
-	const medicineId = $('#medicineForm').data('medicine-id');
 
 	// Nội/ngoại - từ autocomplete
-	medicineData.is_imported = $('#importedTypeValue').val() === '' ? null : $('#importedTypeValue').val() === 'true';
+	medicineData.is_imported = fieldValue('#importedTypeValue') === '' ? null : fieldValue('#importedTypeValue') === 'true';
 	// Loại đơn thuốc - từ autocomplete
-	medicineData.prescription_type = $('#prescriptionTypeValue').val();
-
+	medicineData.prescription_type = fieldValue('#prescriptionTypeValue');
 
 	// Purchase costs belong to receipt lines, never to the catalog form.
 
 	// Xử lý quy cách đóng gói (chỉ có đơn vị và số đơn vị trong hộp)
-	const unitsPerBox = $('#unitsPerBox').val() === '' ? null : Number($('#unitsPerBox').val());
-	const packagingUnit = $('#packagingUnit').val() || '';
+	const unitsPerBox = fieldValue('#unitsPerBox') === '' ? null : Number(fieldValue('#unitsPerBox'));
+	const packagingUnit = fieldValue('#packagingUnit') || '';
 
 	medicineData.units_per_box = unitsPerBox;
 	medicineData.pills_per_unit = 0; // Không còn sử dụng
@@ -172,7 +169,15 @@ function saveMedicine() {
 	if (selectedSaleUnit) {
 		medicineData.unit = selectedSaleUnit; // Lưu trực tiếp tiếng Việt vào database
 	}
+	return medicineData;
+}
 
+// Save medicine
+async function saveMedicine() {
+    if (MedicinePriceEditor.isOpen()) return;
+	if (medicineSaving) return;
+	const medicineData = collectMedicinePayload();
+	const medicineId = state.editingMedicineId;
 	if (!validateMedicineRequiredFields(medicineData)) return;
 	// Mã thuốc duy nhất (khuyến nghị có) - đã bỏ validation bắt buộc
 
@@ -182,46 +187,43 @@ function saveMedicine() {
 		return;
 	}
 
-	const selectionError = window.ClinicMedicineCatalog.payload(medicineData);
+	const selectionError = ClinicMedicineCatalog.payload(medicineData);
 	if (selectionError) {
-		$('#medicineFormError').removeClass('d-none').text(selectionError);
+		showMedicineFormError(selectionError);
 		return;
 	}
 	const url = medicineId ? `/api/medicines/${medicineId}` : '/api/medicines/';
 	const method = medicineId ? 'PUT' : 'POST';
 	const saveRevision = medicineEditRevision;
 	medicineSaving = true;
-	$('#medicineSaveButton').prop('disabled', true);
+	setProp('#medicineSaveButton', 'disabled', true);
 
-	$.ajax({
-		url: url,
-		method: method,
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		data: JSON.stringify(medicineData),
-		success: function () {
-			if (saveRevision !== medicineEditRevision) return;
-			medicineSaving = false;
-			showCustomToast('success', medicineId ? 'Cập nhật thuốc thành công' : 'Thêm thuốc thành công');
-			$('#medicineModal').modal('hide');
-			loadMedicines();
-		},
-		error: function (xhr) {
-			if (saveRevision !== medicineEditRevision) return;
-			if (xhr.status === 401) {
-				showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
-			} else {
-				const message = getUserFacingResponseMessage(xhr, [400, 409], 'Không lưu được thông tin thuốc. Hãy thử lại.');
-				$('#medicineFormError').removeClass('d-none').text(message);
-				showCustomToast('error', message);
-			}
-		},
-		complete: function () {
-			medicineSaving = false;
-			if (saveRevision === medicineEditRevision) $('#medicineSaveButton').prop('disabled', false);
+	try {
+		await requestJson(url, { method, json: medicineData });
+		if (saveRevision !== medicineEditRevision) return;
+		medicineSaving = false;
+		showCustomToast('success', medicineId ? 'Cập nhật thuốc thành công' : 'Thêm thuốc thành công');
+		hideModal('#medicineModal');
+		loadMedicines();
+	} catch (error) {
+		if (saveRevision !== medicineEditRevision) return;
+		if (error?.status === 401) {
+			showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
+		} else {
+			const message = getUserFacingResponseMessage(error, [400, 409], 'Không lưu được thông tin thuốc. Hãy thử lại.');
+			showMedicineFormError(message);
+			showCustomToast('error', message);
 		}
-	});
+	} finally {
+		medicineSaving = false;
+		if (saveRevision === medicineEditRevision) setProp('#medicineSaveButton', 'disabled', false);
+	}
+}
+
+function showMedicineFormError(message) {
+	const error = byId('medicineFormError');
+	error.classList.remove('d-none');
+	error.textContent = message;
 }
 
 function coerceMedicineNumbers(medicineData) {
@@ -233,11 +235,11 @@ function coerceMedicineNumbers(medicineData) {
 }
 
 function resolveSelectedSaleUnit() {
-	const selectedSaleUnit = $('#saleUnitValue').val();
+	const selectedSaleUnit = fieldValue('#saleUnitValue');
 	if (selectedSaleUnit) return selectedSaleUnit;
 	// Nếu không có giá trị trong hidden input, lấy từ input hiển thị
-	const displayUnit = $('#saleUnit').val();
-	if (displayUnit) $('#saleUnitValue').val(displayUnit); // Cập nhật hidden input
+	const displayUnit = fieldValue('#saleUnit');
+	if (displayUnit) setFieldValue('#saleUnitValue', displayUnit); // Cập nhật hidden input
 	return displayUnit || selectedSaleUnit;
 }
 
@@ -246,7 +248,7 @@ function validateMedicineRequiredFields(medicineData) {
 	const validPrescriptionTypes = ['BASIC', 'H', 'N'];
 	if (!medicineData.prescription_type || !validPrescriptionTypes.includes(medicineData.prescription_type)) {
 		showCustomToast('error', 'Vui lòng chọn "Loại đơn thuốc" (Cơ bản, Thuốc H, Thuốc N)');
-		$('#prescriptionType').focus();
+		focusFirst('#prescriptionType');
 		return false;
 	}
 	// Validate các trường bắt buộc khác
@@ -260,13 +262,13 @@ function validateMedicineRequiredFields(medicineData) {
 
 // Confirm delete
 function confirmDelete(id) {
-	$('#confirmDeleteBtn').data('medicine-id', id);
-	$('#confirmDeleteModal').modal('show');
+	state.pendingDeleteMedicineId = id;
+	showModal('#confirmDeleteModal');
 }
 
 // Delete medicine
-function deleteMedicine() {
-	const medicineId = $('#confirmDeleteBtn').data('medicine-id');
+async function deleteMedicine() {
+	const medicineId = state.pendingDeleteMedicineId;
 
 	const hasSession = window.QLPKApiTransport.hasSession();
 	if (!hasSession) {
@@ -274,49 +276,45 @@ function deleteMedicine() {
 		return;
 	}
 
-	$.ajax({
-		url: `/api/medicines/${medicineId}`,
-		method: 'DELETE',
-		success: function () {
-			showCustomToast('success', 'Xóa thuốc thành công');
-			$('#confirmDeleteModal').modal('hide');
-			loadMedicines();
-		},
-		error: function (xhr) {
-			if (xhr.status === 401) {
-				showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
-			} else {
-				showCustomToast('error', getUserFacingResponseMessage(xhr, [409], 'Không xóa được thuốc. Hãy thử lại.'));
-			}
+	try {
+		await requestJson(`/api/medicines/${medicineId}`, { method: 'DELETE' });
+		showCustomToast('success', 'Xóa thuốc thành công');
+		hideModal('#confirmDeleteModal');
+		loadMedicines();
+	} catch (error) {
+		if (error?.status === 401) {
+			showCustomToast('error', 'Phiên đăng nhập đã hết hạn');
+		} else {
+			showCustomToast('error', getUserFacingResponseMessage(error, [409], 'Không xóa được thuốc. Hãy thử lại.'));
 		}
-	});
+	}
 }
 
 // Reset form
 function resetForm() {
 	medicineEditRevision += 1;
-	$('#medicineForm')[0].reset();
-	window.ClinicMedicineCatalog.reset();
-	$('#medicineForm').removeData('medicine-id');
-	$('#medicineModalLabel').text('THÊM THUỐC MỚI');
-	$('#medicineFormError').addClass('d-none');
+	byId('medicineForm').reset();
+	ClinicMedicineCatalog.reset();
+	state.editingMedicineId = undefined;
+	setText('#medicineModalLabel', 'THÊM THUỐC MỚI');
+	addClass('#medicineFormError', 'd-none');
 
 	// Reset new autocomplete fields
 
-	$('#prescriptionType').val('');
-	$('#prescriptionTypeValue').val('');
-	$('#administrationMethod').val('');
-	$('#administrationMethodValue').val('');
-	$('#importedType').val('');
-	$('#importedTypeValue').val('');
-	$('#genericNameInput').val('');
-	$('#genericNameValue').val('');
+	setFieldValue('#prescriptionType', '');
+	setFieldValue('#prescriptionTypeValue', '');
+	setFieldValue('#administrationMethod', '');
+	setFieldValue('#administrationMethodValue', '');
+	setFieldValue('#importedType', '');
+	setFieldValue('#importedTypeValue', '');
+	setFieldValue('#genericNameInput', '');
+	setFieldValue('#genericNameValue', '');
 
 	// Reset quy cách đóng gói và số lượng tồn kho
-	$('#unitsPerBox').val('');
-	$('#pillsPerUnit').val(0);
-	$('#packagingUnit').val('');
-	$('#packagingDisplay').val('');
+	setFieldValue('#unitsPerBox', '');
+	setFieldValue('#pillsPerUnit', 0);
+	setFieldValue('#packagingUnit', '');
+	setFieldValue('#packagingDisplay', '');
 
 	// Reset input số hộp và viên lẻ cho số lượng tồn kho
 	const boxesInput = document.getElementById('stockQuantityBoxes');
@@ -449,24 +447,16 @@ function initializeImportedTypeAutocomplete() {
 }
 
 function showDropdown(dropdown, options, input, hiddenInput) {
-	dropdown.innerHTML = '';
-
-	if (options.length === 0) {
-		setElementVisible(dropdown, false);
-		return;
-	}
-
-	options.forEach(option => {
-		const item = document.createElement('div');
-		item.className = 'occupation-item';
-		item.textContent = option.label;
-		item.addEventListener('click', function () {
+	replace(dropdown, options.map(option => {
+		const item = el('div', { class: 'occupation-item' }, option.label);
+		item.addEventListener('click', () => {
 			input.value = option.label;
 			hiddenInput.value = option.value;
 			setElementVisible(dropdown, false);
 		});
-		dropdown.appendChild(item);
-	});
-
-	setElementVisible(dropdown, true);
+		return item;
+	}));
+	setElementVisible(dropdown, options.length > 0);
 }
+
+export { confirmDelete, deleteMedicine, editMedicine, initializeAdministrationMethodAutocomplete, initializeImportedTypeAutocomplete, initializePrescriptionTypeAutocomplete, medicineSaving, resetForm, saveMedicine };

@@ -1,12 +1,17 @@
-/* global allMedicines, escapeHtml, getUnitDisplay, medicineSaving, medicines, openImportLedger, setElementVisible, setPackagingInfoActive, showImportBatchModal */
-/* exported formatStockDisplay, showInventoryOverlay, showMedicineExpiry, updatePackagingInfo */
+import { state } from './management-state.js';
+import { setElementVisible, setPackagingInfoActive } from '../medicine-management.js';
+import { el, replace } from '../shared/dom.js';
+import { getUnitDisplay } from './management-list.js';
+import { medicineSaving } from './management-form.js';
+import { showImportBatchModal } from './management-batch-import.js';
+import { openImportLedger } from './management-import-ledger.js';
 
 // ========== PHASE 1: QUẢN LÝ QUY CÁCH ĐÓNG GÓI VÀ SỐ LƯỢNG TỒN KHO ==========
 
 // Format số lượng tồn kho theo viên (hiển thị số thập phân với dấu phẩy)
 function formatStockQuantity(quantity, unit = 'viên') {
 	const num = Number(quantity || 0);
-	return (Number.isFinite(num) ? num : 0).toLocaleString('vi-VN', {maximumFractionDigits:2}) + ' ' + escapeHtml(unit || 'đơn vị');
+	return (Number.isFinite(num) ? num : 0).toLocaleString('vi-VN', {maximumFractionDigits:2}) + ' ' + (unit || 'đơn vị');
 }
 
 // Cập nhật thông tin quy cách đóng gói
@@ -125,11 +130,11 @@ function stockFieldValue(id) {
 }
 
 function showStockConvertText(convertElement, convertTextElement, convertText) {
-	if (!convertText) {
+	if (!convertText.length) {
 		setElementVisible(convertElement, false);
 		return;
 	}
-	convertTextElement.innerHTML = `<i class="bi bi-calculator"></i> ${convertText}`;
+	replace(convertTextElement, el('i', { class: 'bi bi-calculator' }), ' ', convertText);
 	setElementVisible(convertElement, true);
 	convertElement.classList.remove('alert-info');
 	convertElement.classList.add('alert-success');
@@ -169,13 +174,14 @@ function formatStockDecimal(num) {
 
 // Ví dụ: "9 vỉ + 70 viên = 970 viên tồn"
 function buildStockConvertText({ boxes, remaining, total, packagingUnit, saleUnit }) {
-	const totalText = `<strong>${formatStockDecimal(total)} ${window.QLPKHtml.escape(saleUnit)} tồn</strong>`;
+	const strong = text => el('strong', {}, text);
+	const totalText = strong(`${formatStockDecimal(total)} ${saleUnit} tồn`);
 	if (boxes > 0 && remaining > 0) {
-		return `<strong>${formatStockNumber(boxes)} ${window.QLPKHtml.escape(packagingUnit)}</strong> + <strong>${formatStockDecimal(remaining)} ${window.QLPKHtml.escape(saleUnit)}</strong> = ${totalText}`;
+		return [strong(`${formatStockNumber(boxes)} ${packagingUnit}`), ' + ', strong(`${formatStockDecimal(remaining)} ${saleUnit}`), ' = ', totalText];
 	}
-	if (boxes > 0 && remaining === 0) return `<strong>${formatStockNumber(boxes)} ${window.QLPKHtml.escape(packagingUnit)}</strong> = ${totalText}`;
-	if (boxes === 0 && remaining > 0) return `<strong>${formatStockDecimal(remaining)} ${window.QLPKHtml.escape(saleUnit)} tồn</strong>`;
-	return '';
+	if (boxes > 0 && remaining === 0) return [strong(`${formatStockNumber(boxes)} ${packagingUnit}`), ' = ', totalText];
+	if (boxes === 0 && remaining > 0) return [strong(`${formatStockDecimal(remaining)} ${saleUnit} tồn`)];
+	return [];
 }
 
 // Hiển thị tồn kho quy đổi (ô tổng read-only) dùng giá trị thô, không định dạng thousands
@@ -201,59 +207,9 @@ function formatStockDisplay(medicine) {
 	return formatStockQuantity(medicine.stock_quantity, getUnitDisplay(medicine.unit || 'tablet'));
 }
 
-
-// Keep the editing context visible while reusing the existing inventory dialogs.
-function showInventoryOverlay(element) {
-    if (element.classList.contains('show')) return;
-    const parent = [...document.querySelectorAll('.modal.show')].reverse().find(node =>
-        node !== element && !node.inert && ['medicineModal', 'importBatchModal'].includes(node.id));
-    const modal = bootstrap.Modal.getOrCreateInstance(element);
-    if (!parent) { modal.show(); return; }
-    const parentModal = bootstrap.Modal.getOrCreateInstance(parent);
-    const trigger = document.activeElement;
-    const parentHidden = parent.getAttribute('aria-hidden');
-    const parentModalAttribute = parent.getAttribute('aria-modal');
-    const bodyOverflow = document.body.style.overflow;
-    const bodyPadding = document.body.style.paddingRight;
-    const scrollbarAttributes = ['data-bs-overflow', 'data-bs-padding-right'].map(name => [name, document.body.getAttribute(name)]);
-    const level = Number(parent.dataset.inventoryModalLayer || 0) + 1;
-    const existingBackdrops = new Set(document.querySelectorAll('.modal-backdrop'));
-    element.dataset.inventoryModalLayer = String(level);
-    // Bootstrap 5.3.2 shares focus-trap listeners across modal instances.
-    // Deactivate the parent before opening, then reactivate it after dismissal.
-    parentModal._focustrap.deactivate();
-    parent.inert = true;
-    $(element).one('shown.bs.modal.inventoryOverlay', () => {
-        parent.setAttribute('aria-hidden', 'true');
-        parent.removeAttribute('aria-modal');
-    });
-    $(element).one('hidden.bs.modal.inventoryOverlay', () => {
-        delete element.dataset.inventoryModalLayer;
-        parent.inert = false;
-        if (!parent.classList.contains('show')) return;
-        if (parentHidden == null) parent.removeAttribute('aria-hidden');
-        else parent.setAttribute('aria-hidden', parentHidden);
-        if (parentModalAttribute == null) parent.removeAttribute('aria-modal');
-        else parent.setAttribute('aria-modal', parentModalAttribute);
-        document.body.classList.add('modal-open');
-        document.body.style.overflow = bodyOverflow;
-        document.body.style.paddingRight = bodyPadding;
-        scrollbarAttributes.forEach(([name, value]) => {
-            if (value == null) document.body.removeAttribute(name);
-            else document.body.setAttribute(name, value);
-        });
-        parentModal._focustrap.activate();
-        if (trigger?.isConnected && parent.contains(trigger)) trigger.focus();
-    });
-    modal.show();
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        if (!existingBackdrops.has(backdrop)) backdrop.dataset.inventoryModalLayer = String(level);
-    });
-}
-
 function showMedicineExpiry() {
     const trigger = document.getElementById('medicine-expiry_date');
-    const medicineId = $('#medicineForm').data('medicine-id');
+    const medicineId = state.editingMedicineId;
     if (medicineSaving || trigger.disabled || !medicineId) return;
     const element = document.getElementById('importBatchModal');
     if (element.classList.contains('show') || element.dataset.inventoryModalLayer) return;
@@ -267,7 +223,9 @@ function showStockDetail(medicineId) {
     if (!element.classList.contains('show') && !element.dataset.inventoryModalLayer) {
         showImportBatchModal();
     }
-    const medicineName = medicines.find(item => item.id === medicineId)?.name
-        || allMedicines.find(item => item.id === medicineId)?.name || '';
+    const medicineName = state.medicines.find(item => item.id === medicineId)?.name
+        || state.allMedicines.find(item => item.id === medicineId)?.name || '';
     openImportLedger({medicineId, search: medicineName});
 }
+
+export { formatStockDisplay, showMedicineExpiry, showStockDetail, formatStockQuantity, updateBoxesInputFromStockQuantity, updatePackagingInfo, updateStockQuantityHint, updateStockQuantityLabels };

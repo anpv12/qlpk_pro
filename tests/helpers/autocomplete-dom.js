@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { runScriptFile } = require('./module-source');
+const { freshGraph, useGlobals } = require('./fresh-esm');
 
 function createEnvironment() {
   const timers = new Map(); let nextTimer = 0;
@@ -85,6 +86,10 @@ function createEnvironment() {
     control.append(tags, input); dropdown.append(list); root.append(control, dropdown); document.body.append(root);
     return {root, control, input, tags, dropdown, list};
   }
-  return {window, document, context, load, createField, Element, tick: () => {const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn());}};
+  // ES modules run in the main realm and see this environment through global getters; every call
+  // evaluates a fresh module graph. modules(rel) imports another module of the same graph.
+  const graphImport = freshGraph();
+  const loadModule = (rel, extraGlobals = []) => { useGlobals(context); useGlobals(context, extraGlobals); return graphImport(rel); };
+  return {window, document, context, load, loadModule, createField, Element, tick: () => {const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn());}};
 }
 module.exports = {createEnvironment};

@@ -1,5 +1,5 @@
-/* global formatCurrency, showCustomToast */
-/* exported exportMedicineListExcel, updateDashboard */
+import { formatCurrency } from './management-list.js';
+import { showCustomToast } from '../medicine-management.js';
 
 // ========== DASHBOARD TỔNG QUAN ==========
 function updateDashboard() {
@@ -70,7 +70,6 @@ function updateDashboard() {
 	});
 }
 
-
 // ========== XUẤT DỮ LIỆU ==========
 // Xuất danh sách thuốc ra Excel
 async function exportMedicineListExcel() {
@@ -113,3 +112,5 @@ async function exportMedicineListExcel() {
 		showCustomToast('error', 'Không thể xuất dữ liệu thuốc. Vui lòng thử lại.');
 	}
 }
+
+export { exportMedicineListExcel, updateDashboard };

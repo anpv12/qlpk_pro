@@ -1,57 +1,65 @@
 'use strict';
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const path = require('node:path');
-const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
+const { loadMedicinePage } = require('./helpers/medicine-page');
 
-function setup() {
-    const source = readMedicineManagementSource();
-    const requests = [], messages = [], changes = [];
-    const values = {'#importedTypeValue':'false', '#prescriptionTypeValue':'BASIC', '#unitsPerBox':'30',
-        '#packagingUnit':'hộp', '#saleUnitValue':'viên', '#saleUnit':'viên'};
-    const $ = selector => ({0:{}, val:()=>values[selector] || '', data:()=>9,
-        prop:(...args)=>changes.push([selector,...args]), removeClass(){return this;},
-        text:value=>messages.push(value), focus(){}, modal:()=>changes.push(['closed'])});
-    $.ajax = request => requests.push(request);
-    const context = vm.createContext({$, FormData:class {entries(){return Object.entries({name:'Thuốc', unit:'viên', unit_price:'1000', stock_quantity:'999', import_price:'12', expiry_date:'2028-01-01'});}},
-        localStorage:{getItem:()=> 'test'}, showCustomToast:(type,text)=>messages.push(text),
-        loadMedicines:()=>changes.push(['reload']), window:{ClinicMedicineCatalog:{payload:()=>null},
-            QLPKApiTransport:{hasSession:()=>true}}});
-    const helper = source.slice(source.indexOf('function getUserFacingResponseMessage('), source.indexOf('function debounce('));
-    vm.runInContext('let medicineSaving = false; let medicineEditRevision = 1;\n' + helper + source.slice(source.indexOf('function saveMedicine()'),source.indexOf('// Confirm delete')),context);
-    return {context, requests, messages, changes, values};
+// Medicine form filled as after choosing a DAV medicine, with the price/stock/cost/expiry inputs holding values.
+async function setup() {
+    const page = await loadMedicinePage();
+    const form = await page.load('medicines/management-form.js');
+    const { ClinicMedicineCatalog } = await page.load('medicines/clinic-catalog.js');
+    ClinicMedicineCatalog.payload = () => null;
+    const values = { importedTypeValue: 'false', prescriptionTypeValue: 'BASIC', unitsPerBox: '30', saleUnitValue: 'viên', saleUnit: 'viên',
+        'medicine-name': 'Thuốc', 'medicine-unit_price': '1000', stockQuantityInput: '999' };
+    Object.entries(values).forEach(([id, value]) => { document.getElementById(id).value = value; });
+    document.getElementById('packagingUnit').value = 'hộp';
+    page.state.editingMedicineId = 9;
+    const saves = () => page.requests.filter(request => request.url === '/api/medicines/9');
+    const error = () => document.getElementById('medicineFormError');
+    return { ...page, form, saves, error };
 }
 
-test('ordinary save excludes price and stock/cost/expiry and blocks repeated submits', () => {
-    const h = setup();
-    h.context.saveMedicine(); h.context.saveMedicine();
-    assert.equal(h.requests.length,1);
-    const data = JSON.parse(h.requests[0].data);
-    for (const field of ['unit_price','stock_quantity','import_price','expiry_date']) assert.equal(field in data,false);
-    h.requests[0].error({status:500,responseJSON:{error:'SQLAlchemy traceback',user_message:'technical detail'}});
-    h.requests[0].complete();
-    assert.equal(h.messages.includes('SQLAlchemy traceback'),false);
-    assert.equal(h.messages.at(-1),'Không lưu được thông tin thuốc. Hãy thử lại.');
-    h.context.saveMedicine();
-    assert.equal(h.requests.length,2);
+test('ordinary save excludes price and stock/cost/expiry and blocks repeated submits', async () => {
+    const h = await setup();
+    h.form.saveMedicine(); h.form.saveMedicine();
+    assert.equal(h.saves().length, 1);
+    assert.equal(h.saves()[0].init.method, 'PUT');
+    const data = h.saves()[0].body;
+    assert.equal(data.name, 'Thuốc');
+    assert.equal(data.unit, 'viên');
+    assert.equal(data.units_per_box, 30);
+    for (const field of ['unit_price', 'stock_quantity', 'import_price', 'expiry_date']) assert.equal(field in data, false, field);
+    assert.equal(document.getElementById('medicineSaveButton').disabled, true);
+    h.saves()[0].respond({ error: 'SQLAlchemy traceback', user_message: 'technical detail' }, 500);
+    await h.flush();
+    assert.equal(h.toasts.some(([, text]) => /SQLAlchemy|technical detail/.test(text)), false);
+    assert.equal(h.toasts.at(-1)[1], 'Không lưu được thông tin thuốc. Hãy thử lại.');
+    assert.equal(h.error().textContent, 'Không lưu được thông tin thuốc. Hãy thử lại.');
+    assert.equal(document.getElementById('medicineSaveButton').disabled, false);
+    h.form.saveMedicine();
+    assert.equal(h.saves().length, 2);
+    h.saves()[1].respond({ error: 'Trùng', user_message: 'Thuốc đã tồn tại' }, 409);
+    await h.flush();
+    assert.equal(h.error().textContent, 'Thuốc đã tồn tại');
 });
 
-test('a response for a previous form never closes or overwrites the current form', () => {
-    const h = setup();
-    h.context.saveMedicine();
-    vm.runInContext('medicineEditRevision += 1',h.context);
-    h.requests[0].success({});
-    h.requests[0].error({status:400,responseJSON:{user_message:'Sai thông tin'}});
-    h.requests[0].complete();
-    assert.equal(h.messages.length,0);
-    assert.equal(h.changes.some(change=>change[0]==='closed'),false);
+test('a response for a previous form never closes or overwrites the current form', async () => {
+    const h = await setup();
+    const hidden = [];
+    h.window.bootstrap.Modal.getOrCreateInstance = node => ({ show() {}, hide() { hidden.push(node.id); } });
+    h.form.saveMedicine();
+    h.form.resetForm();
+    h.saves()[0].respond({ user_message: 'Sai thông tin' }, 400);
+    await h.flush();
+    assert.deepEqual(h.toasts, []);
+    assert.deepEqual(hidden, []);
+    assert.equal(h.error().classList.contains('d-none'), true);
 });
 
-test('typing over a prescription selection requires a valid choice again', () => {
-    const h = setup(); h.values['#prescriptionTypeValue']='';
-    h.context.saveMedicine();
-    assert.equal(h.requests.length,0);
-    assert.match(h.messages[0],/Loại đơn thuốc/);
+test('typing over a prescription selection requires a valid choice again', async () => {
+    const h = await setup();
+    document.getElementById('prescriptionTypeValue').value = '';
+    h.form.saveMedicine();
+    assert.equal(h.saves().length, 0);
+    assert.match(h.toasts[0][1], /Loại đơn thuốc/);
 });

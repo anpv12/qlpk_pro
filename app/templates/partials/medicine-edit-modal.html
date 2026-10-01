@@ -137,7 +137,7 @@
 				         <label class="form-label" for="packagingUnit">
 				          Đóng gói
 				         </label>
-				         <select class="form-select" id="packagingUnit" name="packaging_unit" data-qlpk-call="updatePackagingInfo" data-qlpk-on="change">
+				         <select class="form-select" id="packagingUnit" name="packaging_unit">
 				          <option value="">
 				           Chọn đơn vị
 				          </option>
@@ -168,7 +168,7 @@
 				         <label class="form-label" for="unitsPerBox">
 				          Số đơn vị
 				         </label>
-				         <input class="form-control" id="unitsPerBox" min="1" name="units_per_box" data-qlpk-call="updatePackagingInfo" data-qlpk-on="input" placeholder="Nhập số đơn vị" step="1" type="number"/>
+				         <input class="form-control" id="unitsPerBox" min="1" name="units_per_box" placeholder="Nhập số đơn vị" step="1" type="number"/>
 				        </div>
 				        <div class="mm-field">
 				         <label class="form-label" for="stockQuantitySummaryDisplay">
@@ -192,7 +192,7 @@
 				         <label class="form-label" for="medicineImportOpen">
 				          Tồn kho
 				         </label>
-				         <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicineImportOpen" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" data-qlpk-call="showImportFromMedicineForm"><i id="medicineImportIcon" class="bi bi-box-arrow-in-down" aria-hidden="true" hidden></i><span id="medicineImportLabel">Lưu thuốc trước</span></button>
+				         <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicineImportOpen" type="button" aria-haspopup="dialog" aria-controls="importBatchModal"><i id="medicineImportIcon" class="bi bi-box-arrow-in-down" aria-hidden="true" hidden></i><span id="medicineImportLabel">Lưu thuốc trước</span></button>
 				        </div>
 				       </div>
 				       <input aria-hidden="true" id="stockQuantityInput" type="hidden"/>
@@ -291,7 +291,7 @@
 				       <label class="form-label" for="medicine-expiry_date">
 				        Hạn dùng theo lô
 				       </label>
-				       <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicine-expiry_date" type="button" aria-haspopup="dialog" aria-controls="importBatchModal" data-qlpk-call="showMedicineExpiry"><i id="medicineExpiryIcon" class="bi bi-calendar3" aria-hidden="true" hidden></i><span id="medicineExpiryLabel">Chưa có lô</span></button>
+				       <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="form-control mm-field-action" disabled id="medicine-expiry_date" type="button" aria-haspopup="dialog" aria-controls="importBatchModal"><i id="medicineExpiryIcon" class="bi bi-calendar3" aria-hidden="true" hidden></i><span id="medicineExpiryLabel">Chưa có lô</span></button>
 				      </div>
 				      <div class="mm-field">
 				       <label class="form-label" for="medicine-low_stock_threshold">

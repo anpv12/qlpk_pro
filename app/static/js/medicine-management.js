@@ -1,5 +1,15 @@
-/* global addBatchImportRow, changePage, confirmBatchImport, deleteMedicine, deleteSelectedMedicines, exportMedicineListExcel, filterMedicines, initializeAdministrationMethodAutocomplete, initializeImportedTypeAutocomplete, initializePrescriptionTypeAutocomplete, loadAllMedicines, loadImportLedger, loadMedicines, medicineSaving, resetFilters, resetForm, saveMedicine, showImportBatchModal, switchImportTab, updateDashboard, updatePackagingInfo, updateStockQuantityLabels */
-/* exported allMedicines, canReviewMedicineReference, currentPage, escapeHtml, getUserFacingResponseMessage, medicineListRequest, medicinePageSize, medicines, setPackagingInfoActive, showCustomToast, totalItems, totalPages */
+import { state } from './medicines/management-state.js';
+import { byId, debounce, delegate, el, replace } from './shared/dom.js';
+import { bindMedicineSelection, changePage, confirmBulkDelete, deleteSelectedMedicines, filterMedicines, loadAllMedicines, loadMedicines, resetFilters, toggleMissingImportPriceFilter } from './medicines/management-list.js';
+import { exportMedicineListExcel, updateDashboard } from './medicines/management-overview.js';
+import { ClinicMedicineCatalog } from './medicines/clinic-catalog.js';
+import { MedicinePriceEditor } from './medicines/price-editor.js';
+import { configureReferenceReview } from './medicines/reference-review.js';
+import { deleteMedicine, editMedicine, initializeAdministrationMethodAutocomplete, initializeImportedTypeAutocomplete, initializePrescriptionTypeAutocomplete, medicineSaving, resetForm, saveMedicine } from './medicines/management-form.js';
+import { showMedicineExpiry, updatePackagingInfo, updateStockQuantityLabels } from './medicines/management-stock.js';
+import { addBatchImportRow, confirmBatchImport, showImportBatchModal, showImportFromMedicineForm } from './medicines/management-batch-import.js';
+import { showSupplierManagement } from './medicines/management-suppliers.js';
+import { loadImportLedger, switchImportTab } from './medicines/management-import-ledger.js';
 
 // Medicine Management JavaScript
 
@@ -21,33 +31,21 @@ function escapeHtml(text) {
 	return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-function getUserFacingResponseMessage(xhr, statuses, fallback, field = 'user_message') {
-	const payload = xhr && xhr.responseJSON;
-	const candidate = payload && payload[field];
-	if (!statuses.includes(xhr && xhr.status) || typeof candidate !== 'string' || !candidate.trim()) return fallback;
+// Backend user_message for the given HTTP statuses (HttpError from requestJson), otherwise the fallback.
+function getUserFacingResponseMessage(error, statuses, fallback, field = 'user_message') {
+	const candidate = error?.data?.[field];
+	if (!statuses.includes(error?.status) || typeof candidate !== 'string' || !candidate.trim()) return fallback;
 	return candidate;
 }
 
-function debounce(func, wait) {
-	let timeout;
-	return function executedFunction(...args) {
-		const later = () => {
-			clearTimeout(timeout);
-			func(...args);
-		};
-		clearTimeout(timeout);
-		timeout = setTimeout(later, wait);
-	};
-}
-
-let currentPage = 1;
+state.currentPage = 1;
 let medicinePageSize = 10;
-let medicineListRequest = 0;
-let totalPages = 1;
-let totalItems = 0;
-let medicines = [];
-let canReviewMedicineReference = false;
-let allMedicines = []; // Danh sách tất cả thuốc cho dropdown (không phân trang)
+state.medicineListRequest = 0;
+state.totalPages = 1;
+state.totalItems = 0;
+state.medicines = [];
+state.canReviewMedicineReference = false;
+state.allMedicines = []; // Danh sách tất cả thuốc cho dropdown (không phân trang)
 
 function setElementVisible(element, isVisible) {
 	if (!element) return;
@@ -60,22 +58,34 @@ function setPackagingInfoActive(element, isActive) {
 	element.classList.toggle('mm-packaging-info-text--active', isActive);
 }
 
-// Initialize when document is ready
-$(document).ready(function () {
+const decorativeIcon = className => el('i', { class: `bi ${className}`, 'aria-hidden': 'true' });
+
+// Initialize when document is ready (module scripts run before DOMContentLoaded)
+// Shared medicine components call back into this page instead of importing its list/form modules.
+function configureMedicineComponents() {
+	const refreshLists = () => {
+		loadMedicines();
+		loadAllMedicines();
+	};
+	ClinicMedicineCatalog.configure({ openExisting: id => editMedicine(id), packagingChanged: () => updatePackagingInfo() });
+	MedicinePriceEditor.configure({ onSaved: refreshLists });
+	configureReferenceReview({ onLinked: refreshLists });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	configureMedicineComponents();
+	const icons = window.QLPKIconSystem;
 	document.querySelectorAll('[data-medicine-icon]').forEach(element => {
-		element.innerHTML = window.QLPKIconSystem.renderSectionIcon(element.dataset.medicineIcon);
+		replace(element, decorativeIcon(`${icons.SECTION_ICONS[element.dataset.medicineIcon] || icons.ACTION_ICONS.info} qlpk-section-icon`));
 	});
 	document.querySelectorAll('[data-medicine-action-icon]').forEach(element => {
-		element.innerHTML = window.QLPKIconSystem.renderActionIcon(element.dataset.medicineActionIcon);
+		replace(element, decorativeIcon(icons.getActionIcon(element.dataset.medicineActionIcon)));
 	});
 	if (!window.QLPKApiTransport.hasSession()) {
 		window.location.href = '/login.html';
 		return;
 	}
-
-	$('#logoutBtn').on('click', function () {
-		window.QLPKAppHeader?.logout();
-	});
+	byId('logoutBtn')?.addEventListener('click', () => window.QLPKAppHeader?.logout());
 
 	loadMedicines();
 	loadAllMedicines(); // Load tất cả thuốc cho dropdown
@@ -84,17 +94,15 @@ $(document).ready(function () {
 	initializeAutocompleteComponents();
 	initializeSaleUnitAutocomplete();
 
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
-			types: ['inventory.changed'],
-			debounceMs: 500,
-			handler: function () {
-				loadMedicines();
-				loadAllMedicines();
-				updateDashboard();
-			}
-		});
-	}
+	window.QLPKRealtimePageHooks?.register({
+		types: ['inventory.changed'],
+		debounceMs: 500,
+		handler: () => {
+			loadMedicines();
+			loadAllMedicines();
+			updateDashboard();
+		}
+	});
 });
 
 // Initialize autocomplete components
@@ -135,22 +143,19 @@ function initializeSaleUnitAutocomplete() {
 	];
 
 	function render(list) {
-		dropdown.innerHTML = '';
-		list.forEach(item => {
-			const div = document.createElement('div');
-			div.className = 'occupation-item';
-			div.textContent = item.label;
-			div.onclick = () => {
+		replace(dropdown, list.map(item => {
+			const option = el('div', { class: 'occupation-item' }, item.label);
+			option.addEventListener('click', () => {
 				input.value = item.label;
 				// Lưu trực tiếp tiếng Việt vào hidden input
-				document.getElementById('saleUnitValue').value = item.value;
+				byId('saleUnitValue').value = item.value;
 				setElementVisible(dropdown, false);
 				// Cập nhật quy cách và label khi thay đổi đơn vị dùng
 				updatePackagingInfo();
 				updateStockQuantityLabels();
-			};
-			dropdown.appendChild(div);
-		});
+			});
+			return option;
+		}));
 		setElementVisible(dropdown, list.length > 0);
 	}
 
@@ -182,94 +187,72 @@ function initializeSaleUnitAutocomplete() {
 	});
 }
 
+const bindClick = (id, handler) => byId(id)?.addEventListener('click', handler);
+
 // Bind all events
 function bindEvents() {
-	$('#medicinePageSize').on('change', function () {
-		const size = Number(this.value);
+	byId('medicinePageSize').addEventListener('change', event => {
+		const size = Number(event.target.value);
 		if (![10, 20, 50, 100].includes(size)) return;
 		medicinePageSize = size;
-		currentPage = 1;
+		state.currentPage = 1;
 		loadMedicines();
 	});
-	$('#pagination').on('click', 'button[data-page]', function () {
-		changePage(Number(this.dataset.page));
-	});
+	delegate(byId('pagination'), 'click', 'button[data-page]', (event, button) => changePage(Number(button.dataset.page)));
 
 	// Search functionality
-	$('#searchBtn').on('click', function () {
-		currentPage = 1;
+	bindClick('searchBtn', () => {
+		state.currentPage = 1;
 		filterMedicines();
 	});
-
-	$('#searchInput').on('keypress', function (e) {
-		if (e.which === 13) {
-			currentPage = 1;
+	byId('searchInput').addEventListener('keypress', event => {
+		if (event.key === 'Enter') {
+			state.currentPage = 1;
 			filterMedicines();
 		}
 	});
-
-	// Reset filters
-	$('#resetBtn').on('click', function () {
-		resetFilters();
-	});
-
-	// Form submission
-	$('#medicineForm').on('submit', function (e) {
-		e.preventDefault();
+	bindClick('resetBtn', () => resetFilters());
+	byId('medicineForm').addEventListener('submit', event => {
+		event.preventDefault();
 		saveMedicine();
 	});
-
-	// Delete confirmation
-	$('#confirmDeleteBtn').on('click', function () {
-		deleteMedicine();
-	});
-
-	// Delete selected medicines
-	$('#deleteSelectedBtn').on('click', function () {
-		deleteSelectedMedicines();
-	});
-
-	$('#importWarehouseBtn').on('click', function () {
-		showImportBatchModal();
-	});
+	bindClick('confirmDeleteBtn', () => deleteMedicine());
+	bindClick('deleteSelectedBtn', () => deleteSelectedMedicines());
+	bindClick('confirmBulkDeleteBtn', () => confirmBulkDelete());
+	bindMedicineSelection();
+	bindClick('importWarehouseBtn', () => showImportBatchModal());
+	bindClick('missingImportPriceFilter', () => toggleMissingImportPriceFilter());
 
 	// Tab "Lịch sử nhập" gộp trong modal Nhập kho theo đơn hàng
-	$('#importTabOrder').on('click', function () { switchImportTab('order'); });
-	$('#importTabLedger').on('click', function () { switchImportTab('ledger'); });
-	$('#importLedgerSearch').on('input', debounce(function () {
-		if (!document.getElementById('importLedgerPane').hidden) loadImportLedger(1);
+	bindClick('importTabOrder', () => switchImportTab('order'));
+	bindClick('importTabLedger', () => switchImportTab('ledger'));
+	byId('importLedgerSearch').addEventListener('input', debounce(() => {
+		if (!byId('importLedgerPane').hidden) loadImportLedger(1);
 	}, 400));
-	$('#importLedgerStatus').on('change', function () {
-		if (!document.getElementById('importLedgerPane').hidden) loadImportLedger(1);
+	byId('importLedgerStatus').addEventListener('change', () => {
+		if (!byId('importLedgerPane').hidden) loadImportLedger(1);
 	});
 
-	// Thêm dòng thuốc vào bảng nhập kho
-	$('#addBatchRowBtn').on('click', function () {
-		addBatchImportRow();
-	});
-
-	// Xử lý xác nhận nhập kho theo đơn hàng
-	$('#confirmImportBatchBtn').on('click', function () {
-		confirmBatchImport();
-	});
-
-	// Nút xuất dữ liệu
-	$('#exportDataBtn').on('click', function () {
-		exportMedicineListExcel();
-	});
+	bindClick('addBatchRowBtn', () => addBatchImportRow());
+	bindClick('medicineImportOpen', () => showImportFromMedicineForm());
+	bindClick('medicine-expiry_date', () => showMedicineExpiry());
+	bindClick('batchSupplierPickBtn', () => showSupplierManagement());
+	byId('packagingUnit').addEventListener('change', () => updatePackagingInfo());
+	byId('unitsPerBox').addEventListener('input', () => updatePackagingInfo());
+	bindClick('confirmImportBatchBtn', () => confirmBatchImport());
+	bindClick('exportDataBtn', () => exportMedicineListExcel());
 
 	// Modal events
-	$('#medicineModal').on('hide.bs.modal', function (event) {
+	const medicineModal = byId('medicineModal');
+	medicineModal.addEventListener('hide.bs.modal', event => {
 		if (medicineSaving) event.preventDefault();
 	});
-	$('#medicineModal').on('hidden.bs.modal', function () {
-		resetForm();
-	});
+	medicineModal.addEventListener('hidden.bs.modal', () => resetForm());
 
 	// Khi mở modal thêm mới, reset form
-	$('#addMedicineBtn').on('click', function () {
+	bindClick('addMedicineBtn', () => {
 		resetForm();
-		$('#medicineModal').modal('show');
+		window.bootstrap.Modal.getOrCreateInstance(medicineModal).show();
 	});
 }
 
@@ -277,3 +260,5 @@ function bindEvents() {
 function showCustomToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message, { duration: 5000 });
 }
+
+export { debounce, escapeHtml, getUserFacingResponseMessage, medicinePageSize, normalizeSearchText, setElementVisible, setPackagingInfoActive, showCustomToast };

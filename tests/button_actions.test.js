@@ -59,18 +59,20 @@ test('secondary buttons stay neutral on hover and no decorative borders return',
     assert.doesNotMatch(css, /:is\(:hover, :focus-visible\)/);
 });
 
-test('medicine buttons keep non-action badges and navigation outside action colors', () => {
-    const source = readMedicineManagementSource();
-    const stockBadge = source.match(/<button\b[^>]*data-qlpk-call="showStockDetail"[^>]*>/)?.[0];
+test('medicine buttons keep non-action badges and navigation outside action colors', async () => {
+    const { renderMedicineRows } = require('./helpers/medicine-page');
+    const page = await renderMedicineRows([{ id: 7, name: 'Paracetamol', batch_count: 2, stock_quantity: 5, unit: 'viên', reference_review_status: 'unlinked' }], { canReviewMedicineReference: true });
+    page.render();
+    const stockBadge = page.tbody.querySelector('.stock-detail-badge:not(.mm-reference-button)');
     assert.ok(stockBadge);
-    assert.match(stockBadge, /type="button"/);
-    assert.match(stockBadge, /class="badge stock-detail-badge"/);
-    assert.match(stockBadge, /aria-label="[^"]+"/);
-    assert.doesNotMatch(stockBadge, /data-qlpk-button/);
+    assert.equal(stockBadge.getAttribute('type'), 'button');
+    assert.equal(stockBadge.className, 'badge stock-detail-badge');
+    assert.match(stockBadge.getAttribute('aria-label'), /\S/);
+    assert.equal(stockBadge.hasAttribute('data-qlpk-button'), false);
     assert.match(read('references/ui/button-system.md'), /badge số lần nhập[\s\S]*không gắn data-qlpk-button/);
-    assert.match(source, /<button data-qlpk-button="edit"[^>]*editMedicine/);
-    assert.match(source, /supplement\.dataset\.qlpkButton = 'edit'/);
-    assert.doesNotMatch(source, /<button data-qlpk-button=[^>]*mm-reference-button/);
+    assert.equal(page.tbody.querySelector('.action-btn:not(.delete)').getAttribute('data-qlpk-button'), 'edit');
+    assert.equal(page.tbody.querySelector('.mm-reference-button').hasAttribute('data-qlpk-button'), false);
+    assert.match(readMedicineManagementSource(), /supplement\.dataset\.qlpkButton = 'edit'/);
     const template = readTemplateSource('medicine-management.html');
     assert.match(template, /<button data-qlpk-button="neutral"[^>]*id="exportDataBtn"/);
     assert.match(template, /<button data-qlpk-button="danger"[^>]*id="confirmDeleteBtn"/);

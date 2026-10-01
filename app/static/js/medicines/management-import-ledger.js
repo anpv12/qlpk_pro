@@ -1,11 +1,17 @@
-/* global currentPage: writable, formatCurrency, formatDate, formatStockQuantity, getUserFacingResponseMessage, loadAllMedicines, loadMedicines, showCustomToast, showInventoryOverlay */
-/* exported currentPage, openImportLedger */
+import { state } from './management-state.js';
+import { formatCurrency, formatDate, loadAllMedicines, loadMedicines } from './management-list.js';
+import { formatStockQuantity } from './management-stock.js';
+import { showInventoryOverlay } from './inventory-overlay.js';
+import { getUserFacingResponseMessage, showCustomToast } from '../medicine-management.js';
+import { setProp, setText } from '../shared/dom-query.js';
+import { byId, el, replace } from '../shared/dom.js';
+import { requestJson } from '../shared/http-json.js';
 
 // ========== LỊCH SỬ NHẬP & LÔ (gộp vào modal Nhập kho) ==========
 let importLedgerRequestVersion = 0;
 let importLedgerPage = 1;
 let importLedgerTotalPages = 1;
-let importLedgerSort = '';
+state.importLedgerSort = '';
 
 function switchImportTab(tab) {
     const isLedger = tab === 'ledger';
@@ -22,40 +28,43 @@ function switchImportTab(tab) {
 // (từ bảng danh mục hoặc nút "Xem hạn dùng" trong form thuốc) hoặc sau khi
 // vừa nhập kho xong (sort=recent để thấy ngay lần nhập mới nhất).
 function openImportLedger({medicineId = null, search = '', sort = ''} = {}) {
-    importLedgerMedicineId = medicineId;
-    importLedgerSort = sort;
+    state.importLedgerMedicineId = medicineId;
+    state.importLedgerSort = sort;
     document.getElementById('importLedgerSearch').value = search;
     document.getElementById('importLedgerStatus').value = '';
     switchImportTab('ledger');
 }
 
-let importLedgerMedicineId = null;
+state.importLedgerMedicineId = null;
 
 async function loadImportLedger(page = 1) {
     const version = ++importLedgerRequestVersion;
     importLedgerPage = page;
-    const tbody = $('#importLedgerTableBody').empty();
-    tbody.html('<tr><td colspan="9" class="text-center py-3">Đang tải dữ liệu...</td></tr>');
-    $('#importLedgerPrev, #importLedgerNext').prop('disabled', true);
+    const tbody = byId('importLedgerTableBody');
+    const message = (text, className) => replace(tbody, el('tr', {}, el('td', { colspan: 9, class: className }, text)));
+    message('Đang tải dữ liệu...', 'text-center py-3');
+    setProp('#importLedgerPrev, #importLedgerNext', 'disabled', true);
     try {
         const params = new URLSearchParams({page, per_page: 10});
         const search = document.getElementById('importLedgerSearch').value.trim();
         const status = document.getElementById('importLedgerStatus').value;
         if (search) params.set('search', search);
         if (status) params.set('status', status);
-        if (importLedgerMedicineId) params.set('medicine_id', importLedgerMedicineId);
-        if (importLedgerSort) params.set('sort', importLedgerSort);
-        const response = await $.ajax({
-            url: `/api/medicine-batches/?${params}`,
-        });
+        if (state.importLedgerMedicineId) params.set('medicine_id', state.importLedgerMedicineId);
+        if (state.importLedgerSort) params.set('sort', state.importLedgerSort);
+        const response = await requestJson(`/api/medicine-batches/?${params}`);
         if (version !== importLedgerRequestVersion) return;
         importLedgerTotalPages = Math.max(1, response.total_pages || 1);
         renderImportLedgerRows(response.batches || []);
-        $('#importLedgerPageInfo').text(`${response.total} lô · Trang ${response.page}/${importLedgerTotalPages}`);
-        $('#importLedgerPrev').prop('disabled', response.page <= 1).off('click').on('click', () => loadImportLedger(response.page - 1));
-        $('#importLedgerNext').prop('disabled', response.page >= importLedgerTotalPages).off('click').on('click', () => loadImportLedger(response.page + 1));
+        setText('#importLedgerPageInfo', `${response.total} lô · Trang ${response.page}/${importLedgerTotalPages}`);
+        const previous = byId('importLedgerPrev');
+        const next = byId('importLedgerNext');
+        previous.disabled = response.page <= 1;
+        next.disabled = response.page >= importLedgerTotalPages;
+        previous.onclick = () => loadImportLedger(response.page - 1);
+        next.onclick = () => loadImportLedger(response.page + 1);
     } catch (_) {
-        if (version === importLedgerRequestVersion) tbody.html('<tr><td colspan="9" class="text-center text-danger py-3">Không tải được lịch sử nhập &amp; lô. Hãy đổi bộ lọc hoặc mở lại để thử.</td></tr>');
+        if (version === importLedgerRequestVersion) message('Không tải được lịch sử nhập & lô. Hãy đổi bộ lọc hoặc mở lại để thử.', 'text-center text-danger py-3');
     }
 }
 
@@ -160,10 +169,9 @@ function showMissingImportPriceForm(batch, cell) {
         input.disabled = save.disabled = cancel.disabled = true;
         error.textContent = '';
         try {
-            await $.ajax({url: `/api/medicine-batches/${batch.id}/import-price`, method: 'POST',
-                contentType: 'application/json', data: JSON.stringify({import_price: input.value})});
+            await requestJson(`/api/medicine-batches/${batch.id}/import-price`, { method: 'POST', json: {import_price: input.value} });
             showCustomToast('success', 'Đã bổ sung giá nhập. Tồn và giá vốn giao dịch cũ giữ nguyên.');
-            currentPage = 1;
+            state.currentPage = 1;
             loadMedicines();
             loadAllMedicines();
             if (cell.isConnected) loadImportLedger(importLedgerPage);
@@ -202,11 +210,14 @@ function openReceiptDispensing(batch) {
         applyFilters();
     };
     const modal = document.getElementById('receiptDispensingModal');
-    $(modal).off('hide.bs.modal.receiptDispensing').on('hide.bs.modal.receiptDispensing', () => {
-        receiptDispensingBatch = null;
-        receiptDispensingVersion++;
-        document.getElementById('receiptDispensingRows').replaceChildren();
-    });
+    if (!modal.dataset.receiptDispensingBound) {
+        modal.dataset.receiptDispensingBound = 'true';
+        modal.addEventListener('hide.bs.modal', () => {
+            receiptDispensingBatch = null;
+            receiptDispensingVersion++;
+            document.getElementById('receiptDispensingRows').replaceChildren();
+        });
+    }
     loadReceiptDispensing(1);
     showInventoryOverlay(modal);
 }
@@ -292,7 +303,7 @@ async function loadReceiptDispensing(page = 1) {
     try {
         const params = new URLSearchParams({batch_id: batchId, page, per_page: 20});
         Object.entries(receiptDispensingFilters).forEach(([key, value]) => { if (value) params.set(key, value); });
-        const response = await $.ajax({url: `/api/medicine/statistics/ledger?${params}`});
+        const response = await requestJson(`/api/medicine/statistics/ledger?${params}`);
         if (version !== receiptDispensingVersion) return;
         renderReceiptDispensingRows(response.transactions || []);
         info.textContent = `${response.total} giao dịch${response.total_pages > 1 ? ` · Trang ${response.page}/${response.total_pages}` : ''}`;
@@ -305,3 +316,5 @@ async function loadReceiptDispensing(page = 1) {
         if (version === receiptDispensingVersion) receiptDispensingMessage('Không tải được lịch sử. Đóng và mở lại để thử.');
     }
 }
+
+export { buildImportLedgerRow, loadImportLedger, loadReceiptDispensing, openImportLedger, openReceiptDispensing, renderReceiptDispensingRows, switchImportTab };

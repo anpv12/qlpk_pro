@@ -1,20 +1,17 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const { moduleFiles } = require('./module-source');
+const { JS_ROOT, pageModuleScripts } = require('./module-graph');
 
-const ROOT = path.join(__dirname, '..', '..');
-
+// Medicine page modules: the template's ES module entry, then every relative import it reaches.
 function medicineManagementScripts() {
-    const template = fs.readFileSync(path.join(ROOT, 'app/templates/medicine-management.html'), 'utf8');
-    return [...template.matchAll(/<script src="\/static\/js\/((?:medicine-management|medicines\/management-[\w-]+)\.js)/g)].map(match => match[1]);
+    return pageModuleScripts('medicine-management.html', 'medicine-management.js')
+        .filter(file => file === 'medicine-management.js' || file.startsWith('medicines/'));
 }
 
-// Split slices (``<slice>-parts/``) contribute their parts, in load order, before the slice itself.
 function readMedicineManagementSource() {
     return medicineManagementScripts()
-        .flatMap(file => moduleFiles(file))
-        .map(file => fs.readFileSync(path.join(ROOT, 'app/static/js', file), 'utf8'))
+        .map(file => fs.readFileSync(path.join(JS_ROOT, file), 'utf8'))
         .join('\n');
 }
 

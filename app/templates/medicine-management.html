@@ -19,7 +19,6 @@
 	<script id="qlpk-icon-system" src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/option-autocomplete.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
@@ -67,7 +66,7 @@
 							<span class="qlpk-clinic-summary__label">Cảnh báo tồn kho</span>
 							<span class="qlpk-clinic-summary__value" id="dashboardWarnings">0</span>
 						</div>
-						<button type="button" class="qlpk-clinic-summary__item mm-missing-price-filter" id="missingImportPriceFilter" aria-pressed="false" data-qlpk-call="toggleMissingImportPriceFilter" title="Lọc toàn bộ thuốc có lô thiếu giá nhập; nhấn lại để bỏ lọc">
+						<button type="button" class="qlpk-clinic-summary__item mm-missing-price-filter" id="missingImportPriceFilter" aria-pressed="false" title="Lọc toàn bộ thuốc có lô thiếu giá nhập; nhấn lại để bỏ lọc">
 							<span class="qlpk-clinic-summary__label">Thuốc thiếu giá nhập</span>
 							<span class="qlpk-clinic-summary__value" id="dashboardMissingImportPrice">0</span>
 							<span id="missingImportPriceFilterState" hidden>Đang lọc · Bỏ lọc</span>
@@ -398,18 +397,7 @@
 
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/clinic-catalog.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/price-editor.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/reference-review.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicine-management.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-list.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-form.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-stock.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-batch-import-parts/batch-totals.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-batch-import.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-suppliers.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-overview.js?v={{ app_version }}"></script>
-	<script src="/static/js/medicines/management-import-ledger.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/medicine-management.js?v={{ app_version }}"></script>
 </body>
 
 </html>
