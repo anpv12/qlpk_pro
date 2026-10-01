@@ -375,8 +375,9 @@
 			moduleParts.showToast('success', isEdit ? 'Đã cập nhật mẫu khảo sát' : 'Đã tạo mẫu khảo sát mới');
 			setTimeout(() => {
 				if (moduleParts.overlayEl()) moduleParts.close(true);
-				if (window.surveyTemplateManager) window.surveyTemplateManager.loadTemplates();
-				else window.location.href = '/survey-template-management.html';
+				const saved = new CustomEvent('qlpk:survey-template-saved', { detail: { handled: false } });
+				document.dispatchEvent(saved);
+				if (!saved.detail.handled) window.location.href = '/survey-template-management.html';
 			}, 800);
 		} else {
 			moduleParts.showToast('error', json.code === 'SURVEY_TEMPLATE_IDENTITY_CONFLICT'

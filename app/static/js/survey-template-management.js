@@ -1,473 +1,303 @@
-// Survey Template Management - list-only manager
+// Survey template list: server search/pagination, preview/download, document upload/edit, delete.
+// Questionnaire templates open in window.surveyCreateModal (survey-template-create.js, shared with its page).
+import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
 
-class SurveyTemplateManager {
-	constructor() {
-		this.state = {
-			currentPage: 1,
-			perPage: 10,
-			searchTerm: '',
-			totalItems: 0,
-			templates: [],
-			performers: []
-		};
-		this.currentTemplateId = null;
-		this.documentTemplateId = null;
-		this.canManage = false;
-		this.mutating = false;
-		this.init();
-	}
+const state = { currentPage: 1, perPage: 10, searchTerm: '', templates: [], performers: [], currentTemplateId: null, documentTemplateId: null, canManage: false, mutating: false, revision: 0 };
+const toast = (type, message) => window.AppointmentUtils?.showToast(type, message);
+const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
+const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const createModal = () => window.surveyCreateModal;
 
-	init() {
-		if (!this.hasToken()) {
-			this.showLoginRequired();
-			return;
-		}
+function highlight(text) {
+	if (!state.searchTerm) return text;
+	const parts = String(text).split(new RegExp(`(${escapeRegExp(state.searchTerm)})`, 'gi'));
+	return parts.map((part, index) => (index % 2 ? el('span', { class: 'highlight' }, part) : part));
+}
 
-        this.pagination = window.QLPKPagination.create({ onChange: (page, size) => {
-            this.state.currentPage = page;
-            this.state.perPage = size;
-            this.loadTemplates();
-        } });
-		this.bindEvents();
-		this.registerRealtimeHooks();
-		this.loadPerformers();
-		this.loadTemplates();
-	}
+function formatDate(value) {
+	const date = value ? new Date(value) : null;
+	return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('vi-VN') : 'N/A';
+}
 
-	hasToken() {
-		return window.QLPKApiTransport.hasSession();
-	}
+function renderPerformerOptions(select) {
+	if (!select) return;
+	const current = select.value;
+	replace(select, new Option('Chưa gán (chọn sau khi chỉ định)', ''), state.performers.map(user => {
+		const id = Number(user.id || user.user_id);
+		const name = String(user.full_name || user.name || user.username || '').trim();
+		return id && name ? new Option(name, String(id)) : null;
+	}));
+	if (current && [...select.options].some(option => option.value === String(current))) select.value = String(current);
+}
 
-	async loadPerformers() {
-		try {
-			const response = await fetch('/users/doctors');
-			if (!response.ok) return;
-			const data = await response.json();
-			this.state.performers = Array.isArray(data) ? data : [];
-			this.renderPerformerOptions($('#uploadPerformer')[0]);
-		} catch (_) {
-			this.state.performers = [];
-		}
-	}
-
-	renderPerformerOptions(select) {
-		if (!select) return;
-		const currentValue = select.value;
-		select.innerHTML = '<option value="">Chưa gán (chọn sau khi chỉ định)</option>' + this.state.performers.map(user => {
-			const id = Number(user.id || user.user_id);
-			const name = String(user.full_name || user.name || user.username || '').trim();
-			return id && name ? `<option value="${id}">${this.escapeHtml(name)}</option>` : '';
-		}).join('');
-		if (currentValue && Array.from(select.options).some(option => option.value === String(currentValue))) {
-			select.value = String(currentValue);
-		}
-	}
-
-
-
-	showLoginRequired() {
-		const container = document.querySelector('.stm-card-body') || document.querySelector('.stm-main');
-		if (!container) return;
-
-		container.innerHTML = `
-            <div class="d-flex justify-content-center align-items-center stm-login-required">
-                <div class="text-center">
-                    <i class="bi bi-lock stm-login-required-icon"></i>
-                    <h3 class="text-muted mb-3">Yêu cầu đăng nhập</h3>
-                    <p class="text-muted mb-4">Vui lòng đăng nhập để truy cập tính năng này</p>
-					<div class="d-flex gap-2 justify-content-center">
-						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary js-go-login">
-							<i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
-						</button>
-					</div>
-				</div>
-			</div>
-        `;
-	}
-
-	bindEvents() {
-		$('#searchInput').on('keypress', (e) => {
-			if (e.which === 13) this.handleSearch();
-		});
-
-		$('#searchInput').on('input', this.debounce(() => {
-			this.handleSearch();
-		}, 350));
-
-		$('#uploadNewBtn').on('click', () => this.showUploadModal());
-
-		$('#addNewBtn').on('click', () => {
-			if (this.canManage && window.surveyCreateModal) {
-				window.surveyCreateModal.open('create');
-			}
-		});
-
-		$('#uploadForm').on('submit', (e) => {
-			e.preventDefault();
-			this.uploadFile();
-		});
-
-		$('#uploadBtn').on('click', (e) => {
-			e.preventDefault();
-			this.uploadFile();
-		});
-
-		$('#confirmDeleteBtn').on('click', () => this.deleteTemplate());
-		$('#uploadModal').on('hidden.bs.modal', () => this.resetUploadForm());
-
-		$(document).on('click', '.js-template-preview', (e) => {
-			const id = Number($(e.currentTarget).data('template-id'));
-			if (id) this.viewTemplate(id);
-		});
-
-		$(document).on('click', '.js-template-edit', (e) => {
-			const id = Number($(e.currentTarget).data('template-id'));
-			if (!this.canManage) return;
-			const template = this.state.templates.find(item => item.id === id);
-			if (template?.template_kind === 'document') return this.showUploadModal(template);
-			if (id && window.surveyCreateModal) {
-				window.surveyCreateModal.open('edit', id);
-			}
-		});
-
-		$(document).on('click', '.js-template-delete', (e) => {
-			const id = Number($(e.currentTarget).data('template-id'));
-			const name = String($(e.currentTarget).data('template-name') || '');
-			if (id) this.showDeleteModal(id, name);
-		});
-
-		$(document).on('click', '.js-go-login', () => {
-			window.location.href = '/login.html';
-		});
-	}
-
-	registerRealtimeHooks() {
-		if (!window.QLPKRealtimePageHooks) return;
-		window.QLPKRealtimePageHooks.register({
-			types: ['catalog.changed'],
-			filter: (event) => ['survey_template', 'survey_criteria'].includes(event?.payload?.entity),
-			handler: (event) => {
-				if (event?.payload?.entity === 'survey_template') {
-					this.loadTemplates();
-				}
-				if (event?.payload?.entity === 'survey_criteria' && window.surveyCreateModal?.refreshCriteriaCache) {
-					window.surveyCreateModal.refreshCriteriaCache();
-				}
-			},
-			debounceMs: 350,
-		});
-	}
-
-	async loadTemplates() {
-		const revision = (this.loadRevision || 0) + 1;
-		this.loadRevision = revision;
-		try {
-			this.showLoading(true);
-
-			const params = new URLSearchParams({
-				page: String(this.state.currentPage),
-				per_page: String(this.state.perPage)
-			});
-
-			if (this.state.searchTerm) {
-				params.append('search', this.state.searchTerm);
-			}
-
-			const response = await fetch(`/api/survey-templates?${params}`);
-
-			const result = await response.json();
-			if (revision !== this.loadRevision) return;
-
-			if (result.success) {
-				this.canManage = result.can_manage === true;
-				$('#addNewBtn, #uploadNewBtn').toggleClass('d-none', !this.canManage);
-				$('#addNewBtn, #uploadNewBtn').prop('disabled', !this.canManage);
-				this.state.currentPage = Number(result.pagination?.page) || 1;
-				this.state.totalItems = Number(result.pagination?.total) || 0;
-				this.state.templates = Array.isArray(result.data) ? result.data : [];
-				this.renderTemplates(this.state.templates);
-				this.renderPagination(result.pagination || {});
-			} else {
-				this.showToast('error', 'Không thể tải mẫu khảo sát. Vui lòng thử lại.');
-			}
-		} catch (error) {
-			if (revision !== this.loadRevision) return;
-			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
-		} finally {
-			if (revision === this.loadRevision) this.showLoading(false);
-		}
-	}
-
-
-
-	renderTemplates(templates) {
-		const tbody = $('#surveyTemplatesTableBody');
-		tbody.empty();
-
-		if (!templates.length) {
-			tbody.html(`
-                <tr>
-					<td colspan="7" class="text-center py-5">
-                        <div class="stm-empty">
-                            <i class="bi bi-clipboard2-check"></i>
-                            <p>${this.state.searchTerm ? 'Không tìm thấy mẫu khảo sát phù hợp' : 'Chưa có mẫu khảo sát nào được tạo'}</p>
-                            ${this.canManage && !this.state.searchTerm ? `
-                            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="stm-btn stm-btn--primary mt-3" id="emptyAddNewBtn">
-                                <i class="bi bi-plus-circle"></i>Thêm mẫu khảo sát đầu tiên
-                            </button>` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `);
-			$('#emptyAddNewBtn').on('click', () => {
-				if (window.surveyCreateModal) window.surveyCreateModal.open('create');
-			});
-			return;
-		}
-
-		templates.forEach((template, index) => {
-			tbody.append(this.createTemplateRow(template, index));
-		});
-
-	}
-
-	createTemplateRow(template, index) {
-		const id = Number(template.id) || 0;
-		const name = this.escapeHtml(template.name || 'Không tên');
-		const nameAttr = this.escapeAttr(template.name || 'Không tên');
-		const fileName = this.escapeHtml(template.file_name || '');
-		const description = this.escapeHtml(template.description || 'Không có mô tả');
-		const performer = this.escapeHtml(template.default_performer_name || 'Chưa gán');
-		const createdDate = this.formatDate(template.created_at);
-		const documentOnly = template.template_kind === 'document';
-		const badgeClass = ({ needs_configuration: 'warning', ready: 'active' })[template.readiness] || 'neutral';
-		const statusBadge = `<span class="qlpk-status stm-badge stm-badge--${badgeClass}" title="${this.escapeAttr(template.readiness_message || '')}">${this.escapeHtml(template.readiness_label || 'Cần cấu hình')}</span>`;
-
-		return `
-            <tr>
-                <td>${(this.state.currentPage - 1) * this.state.perPage + index + 1}</td>
-                <td>
-                    <strong>${this.highlightSearch(name)}</strong>
-                    ${fileName ? `<br><span class="text-muted"><i class="bi bi-file-earmark"></i> ${fileName}</span>` : ''}
-                </td>
-	                <td><span class="stm-desc-cell">${this.highlightSearch(description)}</span></td>
-	                <td>${performer}</td>
-	                <td>${createdDate}</td>
-                <td class="stm-table-center-cell">${statusBadge}</td>
-                <td class="stm-table-center-cell">
-                    <div class="stm-row-actions">
-                        <button data-qlpk-button="view" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--preview js-template-preview" data-template-id="${id}" title="${documentOnly ? 'Tải tài liệu' : 'Xem trước khảo sát'}">
-                            <i class="bi ${documentOnly ? 'bi-download' : 'bi-eye'}"></i>
-                        </button>
-                        ${this.canManage ? `
-                        <button data-qlpk-button="edit" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--edit js-template-edit" data-template-id="${id}" title="Chỉnh sửa">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="stm-action-btn stm-action-btn--danger js-template-delete" data-template-id="${id}" data-template-name="${nameAttr}" title="Xóa">
-                            <i class="bi bi-trash"></i>
-                        </button>` : ''}
-                    </div>
-                </td>
-            </tr>
-        `;
-	}
-
-	highlightSearch(text) {
-		if (!this.state.searchTerm) return text;
-		const escapedTerm = this.escapeRegExp(this.escapeHtml(this.state.searchTerm));
-		const regex = new RegExp(`(${escapedTerm})`, 'gi');
-		return text.replace(regex, '<span class="highlight">$1</span>');
-	}
-
-	renderPagination(pagination) {
-        this.pagination.update({ page: pagination.page, pageSize: this.state.perPage, total: pagination.total });
-    }
-
-	handleSearch() {
-		this.state.searchTerm = $('#searchInput').val().trim();
-		this.state.currentPage = 1;
-		this.loadTemplates();
-	}
-
-	showUploadModal(template = null) {
-		if (!this.canManage || this.mutating) return;
-		this.resetUploadForm();
-		this.documentTemplateId = template?.id || null;
-		$('#uploadModalTitle').text(template ? 'Chỉnh sửa tài liệu khảo sát' : 'Tải tài liệu khảo sát');
-		$('#uploadBtn').text(template ? 'Lưu' : 'Tải lên');
-		$('#uploadFileGroup').toggleClass('d-none', !!template);
-		$('#uploadFile').prop('required', !template);
-		if (template) {
-			$('#uploadName').val(template.name);
-			$('#uploadDescription').val(template.description || '');
-			$('#uploadPerformer').val(String(template.default_performer_id || ''));
-		}
-		$('#uploadModal').modal('show');
-	}
-
-	async uploadFile() {
-		if (!this.canManage || this.mutating) return;
-		const formData = this.getUploadFormData();
-		if (!formData) return;
-		this.mutating = true;
-		const editing = this.documentTemplateId;
-
-		try {
-			this.showLoading(true);
-			const response = await fetch(editing ? `/api/survey-templates/${editing}` : '/api/survey-templates/upload', {
-				method: editing ? 'PUT' : 'POST',
-				headers: editing ? { 'Content-Type': 'application/json' } : {},
-				body: editing ? JSON.stringify(Object.fromEntries(formData)) : formData
-			});
-
-			const result = await response.json();
-			if (result.success) {
-				this.showToast('success', editing ? 'Đã cập nhật tài liệu khảo sát.' : 'Đã tải tài liệu khảo sát lên.');
-				$('#uploadModal').modal('hide');
-				this.loadTemplates();
-			} else {
-				const failure = editing ? 'Không thể cập nhật tài liệu. Vui lòng kiểm tra thông tin và thử lại.' : 'Không thể tải tài liệu lên. Vui lòng kiểm tra tên và tệp.';
-				this.showToast('error', result.code === 'SURVEY_MANAGEMENT_FORBIDDEN' ? 'Bạn không có quyền quản lý mẫu khảo sát.' : failure);
-			}
-		} catch (error) {
-			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
-		} finally {
-			this.mutating = false;
-			this.showLoading(false);
-		}
-	}
-
-	getUploadFormData() {
-		const name = $('#uploadName').val().trim();
-		const description = $('#uploadDescription').val().trim();
-		const fileInput = $('#uploadFile')[0];
-		const file = fileInput && fileInput.files ? fileInput.files[0] : null;
-
-		if (!name) {
-			this.showToast('error', 'Tên mẫu khảo sát là bắt buộc');
-			return null;
-		}
-		if (!this.documentTemplateId && !file) {
-			this.showToast('error', 'Vui lòng chọn file');
-			return null;
-		}
-
-		const formData = new FormData();
-		formData.append('name', name);
-		formData.append('description', description);
-		formData.append('default_performer_id', $('#uploadPerformer').val() || '');
-		if (!this.documentTemplateId) formData.append('file', file);
-		return formData;
-	}
-
-	showDeleteModal(id, name) {
-		if (!this.canManage || this.mutating) return;
-		this.currentTemplateId = Number(id) || null;
-		$('#deleteTemplateName').text(name || '');
-		$('#deleteModal').modal('show');
-	}
-
-	async deleteTemplate() {
-		if (!this.canManage || this.mutating || !this.currentTemplateId) return;
-		this.mutating = true;
-
-		try {
-			this.showLoading(true);
-			const response = await fetch(`/api/survey-templates/${this.currentTemplateId}`, {
-				method: 'DELETE'
-			});
-
-			const result = await response.json();
-			if (result.success) {
-				this.showToast('success', 'Xóa thành công');
-				$('#deleteModal').modal('hide');
-				this.currentTemplateId = null;
-				this.loadTemplates();
-			} else {
-				this.showToast('error', 'Không thể xóa mẫu khảo sát. Vui lòng thử lại.');
-			}
-		} catch (error) {
-			this.showToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
-		} finally {
-			this.mutating = false;
-			this.showLoading(false);
-		}
-	}
-
-	resetUploadForm() {
-		this.documentTemplateId = null;
-		const form = $('#uploadForm')[0];
-		if (form) form.reset();
-	}
-
-	viewTemplate(templateId) {
-		const safeId = Number(templateId);
-		if (!safeId) return;
-		const template = this.state.templates.find(item => item.id === safeId);
-		if (template?.template_kind === 'document') return this.downloadTemplate(template);
-		const surveyUrl = `${window.location.origin}/patient-survey.html?template_id=${safeId}&preview=true`;
-		window.open(surveyUrl, '_blank', 'noopener,noreferrer');
-	}
-
-	async downloadTemplate(template) {
-		try {
-			const response = await fetch(`/api/survey-templates/download/${template.id}`);
-			if (!response.ok) throw new Error('download');
-			const url = URL.createObjectURL(await response.blob());
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = template.file_name || template.name;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			setTimeout(() => URL.revokeObjectURL(url), 1000);
-		} catch (_) { this.showToast('error', 'Không thể tải tài liệu. Vui lòng thử lại.'); }
-	}
-
-	showLoading(show) {
-		$('.stm-card').toggleClass('loading', Boolean(show));
-		$('#uploadBtn, #confirmDeleteBtn').prop('disabled', Boolean(show));
-	}
-
-	showToast(type, message) {
-		if (window.AppointmentUtils) {
-			window.AppointmentUtils.showToast(type, message);
-		}
-	}
-
-	formatDate(value) {
-		if (!value) return 'N/A';
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) return 'N/A';
-		return date.toLocaleDateString('vi-VN');
-	}
-
-	escapeHtml(value) {
-		return String(value ?? '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;');
-	}
-
-	escapeAttr(value) {
-		return this.escapeHtml(value).replace(/`/g, '&#96;');
-	}
-
-	escapeRegExp(value) {
-		return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	}
-
-	debounce(fn, delay) {
-		let timer = null;
-		return (...args) => {
-			clearTimeout(timer);
-			timer = setTimeout(() => fn.apply(this, args), delay);
-		};
+async function loadPerformers() {
+	try {
+		const response = await fetch('/users/doctors');
+		if (!response.ok) return;
+		const data = await response.json();
+		state.performers = Array.isArray(data) ? data : [];
+		renderPerformerOptions(byId('uploadPerformer'));
+	} catch {
+		state.performers = [];
 	}
 }
 
-$(document).ready(function () {
-	window.surveyTemplateManager = new SurveyTemplateManager();
-});
+function showLoginRequired() {
+	const container = document.querySelector('.stm-card-body') || document.querySelector('.stm-main');
+	if (!container) return;
+	replace(container, el('div', { class: 'd-flex justify-content-center align-items-center stm-login-required' }, el('div', { class: 'text-center' },
+		icon('bi-lock', 'stm-login-required-icon'), el('h3', { class: 'text-muted mb-3' }, 'Yêu cầu đăng nhập'),
+		el('p', { class: 'text-muted mb-4' }, 'Vui lòng đăng nhập để truy cập tính năng này'),
+		el('div', { class: 'd-flex gap-2 justify-content-center' }, el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'btn btn-primary js-go-login' },
+			icon('bi-box-arrow-in-right', 'me-2'), 'Đăng nhập')))));
+}
+
+function rowButton([kind, className, title, iconName], template, extra = {}) {
+	return el('button', { 'data-qlpk-button': kind, 'data-qlpk-button-variant': 'soft', class: `stm-action-btn ${className}`, 'data-template-id': Number(template.id) || 0, title, ...extra }, icon(iconName));
+}
+
+function templateRow(template, index) {
+	const documentOnly = template.template_kind === 'document';
+	const tone = ({ needs_configuration: 'warning', ready: 'active' })[template.readiness] || 'neutral';
+	return el('tr', {},
+		el('td', {}, (state.currentPage - 1) * state.perPage + index + 1),
+		el('td', {}, el('strong', {}, highlight(template.name || 'Không tên')),
+			template.file_name ? [el('br'), el('span', { class: 'text-muted' }, icon('bi-file-earmark'), ` ${template.file_name}`)] : null),
+		el('td', {}, el('span', { class: 'stm-desc-cell' }, highlight(template.description || 'Không có mô tả'))),
+		el('td', {}, template.default_performer_name || 'Chưa gán'),
+		el('td', {}, formatDate(template.created_at)),
+		el('td', { class: 'stm-table-center-cell' }, el('span', { class: `qlpk-status stm-badge stm-badge--${tone}`, title: template.readiness_message || '' }, template.readiness_label || 'Cần cấu hình')),
+		el('td', { class: 'stm-table-center-cell' }, el('div', { class: 'stm-row-actions' },
+			rowButton(['view', 'stm-action-btn--preview js-template-preview', documentOnly ? 'Tải tài liệu' : 'Xem trước khảo sát', documentOnly ? 'bi-download' : 'bi-eye'], template),
+			state.canManage ? [rowButton(['edit', 'stm-action-btn--edit js-template-edit', 'Chỉnh sửa', 'bi-pencil'], template),
+				rowButton(['danger', 'stm-action-btn--danger js-template-delete', 'Xóa', 'bi-trash'], template, { 'data-template-name': template.name || 'Không tên' })] : null)));
+}
+
+function renderTemplates(templates) {
+	const body = byId('surveyTemplatesTableBody');
+	if (templates.length) {
+		replace(body, templates.map(templateRow));
+		return;
+	}
+	const addFirst = state.canManage && !state.searchTerm
+		? el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'stm-btn stm-btn--primary mt-3', id: 'emptyAddNewBtn' }, icon('bi-plus-circle'), 'Thêm mẫu khảo sát đầu tiên')
+		: null;
+	addFirst?.addEventListener('click', () => createModal()?.open('create'));
+	replace(body, el('tr', {}, el('td', { colspan: 7, class: 'text-center py-5' }, el('div', { class: 'stm-empty' }, icon('bi-clipboard2-check'),
+		el('p', {}, state.searchTerm ? 'Không tìm thấy mẫu khảo sát phù hợp' : 'Chưa có mẫu khảo sát nào được tạo'), addFirst))));
+}
+
+function showLoading(show) {
+	document.querySelectorAll('.stm-card').forEach(card => card.classList.toggle('loading', Boolean(show)));
+	['uploadBtn', 'confirmDeleteBtn'].forEach(id => { if (byId(id)) byId(id).disabled = Boolean(show); });
+}
+
+async function loadTemplates() {
+	const revision = ++state.revision;
+	try {
+		showLoading(true);
+		const params = new URLSearchParams({ page: String(state.currentPage), per_page: String(state.perPage) });
+		if (state.searchTerm) params.append('search', state.searchTerm);
+		const result = await (await fetch(`/api/survey-templates?${params}`)).json();
+		if (revision !== state.revision) return;
+		if (!result.success) {
+			toast('error', 'Không thể tải mẫu khảo sát. Vui lòng thử lại.');
+			return;
+		}
+		state.canManage = result.can_manage === true;
+		['addNewBtn', 'uploadNewBtn'].forEach(id => {
+			byId(id)?.classList.toggle('d-none', !state.canManage);
+			if (byId(id)) byId(id).disabled = !state.canManage;
+		});
+		state.currentPage = Number(result.pagination?.page) || 1;
+		state.templates = Array.isArray(result.data) ? result.data : [];
+		renderTemplates(state.templates);
+		state.pagination.update({ page: result.pagination?.page, pageSize: state.perPage, total: result.pagination?.total });
+	} catch {
+		if (revision === state.revision) toast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
+	} finally {
+		if (revision === state.revision) showLoading(false);
+	}
+}
+
+function handleSearch() {
+	state.searchTerm = byId('searchInput').value.trim();
+	state.currentPage = 1;
+	loadTemplates();
+}
+
+function resetUploadForm() {
+	state.documentTemplateId = null;
+	byId('uploadForm')?.reset();
+}
+
+function showUploadModal(template = null) {
+	if (!state.canManage || state.mutating) return;
+	resetUploadForm();
+	state.documentTemplateId = template?.id || null;
+	byId('uploadModalTitle').textContent = template ? 'Chỉnh sửa tài liệu khảo sát' : 'Tải tài liệu khảo sát';
+	byId('uploadBtn').textContent = template ? 'Lưu' : 'Tải lên';
+	byId('uploadFileGroup').classList.toggle('d-none', Boolean(template));
+	byId('uploadFile').required = !template;
+	if (template) {
+		byId('uploadName').value = template.name ?? '';
+		byId('uploadDescription').value = template.description || '';
+		byId('uploadPerformer').value = String(template.default_performer_id || '');
+	}
+	modal('uploadModal').show();
+}
+
+function uploadFormData() {
+	const name = byId('uploadName').value.trim();
+	const file = byId('uploadFile')?.files ? byId('uploadFile').files[0] : null;
+	if (!name) {
+		toast('error', 'Tên mẫu khảo sát là bắt buộc');
+		return null;
+	}
+	if (!state.documentTemplateId && !file) {
+		toast('error', 'Vui lòng chọn file');
+		return null;
+	}
+	const formData = new FormData();
+	formData.append('name', name);
+	formData.append('description', byId('uploadDescription').value.trim());
+	formData.append('default_performer_id', byId('uploadPerformer').value || '');
+	if (!state.documentTemplateId) formData.append('file', file);
+	return formData;
+}
+
+// Runs one mutating request with the shared loading/lock state.
+async function mutate(run) {
+	state.mutating = true;
+	try {
+		showLoading(true);
+		await run();
+	} catch {
+		toast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
+	} finally {
+		state.mutating = false;
+		showLoading(false);
+	}
+}
+
+function uploadFile() {
+	if (!state.canManage || state.mutating) return;
+	const formData = uploadFormData();
+	if (!formData) return;
+	const editing = state.documentTemplateId;
+	mutate(async () => {
+		const response = await fetch(editing ? `/api/survey-templates/${editing}` : '/api/survey-templates/upload', {
+			method: editing ? 'PUT' : 'POST', headers: editing ? { 'Content-Type': 'application/json' } : {}, body: editing ? JSON.stringify(Object.fromEntries(formData)) : formData });
+		const result = await response.json();
+		if (result.success) {
+			toast('success', editing ? 'Đã cập nhật tài liệu khảo sát.' : 'Đã tải tài liệu khảo sát lên.');
+			modal('uploadModal').hide();
+			loadTemplates();
+			return;
+		}
+		const failure = editing ? 'Không thể cập nhật tài liệu. Vui lòng kiểm tra thông tin và thử lại.' : 'Không thể tải tài liệu lên. Vui lòng kiểm tra tên và tệp.';
+		toast('error', result.code === 'SURVEY_MANAGEMENT_FORBIDDEN' ? 'Bạn không có quyền quản lý mẫu khảo sát.' : failure);
+	});
+}
+
+function deleteTemplate() {
+	if (!state.canManage || state.mutating || !state.currentTemplateId) return;
+	mutate(async () => {
+		const result = await (await fetch(`/api/survey-templates/${state.currentTemplateId}`, { method: 'DELETE' })).json();
+		if (!result.success) {
+			toast('error', 'Không thể xóa mẫu khảo sát. Vui lòng thử lại.');
+			return;
+		}
+		toast('success', 'Xóa thành công');
+		modal('deleteModal').hide();
+		state.currentTemplateId = null;
+		loadTemplates();
+	});
+}
+
+async function downloadTemplate(template) {
+	try {
+		const response = await fetch(`/api/survey-templates/download/${template.id}`);
+		if (!response.ok) throw new Error('download');
+		const url = URL.createObjectURL(await response.blob());
+		const link = el('a', { href: url, download: template.file_name || template.name });
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+	} catch {
+		toast('error', 'Không thể tải tài liệu. Vui lòng thử lại.');
+	}
+}
+
+function viewTemplate(id) {
+	const template = state.templates.find(item => item.id === id);
+	if (template?.template_kind === 'document') {
+		downloadTemplate(template);
+		return;
+	}
+	window.open(`${window.location.origin}/patient-survey.html?template_id=${id}&preview=true`, '_blank', 'noopener,noreferrer');
+}
+
+function bindEvents() {
+	on(byId('searchInput'), 'keypress', event => { if (event.key === 'Enter') handleSearch(); });
+	on(byId('searchInput'), 'input', debounce(handleSearch, 350));
+	on(byId('uploadNewBtn'), 'click', () => showUploadModal());
+	on(byId('addNewBtn'), 'click', () => { if (state.canManage) createModal()?.open('create'); });
+	on(byId('uploadForm'), 'submit', event => {
+		event.preventDefault();
+		uploadFile();
+	});
+	on(byId('uploadBtn'), 'click', event => {
+		event.preventDefault();
+		uploadFile();
+	});
+	on(byId('confirmDeleteBtn'), 'click', deleteTemplate);
+	on(byId('uploadModal'), 'hidden.bs.modal', resetUploadForm);
+	const id = button => Number(button.getAttribute('data-template-id'));
+	delegate(document, 'click', '.js-template-preview', (event, button) => { if (id(button)) viewTemplate(id(button)); });
+	delegate(document, 'click', '.js-template-edit', (event, button) => {
+		if (!state.canManage) return;
+		const template = state.templates.find(item => item.id === id(button));
+		if (template?.template_kind === 'document') showUploadModal(template);
+		else if (id(button)) createModal()?.open('edit', id(button));
+	});
+	delegate(document, 'click', '.js-template-delete', (event, button) => {
+		if (!id(button) || !state.canManage || state.mutating) return;
+		state.currentTemplateId = id(button);
+		byId('deleteTemplateName').textContent = button.getAttribute('data-template-name') || '';
+		modal('deleteModal').show();
+	});
+	delegate(document, 'click', '.js-go-login', () => { window.location.href = '/login.html'; });
+	on(document, 'qlpk:survey-template-saved', event => {
+		event.detail.handled = true;
+		loadTemplates();
+	});
+}
+
+function init() {
+	if (!window.QLPKApiTransport.hasSession()) {
+		showLoginRequired();
+		return;
+	}
+	state.pagination = window.QLPKPagination.create({ onChange(page, size) {
+		state.currentPage = page;
+		state.perPage = size;
+		loadTemplates();
+	} });
+	bindEvents();
+	window.QLPKRealtimePageHooks?.register({
+		types: ['catalog.changed'],
+		filter: event => ['survey_template', 'survey_criteria'].includes(event?.payload?.entity),
+		handler(event) {
+			if (event?.payload?.entity === 'survey_template') loadTemplates();
+			if (event?.payload?.entity === 'survey_criteria') createModal()?.refreshCriteriaCache?.();
+		},
+		debounceMs: 350,
+	});
+	loadPerformers();
+	loadTemplates();
+}
+
+// Survey create modal scripts load after this module's tag; start once the document is parsed.
+document.addEventListener('DOMContentLoaded', init);
