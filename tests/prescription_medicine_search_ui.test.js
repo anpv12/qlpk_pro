@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { MEDICINE_SEARCH_FILES, loadDoctorRegistry } = require('./helpers/doctor-registry');
+const { createWindow } = require('./helpers/fake-dom');
 
 class FakeElement {
     constructor(tag) {
@@ -43,18 +44,14 @@ class FakeElement {
 
 function setup(overrides = {}) {
     const timers = [];
+    const { document: doc } = createWindow();
+    doc.defaultView = { innerHeight: 900, innerWidth: 1440 };
     const window = {
+        document: doc,
         setTimeout: (callback, delay) => timers.push({ callback, delay, cleared: false }),
         clearTimeout: id => { if (timers[id - 1]) timers[id - 1].cleared = true; }
     };
     const factory = loadDoctorRegistry(MEDICINE_SEARCH_FILES, window).require('prescriptionMedicineSearch');
-    const elements = new Map();
-    const doc = {
-        getElementById: id => elements.get(id) || null,
-        createElement: tag => new FakeElement(tag),
-        body: { appendChild: element => elements.set(element.id, element) },
-        defaultView: { innerHeight: 900, innerWidth: 1440 }
-    };
     const requests = [];
     const rows = new Set();
     const search = factory.create({
@@ -69,7 +66,7 @@ function setup(overrides = {}) {
     const row = { uid: 'rx-1', isExternal: false };
     rows.add(row);
     const input = new FakeElement('input');
-    return { search, doc, timers, flush, requests, rows, row, input, dropdown: () => elements.get('doctorMedicineDropdown') };
+    return { search, doc, timers, flush, requests, rows, row, input, dropdown: () => doc.getElementById('doctorMedicineDropdown') ?? undefined };
 }
 
 const MEDICINES = [
@@ -167,8 +164,8 @@ test('keyboard navigation clamps, wraps from none and returns the selected optio
     assert.equal(h.input.getAttribute('aria-activedescendant'), 'doctorMedicineOption-rx-1-0', 'clamped at first option');
     const options = h.dropdown().querySelectorAll('[data-medicine-select]');
     assert.equal(options[0].classList.contains('is-active'), true);
-    assert.equal(options[0].attributes['aria-selected'], 'true');
-    assert.equal(options[1].attributes['aria-selected'], 'false');
+    assert.equal(options[0].getAttribute('aria-selected'), 'true');
+    assert.equal(options[1].getAttribute('aria-selected'), 'false');
 
     assert.equal(h.search.handleKeydown(h.doc, { ...key('Enter'), target: {} }), null, 'other inputs are ignored');
     const enter = key('Enter');

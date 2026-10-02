@@ -1,6 +1,6 @@
+import { el, replace } from '../shared/dom.js';
 import {
   debugLog as medicalHistoryDebugLog,
-  escapeHtml as medicalHistoryEscapeHtml,
   getComponent as medicalHistoryGetComponent,
   getIcdLookup as medicalHistoryGetIcdLookup
 } from './medical-history-context.js';
@@ -174,11 +174,11 @@ function runHistorySuggestions2(ctx) {
 	    itemDiv.dataset.icd = icdObj.icd_code;
 	    itemDiv.dataset.medicalHistoryAction = 'toggle-personal-history';
 
-	    itemDiv.innerHTML = `
-	      <div class="medical-history-item-check"></div>
-	      <span class="medical-history-icd-badge">${medicalHistoryEscapeHtml(icdObj.icd_code)}</span>
-	      <span class="medical-history-item-name">${medicalHistoryEscapeHtml(icdObj.disease_name)}</span>
-	    `;
+	    replace(itemDiv,
+	      el('div', { class: 'medical-history-item-check' }),
+	      el('span', { class: 'medical-history-icd-badge' }, icdObj.icd_code ?? ''),
+	      el('span', { class: 'medical-history-item-name' }, icdObj.disease_name ?? '')
+	    );
 
 	    if (groupName === 'thoi-quen') {
 	      if (code.startsWith('Z72')) {
@@ -244,11 +244,11 @@ function runHistorySuggestions3() {
 	    itemDiv.dataset.icd = icdObj.icd_code;
 	    itemDiv.dataset.medicalHistoryAction = 'toggle-family-history';
 
-	    itemDiv.innerHTML = `
-	      <div class="medical-history-item-check"></div>
-	      <span class="medical-history-icd-badge">${medicalHistoryEscapeHtml(icdObj.icd_code)}</span>
-	      <span class="medical-history-item-name">${medicalHistoryEscapeHtml(icdObj.disease_name)}</span>
-	    `;
+	    replace(itemDiv,
+	      el('div', { class: 'medical-history-item-check' }),
+	      el('span', { class: 'medical-history-icd-badge' }, icdObj.icd_code ?? ''),
+	      el('span', { class: 'medical-history-item-name' }, icdObj.disease_name ?? '')
+	    );
 
 	    container.appendChild(itemDiv);
 	  });

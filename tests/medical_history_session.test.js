@@ -46,8 +46,9 @@ function harness(cookie = true) {
     const shared = fs.readFileSync(base + 'medical-history-context.js', 'utf8')
         .replace(/export \{([\s\S]*?)\};/, 'window.historyContext = {$1};');
     vm.runInContext(`{ ${shared} }`, context);
+    runScriptFile('app/static/js/shared/dom.js', context);
     for (const file of ['medical-history-core', 'medical-history-suggestions', 'medical-history-allergy', 'safety-plan']) {
-        const source = fs.readFileSync(base + file + '.js', 'utf8').replace(
+        const source = fs.readFileSync(base + file + '.js', 'utf8').replace(/^import \{[^}]*\} from '\.\.\/shared\/dom\.js';\n/m, '').replace(
             /import \{([\s\S]*?)\} from '\.\/medical-history-context.js';/,
             (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = window.historyContext;`);
         vm.runInContext(`{ ${source} }`, context);

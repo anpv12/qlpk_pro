@@ -15,7 +15,10 @@ function setup() {
     };
     const window = { QLPKDoctorModuleRegistry: {get: name => modules[name], register: (name, api) => { modules[name] = api; }},
         PrescriptionTypeContract: {getLabel: value => value} };
-    vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/prescription-history-ui.js', 'utf8'), {window});
+    const { createWindow } = require('./helpers/fake-dom');
+    const { document } = createWindow({ html: '<div id="doctorPrescriptionHistoryList"></div><div id="doctorPrescriptionHistoryDetail"></div>' });
+    runScriptFile('app/static/js/doctor-examination/prescription-history-ui.js', vm.createContext({window, document}));
+    modules.prescriptionHistory.testDocument = document;
     return modules.prescriptionHistory;
 }
 
@@ -29,11 +32,8 @@ test('fully refunded visit stays visible and cannot become a reusable prescripti
 
 test('history renders unknown prices without silently converting them to zero and escapes data', () => {
     const api = setup();
-    const nodes = new Map();
-    const root = {querySelector: selector => {
-        if (!nodes.has(selector)) nodes.set(selector, {});
-        return nodes.get(selector);
-    }, querySelectorAll: () => []};
+    const root = api.testDocument;
+    const nodes = new Map([['#doctorPrescriptionHistoryDetail', root.getElementById('doctorPrescriptionHistoryDetail')]]);
     api.render({root, document: root, history: [{prescriptions: [], medicine_transactions: [
         {id: 2, type: 'return', quantity: 3, medicine_name: '<script>bad</script>', batch_number: 'N',
             price: 1000, sale_unit_price: null, sale_amount_delta: null, original_transaction_id: 1,
@@ -42,7 +42,7 @@ test('history renders unknown prices without silently converting them to zero an
     const html = nodes.get('#doctorPrescriptionHistoryDetail').innerHTML;
     assert.match(html, /Chưa rõ/);
     assert.match(html, /Thiếu truy vết/);
-    assert.match(html, /&lt;script>/);
+    assert.match(html, /&lt;script&gt;/);
     assert.doesNotMatch(html, /<script>/);
     assert.match(html, /disabled/);
     assert.match(html, /← #1/);

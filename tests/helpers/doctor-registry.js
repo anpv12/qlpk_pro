@@ -23,7 +23,7 @@ const MEDICINE_SEARCH_FILES = Object.freeze([
 
 function loadDoctorRegistry(files, windowProps = {}) {
   const window = { ...windowProps };
-  const context = vm.createContext({ window, document: {}, console });
+  const context = vm.createContext({ window, document: windowProps.document || {}, console });
   for (const file of files) runScriptFile(file, context);
   return window.QLPKDoctorModuleRegistry;
 }

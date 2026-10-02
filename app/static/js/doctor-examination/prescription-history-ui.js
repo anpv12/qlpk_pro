@@ -1,3 +1,5 @@
+import { el, replace } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -7,7 +9,7 @@
 	const TYPE_CONTRACT = window.PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 	if (!MODEL) throw new Error('Thiếu prescription model');
-	const { escapeHtml, formatCurrency, textOf, toNumber } = RUNTIME;
+	const { formatCurrency, textOf, toNumber } = RUNTIME;
 	const DEFAULT_DOM = {
 		panel: 'doctorPrescriptionHistoryPanel',
 		list: 'doctorPrescriptionHistoryList',
@@ -73,90 +75,120 @@
 		return TYPE_CONTRACT.getLabel(type);
 	}
 
+	const icon = name => el('i', { class: `bi ${name}`, 'aria-hidden': 'true' });
+
 	function buildVisitListItem(visit, index, selectedIndex) {
 		const record = visit.record || {};
 		const medicines = getVisitMedicines(visit);
 		const prescriptionCount = visit.prescriptions.length;
 		const diagnosis = record.diagnosis || record.main_reason || 'Chưa có chẩn đoán';
-		return `
-			<button type="button" class="doctor-prescription-history-modal__visit${index === selectedIndex ? ' is-selected' : ''}" data-prescription-history-action="select" data-prescription-history-index="${index}">
-				<span class="doctor-prescription-history-modal__visit-date"><i class="bi bi-calendar3" aria-hidden="true"></i>${escapeHtml(record.appointment_date || 'Không rõ ngày')}</span>
-				<span class="doctor-prescription-history-modal__visit-doctor"><i class="bi bi-person" aria-hidden="true"></i>${escapeHtml(record.doctor_name || 'Chưa rõ bác sĩ')}</span>
-				<span class="doctor-prescription-history-modal__visit-badges"><strong>${medicines.length} thuốc</strong><strong>${prescriptionCount} đơn</strong></span>
-				<span class="doctor-prescription-history-modal__visit-diagnosis"><i class="bi bi-activity" aria-hidden="true"></i>${escapeHtml(diagnosis)}</span>
-			</button>`;
+		return el('button', { type: 'button', class: `doctor-prescription-history-modal__visit${index === selectedIndex ? ' is-selected' : ''}`, 'data-prescription-history-action': 'select', 'data-prescription-history-index': index },
+			el('span', { class: 'doctor-prescription-history-modal__visit-date' }, icon('bi-calendar3'), record.appointment_date || 'Không rõ ngày'),
+			' ',
+			el('span', { class: 'doctor-prescription-history-modal__visit-doctor' }, icon('bi-person'), record.doctor_name || 'Chưa rõ bác sĩ'),
+			' ',
+			el('span', { class: 'doctor-prescription-history-modal__visit-badges' }, el('strong', null, `${medicines.length} thuốc`), el('strong', null, `${prescriptionCount} đơn`)),
+			' ',
+			el('span', { class: 'doctor-prescription-history-modal__visit-diagnosis' }, icon('bi-activity'), diagnosis)
+		);
 	}
 
 	function buildMedicineRow(medicine, index) {
 		const quantity = toNumber(medicine.quantity, 0);
 		const unitPrice = toNumber(medicine.unit_price, 0);
 		const source = medicine.is_external ? 'Ngoài phòng khám' : 'Trong kho';
-		return `
-			<tr>
-				<td>${index + 1}</td>
-				<td>
-					<strong>${escapeHtml(medicine.name || 'Thuốc chưa có tên')}</strong>
-					<span class="doctor-prescription-history-modal__medicine-meta">${escapeHtml(medicine.generic_name || 'Chưa có hoạt chất')}</span>
-				</td>
-				<td>${formatQuantity(quantity)}</td>
-				<td>${escapeHtml(medicine.unit || 'đơn vị')}</td>
-				<td>${escapeHtml(getUsageNote(medicine.usage, medicine))}</td>
-				<td>${formatCurrency(unitPrice)}</td>
-				<td>${formatCurrency(quantity * unitPrice)}</td>
-				<td><span class="doctor-prescription-history-modal__source">${escapeHtml(source)}</span></td>
-			</tr>`;
+		return el('tr', null,
+			el('td', null, index + 1),
+			el('td', null,
+				el('strong', null, medicine.name || 'Thuốc chưa có tên'),
+				' ',
+				el('span', { class: 'doctor-prescription-history-modal__medicine-meta' }, medicine.generic_name || 'Chưa có hoạt chất')
+			),
+			el('td', null, formatQuantity(quantity)),
+			el('td', null, medicine.unit || 'đơn vị'),
+			el('td', null, getUsageNote(medicine.usage, medicine)),
+			el('td', null, formatCurrency(unitPrice)),
+			el('td', null, formatCurrency(quantity * unitPrice)),
+			el('td', null, el('span', { class: 'doctor-prescription-history-modal__source' }, source))
+		);
 	}
+
+	const headerRow = labels => el('tr', null, labels.map(label => el('th', null, label)));
 
 	function buildPrescriptionTable(prescription) {
 		const medicines = Array.isArray(prescription.medicines) ? prescription.medicines : [];
-		return `
-			<section class="doctor-prescription-history-modal__prescription" aria-labelledby="doctorPrescriptionHistoryType-${escapeHtml(prescription.prescription_code || 'basic')}">
-				<header class="doctor-prescription-history-modal__prescription-header">
-					<strong id="doctorPrescriptionHistoryType-${escapeHtml(prescription.prescription_code || 'basic')}">${escapeHtml(getPrescriptionTypeLabel(prescription.prescription_type))}</strong>
-					<span>Mã đơn thuốc: <strong>${escapeHtml(prescription.prescription_code || 'Chưa cấp mã')}</strong></span>
-				</header>
-				<div class="doctor-prescription-history-modal__table-wrap" role="region" aria-label="Chi tiết thuốc lịch sử" tabindex="0">
-					<table class="doctor-prescription-history-modal__table">
-						<thead>
-							<tr><th>STT</th><th>Tên thuốc / hoạt chất</th><th>Số lượng</th><th>Đơn vị</th><th>Cách dùng</th><th>Đơn giá</th><th>Thành tiền</th><th>Nguồn</th></tr>
-						</thead>
-						<tbody>${medicines.map(buildMedicineRow).join('')}</tbody>
-					</table>
-				</div>
-				<div class="doctor-prescription-history-modal__prescription-total">Tổng đơn <strong>${formatCurrency(toNumber(prescription.total_amount, 0))}</strong></div>
-			</section>`;
+		const headingId = `doctorPrescriptionHistoryType-${prescription.prescription_code || 'basic'}`;
+		return el('section', { class: 'doctor-prescription-history-modal__prescription', 'aria-labelledby': headingId },
+			el('header', { class: 'doctor-prescription-history-modal__prescription-header' },
+				el('strong', { id: headingId }, getPrescriptionTypeLabel(prescription.prescription_type)),
+				' ',
+				el('span', null, 'Mã đơn thuốc: ', el('strong', null, prescription.prescription_code || 'Chưa cấp mã'))
+			),
+			el('div', { class: 'doctor-prescription-history-modal__table-wrap', role: 'region', 'aria-label': 'Chi tiết thuốc lịch sử', tabindex: '0' },
+				el('table', { class: 'doctor-prescription-history-modal__table' },
+					el('thead', null, headerRow(['STT', 'Tên thuốc / hoạt chất', 'Số lượng', 'Đơn vị', 'Cách dùng', 'Đơn giá', 'Thành tiền', 'Nguồn'])),
+					el('tbody', null, medicines.map(buildMedicineRow))
+				)
+			),
+			el('div', { class: 'doctor-prescription-history-modal__prescription-total' }, 'Tổng đơn ', el('strong', null, formatCurrency(toNumber(prescription.total_amount, 0))))
+		);
 	}
 
 	function buildDetail(visit, selectedIndex) {
 		const record = visit.record || {};
 		const medicalHistory = textOf(record.medical_history);
 		const diagnosis = record.diagnosis || record.main_reason || 'Chưa có chẩn đoán';
-		return `
-			<header class="doctor-prescription-history-modal__detail-header">
-				<div>
-					<span class="doctor-prescription-history-modal__detail-kicker"><i class="bi bi-calendar3" aria-hidden="true"></i>Ngày kê: ${escapeHtml(record.appointment_date || 'Không rõ ngày')}</span>
-					<h4 id="doctorPrescriptionHistoryDetailHeading">${escapeHtml(record.doctor_name || 'Chưa rõ bác sĩ')}</h4>
-					<p><i class="bi bi-activity" aria-hidden="true"></i>${escapeHtml(diagnosis)}</p>
-				</div>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" ${visit.prescriptions.length ? '' : 'disabled'} class="doctor-workspace-button doctor-workspace-button--primary" data-prescription-history-action="reuse" data-prescription-history-index="${selectedIndex}">
-					<i class="bi bi-copy" aria-hidden="true"></i><span>Áp dụng tất cả</span>
-				</button>
-			</header>
-			${medicalHistory ? `<div class="doctor-prescription-history-modal__context"><strong><i class="bi bi-journal-text" aria-hidden="true"></i>Bệnh sử</strong><p>${escapeHtml(medicalHistory)}</p></div>` : ''}
-			<div class="doctor-prescription-history-modal__prescriptions">${visit.prescriptions.map(buildPrescriptionTable).join('')}${buildLedgerTable(record.medicine_transactions)}</div>`;
+		return [
+			el('header', { class: 'doctor-prescription-history-modal__detail-header' },
+				el('div', null,
+					el('span', { class: 'doctor-prescription-history-modal__detail-kicker' }, icon('bi-calendar3'), `Ngày kê: ${record.appointment_date || 'Không rõ ngày'}`),
+					el('h4', { id: 'doctorPrescriptionHistoryDetailHeading' }, record.doctor_name || 'Chưa rõ bác sĩ'),
+					el('p', null, icon('bi-activity'), diagnosis)
+				),
+				el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', disabled: !visit.prescriptions.length, class: 'doctor-workspace-button doctor-workspace-button--primary', 'data-prescription-history-action': 'reuse', 'data-prescription-history-index': selectedIndex },
+					icon('bi-copy'), el('span', null, 'Áp dụng tất cả'))
+			),
+			medicalHistory ? el('div', { class: 'doctor-prescription-history-modal__context' },
+				el('strong', null, icon('bi-journal-text'), 'Bệnh sử'), el('p', null, medicalHistory)) : null,
+			el('div', { class: 'doctor-prescription-history-modal__prescriptions' },
+				visit.prescriptions.map(buildPrescriptionTable), buildLedgerTable(record.medicine_transactions))
+		];
+	}
+
+	function buildLedgerRow(row, labels) {
+		const money = value => value == null ? 'Chưa rõ' : formatCurrency(value);
+		const balance = (value, unit) => value == null ? 'Chưa rõ' : `${value} ${unit || ''}`;
+		const original = row.original_transaction_id ? ` ← #${row.original_transaction_id}` : '';
+		return el('tr', null,
+			el('td', null, row.created_at || '', el('br'), `${labels[row.type] || row.type} #${row.id}${original}`),
+			el('td', null, row.medicine_name || '', row.financial_trace_complete ? null : [el('br'), 'Thiếu truy vết']),
+			el('td', null, `${row.receipt_reference || 'Chưa rõ'} / ${row.batch_number || 'Chưa rõ'}`),
+			el('td', null, String(row.quantity)),
+			el('td', null, balance(row.balance_after, row.unit)),
+			el('td', null, balance(row.stock_balance_after, row.unit)),
+			el('td', null, money(row.unit_cost_snapshot)),
+			el('td', null, money(row.sale_unit_price)),
+			el('td', null, money(row.sale_amount_delta))
+		);
 	}
 
 	function buildLedgerTable(transactions) {
-		if (!transactions?.length) return '<p>Chưa có chứng từ cấp/hoàn thuốc; không suy lô hoặc giá từ danh mục.</p>';
-		const money = value => value == null ? 'Chưa rõ' : escapeHtml(formatCurrency(value));
-		const balance = (value, unit) => value == null ? 'Chưa rõ' : escapeHtml(`${value} ${unit || ''}`);
+		if (!transactions?.length) return el('p', null, 'Chưa có chứng từ cấp/hoàn thuốc; không suy lô hoặc giá từ danh mục.');
 		const labels = { export: 'Cấp', return: 'Hoàn', import: 'Hoàn (cũ)', price_adjustment: 'Đổi giá' };
-		return `<section><h5>Giao dịch thuốc đã ghi nhận</h5><p>Giá nhập/bán chốt theo giao dịch; không phải tiền thực thu. Dòng đổi giá không đổi tồn kho.</p>
-			<div class="doctor-prescription-history-modal__table-wrap" role="region" aria-label="Giao dịch thuốc theo lô" tabindex="0">
-			<table class="table table-sm"><thead><tr><th>Thời điểm / loại</th><th>Thuốc</th><th>Lần nhập / lô</th><th>SL kho (+ hoàn / − cấp)</th><th>Tồn lô sau giao dịch</th><th>Tồn tổng sau giao dịch</th><th>Giá nhập</th><th>Giá bán</th><th>Tiền tăng/giảm</th></tr></thead><tbody>
-			${transactions.map(row => `<tr><td>${escapeHtml(row.created_at || '')}<br>${escapeHtml(labels[row.type] || row.type)} #${escapeHtml(String(row.id))}${row.original_transaction_id ? ` ← #${escapeHtml(String(row.original_transaction_id))}` : ''}</td><td>${escapeHtml(row.medicine_name || '')}${row.financial_trace_complete ? '' : '<br>Thiếu truy vết'}</td><td>${escapeHtml(row.receipt_reference || 'Chưa rõ')} / ${escapeHtml(row.batch_number || 'Chưa rõ')}</td><td>${escapeHtml(String(row.quantity))}</td><td>${balance(row.balance_after, row.unit)}</td><td>${balance(row.stock_balance_after, row.unit)}</td><td>${money(row.unit_cost_snapshot)}</td><td>${money(row.sale_unit_price)}</td><td>${money(row.sale_amount_delta)}</td></tr>`).join('')}
-			</tbody></table></div></section>`;
+		return el('section', null,
+			el('h5', null, 'Giao dịch thuốc đã ghi nhận'),
+			el('p', null, 'Giá nhập/bán chốt theo giao dịch; không phải tiền thực thu. Dòng đổi giá không đổi tồn kho.'),
+			el('div', { class: 'doctor-prescription-history-modal__table-wrap', role: 'region', 'aria-label': 'Giao dịch thuốc theo lô', tabindex: '0' },
+				el('table', { class: 'table table-sm' },
+					el('thead', null, headerRow(['Thời điểm / loại', 'Thuốc', 'Lần nhập / lô', 'SL kho (+ hoàn / − cấp)', 'Tồn lô sau giao dịch', 'Tồn tổng sau giao dịch', 'Giá nhập', 'Giá bán', 'Tiền tăng/giảm'])),
+					el('tbody', null, transactions.map(row => buildLedgerRow(row, labels)))
+				)
+			)
+		);
 	}
+
+	const emptyState = modifier => el('div', { class: `doctor-prescription-history-modal__empty${modifier}` },
+		icon('bi-journal-medical'), el('strong', null, 'Chưa có đơn trước'), el('span', null, 'Đơn đang kê nằm ở khu vực đơn thuốc.'));
 
 	function setPanel(options = {}) {
 		const doc = options.document || document;
@@ -196,12 +228,12 @@
 
 		if (count) count.textContent = `${visits.length} đơn`;
 		if (patient && options.patientName) patient.textContent = `Các đơn thuốc trước của ${options.patientName}`;
-		if (list) list.innerHTML = visits.length
-			? visits.map((visit, index) => buildVisitListItem(visit, index, selectedIndex)).join('')
-			: `<div class="doctor-prescription-history-modal__empty doctor-prescription-history-modal__empty--list"><i class="bi bi-journal-medical" aria-hidden="true"></i><strong>Chưa có đơn trước</strong><span>Đơn đang kê nằm ở khu vực đơn thuốc.</span></div>`;
-		if (detail) detail.innerHTML = visits.length
+		if (list) replace(list, visits.length
+			? visits.map((visit, index) => buildVisitListItem(visit, index, selectedIndex))
+			: emptyState(' doctor-prescription-history-modal__empty--list'));
+		if (detail) replace(detail, visits.length
 			? buildDetail(visits[selectedIndex], selectedIndex)
-			: `<div class="doctor-prescription-history-modal__empty"><i class="bi bi-journal-medical" aria-hidden="true"></i><strong>Chưa có đơn trước</strong><span>Đơn đang kê nằm ở khu vực đơn thuốc.</span></div>`;
+			: emptyState(''));
 		return { visits, selectedIndex };
 	}
 

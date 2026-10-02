@@ -1,9 +1,11 @@
+import { el, replace } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
 	if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
-	const { escapeHtml, escapeAttr, formatCurrency } = REGISTRY.require('supportRuntime');
+	const { formatCurrency } = REGISTRY.require('supportRuntime');
 	const { normalizePrescriptionType } = REGISTRY.require('prescriptionModel');
 
 	const DROPDOWN_ID = 'doctorMedicineDropdown';
@@ -101,14 +103,13 @@
 			const rxLabel = ({ H: 'Đơn hướng thần (H)', N: 'Đơn gây nghiện (N)' })[rxType] || '';
 			const rxClass = rxLabel ? ` doctor-support-dropdown__item--rx-${rxType.toLowerCase()}` : '';
 			const rxFlag = rxLabel
-				? `<span class="doctor-support-dropdown__flag" title="${escapeAttr(rxLabel)}" aria-label="${escapeAttr(rxLabel)}">${escapeHtml(rxType)}</span>`
-				: '';
-			return `
-				<button type="button" id="doctorMedicineOption-${escapeAttr(row.uid)}-${index}" class="doctor-support-dropdown__item${rxClass}" data-medicine-select="${escapeAttr(optionKey)}" role="option" aria-selected="false">
-					<span class="doctor-support-dropdown__title">${rxFlag}${escapeHtml(medicine.name)}</span>
-					<span class="doctor-support-dropdown__meta">${escapeHtml([medicine.strength, medicine.unit, `Tồn kho ${medicine.stock_quantity ?? 0}`, formatCurrency(medicine.unit_price)].filter(Boolean).join(' · '))}</span>
-				</button>
-			`;
+				? el('span', { class: 'doctor-support-dropdown__flag', title: rxLabel, 'aria-label': rxLabel }, rxType)
+				: null;
+			return el('button', { type: 'button', id: `doctorMedicineOption-${row.uid}-${index}`, class: `doctor-support-dropdown__item${rxClass}`, 'data-medicine-select': optionKey, role: 'option', 'aria-selected': 'false' },
+				el('span', { class: 'doctor-support-dropdown__title' }, rxFlag, medicine.name ?? ''),
+				' ',
+				el('span', { class: 'doctor-support-dropdown__meta' }, [medicine.strength, medicine.unit, `Tồn kho ${medicine.stock_quantity ?? 0}`, formatCurrency(medicine.unit_price)].filter(Boolean).join(' · '))
+			);
 		}
 
 		function render(doc, input, row, medicines) {
@@ -119,12 +120,12 @@
 			input?.removeAttribute('aria-busy');
 			ctx.setInputState(input, true);
 			if (!Array.isArray(medicines) || !medicines.length) {
-				dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Không tìm thấy thuốc trong kho</div>';
+				replace(dropdown, el('div', { class: 'doctor-support-dropdown__empty' }, 'Không tìm thấy thuốc trong kho'));
 				dropdown.hidden = false;
 				ctx.position(doc);
 				return;
 			}
-			dropdown.innerHTML = medicines.map((medicine, index) => buildOption(row, medicine, index)).join('');
+			replace(dropdown, medicines.map((medicine, index) => buildOption(row, medicine, index)));
 			dropdown.hidden = false;
 			ctx.position(doc);
 		}
@@ -144,7 +145,7 @@
 			ctx.state.activeIndex = -1;
 			input.setAttribute('aria-busy', 'true');
 			ctx.setInputState(input, true);
-			dropdown.innerHTML = '<div class="doctor-support-dropdown__empty">Đang tải danh sách thuốc...</div>';
+			replace(dropdown, el('div', { class: 'doctor-support-dropdown__empty' }, 'Đang tải danh sách thuốc...'));
 			dropdown.hidden = false;
 			ctx.position(doc);
 			ctx.state.timer = window.setTimeout(async () => {
