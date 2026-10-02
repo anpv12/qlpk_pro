@@ -60,12 +60,13 @@ test('old payloads, malformed quantities and inventory reconciliation keep exact
 function feedbackHarness() {
     const timers = [];
     const listeners = {};
-    const classes = new Set();
-    const host = { innerHTML: '', replaceChildren() { this.innerHTML = ''; }, classList: { toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name) },
-        querySelector: () => ({ addEventListener: (name, callback) => { listeners[name] = callback; } }) };
-    const document = { getElementById: name => name === 'qlpkWorkspaceToastHost' ? host : null };
+    const { document } = require('./helpers/fake-dom').createWindow({ html: '<div id="qlpkWorkspaceToastHost"></div>' });
+    const host = document.getElementById('qlpkWorkspaceToastHost');
+    const classes = { get size() { return host.classList.contains('qlpk-workspace-toast-host--detailed') ? 1 : 0; } };
     const window = { document, setTimeout: (callback, duration) => { timers.push(duration); return timers.length; }, clearTimeout: () => {} };
     vm.runInNewContext(fs.readFileSync('app/static/js/shared/user-feedback.js', 'utf8'), { window, document });
+    const close = () => host.querySelector('.qlpk-toast__close');
+    listeners.click = () => close().dispatchEvent(new (require('./helpers/fake-dom').Event)('click'));
     return { feedback: window.QLPKUserFeedback, host, classes, listeners, timers };
 }
 

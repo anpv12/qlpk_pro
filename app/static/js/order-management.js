@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 import { state } from './orders/order-management-state.js';
 import { checkSurveyStatusUpdate } from './orders/order-management-survey-level.js';
 import { loadOrderDetail } from './orders/order-management-detail.js';
@@ -152,7 +153,7 @@ function formatDateOnly(dateString) {
 // Get status badge HTML
 function getStatusBadge(status) {
     const config = window.ClinicalOrderStatusUtils.getOrderStatusConfig(status);
-    return `<span class="qlpk-status status-pill ${config.className} ${escapeHtml(status)}">${escapeHtml(config.label)}</span>`;
+    return el('span', { class: `qlpk-status status-pill ${config.className} ${status ?? ''}` }, config.label ?? '');
 }
 
 function buildOrdersQuery() {
@@ -225,51 +226,39 @@ function renderOrdersTable(orders) {
 	if (!tbody) return;
 
 	if (orders.length === 0) {
-		tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center py-4 text-navy">
-                    <i class="bi bi-inbox om-empty-icon"></i>
-                    <p class="mt-2 mb-0">Chưa có chỉ định nào</p>
-                </td>
-            </tr>
-        `;
+		replace(tbody, el('tr', null,
+			el('td', { colspan: '7', class: 'text-center py-4 text-navy' },
+				el('i', { class: 'bi bi-inbox om-empty-icon' }),
+				el('p', { class: 'mt-2 mb-0' }, 'Chưa có chỉ định nào'))));
 		return;
 	}
 
-	tbody.innerHTML = orders.map((order, index) => {
+	const icons = window.QLPKIconSystem;
+	replace(tbody, orders.map((order, index) => {
 		const patient = order.patient || {};
 		const doctor = order.doctor || {};
-
-		const patientName = patient.full_name || '—';
-		const patientPhone = patient.phone || 'Chưa có';
-		const orderName = order.order_name || '—';
-		const doctorName = doctor.full_name || doctor.name || '—';
-		const createdDate = formatDisplayDate(order.created_at);
-		const statusBadge = getStatusBadge(order.status);
 		const orderId = order.id;
-
-		return `
-            <tr data-order-id="${orderId}">
-                <td>${(state.currentPage - 1) * perPage + index + 1}</td>
-                <td>
-                    <div class="fw-semibold">
-                        <a href="#" class="text-decoration-none order-detail-link" data-order-id="${orderId}">${escapeHtml(patientName)}</a>
-                    </div>
-                    <small class="text-navy">SĐT: ${escapeHtml(patientPhone)}</small>
-                </td>
-                <td>${escapeHtml(orderName)}</td>
-                <td>${escapeHtml(doctorName)}</td>
-                <td>${createdDate}</td>
-                <td>${statusBadge}</td>
-                <td>
-                    <div class="om-actions">
-                        ${window.QLPKIconSystem.renderActionButton({ action: 'edit', label: 'Chi tiết chỉ định', className: 'order-detail-btn', attrs: { 'data-order-id': orderId } })}
-                        ${window.QLPKIconSystem.renderActionButton({ action: 'delete', label: 'Xóa chỉ định', className: 'order-delete-btn', attrs: { 'data-order-id': orderId } })}
-                    </div>
-                </td>
-            </tr>
-        `;
-	}).join('');
+		return el('tr', { 'data-order-id': orderId },
+			el('td', null, (state.currentPage - 1) * perPage + index + 1),
+			el('td', null,
+				el('div', { class: 'fw-semibold' },
+					el('a', { href: '#', class: 'text-decoration-none order-detail-link', 'data-order-id': orderId }, patient.full_name || '—')),
+				' ',
+				el('small', { class: 'text-navy' }, `SĐT: ${patient.phone || 'Chưa có'}`)
+			),
+			el('td', null, order.order_name || '—'),
+			el('td', null, doctor.full_name || doctor.name || '—'),
+			el('td', null, formatDisplayDate(order.created_at)),
+			el('td', null, getStatusBadge(order.status)),
+			el('td', null,
+				el('div', { class: 'om-actions' },
+					icons.createActionButton({ action: 'edit', label: 'Chi tiết chỉ định', className: 'order-detail-btn', attrs: { 'data-order-id': orderId } }),
+					' ',
+					icons.createActionButton({ action: 'delete', label: 'Xóa chỉ định', className: 'order-delete-btn', attrs: { 'data-order-id': orderId } })
+				)
+			)
+		);
+	}));
 
 	// Update total count in header
 	const headerCount = document.querySelector('.order-card h4');
@@ -283,18 +272,6 @@ function renderOrdersTable(orders) {
 
 	// Attach event listeners
 	attachTableEventListeners();
-}
-
-// Escape HTML
-function escapeHtml(text) {
-	if (!text) return '';
-	const div = document.createElement('div');
-	div.textContent = text;
-	return div.innerHTML;
-}
-
-function attrJson(values) {
-	return JSON.stringify(values).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 // Attach event listeners to table
@@ -348,14 +325,13 @@ function updateSelectAllCheckbox() {
 function updateSelectedCount() {
 	const footer = document.querySelector('.order-card__footer');
 	if (footer) {
-		footer.innerHTML = `
-            <span>${totalOrders} chỉ định / ${totalPages} trang</span>
-            ${totalPages > 1 ? `<nav class="d-flex align-items-center gap-2" aria-label="Phân trang chỉ định">
-                <button type="button" class="om-button om-button--secondary" id="ordersPrevPage" ${state.currentPage === 1 ? 'disabled' : ''}>Trước</button>
-                <label class="d-flex align-items-center gap-2">Trang <input id="ordersPageNumber" class="form-control form-control-sm om-page-number" type="number" min="1" max="${totalPages}" value="${state.currentPage}"></label>
-                <button type="button" class="om-button om-button--secondary" id="ordersNextPage" ${state.currentPage === totalPages ? 'disabled' : ''}>Sau</button>
-            </nav>` : ''}
-        `;
+		const pager = totalPages > 1 ? el('nav', { class: 'd-flex align-items-center gap-2', 'aria-label': 'Phân trang chỉ định' },
+			el('button', { type: 'button', class: 'om-button om-button--secondary', id: 'ordersPrevPage', disabled: state.currentPage === 1 }, 'Trước'),
+			el('label', { class: 'd-flex align-items-center gap-2' }, 'Trang ',
+				el('input', { id: 'ordersPageNumber', class: 'form-control form-control-sm om-page-number', type: 'number', min: '1', max: totalPages, defaultValue: state.currentPage })),
+			el('button', { type: 'button', class: 'om-button om-button--secondary', id: 'ordersNextPage', disabled: state.currentPage === totalPages }, 'Sau')
+		) : null;
+		replace(footer, el('span', null, `${totalOrders} chỉ định / ${totalPages} trang`), pager);
 		const go = value => {
 			const page = Number(value);
 			if (!Number.isInteger(page) || page < 1 || page > totalPages) {
@@ -371,7 +347,7 @@ function updateSelectedCount() {
 	}
 }
 
-export { FILTER_INPUT_DEBOUNCE_MS, RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, attrJson, escapeHtml, filterState, formatDateOnly, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast, updateSelectedCount };
+export { FILTER_INPUT_DEBOUNCE_MS, RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, filterState, formatDateOnly, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast, updateSelectedCount };
 
 // Entry evaluates after every slice it imports; start after DOMContentLoaded so classic page helpers
 // (datepicker-init sets the default date range on that event) are ready first.

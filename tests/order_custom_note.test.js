@@ -21,6 +21,7 @@ function setup(note = '') {
             }
         },
         updateOrderNote: async (...args) => { calls.push(args); },
+        el: () => ({}),
     });
     vm.runInContext(noteSource, context);
     context.renderCustomOrderNote(order);

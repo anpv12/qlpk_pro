@@ -139,7 +139,9 @@ async function mountHeader() {
 		const html = await response.text();
 		const host = document.createElement('div');
 		host.className = moduleState.HEADER_CONTAINER_CLASS;
-		host.innerHTML = html;
+		// The header is a same-origin static component file (not data); parsed once into nodes.
+		const parsed = new DOMParser().parseFromString(html, 'text/html');
+		host.append(...parsed.body.childNodes);
 		target.insertBefore(host, target.firstChild);
 		document.body.classList.add('qlpk-has-app-header');
 		await ensureWorkspaceRuntime();

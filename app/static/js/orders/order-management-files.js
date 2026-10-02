@@ -1,5 +1,6 @@
+import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
-import { RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, escapeHtml, formatDateOnly, showConfirmDialog, showCustomToast } from '../order-management.js';
+import { RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, formatDateOnly, showConfirmDialog, showCustomToast } from '../order-management.js';
 import { loadOrderDetail } from './order-management-detail.js';
 
 // Render result files
@@ -14,31 +15,32 @@ function renderResultFiles(files) {
 	if (!listContainer) return;
 
 	if (files.length === 0) {
-		listContainer.innerHTML = '<div class="om-file-empty">Chưa có file đính kèm</div>';
+		replace(listContainer, el('div', { class: 'om-file-empty' }, 'Chưa có file đính kèm'));
 	} else {
+		const icons = window.QLPKIconSystem;
 		const filesList = files.map(file => {
             const ext = (file.original_filename || file.filename || '').split('.').pop().toUpperCase();
             let badgeClass = 'qlpk-status--neutral';
             if (ext === 'PDF') badgeClass = 'qlpk-status--error';
             if (ext === 'DOC' || ext === 'DOCX') badgeClass = 'bg-primary bg-opacity-25 text-dark';
             if (ext === 'JPG' || ext === 'PNG') badgeClass = 'qlpk-status--success';
-
-            return `
-            <li class="om-file-row">
-                <span class="fw-semibold text-dark om-file-name">${escapeHtml(file.original_filename || file.filename)}</span>
-                <div class="om-file-meta">
-                    <span class="badge ${badgeClass} border om-file-type-badge">${escapeHtml(ext)}</span>
-                    <span>Ngày tải: ${formatDateOnly(file.created_at)}</span>
-                    <div class="om-actions">
-                        ${window.QLPKIconSystem.renderActionButton({ action: 'download', label: 'Tải xuống', className: 'result-file-download', attrs: { 'data-file-id': file.id } })}
-                        ${window.QLPKIconSystem.renderActionButton({ action: 'delete', label: 'Xóa file', className: 'result-file-delete', attrs: { 'data-file-id': file.id } })}
-                    </div>
-                </div>
-            </li>
-            `;
-        }).join('');
-
-        listContainer.innerHTML = `<ul class="om-file-list" aria-label="File kết quả đính kèm">${filesList}</ul>`;
+            return el('li', { class: 'om-file-row' },
+                el('span', { class: 'fw-semibold text-dark om-file-name' }, file.original_filename || file.filename || ''),
+                ' ',
+                el('div', { class: 'om-file-meta' },
+                    el('span', { class: `badge ${badgeClass} border om-file-type-badge` }, ext),
+                    ' ',
+                    el('span', null, `Ngày tải: ${formatDateOnly(file.created_at)}`),
+                    ' ',
+                    el('div', { class: 'om-actions' },
+                        icons.createActionButton({ action: 'download', label: 'Tải xuống', className: 'result-file-download', attrs: { 'data-file-id': file.id } }),
+                        ' ',
+                        icons.createActionButton({ action: 'delete', label: 'Xóa file', className: 'result-file-delete', attrs: { 'data-file-id': file.id } })
+                    )
+                )
+            );
+        });
+        replace(listContainer, el('ul', { class: 'om-file-list', 'aria-label': 'File kết quả đính kèm' }, filesList));
 	}
 
     // Attach event listeners for the static upload area

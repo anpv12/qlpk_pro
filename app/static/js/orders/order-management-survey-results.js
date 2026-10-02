@@ -1,4 +1,4 @@
-import { attrJson, escapeHtml } from '../order-management.js';
+import { el } from '../shared/dom.js';
 import { surveyResultSummary } from '../shared/survey-result-summary.js';
 
 function resolveSurveyAnswerText(question, answerValue) {
@@ -101,44 +101,35 @@ function renderSurveyResultsByCriteria(template, response) {
 	const allCriteria = Object.keys(template.questions_by_criteria || {});
 
 	if (allCriteria.length === 0) {
-		return '<div class="text-navy p-3">Không có tiêu chí nào trong mẫu khảo sát</div>';
+		return el('div', { class: 'text-navy p-3' }, 'Không có tiêu chí nào trong mẫu khảo sát');
 	}
 
-	let html = '';
-
 	// Render each criteria dynamically
-	allCriteria.forEach(criteriaName => {
+	return allCriteria.map(criteriaName => {
 		const answers = summary.criteria[criteriaName] || [];
 		const score = summary.scores[criteriaName] ?? 'Chưa tính được';
 
 		// Normalize criteria name for use as key (for saving levels)
-		// Use criteria name as-is, but sanitize for HTML id
 		const criteriaKey = criteriaName.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_');
+		const inputId = `level-input-${criteriaKey}-${response.id}`;
 
-		// Format title: uppercase and add prefix if needed
-		const title = criteriaName.toUpperCase();
-
-        html += `
-            <div class="survey-criteria-section">
-                <div class="criteria-header">${escapeHtml(title)}</div>
-                <div class="criteria-left">
-                    ${answers.length > 0 ? answers.map(answer => `<div class="symptom-item">• ${escapeHtml(answer.summarized)}</div>`).join('') : '<div class="text-navy">Chưa có câu trả lời ghép được với nhóm này</div>'}
-                </div>
-                <div class="score-display" title="Tổng số điểm ghi nhận">
-                    <span class="score-label">Tổng số điểm ghi nhận:</span><span class="score-value">${score}</span>
-                </div>
-                <div class="level-display">
-                    <label class="level-label" for="level-input-${criteriaKey}-${response.id}">Mức độ ghi nhận:</label>
-                    <input type="text" class="form-control form-control-sm level-input" placeholder="Nhập mức độ"
-                        data-criteria="${escapeHtml(criteriaName)}" data-criteria-key="${criteriaKey}"
-                        id="level-input-${criteriaKey}-${response.id}"
-                        data-qlpk-call="saveSurveyLevelForOrder" data-qlpk-args="${attrJson([criteriaName, String(response.examination_id), '$this'])}" data-qlpk-on="change"
-                        data-qlpk-call="updateLevelInputAlignment" data-qlpk-args='["$this"]' data-qlpk-on="input">
-                </div>
-            </div>`;
+		return el('div', { class: 'survey-criteria-section' },
+			el('div', { class: 'criteria-header' }, criteriaName.toUpperCase()),
+			el('div', { class: 'criteria-left' },
+				answers.length > 0
+					? answers.map(answer => el('div', { class: 'symptom-item' }, `• ${answer.summarized ?? ''}`))
+					: el('div', { class: 'text-navy' }, 'Chưa có câu trả lời ghép được với nhóm này')),
+			el('div', { class: 'score-display', title: 'Tổng số điểm ghi nhận' },
+				el('span', { class: 'score-label' }, 'Tổng số điểm ghi nhận:'), el('span', { class: 'score-value' }, score)),
+			el('div', { class: 'level-display' },
+				el('label', { class: 'level-label', for: inputId }, 'Mức độ ghi nhận:'),
+				' ',
+				// Saved through the inline-action registry on change (one handler per element, as the markup had).
+				el('input', { type: 'text', class: 'form-control form-control-sm level-input', placeholder: 'Nhập mức độ',
+					'data-criteria': criteriaName, 'data-criteria-key': criteriaKey, id: inputId,
+					'data-qlpk-call': 'saveSurveyLevelForOrder', 'data-qlpk-args': JSON.stringify([criteriaName, String(response.examination_id), '$this']), 'data-qlpk-on': 'change' }))
+		);
 	});
-
-	return html;
 }
 
 // Render single survey result card (ONLY the "Kết quả khảo sát" card, no header)
@@ -149,18 +140,12 @@ async function renderSingleSurveyResultCard(template, response) {
 
 	// Only render if we have completed survey
 	if (!completedAt || !template.questions_by_criteria) {
-		return '';
+		return null;
 	}
 
-	// Render survey results by criteria (new format matching mockup)
-	const criteriaResultsHtml = renderSurveyResultsByCriteria(template, response);
-
-    return `
-        <div class="survey-result-card">
-            ${surveyResultSummary(response.result_summary)?.outerHTML || ''}
-            ${criteriaResultsHtml}
-        </div>
-    `;
+	return el('div', { class: 'survey-result-card' },
+		surveyResultSummary(response.result_summary),
+		renderSurveyResultsByCriteria(template, response));
 }
 
 export { renderSingleSurveyResultCard };

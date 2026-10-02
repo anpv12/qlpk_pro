@@ -1,3 +1,4 @@
+import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
 import { FILTER_INPUT_DEBOUNCE_MS, apiCall, filterState, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast } from '../order-management.js';
 
@@ -16,19 +17,21 @@ function timelineStepDetail(order, value, timestamps) {
 
 function renderTimeline(order) {
     const statusBadge = document.getElementById('orderSurveyStatus');
-    if (statusBadge) statusBadge.innerHTML = getStatusBadge(order.status);
+    if (statusBadge) replace(statusBadge, getStatusBadge(order.status));
     const target = document.querySelector('#orderDetailModal .timeline');
     if (!target) return;
     const states = order.survey_template_id ? ['sent', 'survey_sent', 'has_result', 'completed'] : ['sent', 'completed'];
     const current = states.indexOf(order.status);
     const timestamps = {sent: order.created_at, survey_sent: order.survey_sent_at, has_result: order.result_at, completed: order.completed_at};
-    target.innerHTML = states.map((value, index) => {
+    replace(target, states.map((value, index) => {
         const label = window.ClinicalOrderStatusUtils.getOrderStatusConfig(value).label;
         const reached = index === current && value !== 'completed' ? 'active' : 'done';
-        const state = timestamps[value] ? reached : 'pending';
+        const step = timestamps[value] ? reached : 'pending';
         const detail = timelineStepDetail(order, value, timestamps);
-        return `<div class="timeline-item ${state}"><div class="fw-semibold om-timeline-step-title">${label}</div>${detail ? `<div class="om-timeline-step-sub">${detail}</div>` : ''}</div>`;
-    }).join('');
+        return el('div', { class: `timeline-item ${step}` },
+            el('div', { class: 'fw-semibold om-timeline-step-title' }, label),
+            detail ? el('div', { class: 'om-timeline-step-sub' }, detail) : null);
+    }));
 }
 
 async function refreshCurrentOrderStatus() {

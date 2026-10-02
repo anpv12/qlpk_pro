@@ -40,15 +40,6 @@
 		return TYPES.has(type) ? type : 'info';
 	}
 
-	function escapeHtml(value) {
-		return String(value == null ? '' : value)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
-	}
-
 	function getHostWindow(options = {}) {
 		const currentWindow = options.window || window;
 		const candidates = [currentWindow];
@@ -93,7 +84,7 @@
 		host.classList.toggle('qlpk-workspace-toast-host--detailed', Boolean(structured));
 		positionHost(host, hostWindow);
 		hostWindow.setTimeout(() => positionHost(host, hostWindow), 250);
-		host.innerHTML = buildToastHtml(toastType, structured, message, text);
+		host.replaceChildren(buildToast(hostWindow.document, toastType, structured, message, text));
 
 		hostWindow.clearTimeout(host._qlpkToastTimer);
 		hostWindow.clearTimeout(host._qlpkToastHideTimer);
@@ -111,19 +102,37 @@
 			: String(message || '').trim();
 	}
 
-	function buildToastHtml(toastType, structured, message, text) {
-		return `
-			<div class="qlpk-workspace-toast qlpk-toast qlpk-toast--${toastType}${structured ? ' qlpk-toast--detailed' : ''}" role="status" aria-live="polite">
-				<span class="qlpk-toast__icon" aria-hidden="true"><i class="bi ${ICONS[toastType]}"></i></span>
-				${structured ? `<div class="qlpk-toast__content">
-					<strong class="qlpk-toast__heading">${escapeHtml(message.title)}</strong>
-					<div><strong>${escapeHtml(message.label || '')}</strong> <strong class="qlpk-toast__emphasis">${escapeHtml(message.emphasis || '')}</strong></div>
-					${message.detail ? `<div>${escapeHtml(message.detail)}</div>` : ''}
-					<div class="qlpk-toast__guidance">${escapeHtml(message.guidance || '')}</div>
-				</div><button type="button" class="qlpk-toast__close" aria-label="Đóng thông báo">×</button>`
-				: `<span class="qlpk-toast__title" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`}
-			</div>
-		`;
+	function buildToast(documentRef, toastType, structured, message, text) {
+		const node = (tag, className, value) => {
+			const element = documentRef.createElement(tag);
+			if (className) element.className = className;
+			if (value !== undefined) element.textContent = value;
+			return element;
+		};
+		const toast = node('div', `qlpk-workspace-toast qlpk-toast qlpk-toast--${toastType}${structured ? ' qlpk-toast--detailed' : ''}`);
+		toast.setAttribute('role', 'status');
+		toast.setAttribute('aria-live', 'polite');
+		const iconHost = node('span', 'qlpk-toast__icon');
+		iconHost.setAttribute('aria-hidden', 'true');
+		iconHost.append(node('i', `bi ${ICONS[toastType]}`));
+		toast.append(iconHost);
+		if (!structured) {
+			const title = node('span', 'qlpk-toast__title', text);
+			title.setAttribute('title', text);
+			toast.append(title);
+			return toast;
+		}
+		const content = node('div', 'qlpk-toast__content');
+		const summary = node('div');
+		summary.append(node('strong', '', message.label || ''), ' ', node('strong', 'qlpk-toast__emphasis', message.emphasis || ''));
+		content.append(node('strong', 'qlpk-toast__heading', message.title ?? ''), summary);
+		if (message.detail) content.append(node('div', '', message.detail));
+		content.append(node('div', 'qlpk-toast__guidance', message.guidance || ''));
+		const close = node('button', 'qlpk-toast__close', '×');
+		close.type = 'button';
+		close.setAttribute('aria-label', 'Đóng thông báo');
+		toast.append(content, close);
+		return toast;
 	}
 
 	function ensureToastHost(documentRef) {

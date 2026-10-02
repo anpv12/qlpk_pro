@@ -159,7 +159,7 @@ def test_clinical_order_scope_and_validation_contract() -> None:
     assert "MAX_FILE_SIZE = 25 * 1024 * 1024" in result_files
     assert "def _safe_result_path" in result_files
     assert "_get_accessible_examination" in survey_sessions
-    assert "om-survey-helper-text\">Mẫu: ${escapeHtml(linkedTemplate.name" in order_management
+    assert "el('p', { class: 'om-survey-helper-text' }, `Mẫu: ${linkedTemplate.name" in order_management
     assert "if (!indicationTemplateId) {\n\t\trenderCustomOrderNote(state.currentOrderDetail);" in order_management
     assert "/api/survey-templates/active/public" not in order_management
     assert "surveyTemplateSelectResults.addEventListener('change'" not in order_management

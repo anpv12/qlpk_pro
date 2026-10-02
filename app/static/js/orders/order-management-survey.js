@@ -1,25 +1,23 @@
+import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
-import { apiCall, escapeHtml, formatDisplayDate, getStatusBadge, loadOrders, showConfirmDialog, showCustomToast } from '../order-management.js';
+import { apiCall, formatDisplayDate, getStatusBadge, loadOrders, showConfirmDialog, showCustomToast } from '../order-management.js';
 import { copySurveyLink, loadSavedSurveyLevels } from './order-management-survey-level.js';
 import { loadOrderSurvey } from './order-management-detail.js';
 import { refreshCurrentOrderStatus } from './order-management-actions.js';
 import { renderSingleSurveyResultCard } from './order-management-survey-results.js';
 
 // Render the survey section
-function renderOrderSurveyContent(html, qrCode = '') {
+function renderOrderSurveyContent(content, qrCode = '') {
     const qr = document.getElementById('orderProgressQR');
     qr.hidden = !qrCode;
-    qr.innerHTML = qrCode ? `<img src="${escapeHtml(qrCode)}" alt="Mã QR mở link khảo sát" class="om-survey-qr">` : '';
+    replace(qr, qrCode ? el('img', { src: qrCode, alt: 'Mã QR mở link khảo sát', class: 'om-survey-qr' }) : null);
 	try {
 		const surveyContent = document.getElementById('surveyContent');
 		if (!surveyContent) {
 			console.warn('Survey content element not found when rendering');
 			return;
 		}
-		// Clear content first to prevent any accumulation
-		surveyContent.replaceChildren();
-		// Then set new content
-		surveyContent.innerHTML = html;
+		replace(surveyContent, content);
 	} catch (error) {
 		console.error('Error rendering survey content:', error);
 	}
@@ -29,10 +27,20 @@ function renderSurveyActions(examinationId, patientId, hasResult = false, hasLin
     const order = state.currentOrderDetail;
     const target = document.getElementById('orderSurveyActions');
     if (!order?.survey_template_id) { target.replaceChildren(); return; }
-    target.innerHTML = `
-        ${!hasResult && order.status !== 'completed' ? `<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="qlpk-icon-text-button om-button" id="sendSurveyLinkBtn"><i class="bi bi-link-45deg qlpk-button-icon" aria-hidden="true"></i>${hasLink ? 'Tạo lại link khảo sát' : 'Tạo link khảo sát'}</button>` : ''}
-        <a class="qlpk-icon-text-button om-button" id="viewSurveyResultBtn" href="/patient-survey.html?review_order_id=${order.id}" target="_blank" rel="noopener"><i class="bi bi-eye qlpk-button-icon" aria-hidden="true"></i>Xem kết quả</a>
-        ${order.status !== 'completed' ? '<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="qlpk-icon-text-button om-button om-button--danger" id="closeSurveySessionBtn"><i class="bi bi-lock qlpk-button-icon" aria-hidden="true"></i>Kết thúc khảo sát</button>' : ''}`;
+    const buttonIcon = name => el('i', { class: `bi ${name} qlpk-button-icon`, 'aria-hidden': 'true' });
+    replace(target,
+        !hasResult && order.status !== 'completed'
+            ? el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'qlpk-icon-text-button om-button', id: 'sendSurveyLinkBtn' },
+                buttonIcon('bi-link-45deg'), hasLink ? 'Tạo lại link khảo sát' : 'Tạo link khảo sát')
+            : null,
+        ' ',
+        el('a', { class: 'qlpk-icon-text-button om-button', id: 'viewSurveyResultBtn', href: `/patient-survey.html?review_order_id=${order.id}`, target: '_blank', rel: 'noopener' },
+            buttonIcon('bi-eye'), 'Xem kết quả'),
+        ' ',
+        order.status !== 'completed'
+            ? el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'qlpk-icon-text-button om-button om-button--danger', id: 'closeSurveySessionBtn' },
+                buttonIcon('bi-lock'), 'Kết thúc khảo sát')
+            : null);
     document.getElementById('sendSurveyLinkBtn')?.addEventListener('click', () => sendSurveyLink(examinationId, patientId, order.survey_template_id));
     document.getElementById('closeSurveySessionBtn')?.addEventListener('click', () => closeSurveySession());
 }
@@ -62,35 +70,30 @@ function renderSurveySelectionUI(examinationId, templates, surveySession) {
 	// The template linked to this indication is the source of the displayed name.
 	const linkedTemplate = templates[0];
 
-	// Build QR and Link section HTML
-	let qrAndLinkHtml = '';
-	if (surveyUrl) {
-		qrAndLinkHtml = `
-            <div class="om-survey-access">
-                    <div class="om-survey-access-link">
-                        <h6 class="fw-semibold mb-3">
-                            <i class="bi bi-link-45deg me-2"></i>Link khảo sát
-                        </h6>
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control form-control-sm om-survey-link-input" id="surveyLinkInput" value="${escapeHtml(surveyUrl)}" readonly>
-                            <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="qlpk-icon-action qlpk-icon-action--view" type="button" id="copySurveyLinkBtn" title="Sao chép link khảo sát" aria-label="Sao chép link khảo sát">
-                                <i class="bi bi-clipboard" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        ${expiresAt ? `<small class="text-navy">Hết hạn: ${expiresAt}</small>` : ''}
-                    </div>
-            </div>
-        `;
-	}
+	// QR and link section
+	const accessSection = surveyUrl ? el('div', { class: 'om-survey-access' },
+		el('div', { class: 'om-survey-access-link' },
+			el('h6', { class: 'fw-semibold mb-3' }, el('i', { class: 'bi bi-link-45deg me-2' }), 'Link khảo sát'),
+			el('div', { class: 'input-group mb-2' },
+				el('input', { type: 'text', class: 'form-control form-control-sm om-survey-link-input', id: 'surveyLinkInput', defaultValue: surveyUrl, readonly: true }),
+				el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', class: 'qlpk-icon-action qlpk-icon-action--view', type: 'button', id: 'copySurveyLinkBtn', title: 'Sao chép link khảo sát', 'aria-label': 'Sao chép link khảo sát' },
+					el('i', { class: 'bi bi-clipboard', 'aria-hidden': 'true' }))
+			),
+			expiresAt ? el('small', { class: 'text-navy' }, `Hết hạn: ${expiresAt}`) : null
+		)
+	) : null;
 
     renderSurveyActions(examinationId, patientId, false, Boolean(surveyUrl));
-    const html = `
-        <div class="om-survey-heading"><div><h3>Khảo sát <span id="orderSurveyStatus">${getStatusBadge(state.currentOrderDetail.status)}</span></h3>
-            <p class="om-survey-helper-text">Mẫu: ${escapeHtml(linkedTemplate.name || '—')}</p></div></div>
-        ${state.currentOrderDetail.status === 'completed' ? '<p class="om-survey-empty">Chưa có bài nộp. Bấm “Xem kết quả” để xem phần trả lời đã lưu.</p>' : qrAndLinkHtml || '<p class="om-survey-empty">Chưa tạo link khảo sát. Bấm “Tạo link khảo sát” để bệnh nhân bắt đầu làm bài.</p>'}
-    `;
+    const content = [
+        el('div', { class: 'om-survey-heading' }, el('div', null,
+            el('h3', null, 'Khảo sát ', el('span', { id: 'orderSurveyStatus' }, getStatusBadge(state.currentOrderDetail.status))),
+            el('p', { class: 'om-survey-helper-text' }, `Mẫu: ${linkedTemplate.name || '—'}`))),
+        state.currentOrderDetail.status === 'completed'
+            ? el('p', { class: 'om-survey-empty' }, 'Chưa có bài nộp. Bấm “Xem kết quả” để xem phần trả lời đã lưu.')
+            : accessSection || el('p', { class: 'om-survey-empty' }, 'Chưa tạo link khảo sát. Bấm “Tạo link khảo sát” để bệnh nhân bắt đầu làm bài.')
+    ];
 
-	renderOrderSurveyContent(html, state.currentOrderDetail.status !== 'completed' && surveyUrl ? qrCode : '');
+	renderOrderSurveyContent(content, state.currentOrderDetail.status !== 'completed' && surveyUrl ? qrCode : '');
 
     document.getElementById('copySurveyLinkBtn')?.addEventListener('click', copySurveyLink);
 }
@@ -209,11 +212,12 @@ function uniqueResponsesLatestFirst(surveyResponses) {
 
 function buildSurveyResultHeading(latestTemplate) {
 	const expires = state.currentOrderDetail.status !== 'completed' && state.currentOrderDetail.survey_expires_at
-		? `<p class="om-survey-helper-text">Hết hạn: ${formatDisplayDate(state.currentOrderDetail.survey_expires_at)}</p>` : '';
-	return `
-        <div class="om-survey-heading"><div><h3>Kết quả khảo sát <span id="orderSurveyStatus">${getStatusBadge(state.currentOrderDetail.status)}</span></h3>
-        <p class="om-survey-helper-text">Mẫu: ${escapeHtml(latestTemplate.name || '—')}</p></div>
-        ${expires}</div>`;
+		? el('p', { class: 'om-survey-helper-text' }, `Hết hạn: ${formatDisplayDate(state.currentOrderDetail.survey_expires_at)}`) : null;
+	return el('div', { class: 'om-survey-heading' },
+		el('div', null,
+			el('h3', null, 'Kết quả khảo sát ', el('span', { id: 'orderSurveyStatus' }, getStatusBadge(state.currentOrderDetail.status))),
+			el('p', { class: 'om-survey-helper-text' }, `Mẫu: ${latestTemplate.name || '—'}`)),
+		expires);
 }
 
 async function renderSurveyResults(surveyResponses, templates, surveySession, appointment, isCurrent = () => true) {
@@ -251,18 +255,10 @@ async function renderSurveyResults(surveyResponses, templates, surveySession, ap
 	// Debug: Log template match
 
     renderSurveyActions(latestResponse.examination_id, state.currentOrderDetail.patient?.id, true);
-    let html = `<div>${buildSurveyResultHeading(latestTemplate)}`;
 	// Render chỉ 1 card cho response mới nhất
-	const cardHtml = await renderSingleSurveyResultCard(latestTemplate, latestResponse);
+	const card = await renderSingleSurveyResultCard(latestTemplate, latestResponse);
     if (!isCurrent()) return;
-	// Only add if card is not empty
-	if (cardHtml && cardHtml.trim()) {
-		html += cardHtml;
-	}
-
-	html += '</div>';
-
-	renderOrderSurveyContent(html);
+	renderOrderSurveyContent(el('div', null, buildSurveyResultHeading(latestTemplate), card));
 
 	// Load saved survey levels after content is in DOM
 	setTimeout(() => {

@@ -6,10 +6,14 @@ const { readOrderManagementSource } = require('./helpers/order-management-source
 const source = readOrderManagementSource();
 const start = source.indexOf('function resolveSurveyAnswerText(');
 const end = source.indexOf('// Render single survey result card', start);
-const helperStart = source.indexOf('function attrJson(');
-const helperEnd = source.indexOf('\n}\n', helperStart) + 3;
-const context = vm.createContext({ escapeHtml: value => String(value).replaceAll('<', '&lt;'), JSON });
-vm.runInContext(source.slice(helperStart, helperEnd) + source.slice(start, end), context);
+const { createWindow } = require('./helpers/fake-dom');
+const { runScriptFile } = require('./helpers/module-source');
+const { document } = createWindow();
+const context = vm.createContext({ document, JSON });
+runScriptFile('app/static/js/shared/dom.js', context);
+vm.runInContext(source.slice(start, end), context);
+const host = document.createElement('div');
+const render = (...args) => { host.replaceChildren(...[context.renderSurveyResultsByCriteria(...args)].flat()); return host.innerHTML; };
 const template = { questions_by_criteria: {
     A: [{ id: 'q0', text: 'Câu có điểm 0', answers: [{ id: 'a0', text: 'Không', score: 0 }] },
         { id: 'q1', text: 'Câu điểm khác 0', answers: [{ id: 'a2', text: 'Có', score: 2 }] }],
@@ -21,11 +25,11 @@ assert.equal(summary.scores.A, 2);
 assert.equal(summary.scores.B, null);
 assert.equal(summary.criteria.A.length, 2);
 assert.equal(summary.criteria.B.length, 0);
-let html = context.renderSurveyResultsByCriteria(template, response);
+let html = render(template, response);
 assert.match(html, /Chưa tính được/);
 assert.doesNotMatch(html, /score-value">0</);
 response.total_scores.A = 0;
-html = context.renderSurveyResultsByCriteria(template, response);
+html = render(template, response);
 assert.match(html, /score-value">0</);
 assert.match(html, /Chưa tính được/);
 assert.equal(context.resolveSurveyAnswerText({ answers: [{ id: 'abc', text: 'Không' }] }, '0'), 'Không ghép được đáp án');

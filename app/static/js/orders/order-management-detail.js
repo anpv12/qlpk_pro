@@ -1,7 +1,8 @@
+import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
 import { clearSurveyRealtimeContext, initializeSurveyRealtimeContext } from './order-management-survey-level.js';
 import { renderOrderSurveyContent, renderSurveyResults, renderSurveySelectionUI } from './order-management-survey.js';
-import { apiCall, escapeHtml, formatDateOnly, loadOrders, showCustomToast } from '../order-management.js';
+import { apiCall, formatDateOnly, loadOrders, showCustomToast } from '../order-management.js';
 import { refreshCurrentOrderStatus, renderTimeline, updateOrderNote } from './order-management-actions.js';
 import { renderResultFiles } from './order-management-files.js';
 
@@ -15,7 +16,7 @@ async function loadOrderDetail(orderId) {
     clearSurveyRealtimeContext();
     state.currentOrderDetail = null;
     state.saveCustomOrderNote = null;
-    renderOrderSurveyContent('<p>Đang tải thông tin khảo sát…</p>');
+    renderOrderSurveyContent(el('p', null, 'Đang tải thông tin khảo sát…'));
     document.getElementById('orderSurveyActions').replaceChildren();
     try {
         const response = await apiCall(`/api/chi-dinh/${orderId}`);
@@ -39,7 +40,7 @@ async function loadOrderDetail(orderId) {
                     clearSurveyRealtimeContext();
                     state.currentOrderDetail = null;
                     state.saveCustomOrderNote = null;
-                    renderOrderSurveyContent('');
+                    renderOrderSurveyContent([]);
                     document.getElementById('orderSurveyActions').replaceChildren();
                 }
                 loadOrders();
@@ -68,20 +69,19 @@ function renderOrderDetailModal(order) {
 	const age = birthYear ? new Date().getFullYear() - birthYear : null;
 
 	// Update patient info
-    const patientInfoHtml = `
-        <div class="om-patient-summary">
-            <div class="om-patient-identity"><span class="om-patient-name">${escapeHtml(patient.full_name || '—')}</span>
-            ${age !== null ? `<span class="badge om-patient-age-badge">${age} tuổi</span>` : ''}</div>
-            <dl class="om-patient-fields">
-                <dt>Điện thoại</dt><dd>${escapeHtml(patient.phone || 'Chưa có')}</dd>
-                <dt>Ngày sinh</dt><dd>${formatDateOnly(patient.date_of_birth)}</dd>
-                <dt>Ngày ra chỉ định</dt><dd>${formatDateOnly(order.created_at)}</dd>
-            </dl>
-        </div>`;
-
+    const field = (label, value) => [el('dt', null, label), el('dd', null, value)];
 	const patientInfoEl = document.getElementById('orderPatientInfo');
 	if (patientInfoEl) {
-		patientInfoEl.innerHTML = patientInfoHtml;
+		replace(patientInfoEl, el('div', { class: 'om-patient-summary' },
+			el('div', { class: 'om-patient-identity' },
+				el('span', { class: 'om-patient-name' }, patient.full_name || '—'),
+				age !== null ? [' ', el('span', { class: 'badge om-patient-age-badge' }, `${age} tuổi`)] : null),
+			' ',
+			el('dl', { class: 'om-patient-fields' },
+				field('Điện thoại', patient.phone || 'Chưa có'),
+				field('Ngày sinh', formatDateOnly(patient.date_of_birth)),
+				field('Ngày ra chỉ định', formatDateOnly(order.created_at)))
+		));
 	}
 
 	// Update order status và setup autosave listener
@@ -144,14 +144,14 @@ function renderOrderDetailModal(order) {
 
 // Manual orders use the existing result note, independently of survey content.
 function renderCustomOrderNote(order) {
-    renderOrderSurveyContent(`
-        <label class="view-field-label" for="customOrderResultNote">Ghi chú kết quả</label>
-        <textarea id="customOrderResultNote" class="form-control" rows="8"
-            aria-describedby="customOrderNoteStatus" placeholder="Nhập nội dung xử lý hoặc kết quả chỉ định..."></textarea>
-        <div class="om-order-controls mt-2">
-            <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="qlpk-icon-text-button om-button" id="saveCustomOrderNoteBtn">Lưu ghi chú</button>
-            <span id="customOrderNoteStatus" role="status" aria-live="polite">Tự lưu khi rời ô.</span>
-        </div>`);
+    renderOrderSurveyContent([
+        el('label', { class: 'view-field-label', for: 'customOrderResultNote' }, 'Ghi chú kết quả'),
+        el('textarea', { id: 'customOrderResultNote', class: 'form-control', rows: '8', 'aria-describedby': 'customOrderNoteStatus', placeholder: 'Nhập nội dung xử lý hoặc kết quả chỉ định...' }),
+        el('div', { class: 'om-order-controls mt-2' },
+            el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', class: 'qlpk-icon-text-button om-button', id: 'saveCustomOrderNoteBtn' }, 'Lưu ghi chú'),
+            ' ',
+            el('span', { id: 'customOrderNoteStatus', role: 'status', 'aria-live': 'polite' }, 'Tự lưu khi rời ô.'))
+    ]);
     const input = document.getElementById('customOrderResultNote');
     const feedback = document.getElementById('customOrderNoteStatus');
     const button = document.getElementById('saveCustomOrderNoteBtn');
@@ -189,15 +189,17 @@ function renderCustomOrderNote(order) {
 }
 
 // Load survey content directly as part of the order detail.
-const SURVEY_NO_INFO_HTML = '<div class="text-center text-navy py-5"><p>Không có thông tin khảo sát</p></div>';
-const SURVEY_NO_EXAMINATION_HTML = '<div class="text-center text-navy py-5"><p>Chưa có lịch khám nào cho chỉ định này</p></div>';
+const centeredMessage = (className, iconClass, text) => el('div', { class: `text-center ${className} py-5` },
+	iconClass ? el('i', { class: `bi ${iconClass} display-4 mb-3 d-block` }) : null, el('p', null, text));
+const surveyNoInfo = () => centeredMessage('text-navy', null, 'Không có thông tin khảo sát');
+const surveyNoExamination = () => centeredMessage('text-navy', null, 'Chưa có lịch khám nào cho chỉ định này');
 
 async function loadOrderSurvey() {
     const version = ++surveyLoadVersion;
     const loadingOrderId = state.currentOrderDetail?.id;
     const isCurrent = () => version === surveyLoadVersion && state.currentOrderDetail?.id === loadingOrderId;
 	if (!state.currentOrderDetail || !state.currentOrderDetail.appointment || !state.currentOrderDetail.appointment.id) {
-		renderOrderSurveyContent(SURVEY_NO_INFO_HTML);
+		renderOrderSurveyContent(surveyNoInfo());
 		return;
 	}
 	const appointment = state.currentOrderDetail.appointment;
@@ -210,24 +212,14 @@ async function loadOrderSurvey() {
 	state.saveCustomOrderNote = null;
 
 	// Show loading
-	renderOrderSurveyContent(`
-        <div class="text-center text-navy py-5">
-            <i class="bi bi-hourglass-split display-4 mb-3 d-block"></i>
-            <p>Đang tải thông tin khảo sát...</p>
-        </div>
-    `);
+	renderOrderSurveyContent(centeredMessage('text-navy', 'bi-hourglass-split', 'Đang tải thông tin khảo sát...'));
 
 	try {
 		await loadOrderSurveyForTemplate(appointment, indicationTemplateId, isCurrent);
 	} catch (error) {
         if (!isCurrent()) return;
 		console.error('Error loading survey data:', error);
-		renderOrderSurveyContent(`
-            <div class="text-center text-danger py-5">
-                <i class="bi bi-exclamation-triangle display-4 mb-3 d-block"></i>
-                <p>Không thể tải thông tin khảo sát. Vui lòng thử lại.</p>
-            </div>
-        `);
+		renderOrderSurveyContent(centeredMessage('text-danger', 'bi-exclamation-triangle', 'Không thể tải thông tin khảo sát. Vui lòng thử lại.'));
 	}
 }
 
@@ -270,7 +262,7 @@ async function resolveSurveyExaminationId(appointment, isCurrent) {
 	if (!isCurrent()) return null;
 	if (!examIdResponse.ok) {
 		if (examIdResponse.status === 404) {
-			renderOrderSurveyContent(SURVEY_NO_EXAMINATION_HTML);
+			renderOrderSurveyContent(surveyNoExamination());
 			return null;
 		}
 		const errorData = await examIdResponse.json().catch(() => ({ detail: 'Lỗi không xác định' }));
@@ -281,7 +273,7 @@ async function resolveSurveyExaminationId(appointment, isCurrent) {
 	const examIdData = await examIdResponse.json();
 	if (!isCurrent()) return null;
 	if (!examIdData.examination_id) {
-		renderOrderSurveyContent(SURVEY_NO_EXAMINATION_HTML);
+		renderOrderSurveyContent(surveyNoExamination());
 		return null;
 	}
 	return examIdData.examination_id;
