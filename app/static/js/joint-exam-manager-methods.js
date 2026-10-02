@@ -99,8 +99,8 @@ const methods = {
                     <td class="relative-table-center">${jointDate}</td>
                     <td class="relative-table-center">
                         <div class="relative-row-actions">
-						${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit-pending', 'data-joint-exam-temp-id': relative.temp_id })}
-						${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete-pending', 'data-joint-exam-temp-id': relative.temp_id })}
+							${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit-pending', 'data-joint-exam-temp-id': relative.temp_id })}
+							${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete-pending', 'data-joint-exam-temp-id': relative.temp_id })}
                         </div>
                     </td>
                 </tr>

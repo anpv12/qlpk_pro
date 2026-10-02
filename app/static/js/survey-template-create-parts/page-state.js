@@ -325,44 +325,44 @@ function renderQuestionCard(qObj) {
 function buildCardHTML(qObj, idx) {
 	const reqChecked = qObj.required ? 'checked' : '';
 	return `
-		<div class="sc-q-header">
-			<div class="sc-q-header-left">
-				<div class="sc-q-drag-handle" title="Kéo để sắp xếp">⠿</div>
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="sc-q-collapse-btn" title="Thu gọn"><i class="bi bi-chevron-down"></i></button>
-				<span class="sc-q-badge">Câu ${idx}</span>
-				<select class="sc-q-type">
-					<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE ? 'selected' : ''}>Trắc nghiệm</option>
-					<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID ? 'selected' : ''}>Lưới trắc nghiệm</option>
-				</select>
-			</div>
-		</div>
-		<div class="sc-q-body">
-			<div class="sc-q-content-row">
-				<input type="text" class="sc-q-text" placeholder="Nhập nội dung câu hỏi..." value="${escHtml(qObj.text)}">
-				<div class="sc-criteria-wrap ${isGridType(qObj.type) ? 'sc-hidden' : ''}">
-					<input type="text" class="sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(qObj.criteria)}" autocomplete="off">
-					<div class="sc-criteria-dropdown sc-hidden"></div>
+			<div class="sc-q-header">
+				<div class="sc-q-header-left">
+					<div class="sc-q-drag-handle" title="Kéo để sắp xếp">⠿</div>
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="sc-q-collapse-btn" title="Thu gọn"><i class="bi bi-chevron-down"></i></button>
+					<span class="sc-q-badge">Câu ${idx}</span>
+					<select class="sc-q-type">
+						<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE ? 'selected' : ''}>Trắc nghiệm</option>
+						<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID ? 'selected' : ''}>Lưới trắc nghiệm</option>
+					</select>
 				</div>
 			</div>
-			<div class="sc-trac-nghiem-section ${isChoiceType(qObj.type) ? '' : 'sc-hidden'}">
-				<div class="sc-score-hint">Nhập điểm cho từng phương án</div>
-				<div class="sc-answers-list">
-					${qObj.answers.map(a => buildAnswerRowHTML(a)).join('')}
+			<div class="sc-q-body">
+				<div class="sc-q-content-row">
+					<input type="text" class="sc-q-text" placeholder="Nhập nội dung câu hỏi..." value="${escHtml(qObj.text)}">
+					<div class="sc-criteria-wrap ${isGridType(qObj.type) ? 'sc-hidden' : ''}">
+						<input type="text" class="sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(qObj.criteria)}" autocomplete="off">
+						<div class="sc-criteria-dropdown sc-hidden"></div>
+					</div>
 				</div>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-answer-btn"><i class="bi bi-plus"></i> Thêm đáp án</button>
+				<div class="sc-trac-nghiem-section ${isChoiceType(qObj.type) ? '' : 'sc-hidden'}">
+					<div class="sc-score-hint">Nhập điểm cho từng phương án</div>
+					<div class="sc-answers-list">
+						${qObj.answers.map(a => buildAnswerRowHTML(a)).join('')}
+					</div>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-answer-btn"><i class="bi bi-plus"></i> Thêm đáp án</button>
+				</div>
+				<div class="sc-grid-section ${isGridType(qObj.type) ? '' : 'sc-hidden'}">
+					${buildGridHTML(qObj)}
+				</div>
 			</div>
-			<div class="sc-grid-section ${isGridType(qObj.type) ? '' : 'sc-hidden'}">
-				${buildGridHTML(qObj)}
+			<div class="sc-q-footer">
+				<div class="sc-required-wrap">
+					<label class="sc-required-toggle"><input type="checkbox" class="sc-required-check" ${reqChecked}><span class="sc-toggle-track"></span></label>
+					<span class="sc-required-label">Bắt buộc</span>
+				</div>
+				<div class="sc-q-action-btns"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-q-action-btn sc-q-delete-btn" title="Xóa câu hỏi"><i class="bi bi-trash"></i></button></div>
 			</div>
-		</div>
-		<div class="sc-q-footer">
-			<div class="sc-required-wrap">
-				<label class="sc-required-toggle"><input type="checkbox" class="sc-required-check" ${reqChecked}><span class="sc-toggle-track"></span></label>
-				<span class="sc-required-label">Bắt buộc</span>
-			</div>
-			<div class="sc-q-action-btns"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-q-action-btn sc-q-delete-btn" title="Xóa câu hỏi"><i class="bi bi-trash"></i></button></div>
-		</div>
-	`;
+		`;
 }
 
 export { addQuestion, addQuestionButton, buildCardHTML, buildQuestionObject, byId, close, escHtml, fillTemplateHeader, genId, hasUnsavedChanges, init, isChoiceType, isGridType, loadPerformers, loadTemplate, markDirty, normalizeQuestionType, normalizeSearchText, open, overlayEl, pageTitleEl, parseTemplateContent, questionsListEl, rawTemplateAnswers, rawTemplateQuestion, refreshCriteriaCache, registerRealtimeHooks, renderPerformerOptions, renderQuestionCard, resetState, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab };

@@ -283,7 +283,7 @@ function buildHistoryRowActions(exam, index, flags, options) {
 	const actionButtons = [];
 	if (options.showCopyAction !== false) {
 		actionButtons.push(`
-					<button class="btn btn-sm patient-search-modal__history-copy-button ${flags.isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${flags.isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${flags.isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
+						<button class="btn btn-sm patient-search-modal__history-copy-button ${flags.isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${flags.isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${flags.isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
                             <i class="bi ${flags.isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}"></i>
                         </button>
                     `);
@@ -329,11 +329,11 @@ function buildHistoryRowHtml(options = {}) {
                     </div>
                     <div class="col-5 text-start col-history-diagnosis">
                         <span class="d-block text-truncate" title="${window.QLPKHtml.escape(description)}">${window.QLPKHtml.escape(description)}</span>
-				</div>
-				<div class="col-2 text-center col-history-payment">
-					<span class="qlpk-status patient-search-modal__exam-status-badge${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
-						${getStatusText(exam.status)}
-					</span>
+					</div>
+					<div class="col-2 text-center col-history-payment">
+						<span class="qlpk-status patient-search-modal__exam-status-badge${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
+							${getStatusText(exam.status)}
+						</span>
                     </div>
                     <div class="col-2 text-center">
                         ${buildHistoryRowActions(exam, index, flags, options)}

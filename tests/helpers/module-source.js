@@ -11,7 +11,7 @@ const ES_MODULE_SYNTAX = /^(?:import|export)\s/m;
 const loadedModules = new WeakMap();
 const MANIFEST = /^\/\/ Parts \(nạp trước file này\): (.+)$/m;
 // Classic page scripts split into continuation files that share the page scope.
-const FACTORY_SPLIT = /moduleParts\.installers\.push\(function \(inst, outer\)/;
+const FACTORY_SPLIT = /(?:moduleParts\.)?installers\.push\(function \(inst(?:, outer)?\)/;
 const CONTINUED = /^\/\/ Continued in \(nạp ngay sau file này, cùng scope trang\): (.+)$/m;
 
 // Load order: the entry's parts, the entry, then its continuation files (each expanded the same way).

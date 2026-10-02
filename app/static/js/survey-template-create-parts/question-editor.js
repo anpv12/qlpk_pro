@@ -4,61 +4,61 @@ import { bindCriteriaAutocomplete } from './criteria-autocomplete.js';
 
 function buildAnswerRowHTML(a) {
 	return `
-		<div class="sc-answer-row" data-answer-id="${escHtml(retainedId(a.id))}">
-			<div class="sc-answer-radio"></div>
-			<input type="text" class="sc-answer-text" placeholder="Nhập đáp án..." value="${escHtml(a.text || '')}">
-			<span class="sc-answer-score-label">Điểm:</span>
-			<input type="number" class="sc-answer-score" value="${window.QLPKHtml.escape(a.score ?? a.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
-			<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
-		</div>
-	`;
+			<div class="sc-answer-row" data-answer-id="${escHtml(retainedId(a.id))}">
+				<div class="sc-answer-radio"></div>
+				<input type="text" class="sc-answer-text" placeholder="Nhập đáp án..." value="${escHtml(a.text || '')}">
+				<span class="sc-answer-score-label">Điểm:</span>
+				<input type="number" class="sc-answer-score" value="${window.QLPKHtml.escape(a.score ?? a.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
+			</div>
+		`;
 }
 function buildGridHTML(qObj) {
 	const rows = qObj.grid?.rows || [];
 	const cols = qObj.grid?.columns || [];
 	const colHeaders = cols.map((c, ci) => `
-		<th class="sc-col-header" data-column-id="${escHtml(retainedId(c.id))}">
-			<div class="sc-grid-col-top">
-				<input type="text" class="sc-grid-col-label" value="${escHtml(c.label ?? c.text ?? `Cột ${ci + 1}`)}" placeholder="Nhập tên cột...">
-				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
-			</div>
-			<div class="sc-grid-col-score">
-				<span>Điểm mặc định</span>
-				<input type="number" class="sc-grid-score-input" value="${window.QLPKHtml.escape(c.score ?? c.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
-			</div>
-		</th>
-	`).join('');
+			<th class="sc-col-header" data-column-id="${escHtml(retainedId(c.id))}">
+				<div class="sc-grid-col-top">
+					<input type="text" class="sc-grid-col-label" value="${escHtml(c.label ?? c.text ?? `Cột ${ci + 1}`)}" placeholder="Nhập tên cột...">
+					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
+				</div>
+				<div class="sc-grid-col-score">
+					<span>Điểm mặc định</span>
+					<input type="number" class="sc-grid-score-input" value="${window.QLPKHtml.escape(c.score ?? c.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
+				</div>
+			</th>
+		`).join('');
 
 	const bodyRows = rows.map((r, ri) => `
-		<tr data-row="${ri}" data-row-id="${escHtml(retainedId(r.question_id ?? r.id))}">
-			<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
-			<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..." value="${escHtml(r.text || '')}"></td>
-			<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(r.criteria ?? r.scoring_criteria ?? qObj.criteria)}" autocomplete="off"><div class="sc-criteria-dropdown sc-hidden"></div></div></td>
-			<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" ${r.score_enabled !== false ? 'checked' : ''} title="Cho phép tính điểm"></td>
-			${cols.map(c => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${r.scores?.[c.id] ?? c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
-			<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
-		</tr>
-	`).join('');
+			<tr data-row="${ri}" data-row-id="${escHtml(retainedId(r.question_id ?? r.id))}">
+				<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
+				<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..." value="${escHtml(r.text || '')}"></td>
+				<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(r.criteria ?? r.scoring_criteria ?? qObj.criteria)}" autocomplete="off"><div class="sc-criteria-dropdown sc-hidden"></div></div></td>
+				<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" ${r.score_enabled !== false ? 'checked' : ''} title="Cho phép tính điểm"></td>
+				${cols.map(c => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${r.scores?.[c.id] ?? c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
+				<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
+			</tr>
+		`).join('');
 
 	return `
-		<div class="sc-grid-wrap">
-			<table class="sc-grid-table">
-				<thead>
-					<tr>
-						<th class="sc-grid-handle-col"></th>
-						<th class="sc-grid-row-col">Hàng</th>
-						<th class="sc-grid-criteria-col">Tiêu chí</th>
-						<th class="sc-grid-score-enabled-col">Tính điểm</th>
-						${colHeaders}
-						<th class="sc-grid-add-col"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-col-btn"><i class="bi bi-plus-lg"></i></button></th>
-					</tr>
-				</thead>
-				<tbody>${bodyRows}</tbody>
-			</table>
-		</div>
-		<div class="sc-grid-actions"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-row-btn"><i class="bi bi-plus"></i> Thêm hàng</button></div>
-	`;
+			<div class="sc-grid-wrap">
+				<table class="sc-grid-table">
+					<thead>
+						<tr>
+							<th class="sc-grid-handle-col"></th>
+							<th class="sc-grid-row-col">Hàng</th>
+							<th class="sc-grid-criteria-col">Tiêu chí</th>
+							<th class="sc-grid-score-enabled-col">Tính điểm</th>
+							${colHeaders}
+							<th class="sc-grid-add-col"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-col-btn"><i class="bi bi-plus-lg"></i></button></th>
+						</tr>
+					</thead>
+					<tbody>${bodyRows}</tbody>
+				</table>
+			</div>
+			<div class="sc-grid-actions"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-row-btn"><i class="bi bi-plus"></i> Thêm hàng</button></div>
+		`;
 }
 function bindCardEvents(card, qObj) {
 	card.querySelector('.sc-q-collapse-btn').addEventListener('click', function () {
@@ -202,16 +202,16 @@ function addGridCol(card) {
 	newTh.className = 'sc-col-header';
 	newTh.dataset.columnId = genId();
 	newTh.innerHTML = `
-		<div class="sc-grid-col-top">
-			<input type="text" class="sc-grid-col-label" value="Cột ${colCount + 1}" placeholder="Nhập tên cột...">
-			<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
-		</div>
-		<div class="sc-grid-col-score">
-			<span>Điểm mặc định</span>
-			<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">
-			<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
-		</div>
-	`;
+			<div class="sc-grid-col-top">
+				<input type="text" class="sc-grid-col-label" value="Cột ${colCount + 1}" placeholder="Nhập tên cột...">
+				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
+			</div>
+			<div class="sc-grid-col-score">
+				<span>Điểm mặc định</span>
+				<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">
+				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
+			</div>
+		`;
 	table.querySelector('thead tr').insertBefore(newTh, addTh);
 	table.querySelectorAll('tbody tr').forEach(tr => {
 		const td = document.createElement('td');
@@ -228,13 +228,13 @@ function addGridRow(card) {
 	const tr = document.createElement('tr');
 	tr.dataset.rowId = genId();
 	tr.innerHTML = `
-		<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
-		<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..."></td>
-		<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" autocomplete="off"><div class="sc-criteria-dropdown"></div></div></td>
-		<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" checked title="Cho phép tính điểm"></td>
-		${headerScoreInputs.map(input => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${input.value}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
-		<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
-	`;
+			<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
+			<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..."></td>
+			<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" autocomplete="off"><div class="sc-criteria-dropdown"></div></div></td>
+			<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" checked title="Cho phép tính điểm"></td>
+			${headerScoreInputs.map(input => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${input.value}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
+			<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
+		`;
 	tbody.appendChild(tr);
 	const newCriteriaInput = tr.querySelector('.sc-q-criteria-input');
 	if (newCriteriaInput) bindCriteriaAutocomplete(newCriteriaInput);

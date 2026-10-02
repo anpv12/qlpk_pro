@@ -182,11 +182,11 @@ function installServicesFormFns3(ctx) {
 		}
 		list.hidden = false;
 		list.innerHTML = ctx.STATE.services.map(service => `<article class="doctor-service-selection__row" data-service-row-id="${escapeAttr(service.uid)}">
-			<strong class="doctor-service-selection__name">${escapeHtml(service.name || 'Chưa đặt tên dịch vụ')}</strong>
-			<span class="doctor-service-selection__price">${formatCurrency(service.amount)}</span>
-			<label class="doctor-service-selection__quantity"><span class="visually-hidden">Số lượng ${escapeHtml(service.name || 'dịch vụ')}</span><input type="number" min="1" value="${escapeAttr(service.quantity)}" data-service-field="quantity" aria-label="Số lượng ${escapeAttr(service.name || 'dịch vụ')}"></label>
-			${ctx.renderServiceRemoveButton()}
-		</article>`).join('');
+				<strong class="doctor-service-selection__name">${escapeHtml(service.name || 'Chưa đặt tên dịch vụ')}</strong>
+				<span class="doctor-service-selection__price">${formatCurrency(service.amount)}</span>
+				<label class="doctor-service-selection__quantity"><span class="visually-hidden">Số lượng ${escapeHtml(service.name || 'dịch vụ')}</span><input type="number" min="1" value="${escapeAttr(service.quantity)}" data-service-field="quantity" aria-label="Số lượng ${escapeAttr(service.name || 'dịch vụ')}"></label>
+				${ctx.renderServiceRemoveButton()}
+			</article>`).join('');
 		if (empty) empty.hidden = true;
 		ctx.renderEstimatedTotal(doc);
 		renderCatalog(doc);

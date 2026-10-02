@@ -52,7 +52,7 @@ def read_module_source(path: Path, plain: bool = True) -> str:
     if not plain:
         return source
     prefixes = "module(?:Parts|State)"
-    if "moduleParts.installers.push(function (inst, outer)" in source:
+    if re.search(r"(?:moduleParts\.)?installers\.push\(function \(inst(?:, outer)?\)", source):
         prefixes += "|inst|outer"
     source = re.sub(rf"\b(\w+): (?:{prefixes})\.\1\b", r"\1", source)
     return re.sub(rf"\b(?:{prefixes})\.", "", source)

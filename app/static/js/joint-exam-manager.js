@@ -281,10 +281,10 @@ class JointExamManager {
                     <td>${this.escapeHtml(relative.id_number || '')}</td>
                     <td>${this.escapeHtml(relative.phone || '')}</td>
                     <td class="relative-table-center">${jointDate}</td>
-				<td class="relative-table-center">
+					<td class="relative-table-center">
                         <div class="relative-row-actions">
-						${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id })}
-						${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })}
+							${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id })}
+							${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })}
                         </div>
                     </td>
                 </tr>

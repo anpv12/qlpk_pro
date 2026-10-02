@@ -6,30 +6,30 @@ function buildMedicalRecordTreatmentHtml(model) {
 	const prescriptionType = prescriptionData.prescriptions?.[0]?.type
 		|| prescriptionData.prescription_type || prescriptionData.type || '';
 	return `<div class="medical-record-section">
-				<h6 class="medical-record-section-title">IV. ĐIỀU TRỊ</h6>
-				<div class="medical-record-block"><strong>Loại đơn thuốc:</strong> ${escapeHtml(formatPrescriptionType(prescriptionType))}</div>
-				<div class="medical-record-block"><strong>Số ngày thuốc:</strong> ${escapeHtml(resolvePrescriptionDays(prescriptionData))}</div>
-				<div class="medical-record-block"><strong>Hẹn ngày tái khám:</strong> ${formatDate(prescriptionData.re_examination_date)}</div>
-				<div class="medical-record-treatment-list"><strong>Danh sách thuốc:</strong>${buildMedicineRows(prescriptionData)}</div>
-				<div class="medical-record-loi-dan"><strong>Lời dặn:</strong><div class="medical-record-loi-dan-text">${formatMultiline(history.loi_dan || '')}</div></div>
-			</div>`;
+					<h6 class="medical-record-section-title">IV. ĐIỀU TRỊ</h6>
+					<div class="medical-record-block"><strong>Loại đơn thuốc:</strong> ${escapeHtml(formatPrescriptionType(prescriptionType))}</div>
+					<div class="medical-record-block"><strong>Số ngày thuốc:</strong> ${escapeHtml(resolvePrescriptionDays(prescriptionData))}</div>
+					<div class="medical-record-block"><strong>Hẹn ngày tái khám:</strong> ${formatDate(prescriptionData.re_examination_date)}</div>
+					<div class="medical-record-treatment-list"><strong>Danh sách thuốc:</strong>${buildMedicineRows(prescriptionData)}</div>
+					<div class="medical-record-loi-dan"><strong>Lời dặn:</strong><div class="medical-record-loi-dan-text">${formatMultiline(history.loi_dan || '')}</div></div>
+				</div>`;
 }
 function buildMedicalRecordHTML(options = {}) {
 	const model = buildMedicalRecordModel(options);
 	const { labels, history, patient } = model;
 	const doctorName = history.doctor?.full_name || labels.fallbackName;
 	return `
-		<div class="prescription-preview prescription-preview--document">
-			${buildClinicHeader(model.clinicInfo, patient.patient_code)}
-			<div class="prescription-gradient-separator"></div>
-			<h3 class="prescription-preview__title prescription-preview__title--document">${labels.title}</h3>${buildMedicalRecordAdminHtml(model)}${buildMedicalRecordInquiryHtml(model)}${buildMedicalRecordExaminationHtml(model)}
-			${buildMedicalRecordTreatmentHtml(model)}
-			<div class="prescription-preview__signature prescription-preview__signature--avoid-break">
-				<div>${formatSignatureDate(history.examination_date)}</div>
-				<div class="prescription-preview__signature-role">${labels.signer}</div>
-				<div class="prescription-preview__signature-name">${escapeHtml(doctorName)}</div>
-			</div>
-		</div>`;
+			<div class="prescription-preview prescription-preview--document">
+				${buildClinicHeader(model.clinicInfo, patient.patient_code)}
+				<div class="prescription-gradient-separator"></div>
+				<h3 class="prescription-preview__title prescription-preview__title--document">${labels.title}</h3>${buildMedicalRecordAdminHtml(model)}${buildMedicalRecordInquiryHtml(model)}${buildMedicalRecordExaminationHtml(model)}
+				${buildMedicalRecordTreatmentHtml(model)}
+				<div class="prescription-preview__signature prescription-preview__signature--avoid-break">
+					<div>${formatSignatureDate(history.examination_date)}</div>
+					<div class="prescription-preview__signature-role">${labels.signer}</div>
+					<div class="prescription-preview__signature-name">${escapeHtml(doctorName)}</div>
+				</div>
+			</div>`;
 }
 async function parseJsonResponse(response, errorMessage) {
 	if (!response || !response.ok) {

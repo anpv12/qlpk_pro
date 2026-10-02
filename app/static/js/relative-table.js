@@ -109,10 +109,10 @@ const renderAddRelativeButton = () => {
 		});
 	}
 	return `
-		<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn-add-relative relative-table-add-btn">
-			<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i><span>Thêm người thân</span>
-		</button>
-	`;
+			<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn-add-relative relative-table-add-btn">
+				<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i><span>Thêm người thân</span>
+			</button>
+		`;
 };
 
 const buildRelativeTableMarkup = (table, relationshipOptionsHtml) => {
@@ -125,19 +125,19 @@ const buildRelativeTableMarkup = (table, relationshipOptionsHtml) => {
                         </div>
                     </div>
                     <div class="relative-table-body">
-					<div class="relative-table-scroll">
-						<table class="relative-table">
-							<colgroup>
-								<col class="receptionist-shared-col-index">
-								<col class="receptionist-shared-col-name">
-								<col class="receptionist-shared-col-relation">
-								<col class="receptionist-shared-col-id-number">
-								<col class="receptionist-shared-col-phone">
-								<col class="receptionist-shared-col-emergency">
-								<col class="receptionist-shared-col-date">
-								<col class="receptionist-shared-col-actions">
-							</colgroup>
-							<thead>
+						<div class="relative-table-scroll">
+							<table class="relative-table">
+								<colgroup>
+									<col class="receptionist-shared-col-index">
+									<col class="receptionist-shared-col-name">
+									<col class="receptionist-shared-col-relation">
+									<col class="receptionist-shared-col-id-number">
+									<col class="receptionist-shared-col-phone">
+									<col class="receptionist-shared-col-emergency">
+									<col class="receptionist-shared-col-date">
+									<col class="receptionist-shared-col-actions">
+								</colgroup>
+								<thead>
                                     <tr>
                                         <th>STT</th>
                                         <th>Họ tên</th>
@@ -146,7 +146,7 @@ const buildRelativeTableMarkup = (table, relationshipOptionsHtml) => {
                                         <th>Số điện thoại</th>
                                         <th>Liên hệ khẩn cấp</th>
                                         <th>Ngày khám cùng</th>
-									<th class="joint-exam-action-column">Thao tác</th>
+										<th class="joint-exam-action-column">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -396,17 +396,17 @@ class RelativeTable {
                     <td>${this.escape(item.kinship)}</td>
                     <td>${this.escape(item.id_number || '')}</td>
                     <td>${this.escape(item.phone || '')}</td>
-					<td class="relative-table-center">
-						${item.emergency_contact ? '<i class="bi bi-check-circle-fill relative-table-emergency-icon" aria-hidden="true"></i>' : ''}
+						<td class="relative-table-center">
+							${item.emergency_contact ? '<i class="bi bi-check-circle-fill relative-table-emergency-icon" aria-hidden="true"></i>' : ''}
                     </td>
-				<td>${jointExamDate ? formatDateDisplay(jointExamDate) : ''}</td>
-				<td>
-					<div class="relative-row-actions">
-						${this.readOnly ? '' : `
-							${renderRelativeActionButton('edit', 'edit', 'Chỉnh sửa')}
-							${renderRelativeActionButton('delete', 'remove', 'Xóa dòng')}
-						`}
-					</div>
+					<td>${jointExamDate ? formatDateDisplay(jointExamDate) : ''}</td>
+					<td>
+						<div class="relative-row-actions">
+							${this.readOnly ? '' : `
+								${renderRelativeActionButton('edit', 'edit', 'Chỉnh sửa')}
+								${renderRelativeActionButton('delete', 'remove', 'Xóa dòng')}
+							`}
+						</div>
                     </td>
                 `;
 			if (!this.readOnly) {

@@ -132,43 +132,43 @@ function buildClinicHeader(clinicInfo = {}, patientCode = '') {
 		fanpage: clinicInfo.fanpage || clinicInfo.facebook || 'Phòng khám Sơn Tâm'
 	};
 	return `
-		<div class="prescription-preview__header prescription-preview__header--clinic">
-			<div class="clinic-logo">
-				<img src="/static/assets/sontam.jpg" alt="Logo phòng khám" class="clinic-logo__image">
-			</div>
-			<div class="clinic-info">
-				<div class="clinic-name-row"><div class="clinic-name">${escapeHtml(clinic.name)}</div></div>
-				<div class="clinic-details clinic-details--loose">
-					<div class="clinic-detail-line">📍 <strong>Địa chỉ:</strong> ${escapeHtml(clinic.address)}</div>
-					<div class="clinic-detail-line">📞 <strong>Zalo:</strong> ${escapeHtml(clinic.zalo)}</div>
-					<div class="clinic-detail-line">📧 <strong>Email:</strong> ${escapeHtml(clinic.email)}</div>
-					<div class="clinic-detail-line">📘 <strong>Fanpage:</strong> ${escapeHtml(clinic.fanpage)}</div>
+			<div class="prescription-preview__header prescription-preview__header--clinic">
+				<div class="clinic-logo">
+					<img src="/static/assets/sontam.jpg" alt="Logo phòng khám" class="clinic-logo__image">
 				</div>
-			</div>
-			${patientCode ? `
-			<div class="prescription-code-section">
-				<svg class="barcode-svg barcode-svg--patient" data-barcode="${escapeHtml(patientCode)}"></svg>
-				<span class="patient-code">Mã hồ sơ: ${escapeHtml(patientCode)}</span>
-			</div>` : ''}
-		</div>`;
+				<div class="clinic-info">
+					<div class="clinic-name-row"><div class="clinic-name">${escapeHtml(clinic.name)}</div></div>
+					<div class="clinic-details clinic-details--loose">
+						<div class="clinic-detail-line">📍 <strong>Địa chỉ:</strong> ${escapeHtml(clinic.address)}</div>
+						<div class="clinic-detail-line">📞 <strong>Zalo:</strong> ${escapeHtml(clinic.zalo)}</div>
+						<div class="clinic-detail-line">📧 <strong>Email:</strong> ${escapeHtml(clinic.email)}</div>
+						<div class="clinic-detail-line">📘 <strong>Fanpage:</strong> ${escapeHtml(clinic.fanpage)}</div>
+					</div>
+				</div>
+				${patientCode ? `
+				<div class="prescription-code-section">
+					<svg class="barcode-svg barcode-svg--patient" data-barcode="${escapeHtml(patientCode)}"></svg>
+					<span class="patient-code">Mã hồ sơ: ${escapeHtml(patientCode)}</span>
+				</div>` : ''}
+			</div>`;
 }
 function buildPatientInfo(patient = {}, history = {}, options = {}) {
 	const birthDate = formatDate(patient.date_of_birth);
 	const age = formatAge(patient.date_of_birth, history.examination_date);
 	const weight = history.weight || options.weight || '';
 	return `
-		<div class="prescription-preview__patient-info">
-			<div class="prescription-preview__patient-info-left">
-				<div><strong>Họ tên:</strong> ${escapeHtml(patient.full_name || '')}</div>
-				<div><strong>Ngày sinh:</strong> ${birthDate}${age ? ` — ${escapeHtml(age)}` : ''}</div>
-				<div><strong>Địa chỉ:</strong> ${escapeHtml(buildAddress(patient))}</div>
-			</div>
-			<div class="prescription-preview__patient-info-right">
-				<div><strong>Giới tính:</strong> ${escapeHtml(formatGender(patient.gender))}</div>
-				<div><strong>Số điện thoại:</strong> ${escapeHtml(patient.phone || patient.phone_number || '')}</div>
-				<div><strong>Cân nặng:</strong> ${weight ? `${escapeHtml(weight)} kg` : ''}</div>
-			</div>
-		</div>`;
+			<div class="prescription-preview__patient-info">
+				<div class="prescription-preview__patient-info-left">
+					<div><strong>Họ tên:</strong> ${escapeHtml(patient.full_name || '')}</div>
+					<div><strong>Ngày sinh:</strong> ${birthDate}${age ? ` — ${escapeHtml(age)}` : ''}</div>
+					<div><strong>Địa chỉ:</strong> ${escapeHtml(buildAddress(patient))}</div>
+				</div>
+				<div class="prescription-preview__patient-info-right">
+					<div><strong>Giới tính:</strong> ${escapeHtml(formatGender(patient.gender))}</div>
+					<div><strong>Số điện thoại:</strong> ${escapeHtml(patient.phone || patient.phone_number || '')}</div>
+					<div><strong>Cân nặng:</strong> ${weight ? `${escapeHtml(weight)} kg` : ''}</div>
+				</div>
+			</div>`;
 }
 function buildServiceInvoiceHTML(options = {}) {
 	const patient = options.patient || {};
@@ -191,41 +191,41 @@ function buildServiceInvoiceHTML(options = {}) {
 		subtotal += lineSubtotal;
 		totalDiscount += discountAmount;
 		return `
-			<tr>
-				<td>${index + 1}</td>
-				<td>${escapeHtml(service.service_name || service.name || '')}</td>
-				<td class="text-center">${quantity}</td>
-				<td class="text-center">${duration ? `${duration} phút` : ''}</td>
-				<td class="text-end">${formatCurrency(unitPrice)}</td>
-				<td class="text-end">${formatCurrency(lineTotal)}</td>
-			</tr>`;
+				<tr>
+					<td>${index + 1}</td>
+					<td>${escapeHtml(service.service_name || service.name || '')}</td>
+					<td class="text-center">${quantity}</td>
+					<td class="text-center">${duration ? `${duration} phút` : ''}</td>
+					<td class="text-end">${formatCurrency(unitPrice)}</td>
+					<td class="text-end">${formatCurrency(lineTotal)}</td>
+				</tr>`;
 	}).join('');
 
 	const emptyRow = `
-		<tr><td colspan="6" class="text-center text-muted py-4">Lượt khám này chưa có dịch vụ</td></tr>`;
+			<tr><td colspan="6" class="text-center text-muted py-4">Lượt khám này chưa có dịch vụ</td></tr>`;
 	const resolvedTotal = toNumber(servicesData.total_amount, Math.max(subtotal - totalDiscount, 0));
 	const doctorName = history.doctor?.full_name || 'Bác sĩ';
 
 	return `
-		<div class="prescription-preview prescription-preview--document">
-			${buildClinicHeader(options.clinicInfo || getClinicInfo(), patient.patient_code)}
-			<div class="prescription-gradient-separator"></div>
-			<h3 class="prescription-preview__title prescription-preview__title--document">HÓA ĐƠN DỊCH VỤ</h3>
-			${buildPatientInfo(patient, history, { weight: servicesData.patient_info?.weight })}
-			<div class="prescription-preview__diagnosis"><strong>Chẩn đoán:</strong> ${escapeHtml(history.diagnosis || '')}</div>
-			<div class="prescription-preview__body">
-				<table class="prescription-preview-table table-centered prescription-service-table">
-					<colgroup><col class="prescription-service-table__col-index"><col class="prescription-service-table__col-name"><col class="prescription-service-table__col-quantity"><col class="prescription-service-table__col-duration"><col class="prescription-service-table__col-price"><col class="prescription-service-table__col-total"></colgroup>
-					<thead><tr><th>STT</th><th>Tên dịch vụ</th><th>Số lượng</th><th>Thời gian</th><th>Đơn giá (VNĐ)</th><th>Thành tiền</th></tr></thead>
-					<tbody>${rows || emptyRow}<tr><td colspan="5" class="text-end"><strong>Tổng thanh toán</strong></td><td class="text-end"><strong>${formatCurrency(resolvedTotal)} VNĐ</strong></td></tr></tbody>
-				</table>
-			</div>
-			<div class="prescription-preview__signature prescription-preview__signature--avoid-break">
-				<div>${formatSignatureDate(history.examination_date)}</div>
-				<div class="prescription-preview__signature-role">Bác sĩ khám bệnh</div>
-				<div class="prescription-preview__signature-name">${escapeHtml(doctorName)}</div>
-			</div>
-		</div>`;
+			<div class="prescription-preview prescription-preview--document">
+				${buildClinicHeader(options.clinicInfo || getClinicInfo(), patient.patient_code)}
+				<div class="prescription-gradient-separator"></div>
+				<h3 class="prescription-preview__title prescription-preview__title--document">HÓA ĐƠN DỊCH VỤ</h3>
+				${buildPatientInfo(patient, history, { weight: servicesData.patient_info?.weight })}
+				<div class="prescription-preview__diagnosis"><strong>Chẩn đoán:</strong> ${escapeHtml(history.diagnosis || '')}</div>
+				<div class="prescription-preview__body">
+					<table class="prescription-preview-table table-centered prescription-service-table">
+						<colgroup><col class="prescription-service-table__col-index"><col class="prescription-service-table__col-name"><col class="prescription-service-table__col-quantity"><col class="prescription-service-table__col-duration"><col class="prescription-service-table__col-price"><col class="prescription-service-table__col-total"></colgroup>
+						<thead><tr><th>STT</th><th>Tên dịch vụ</th><th>Số lượng</th><th>Thời gian</th><th>Đơn giá (VNĐ)</th><th>Thành tiền</th></tr></thead>
+						<tbody>${rows || emptyRow}<tr><td colspan="5" class="text-end"><strong>Tổng thanh toán</strong></td><td class="text-end"><strong>${formatCurrency(resolvedTotal)} VNĐ</strong></td></tr></tbody>
+					</table>
+				</div>
+				<div class="prescription-preview__signature prescription-preview__signature--avoid-break">
+					<div>${formatSignatureDate(history.examination_date)}</div>
+					<div class="prescription-preview__signature-role">Bác sĩ khám bệnh</div>
+					<div class="prescription-preview__signature-name">${escapeHtml(doctorName)}</div>
+				</div>
+			</div>`;
 }
 function resolveMedicineUsageNote(rawUsage) {
 	if (rawUsage === null || rawUsage === undefined) return '';
@@ -258,13 +258,13 @@ function buildMedicineRows(prescriptionData = {}) {
 	const medicines = Array.isArray(prescriptionData.medicines) ? prescriptionData.medicines : [];
 	if (!medicines.length) return '';
 	return medicines.map((medicine, index) => `
-		<div class="medical-record-medicine-item">
-			<div class="medical-record-medicine-row">
-				<div class="medical-record-medicine-name">${index + 1}. ${escapeHtml([medicine.name, medicine.strength].filter(Boolean).join(' ') || 'Không tên')}${medicine.generic_name ? ` (${escapeHtml(medicine.generic_name)})` : ''}</div>
-				<div class="medical-record-medicine-quantity">${escapeHtml(medicine.quantity || '')} ${escapeHtml(medicine.unit || '')}</div>
-			</div>
-			${resolveMedicineUsageNote(medicine.usage) ? `<div class="medical-record-medicine-usage">${formatMultiline(resolveMedicineUsageNote(medicine.usage))}</div>` : ''}
-		</div>`).join('');
+			<div class="medical-record-medicine-item">
+				<div class="medical-record-medicine-row">
+					<div class="medical-record-medicine-name">${index + 1}. ${escapeHtml([medicine.name, medicine.strength].filter(Boolean).join(' ') || 'Không tên')}${medicine.generic_name ? ` (${escapeHtml(medicine.generic_name)})` : ''}</div>
+					<div class="medical-record-medicine-quantity">${escapeHtml(medicine.quantity || '')} ${escapeHtml(medicine.unit || '')}</div>
+				</div>
+				${resolveMedicineUsageNote(medicine.usage) ? `<div class="medical-record-medicine-usage">${formatMultiline(resolveMedicineUsageNote(medicine.usage))}</div>` : ''}
+			</div>`).join('');
 }
 function getField(section, key, fallback = '') {
 	const value = section && section[key];
@@ -373,80 +373,80 @@ function buildMedicalRecordAdminHtml(model) {
 	const guardian = firstPatientValue(patient, ['guardian_name', 'guardian', 'emergency_contact']);
 	const insurance = firstPatientValue(patient, ['insurance_card', 'insurance']);
 	return `
-			<div class="medical-record-section">
-				<h6 class="medical-record-section-title">I. HÀNH CHÍNH</h6>
-				<div class="medical-record-admin-grid">
-					<div class="medical-record-admin-main">
-						<div class="medical-record-line medical-record-line--tight"><strong>Họ tên:</strong> ${escapeHtml(patient.full_name || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Ngày sinh:</strong> ${formatDate(patient.date_of_birth)}${age ? ` — ${escapeHtml(age)}` : ''}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Giới tính:</strong> ${escapeHtml(formatGender(patient.gender))}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Số điện thoại:</strong> ${escapeHtml(phone)}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Nghề nghiệp:</strong> ${escapeHtml(patient.occupation || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Địa chỉ:</strong> ${escapeHtml(patientAddress)}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Tỉnh/thành phố:</strong> ${escapeHtml(patient.province || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Ghi chú:</strong> ${formatMultiline(appointment.notes || '')}</div>
+				<div class="medical-record-section">
+					<h6 class="medical-record-section-title">I. HÀNH CHÍNH</h6>
+					<div class="medical-record-admin-grid">
+						<div class="medical-record-admin-main">
+							<div class="medical-record-line medical-record-line--tight"><strong>Họ tên:</strong> ${escapeHtml(patient.full_name || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Ngày sinh:</strong> ${formatDate(patient.date_of_birth)}${age ? ` — ${escapeHtml(age)}` : ''}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Giới tính:</strong> ${escapeHtml(formatGender(patient.gender))}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Số điện thoại:</strong> ${escapeHtml(phone)}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Nghề nghiệp:</strong> ${escapeHtml(patient.occupation || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Địa chỉ:</strong> ${escapeHtml(patientAddress)}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Tỉnh/thành phố:</strong> ${escapeHtml(patient.province || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Ghi chú:</strong> ${formatMultiline(appointment.notes || '')}</div>
+						</div>
+						<div class="medical-record-admin-side">
+							<div class="medical-record-line medical-record-line--tight"><strong>Xu hướng tính dục:</strong> ${escapeHtml(patient.sexual_orientation || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>CMT/CCCD:</strong> ${escapeHtml(identity)}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Tôn giáo:</strong> ${escapeHtml(patient.religion || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Tình trạng hôn nhân:</strong> ${escapeHtml(formatMaritalStatus(patient.marital_status))}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Học vấn:</strong> ${escapeHtml(patient.education_level || '')}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Người giám hộ:</strong> ${escapeHtml(guardian)}</div>
+							<div class="medical-record-line medical-record-line--tight"><strong>Thẻ BHYT:</strong> ${escapeHtml(insurance)}</div>
+						</div>
 					</div>
-					<div class="medical-record-admin-side">
-						<div class="medical-record-line medical-record-line--tight"><strong>Xu hướng tính dục:</strong> ${escapeHtml(patient.sexual_orientation || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>CMT/CCCD:</strong> ${escapeHtml(identity)}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Tôn giáo:</strong> ${escapeHtml(patient.religion || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Tình trạng hôn nhân:</strong> ${escapeHtml(formatMaritalStatus(patient.marital_status))}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Học vấn:</strong> ${escapeHtml(patient.education_level || '')}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Người giám hộ:</strong> ${escapeHtml(guardian)}</div>
-						<div class="medical-record-line medical-record-line--tight"><strong>Thẻ BHYT:</strong> ${escapeHtml(insurance)}</div>
-					</div>
-				</div>
-			</div>`;
+				</div>`;
 }
 function buildMedicalRecordInquiryHtml(model) {
 	const { patient, history } = model;
 	return `
-			<div class="medical-record-section">
-				<h6 class="medical-record-section-title">II. HỎI BỆNH</h6>
-				<div class="medical-record-line"><strong>Lý do chính đến khám:</strong> ${formatMultiline(model.mainReason)}</div>
-				<div class="medical-record-line"><strong>Triệu chứng chính:</strong> ${formatMultiline(history.main_symptoms || '')}</div>
-				<div class="medical-record-line"><strong>Đến khám cùng:</strong> ${escapeHtml(buildRelativeText(model.relatives))}</div>
-				<div class="medical-record-block"><strong>Tiền sử bệnh:</strong><div class="medical-record-indent">
-					<div class="medical-record-line medical-record-line--compact"><strong>+ Bản thân:</strong> ${escapeHtml(formatHistoryEntries(patient.physical_history))}</div>
-					<div class="medical-record-line medical-record-line--compact"><strong>+ Gia đình:</strong> ${escapeHtml(formatHistoryEntries(patient.family_history))}</div>
-				</div></div>
-			</div>`;
+				<div class="medical-record-section">
+					<h6 class="medical-record-section-title">II. HỎI BỆNH</h6>
+					<div class="medical-record-line"><strong>Lý do chính đến khám:</strong> ${formatMultiline(model.mainReason)}</div>
+					<div class="medical-record-line"><strong>Triệu chứng chính:</strong> ${formatMultiline(history.main_symptoms || '')}</div>
+					<div class="medical-record-line"><strong>Đến khám cùng:</strong> ${escapeHtml(buildRelativeText(model.relatives))}</div>
+					<div class="medical-record-block"><strong>Tiền sử bệnh:</strong><div class="medical-record-indent">
+						<div class="medical-record-line medical-record-line--compact"><strong>+ Bản thân:</strong> ${escapeHtml(formatHistoryEntries(patient.physical_history))}</div>
+						<div class="medical-record-line medical-record-line--compact"><strong>+ Gia đình:</strong> ${escapeHtml(formatHistoryEntries(patient.family_history))}</div>
+					</div></div>
+				</div>`;
 }
 function buildMedicalRecordExaminationDetailHtml(model) {
 	const mental = buildMedicalRecordFieldLines(moduleState.MEDICAL_RECORD_MENTAL_FIELDS, model.mentalSection);
 	if (model.isDoctor) {
 		return `${moduleState.MEDICAL_RECORD_DETAIL_LEAD}<div class="medical-record-indent medical-record-examination-grid">
-						<div class="medical-record-examination-group">
-							<div class="medical-record-subtitle"><strong>- Các cơ quan:</strong></div>
-							<div class="medical-record-indent-lg">${buildMedicalRecordFieldLines(moduleState.MEDICAL_RECORD_ORGAN_FIELDS, model.generalSection)}</div>
-						</div>
-						<div class="medical-record-examination-group">
-							<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
-							<div class="medical-record-indent-lg">${mental}</div>
-						</div>
-					</div>`;
+							<div class="medical-record-examination-group">
+								<div class="medical-record-subtitle"><strong>- Các cơ quan:</strong></div>
+								<div class="medical-record-indent-lg">${buildMedicalRecordFieldLines(moduleState.MEDICAL_RECORD_ORGAN_FIELDS, model.generalSection)}</div>
+							</div>
+							<div class="medical-record-examination-group">
+								<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
+								<div class="medical-record-indent-lg">${mental}</div>
+							</div>
+						</div>`;
 	}
 	return `${moduleState.MEDICAL_RECORD_DETAIL_LEAD}<div class="medical-record-indent">
-						<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
-						<div class="medical-record-indent-lg">${mental}</div>
-					</div>`;
+							<div class="medical-record-subtitle"><strong>- Khám tâm thần:</strong></div>
+							<div class="medical-record-indent-lg">${mental}</div>
+						</div>`;
 }
 function buildMedicalRecordExaminationHtml(model) {
 	const { labels, isDoctor, patient } = model;
 	return `
-			<div class="medical-record-section">
-				<h6 class="medical-record-section-title">III. KHÁM BỆNH</h6>
-				<div class="medical-record-section-title"><strong>Sinh hiệu:</strong> ${buildMedicalRecordVitals(model.history)}</div>
-				<div class="medical-record-line"><strong>Bệnh sử:</strong> ${formatMultiline(model.medicalHistory)}</div>
-				<div class="medical-record-line"><strong>${labels.manifestations}:</strong> ${formatMultiline(model.generalManifestations)}</div>
-				<div class="medical-record-block"><strong>${labels.examination}:</strong> ${formatMultiline(model.generalExamination)}${buildMedicalRecordExaminationDetailHtml(model)}
-				</div>
-				${isDoctor ? `<div class="medical-record-line"><strong>- Các xét nghiệm cận lâm sàng cần làm:</strong> ${formatMultiline(getField(model.labSection, 'required_tests', ''))}</div>` : ''}
-				<div class="medical-record-line"><strong>${labels.diagnosis}:</strong> ${formatMultiline(model.diagnosis)}</div>
-				<div class="medical-record-line"><strong>${labels.accompanying}:</strong> ${formatMultiline(model.accompanyingDiagnosis)}</div>
-				<div class="medical-record-line"><strong>${labels.plan}:</strong> ${formatMultiline(model.treatmentPlan)}</div>
-				${isDoctor ? `<div class="medical-record-line"><strong>Dị ứng thuốc:</strong> ${escapeHtml(formatAllergies(patient.allergies))}</div>` : ''}
-			</div>`;
+				<div class="medical-record-section">
+					<h6 class="medical-record-section-title">III. KHÁM BỆNH</h6>
+					<div class="medical-record-section-title"><strong>Sinh hiệu:</strong> ${buildMedicalRecordVitals(model.history)}</div>
+					<div class="medical-record-line"><strong>Bệnh sử:</strong> ${formatMultiline(model.medicalHistory)}</div>
+					<div class="medical-record-line"><strong>${labels.manifestations}:</strong> ${formatMultiline(model.generalManifestations)}</div>
+					<div class="medical-record-block"><strong>${labels.examination}:</strong> ${formatMultiline(model.generalExamination)}${buildMedicalRecordExaminationDetailHtml(model)}
+					</div>
+					${isDoctor ? `<div class="medical-record-line"><strong>- Các xét nghiệm cận lâm sàng cần làm:</strong> ${formatMultiline(getField(model.labSection, 'required_tests', ''))}</div>` : ''}
+					<div class="medical-record-line"><strong>${labels.diagnosis}:</strong> ${formatMultiline(model.diagnosis)}</div>
+					<div class="medical-record-line"><strong>${labels.accompanying}:</strong> ${formatMultiline(model.accompanyingDiagnosis)}</div>
+					<div class="medical-record-line"><strong>${labels.plan}:</strong> ${formatMultiline(model.treatmentPlan)}</div>
+					${isDoctor ? `<div class="medical-record-line"><strong>Dị ứng thuốc:</strong> ${escapeHtml(formatAllergies(patient.allergies))}</div>` : ''}
+				</div>`;
 }
 
 export { buildAddress, buildClinicHeader, buildMedicalRecordAdminHtml, buildMedicalRecordExaminationDetailHtml, buildMedicalRecordExaminationHtml, buildMedicalRecordFieldLines, buildMedicalRecordInquiryHtml, buildMedicalRecordModel, buildMedicalRecordRoleFields, buildMedicalRecordVitals, buildMedicineRows, buildPatientInfo, buildRelativeText, buildServiceInvoiceHTML, escapeHtml, formatAge, formatAllergies, formatCurrency, formatDate, formatGender, formatHistoryEntries, formatMaritalStatus, formatMultiline, formatPrescriptionType, formatSignatureDate, getClinicInfo, getField, parseArrayValue, parseMedicineUsage, resolveMedicineUsageNote, resolvePrescriptionDays, toNumber };
