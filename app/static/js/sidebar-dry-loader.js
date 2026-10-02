@@ -2,11 +2,11 @@
 	'use strict';
 
 	const SIDEBAR_CONTAINER_ID = 'sidebar-container';
-	// Split modules: parts are loaded in order before the entry file (last item).
-	const APP_HEADER_LOADER_PATHS = ['/static/js/app-header-loader-parts/assets-and-session.js', '/static/js/app-header-loader-parts/global-search.js', '/static/js/app-header-loader-parts/header-buttons.js', '/static/js/app-header-loader-parts/notifications-and-mount.js', '/static/js/app-header-loader.js'];
+	// ES module entries (their parts are imports).
+	const APP_HEADER_LOADER_PATH = '/static/js/app-header-loader.js';
 	const APP_HEADER_STYLESHEET_PATH = '/static/css/components/app-header.css';
 	const APP_HEADER_STYLESHEET_ID = 'qlpk-app-header-style';
-	const SHORTCUT_MANAGER_PATHS = ['/static/js/shortcut-manager-parts/session-and-keys.js', '/static/js/shortcut-manager-parts/settings-page.js', '/static/js/shortcut-manager.js'];
+	const SHORTCUT_MANAGER_PATH = '/static/js/shortcut-manager.js';
 
 	function getAppVersion() {
 		return window.APP_VERSION || localStorage.getItem('APP_VERSION') || Date.now();
@@ -20,50 +20,10 @@
 		}
 	}
 
-	function ensureScriptLoaded(path, dataAttribute, isReady) {
-		return new Promise((resolve) => {
-			if (typeof isReady === 'function' && isReady()) {
-				resolve();
-				return;
-			}
-
-			const existing = document.querySelector(`script[data-${dataAttribute}="1"]`);
-			if (existing) {
-				let resolved = false;
-				const finish = () => {
-					if (resolved) return;
-					resolved = true;
-					resolve();
-				};
-				existing.addEventListener('load', finish, { once: true });
-				existing.addEventListener('error', finish, { once: true });
-				let attempts = 0;
-				const timer = setInterval(() => {
-					attempts += 1;
-					if ((typeof isReady === 'function' && isReady()) || attempts >= 20) {
-						clearInterval(timer);
-						finish();
-					}
-				}, 50);
-				return;
-			}
-
-			const script = document.createElement('script');
-			script.src = `${path}?v=${getAppVersion()}`;
-			script.async = true;
-			script.setAttribute(`data-${dataAttribute}`, '1');
-			script.onload = () => resolve();
-			script.onerror = () => resolve();
-			document.head.appendChild(script);
-		});
-	}
-
-	function ensureScriptSequence(paths, dataAttribute, isReady) {
-		return paths.reduce((chain, path, index) => chain.then(() => ensureScriptLoaded(
-			path,
-			index === paths.length - 1 ? dataAttribute : `${dataAttribute}-part-${index + 1}`,
-			isReady
-		)), Promise.resolve());
+	// Same URL as a page's own module tag, so a module the page already loaded is not evaluated twice.
+	function ensureModuleLoaded(path, isReady) {
+		if (typeof isReady === 'function' && isReady()) return Promise.resolve();
+		return import(`${path}?v=${getAppVersion()}`).catch(() => {});
 	}
 
 	function ensureShellStylesheet() {
@@ -107,19 +67,14 @@
 			return Promise.resolve();
 		}
 
-		return ensureScriptSequence(
-			APP_HEADER_LOADER_PATHS,
-			'app-header-loader',
+		return ensureModuleLoaded(
+			APP_HEADER_LOADER_PATH,
 			() => !!(window.QLPKAppHeader && typeof window.QLPKAppHeader.reload === 'function')
 		);
 	}
 
 	function ensureShortcutManagerLoaded() {
-		return ensureScriptSequence(
-			SHORTCUT_MANAGER_PATHS,
-			'shortcut-manager',
-			() => !!window.ShortcutManager
-		);
+		return ensureModuleLoaded(SHORTCUT_MANAGER_PATH, () => !!window.ShortcutManager);
 	}
 
 	async function initializeWorkspaceShell() {

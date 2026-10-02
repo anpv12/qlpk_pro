@@ -15,16 +15,16 @@ const FACTORY_SPLIT = /(?:moduleParts\.)?installers\.push\(function \(inst(?:, o
 const CONTINUED = /^\/\/ Continued in \(nạp ngay sau file này, cùng scope trang\): (.+)$/m;
 
 // Load order: the entry's parts, the entry, then its continuation files (each expanded the same way).
-// An ES module whose parts live in <entry>-parts/: the parts it imports (each after its own parts), then the entry.
-function esPartFiles(rel, seen = []) {
+// An ES module whose parts live in <entry>-parts/: every part reachable through imports inside that folder
+// (dependencies first, each once), then the entry.
+function esPartFiles(rel, partDir = rel.replace(/\.js$/, '-parts'), seen = []) {
     if (seen.includes(rel)) return [];
     seen.push(rel);
     const source = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
-    const partDir = rel.replace(/\.js$/, '-parts');
     const parts = [...source.matchAll(/^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}\/[^'"]+)['"]/gm)]
         .map(match => path.posix.normalize(path.posix.join(path.posix.dirname(rel), match[1])))
         .filter(file => path.posix.dirname(file) === partDir);
-    return [...parts.flatMap(part => esPartFiles(part, seen)), rel];
+    return [...parts.flatMap(part => esPartFiles(part, partDir, seen)), rel];
 }
 
 // Sibling ES modules `<stem>-*.js` that import `./<stem>.js` and extend it (class method modules), in name order.

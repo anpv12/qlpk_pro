@@ -10,7 +10,7 @@ const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 const source = readScriptSource(path.join(__dirname, '../app/static/js/app-header-loader.js'));
 // Logout state lives in the split entry; the functions come from its parts.
 const logoutSource = 'let logoutPending = false;\nlet confirmedLogoutCleanup = null;\n'
-    + source.slice(source.indexOf('\tasync function clearConfirmedLogout('), source.indexOf('\n\tfunction bindLogout()'));
+    + source.slice(source.indexOf('\nasync function clearConfirmedLogout('), source.indexOf('\nfunction bindLogout()'));
 
 function harness() {
     const storage = new Map([['qlpk_token', 'qa-token'], ['token', 'old-alias'], ['qlpk_user', 'qa-user']]);

@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 const source = readScriptSource(path.join(__dirname, '../app/static/js/app-header-loader.js'));
-const submitSource = source.slice(source.indexOf('\tasync function submitPasswordChange('), source.indexOf('\n\tasync function fetchCurrentUser('));
+const submitSource = source.slice(source.indexOf('\nasync function submitPasswordChange('), source.indexOf('\nasync function fetchCurrentUser('));
 
 function harness() {
     const log = [];

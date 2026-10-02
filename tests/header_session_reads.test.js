@@ -24,11 +24,11 @@ function harness() {
         },
     });
     for (const [start, end] of [
-        ['\tfunction readStoredUser()', '\n\tfunction normalizeRole'],
-        ['\tasync function fetchCurrentUser()', '\n\tfunction globalSearchElements'],
-        ['\tfunction globalSearchApiHeaders()', '\n\tfunction itemActions'],
-        ['\tasync function fetchGlobalSearch(', '\n\tasync function selectGlobalSearchPatient'],
-        ['\tfunction hasHeaderSession()', '\n\tfunction notificationElements'],
+        ['\nfunction readStoredUser()', '\nfunction normalizeRole'],
+        ['\nasync function fetchCurrentUser()', '\nfunction globalSearchElements'],
+        ['\nfunction globalSearchApiHeaders()', '\nfunction itemActions'],
+        ['\nasync function fetchGlobalSearch(', '\nasync function selectGlobalSearchPatient'],
+        ['\nfunction hasHeaderSession()', '\nfunction notificationElements'],
     ]) vm.runInContext(segment(start, end), context);
     return { context, requests, writes, updates, user, setStatus(value) { status = value; } };
 }
