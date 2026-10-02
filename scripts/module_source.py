@@ -106,15 +106,21 @@ def module_graph(entry: Path, seen: list[Path] | None = None) -> list[Path]:
     return seen
 
 
-def read_template_source(path: Path) -> str:
-    """Template text plus one ``<!-- module import: /static/js/... -->`` line per module its module scripts reach,
-    so asset checks see scripts a page now imports from its entry instead of listing them as tags."""
-    text = path.read_text(encoding="utf-8", errors="ignore")
+def module_import_lines(html: str) -> str:
+    """One ``<!-- module import: /static/js/... -->`` line per module the module scripts in ``html`` reach."""
     imported: list[Path] = []
-    for entry in MODULE_SCRIPT.findall(text):
-        module_graph(JS_ROOT / entry, imported)
-    lines = [f"<!-- module import: /static/js/{p.relative_to(JS_ROOT.resolve()).as_posix()} -->" for p in imported]
-    return text + ("\n" + "\n".join(lines) if lines else "")
+    for entry in MODULE_SCRIPT.findall(html):
+        if (JS_ROOT / entry).is_file():
+            module_graph(JS_ROOT / entry, imported)
+    return "\n".join(f"<!-- module import: /static/js/{p.relative_to(JS_ROOT.resolve()).as_posix()} -->" for p in imported)
+
+
+def read_template_source(path: Path) -> str:
+    """Template text plus the module imports its module scripts reach, so asset checks see scripts a page now
+    imports from its entry instead of listing them as tags."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    lines = module_import_lines(text)
+    return text + ("\n" + lines if lines else "")
 
 
 def read_source(path: Path) -> str:

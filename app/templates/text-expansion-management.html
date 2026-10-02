@@ -3,12 +3,10 @@
 <head>
 	{% include 'partials/user-feedback-runtime.html' %}
 	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý từ viết tắt</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
   <link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   {% include 'partials/brand-theme.html' %}
@@ -17,16 +15,14 @@
   <link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
   <script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
   <script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
-  <script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
-  <script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
+
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
-<script src="/static/js/components/clinic-pagination.js?v={{ app_version }}"></script>
+
 </head>
 <body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
   <div class="container-fluid p-0">
     <div class="row g-0">
       <div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-      
       <!-- Main Content -->
       <div class="col-md-10 main-content">
         <div class="header-bar qlpk-clinic-header header-padding">
@@ -37,7 +33,6 @@
             </div>
           </div>
         </div>
-        
         <div class="import-export-section">
           <div class="qlpk-admin-toolbar-top">
             <div class="qlpk-admin-actions">
@@ -74,7 +69,6 @@
             </div>
           </div>
         </div>
-        
         <!-- Table -->
         <div class="card">
           <div class="card-body p-0">
@@ -97,13 +91,11 @@
             </div>
           </div>
         </div>
-        
         <!-- Pagination -->
         {% with pagination_class='qlpk-pagination--separate' %}{% include 'partials/clinic-pagination.html' %}{% endwith %}
       </div>
     </div>
   </div>
-  
   <!-- Add/Edit Modal -->
   <div class="modal fade" id="textExpansionModal" tabindex="-1">
     <div class="modal-dialog">
@@ -152,7 +144,6 @@
       </div>
     </div>
   </div>
-  
   <!-- Import Modal -->
   <div class="modal fade" id="importModal" tabindex="-1">
     <div class="modal-dialog">
@@ -182,8 +173,7 @@
       </div>
     </div>
   </div>
-  
-  <script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
+
   <script type="module" src="/static/js/text-expansion-management.js?v={{ app_version }}"></script>
 </body>
 </html>

@@ -1,4 +1,9 @@
 // DAV medicine reference catalogue: server-paged search with abort/timeout, detail modal, Excel export, DAV sync.
+// Shared page runtime (formerly classic script tags), in page order.
+import '../app-version-check.js';
+import '../sidebar-dry-loader.js';
+import '../components/clinic-pagination.js';
+import '../realtime-page-hooks.js';
 import { el, icon, replace } from '../shared/dom.js';
 
 let currentPage = 1;

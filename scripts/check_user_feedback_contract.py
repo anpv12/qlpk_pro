@@ -66,7 +66,7 @@ def check_runtime(errors: list[str]) -> None:
     if not RUNTIME_PARTIAL.exists():
         fail(errors, "missing shared feedback runtime partial")
         return
-    partial = RUNTIME_PARTIAL.read_text(encoding="utf-8")
+    partial = read_source(RUNTIME_PARTIAL)
     for needle in ("shared/feedback-tokens.css", "shared/user-feedback.js"):
         if needle not in partial:
             fail(errors, f"feedback runtime partial missing {needle}")

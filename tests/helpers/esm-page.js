@@ -2,6 +2,7 @@
 // Loads an ES module page entry into a fresh fake DOM. Each call re-evaluates the entry (a unique
 // query string defeats the ESM cache) so page-level state never leaks between tests; shared
 // dependency modules stay cached but read window/document at call time.
+const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { installDom, Event } = require('./fake-dom');
@@ -23,9 +24,19 @@ function fetchRecorder(window) {
     return requests;
 }
 
+// The entry's leading side-effect imports (shared page runtime: sidebar, pagination, dialogs…), evaluated before a
+// test installs its stubs so a stub is not overwritten when such a module first runs.
+async function importSharedRuntime(entry) {
+    const source = fs.readFileSync(path.join(JS_ROOT, entry), 'utf8');
+    for (const [, spec] of source.matchAll(/^import '(\.{1,2}\/[^']+)';$/gm)) {
+        await import(pathToFileURL(path.join(JS_ROOT, path.dirname(entry), spec)).href);
+    }
+}
+
 async function loadPage(entry, { html = '', url, before } = {}) {
     const window = installDom({ html, url });
     const requests = fetchRecorder(window);
+    await importSharedRuntime(entry);
     if (before) before(window);
     const module = await import(`${pathToFileURL(path.join(JS_ROOT, entry)).href}?case=${++sequence}`);
     return { window, document: window.document, requests, module };

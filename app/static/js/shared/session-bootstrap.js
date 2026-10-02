@@ -3,7 +3,7 @@
 
 	const transport = window.QLPKApiTransport;
 	if (!transport || transport.session) return;
-	const script = document.currentScript;
+	const script = document.querySelector('script[data-qlpk-session]');
 	const publicPage = Boolean(script && script.dataset.qlpkSession === 'public');
 	let channel = null;
 	try {

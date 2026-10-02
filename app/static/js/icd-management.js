@@ -1,5 +1,10 @@
 // ICD catalogue: server-paged search with disease-group filter, add/edit modals with field validation,
 // delete confirmation, realtime refresh; Excel template/import lives in icd-management/import-export.js.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { bindImportExport } from './icd-management/import-export.js';
 

@@ -1,3 +1,9 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './custom-modal.js';
+import './realtime-client.js';
+import './realtime-page-hooks.js';
 import { state } from './chi-tieu/state.js';
 import { el, icon, replace } from './shared/dom.js';
 import { CAT, getCat } from './chi-tieu/categories.js';

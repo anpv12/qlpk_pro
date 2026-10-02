@@ -1,5 +1,12 @@
 // Text expansion (abbreviation) catalog: filtered server-paged list, stats, add/edit modal, delete,
 // Excel import/export/template and reset. Every change refreshes the page's live expansion cache.
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
+import './text-expansion.js';
 import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 

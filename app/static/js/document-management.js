@@ -1,5 +1,11 @@
 // Document library: folder tree (admin add/rename/delete), documents of the selected folder, link and
 // file upload (button or drag & drop), realtime refresh. Admin-only controls stay hidden for others.
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './custom-modal.js';
+import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { HttpError, requestJson } from './shared/http-json.js';
 

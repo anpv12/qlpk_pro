@@ -1,3 +1,10 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './shared/icon-system.js';
+import './shared/confirmation-dialog.js';
+import './sidebar-dry-loader.js';
 import './doctor-examination/module-registry.js';
 import './doctor-examination/page-runtime.js';
 import './components/component-dom-scope.js';

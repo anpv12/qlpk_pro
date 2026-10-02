@@ -1,5 +1,12 @@
 // Doctor busy schedule: the signed-in doctor's own busy periods — quick presets, create/edit form with
 // conflict reporting, reason suggestions, filtered list, delete confirmation, realtime refresh.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './flatpickr-vn.js';
+import './sidebar-dry-loader.js';
+import './datepicker-init.js';
+import './custom-modal.js';
+import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { HttpError, requestJson } from './shared/http-json.js';
 import { formatDateTime, formatTimeRangeReadable, statusIndicator } from './doctor-busy-schedule/format.js';

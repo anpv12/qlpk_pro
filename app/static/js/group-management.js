@@ -1,5 +1,12 @@
 // Permission groups: searchable list with permission badges, add/edit modal with a parent/child
 // permission tree, read-only view, delete confirmation modal, realtime refresh.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
 import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { PERMISSIONS } from './group-permissions.js';

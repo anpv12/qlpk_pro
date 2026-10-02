@@ -1,5 +1,7 @@
 // Login page: cookie session through the shared session owner (QLPKApiTransport.session), with the
 // legacy bearer-token flow kept for transports without a session owner. Mounts on import.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
 import { requestJson } from './shared/http-json.js';
 
 function normalizeRole(role) {

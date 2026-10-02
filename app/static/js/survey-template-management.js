@@ -1,5 +1,11 @@
 // Survey template list: server search/pagination, preview/download, document upload/edit, delete.
 // Questionnaire templates open in the shared create/edit modal (survey-template-create.js).
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
+import './utils.js';
 import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
 import { surveyCreateModal } from './survey-template-create.js';
 import './survey-result-config.js';

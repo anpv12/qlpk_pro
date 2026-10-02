@@ -4,12 +4,10 @@
 	{% set qlpk_public_page = true %}
 	{% include 'partials/user-feedback-runtime.html' %}
 	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Khảo sát Tâm lý</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
   {% include 'partials/brand-theme.html' %}
   <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
   <link rel="stylesheet" href="/static/css/pages/patient-survey.css?v={{ app_version }}">
@@ -18,7 +16,6 @@
 <body>
   <!-- Alert container -->
   <div id="alert-container" class="qlpk-alert-container"></div>
-  
   <div class="container">
     <section class="hero" aria-labelledby="title">
       <div>

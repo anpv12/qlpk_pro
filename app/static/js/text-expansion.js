@@ -5,6 +5,7 @@
 let textExpansions = {};
 let isLoaded = false;
 let loadRevision = 0;
+let pendingLoads = 0;
 let cachedSessionRevision = null;
 
 function clearExpansionCache() {
@@ -35,7 +36,7 @@ function initializeTextExpansion() {
     document.addEventListener('keydown', event => {
         if (event.target instanceof Element && event.target.matches(EXPANDABLE_FIELDS)) handleTextExpansion(event, event.target);
     });
-    if (!isLoaded) setTimeout(loadTextExpansions, 500);
+    setTimeout(() => { if (!isLoaded && !pendingLoads) loadTextExpansions(); }, 500);
 }
 
 // Load data immediately when script loads
@@ -46,6 +47,7 @@ else initializeTextExpansion();
 // Load text expansions from server
 async function loadTextExpansions() {
     const revision = ++loadRevision;
+    pendingLoads += 1;
     try {
         const response = await fetch('/api/text-expansions/active', { method: 'GET' });
         
@@ -74,6 +76,8 @@ async function loadTextExpansions() {
         console.error('Text Expansion: Error loading expansions', error);
         textExpansions = {};
         isLoaded = false;
+    } finally {
+        pendingLoads -= 1;
     }
 }
 

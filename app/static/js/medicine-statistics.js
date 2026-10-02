@@ -1,5 +1,9 @@
 // Medicine statistics page: summary cards, prescriptions by doctor, inventory, prescription history and the
 // dispensing ledger (per-medicine totals + transactions), with date/doctor/type/search filters and Excel export.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
 import { delegate } from './shared/dom.js';
 import { authHeaders, formatMoney, formatNumber, getFilterParams, hideLoading, showLoading, showToast, state } from './medicine-statistics/shared.js';
 import { renderInventoryTable, renderPrescriptionHistoryTable, renderPrescriptionsTable } from './medicine-statistics/tables.js';

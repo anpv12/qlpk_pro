@@ -1,3 +1,9 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
 import { byId, el, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { bindExcelImport, mountModalCrudPage, statusBadge } from './components/modal-crud-page.js';

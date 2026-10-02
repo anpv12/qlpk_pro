@@ -1,5 +1,12 @@
 // Account management: filtered list (server role filter, client text/status filter, stale responses
 // dropped), delete confirmation, sidebar identity; the account modal lives in user-management-form.js.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
+import './components/clinic-pagination.js';
 import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { bindColorSwatches, openAddUser, openEditUser, saveUser, uploadAvatar, uploadLicense } from './user-management-form.js';

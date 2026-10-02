@@ -7,7 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Lịch hẹn</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="/static/vendor/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
@@ -16,12 +15,10 @@
 	<link rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 
-
 	{% include 'partials/flatpickr.html' %}
 	<link rel="stylesheet" href="/static/css/holiday-calendar.css?v={{ app_version }}">
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/fullcalendar@5.11.3/main.min.js"></script>
-	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<script src="/static/vendor/fullcalendar@5.11.3/locales/vi.js"></script>
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/appointment-management.css?v={{ app_version }}">
@@ -123,21 +120,9 @@
 		</div>
 	</div>
 
-
-
 	{% include "partials/appointment-management-modals.html" %}
 
-	<script src="/static/js/utils.js?v={{ app_version }}"></script>
-
-	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
-	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
-	<script src="/static/js/components/icd-data-loader.js?v={{ app_version }}"></script>
-	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
-	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
-	<script src="/static/js/components/appointment-calendar.js?v={{ app_version }}"></script>
-	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
 	<script type="module" src="/static/js/appointment-management.js?v={{ app_version }}"></script>
-	<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
 
 </body>
 

@@ -1,5 +1,9 @@
 // Admin dashboard: today's appointments, exam visits per day, top ICD treemap, referral sources,
 // staff presence, detail modals and Excel exports. Non-admin users see the welcome view only.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, replace } from './shared/dom.js';
 import { bindExamStatsChartInteractions, buildExamStatsChartOption, buildICDChartOption } from './dashboard/charts.js';
 import { emptyState, examDetailRows, icdDetailRows, referralDetailRows, renderAppointments, renderReferralSources, renderStaffOnline } from './dashboard/panels.js';

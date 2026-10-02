@@ -1,3 +1,6 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
 import { state } from './patient-survey/state.js';
 import { byId, el, icon, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';

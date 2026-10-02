@@ -7,7 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Quản lý khám - Lễ tân</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="/static/vendor/roboto/roboto.css"
@@ -24,19 +23,14 @@
 	<!-- Flatpickr CSS -->
 	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
 
-	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
 
 	<!-- Flatpickr JS -->
 	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
-	<script src="/static/js/flatpickr-vn.js?v={{ app_version }}"></script>
 
 	<!-- DRY Datepicker Init -->
-	<script src="/static/js/datepicker-init.js?v={{ app_version }}"></script>
-	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
-	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
 
 	<link rel="stylesheet" href="/static/css/shared/clinical-workflow.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/waiting-queue-card.css?v={{ app_version }}">
@@ -175,7 +169,6 @@
 						</div>
 					</div>
 
-
 						</div>
 				</main>
 		</div>
@@ -186,7 +179,6 @@
 		<input type="hidden" id="provinceHidden" value="">
 		<input type="hidden" id="district" value="">
 	</div>
-
 
 	<!-- Duplicate Patient Modal -->
 	<div class="modal fade qlpk-duplicate-patient-modal" id="duplicatePatientModal" tabindex="-1" aria-labelledby="duplicatePatientModalLabel"
@@ -226,7 +218,6 @@
 
 	<!-- Modal: Quản lý người đi khám cùng - DRY -->
 	{% include 'partials/joint-exam-modal.html' %}
-
 
 		<!-- Custom JavaScript -->
 	<script type="module" src="/static/js/receptionist-new-entry.js?v={{ app_version }}"></script>

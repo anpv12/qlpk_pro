@@ -1,4 +1,14 @@
 // Shared components and psychologist slices, in the order the page used to load them as classic scripts.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './shared/icon-system.js';
+import './shared/confirmation-dialog.js';
+import './sidebar-dry-loader.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './components/autocomplete-field.js';
+import './components/icd-autocomplete.js';
+import './clinic-config.js';
 import './occupation-autocomplete.js';
 import './components/patient-search-dropdown.js';
 import './relative-table.js';

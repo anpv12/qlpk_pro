@@ -1,3 +1,10 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './sidebar-dry-loader.js';
+import './shared/confirmation-dialog.js';
+import './utils.js';
+import './datepicker-init.js';
+import './custom-modal.js';
+import './realtime-page-hooks.js';
 import { state } from './payment-waiting/state.js';
 import { byId, debounce, delegate, on } from './shared/dom.js';
 import { HttpError } from './shared/http-json.js';

@@ -1,3 +1,17 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './sidebar-dry-loader.js';
+import './utils.js';
+import './custom-modal.js';
+import './shared/icon-system.js';
+import './components/icd-data-loader.js';
+import './components/autocomplete-field.js';
+import './components/icd-autocomplete.js';
+import './components/appointment-calendar.js';
+import './realtime-page-hooks.js';
+import './text-expansion.js';
 import { state } from './appointment-management/page-state.js';
 import { clearStaleHeaderAppointmentModalRequest, initializeCalendar } from './appointment-management/page-calendar.js';
 import { loadDoctors, loadPackages, loadServices } from './appointment-management/page-data.js';

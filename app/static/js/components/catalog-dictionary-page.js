@@ -2,6 +2,12 @@
 // debounced search, server pagination, add/edit modal, delete confirmation, Excel template/import,
 // realtime refresh. The page entry passes its API, field and wording config; markup comes from
 // templates/partials/catalog-dictionary-page.html with the same id prefix.
+// Shared page runtime (formerly classic script tags), in page order.
+import '../shared/confirmation-dialog.js';
+import '../app-version-check.js';
+import '../sidebar-dry-loader.js';
+import './clinic-pagination.js';
+import '../realtime-page-hooks.js';
 import { byId, debounce, delegate, el, icon, on, replace } from '../shared/dom.js';
 import { downloadFile, requestJson } from '../shared/http-json.js';
 

@@ -1,10 +1,2 @@
 <link id="qlpk-feedback-tokens-style" rel="stylesheet" href="/static/css/shared/feedback-tokens.css?v={{ app_version }}">
-<script src="/static/js/shared/html-escape.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/api-transport.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/browser-session.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/browser-session-actions.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/session-bootstrap.js?v={{ app_version }}" data-qlpk-session="{{ 'public' if qlpk_public_page else 'required' }}"></script>
-<script src="/static/js/shared/search-normalization.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/user-feedback.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/inline-actions.js?v={{ app_version }}"></script>
-<script src="/static/js/shared/pdf-preview.js?v={{ app_version }}"></script>
+<script type="module" src="/static/js/shared/runtime.js?v={{ app_version }}" data-qlpk-session="{{ 'public' if qlpk_public_page else 'required' }}"></script>

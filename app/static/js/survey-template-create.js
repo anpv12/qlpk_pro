@@ -1,3 +1,7 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
 import { moduleState } from './survey-template-create-parts/state.js';
 import { close, init, open, refreshCriteriaCache } from './survey-template-create-parts/page-state.js';
 

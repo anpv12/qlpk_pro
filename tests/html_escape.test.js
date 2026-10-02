@@ -11,6 +11,7 @@ test('shared escaper neutralises markup and attribute breakouts', () => {
 });
 
 test('shared escaper loads before page scripts on every runtime page', () => {
-    const runtime = fs.readFileSync('app/templates/partials/user-feedback-runtime.html', 'utf8');
-    assert.ok(runtime.indexOf('shared/html-escape.js') < runtime.indexOf('shared/api-transport.js'));
+    const runtime = fs.readFileSync('app/static/js/shared/runtime.js', 'utf8');
+    assert.ok(runtime.indexOf('./html-escape.js') >= 0);
+    assert.ok(runtime.indexOf('./html-escape.js') < runtime.indexOf('./api-transport.js'));
 });

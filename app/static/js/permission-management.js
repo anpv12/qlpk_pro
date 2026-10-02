@@ -1,5 +1,9 @@
 // Permission assignment: pick a user, tick the groups, save. Responses for a previously selected user
 // are dropped (revision guard) and saving stays disabled until the chosen user's assignments load.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './realtime-page-hooks.js';
 import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 

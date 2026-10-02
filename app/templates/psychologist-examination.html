@@ -7,7 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Tâm lý gia khám bệnh</title>
 	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<script src="/static/js/app-version-check.js?v={{ app_version }}"></script>
 	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 	<link href="/static/vendor/roboto/roboto.css"
@@ -25,18 +24,14 @@
 	<link rel="stylesheet" href="/static/css/personal-detail-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/patient-search-modal.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/referral-source-control.css?v={{ app_version }}">
-	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
-	<script src="/static/js/shared/confirmation-dialog.js?v={{ app_version }}"></script>
-	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
+
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
 	<script src="/static/vendor/chart.js@4.5.1/chart.umd.min.js"></script>
 	{% include 'partials/flatpickr.html' %}
 	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/autocomplete-field.css?v={{ app_version }}">
-	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
-	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
-	<script src="/static/js/clinic-config.js?v={{ app_version }}"></script>
+
 	<link rel="stylesheet" href="/static/css/shared/clinical-workflow.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/shared/examination-workflow.css?v={{ app_version }}">
 	<link rel="stylesheet" href="/static/css/components/doctor-component-base.css?v={{ app_version }}">
@@ -60,7 +55,6 @@
 			</main>
 		</div>
 	</div>
-
 
 	<!-- Hidden elements required by shared clinical helpers -->
 	<div class="exam-initially-hidden">
@@ -90,13 +84,6 @@
 		<input type="hidden" id="hiddenSeverityLevel" value="">
 	</div>
 
-
-
-
-
-
-
-
 	{% include 'partials/transfer-modal.html' %}
 
 	<!-- Shared Patient History Modal: canonical markup, page chỉ truyền adapter TLG -->
@@ -108,8 +95,6 @@
 	</div>
 	<!-- Custom JavaScript -->
 		<script type="module" src="/static/js/psychologist-examination-entry.js?v={{ app_version }}"></script>
-
-
 
 	<!-- Modal: Quản lý người đi khám cùng - DRY -->
 	{% include 'partials/joint-exam-modal.html' %}

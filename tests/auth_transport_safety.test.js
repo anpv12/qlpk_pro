@@ -158,14 +158,16 @@ test('native response accessors and body consumption retain their brand', async 
     assert.equal(response.bodyUsed, true);
 });
 
-test('every template loading utils first loads the canonical transport partial', () => {
+test('every page module runs after the canonical transport runtime', () => {
     const partial = fs.readFileSync('app/templates/partials/user-feedback-runtime.html', 'utf8');
-    assert.match(partial, /shared\/api-transport\.js/);
+    assert.match(partial, /<script type="module" src="\/static\/js\/shared\/runtime\.js/);
+    assert.match(fs.readFileSync('app/static/js/shared/runtime.js', 'utf8'), /import '\.\/api-transport\.js';/);
     for (const filename of fs.readdirSync('app/templates').filter(name => name.endsWith('.html'))) {
         const source = fs.readFileSync(`app/templates/${filename}`, 'utf8');
-        if (!source.includes('/static/js/utils.js')) continue;
-        assert.ok(source.indexOf("include 'partials/user-feedback-runtime.html'") >= 0, filename);
-        assert.ok(source.indexOf("include 'partials/user-feedback-runtime.html'") < source.indexOf('/static/js/utils.js'), filename);
+        const firstModule = source.search(/<script type="module"/);
+        if (firstModule < 0 || source.includes('{% include \'partials/catalog-dictionary-page.html\' %}')) continue;
+        const include = source.indexOf("include 'partials/user-feedback-runtime.html'");
+        assert.ok(include >= 0 && include < firstModule, filename);
     }
     assert.doesNotMatch(fs.readFileSync('app/static/js/utils.js', 'utf8'), /window\.fetch\s*=|ajaxSend\(/);
 });

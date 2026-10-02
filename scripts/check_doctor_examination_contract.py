@@ -40,14 +40,7 @@ ATTACHMENT_JS = (
 )
 
 DOCTOR_ENTRY_ASSET = "/static/js/doctor-examination-entry.js"
-CLASSIC_SHARED_ASSETS = {
-    "/static/js/app-version-check.js",
-    "/static/js/flatpickr-vn.js",
-    "/static/js/datepicker-init.js",
-    "/static/js/shared/icon-system.js",
-    "/static/js/shared/confirmation-dialog.js",
-    "/static/js/sidebar-dry-loader.js",
-}
+CLASSIC_SHARED_ASSETS: set[str] = set()  # shared runtime is imported by the entry; no classic app scripts
 
 ROOT_SECTION_IDS = (
     "doctorReceptionistIntakePanel",
@@ -407,8 +400,9 @@ def main() -> int:
     )
     if "window.confirm" in attachment_runtime or "confirm: window.confirm" in attachment_runtime:
         failures.append("attachment runtime still contains native window.confirm")
-    if "/static/js/shared/confirmation-dialog.js" not in parser.scripts:
-        failures.append("shared confirmation dialog is not loaded by Doctor template")
+    entry_imports = (ROOT / "app/static/js/doctor-examination-entry.js").read_text(encoding="utf-8")
+    if "import './shared/confirmation-dialog.js';" not in entry_imports:
+        failures.append("shared confirmation dialog is not imported by the Doctor entry")
 
     for module_name, relative_path in REGISTRY_OWNERS.items():
         expected_path = ROOT / relative_path
@@ -589,7 +583,7 @@ def main() -> int:
             print(f"- {failure}")
         return 1
 
-    print(f"[OK] Doctor assets: one ESM entry plus {len(CLASSIC_SHARED_ASSETS)} intentional shared classic boundaries")
+    print("[OK] Doctor assets: one ESM entry, no classic app scripts")
     print(f"[OK] Doctor root sections: {len(ROOT_SECTION_IDS)} unique sections")
     print("[OK] Doctor registry modules: one registration each")
     print("[OK] Retired aliases: none in active Doctor runtime")

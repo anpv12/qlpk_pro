@@ -1,4 +1,11 @@
 // Shared components and receptionist slices, in the order the page used to load them as classic scripts.
+// Shared page runtime (formerly classic script tags), in page order.
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './flatpickr-vn.js';
+import './datepicker-init.js';
+import './shared/icon-system.js';
+import './shared/confirmation-dialog.js';
 import './occupation-autocomplete.js';
 import './receptionist/formatters.js';
 import './components/patient-search-dropdown.js';

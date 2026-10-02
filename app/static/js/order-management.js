@@ -1,3 +1,12 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
+import './sidebar-dry-loader.js';
+import './utils.js';
+import './datepicker-init.js';
+import './realtime-page-hooks.js';
+import './shared/icon-system.js';
+import './orders/order-status-utils.js';
 import { el, replace } from './shared/dom.js';
 import { state } from './orders/order-management-state.js';
 import { checkSurveyStatusUpdate } from './orders/order-management-survey-level.js';

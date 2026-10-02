@@ -1,3 +1,13 @@
+// Shared page runtime (formerly classic script tags), in page order.
+import './shared/confirmation-dialog.js';
+import './app-version-check.js';
+import './shared/icon-system.js';
+import './sidebar-dry-loader.js';
+import './flatpickr-vn.js';
+import './utils.js';
+import './datepicker-init.js';
+import './realtime-page-hooks.js';
+import './components/autocomplete-field.js';
 import { state } from './medicines/management-state.js';
 import { byId, debounce, delegate, el, replace } from './shared/dom.js';
 import { bindMedicineSelection, changePage, confirmBulkDelete, deleteSelectedMedicines, filterMedicines, loadAllMedicines, loadMedicines, resetFilters, toggleMissingImportPriceFilter } from './medicines/management-list.js';

@@ -1,5 +1,10 @@
 // Public prescription verification page: fetches the prescription by code and renders the shared
 // print document, a verification badge and a scaler that fits the A5 document to the viewport.
+// Shared page runtime (formerly classic script tags), in page order.
+import '../../clinic-config.js';
+import '../shared/prescription-dose-utils.js';
+import '../shared/prescription-document-template.js';
+import '../components/prescription-preview-scaler.js';
 import { byId, el, renderDocumentMarkup, replace } from '../../shared/dom.js';
 
 function banner(icon, text, sub) {
