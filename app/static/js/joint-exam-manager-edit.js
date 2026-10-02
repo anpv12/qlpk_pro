@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 import { JointExamManager, renderJointExamActionButton } from './joint-exam-manager.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 const methods = {
@@ -69,26 +70,22 @@ const methods = {
 
 		// Disable CCCD/CMND và Số điện thoại nếu có relativePatientId (chọn từ hệ thống)
 		const isFromSystem = relativePatientId && relativePatientId > 0;
-		const idNumberDisabled = isFromSystem ? 'disabled' : '';
-		const phoneDisabled = isFromSystem ? 'disabled' : '';
 		const lockedInputTitle = isFromSystem ? 'Dữ liệu lấy từ hồ sơ bệnh nhân đã có' : '';
 
-		cells[1].innerHTML = `
-                    <div class="relative-input-wrap">
-                        <input aria-label="Họ tên người thân" class="relative-row-input" value="${this.escapeHtml(relative.name || '')}" placeholder="Nhập/tìm họ tên" autocomplete="off">
-                        <div class="joint-exam-search-dropdown"></div>
-                    </div>
-                `;
-		cells[2].innerHTML = `<input aria-label="Quan hệ" class="relative-row-input" value="${this.escapeHtml(relative.kinship || '')}" list="joint-exam-kinship-list" autocomplete="off">`;
-		cells[3].innerHTML = `<input aria-label="CCCD/CMND" class="relative-row-input" value="${this.escapeHtml(relative.id_number || '')}" maxlength="12" title="${lockedInputTitle}" ${idNumberDisabled}>`;
-		cells[4].innerHTML = `<input aria-label="Số điện thoại" class="relative-row-input" value="${this.escapeHtml(relative.phone || '')}" title="${lockedInputTitle}" ${phoneDisabled}>`;
-		cells[5].innerHTML = `<input aria-label="Ngày đi khám cùng" class="relative-row-input js-datepicker joint-exam-date-input" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">`;
-		cells[6].innerHTML = `
-                    <div class="relative-row-actions">
-                        ${renderJointExamActionButton('save', 'btn-save', 'Lưu')}
-                        ${renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')}
-                    </div>
-                `;
+		replace(cells[1], el('div', { class: 'relative-input-wrap' },
+			el('input', { 'aria-label': 'Họ tên người thân', class: 'relative-row-input', defaultValue: relative.name || '', placeholder: 'Nhập/tìm họ tên', autocomplete: 'off' }),
+			' ',
+			el('div', { class: 'joint-exam-search-dropdown' })
+		));
+		replace(cells[2], el('input', { 'aria-label': 'Quan hệ', class: 'relative-row-input', defaultValue: relative.kinship || '', list: 'joint-exam-kinship-list', autocomplete: 'off' }));
+		replace(cells[3], el('input', { 'aria-label': 'CCCD/CMND', class: 'relative-row-input', defaultValue: relative.id_number || '', maxlength: '12', title: lockedInputTitle, disabled: Boolean(isFromSystem) }));
+		replace(cells[4], el('input', { 'aria-label': 'Số điện thoại', class: 'relative-row-input', defaultValue: relative.phone || '', title: lockedInputTitle, disabled: Boolean(isFromSystem) }));
+		replace(cells[5], el('input', { 'aria-label': 'Ngày đi khám cùng', class: 'relative-row-input js-datepicker joint-exam-date-input', 'data-date-format': 'Y-m-d', 'data-alt-format': 'd/m/Y', placeholder: 'dd/mm/yyyy' }));
+		replace(cells[6], el('div', { class: 'relative-row-actions' },
+			renderJointExamActionButton('save', 'btn-save', 'Lưu'),
+			' ',
+			renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')
+		));
 
 		// Setup autocomplete cho name input
 		this.setupNameAutocomplete(row);

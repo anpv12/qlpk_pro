@@ -214,6 +214,10 @@ reflectBoolean.forEach(prop => Object.defineProperty(Element.prototype, prop, {
         set(value) { this.setAttribute(attr, value); },
     });
 });
+Object.defineProperty(Element.prototype, 'defaultValue', {
+    get() { return this.localName === 'textarea' ? this.defaultText : this.getAttribute('value') || ''; },
+    set(value) { if (this.localName === 'textarea') this.textContent = String(value); else this.setAttribute('value', String(value)); },
+});
 Object.defineProperty(Element.prototype, 'value', {
     get() {
         if (this.localName === 'select') {

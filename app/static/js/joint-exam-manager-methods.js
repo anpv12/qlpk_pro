@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 import { JointExamManager, confirmJointExamDelete, renderJointExamActionButton } from './joint-exam-manager.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 const methods = {
@@ -83,29 +84,28 @@ const methods = {
 
 		if (this.emptyState) this.emptyState.classList.remove('active');
 
-		this.tableBody.innerHTML = this.pendingJointExamList.map((relative, index) => {
+		replace(this.tableBody, this.pendingJointExamList.map((relative, index) => {
 			let jointDate = '';
 			if (relative.joint_date) {
 				jointDate = this.formatDateDisplay(relative.joint_date);
 			}
 
-                return `
-                <tr data-temp-id="${relative.temp_id}">
-                    <td class="joint-exam-row-index relative-table-center">${index + 1}.</td>
-                    <td>${this.escapeHtml(relative.name || '')}</td>
-                    <td>${this.escapeHtml(relative.kinship || '')}</td>
-                    <td>${this.escapeHtml(relative.id_number || '')}</td>
-                    <td>${this.escapeHtml(relative.phone || '')}</td>
-                    <td class="relative-table-center">${jointDate}</td>
-                    <td class="relative-table-center">
-                        <div class="relative-row-actions">
-							${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit-pending', 'data-joint-exam-temp-id': relative.temp_id })}
-							${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete-pending', 'data-joint-exam-temp-id': relative.temp_id })}
-                        </div>
-                    </td>
-                </tr>
-            `;
-		}).join('');
+                return el('tr', { 'data-temp-id': relative.temp_id },
+	el('td', { class: 'joint-exam-row-index relative-table-center' }, index + 1, '.'),
+	el('td', null, relative.name || ''),
+	el('td', null, relative.kinship || ''),
+	el('td', null, relative.id_number || ''),
+	el('td', null, relative.phone || ''),
+	el('td', { class: 'relative-table-center' }, jointDate),
+	el('td', { class: 'relative-table-center' },
+		el('div', { class: 'relative-row-actions' },
+			renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit-pending', 'data-joint-exam-temp-id': relative.temp_id }),
+			' ',
+			renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete-pending', 'data-joint-exam-temp-id': relative.temp_id })
+		)
+	)
+);
+		}));
 	},
 
 	/**
@@ -205,22 +205,20 @@ const methods = {
 		const isFromSystem = Boolean(item.relative_patient_id);
 		const lockedInputTitle = isFromSystem ? 'Dữ liệu lấy từ hồ sơ bệnh nhân đã có' : '';
 
-		cells[1].innerHTML = `
-                <div class="relative-input-wrap">
-                    <input aria-label="Họ tên người thân" class="relative-row-input" value="${this.escapeHtml(item.name || '')}" placeholder="Nhập/tìm họ tên" autocomplete="off">
-                    <div class="joint-exam-search-dropdown"></div>
-                </div>
-            `;
-		cells[2].innerHTML = `<input aria-label="Quan hệ" class="relative-row-input" value="${this.escapeHtml(item.kinship || '')}" list="joint-exam-kinship-list" autocomplete="off">`;
-		cells[3].innerHTML = `<input aria-label="CCCD/CMND" class="relative-row-input" value="${this.escapeHtml(item.id_number || '')}" maxlength="12" title="${lockedInputTitle}" ${isFromSystem ? 'disabled' : ''}>`;
-		cells[4].innerHTML = `<input aria-label="Số điện thoại" class="relative-row-input" value="${this.escapeHtml(item.phone || '')}" title="${lockedInputTitle}" ${isFromSystem ? 'disabled' : ''}>`;
-		cells[5].innerHTML = `<input aria-label="Ngày đi khám cùng" class="relative-row-input js-datepicker joint-exam-date-input" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">`;
-		cells[6].innerHTML = `
-                <div class="relative-row-actions">
-                    ${renderJointExamActionButton('save', 'btn-save', 'Lưu')}
-                    ${renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')}
-                </div>
-            `;
+		replace(cells[1], el('div', { class: 'relative-input-wrap' },
+			el('input', { 'aria-label': 'Họ tên người thân', class: 'relative-row-input', defaultValue: item.name || '', placeholder: 'Nhập/tìm họ tên', autocomplete: 'off' }),
+			' ',
+			el('div', { class: 'joint-exam-search-dropdown' })
+		));
+		replace(cells[2], el('input', { 'aria-label': 'Quan hệ', class: 'relative-row-input', defaultValue: item.kinship || '', list: 'joint-exam-kinship-list', autocomplete: 'off' }));
+		replace(cells[3], el('input', { 'aria-label': 'CCCD/CMND', class: 'relative-row-input', defaultValue: item.id_number || '', maxlength: '12', title: lockedInputTitle, disabled: isFromSystem }));
+		replace(cells[4], el('input', { 'aria-label': 'Số điện thoại', class: 'relative-row-input', defaultValue: item.phone || '', title: lockedInputTitle, disabled: isFromSystem }));
+		replace(cells[5], el('input', { 'aria-label': 'Ngày đi khám cùng', class: 'relative-row-input js-datepicker joint-exam-date-input', 'data-date-format': 'Y-m-d', 'data-alt-format': 'd/m/Y', placeholder: 'dd/mm/yyyy' }));
+		replace(cells[6], el('div', { class: 'relative-row-actions' },
+			renderJointExamActionButton('save', 'btn-save', 'Lưu'),
+			' ',
+			renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')
+		));
 
 		// Setup autocomplete cho name input
 		this.setupNameAutocomplete(row);
@@ -347,7 +345,7 @@ const methods = {
 			if (!shouldRender()) return;
 
 			if (!response.ok) {
-				dropdown.innerHTML = searchDropdown.stateHtml('Lỗi tìm kiếm');
+				searchDropdown.renderState(dropdown, 'Lỗi tìm kiếm');
 				onShow();
 				return;
 			}
@@ -356,7 +354,6 @@ const methods = {
 			if (!shouldRender()) return;
 
 			searchDropdown.renderPatientResults(dropdown, data.success ? data.data : [], {
-				escapeHtml: value => this.escapeHtml(value),
 				formatDateDisplay: value => this.formatDateDisplay(value),
 				nameClass: 'joint-exam-search-name',
 				metaClass: 'joint-exam-search-meta',
@@ -367,7 +364,7 @@ const methods = {
 		} catch (error) {
 			if (!shouldRender()) return;
 			console.error('Error searching patients for joint exam:', error);
-			dropdown.innerHTML = searchDropdown.stateHtml('Không thể tìm kiếm. Vui lòng thử lại.');
+			searchDropdown.renderState(dropdown, 'Không thể tìm kiếm. Vui lòng thử lại.');
 			onShow();
 		}
 	},
@@ -435,13 +432,6 @@ const methods = {
 	},
 
 	// Utility functions với default implementation
-	_defaultEscapeHtml(text) {
-		if (!text) return '';
-		const div = document.createElement('div');
-		div.textContent = text;
-		return div.innerHTML;
-	},
-
 	_defaultFormatDateDisplay(value) {
 		if (!value) return '';
 		if (value.includes('/')) return value;

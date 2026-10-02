@@ -10,7 +10,7 @@ function createEnvironment() {
   let document;
   class Element {
     constructor(tag = 'div') {
-      this.tagName = tag.toUpperCase(); this.id = ''; this.value = ''; this.children = [];
+      this.nodeType = 1; this.tagName = tag.toUpperCase(); this.id = ''; this.value = ''; this.children = [];
       this.attributes = {}; this.events = {}; this.dataset = {}; this.hidden = false;
       this.disabled = false; this.readOnly = false; this.scrollTop = 0; this.clientHeight = 160;
       this.scrollHeight = 400; this.offsetTop = 0; this.offsetHeight = 40; this.ownerDocument = document;
@@ -70,6 +70,8 @@ function createEnvironment() {
   document.documentElement = new Element('html'); document.body = new Element('body');
   document.append(document.documentElement); document.documentElement.append(document.body);
   document.createElement = tag => new Element(tag);
+  document.createTextNode = text => ({nodeType: 3, data: String(text), textContent: String(text), children: [],
+    contains: node => false, matches: () => false, querySelectorAll: () => [], remove() {}});
   document.getElementById = id => document.querySelector('#' + id);
   const window = new Element('window'); window.innerWidth = 1000; window.innerHeight = 800;
   window.QLPKHtml = require('./html-escape').QLPKHtml;

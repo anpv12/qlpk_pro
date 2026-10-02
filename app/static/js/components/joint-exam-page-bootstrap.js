@@ -1,12 +1,5 @@
 /* global currentAppointmentId */
 (function () {
-	function escapeHtml(text) {
-		if (!text) return '';
-		const div = document.createElement('div');
-		div.textContent = text;
-		return div.innerHTML;
-	}
-
 	function formatDateDisplay(value) {
 		const pageRuntime = window.QLPKDoctorPageRuntime;
 		if (pageRuntime && typeof pageRuntime.formatDateDisplay === 'function') {
@@ -73,7 +66,6 @@
 			onReloadFamilyMembers: reloadFamilyMembers,
 			showToast,
 			apiCall: getApiCall(),
-			escapeHtml,
 			formatDateDisplay,
 		});
 

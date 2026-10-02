@@ -81,9 +81,9 @@ test('shared relative and transfer components never open native dialogs or Sweet
 test('relative create/edit templates label every dynamic input', () => {
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {
         const source = readScriptSource(`app/static/js/${file}`);
-        const inputs = source.match(/<input\b[^>]*(?:>|$)/gm);
-        assert.ok(inputs.length >= 12);
-        for (const input of inputs) assert.match(input, /aria-label="[^"]+"/);
+        const inputs = [...(source.match(/<input\b[^>]*(?:>|$)/gm) || []), ...(source.match(/el\('input', \{[^}]*\}/g) || [])];
+        assert.ok(inputs.length >= 12, file);
+        for (const input of inputs) assert.match(input, /aria-label(?:="[^"]+"|': '[^']+')/);
     }
 });
 

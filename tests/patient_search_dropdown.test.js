@@ -4,6 +4,9 @@ const fs = require('node:fs');
 const { createEnvironment } = require('./helpers/autocomplete-dom');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
+// Text of a node built by the component (fake elements keep children; text nodes keep data).
+const textOf = node => node.nodeType === 3 ? node.data : (node.children || []).map(textOf).join('');
+
 function setup() {
     const env = createEnvironment();
     env.load('app/static/js/components/patient-search-dropdown.js');
@@ -49,7 +52,7 @@ test('focus loads recent patients and a selection closes the dropdown', async ()
     state.nameInput.focus();
     assert.deepEqual(state.calls.searches, [{ query: '', perPage: 10000 }]);
     assert.equal(state.dropdown.dataset.visible, 'true');
-    assert.match(state.dropdown.innerHTML, /Đang tải/);
+    assert.match(textOf(state.dropdown), /Đang tải/);
     state.finishSearch();
     await Promise.resolve();
     assert.deepEqual(state.calls.selected, [{ id: 7 }]);
@@ -62,7 +65,7 @@ test('typing debounces, clears links on short queries and ignores stale results'
     state.nameInput.value = 'a';
     await state.nameInput.fire('input');
     assert.equal(state.calls.cleared, 1);
-    assert.match(state.dropdown.innerHTML, /Nhập tên/);
+    assert.match(textOf(state.dropdown), /Nhập tên/);
     state.nameInput.value = 'an';
     await state.nameInput.fire('input');
     assert.equal(state.calls.changed, 1);
@@ -80,6 +83,7 @@ test('keyboard navigation, escape and dispose stay within the shared owner', asy
     const state = setup();
     state.nameInput.focus();
     const first = new state.env.Element('div'), second = new state.env.Element('div');
+    state.dropdown.replaceChildren(); // results replace the loading state, as a finished search does
     [first, second].forEach(item => { item.className = 'relative-search-item'; item.scrollIntoView = () => {}; state.dropdown.append(item); });
     state.dropdown.querySelector = selector => (selector === '.relative-search-item.active' ? [first, second].find(item => item.classList.contains('active')) || null : null);
     await state.nameInput.fire('keydown', { key: 'ArrowDown' });
@@ -99,20 +103,23 @@ test('keyboard navigation, escape and dispose stay within the shared owner', asy
     assert.equal(state.env.document.events.click.length, 0, 'document click listener removed');
 });
 
-test('result rendering escapes values and reports empty results', () => {
-    const env = createEnvironment();
-    env.load('app/static/js/components/patient-search-dropdown.js');
-    const dropdown = new env.Element('div');
-    dropdown.querySelectorAll = () => [];
-    env.window.QLPKPatientSearchDropdown.renderPatientResults(dropdown, [{ id: 3, full_name: '<b>An</b>', phone: '090', latest_diagnosis: 'F32' }], {
-        escapeHtml: value => String(value).replace(/</g, '&lt;'), formatDateDisplay: value => value,
-        nameClass: 'relative-search-name', metaClass: 'relative-search-meta', onSelect() {}, shouldRender: () => true
+test('result rendering builds text nodes (no markup from data) and reports empty results', () => {
+    const { createWindow } = require('./helpers/fake-dom');
+    const vm = require('node:vm');
+    const window = createWindow();
+    window.QLPKHtml = require('./helpers/html-escape').QLPKHtml;
+    runScriptFile('app/static/js/components/patient-search-dropdown.js', vm.createContext({ window, document: window.document, console }));
+    const dropdown = window.document.createElement('div');
+    window.QLPKPatientSearchDropdown.renderPatientResults(dropdown, [{ id: 3, full_name: '<b>An</b>', phone: '090', latest_diagnosis: 'F32' }], {
+        formatDateDisplay: value => value, nameClass: 'relative-search-name', metaClass: 'relative-search-meta', onSelect() {}, shouldRender: () => true
     });
-    assert.match(dropdown.innerHTML, /&lt;b>An/);
+    assert.match(dropdown.innerHTML, /&lt;b&gt;An/);
+    assert.equal(dropdown.querySelector('.relative-search-name').textContent, '<b>An</b>');
     assert.match(dropdown.innerHTML, /data-patient-id="3"/);
-    env.window.QLPKPatientSearchDropdown.renderPatientResults(dropdown, [], { escapeHtml: String, formatDateDisplay: String, nameClass: '', metaClass: '', onSelect() {}, shouldRender: () => true });
+    window.QLPKPatientSearchDropdown.renderPatientResults(dropdown, [], { formatDateDisplay: String, nameClass: '', metaClass: '', onSelect() {}, shouldRender: () => true });
     assert.match(dropdown.innerHTML, /Không tìm thấy bệnh nhân/);
 });
+
 
 test('relative and joint-exam components delegate the autocomplete lifecycle to the shared owner', () => {
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {

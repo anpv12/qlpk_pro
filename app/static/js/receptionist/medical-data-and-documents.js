@@ -250,7 +250,6 @@ function initializePage() {
 let jointExamManagerInstance = null;
 
 	const receptionistFormatters = window.ReceptionistFormatters || {};
-	const escapeHtml = receptionistFormatters.escapeHtml;
 	const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
 
 // Lấy appointment ID hiện tại
@@ -371,7 +370,6 @@ function startMedicalDataAndDocuments() {
 					}
 				},
 				showToast: showCustomToast,
-				escapeHtml,
 				formatDateDisplay
 			})
 		);

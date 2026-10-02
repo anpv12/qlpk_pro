@@ -1,3 +1,5 @@
+import { el, replace } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -6,34 +8,43 @@
 	const INPUT_DEBOUNCE_MS = 300;
 	const DEFAULT_PER_PAGE = 10000;
 
-	function stateHtml(message) {
-		return `<div class="relative-search-item no-results">${window.QLPKHtml.escape(message)}</div>`;
+	function stateNode(message) {
+		return el('div', { class: 'relative-search-item no-results' }, message);
+	}
+
+	function renderState(dropdown, message) {
+		replace(dropdown, stateNode(message));
+	}
+
+	function metaPart(label, value) {
+		return el('span', null, el('strong', null, label), ' ', value);
+	}
+
+	function patientResultNode(patient, options) {
+		const { formatDateDisplay, nameClass, metaClass } = options;
+		const phone = patient.phone || 'Chưa có';
+		const lastExam = patient.latest_appointment_date ? formatDateDisplay(patient.latest_appointment_date) : 'Chưa khám';
+		const diagnosis = patient.latest_diagnosis || 'Chưa có';
+		return el('div', { class: 'relative-search-item', 'data-patient-id': patient.id },
+			el('div', { class: nameClass }, patient.full_name),
+			el('div', { class: metaClass },
+				metaPart('SĐT:', phone),
+				patient.date_of_birth ? metaPart('Sinh:', formatDateDisplay(patient.date_of_birth)) : null
+			),
+			el('div', { class: metaClass },
+				metaPart('Khám gần nhất:', lastExam),
+				diagnosis !== 'Chưa có' ? metaPart('Chẩn đoán:', diagnosis) : null
+			)
+		);
 	}
 
 	function renderPatientResults(dropdown, patients, options) {
-		const { escapeHtml, formatDateDisplay, nameClass, metaClass, onSelect, shouldRender } = options;
+		const { onSelect, shouldRender } = options;
 		if (!Array.isArray(patients) || patients.length === 0) {
-			dropdown.innerHTML = stateHtml('Không tìm thấy bệnh nhân');
+			renderState(dropdown, 'Không tìm thấy bệnh nhân');
 			return;
 		}
-		dropdown.innerHTML = patients.map(patient => {
-			const phone = patient.phone || 'Chưa có';
-			const lastExam = patient.latest_appointment_date ? formatDateDisplay(patient.latest_appointment_date) : 'Chưa khám';
-			const diagnosis = patient.latest_diagnosis || 'Chưa có';
-			return `
-				<div class="relative-search-item" data-patient-id="${patient.id}">
-					<div class="${nameClass}">${escapeHtml(patient.full_name)}</div>
-					<div class="${metaClass}">
-						<span><strong>SĐT:</strong> ${escapeHtml(phone)}</span>
-						${patient.date_of_birth ? `<span><strong>Sinh:</strong> ${formatDateDisplay(patient.date_of_birth)}</span>` : ''}
-					</div>
-					<div class="${metaClass}">
-						<span><strong>Khám gần nhất:</strong> ${lastExam}</span>
-						${diagnosis !== 'Chưa có' ? `<span><strong>Chẩn đoán:</strong> ${escapeHtml(diagnosis)}</span>` : ''}
-					</div>
-				</div>
-			`;
-		}).join('');
+		replace(dropdown, patients.map(patient => patientResultNode(patient, options)));
 
 		dropdown.querySelectorAll('.relative-search-item').forEach(item => {
 			if (item.classList.contains('no-results')) return;
@@ -123,16 +134,16 @@
 			closeDropdown();
 		};
 
-		const renderState = (searchToken, message) => {
+		const renderTokenState = (searchToken, message) => {
 			if (!canRender(searchToken)) return false;
-			ctx.dropdown.innerHTML = stateHtml(message);
+			renderState(ctx.dropdown, message);
 			showDropdown(searchToken);
 			return true;
 		};
 
 		Object.assign(ctx, {
 			clearSearchTimeout, createSearchToken, invalidateSearch, canRender, showDropdown, closeDropdown,
-			hideDropdown, renderState
+			hideDropdown, renderState: renderTokenState
 		});
 	}
 
@@ -237,5 +248,5 @@
 		return { hideDropdown: ctx.hideDropdown, dispose: ctx.dispose };
 	}
 
-	window.QLPKPatientSearchDropdown = Object.freeze({ attach, renderPatientResults, stateHtml });
+	window.QLPKPatientSearchDropdown = Object.freeze({ attach, renderPatientResults, renderState });
 })(window);

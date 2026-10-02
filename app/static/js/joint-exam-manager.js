@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 /**
  * Joint Exam Manager - Module quản lý "Người đi khám cùng"
  * DRY: Dùng chung cho receptionist, doctor, psychologist
@@ -18,15 +19,6 @@ async function confirmJointExamDelete(showToast) {
 	});
 }
 
-function escapeAttribute(value) {
-	return String(value == null ? '' : value)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
-
 function getJointExamActionIcon(action) {
 	switch (action) {
 		case 'edit':
@@ -44,11 +36,8 @@ function getJointExamActionIcon(action) {
 
 function renderJointExamActionButton(action, className, title, attrs = {}) {
 	const buttonRole = { edit: 'edit', delete: 'danger', save: 'execute', cancel: 'neutral' }[action] || 'neutral';
-	const attrHtml = Object.keys(attrs)
-		.filter(key => attrs[key] !== undefined && attrs[key] !== null)
-		.map(key => ` ${escapeAttribute(key)}="${escapeAttribute(attrs[key])}"`)
-		.join('');
-	return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" type="button" class="${escapeAttribute(className)}" title="${escapeAttribute(title)}" aria-label="${escapeAttribute(title)}"${attrHtml}><i class="bi ${getJointExamActionIcon(action)}" aria-hidden="true"></i></button>`;
+	return el('button', { 'data-qlpk-button': buttonRole, 'data-qlpk-button-variant': 'soft', type: 'button', class: className, title, 'aria-label': title, ...attrs },
+		el('i', { class: `bi ${getJointExamActionIcon(action)}`, 'aria-hidden': 'true' }));
 }
 
 /**
@@ -58,7 +47,6 @@ function renderJointExamActionButton(action, className, title, attrs = {}) {
  * @param {Function} options.onReloadFamilyMembers - Callback khi cần reload "Người thân liên kết"
  * @param {Function} options.showToast - Hàm hiển thị toast (default: showCustomToast)
  * @param {Function} options.apiCall - Hàm gọi API (default: window.apiCall)
- * @param {Function} options.escapeHtml - Hàm escape HTML (default: window.escapeHtml)
  * @param {Function} options.formatDateDisplay - Hàm format date (default: window.formatDateDisplay)
  */
 class JointExamManager {
@@ -75,7 +63,6 @@ class JointExamManager {
 			|| window.showCustomToast
 			|| ((type, msg) => window.QLPKUserFeedback?.show(type, msg));
 		this.apiCall = options.apiCall || window.apiCall || fetch;
-		this.escapeHtml = options.escapeHtml || this._defaultEscapeHtml;
 		this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
 
 		// State
@@ -261,7 +248,7 @@ class JointExamManager {
 		if (!this.tableBody) return;
 		this.renderedContextGuard = this.createContextGuard();
 
-		this.tableBody.innerHTML = relatives.map((relative, index) => {
+		replace(this.tableBody, relatives.map((relative, index) => {
 			// Format ngày đi cùng từ joint_date (ưu tiên), sau đó appointment_date hoặc created_at
 			let jointDate = '';
 			if (relative.joint_date) {
@@ -273,23 +260,22 @@ class JointExamManager {
 				jointDate = date.toLocaleDateString('vi-VN');
 			}
 
-			return `
-                <tr data-id="${relative.id}">
-                    <td class="joint-exam-row-index relative-table-center">${index + 1}.</td>
-                    <td>${this.escapeHtml(relative.name || '')}</td>
-                    <td>${this.escapeHtml(relative.kinship || '')}</td>
-                    <td>${this.escapeHtml(relative.id_number || '')}</td>
-                    <td>${this.escapeHtml(relative.phone || '')}</td>
-                    <td class="relative-table-center">${jointDate}</td>
-					<td class="relative-table-center">
-                        <div class="relative-row-actions">
-							${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id })}
-							${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })}
-                        </div>
-                    </td>
-                </tr>
-            `;
-		}).join('');
+			return el('tr', { 'data-id': relative.id },
+				el('td', { class: 'joint-exam-row-index relative-table-center' }, index + 1, '.'),
+				el('td', null, relative.name || ''),
+				el('td', null, relative.kinship || ''),
+				el('td', null, relative.id_number || ''),
+				el('td', null, relative.phone || ''),
+				el('td', { class: 'relative-table-center' }, jointDate),
+				el('td', { class: 'relative-table-center' },
+					el('div', { class: 'relative-row-actions' },
+						renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id }),
+						' ',
+						renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })
+					)
+				)
+			);
+		}));
 	}
 
 	/**
@@ -309,33 +295,35 @@ class JointExamManager {
 
 		const tr = document.createElement('tr');
 		tr.classList.add('editing-row');
-		tr.innerHTML = `
-                <td class="joint-exam-row-index relative-table-center">+</td>
-                <td class="relative-cell-overlay">
-                    <div class="relative-input-wrap">
-                        <input aria-label="Họ tên người thân" class="relative-row-input" id="jointExamNameInput" placeholder="Nhập/tìm họ tên" autocomplete="off">
-                        <div class="joint-exam-search-dropdown" id="jointExamSearchDropdown"></div>
-                    </div>
-                </td>
-                <td>
-                    <input aria-label="Quan hệ" class="relative-row-input" id="jointExamKinshipInput" placeholder="Quan hệ" list="joint-exam-kinship-list" autocomplete="off">
-                </td>
-                <td>
-                    <input aria-label="CCCD/CMND" class="relative-row-input" id="jointExamIdNumberInput" placeholder="CCCD/CMND" maxlength="12">
-                </td>
-                <td>
-                    <input aria-label="Số điện thoại" class="relative-row-input" id="jointExamPhoneInput" placeholder="Số điện thoại">
-                </td>
-                <td class="relative-table-center">
-                    <input aria-label="Ngày đi khám cùng" class="relative-row-input js-datepicker joint-exam-date-input" id="jointExamDateInput" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy">
-                </td>
-                <td class="relative-table-center">
-                    <div class="relative-row-actions">
-                        ${renderJointExamActionButton('save', 'btn-save', 'Lưu')}
-                        ${renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')}
-                    </div>
-                </td>
-            `;
+		replace(tr, [
+			el('td', { class: 'joint-exam-row-index relative-table-center' }, '+'),
+			el('td', { class: 'relative-cell-overlay' },
+				el('div', { class: 'relative-input-wrap' },
+					el('input', { 'aria-label': 'Họ tên người thân', class: 'relative-row-input', id: 'jointExamNameInput', placeholder: 'Nhập/tìm họ tên', autocomplete: 'off' }),
+					' ',
+					el('div', { class: 'joint-exam-search-dropdown', id: 'jointExamSearchDropdown' })
+				)
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'Quan hệ', class: 'relative-row-input', id: 'jointExamKinshipInput', placeholder: 'Quan hệ', list: 'joint-exam-kinship-list', autocomplete: 'off' })
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'CCCD/CMND', class: 'relative-row-input', id: 'jointExamIdNumberInput', placeholder: 'CCCD/CMND', maxlength: '12' })
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'Số điện thoại', class: 'relative-row-input', id: 'jointExamPhoneInput', placeholder: 'Số điện thoại' })
+			),
+			el('td', { class: 'relative-table-center' },
+				el('input', { 'aria-label': 'Ngày đi khám cùng', class: 'relative-row-input js-datepicker joint-exam-date-input', id: 'jointExamDateInput', 'data-date-format': 'Y-m-d', 'data-alt-format': 'd/m/Y', placeholder: 'dd/mm/yyyy' })
+			),
+			el('td', { class: 'relative-table-center' },
+				el('div', { class: 'relative-row-actions' },
+					renderJointExamActionButton('save', 'btn-save', 'Lưu'),
+					' ',
+					renderJointExamActionButton('cancel', 'btn-cancel', 'Hủy')
+				)
+			)
+		]);
 
 		this.tableBody.prepend(tr);
 		this.pendingJointExamRow = tr;

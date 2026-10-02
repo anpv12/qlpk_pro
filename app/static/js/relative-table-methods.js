@@ -132,7 +132,6 @@ const methods = {
 			if (!shouldRender()) return;
 
 			searchDropdown.renderPatientResults(dropdown, response.success ? response.data : [], {
-				escapeHtml: value => this.escape(value),
 				formatDateDisplay,
 				nameClass: 'relative-search-name',
 				metaClass: 'relative-search-meta',
@@ -143,7 +142,7 @@ const methods = {
 		} catch (error) {
 			if (!shouldRender()) return;
 			console.error('RelativeTable: Error searching patients:', error);
-			dropdown.innerHTML = searchDropdown.stateHtml('Không thể tìm kiếm. Vui lòng thử lại.');
+			searchDropdown.renderState(dropdown, 'Không thể tìm kiếm. Vui lòng thử lại.');
 			onShow();
 		}
 	},

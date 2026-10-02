@@ -1,6 +1,7 @@
 // Native DOM building blocks for ES module pages: nodes are created, never parsed from HTML strings.
 //   el('button', { class: 'btn', dataset: { action: 'edit' }, title: 'Sửa' }, icon('bi-pencil'), 'Sửa')
-// Props: class/className, text, dataset, hidden/disabled/checked (boolean), value, any other attribute.
+// Props: class/className, text, dataset, hidden/disabled/checked (boolean), value (property), defaultValue (an input's
+// value attribute, as markup would set it), any other attribute.
 // Children: nodes, strings/numbers (text nodes), arrays; null/undefined/false are skipped.
 
 export function byId(id) {
@@ -13,6 +14,7 @@ function applyProp(node, key, value) {
 	else if (key === 'text') node.textContent = String(value);
 	else if (key === 'dataset') Object.entries(value).forEach(([name, data]) => { if (data != null) node.dataset[name] = String(data); });
 	else if (key === 'value') node.value = String(value);
+	else if (key === 'defaultValue') node.defaultValue = String(value);
 	else if (value === true) node.setAttribute(key, '');
 	else node.setAttribute(key, String(value));
 }
@@ -20,7 +22,7 @@ function applyProp(node, key, value) {
 export function append(node, children) {
 	for (const child of children.flat(Infinity)) {
 		if (child === null || child === undefined || child === false) continue;
-		node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+		node.append(typeof child === 'object' && typeof child.nodeType === 'number' ? child : document.createTextNode(String(child)));
 	}
 	return node;
 }

@@ -26,7 +26,6 @@
 			onReloadFamilyMembers: opts.onReloadFamilyMembers,
 			showToast: opts.showToast,
 			apiCall: opts.apiCall,
-			escapeHtml: opts.escapeHtml,
 			formatDateDisplay: opts.formatDateDisplay
 		});
 
