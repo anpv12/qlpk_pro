@@ -277,11 +277,9 @@ function medicalHistoryRestoreSuicideAndRisk(riskAssessment = {}) {
 
 
     // Đồng bộ trạng thái checked của các radio ĐGN
-	if (typeof window.$ === 'function' && window.$.fn) {
-		$('input[type="radio"][name^="risk_"]').each(function() {
-			this.dataset.wasChecked = String(this.checked);
-		});
-	}
+    document.querySelectorAll('input[type="radio"][name^="risk_"]').forEach(radio => {
+        radio.dataset.wasChecked = String(radio.checked);
+    });
 }
 
 /**
