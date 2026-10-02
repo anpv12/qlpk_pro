@@ -1,9 +1,10 @@
 import { el, replace } from '../shared/dom.js';
 import { moduleState } from './state.js';
 import { bindCardEvents, buildAnswerRow, buildGrid, reindexBadges, save } from './question-editor.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 
 function normalizeSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '').toLowerCase().trim();
 }
 function byId(...ids) {

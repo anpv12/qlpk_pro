@@ -1,10 +1,12 @@
 // ECharts options for the dashboard. ECharts renders tooltips from HTML strings, so every
 // data-derived value in a formatter is escaped with QLPKHtml.escape.
+import { QLPKHtml } from '../shared/html-escape.js';
+
 const EXAM_STATS_DOCTOR_COLOR = '#0F766E';
 const EXAM_STATS_PSYCH_COLOR = '#E91E90';
 
 function formatExamStatsTooltip(params) {
-	let html = `<strong>${window.QLPKHtml.escape(params[0].name)}</strong><br/>`;
+	let html = `<strong>${QLPKHtml.escape(params[0].name)}</strong><br/>`;
 	let dayTotal = 0;
 	params.forEach(p => {
 		html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
@@ -129,8 +131,8 @@ export function buildICDChartOption(items) {
 					confine: true,
 					formatter: (p) => {
 						const d = p.data;
-						return `<b>${window.QLPKHtml.escape(d.name)}</b><br/>
-							<span class="dashboard-tooltip-muted">${window.QLPKHtml.escape(d._disease)}</span><br/>
+						return `<b>${QLPKHtml.escape(d.name)}</b><br/>
+							<span class="dashboard-tooltip-muted">${QLPKHtml.escape(d._disease)}</span><br/>
 							${p.marker} <b>${d.value}</b> ca &nbsp;•&nbsp; ${d._pct}%`;
 					}
 				},

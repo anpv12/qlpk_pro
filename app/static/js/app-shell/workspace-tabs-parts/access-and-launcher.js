@@ -1,4 +1,5 @@
 import { moduleState } from './state.js';
+import { QLPKSearchNormalization } from '../../shared/search-normalization.js';
 
 function captureAccess() {
 	const owner = window.QLPKApiTransport?.session?.owner;
@@ -14,7 +15,7 @@ function captureAccess() {
 		&& user === localStorage.getItem('qlpk_user');
 }
 function normalizeLauncherSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '')
 			.normalize('NFKD')
 			.toLowerCase()

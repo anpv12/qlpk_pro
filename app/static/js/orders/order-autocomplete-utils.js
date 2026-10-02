@@ -1,10 +1,11 @@
 import { el } from '../shared/dom.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 
 (function () {
 	'use strict';
 
 	function sharedNormalizeSearchText(value) {
-		const helper = typeof window !== 'undefined' ? window.QLPKSearchNormalization : null;
+		const helper = typeof window !== 'undefined' ? QLPKSearchNormalization : null;
 		return helper?.normalizeSearchText
 			? helper.normalizeSearchText(value)
 			: String(value || '').toLowerCase().trim();

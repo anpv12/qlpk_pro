@@ -10,11 +10,13 @@ import { CAT, getCat } from './chi-tieu/categories.js';
 import { registerFinanceRealtime, updateCell } from './chi-tieu/import-and-edit.js';
 import { isInDateRange, parseDateStr, renderGrid } from './chi-tieu/grid-and-filters.js';
 import { getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart } from './chi-tieu/revenue-charts.js';
+import { QLPKHtml } from './shared/html-escape.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
 
 function normalizeSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '').toLowerCase().trim();
 }
 
@@ -315,7 +317,7 @@ function renderPieChart(totalChi, dateRows) {
 	chart.setOption({
 		tooltip: {
 			trigger: 'item',
-			formatter: p => `<b>${window.QLPKHtml.escape(p.name)}</b><br/>${fmtNum(p.value)} · ${p.percent}%`
+			formatter: p => `<b>${QLPKHtml.escape(p.name)}</b><br/>${fmtNum(p.value)} · ${p.percent}%`
 		},
 		legend: { bottom: 0, padding: [16, 0, 0, 0], textStyle: { fontSize: 10 } },
 		series: [{

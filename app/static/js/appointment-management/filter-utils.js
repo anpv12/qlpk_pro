@@ -1,4 +1,5 @@
 import { AppointmentManagementCalendarDateUtils } from './calendar-date-utils.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 function getAppointmentDate(appointment) {
 	// Dùng ngày theo giờ địa phương để khớp với calendar (timeZone: 'local')
 	// và với fromDate/toDate lấy từ input ngày (cũng là ngày local).
@@ -31,7 +32,7 @@ function matchesRoleFilter(appointment, selectedRoleFilter, doctors) {
 function matchesSearch(appointment, searchKeyword) {
 	if (!searchKeyword) return true;
 
-	const normalizeSearchText = value => window.QLPKSearchNormalization?.normalizeSearchText(value)
+	const normalizeSearchText = value => QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '').toLowerCase().trim();
 	const searchLower = normalizeSearchText(searchKeyword);
 	const nameMatch = normalizeSearchText(appointment.patient_full_name || appointment.full_name).includes(searchLower);

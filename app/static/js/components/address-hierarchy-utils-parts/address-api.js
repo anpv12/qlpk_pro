@@ -1,3 +1,5 @@
+import { QLPKSearchNormalization } from '../../shared/search-normalization.js';
+
 function getDocument(options = {}) {
 	return options.document || window.document;
 }
@@ -80,7 +82,7 @@ function normalizeAddressName(s) {
 	x = x.replace(/^t\s*p\.?\s*/i, '');
 	x = x.replace(/^thành phố\s+/i, '');
 	x = x.replace(/^tỉnh\s+/i, '');
-	x = window.QLPKSearchNormalization?.normalizeSearchText(x)
+	x = QLPKSearchNormalization?.normalizeSearchText(x)
 		|| x.normalize('NFKD').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 	return x.replace(/\s+/g, ' ');
 }
@@ -114,7 +116,7 @@ function setSelectByApprox(selectId, targetName, type, options = {}) {
 			} else if (type === 'ward') {
 				t = t.replace(/^(Phường|Xã|Thị\s*trấn)\s*/i, '');
 			}
-			return window.QLPKSearchNormalization?.normalizeSearchText(t)
+			return QLPKSearchNormalization?.normalizeSearchText(t)
 				|| t.normalize('NFKD').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim();
 		};
 		const target = normalize(targetName);

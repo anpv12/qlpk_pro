@@ -1,3 +1,5 @@
+import { QLPKSearchNormalization } from '../../shared/search-normalization.js';
+
 function getDocument(options) {
 	return options && options.document ? options.document : window.document;
 }
@@ -23,7 +25,7 @@ const mainAddressAutocompleteState = {
 };
 
 function normalizeAddressQuery(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '')
 			.normalize('NFKD')
 			.toLowerCase()

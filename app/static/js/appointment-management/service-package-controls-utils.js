@@ -1,8 +1,9 @@
 import { el, replace } from '../shared/dom.js';
 import { rebind, rebindDelegate } from '../shared/dom-query.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 
 function normalizeServiceSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '')
 			.normalize('NFKD')
 			.toLowerCase()

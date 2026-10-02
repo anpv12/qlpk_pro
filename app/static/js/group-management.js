@@ -10,9 +10,10 @@ import './components/clinic-pagination.js';
 import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { PERMISSIONS } from './group-permissions.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 const state = { groups: [], editingId: null, deletingId: null };
-const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 
 function permissionBadges(perms) {

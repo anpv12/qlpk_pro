@@ -1,4 +1,5 @@
 import { el, replace } from '../shared/dom.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 import {
   callAction as medicalHistoryCallAction,
   getComponent as medicalHistoryGetComponent,
@@ -13,7 +14,7 @@ let _allergyRowCounter = 0;
 let _allergyActiveTab = 'all';
 
 function normalizeAllergySearchText(value) {
-  return window.QLPKSearchNormalization?.normalizeSearchText(value)
+  return QLPKSearchNormalization?.normalizeSearchText(value)
     || String(value || '')
       .normalize('NFKD')
       .toLowerCase()

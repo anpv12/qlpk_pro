@@ -1,8 +1,10 @@
+import { QLPKHtml } from '../shared/html-escape.js';
+
 function getAppointmentTitle(appointment) {
 	const appointmentCategory = appointment.appointment_category || 'NEW';
 	const categoryText = appointmentCategory === 'RE_EXAMINATION' ? '(Tái khám)' : '';
 	const patientName = appointment.patient_full_name || appointment.full_name;
-	return categoryText ? `${window.QLPKHtml.escape(patientName)}<br>${window.QLPKHtml.escape(categoryText)}` : `${window.QLPKHtml.escape(patientName)}`;
+	return categoryText ? `${QLPKHtml.escape(patientName)}<br>${QLPKHtml.escape(categoryText)}` : `${QLPKHtml.escape(patientName)}`;
 }
 
 function getAppointmentTimeRange(appointment) {

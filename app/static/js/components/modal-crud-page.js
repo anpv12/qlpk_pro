@@ -6,9 +6,10 @@
 //            toPayload: value => value, fromItem: item => value }
 import { byId, delegate, el, icon, on, replace } from '../shared/dom.js';
 import { requestJson } from '../shared/http-json.js';
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 
 const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
-const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 export const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 
 export function statusBadge(active, onText, offText) {

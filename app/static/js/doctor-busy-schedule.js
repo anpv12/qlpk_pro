@@ -11,11 +11,12 @@ import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { HttpError, requestJson } from './shared/http-json.js';
 import { formatDateTime, formatTimeRangeReadable, statusIndicator } from './doctor-busy-schedule/format.js';
 import { setQuickTime, setQuickTimeSelection, setRange } from './doctor-busy-schedule/quick-time.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 const DEFAULT_REASONS = ['Họp định kỳ', 'Nghỉ phép', 'Khám ngoài', 'Đào tạo', 'Hội nghị', 'Nghỉ ốm', 'Công tác', 'Nghỉ lễ'];
 const state = { user: null, schedules: [], revision: 0, reasons: null, reasonsTime: null, editingId: null };
 const showAlert = (message, type = 'info') => window.QLPKUserFeedback?.show(type, message, { duration: 5000 });
-const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const field = name => document.querySelector(`input[name="${name}"]`);
 const submitLabel = editing => [icon(editing ? 'bi-check-lg' : 'bi-plus-lg', 'me-2'), editing ? 'Cập nhật lịch bận' : 'Tạo lịch bận'];
 const setSubmitLabels = editing => document.querySelectorAll('button[type="submit"]').forEach(button => replace(button, submitLabel(editing)));

@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const source = file => fs.readFileSync(path.join(__dirname, '../app/static/js', file), 'utf8');
+const { runScriptFile } = require('./helpers/module-source');
+const load = (file, context) => runScriptFile(path.join(__dirname, '../app/static/js', file), vm.isContext(context) ? context : vm.createContext(context));
 class Surface extends EventTarget {}
 class CustomEvent extends Event { constructor(type, options) { super(type); this.detail = options.detail; } }
 const delay = () => new Promise(resolve => setTimeout(resolve, 15));
@@ -19,7 +20,7 @@ async function main() {
   let ioOptions, token = 'first-token';
   window.io = options => {ioOptions = options; return socket;};
   const context = {window, document, CustomEvent, URL, URLSearchParams, localStorage: {getItem: () => token}, console};
-  vm.runInNewContext(source('realtime-client.js'), context);
+  load('realtime-client.js', context);
   window.addEventListener('qlpk:realtime:event', event => received.push(event.detail));
   window.QLPKRealtimeClient.start(); callbacks.connect(); callbacks['qlpk:subscribed'](); callbacks['qlpk:subscribed']();
   assert.equal(received.filter(e => e.type === 'realtime.resynced').length, 1);
@@ -33,7 +34,7 @@ async function main() {
   assert.equal(received.filter(e => e.type === 'realtime.resynced').length, 2);
   assert.equal(sent.length, 2);
 
-  vm.runInNewContext(source('realtime-page-hooks.js'), context);
+  load('realtime-page-hooks.js', context);
   let batch;
   const unregister = window.QLPKRealtimePageHooks.register({types:['appointment.changed','document.changed'], batch:true, debounceMs:1, handler: events => batch = events});
   for (const type of ['appointment.changed','document.changed']) {
@@ -44,7 +45,7 @@ async function main() {
   await delay(); assert.deepEqual(Array.from(batch, e => e.type), ['appointment.changed','document.changed']); unregister();
 
   document.getElementById = () => null;
-  vm.runInNewContext(source('components/examination-waiting-list-ui.js'), context);
+  load('components/examination-waiting-list-ui.js', context);
   let rows = [], urls = [];
   const ui = window.ClinicalExaminationWaitingListUi;
   const adapter = ui.createWaitingListAdapter({document, statuses:['doctor_queue'], loadAllPages:true, preserveServerOrder:true,

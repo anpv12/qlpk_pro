@@ -1,3 +1,5 @@
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
+
 import {
   getComponent as medicalHistoryGetComponent,
   setVisible as medicalHistorySetVisible
@@ -380,7 +382,7 @@ function medicalHistoryBanThanFilter(query) {
     medicalHistoryGetComponent().queryAll('#banThanList [data-bt-group]').forEach(grp => medicalHistorySetVisible(grp, true));
     if (!q) return;
     medicalHistoryGetComponent().queryAll('#banThanList .medical-history-suggestion-item').forEach(item => {
-    const matches = window.QLPKSearchNormalization?.contains(item.textContent, q)
+    const matches = QLPKSearchNormalization?.contains(item.textContent, q)
       ?? item.textContent.toLowerCase().includes(q.toLowerCase());
     item.style.display = matches ? '' : 'none';
   });
@@ -393,7 +395,7 @@ function medicalHistoryGiaDinhFilter(query) {
   medicalHistoryGetComponent().queryAll('#giaDinhList [data-gd-group]').forEach(grp => medicalHistorySetVisible(grp, true));
   if (!q) return;
   medicalHistoryGetComponent().queryAll('#giaDinhList .medical-history-suggestion-item').forEach(item => {
-    const matches = window.QLPKSearchNormalization?.contains(item.textContent, q)
+    const matches = QLPKSearchNormalization?.contains(item.textContent, q)
       ?? item.textContent.toLowerCase().includes(q.toLowerCase());
     item.style.display = matches ? '' : 'none';
   });

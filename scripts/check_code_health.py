@@ -35,7 +35,7 @@ JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 10
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
-MAX_WINDOW_GLOBALS = 144
+MAX_WINDOW_GLOBALS = 142
 CSS_ROOT = ROOT / "app" / "static" / "css"
 MAX_CSS_LINES = 500
 
@@ -193,6 +193,39 @@ def window_global_findings() -> list[str]:
     return [f"window globals: {count} (> {MAX_WINDOW_GLOBALS}); dùng registry/module thay vì biến toàn cục mới"] if count > MAX_WINDOW_GLOBALS else []
 
 
+# Browser and vendor properties a page may read from window, plus developer-only debug switches.
+WINDOW_PLATFORM_PROPERTIES = {
+    "Blob", "BroadcastChannel", "Element", "Event", "FormData", "HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement",
+    "ReadableStream", "URL", "URLSearchParams", "addEventListener", "clearInterval", "clearTimeout", "console", "dispatchEvent",
+    "document", "encodeURIComponent", "getComputedStyle", "history", "indexedDB", "innerHeight", "innerWidth", "localStorage",
+    "location", "matchMedia", "navigator", "open", "pageXOffset", "pageYOffset", "removeEventListener", "requestAnimationFrame",
+    "scrollTo", "scrollX", "scrollY", "self", "sessionStorage", "setInterval", "setTimeout", "top",
+    "Chart", "FullCalendar", "JsBarcode", "Swal", "XLSX", "bootstrap", "echarts", "flatpickr", "io",
+    "QLPK_DEBUG_MEDICAL_HISTORY",
+}
+
+
+def _script_code(text: str) -> str:
+    return re.sub(r"/\*[\s\S]*?\*/|(?<![:'\"\\])//[^\n]*", "", text)
+
+
+def window_read_findings() -> list[str]:
+    """window.X reads where no script assigns X: a dead fallback or an API that moved to a module import."""
+    assigned: set[str] = set()
+    reads: dict[str, str] = {}
+    for path in JS_ROOT.rglob('*.js'):
+        if 'vendor' in path.parts or '.min.' in path.name:
+            continue
+        text = _script_code(path.read_text(encoding='utf-8', errors='ignore'))
+        assigned.update(re.findall(r"\bwindow\.([A-Za-z_$][\w$]*)\s*=(?!=)", text))
+        assigned.update(re.findall(r"\(\s*options\.window\s*\|\|\s*window\s*\)\.([\w$]+)\s*=(?!=)", text))
+        assigned.update(re.findall(r"defineProperty\(window,\s*'([\w$]+)'", text))
+        for match in re.finditer(r"\bwindow\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))", text):
+            reads.setdefault(match.group(1), f"{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}")
+    return [f"{where}: window.{name} is read but never assigned (import the module or drop the dead fallback)"
+            for name, where in sorted(reads.items()) if name not in assigned and name not in WINDOW_PLATFORM_PROPERTIES]
+
+
 def eslint_findings() -> list[str] | None:
     eslint = shutil.which("eslint")
     if not eslint:
@@ -217,7 +250,7 @@ def eslint_findings() -> list[str] | None:
 
 
 def main() -> int:
-    failures = oversized() + oversized_templates() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings()
+    failures = oversized() + oversized_templates() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings() + window_read_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")

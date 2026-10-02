@@ -2,11 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function loadUi(path = 'app/static/js/components/examination-waiting-list-ui.js') {
     const window = {};
     const document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() {} };
-    vm.runInNewContext(fs.readFileSync(path, 'utf8'), { window, document, console, setTimeout, clearTimeout, URLSearchParams, Array, Set, Math, Error });
+    runScriptFile(path, vm.createContext({ window, document, console, setTimeout, clearTimeout, URLSearchParams, Array, Set, Math, Error }));
     return window.ClinicalExaminationWaitingListUi;
 }
 

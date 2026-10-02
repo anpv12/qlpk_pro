@@ -1,29 +1,12 @@
-import { bindCompleteExaminationButton, bindDetailExaminationModalButton, bindDocumentModalButton, bindEditHistoryButton, bindExaminationFormShell, bindFeedbackButtons, bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindSaveMedicalHistoryButton, bindTabPrintButtons, buildDefaultExaminationFormFieldEvents, buildExaminationIdUrl, buildTransitionRequestOptions, completeExaminationFlow, createTransferMenuHandler, extractExaminationId, initRelativeTable, openDetailExaminationModalFlow, openPersonalDetailSection, showTransferMenuFlow } from './examination-action-buttons-ui-parts/transfer-actions.js';
-import { bindExaminationActionButtons, createExaminationFeedbackAdapter, createExaminationFormInitializer } from './examination-action-buttons-ui-parts/detail-modal-and-init.js';
+import { bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindTabPrintButtons, createTransferMenuHandler, initRelativeTable, openPersonalDetailSection, showTransferMenuFlow } from './examination-action-buttons-ui-parts/transfer-actions.js';
 
 window.ExaminationActionButtonsUi = {
-	buildExaminationIdUrl: buildExaminationIdUrl,
-	extractExaminationId: extractExaminationId,
-	buildTransitionRequestOptions: buildTransitionRequestOptions,
-	showTransferMenuFlow: showTransferMenuFlow,
-	createTransferMenuHandler: createTransferMenuHandler,
-	completeExaminationFlow: completeExaminationFlow,
-	bindEditHistoryButton: bindEditHistoryButton,
-	bindCompleteExaminationButton: bindCompleteExaminationButton,
-	bindDocumentModalButton: bindDocumentModalButton,
-	bindSaveMedicalHistoryButton: bindSaveMedicalHistoryButton,
-	bindSaveInfoButton: bindSaveInfoButton,
-	bindReExaminationSourceReset: bindReExaminationSourceReset,
-	openPersonalDetailSection: openPersonalDetailSection,
-	bindPersonalDetailEditButtons: bindPersonalDetailEditButtons,
-	initRelativeTable: initRelativeTable,
-	bindTabPrintButtons: bindTabPrintButtons,
-	openDetailExaminationModalFlow: openDetailExaminationModalFlow,
-	bindDetailExaminationModalButton: bindDetailExaminationModalButton,
-	bindFeedbackButtons: bindFeedbackButtons,
-	bindExaminationFormShell: bindExaminationFormShell,
-	buildDefaultExaminationFormFieldEvents: buildDefaultExaminationFormFieldEvents,
-	createExaminationFormInitializer: createExaminationFormInitializer,
-	bindExaminationActionButtons: bindExaminationActionButtons,
-	createExaminationFeedbackAdapter: createExaminationFeedbackAdapter
+	showTransferMenuFlow,
+	createTransferMenuHandler,
+	bindSaveInfoButton,
+	bindReExaminationSourceReset,
+	openPersonalDetailSection,
+	bindPersonalDetailEditButtons,
+	initRelativeTable,
+	bindTabPrintButtons
 };

@@ -42,16 +42,8 @@ function harness(cookie = true) {
     const binding = cookie ? window.QLPKApiTransport.useCookieSession() : null;
     if (binding) binding.owner.replace({ token_type: 'cookie', session_id: 'a'.repeat(32), csrf_token: 'b'.repeat(64),
         user: { id: 7, username: 'qa', role: 'doctor', permissions: [] } }, 0);
-    const base = 'app/static/js/doctor-examination/';
-    const shared = fs.readFileSync(base + 'medical-history-context.js', 'utf8')
-        .replace(/export \{([\s\S]*?)\};/, 'window.historyContext = {$1};');
-    vm.runInContext(`{ ${shared} }`, context);
-    runScriptFile('app/static/js/shared/dom.js', context);
     for (const file of ['medical-history-core', 'medical-history-suggestions', 'medical-history-allergy', 'safety-plan']) {
-        const source = fs.readFileSync(base + file + '.js', 'utf8').replace(/^import \{[^}]*\} from '\.\.\/shared\/dom\.js';\n/m, '').replace(
-            /import \{([\s\S]*?)\} from '\.\/medical-history-context.js';/,
-            (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = window.historyContext;`);
-        vm.runInContext(`{ ${source} }`, context);
+        runScriptFile(`app/static/js/doctor-examination/${file}.js`, context);
     }
     return { requests, responses, opened, messages, actions, component, binding,
         switchPatient() { patientId = 8; contextToken++; } };

@@ -116,6 +116,8 @@ function esModuleScript(rel, seen = new Set()) {
     const exportLists = [...source.matchAll(/^export \{([^}]*)\};?$/gm)].flatMap(match => match[1].split(','))
         .map(part => part.trim()).filter(Boolean)
         .map(part => part.replace(/^([\w$]+)\s+as\s+([\w$]+)$/, '$2: $1'));
+    const exported = [...new Set([...source.matchAll(/^export (?:async )?(?:function\*?|const|let|class)\s+([\w$]+)/gm)].map(match => match[1])
+        .concat(exportLists.map(part => part.split(':')[0].trim())))];
     const body = source.replace(RELATIVE_IMPORT, '').replace(/^export \{[^}]*\};?\n?/gm, '').replace(/^export (?=(?:async )?function|const|let|class)/gm, '');
     const top = topLevelNames(body);
     return `${dependencies}
@@ -126,6 +128,10 @@ ${body}
 const __exports = { ${[...new Set([...top, ...exportLists])].join(', ')} };
 __qlpkEsModules[${JSON.stringify(rel)}] = __exports;
 for (const [name, value] of Object.entries(__exports)) globalThis[name] = value;
+// Harnesses read shared APIs from their fake window, as pages did before these modules exported them.
+if (globalThis.window && typeof globalThis.window === 'object' && globalThis.window !== globalThis) {
+    for (const name of ${JSON.stringify(exported)}) if (!(name in globalThis.window)) globalThis.window[name] = __exports[name];
+}
 })();
 `;
 }

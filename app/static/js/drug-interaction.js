@@ -8,13 +8,14 @@ import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { downloadFile, HttpError, requestJson } from './shared/http-json.js';
 import { setupIngredientAutocomplete } from './drug-interaction-autocomplete.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 const API_BASE = '/api/drug-interactions';
 const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
 const state = { interactions: [], ingredients: [], editingId: null };
 const FIELDS = ['consequence', 'mechanism', 'management', 'notes'];
 
-const normalize = value => window.QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
+const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 

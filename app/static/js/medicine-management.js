@@ -20,12 +20,13 @@ import { showMedicineExpiry, updatePackagingInfo, updateStockQuantityLabels } fr
 import { addBatchImportRow, confirmBatchImport, showImportBatchModal, showImportFromMedicineForm } from './medicines/management-batch-import.js';
 import { showSupplierManagement } from './medicines/management-suppliers.js';
 import { loadImportLedger, switchImportTab } from './medicines/management-import-ledger.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 // Medicine Management JavaScript
 
 // Helper functions
 function normalizeSearchText(value) {
-	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+	return QLPKSearchNormalization?.normalizeSearchText(value)
 		|| String(value || '').toLowerCase().trim();
 }
 

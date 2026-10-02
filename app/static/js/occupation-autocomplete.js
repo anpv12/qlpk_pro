@@ -1,4 +1,5 @@
 import { el } from './shared/dom.js';
+import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 /**
  * Occupation Autocomplete Component
@@ -6,7 +7,7 @@ import { el } from './shared/dom.js';
  */
 
 function normalizeOccupationText(value) {
-    return window.QLPKSearchNormalization?.normalizeSearchText(value)
+    return QLPKSearchNormalization?.normalizeSearchText(value)
         || String(value || '').toLowerCase().trim();
 }
 

@@ -1,3 +1,5 @@
+import { QLPKSearchNormalization } from '../shared/search-normalization.js';
+
 (function (window) {
 	'use strict';
 
@@ -6,7 +8,7 @@
 	}
 
 	function normalizeSearchText(value) {
-		return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		return QLPKSearchNormalization?.normalizeSearchText(value)
 			|| String(value || '').toLowerCase().trim();
 	}
 
