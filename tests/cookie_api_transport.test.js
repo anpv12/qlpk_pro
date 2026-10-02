@@ -86,25 +86,6 @@ test('cookie revision protects delayed body and clone independent of storage', a
     await assert.rejects(clone.blob(), { code: 'session.changed' });
 });
 
-test('cookie jQuery adapter adds csrf without legacy token and rejects stale body', async () => {
-    const state = harness();
-    state.authenticate();
-    let factory, release;
-    state.window.QLPKApiTransport.installJQuery({ ajaxTransport(kind, callback) { factory = callback; } });
-    state.queue.push(new Promise(resolve => { release = resolve; }));
-    const transport = factory({ url: '/write', type: 'POST', dataTypes: ['json'], hasContent: true, data: 'body' });
-    const done = new Promise(resolve => transport.send({}, (...args) => resolve(args)));
-    await new Promise(resolve => setImmediate(resolve));
-    assert.equal(state.requests[0].init.headers.get('X-CSRF-Token'), 'a'.repeat(64));
-    assert.equal(state.requests[0].init.headers.has('Authorization'), false);
-    state.session.owner.invalidate('changed');
-    release(Response.json({ patient: 'old' }));
-    const result = await done;
-    assert.equal(result[0], 0);
-    assert.equal(result[1], 'session.changed');
-    assert.equal(result[2], undefined);
-});
-
 test('static assets and external requests do not bootstrap identity or attach session headers', async () => {
     const state = harness();
     state.queue.push(new Response('asset'), new Response('outside'));

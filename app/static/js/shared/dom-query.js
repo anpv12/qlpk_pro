@@ -72,7 +72,7 @@ export function hideModal(selector) {
 const bound = new WeakMap();
 const nodesOf = target => (typeof target === 'string' ? all(target) : [].concat(target).filter(Boolean));
 
-// Replaces the listener previously bound under `key` for this event (the jQuery .off('type.ns').on('type.ns') pattern).
+// Replaces the listener previously bound under `key` for this event (a namespaced off-then-on rebinding).
 // The handler runs with `this` set to the element, like a jQuery handler.
 export function rebind(target, type, key, handler) {
     nodesOf(target).forEach(node => {

@@ -7,7 +7,7 @@ import { showQuestion } from './questions.js';
 import { submitSurvey } from './submit.js';
 import { setSurveyProgressBar } from '../patient-survey-parts/display.js';
 
-// data-* values coerced the way the former jQuery .data() did ("3" -> 3, "true" -> true), so stored scores keep their types.
+// data-* values coerced the way the former data() helper did ("3" -> 3, "true" -> true), so stored scores keep their types.
 function dataValue(node, name) {
     const raw = node.getAttribute(`data-${name}`);
     if (raw === null) return undefined;

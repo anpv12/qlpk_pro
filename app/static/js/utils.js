@@ -13,19 +13,6 @@ window.QLPKSharedUtils.escapeHtml = function (value) {
 };
 
 const AppointmentUtils = {
-	// Hàm load doctors chung
-	loadDoctors: function (selectElement, callback) {
-		$.get('/users?role=doctor', function (res) {
-			const doctors = res.items || res;
-			selectElement.empty();
-			selectElement.append('<option value="">Chọn bác sĩ</option>');
-			doctors.forEach(d => {
-				selectElement.append(`<option value="${d.id}">${window.QLPKHtml.escape(d.full_name || d.username)}</option>`);
-			});
-			if (typeof callback === 'function') callback();
-		});
-	},
-
 	// Hàm format datetime
 	formatDateTime: function (dateTimeStr) {
 		const d = new Date(dateTimeStr);
@@ -171,4 +158,3 @@ const AppointmentUtils = {
 window.AppointmentUtils = AppointmentUtils;
 window.formatDateDisplay = AppointmentUtils.formatDateDisplay;
 
-if (typeof $ === "function") window.QLPKApiTransport.installJQuery($);

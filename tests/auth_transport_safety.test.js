@@ -5,25 +5,18 @@ const vm = require('node:vm');
 const { runScriptFile } = require('./helpers/module-source');
 
 function harness(baseURI = 'https://clinic.test/page') {
-    const requests = [], hooks = {}, startup = [];
+    const requests = [];
     const stored = new Map([['qlpk_token', 'qa-token'], ['qlpk_password', 'old-qa-password'], ['qlpk_username', 'qa']]);
     const document = { baseURI };
     const window = { location: { href: 'https://clinic.test/page', origin: 'https://clinic.test' },
         fetch: async (input, init) => { requests.push({ input, init }); return { status: 401 }; } };
-    const jquery = target => {
-        if (typeof target === 'function') startup.push(target);
-        return { ajaxSend(handler) { hooks.send = handler; }, ajaxError(handler) { hooks.error = handler; } };
-    };
-    jquery.ajax = () => { throw new Error('Unexpected automatic retry'); };
-    $.ajaxTransport = (kind, handler) => { hooks.transport = handler; };
-    const context = vm.createContext({ window, document, URL, Request, Headers, AbortController, $, localStorage: {
+    const context = vm.createContext({ window, document, URL, Request, Headers, AbortController, localStorage: {
         getItem: key => stored.get(key), removeItem: key => stored.delete(key),
     } });
-    function $(target) { return jquery(target); }
     window.localStorage = context.localStorage;
     runScriptFile('app/static/js/shared/api-transport.js', context);
     runScriptFile('app/static/js/utils.js', context);
-    return { window, document, hooks, startup, stored, requests, context };
+    return { window, document, stored, requests, context };
 }
 
 for (const target of ['https://outside.test/api', '//outside.test/api', 'http://clinic.test/api',
@@ -79,20 +72,9 @@ test('external document base cannot redirect relative credentials', async () => 
     assert.equal(state.requests[0].init, undefined);
 });
 
-test('jQuery transport handles only same origin and ordinary data types', () => {
-    const state = harness();
-    assert.equal(state.hooks.transport({ url: 'https://outside.test/api', dataTypes: ['json'] }), undefined);
-    assert.equal(state.hooks.transport({ url: '/script', dataTypes: ['script'] }), undefined);
-    assert.equal(state.hooks.transport({ url: '/script', dataTypes: ['jsonp'] }), undefined);
-    assert.equal(typeof state.hooks.transport({ url: '/api/save', dataTypes: ['json'] }).send, 'function');
-    assert.equal(state.hooks.send, undefined);
-    assert.equal(state.hooks.error, undefined);
-});
-
 test('no automatic login, refresh, startup request or password retained', async () => {
     const state = harness();
     assert.equal(state.window.autoLogin, undefined);
-    assert.equal(state.startup.length, 0);
     assert.equal(state.stored.has('qlpk_password'), false);
     assert.equal(state.stored.has('qlpk_username'), false);
     state.stored.delete('qlpk_token');
@@ -126,15 +108,6 @@ test('loading shared transport twice preserves one fetch owner', async () => {
     assert.equal(state.window.fetch, fetcher);
     await state.window.fetch('/api/load');
     assert.equal(state.requests.length, 1);
-});
-
-test('jQuery installation is idempotent for each instance', () => {
-    const state = harness();
-    let installations = 0;
-    const jquery = { ajaxTransport() { installations++; } };
-    state.window.QLPKApiTransport.installJQuery(jquery);
-    state.window.QLPKApiTransport.installJQuery(jquery);
-    assert.equal(installations, 1);
 });
 
 test('document management no longer captures a token once at startup', () => {

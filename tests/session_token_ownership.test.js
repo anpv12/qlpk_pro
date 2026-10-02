@@ -33,39 +33,11 @@ function loadTransport(window) {
     return window.QLPKApiTransport;
 }
 
-function fakeJQuery(installs) {
-    return { ajaxTransport(kind, factory) { installs.push({ kind, factory }); } };
-}
-
 function legacyWindow(storage) {
     return { location: { origin: 'https://qa.test', href: 'https://qa.test/' },
         localStorage: { getItem: key => storage[key] ?? null, removeItem() {} },
         fetch: () => Promise.resolve(new Response('{}')) };
 }
-
-test('jQuery loaded after the transport is routed through it exactly once', () => {
-    const installs = [];
-    const window = legacyWindow({});
-    loadTransport(window);
-    const jquery = fakeJQuery(installs);
-    window.jQuery = jquery;
-    window.jQuery = jquery;
-    assert.equal(window.jQuery, jquery);
-    assert.equal(installs.length, 1);
-    assert.equal(installs[0].kind, '+*');
-    window.QLPKApiTransport.installJQuery(jquery);
-    assert.equal(installs.length, 1);
-    window.jQuery = fakeJQuery(installs);
-    assert.equal(installs.length, 2);
-});
-
-test('jQuery loaded before the transport is installed immediately', () => {
-    const installs = [];
-    const window = legacyWindow({});
-    window.jQuery = fakeJQuery(installs);
-    loadTransport(window);
-    assert.equal(installs.length, 1);
-});
 
 test('legacy session presence and revision follow the stored credential without exposing it', () => {
     const storage = { qlpk_token: 'first' };

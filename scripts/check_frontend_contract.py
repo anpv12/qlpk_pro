@@ -33,7 +33,7 @@ class Metric:
     exclude: tuple[str, ...] = ()
 
 
-MAX_JQUERY = 4
+MAX_JQUERY = 0
 MAX_HTML_SINKS = 165
 MAX_CLASSIC_SCRIPTS = 336
 
@@ -93,7 +93,7 @@ METRICS = [
         pattern=r"\.css\s*\(",
         roots=("app/static/js",),
         suffixes=(".js",),
-        max_count=2,
+        max_count=0,
         description="Legacy jQuery .css() dynamic debt is locked; prefer classes/CSS variables.",
     ),
     Metric(
@@ -184,6 +184,15 @@ METRICS = [
 		suffixes=(".js",),
 		max_count=MAX_JQUERY,
 		description="Debt item 3: jQuery calls are locked and only decrease; new code uses native DOM (shared/dom.js) and fetch (shared/http-json.js).",
+	),
+	Metric(
+		name="html_jquery_script",
+		pattern=r"jquery",
+		roots=("app/templates",),
+		suffixes=(".html",),
+		max_count=0,
+		flags=re.I,
+		description="Debt item 3 (done 02/10/2026): no page loads jQuery; the vendor copy and the jQuery fetch adapter are removed.",
 	),
 	Metric(
 		name="js_html_string_sinks",

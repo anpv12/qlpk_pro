@@ -3,7 +3,6 @@
 
 	if (window.QLPKApiTransport) return;
 	const nativeFetch = window.fetch.bind(window);
-	const installedJQuery = new WeakSet();
 	let cookieSession = null;
 	let legacyToken = null;
 	let legacyRevision = 0;
@@ -263,79 +262,13 @@
 		return stream;
 	}
 
-	function installJQuery(jquery) {
-		if (!jquery || typeof jquery.ajaxTransport !== 'function' || installedJQuery.has(jquery)) return;
-		jquery.ajaxTransport('+*', function (settings) {
-			if (!isSameOrigin(settings.url) || settings.dataTypes.some(type => ['script', 'jsonp'].includes(type))) return;
-			return jqueryTransport(settings);
-		});
-		installedJQuery.add(jquery);
-	}
-
-	function watchGlobalJQuery() {
-		if (window.jQuery) {
-			installJQuery(window.jQuery);
-			return;
-		}
-		let current;
-		try {
-			Object.defineProperty(window, 'jQuery', {
-				configurable: true,
-				enumerable: true,
-				get() { return current; },
-				set(value) {
-					current = value;
-					installJQuery(value);
-				},
-			});
-		} catch { /* storage/jQuery hook không khả dụng: bỏ qua */ }
-	}
-
-	function jqueryTransport(settings) {
-		const controller = new AbortController();
-		let aborted = false;
-		return {
-			send(headers, complete) {
-				if (settings.async === false) {
-					complete(0, 'session.sync_unsupported');
-					return;
-				}
-				const requestHeaders = new Headers(headers);
-				if (!requestHeaders.has('X-Requested-With')) requestHeaders.set('X-Requested-With', 'XMLHttpRequest');
-				const result = fetch(settings.url, {
-					method: settings.type, headers: requestHeaders, signal: controller.signal,
-					body: settings.hasContent && settings.data != null ? settings.data : undefined,
-					credentials: settings.xhrFields?.withCredentials ? 'include' : 'same-origin',
-				}).then(async response => {
-					const binary = settings.xhrFields?.responseType;
-					const reader = ({ blob: 'blob', arraybuffer: 'arrayBuffer', json: 'json' })[binary] || 'text';
-					const payload = await response[reader]();
-					const responseHeaders = new Headers(response.headers);
-					if (settings.mimeType) responseHeaders.set('Content-Type', settings.mimeType);
-					const rawHeaders = Array.from(responseHeaders, ([name, value]) => `${name}: ${value}`).join('\r\n');
-					return [response.status, response.statusText, { [binary && binary !== 'text' ? 'binary' : 'text']: payload }, rawHeaders];
-				});
-				result.then(args => {
-					if (!aborted) complete(...args);
-				}, error => {
-					if (!aborted) complete(0, error.code || 'error');
-				});
-			},
-			abort() {
-				aborted = true;
-				controller.abort();
-			},
-		};
-	}
-
 	try {
 		window.localStorage.removeItem('qlpk_password');
 		window.localStorage.removeItem('qlpk_username');
-	} catch { /* storage/jQuery hook không khả dụng: bỏ qua */ }
+	} catch { /* storage không khả dụng: bỏ qua */ }
 
 	window.fetch = fetch;
-	watchGlobalJQuery();
-	window.QLPKApiTransport = Object.freeze({ fetch, installJQuery, useCookieSession, ensureSession, getAuthHeader, hasSession,
+	window.QLPKApiTransport = Object.freeze({ fetch, useCookieSession, ensureSession, getAuthHeader, hasSession,
 		sessionRevision, userSnapshot, currentUser,
 		get session() { return cookieSession; },
 	});

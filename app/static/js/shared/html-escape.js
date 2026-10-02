@@ -1,4 +1,4 @@
-// Escape text before it is interpolated into an HTML string (innerHTML, jQuery .html/.append, template rows).
+// Escape text before it is interpolated into an HTML string (innerHTML, template rows).
 (function (window) {
 	'use strict';
 	const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;', '`': '&#096;' };
