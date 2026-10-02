@@ -59,17 +59,10 @@ import { QLPKWaitingQueueCardUi } from './waiting-queue-card-ui.js';
 		});
 	}
 
-	function resolveWindowAction(name) {
-		return name && typeof window[name] === 'function' ? window[name] : null;
-	}
-
 	function bindWaitingListPatientCardEvents(container, options = {}) {
-		const selectAction = options.onSelectAppointment
-			|| resolveWindowAction(options.selectFunctionName || 'selectPatientCard');
-		const transferAction = options.onTransferAppointment
-			|| resolveWindowAction(options.transferFunctionName || 'showTransferMenu');
-		const deleteAction = options.onDeleteAppointment
-			|| resolveWindowAction(options.deleteFunctionName || 'deleteExaminationFromQuickSearch');
+		const selectAction = options.onSelectAppointment;
+		const transferAction = options.onTransferAppointment;
+		const deleteAction = options.onDeleteAppointment;
 
 		container.querySelectorAll('.qlpk-waiting-card[data-appointment-id]').forEach(card => {
 			const rawAppointmentId = card.dataset.appointmentId;
@@ -226,9 +219,9 @@ import { QLPKWaitingQueueCardUi } from './waiting-queue-card-ui.js';
 				patientCodeLabel: options.patientCodeLabel,
 				listId: options.listId,
 				emptyStateId: options.emptyStateId,
-				selectFunctionName: options.selectFunctionName,
-				transferFunctionName: options.transferFunctionName,
-				deleteFunctionName: options.deleteFunctionName,
+				onSelectAppointment: options.onSelectAppointment,
+				onTransferAppointment: options.onTransferAppointment,
+				onDeleteAppointment: options.onDeleteAppointment,
 				showActions: options.showActions,
 				includeAge: options.includeAge,
 				includeGender: options.includeGender,

@@ -70,13 +70,6 @@
 		});
 
 		manager.init();
-		window.jointExamManagerInstance = manager;
-
-		const context = document.body?.dataset?.jointExamContext;
-		if (context) {
-			window.qlpkJointExamManagers = window.qlpkJointExamManagers || {};
-			window.qlpkJointExamManagers[context] = manager;
-		}
 
 		const jointExamBtn = document.getElementById('jointExamEditBtn');
 		if (jointExamBtn) {

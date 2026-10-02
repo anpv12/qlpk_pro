@@ -84,5 +84,3 @@ window.QLPKDoctorPage = Object.freeze({
 	reloadCurrentAppointment: reloadCurrentAppointment,
 	requestWorkspaceLeave: requestWorkspaceLeave
 });
-window.selectPatientCard = selectPatientCard;
-window.loadAppointments = loadAppointments;

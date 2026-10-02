@@ -125,6 +125,7 @@ const psychologistWaitingListAdapter = window.ClinicalExaminationWaitingListUi.c
 	variant: 'timeline',
 	patientCodeLabel: '',
 	showActions: false,
+	onSelectAppointment: appointmentId => selectPatientCard(appointmentId),
 	includeAge: true,
 	includeGender: true,
 	includePhone: false,
@@ -401,6 +402,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 		getExaminationStatusText: psychologistGetExaminationStatusText,
 		resetFormToDefault,
 		loadAppointments,
+		selectPatientCard,
 		clearExaminationLayout: () => psychologistWorkspaceRuntime?.clear({ document })
 	}).bind();
 
@@ -438,15 +440,6 @@ async function selectPatientCard(appointmentId) {
 		clearErrorMessage: 'Error clearing examination fields:'
 	});
 }
-// Make functions global
-window.selectPatientCard = selectPatientCard;
-window.showTransferMenu = window.ExaminationActionButtonsUi.createTransferMenuHandler({
-	role: 'psychologist',
-	showToast: window.showCustomToast,
-	onSuccess: function () {
-		loadAppointments(currentStatus, currentPage);
-	}
-});
 
 // ========================================
 // ICD DATA LOADING (for autocomplete components)

@@ -27,7 +27,6 @@ function createManager(currentInstance, options) {
 	});
 
 	instance.init();
-	window.jointExamManagerInstance = instance;
 	return instance;
 }
 

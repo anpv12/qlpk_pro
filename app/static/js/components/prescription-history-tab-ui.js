@@ -33,7 +33,7 @@ import { QLPKHistoryTabCore } from './history-tab-core.js';
 	}
 
 	function setupPreview(options = {}) {
-		const setupPrescriptionTabPagination = options.setupPrescriptionTabPagination || window.setupPrescriptionTabPagination;
+		const setupPrescriptionTabPagination = options.setupPrescriptionTabPagination;
 		if (typeof setupPrescriptionTabPagination !== 'function') {
 			throw new Error('setupPrescriptionTabPagination is required');
 		}

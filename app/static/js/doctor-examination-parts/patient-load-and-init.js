@@ -80,6 +80,7 @@ function createWaitingListAdapter() {
 		variant: 'timeline',
 		patientCodeLabel: '',
 		showActions: false,
+		onSelectAppointment: appointmentId => selectPatientCard(appointmentId),
 		includeAge: true,
 		includeGender: true,
 		includePhone: false,

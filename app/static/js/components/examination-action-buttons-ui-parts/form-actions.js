@@ -8,36 +8,6 @@ function resolveElement(elementOrId, fallbackId) {
 function getDocument(options = {}) {
 	return options.document || window.document;
 }
-function showTransferMenuFlow(appointmentId, event, options = {}) {
-	if (event && typeof event.stopPropagation === 'function') {
-		event.stopPropagation();
-	}
-
-	const transferModal = options.transferModal || window.TransferModal;
-	const role = options.role || 'doctor';
-	const onSuccess = typeof options.onSuccess === 'function' ? options.onSuccess : null;
-
-	if (transferModal && typeof transferModal.openWithErrorHandling === 'function') {
-		transferModal.openWithErrorHandling([appointmentId], role, onSuccess);
-		return { status: 'opened', method: 'openWithErrorHandling', role };
-	}
-
-	if (transferModal && typeof transferModal.open === 'function') {
-		transferModal.open([appointmentId], role, onSuccess);
-		return { status: 'opened', method: 'open', role };
-	}
-
-	console.error('TransferModal module chưa được load.');
-	if (typeof options.showToast === 'function') {
-		options.showToast('error', options.missingModuleMessage || 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-	}
-	return { status: 'missingModule', role };
-}
-function createTransferMenuHandler(options = {}) {
-	return function handleTransferMenu(appointmentId, event) {
-		return showTransferMenuFlow(appointmentId, event, options);
-	};
-}
 function getBootstrapApi() {
 	if (window.bootstrap) return window.bootstrap;
 	if (typeof bootstrap !== 'undefined') return bootstrap;
@@ -148,4 +118,4 @@ function bindTabPrintButtons(options = {}) {
 	});
 	return buttons;
 }
-export { bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindTabPrintButtons, createTransferMenuHandler, getBootstrapApi, getDocument, initRelativeTable, openPersonalDetailSection, resolveElement, showTransferMenuFlow };
+export { bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindTabPrintButtons, getBootstrapApi, getDocument, initRelativeTable, openPersonalDetailSection, resolveElement };

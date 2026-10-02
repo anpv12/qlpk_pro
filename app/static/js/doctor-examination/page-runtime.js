@@ -50,7 +50,6 @@
 		version: 2
 	});
 	// These aliases keep shared legacy components on the same canonical Doctor runtime.
-	window.getAuthHeader = getAuthHeader;
 	window.formatDateDisplay = formatDateDisplay;
 	window.showCustomToast = showCustomToast;
 })(window);

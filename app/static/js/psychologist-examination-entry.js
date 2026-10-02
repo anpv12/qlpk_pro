@@ -57,7 +57,7 @@ import './components/modal-history-data-runtime.js';
 import './components/modal-history-print-controller.js';
 import './components/waiting-queue-card-ui.js';
 import './components/examination-waiting-list-ui.js';
-import './components/examination-action-buttons-ui-parts/transfer-actions.js';
+import './components/examination-action-buttons-ui-parts/form-actions.js';
 import './components/examination-action-buttons-ui.js';
 import './components/icd-data-loader.js';
 import './components/sidebar-user-info-ui.js';

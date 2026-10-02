@@ -28,7 +28,7 @@ function buildHistoryContextOptions(options, accessors) {
 	};
 }
 
-function createGlobalSearchActions(getFlow, hasAppointmentInCurrentList) {
+function createGlobalSearchActions(getFlow, hasAppointmentInCurrentList, selectAppointment) {
 	return {
 		handleAction(action = {}, item = {}) {
 			if (action.kind === 'open_patient_history') {
@@ -51,8 +51,8 @@ function createGlobalSearchActions(getFlow, hasAppointmentInCurrentList) {
 		openAppointment(payload = {}) {
 			if (payload.appointment_id
 				&& hasAppointmentInCurrentList(payload.appointment_id)
-				&& typeof window.selectPatientCard === 'function') {
-				return window.selectPatientCard(payload.appointment_id);
+				&& typeof selectAppointment === 'function') {
+				return selectAppointment(payload.appointment_id);
 			}
 			return this.openPatientHistory(payload);
 		}
@@ -113,7 +113,7 @@ function create(options = {}) {
 		const modalSearchState = modalSearchContext.stateStore;
 		modalPatientSearchFlow = modalSearchContext.flow;
 
-		window.QLPKGlobalSearchActions = createGlobalSearchActions(() => modalPatientSearchFlow, hasAppointmentInCurrentList);
+		window.QLPKGlobalSearchActions = createGlobalSearchActions(() => modalPatientSearchFlow, hasAppointmentInCurrentList, options.selectPatientCard);
 
 		const medicalRecordRealtimeAdapter = PsychologistMedicalRecordRealtimeUtils.createMedicalRecordRealtimeAdapter({
 			document,

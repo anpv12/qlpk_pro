@@ -1,151 +1,135 @@
 import { el, renderDocumentMarkup, replace } from '../../shared/dom.js';
 
-(function (window) {
-	'use strict';
+const PRESCRIPTION_PAGE_COLORS = {
+	'BASIC': { accent: '#00897B', label: 'Đơn Cơ bản' },
+	'H': { accent: '#7E57C2', label: 'Đơn Hướng thần (H)' },
+	'N': { accent: '#F4511E', label: 'Đơn Gây nghiện (N)' }
+};
 
-	const PRESCRIPTION_PAGE_COLORS = {
-		'BASIC': { accent: '#00897B', label: 'Đơn Cơ bản' },
-		'H': { accent: '#7E57C2', label: 'Đơn Hướng thần (H)' },
-		'N': { accent: '#F4511E', label: 'Đơn Gây nghiện (N)' }
-	};
-
-	function missingDependency(name) {
-		return new Error(`Thiếu helper preview đơn thuốc từ modal: ${name}`);
+function missingDependency(name) {
+	return new Error(`Thiếu helper preview đơn thuốc từ modal: ${name}`);
 	}
 
 	function resolveFunction(deps, dependencyName, globalName = dependencyName) {
-		const candidate = deps[dependencyName] || window[globalName];
-		if (typeof candidate !== 'function') {
-			throw missingDependency(globalName);
+	const candidate = deps[dependencyName] || window[globalName];
+	if (typeof candidate !== 'function') {
+		throw missingDependency(globalName);
+	}
+	return candidate;
+}
+
+function buildPerTypePrescriptionData(rx, fullPrescriptionData) {
+	return {
+		medicines: rx.medicines || [],
+		prescription_code: rx.prescription_code || null,
+		prescription_type: rx.type || 'BASIC',
+		usage_instructions: fullPrescriptionData?.usage_instructions || '',
+		re_examination_date: fullPrescriptionData?.re_examination_date || null,
+		show_re_examination_date: fullPrescriptionData?.show_re_examination_date,
+		re_examination_time: fullPrescriptionData?.re_examination_time || null,
+		total_amount: rx.total_amount || 0
+	};
+}
+
+function normalizeTabPrescriptions(prescriptionData) {
+	return prescriptionData?.prescriptions && prescriptionData.prescriptions.length > 0
+		? prescriptionData.prescriptions
+		: [{
+			type: 'BASIC',
+			medicines: prescriptionData?.medicines || [],
+			prescription_code: prescriptionData?.prescription_code || null,
+			total_amount: prescriptionData?.total_amount || 0
+		}];
+}
+
+function createPrescriptionModalPreview(deps = {}) {
+	let prescriptionTabPageIndex = 0;
+	let prescriptionTabData = null;
+
+	function renderPrescriptionPage() {
+		const contentArea = document.getElementById('modalContentArea');
+		if (!contentArea || !prescriptionTabData) return;
+
+		const buildPrescriptionScreenHTML = resolveFunction(deps, 'buildPrescriptionScreenHTML');
+		const createBarcodesInElement = resolveFunction(deps, 'createBarcodesInElement');
+		const {
+			prescriptions,
+			clinicInfo,
+			patient,
+			history,
+			examinationDetail,
+			examinationDetailsBySection,
+			relatives,
+			fullPrescriptionData
+		} = prescriptionTabData;
+
+		const totalPages = prescriptions.length;
+		if (totalPages === 0) {
+			const emptyIcon = el('i', { class: 'bi bi-clipboard' });
+			emptyIcon.style.setProperty('font-size', 'var(--qlpk-font-size-5xl, 32px)');
+			replace(contentArea, el('div', { class: 'text-center text-muted py-4' },
+				emptyIcon, el('p', { class: 'mt-2 mb-0' }, 'Lượt khám này không có đơn thuốc')));
+			return;
 		}
-		return candidate;
-	}
 
-	function buildPerTypePrescriptionData(rx, fullPrescriptionData) {
-		return {
-			medicines: rx.medicines || [],
-			prescription_code: rx.prescription_code || null,
-			prescription_type: rx.type || 'BASIC',
-			usage_instructions: fullPrescriptionData?.usage_instructions || '',
-			re_examination_date: fullPrescriptionData?.re_examination_date || null,
-			show_re_examination_date: fullPrescriptionData?.show_re_examination_date,
-			re_examination_time: fullPrescriptionData?.re_examination_time || null,
-			total_amount: rx.total_amount || 0
-		};
-	}
+		let combinedHtml = '';
+		prescriptions.forEach(rx => {
+			const pType = rx.type || 'BASIC';
 
-	function normalizeTabPrescriptions(prescriptionData) {
-		return prescriptionData?.prescriptions && prescriptionData.prescriptions.length > 0
-			? prescriptionData.prescriptions
-			: [{
-				type: 'BASIC',
-				medicines: prescriptionData?.medicines || [],
-				prescription_code: prescriptionData?.prescription_code || null,
-				total_amount: prescriptionData?.total_amount || 0
-			}];
-	}
+			const perTypePrescriptionData = buildPerTypePrescriptionData(rx, fullPrescriptionData);
 
-	window.createPrescriptionModalPreview = function createPrescriptionModalPreview(deps = {}) {
-		let prescriptionTabPageIndex = 0;
-		let prescriptionTabData = null;
-
-		function renderPrescriptionPage() {
-			const contentArea = document.getElementById('modalContentArea');
-			if (!contentArea || !prescriptionTabData) return;
-
-			const buildPrescriptionScreenHTML = resolveFunction(deps, 'buildPrescriptionScreenHTML');
-			const createBarcodesInElement = resolveFunction(deps, 'createBarcodesInElement');
-			const {
-				prescriptions,
+			const previewHtml = buildPrescriptionScreenHTML({
 				clinicInfo,
 				patient,
 				history,
 				examinationDetail,
 				examinationDetailsBySection,
+				prescriptionData: perTypePrescriptionData,
 				relatives,
-				fullPrescriptionData
-			} = prescriptionTabData;
-
-			const totalPages = prescriptions.length;
-			if (totalPages === 0) {
-				const emptyIcon = el('i', { class: 'bi bi-clipboard' });
-				emptyIcon.style.setProperty('font-size', 'var(--qlpk-font-size-5xl, 32px)');
-				replace(contentArea, el('div', { class: 'text-center text-muted py-4' },
-					emptyIcon, el('p', { class: 'mt-2 mb-0' }, 'Lượt khám này không có đơn thuốc')));
-				return;
-			}
-
-			let combinedHtml = '';
-			prescriptions.forEach(rx => {
-				const pType = rx.type || 'BASIC';
-
-				const perTypePrescriptionData = buildPerTypePrescriptionData(rx, fullPrescriptionData);
-
-				const previewHtml = buildPrescriptionScreenHTML({
-					clinicInfo,
-					patient,
-					history,
-					examinationDetail,
-					examinationDetailsBySection,
-					prescriptionData: perTypePrescriptionData,
-					relatives,
-					overridePrescriptionType: pType
-				});
-
-				combinedHtml += previewHtml;
+				overridePrescriptionType: pType
 			});
 
-			renderDocumentMarkup(contentArea, combinedHtml);
-			createBarcodesInElement(contentArea);
-		}
+			combinedHtml += previewHtml;
+		});
 
-		function setupPrescriptionTabPagination({ prescriptionData, clinicInfo, patient, history, examinationDetail, examinationDetailsBySection, relatives }) {
-			const prescriptions = normalizeTabPrescriptions(prescriptionData);
+		renderDocumentMarkup(contentArea, combinedHtml);
+		createBarcodesInElement(contentArea);
+	}
 
-			prescriptionTabPageIndex = 0;
-			prescriptionTabData = {
-				prescriptions,
-				clinicInfo,
-				patient,
-				history,
-				examinationDetail,
-				examinationDetailsBySection: examinationDetailsBySection || {},
-				relatives,
-				fullPrescriptionData: prescriptionData
-			};
+	function setupPrescriptionTabPagination({ prescriptionData, clinicInfo, patient, history, examinationDetail, examinationDetailsBySection, relatives }) {
+		const prescriptions = normalizeTabPrescriptions(prescriptionData);
 
-			renderPrescriptionPage();
-		}
-
-		return {
-			get pageIndex() { return prescriptionTabPageIndex; },
-			set pageIndex(value) { prescriptionTabPageIndex = value; },
-			renderPrescriptionPage,
-			setupPrescriptionTabPagination,
-			PRESCRIPTION_PAGE_COLORS
+		prescriptionTabPageIndex = 0;
+		prescriptionTabData = {
+			prescriptions,
+			clinicInfo,
+			patient,
+			history,
+			examinationDetail,
+			examinationDetailsBySection: examinationDetailsBySection || {},
+			relatives,
+			fullPrescriptionData: prescriptionData
 		};
-	};
 
-	window.prescriptionModalPreviewController = window.createPrescriptionModalPreview();
-	window.PRESCRIPTION_PAGE_COLORS = PRESCRIPTION_PAGE_COLORS;
-	window.renderPrescriptionPage = function renderPrescriptionPageFromComponent() {
-		return window.prescriptionModalPreviewController.renderPrescriptionPage();
-	};
-	window.setupPrescriptionTabPagination = function setupPrescriptionTabPaginationFromComponent(options) {
-		return window.prescriptionModalPreviewController.setupPrescriptionTabPagination(options);
-	};
+		renderPrescriptionPage();
+	}
 
-	Object.defineProperty(window, '_prescriptionTabPageIndex', {
-		get() { return window.prescriptionModalPreviewController.pageIndex; },
-		set(value) { window.prescriptionModalPreviewController.pageIndex = value; },
-		configurable: true
-	});
+	return {
+		get pageIndex() { return prescriptionTabPageIndex; },
+		set pageIndex(value) { prescriptionTabPageIndex = value; },
+		renderPrescriptionPage,
+		setupPrescriptionTabPagination,
+		PRESCRIPTION_PAGE_COLORS
+	};
+}
 
-	window.QLPKDoctorModuleRegistry?.register?.('prescriptionModalPreview', Object.freeze({
-		create: window.createPrescriptionModalPreview,
-		getController: () => window.prescriptionModalPreviewController
-	}), {
-		owner: 'shared/prescription-preview',
-		version: 2
-	});
-})(window);
+const controller = createPrescriptionModalPreview();
+window.QLPKDoctorModuleRegistry?.register?.('prescriptionModalPreview', Object.freeze({
+	create: createPrescriptionModalPreview,
+	getController: () => controller
+}), {
+	owner: 'shared/prescription-preview',
+	version: 2
+});
+
+export { createPrescriptionModalPreview };

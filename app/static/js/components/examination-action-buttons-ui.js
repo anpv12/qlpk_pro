@@ -1,8 +1,6 @@
-import { bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindTabPrintButtons, createTransferMenuHandler, initRelativeTable, openPersonalDetailSection, showTransferMenuFlow } from './examination-action-buttons-ui-parts/transfer-actions.js';
+import { bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindTabPrintButtons, initRelativeTable, openPersonalDetailSection } from './examination-action-buttons-ui-parts/form-actions.js';
 
 window.ExaminationActionButtonsUi = {
-	showTransferMenuFlow,
-	createTransferMenuHandler,
 	bindSaveInfoButton,
 	bindReExaminationSourceReset,
 	openPersonalDetailSection,
