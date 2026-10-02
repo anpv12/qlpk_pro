@@ -61,7 +61,6 @@ import './orders/order-autocomplete-utils.js';
 import './orders/order-status-utils.js';
 import './orders/order-selection-state-utils.js';
 import './prescriptions/pages/doctor-prescription-print.js';
-import './transfer-modal-dry-parts/helpers.js';
 import './transfer-modal-dry.js';
 import './doctor-examination/platform-boundaries.js';
 import './components/medical-history-form.js';

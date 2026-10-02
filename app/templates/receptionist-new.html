@@ -234,7 +234,7 @@
 		</div>
 	</div>
 
-	<!-- Modal Chuyển Khám - Được load từ template /static/templates/transfer-modal.html bởi transfer-modal-dry.js -->
+	{% include 'partials/transfer-modal.html' %}
 
 	<!-- Modal: Quản lý người đi khám cùng - DRY -->
 	{% include 'partials/joint-exam-modal.html' %}
@@ -248,8 +248,7 @@
 	<script src="/static/js/relative-link-handler.js?v={{ app_version }}"></script>
 	<script src="/static/js/receptionist/patient-relatives-table.js?v={{ app_version }}"></script>
 	<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
-	<script src="/static/js/transfer-modal-dry-parts/helpers.js?v={{ app_version }}"></script>
-	<script src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
 	<script src="/static/js/joint-exam-manager.js?v={{ app_version }}"></script>
 	<script src="/static/js/joint-exam-manager-methods.js?v={{ app_version }}"></script>
 	<script src="/static/js/joint-exam-manager-edit.js?v={{ app_version }}"></script>

@@ -107,7 +107,7 @@
 
 
 
-	<!-- Modal Chuyển Khám - Được load từ template /static/templates/transfer-modal.html bởi transfer-modal-dry.js -->
+	{% include 'partials/transfer-modal.html' %}
 
 	<!-- Shared Patient History Modal: canonical markup, page chỉ truyền adapter TLG -->
 	{% include 'partials/patient-search-modal.html' %}
@@ -154,8 +154,7 @@
 		<script src="/static/js/components/modal-patient-search-ui.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/patient-history-modal.js?v={{ app_version }}"></script>
 		<script src="/static/js/components/patient-modal-contract.js?v={{ app_version }}"></script>
-		<script src="/static/js/transfer-modal-dry-parts/helpers.js?v={{ app_version }}"></script>
-		<script src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
+		<script type="module" src="/static/js/transfer-modal-dry.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-type-contract.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-dose-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/prescriptions/shared/prescription-document-template-parts/moh-form.js?v={{ app_version }}"></script>
