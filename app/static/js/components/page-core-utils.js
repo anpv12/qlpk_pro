@@ -1,30 +1,27 @@
-// Parts (nạp trước file này): api-and-indicators.js, page-bootstrap.js
-(function (window) {
-	'use strict';
-	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/page-core-utils'] || (window.QLPKModuleParts['components/page-core-utils'] = { state: {} });
-	const moduleState = moduleParts.state;
+import { moduleState } from './page-core-utils-parts/state.js';
+import { addButtonAnimationCSS, apiCall, autoSavePatientFormFieldShell, bindPaginationControls, bindRefreshButtons, ensureCurrentAppointmentIdForAutoSave, ensureSession, getAuthHeader, isRefreshButtonInReloadHeader, reloadPage, resolveAppointmentIdForPatientSave, runPatientDataInternalSave, saveAppointmentClinicalUpdate, savePatientRecord, setCurrentPatientId, showAutoSaveIndicator, updatePagination } from './page-core-utils-parts/api-and-indicators.js';
+import { createPageCoreAdapter, initializeExaminationPageBootstrap } from './page-core-utils-parts/page-bootstrap.js';
 
-	moduleState.api = {
-		addButtonAnimationCSS: moduleParts.addButtonAnimationCSS,
-		ensureSession: moduleParts.ensureSession,
-		getAuthHeader: moduleParts.getAuthHeader,
-		apiCall: moduleParts.apiCall,
-		updatePagination: moduleParts.updatePagination,
-		showAutoSaveIndicator: moduleParts.showAutoSaveIndicator,
-		setCurrentPatientId: moduleParts.setCurrentPatientId,
-		ensureCurrentAppointmentIdForAutoSave: moduleParts.ensureCurrentAppointmentIdForAutoSave,
-		resolveAppointmentIdForPatientSave: moduleParts.resolveAppointmentIdForPatientSave,
-		saveAppointmentClinicalUpdate: moduleParts.saveAppointmentClinicalUpdate,
-		autoSavePatientFormFieldShell: moduleParts.autoSavePatientFormFieldShell,
-		savePatientRecord: moduleParts.savePatientRecord,
-		runPatientDataInternalSave: moduleParts.runPatientDataInternalSave,
-		reloadPage: moduleParts.reloadPage,
-		isRefreshButtonInReloadHeader: moduleParts.isRefreshButtonInReloadHeader,
-		bindRefreshButtons: moduleParts.bindRefreshButtons,
-		bindPaginationControls: moduleParts.bindPaginationControls,
-		initializeExaminationPageBootstrap: moduleParts.initializeExaminationPageBootstrap,
-		createPageCoreAdapter: moduleParts.createPageCoreAdapter
-	};
+moduleState.api = {
+	addButtonAnimationCSS: addButtonAnimationCSS,
+	ensureSession: ensureSession,
+	getAuthHeader: getAuthHeader,
+	apiCall: apiCall,
+	updatePagination: updatePagination,
+	showAutoSaveIndicator: showAutoSaveIndicator,
+	setCurrentPatientId: setCurrentPatientId,
+	ensureCurrentAppointmentIdForAutoSave: ensureCurrentAppointmentIdForAutoSave,
+	resolveAppointmentIdForPatientSave: resolveAppointmentIdForPatientSave,
+	saveAppointmentClinicalUpdate: saveAppointmentClinicalUpdate,
+	autoSavePatientFormFieldShell: autoSavePatientFormFieldShell,
+	savePatientRecord: savePatientRecord,
+	runPatientDataInternalSave: runPatientDataInternalSave,
+	reloadPage: reloadPage,
+	isRefreshButtonInReloadHeader: isRefreshButtonInReloadHeader,
+	bindRefreshButtons: bindRefreshButtons,
+	bindPaginationControls: bindPaginationControls,
+	initializeExaminationPageBootstrap: initializeExaminationPageBootstrap,
+	createPageCoreAdapter: createPageCoreAdapter
+};
 
-	window.ClinicalPageCoreUtils = moduleState.api;
-})(window);
+window.ClinicalPageCoreUtils = moduleState.api;

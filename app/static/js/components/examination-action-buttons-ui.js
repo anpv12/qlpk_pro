@@ -1,32 +1,29 @@
-// Parts (nạp trước file này): transfer-actions.js, detail-modal-and-init.js
-(function (window) {
-	'use strict';
-	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/examination-action-buttons-ui'] || (window.QLPKModuleParts['components/examination-action-buttons-ui'] = { state: {} });
+import { bindCompleteExaminationButton, bindDetailExaminationModalButton, bindDocumentModalButton, bindEditHistoryButton, bindExaminationFormShell, bindFeedbackButtons, bindPersonalDetailEditButtons, bindReExaminationSourceReset, bindSaveInfoButton, bindSaveMedicalHistoryButton, bindTabPrintButtons, buildDefaultExaminationFormFieldEvents, buildExaminationIdUrl, buildTransitionRequestOptions, completeExaminationFlow, createTransferMenuHandler, extractExaminationId, initRelativeTable, openDetailExaminationModalFlow, openPersonalDetailSection, showTransferMenuFlow } from './examination-action-buttons-ui-parts/transfer-actions.js';
+import { bindExaminationActionButtons, createExaminationFeedbackAdapter, createExaminationFormInitializer } from './examination-action-buttons-ui-parts/detail-modal-and-init.js';
 
-	window.ExaminationActionButtonsUi = {
-		buildExaminationIdUrl: moduleParts.buildExaminationIdUrl,
-		extractExaminationId: moduleParts.extractExaminationId,
-		buildTransitionRequestOptions: moduleParts.buildTransitionRequestOptions,
-		showTransferMenuFlow: moduleParts.showTransferMenuFlow,
-		createTransferMenuHandler: moduleParts.createTransferMenuHandler,
-		completeExaminationFlow: moduleParts.completeExaminationFlow,
-		bindEditHistoryButton: moduleParts.bindEditHistoryButton,
-		bindCompleteExaminationButton: moduleParts.bindCompleteExaminationButton,
-		bindDocumentModalButton: moduleParts.bindDocumentModalButton,
-		bindSaveMedicalHistoryButton: moduleParts.bindSaveMedicalHistoryButton,
-		bindSaveInfoButton: moduleParts.bindSaveInfoButton,
-		bindReExaminationSourceReset: moduleParts.bindReExaminationSourceReset,
-		openPersonalDetailSection: moduleParts.openPersonalDetailSection,
-		bindPersonalDetailEditButtons: moduleParts.bindPersonalDetailEditButtons,
-		initRelativeTable: moduleParts.initRelativeTable,
-		bindTabPrintButtons: moduleParts.bindTabPrintButtons,
-		openDetailExaminationModalFlow: moduleParts.openDetailExaminationModalFlow,
-		bindDetailExaminationModalButton: moduleParts.bindDetailExaminationModalButton,
-		bindFeedbackButtons: moduleParts.bindFeedbackButtons,
-		bindExaminationFormShell: moduleParts.bindExaminationFormShell,
-		buildDefaultExaminationFormFieldEvents: moduleParts.buildDefaultExaminationFormFieldEvents,
-		createExaminationFormInitializer: moduleParts.createExaminationFormInitializer,
-		bindExaminationActionButtons: moduleParts.bindExaminationActionButtons,
-		createExaminationFeedbackAdapter: moduleParts.createExaminationFeedbackAdapter
-	};
-})(window);
+window.ExaminationActionButtonsUi = {
+	buildExaminationIdUrl: buildExaminationIdUrl,
+	extractExaminationId: extractExaminationId,
+	buildTransitionRequestOptions: buildTransitionRequestOptions,
+	showTransferMenuFlow: showTransferMenuFlow,
+	createTransferMenuHandler: createTransferMenuHandler,
+	completeExaminationFlow: completeExaminationFlow,
+	bindEditHistoryButton: bindEditHistoryButton,
+	bindCompleteExaminationButton: bindCompleteExaminationButton,
+	bindDocumentModalButton: bindDocumentModalButton,
+	bindSaveMedicalHistoryButton: bindSaveMedicalHistoryButton,
+	bindSaveInfoButton: bindSaveInfoButton,
+	bindReExaminationSourceReset: bindReExaminationSourceReset,
+	openPersonalDetailSection: openPersonalDetailSection,
+	bindPersonalDetailEditButtons: bindPersonalDetailEditButtons,
+	initRelativeTable: initRelativeTable,
+	bindTabPrintButtons: bindTabPrintButtons,
+	openDetailExaminationModalFlow: openDetailExaminationModalFlow,
+	bindDetailExaminationModalButton: bindDetailExaminationModalButton,
+	bindFeedbackButtons: bindFeedbackButtons,
+	bindExaminationFormShell: bindExaminationFormShell,
+	buildDefaultExaminationFormFieldEvents: buildDefaultExaminationFormFieldEvents,
+	createExaminationFormInitializer: createExaminationFormInitializer,
+	bindExaminationActionButtons: bindExaminationActionButtons,
+	createExaminationFeedbackAdapter: createExaminationFeedbackAdapter
+};

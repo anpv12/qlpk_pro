@@ -1,31 +1,28 @@
-// Parts (nạp trước file này): copy-flow.js, select-flow.js
-(function (window) {
-	'use strict';
-	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/modal-patient-search-state'] || (window.QLPKModuleParts['components/modal-patient-search-state'] = { state: {} });
-	const moduleState = moduleParts.state;
+import { moduleState } from './modal-patient-search-state-parts/state.js';
+import { applyAutoSelectAfterSearch, applyAutoSelectAfterSearchForFlow, buildAppointmentPostLoadState, buildAutoSelectAfterSearchState, buildCopyHistoryPatientLoadState, buildHistoryTabStateFromStore, buildLinkedRelativePatientState, buildNoSearchResultsState, buildPatientSelectionFlowState, buildResetModalState, buildSelectedPatientState, buildSinglePatientSearchState, callIfFunction, callOption, copyPatientToFormFlow, createAppointmentCopyFormPreparer, createModalSearchStateStore, hasAppointmentContext, loadCopiedPatientFallback, loadCopiedPatientWithAppointmentContext, loadCopyHistoryPatient, loadFlowExaminationForm, loadOptionalAppointmentPart, prepareAppointmentCopyForm, resetModalStateForFlow, resolveModalPatientId, resolvePatientAtIndex, resolvePatientIdentity, resolveWorkflowModalElements, runAppointmentPatientFlow, runSafeAsyncCallback, runSafeCallback, setFlowLoading } from './modal-patient-search-state-parts/copy-flow.js';
+import { openLinkedRelativePatientSearch, selectAppointmentPatientFlow, selectPatientForModalFlow } from './modal-patient-search-state-parts/select-flow.js';
 
-	moduleState.PARTS = window.QLPKModalPatientSearchParts || (window.QLPKModalPatientSearchParts = {});
-	moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
-	moduleState.resolveUi = (name, fallback) => moduleState.REGISTRY?.get?.(name) || fallback;
-	moduleState.getTabsUi = options => options?.tabsUi || moduleState.resolveUi('modalFunctionTabsUi', window.ModalFunctionTabsUi);
-	moduleState.getHistoryListUi = options => options?.historyListUi || moduleState.resolveUi('modalMedicalHistoryListUi', window.ModalMedicalHistoryListUi);
-	moduleState.DATA = window.ModalPatientSearchData;
-	if (!moduleState.DATA) throw new Error('Thiếu ModalPatientSearchData');
-	({ extractPatientPayload: moduleState.extractPatientPayload, buildPatientDetailUrl: moduleState.buildPatientDetailUrl, loadLatestAppointmentContextForPatient: moduleState.loadLatestAppointmentContextForPatient, loadPatientForAppointment: moduleState.loadPatientForAppointment } = moduleState.DATA);
-	({ applyNoSearchResultsUi: moduleState.applyNoSearchResultsUi, applySelectedPatientUi: moduleState.applySelectedPatientUi, applySinglePatientSearchUi: moduleState.applySinglePatientSearchUi, hideBootstrapModal: moduleState.hideBootstrapModal, resetModalDom: moduleState.resetModalDom, resolveAutoSelectIndex: moduleState.resolveAutoSelectIndex, selectAppointmentCard: moduleState.selectAppointmentCard, showBootstrapModal: moduleState.showBootstrapModal, showHistoryButton: moduleState.showHistoryButton } = moduleState.PARTS);
+moduleState.PARTS = window.QLPKModalPatientSearchParts || (window.QLPKModalPatientSearchParts = {});
+moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
+moduleState.resolveUi = (name, fallback) => moduleState.REGISTRY?.get?.(name) || fallback;
+moduleState.getTabsUi = options => options?.tabsUi || moduleState.resolveUi('modalFunctionTabsUi', window.ModalFunctionTabsUi);
+moduleState.getHistoryListUi = options => options?.historyListUi || moduleState.resolveUi('modalMedicalHistoryListUi', window.ModalMedicalHistoryListUi);
+moduleState.DATA = window.ModalPatientSearchData;
+if (!moduleState.DATA) throw new Error('Thiếu ModalPatientSearchData');
+({ extractPatientPayload: moduleState.extractPatientPayload, buildPatientDetailUrl: moduleState.buildPatientDetailUrl, loadLatestAppointmentContextForPatient: moduleState.loadLatestAppointmentContextForPatient, loadPatientForAppointment: moduleState.loadPatientForAppointment } = moduleState.DATA);
+({ applyNoSearchResultsUi: moduleState.applyNoSearchResultsUi, applySelectedPatientUi: moduleState.applySelectedPatientUi, applySinglePatientSearchUi: moduleState.applySinglePatientSearchUi, hideBootstrapModal: moduleState.hideBootstrapModal, resetModalDom: moduleState.resetModalDom, resolveAutoSelectIndex: moduleState.resolveAutoSelectIndex, selectAppointmentCard: moduleState.selectAppointmentCard, showBootstrapModal: moduleState.showBootstrapModal, showHistoryButton: moduleState.showHistoryButton } = moduleState.PARTS);
 
-	Object.assign(moduleState.PARTS, {
-		callOption: moduleParts.callOption, loadOptionalAppointmentPart: moduleParts.loadOptionalAppointmentPart, loadCopiedPatientWithAppointmentContext: moduleParts.loadCopiedPatientWithAppointmentContext,
-		loadCopiedPatientFallback: moduleParts.loadCopiedPatientFallback, prepareAppointmentCopyForm: moduleParts.prepareAppointmentCopyForm, createAppointmentCopyFormPreparer: moduleParts.createAppointmentCopyFormPreparer,
-		copyPatientToFormFlow: moduleParts.copyPatientToFormFlow, hasAppointmentContext: moduleParts.hasAppointmentContext, buildAppointmentPostLoadState: moduleParts.buildAppointmentPostLoadState,
-		buildCopyHistoryPatientLoadState: moduleParts.buildCopyHistoryPatientLoadState, loadCopyHistoryPatient: moduleParts.loadCopyHistoryPatient, buildSinglePatientSearchState: moduleParts.buildSinglePatientSearchState,
-		buildLinkedRelativePatientState: moduleParts.buildLinkedRelativePatientState, buildNoSearchResultsState: moduleParts.buildNoSearchResultsState, buildAutoSelectAfterSearchState: moduleParts.buildAutoSelectAfterSearchState,
-		applyAutoSelectAfterSearch: moduleParts.applyAutoSelectAfterSearch, buildResetModalState: moduleParts.buildResetModalState, createModalSearchStateStore: moduleParts.createModalSearchStateStore,
-		resolveWorkflowModalElements: moduleParts.resolveWorkflowModalElements, buildHistoryTabStateFromStore: moduleParts.buildHistoryTabStateFromStore, resetModalStateForFlow: moduleParts.resetModalStateForFlow,
-		applyAutoSelectAfterSearchForFlow: moduleParts.applyAutoSelectAfterSearchForFlow, buildSelectedPatientState: moduleParts.buildSelectedPatientState, resolvePatientAtIndex: moduleParts.resolvePatientAtIndex,
-		resolveModalPatientId: moduleParts.resolveModalPatientId, resolvePatientIdentity: moduleParts.resolvePatientIdentity, buildPatientSelectionFlowState: moduleParts.buildPatientSelectionFlowState, runSafeCallback: moduleParts.runSafeCallback,
-		runSafeAsyncCallback: moduleParts.runSafeAsyncCallback, callIfFunction: moduleParts.callIfFunction, setFlowLoading: moduleParts.setFlowLoading, loadFlowExaminationForm: moduleParts.loadFlowExaminationForm,
-		runAppointmentPatientFlow: moduleParts.runAppointmentPatientFlow, selectAppointmentPatientFlow: moduleParts.selectAppointmentPatientFlow, selectPatientForModalFlow: moduleParts.selectPatientForModalFlow,
-		openLinkedRelativePatientSearch: moduleParts.openLinkedRelativePatientSearch
-	});
-})(window);
+Object.assign(moduleState.PARTS, {
+	callOption: callOption, loadOptionalAppointmentPart: loadOptionalAppointmentPart, loadCopiedPatientWithAppointmentContext: loadCopiedPatientWithAppointmentContext,
+	loadCopiedPatientFallback: loadCopiedPatientFallback, prepareAppointmentCopyForm: prepareAppointmentCopyForm, createAppointmentCopyFormPreparer: createAppointmentCopyFormPreparer,
+	copyPatientToFormFlow: copyPatientToFormFlow, hasAppointmentContext: hasAppointmentContext, buildAppointmentPostLoadState: buildAppointmentPostLoadState,
+	buildCopyHistoryPatientLoadState: buildCopyHistoryPatientLoadState, loadCopyHistoryPatient: loadCopyHistoryPatient, buildSinglePatientSearchState: buildSinglePatientSearchState,
+	buildLinkedRelativePatientState: buildLinkedRelativePatientState, buildNoSearchResultsState: buildNoSearchResultsState, buildAutoSelectAfterSearchState: buildAutoSelectAfterSearchState,
+	applyAutoSelectAfterSearch: applyAutoSelectAfterSearch, buildResetModalState: buildResetModalState, createModalSearchStateStore: createModalSearchStateStore,
+	resolveWorkflowModalElements: resolveWorkflowModalElements, buildHistoryTabStateFromStore: buildHistoryTabStateFromStore, resetModalStateForFlow: resetModalStateForFlow,
+	applyAutoSelectAfterSearchForFlow: applyAutoSelectAfterSearchForFlow, buildSelectedPatientState: buildSelectedPatientState, resolvePatientAtIndex: resolvePatientAtIndex,
+	resolveModalPatientId: resolveModalPatientId, resolvePatientIdentity: resolvePatientIdentity, buildPatientSelectionFlowState: buildPatientSelectionFlowState, runSafeCallback: runSafeCallback,
+	runSafeAsyncCallback: runSafeAsyncCallback, callIfFunction: callIfFunction, setFlowLoading: setFlowLoading, loadFlowExaminationForm: loadFlowExaminationForm,
+	runAppointmentPatientFlow: runAppointmentPatientFlow, selectAppointmentPatientFlow: selectAppointmentPatientFlow, selectPatientForModalFlow: selectPatientForModalFlow,
+	openLinkedRelativePatientSearch: openLinkedRelativePatientSearch
+});

@@ -13,8 +13,21 @@ const FACTORY_SPLIT = /moduleParts\.installers\.push\(function \(inst, outer\)/;
 const CONTINUED = /^\/\/ Continued in \(nạp ngay sau file này, cùng scope trang\): (.+)$/m;
 
 // Load order: the entry's parts, the entry, then its continuation files (each expanded the same way).
+// An ES module whose parts live in <entry>-parts/: the parts it imports (each after its own parts), then the entry.
+function esPartFiles(rel, seen = []) {
+    if (seen.includes(rel)) return [];
+    seen.push(rel);
+    const source = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
+    const partDir = rel.replace(/\.js$/, '-parts');
+    const parts = [...source.matchAll(/^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}\/[^'"]+)['"]/gm)]
+        .map(match => path.posix.normalize(path.posix.join(path.posix.dirname(rel), match[1])))
+        .filter(file => path.posix.dirname(file) === partDir);
+    return [...parts.flatMap(part => esPartFiles(part, seen)), rel];
+}
+
 function moduleFiles(rel) {
     const entry = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
+    if (!MANIFEST.test(entry) && new RegExp(`from ['"]\\./${path.posix.basename(rel, '.js')}-parts/`).test(entry)) return esPartFiles(rel);
     const match = entry.match(MANIFEST);
     const partDir = rel.replace(/\.js$/, '-parts');
     const parts = match ? match[1].split(',').map(name => `${partDir}/${name.trim()}`) : [];
@@ -48,19 +61,59 @@ function toModuleRel(filePath) {
 }
 
 const ES_MODULE_SYNTAX = /^(?:import|export)\s/m;
+const loadedModules = new WeakMap();
 const RELATIVE_IMPORT = /^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}\/[^'"]+)['"];?\n?/gm;
 
-// An ES module and the relative modules it imports, dependencies first (each once), as one script:
-// import/export lines are dropped, so a vm context sees every top-level declaration as a global.
+// An ES module and the relative modules it imports, as one classic script for a vm context. Each module runs in its
+// own function scope (dependencies first, each once per context, like a browser module map) and receives its imports
+// from the modules it names; afterwards every top-level declaration is also copied onto the context's global object,
+// so harnesses keep reading page functions as globals.
+function topLevelNames(body) {
+    const names = new Set();
+    for (const match of body.matchAll(/^(?:async\s+)?function\*?\s+([\w$]+)|^class\s+([\w$]+)|^(?:const|let|var)\s+([\w$]+)/gm)) {
+        names.add(match[1] || match[2] || match[3]);
+    }
+    for (const match of body.matchAll(/^(?:const|let|var)\s+\{([^}]*)\}\s*=/gm)) {
+        for (const part of match[1].split(',')) {
+            const name = part.split(':').pop().split('=')[0].trim();
+            if (/^[\w$]+$/.test(name)) names.add(name);
+        }
+    }
+    return [...names];
+}
+
 function esModuleScript(rel, seen = new Set()) {
     if (seen.has(rel)) return '';
     seen.add(rel);
     const source = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
-    const dependencies = [...source.matchAll(RELATIVE_IMPORT)]
-        .map(match => path.posix.normalize(path.posix.join(path.posix.dirname(rel), match[1])))
-        .map(dependency => esModuleScript(dependency, seen));
+    const resolve = spec => path.posix.normalize(path.posix.join(path.posix.dirname(rel), spec));
+    const imports = [...source.matchAll(RELATIVE_IMPORT)].map(match => ({ from: resolve(match[1]), clause: match[0] }));
+    const dependencies = imports.map(item => esModuleScript(item.from, seen)).join('\n');
+    const bindings = imports.map(({ from, clause }) => {
+        const named = clause.match(/\{([^}]*)\}/);
+        if (!named) return '';
+        const key = JSON.stringify(from);
+        // A module still being evaluated (import cycle) is reached lazily, like a live ESM binding of a hoisted function.
+        return named[1].split(',').map(part => part.trim()).filter(Boolean).map(part => {
+            const [imported, local = imported] = part.split(/\s+as\s+/);
+            return `const ${local} = __qlpkEsModules[${key}] ? __qlpkEsModules[${key}].${imported} : (...args) => __qlpkEsModules[${key}].${imported}(...args);`;
+        }).join('\n');
+    }).join('\n');
+    const exportLists = [...source.matchAll(/^export \{([^}]*)\};?$/gm)].flatMap(match => match[1].split(','))
+        .map(part => part.trim()).filter(Boolean)
+        .map(part => part.replace(/^([\w$]+)\s+as\s+([\w$]+)$/, '$2: $1'));
     const body = source.replace(RELATIVE_IMPORT, '').replace(/^export \{[^}]*\};?\n?/gm, '').replace(/^export (?=(?:async )?function|const|let|class)/gm, '');
-    return dependencies.join('\n') + '\n' + body;
+    const top = topLevelNames(body);
+    return `${dependencies}
+globalThis.__qlpkEsModules = globalThis.__qlpkEsModules || {};
+(function () {
+${bindings}
+${body}
+const __exports = { ${[...new Set([...top, ...exportLists])].join(', ')} };
+__qlpkEsModules[${JSON.stringify(rel)}] = __exports;
+for (const [name, value] of Object.entries(__exports)) globalThis[name] = value;
+})();
+`;
 }
 
 // Runs a script file (any path form) in a context; split modules run their parts first, ES modules their imports.
@@ -68,7 +121,9 @@ function runScriptFile(filePath, context) {
     const rel = toModuleRel(filePath);
     if (!rel) return vm.runInContext(fs.readFileSync(filePath, 'utf8'), context, { filename: filePath });
     if (ES_MODULE_SYNTAX.test(fs.readFileSync(path.join(JS_ROOT, rel), 'utf8'))) {
-        return vm.runInContext(esModuleScript(rel), context, { filename: rel });
+        // Like a browser module map: a module already evaluated in this context is not evaluated again.
+        if (!loadedModules.has(context)) loadedModules.set(context, new Set());
+        return vm.runInContext(esModuleScript(rel, loadedModules.get(context)), context, { filename: rel });
     }
     return runModuleScript(rel, context);
 }

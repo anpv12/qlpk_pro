@@ -1,35 +1,32 @@
-// Parts (nạp trước file này): address-api.js, address-modal-sync.js
-(function () {
-	'use strict';
-	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['components/address-hierarchy-utils'] || (window.QLPKModuleParts['components/address-hierarchy-utils'] = { state: {} });
+import { callVietnamAddressAPI, clearSelectOptions, collectPersonalDetailModalValues, fillMainAddressFieldFromModal, getModalAddressFormValues, loadAddressHierarchy, loadDistricts, loadDistrictsModal, loadProvinces, loadProvincesForModal, loadProvincesModal, loadWards, loadWardsModal, normalizeAddressName, setSelectByApprox, setSelectValueWithFallback, tryFallbackAPI, updateAddressSummary } from './address-hierarchy-utils-parts/address-api.js';
+import { createAddressHierarchyAdapter, handleDistrictChange, handlePersonalDetailModalClose, handleProvinceChange, hasPersonalDetailModalAddressData, savePersonalDetailAddressToServerIfEditing, setupMainAddressChangeHandlers, syncPersonalDetailModalIfNeeded, syncPersonalDetailModalToMainForm } from './address-hierarchy-utils-parts/address-modal-sync.js';
 
-	window.ClinicalAddressHierarchyUtils = {
-		callVietnamAddressAPI: moduleParts.callVietnamAddressAPI,
-		tryFallbackAPI: moduleParts.tryFallbackAPI,
-		normalizeAddressName: moduleParts.normalizeAddressName,
-		setSelectValueWithFallback: moduleParts.setSelectValueWithFallback,
-		setSelectByApprox: moduleParts.setSelectByApprox,
-		loadProvinces: moduleParts.loadProvinces,
-		loadDistricts: moduleParts.loadDistricts,
-		loadWards: moduleParts.loadWards,
-		loadProvincesModal: moduleParts.loadProvincesModal,
-		loadProvincesForModal: moduleParts.loadProvincesForModal,
-		loadDistrictsModal: moduleParts.loadDistrictsModal,
-		loadWardsModal: moduleParts.loadWardsModal,
-		loadAddressHierarchy: moduleParts.loadAddressHierarchy,
-		clearSelectOptions: moduleParts.clearSelectOptions,
-		getModalAddressFormValues: moduleParts.getModalAddressFormValues,
-		updateAddressSummary: moduleParts.updateAddressSummary,
-		fillMainAddressFieldFromModal: moduleParts.fillMainAddressFieldFromModal,
-		collectPersonalDetailModalValues: moduleParts.collectPersonalDetailModalValues,
-		savePersonalDetailAddressToServerIfEditing: moduleParts.savePersonalDetailAddressToServerIfEditing,
-		handlePersonalDetailModalClose: moduleParts.handlePersonalDetailModalClose,
-		syncPersonalDetailModalToMainForm: moduleParts.syncPersonalDetailModalToMainForm,
-		hasPersonalDetailModalAddressData: moduleParts.hasPersonalDetailModalAddressData,
-		syncPersonalDetailModalIfNeeded: moduleParts.syncPersonalDetailModalIfNeeded,
-		handleProvinceChange: moduleParts.handleProvinceChange,
-		handleDistrictChange: moduleParts.handleDistrictChange,
-		setupMainAddressChangeHandlers: moduleParts.setupMainAddressChangeHandlers,
-		createAddressHierarchyAdapter: moduleParts.createAddressHierarchyAdapter
-	};
-})();
+window.ClinicalAddressHierarchyUtils = {
+	callVietnamAddressAPI: callVietnamAddressAPI,
+	tryFallbackAPI: tryFallbackAPI,
+	normalizeAddressName: normalizeAddressName,
+	setSelectValueWithFallback: setSelectValueWithFallback,
+	setSelectByApprox: setSelectByApprox,
+	loadProvinces: loadProvinces,
+	loadDistricts: loadDistricts,
+	loadWards: loadWards,
+	loadProvincesModal: loadProvincesModal,
+	loadProvincesForModal: loadProvincesForModal,
+	loadDistrictsModal: loadDistrictsModal,
+	loadWardsModal: loadWardsModal,
+	loadAddressHierarchy: loadAddressHierarchy,
+	clearSelectOptions: clearSelectOptions,
+	getModalAddressFormValues: getModalAddressFormValues,
+	updateAddressSummary: updateAddressSummary,
+	fillMainAddressFieldFromModal: fillMainAddressFieldFromModal,
+	collectPersonalDetailModalValues: collectPersonalDetailModalValues,
+	savePersonalDetailAddressToServerIfEditing: savePersonalDetailAddressToServerIfEditing,
+	handlePersonalDetailModalClose: handlePersonalDetailModalClose,
+	syncPersonalDetailModalToMainForm: syncPersonalDetailModalToMainForm,
+	hasPersonalDetailModalAddressData: hasPersonalDetailModalAddressData,
+	syncPersonalDetailModalIfNeeded: syncPersonalDetailModalIfNeeded,
+	handleProvinceChange: handleProvinceChange,
+	handleDistrictChange: handleDistrictChange,
+	setupMainAddressChangeHandlers: setupMainAddressChangeHandlers,
+	createAddressHierarchyAdapter: createAddressHierarchyAdapter
+};
