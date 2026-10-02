@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
-import { escHtml, markDirty, normalizeSearchText, setScVisible } from './page-state.js';
+import { el, replace } from '../shared/dom.js';
+import { markDirty, normalizeSearchText, setScVisible } from './page-state.js';
 
 async function fetchCriteria() {
 	if (moduleState.criteriaCache) return moduleState.criteriaCache;
@@ -41,19 +42,17 @@ function bindCriteriaAutocomplete(input) {
 	if (!dropdown) return;
 
 	function renderDropdown(items, query) {
-		let html = '';
+		const createItem = () => el('div', { class: 'sc-criteria-item sc-criteria-create', 'data-name': query },
+			el('i', { class: 'bi bi-plus-circle' }), ` Tạo mới: "${query}"`);
+		const nodes = [];
 		if (items.length === 0 && query) {
-			html = `<div class="sc-criteria-item sc-criteria-create" data-name="${escHtml(query)}"><i class="bi bi-plus-circle"></i> Tạo mới: "${escHtml(query)}"</div>`;
+			nodes.push(createItem());
 		} else {
-			items.forEach(c => {
-				html += `<div class="sc-criteria-item" data-name="${escHtml(c.name)}">${escHtml(c.name)}</div>`;
-			});
-			if (query && !items.find(c => normalizeSearchText(c.name) === normalizeSearchText(query))) {
-				html += `<div class="sc-criteria-item sc-criteria-create" data-name="${escHtml(query)}"><i class="bi bi-plus-circle"></i> Tạo mới: "${escHtml(query)}"</div>`;
-			}
+			items.forEach(c => nodes.push(el('div', { class: 'sc-criteria-item', 'data-name': c.name ?? '' }, c.name ?? '')));
+			if (query && !items.find(c => normalizeSearchText(c.name) === normalizeSearchText(query))) nodes.push(createItem());
 		}
-		dropdown.innerHTML = html;
-		setScVisible(dropdown, !!html);
+		replace(dropdown, nodes);
+		setScVisible(dropdown, nodes.length > 0);
 		dropdown.querySelectorAll('.sc-criteria-item').forEach(item => {
 			item.addEventListener('mousedown', async (e) => {
 				e.preventDefault();

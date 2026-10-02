@@ -40,7 +40,11 @@
                 if (index && p - visible[index - 1] > 1) {
                     const gap = document.createElement('li');
                     gap.className = 'page-item disabled';
-                    gap.innerHTML = '<span class="page-link" aria-hidden="true">…</span>';
+                    const gapLabel = document.createElement('span');
+                    gapLabel.className = 'page-link';
+                    gapLabel.setAttribute('aria-hidden', 'true');
+                    gapLabel.textContent = '…';
+                    gap.replaceChildren(gapLabel);
                     links.append(gap);
                 }
                 button(String(p), p, false, p === page);

@@ -127,7 +127,7 @@ async function loadProvinces(options = {}) {
 		const provinceSelect = doc.getElementById('province');
 
 		if (!provinceSelect || provinceSelect.tagName !== 'SELECT') return;
-		provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+		provinceSelect.replaceChildren(new Option('Chọn tỉnh/thành phố', ''));
 
 		regions.forEach(region => {
 			const option = doc.createElement('option');
@@ -166,7 +166,7 @@ async function loadWards(provinceName, districtNameIgnored, options = {}) {
 
 		const wardSelect = doc.getElementById('ward');
 		if (wardSelect && wardSelect.tagName === 'SELECT') {
-			wardSelect.innerHTML = '<option value="">Chọn Xã/Phường/Đặc khu</option>';
+			wardSelect.replaceChildren(new Option('Chọn Xã/Phường/Đặc khu', ''));
 			units.forEach(unit => {
 				const option = doc.createElement('option');
 				option.value = unit.name;
@@ -200,7 +200,7 @@ function clearFieldValue(element) {
 function resetSelectOptions(element, placeholder) {
 	if (!element) return;
 	if (element.tagName === 'SELECT') {
-		element.innerHTML = `<option value="">${placeholder}</option>`;
+		element.replaceChildren(new Option(placeholder, ''));
 	} else {
 		element.value = '';
 	}

@@ -5,26 +5,34 @@
 		return options && options.document ? options.document : window.document;
 	}
 
+	// A button's own content while it shows the loading state.
+	const originalButtonContent = new WeakMap();
+
 	function setButtonLoading(button, isLoading, loadingLabel) {
 		if (!button) return;
 
 		if (isLoading) {
-			if (!button.dataset.originalHtml) {
-				button.dataset.originalHtml = button.innerHTML;
+			if (!originalButtonContent.has(button)) {
+				originalButtonContent.set(button, [...button.childNodes]);
 			}
 			button.classList.add('is-loading');
 			button.disabled = true;
 			button.setAttribute('aria-busy', 'true');
-			button.innerHTML = '<span class="qlpk-button-spinner" aria-hidden="true"></span><span>' + (loadingLabel || 'Đang lưu...') + '</span>';
+			const spinner = document.createElement('span');
+			spinner.className = 'qlpk-button-spinner';
+			spinner.setAttribute('aria-hidden', 'true');
+			const label = document.createElement('span');
+			label.textContent = loadingLabel || 'Đang lưu...';
+			button.replaceChildren(spinner, label);
 			return;
 		}
 
 		button.classList.remove('is-loading');
 		button.disabled = false;
 		button.removeAttribute('aria-busy');
-		if (button.dataset.originalHtml) {
-			button.innerHTML = button.dataset.originalHtml;
-			delete button.dataset.originalHtml;
+		if (originalButtonContent.has(button)) {
+			button.replaceChildren(...originalButtonContent.get(button));
+			originalButtonContent.delete(button);
 		}
 	}
 

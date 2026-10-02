@@ -66,14 +66,19 @@ function showAutoSaveIndicator(type = 'success', options = {}) {
 	indicator.classList.remove('show', 'saving', 'error');
 
 	const savingIconClass = options.savingIconClass || 'bi-arrow-clockwise';
+	const show = (iconClass, text) => {
+		const icon = doc.createElement('i');
+		icon.className = `bi ${iconClass} me-1`;
+		indicator.replaceChildren(icon, text);
+	};
 	if (type === 'saving') {
-		indicator.innerHTML = `<i class="bi ${savingIconClass} me-1"></i>Đang lưu...`;
+		show(savingIconClass, 'Đang lưu...');
 		indicator.classList.add('saving');
 	} else if (type === 'error') {
-		indicator.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Lỗi lưu';
+		show('bi-exclamation-triangle', 'Lỗi lưu');
 		indicator.classList.add('error');
 	} else {
-		indicator.innerHTML = '<i class="bi bi-check-circle me-1"></i>Đã lưu';
+		show('bi-check-circle', 'Đã lưu');
 	}
 
 	indicator.classList.add('show');

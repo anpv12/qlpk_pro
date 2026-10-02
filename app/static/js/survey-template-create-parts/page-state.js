@@ -1,5 +1,6 @@
+import { el, replace } from '../shared/dom.js';
 import { moduleState } from './state.js';
-import { bindCardEvents, buildAnswerRowHTML, buildGridHTML, reindexBadges, save } from './question-editor.js';
+import { bindCardEvents, buildAnswerRow, buildGrid, reindexBadges, save } from './question-editor.js';
 
 function normalizeSearchText(value) {
 	return window.QLPKSearchNormalization?.normalizeSearchText(value)
@@ -27,7 +28,7 @@ function setScVisible(element, isVisible) {
 function setSaveButtonIdle(btn = saveButton()) {
 	if (!btn) return;
 	btn.disabled = false;
-	btn.innerHTML = '<i class="bi bi-check2 sc-save-icon"></i> Lưu';
+	replace(btn, el('i', { class: 'bi bi-check2 sc-save-icon' }), ' Lưu');
 }
 function showToast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
@@ -35,11 +36,11 @@ function showToast(type, message) {
 function renderPerformerOptions(selectedId = moduleState.state.defaultPerformerId) {
 	const select = surveyPerformerInput();
 	if (!select) return;
-	select.innerHTML = '<option value="">Chưa gán (chọn sau khi chỉ định)</option>' + moduleState.state.performers.map(user => {
+	replace(select, new Option('Chưa gán (chọn sau khi chỉ định)', ''), moduleState.state.performers.map(user => {
 		const id = Number(user.id || user.user_id);
 		const name = String(user.full_name || user.name || user.username || '').trim();
-		return id && name ? `<option value="${id}">${escHtml(name)}</option>` : '';
-	}).join('');
+		return id && name ? new Option(name, String(id)) : null;
+	}));
 	const normalizedId = Number(selectedId) || 0;
 	select.value = normalizedId && Array.from(select.options).some(option => option.value === String(normalizedId))
 		? String(normalizedId)
@@ -72,10 +73,6 @@ function genId() {
 }
 function retainedId(id) {
 	return id === undefined || id === null || id === '' ? genId() : id;
-}
-function escHtml(str) {
-	if (str === undefined || str === null) return '';
-	return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function hasUnsavedChanges() {
 	return moduleState.state.dirty && !moduleState.state.saving;
@@ -318,51 +315,51 @@ function renderQuestionCard(qObj) {
 	card.className = 'sc-q-card';
 	card.id = `qcard-${qObj.id}`;
 	card.dataset.qid = qObj.id;
-	card.innerHTML = buildCardHTML(qObj, moduleState.state.questionCounter);
+	replace(card, buildCard(qObj, moduleState.state.questionCounter));
 	list.appendChild(card);
 	bindCardEvents(card, qObj);
 }
-function buildCardHTML(qObj, idx) {
-	const reqChecked = qObj.required ? 'checked' : '';
-	return `
-			<div class="sc-q-header">
-				<div class="sc-q-header-left">
-					<div class="sc-q-drag-handle" title="Kéo để sắp xếp">⠿</div>
-					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="sc-q-collapse-btn" title="Thu gọn"><i class="bi bi-chevron-down"></i></button>
-					<span class="sc-q-badge">Câu ${idx}</span>
-					<select class="sc-q-type">
-						<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE ? 'selected' : ''}>Trắc nghiệm</option>
-						<option value="${moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID}" ${qObj.type === moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID ? 'selected' : ''}>Lưới trắc nghiệm</option>
-					</select>
-				</div>
-			</div>
-			<div class="sc-q-body">
-				<div class="sc-q-content-row">
-					<input type="text" class="sc-q-text" placeholder="Nhập nội dung câu hỏi..." value="${escHtml(qObj.text)}">
-					<div class="sc-criteria-wrap ${isGridType(qObj.type) ? 'sc-hidden' : ''}">
-						<input type="text" class="sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(qObj.criteria)}" autocomplete="off">
-						<div class="sc-criteria-dropdown sc-hidden"></div>
-					</div>
-				</div>
-				<div class="sc-trac-nghiem-section ${isChoiceType(qObj.type) ? '' : 'sc-hidden'}">
-					<div class="sc-score-hint">Nhập điểm cho từng phương án</div>
-					<div class="sc-answers-list">
-						${qObj.answers.map(a => buildAnswerRowHTML(a)).join('')}
-					</div>
-					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-answer-btn"><i class="bi bi-plus"></i> Thêm đáp án</button>
-				</div>
-				<div class="sc-grid-section ${isGridType(qObj.type) ? '' : 'sc-hidden'}">
-					${buildGridHTML(qObj)}
-				</div>
-			</div>
-			<div class="sc-q-footer">
-				<div class="sc-required-wrap">
-					<label class="sc-required-toggle"><input type="checkbox" class="sc-required-check" ${reqChecked}><span class="sc-toggle-track"></span></label>
-					<span class="sc-required-label">Bắt buộc</span>
-				</div>
-				<div class="sc-q-action-btns"><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-q-action-btn sc-q-delete-btn" title="Xóa câu hỏi"><i class="bi bi-trash"></i></button></div>
-			</div>
-		`;
+function buildCard(qObj, idx) {
+	const typeOption = (value, label) => el('option', { value, selected: qObj.type === value }, label);
+	return [
+		el('div', { class: 'sc-q-header' },
+			el('div', { class: 'sc-q-header-left' },
+				el('div', { class: 'sc-q-drag-handle', title: 'Kéo để sắp xếp' }, '⠿'),
+				el('button', { 'data-qlpk-button': 'neutral', 'data-qlpk-button-variant': 'soft', class: 'sc-q-collapse-btn', title: 'Thu gọn' }, el('i', { class: 'bi bi-chevron-down' })),
+				el('span', { class: 'sc-q-badge' }, `Câu ${idx}`),
+				el('select', { class: 'sc-q-type' },
+					typeOption(moduleState.Q_TYPE.MULTIPLE_CHOICE, 'Trắc nghiệm'),
+					typeOption(moduleState.Q_TYPE.MULTIPLE_CHOICE_GRID, 'Lưới trắc nghiệm')
+				)
+			)
+		),
+		el('div', { class: 'sc-q-body' },
+			el('div', { class: 'sc-q-content-row' },
+				el('input', { type: 'text', class: 'sc-q-text', placeholder: 'Nhập nội dung câu hỏi...', defaultValue: qObj.text ?? '' }),
+				el('div', { class: `sc-criteria-wrap ${isGridType(qObj.type) ? 'sc-hidden' : ''}` },
+					el('input', { type: 'text', class: 'sc-q-criteria-input', placeholder: 'Tiêu chí', defaultValue: qObj.criteria ?? '', autocomplete: 'off' }),
+					el('div', { class: 'sc-criteria-dropdown sc-hidden' })
+				)
+			),
+			el('div', { class: `sc-trac-nghiem-section ${isChoiceType(qObj.type) ? '' : 'sc-hidden'}` },
+				el('div', { class: 'sc-score-hint' }, 'Nhập điểm cho từng phương án'),
+				el('div', { class: 'sc-answers-list' }, qObj.answers.map(a => buildAnswerRow(a))),
+				el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'sc-add-answer-btn' }, el('i', { class: 'bi bi-plus' }), ' Thêm đáp án')
+			),
+			el('div', { class: `sc-grid-section ${isGridType(qObj.type) ? '' : 'sc-hidden'}` }, buildGrid(qObj))
+		),
+		el('div', { class: 'sc-q-footer' },
+			el('div', { class: 'sc-required-wrap' },
+				el('label', { class: 'sc-required-toggle' },
+					el('input', { type: 'checkbox', class: 'sc-required-check', checked: Boolean(qObj.required) }),
+					el('span', { class: 'sc-toggle-track' })
+				),
+				el('span', { class: 'sc-required-label' }, 'Bắt buộc')
+			),
+			el('div', { class: 'sc-q-action-btns' },
+				el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-q-action-btn sc-q-delete-btn', title: 'Xóa câu hỏi' }, el('i', { class: 'bi bi-trash' })))
+		)
+	];
 }
 
-export { addQuestion, addQuestionButton, buildCardHTML, buildQuestionObject, byId, close, escHtml, fillTemplateHeader, genId, hasUnsavedChanges, init, isChoiceType, isGridType, loadPerformers, loadTemplate, markDirty, normalizeQuestionType, normalizeSearchText, open, overlayEl, pageTitleEl, parseTemplateContent, questionsListEl, rawTemplateAnswers, rawTemplateQuestion, refreshCriteriaCache, registerRealtimeHooks, renderPerformerOptions, renderQuestionCard, resetState, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab };
+export { addQuestion, addQuestionButton, buildCard, buildQuestionObject, byId, close, fillTemplateHeader, genId, hasUnsavedChanges, init, isChoiceType, isGridType, loadPerformers, loadTemplate, markDirty, normalizeQuestionType, normalizeSearchText, open, overlayEl, pageTitleEl, parseTemplateContent, questionsListEl, rawTemplateAnswers, rawTemplateQuestion, refreshCriteriaCache, registerRealtimeHooks, renderPerformerOptions, renderQuestionCard, resetState, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab };

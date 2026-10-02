@@ -210,8 +210,8 @@ function setupMainAddressChangeHandlers(options = {}) {
 				if (districtEl) districtEl.value = '';
 				if (wardEl) wardEl.value = '';
 			} else {
-				if (districtEl) districtEl.innerHTML = '<option value="">Chọn quận/huyện</option>';
-				if (wardEl) wardEl.innerHTML = '<option value="">Chọn phường/xã</option>';
+				if (districtEl) districtEl.replaceChildren(new Option('Chọn quận/huyện', ''));
+				if (wardEl) wardEl.replaceChildren(new Option('Chọn phường/xã', ''));
 			}
 			updateSummary();
 		});
@@ -226,7 +226,7 @@ function setupMainAddressChangeHandlers(options = {}) {
 				if (typeof options.loadWards === 'function') options.loadWards(provinceName, districtName);
 				if (wardEl) wardEl.value = '';
 			} else if (wardEl) {
-				wardEl.innerHTML = '<option value="">Chọn phường/xã</option>';
+				wardEl.replaceChildren(new Option('Chọn phường/xã', ''));
 			}
 			updateSummary();
 		});

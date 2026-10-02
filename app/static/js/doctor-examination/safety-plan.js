@@ -49,6 +49,15 @@ function safetyPlanIsCurrent(patientId, contextToken) {
  *                                    tránh race condition với setTimeout.
  * @param {Object} options          - Predicate xác nhận request vẫn thuộc patient hiện tại.
  */
+function safetyPlanSetUploadLabel(labelEl, iconClass, text) {
+    const icon = document.createElement('i');
+    icon.className = `bi ${iconClass}`;
+    icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.textContent = text;
+    labelEl.replaceChildren(icon, label);
+}
+
 async function safetyPlanLoadFamilyMembers(patientId, savedSupporters = [], options = {}) {
     const isCurrentLoad = typeof options.isCurrentLoad === 'function' ? options.isCurrentLoad : () => true;
     if (!patientId || !isCurrentLoad()) return false;
@@ -259,7 +268,7 @@ async function safetyPlanHandleUpload(input) {
 
     const labelEl = medicalHistoryGetComponent().query('label[for="safetyPlanFileInput"]');
     try {
-        if (labelEl) labelEl.innerHTML = '<i class="bi bi-arrow-repeat" aria-hidden="true"></i><span>Đang upload...</span>';
+        if (labelEl) safetyPlanSetUploadLabel(labelEl, 'bi-arrow-repeat', 'Đang upload...');
 
         const res  = await fetch(`/api/patients/${patientId}/safety-plan/upload`, {
             method: 'POST',
@@ -278,7 +287,7 @@ async function safetyPlanHandleUpload(input) {
         if (safetyPlanIsCurrent(patientId, contextToken)) safetyPlanToast('error', 'Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.');
     } finally {
         if (labelEl && safetyPlanIsCurrent(patientId, contextToken)) {
-            labelEl.innerHTML = '<i class="bi bi-upload" aria-hidden="true"></i><span>Upload bản đã ký</span>';
+            safetyPlanSetUploadLabel(labelEl, 'bi-upload', 'Upload bản đã ký');
         }
         if (safetyPlanIsCurrent(patientId, contextToken)) input.value = '';
     }

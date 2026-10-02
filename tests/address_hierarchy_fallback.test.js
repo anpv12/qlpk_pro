@@ -21,7 +21,7 @@ function createHarness(routeResponse) {
   const errors = [];
   const elements = new Map(['district', 'ward', 'modalDistrict', 'modalWard'].map(id => [id, {
     options: [],
-    set innerHTML(value) { this.placeholder = value; this.options = []; },
+    replaceChildren(placeholder) { this.placeholder = placeholder; this.options = []; },
     appendChild(option) { this.options.push(option); }
   }]));
   const document = {
@@ -38,7 +38,8 @@ function createHarness(routeResponse) {
     }
   };
   const window = { document, URLSearchParams, encodeURIComponent, console: options.console };
-  runScriptFile(SOURCE_FILE, vm.createContext({ window }));
+  function Option(text, value) { return { text, value, textContent: text }; }
+  runScriptFile(SOURCE_FILE, vm.createContext({ window, Option }));
   return { api: window.ClinicalAddressHierarchyUtils, options, calls, errors, elements };
 }
 

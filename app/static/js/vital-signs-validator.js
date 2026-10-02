@@ -126,7 +126,9 @@
         if (errorMsg) {
             const icon = document.createElement('span');
             icon.className = 'vital-blink-icon';
-            icon.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+            const iconGlyph = document.createElement('i');
+            iconGlyph.className = 'bi bi-exclamation-triangle-fill';
+            icon.replaceChildren(iconGlyph);
             icon.dataset.tooltipText = errorMsg;
             
             // Gán các sự kiện để hiển thị tooltip

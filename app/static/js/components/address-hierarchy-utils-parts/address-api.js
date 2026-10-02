@@ -157,7 +157,7 @@ async function loadProvinces(options = {}) {
 
 		if (data.success && data.data) {
 			const provinceSelect = getDocument(options).getElementById('province');
-			provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+			provinceSelect.replaceChildren(new Option('Chọn tỉnh/thành phố', ''));
 
 			appendAddressOptions(provinceSelect, data.data, {
 				...options,
@@ -176,7 +176,7 @@ async function loadDistricts(provinceName, options = {}) {
 		if (data && (data.success || Array.isArray(data))) {
 			const list = data.data || data;
 			const districtSelect = getDocument(options).getElementById('district');
-			districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+			districtSelect.replaceChildren(new Option('Chọn quận/huyện', ''));
 			appendAddressOptions(districtSelect, list, {
 				...options,
 				includeCode: true,
@@ -197,7 +197,7 @@ async function loadWards(provinceName, districtName, options = {}) {
 		if (data && (data.success || Array.isArray(data))) {
 			const list = data.data || data;
 			const wardSelect = getDocument(options).getElementById('ward');
-			wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+			wardSelect.replaceChildren(new Option('Chọn phường/xã', ''));
 			appendAddressOptions(wardSelect, list, {
 				...options,
 				includeCode: false,
@@ -215,7 +215,7 @@ async function loadProvincesModal(options = {}) {
 		if (data.success && data.data) {
 			const provinceSelect = getDocument(options).getElementById('modalProvince');
 			if (!provinceSelect) return;
-			provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+			provinceSelect.replaceChildren(new Option('Chọn tỉnh/thành phố', ''));
 			appendAddressOptions(provinceSelect, data.data, {
 				...options,
 				includeCode: true,
@@ -233,7 +233,7 @@ async function loadProvincesForModal(options = {}) {
 		const data = result.data || result;
 		const modalProvinceSelect = getDocument(options).getElementById('modalProvince');
 		if (modalProvinceSelect) {
-			modalProvinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+			modalProvinceSelect.replaceChildren(new Option('Chọn tỉnh/thành phố', ''));
 			if (Array.isArray(data)) {
 				appendAddressOptions(modalProvinceSelect, data, {
 					...options,
@@ -315,7 +315,7 @@ async function loadAddressHierarchy(provinceName = null, districtName = null, wa
 function clearSelectOptions(selectId, placeholder, options = {}) {
 	const select = getDocument(options).getElementById(selectId);
 	if (select) {
-		select.innerHTML = `<option value="">${placeholder}</option>`;
+		select.replaceChildren(new Option(placeholder, ''));
 	}
 }
 function getElementValue(elementId, options = {}) {

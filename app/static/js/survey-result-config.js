@@ -1,5 +1,6 @@
 import { moduleState } from './survey-template-create-parts/state.js';
-import { buildAlertCard, buildConditionsTable, buildScoreInputs, escHtml, extractCriteriaGroups, extractQuestions, genId, readNumber } from './survey-result-config-parts/builders.js';
+import { el, replace } from './shared/dom.js';
+import { buildAlertCard, buildConditionsTable, buildScoreInputs, extractCriteriaGroups, extractQuestions, genId, readNumber } from './survey-result-config-parts/builders.js';
 
 // Survey results configuration tab of the template modal; registers itself as moduleState.resultConfig
 // so the modal (survey-template-create) can initialise, collect and validate it when this module is loaded.
@@ -22,90 +23,84 @@ function render() {
 	const groups = extractCriteriaGroups();
 
 	if (questions.length === 0) {
-		root.innerHTML = `<div class="sc-rc-no-questions">
-				<i class="bi bi-list-check"></i>
-				<p>Vui lòng cấu hình câu hỏi ở Tab 1 trước.</p>
-			</div>`;
+		replace(root, el('div', { class: 'sc-rc-no-questions' },
+			el('i', { class: 'bi bi-list-check' }),
+			el('p', null, 'Vui lòng cấu hình câu hỏi ở Tab 1 trước.')
+		));
 		return;
 	}
 
 	const isTotal = currentConfig.scoring_method === 'total';
 	const isByGroup = currentConfig.scoring_method === 'by_group';
 
-	let html = buildScoringMethodSection(isTotal, isByGroup);
-	// ── Section: Calculation Type (only for total) ──
-	if (isTotal) html += buildCalculationTypeSection();
-	// ── Section: Group Tabs (only for by_group) ──
-	if (isByGroup) html += buildGroupSection(groups);
-	// ── Section: Conditions (for total mode) ──
-	if (isTotal) {
-		html += `<div class="sc-rc-section" id="scTotalConditions">
-				${buildConditionsTable(currentConfig.conditions)}
-			</div>`;
-	}
-	html += buildSpecialAlertsSection(questions);
-
-	root.innerHTML = html;
+	replace(root,
+		buildScoringMethodSection(isTotal, isByGroup),
+		// ── Section: Calculation Type (only for total) ──
+		isTotal ? buildCalculationTypeSection() : null,
+		// ── Section: Group Tabs (only for by_group) ──
+		isByGroup ? buildGroupSection(groups) : null,
+		// ── Section: Conditions (for total mode) ──
+		isTotal ? el('div', { class: 'sc-rc-section', id: 'scTotalConditions' }, buildConditionsTable(currentConfig.conditions)) : null,
+		buildSpecialAlertsSection(questions)
+	);
 	bindEvents();
+}
+
+const choiceInput = (name, value, checked) => el('input', { type: 'radio', name, value, checked });
+
+function methodCard(method, active, iconClass, label, description) {
+	return el('label', { class: `sc-rc-method-card ${active ? 'active' : ''}`, 'data-method': method },
+		choiceInput('scScoringMethod', method, active),
+		el('i', { class: `bi ${iconClass} sc-rc-method-icon` }),
+		el('div', null,
+			el('div', { class: 'sc-rc-method-label' }, label),
+			el('div', { class: 'sc-rc-method-desc' }, description)
+		)
+	);
 }
 
 // ── Section: Scoring Method ──
 function buildScoringMethodSection(isTotal, isByGroup) {
-	return `<div class="sc-rc-section">
-			<h3 class="sc-rc-title">Cấu hình kết quả hiển thị khảo sát</h3>
-			<p class="sc-rc-subtitle">Thiết lập cách thức trả kết quả sau khi bệnh nhân hoàn thành khảo sát</p>
-			<div class="sc-rc-methods">
-				<label class="sc-rc-method-card ${isTotal ? 'active' : ''}" data-method="total">
-					<input type="radio" name="scScoringMethod" value="total" ${isTotal ? 'checked' : ''}>
-					<i class="bi bi-list-ol sc-rc-method-icon"></i>
-					<div>
-						<div class="sc-rc-method-label">Theo khoảng điểm tổng</div>
-						<div class="sc-rc-method-desc">Tính điểm khảo sát dựa trên cơ chế tính tổng điểm các câu hỏi bệnh nhân trả lời</div>
-					</div>
-				</label>
-				<label class="sc-rc-method-card ${isByGroup ? 'active' : ''}" data-method="by_group">
-					<input type="radio" name="scScoringMethod" value="by_group" ${isByGroup ? 'checked' : ''}>
-					<i class="bi bi-grid-3x3-gap sc-rc-method-icon"></i>
-					<div>
-						<div class="sc-rc-method-label">Theo khoảng điểm từng nhóm</div>
-						<div class="sc-rc-method-desc">Tính điểm khảo sát dựa trên cơ chế tính điểm theo nhóm tiêu chí câu hỏi</div>
-					</div>
-				</label>
-			</div>
-		</div>`;
+	return el('div', { class: 'sc-rc-section' },
+		el('h3', { class: 'sc-rc-title' }, 'Cấu hình kết quả hiển thị khảo sát'),
+		el('p', { class: 'sc-rc-subtitle' }, 'Thiết lập cách thức trả kết quả sau khi bệnh nhân hoàn thành khảo sát'),
+		el('div', { class: 'sc-rc-methods' },
+			methodCard('total', isTotal, 'bi-list-ol', 'Theo khoảng điểm tổng', 'Tính điểm khảo sát dựa trên cơ chế tính tổng điểm các câu hỏi bệnh nhân trả lời'),
+			methodCard('by_group', isByGroup, 'bi-grid-3x3-gap', 'Theo khoảng điểm từng nhóm', 'Tính điểm khảo sát dựa trên cơ chế tính điểm theo nhóm tiêu chí câu hỏi')
+		)
+	);
 }
 
 function buildCalculationTypeSection() {
 	const ct = currentConfig.calculation_type || 'sum';
-	let html = `<div class="sc-rc-section" id="scCalcTypeSection">
-			<div class="sc-rc-calc-wrap">
-				<div class="sc-rc-calc-title">Chọn phương thức tính</div>
-				<div class="sc-rc-calc-options">
-					<label class="sc-rc-calc-option ${ct === 'sum' ? 'active' : ''}">
-						<input type="radio" name="scCalcType" value="sum" ${ct === 'sum' ? 'checked' : ''}> Tính tổng
-					</label>
-					<label class="sc-rc-calc-option ${ct === 'average' ? 'active' : ''}">
-						<input type="radio" name="scCalcType" value="average" ${ct === 'average' ? 'checked' : ''}> Tính trung bình
-					</label>
-					<label class="sc-rc-calc-option ${ct === 'scale_conversion' ? 'active' : ''}">
-						<input type="radio" name="scCalcType" value="scale_conversion" ${ct === 'scale_conversion' ? 'checked' : ''}> Quy đổi điểm
-					</label>
-				</div>
-			</div>
-		</div>`;
-	if (ct === 'scale_conversion') html += `<div class="sc-rc-section">
-			<p>Điểm quy đổi = Tổng điểm × Hệ số + Số cộng</p>
-			<label>Hệ số <input type="number" step="any" class="sc-rc-conversion-factor" value="${currentConfig.conversion?.factor ?? ''}" required></label>
-			<label>Số cộng <input type="number" step="any" class="sc-rc-conversion-offset" value="${currentConfig.conversion?.offset ?? ''}" required></label>
-		</div>`;
-	return html;
+	const option = (value, label) => el('label', { class: `sc-rc-calc-option ${ct === value ? 'active' : ''}` },
+		choiceInput('scCalcType', value, ct === value), ` ${label}`);
+	const numberField = (label, className, value) => el('label', null, `${label} `,
+		el('input', { type: 'number', step: 'any', class: className, defaultValue: value ?? '', required: true }));
+	return [
+		el('div', { class: 'sc-rc-section', id: 'scCalcTypeSection' },
+			el('div', { class: 'sc-rc-calc-wrap' },
+				el('div', { class: 'sc-rc-calc-title' }, 'Chọn phương thức tính'),
+				el('div', { class: 'sc-rc-calc-options' },
+					option('sum', 'Tính tổng'),
+					option('average', 'Tính trung bình'),
+					option('scale_conversion', 'Quy đổi điểm')
+				)
+			)
+		),
+		ct === 'scale_conversion' ? el('div', { class: 'sc-rc-section' },
+			el('p', null, 'Điểm quy đổi = Tổng điểm × Hệ số + Số cộng'),
+			numberField('Hệ số', 'sc-rc-conversion-factor', currentConfig.conversion?.factor),
+			numberField('Số cộng', 'sc-rc-conversion-offset', currentConfig.conversion?.offset)
+		) : null
+	];
 }
 
 function buildGroupSection(groups) {
 	if (groups.length === 0) {
-		return `<div class="sc-rc-section"><div class="sc-rc-calc-wrap">
-				<p class="sc-rc-empty-message"><i class="bi bi-info-circle me-1"></i>Không tìm thấy nhóm tiêu chí nào. Vui lòng nhập tiêu chí cho câu hỏi ở Tab 1.</p>
-			</div></div>`;
+		return el('div', { class: 'sc-rc-section' }, el('div', { class: 'sc-rc-calc-wrap' },
+			el('p', { class: 'sc-rc-empty-message' }, el('i', { class: 'bi bi-info-circle me-1' }), 'Không tìm thấy nhóm tiêu chí nào. Vui lòng nhập tiêu chí cho câu hỏi ở Tab 1.')
+		));
 	}
 	// Initialize group_configs for new groups
 	groups.forEach(g => {
@@ -121,33 +116,29 @@ function buildGroupSection(groups) {
 		activeGroupTab = groups[0];
 	}
 
-	const tabsHtml = groups.map(g =>
-		`<button class="sc-rc-group-tab ${g === activeGroupTab ? 'active' : ''}" data-group="${escHtml(g)}">${escHtml(g)}</button>`
-	).join('');
+	const tabs = groups.map(g => el('button', { class: `sc-rc-group-tab ${g === activeGroupTab ? 'active' : ''}`, 'data-group': g }, g));
 
 	const activeConditions = currentConfig.group_configs[activeGroupTab]?.conditions || [];
 
-	return `<div class="sc-rc-section" id="scGroupSection">
-			<div class="sc-rc-group-wrap">
-				<div class="sc-rc-calc-title">Chọn nhóm cấu hình</div>
-				<div class="sc-rc-group-tabs">${tabsHtml}</div>
-				<div class="sc-rc-group-label">Cấu hình thang điểm cho nhóm: <strong>${escHtml(activeGroupTab)}</strong></div>
-			</div>
-			<div id="scGroupConditions">${buildConditionsTable(activeConditions)}</div>
-		</div>`;
+	return el('div', { class: 'sc-rc-section', id: 'scGroupSection' },
+		el('div', { class: 'sc-rc-group-wrap' },
+			el('div', { class: 'sc-rc-calc-title' }, 'Chọn nhóm cấu hình'),
+			el('div', { class: 'sc-rc-group-tabs' }, tabs),
+			el('div', { class: 'sc-rc-group-label' }, 'Cấu hình thang điểm cho nhóm: ', el('strong', null, activeGroupTab))
+		),
+		el('div', { id: 'scGroupConditions' }, buildConditionsTable(activeConditions))
+	);
 }
 
 // ── Section: Special Alerts ──
 function buildSpecialAlertsSection(questions) {
-	return `<div class="sc-rc-section" id="scAlertSection">
-			<div class="sc-rc-alerts-header">
-				<div class="sc-rc-alerts-title"><i class="bi bi-exclamation-circle-fill"></i> Lưu ý đặc biệt</div>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-rc-add-btn sc-rc-add-alert"><i class="bi bi-plus"></i> Thêm lưu ý</button>
-			</div>
-			<div id="scAlertsList">
-				${currentConfig.special_alerts.map(a => buildAlertCard(a, questions)).join('')}
-			</div>
-		</div>`;
+	return el('div', { class: 'sc-rc-section', id: 'scAlertSection' },
+		el('div', { class: 'sc-rc-alerts-header' },
+			el('div', { class: 'sc-rc-alerts-title' }, el('i', { class: 'bi bi-exclamation-circle-fill' }), ' Lưu ý đặc biệt'),
+			el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'sc-rc-add-btn sc-rc-add-alert' }, el('i', { class: 'bi bi-plus' }), ' Thêm lưu ý')
+		),
+		el('div', { id: 'scAlertsList' }, currentConfig.special_alerts.map(a => buildAlertCard(a, questions)))
+	);
 }
 
 function createDefaultCondition() {
@@ -187,7 +178,7 @@ function changeConditionOperator(select) {
 		? '.sc-rc-min-score' : '.sc-rc-single-score'));
 	cond.max_score = cond.operator === 'between' ? readNumber(cell.querySelector('.sc-rc-max-score')) : null;
 	cond.operator = select.value;
-	cell.innerHTML = buildScoreInputs(cond);
+	replace(cell, buildScoreInputs(cond));
 }
 
 function addCondition() {
@@ -213,7 +204,7 @@ function addAlert() {
 	currentConfig.special_alerts.push(newAlert);
 	const list = document.getElementById('scAlertsList');
 	if (list) {
-		list.insertAdjacentHTML('beforeend', buildAlertCard(newAlert, questions));
+		list.append(buildAlertCard(newAlert, questions));
 		bindAlertDel(list.lastElementChild);
 	}
 }

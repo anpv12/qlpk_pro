@@ -222,7 +222,7 @@ function renderTabs() {
 		if (tabs.length > 1) {
 			const close = document.createElement('span');
 			close.className = 'qlpk-workspace-tab__close';
-			close.innerHTML = '&times;';
+			close.textContent = '\u00d7';
 			close.setAttribute('aria-label', `Đóng ${tab.label}`);
 			close.addEventListener('click', (event) => {
 				event.stopPropagation();

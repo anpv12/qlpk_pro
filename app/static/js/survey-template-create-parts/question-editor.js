@@ -1,64 +1,82 @@
+import { el, replace } from '../shared/dom.js';
 import { moduleState } from './state.js';
-import { close, escHtml, genId, isChoiceType, isGridType, markDirty, normalizeQuestionType, overlayEl, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab } from './page-state.js';
+import { close, genId, isChoiceType, isGridType, markDirty, normalizeQuestionType, overlayEl, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab } from './page-state.js';
 import { bindCriteriaAutocomplete } from './criteria-autocomplete.js';
 
-function buildAnswerRowHTML(a) {
-	return `
-			<div class="sc-answer-row" data-answer-id="${escHtml(retainedId(a.id))}">
-				<div class="sc-answer-radio"></div>
-				<input type="text" class="sc-answer-text" placeholder="Nhập đáp án..." value="${escHtml(a.text || '')}">
-				<span class="sc-answer-score-label">Điểm:</span>
-				<input type="number" class="sc-answer-score" value="${window.QLPKHtml.escape(a.score ?? a.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
-				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-answer-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
-			</div>
-		`;
+const removeIcon = () => el('i', { class: 'bi bi-x-lg' });
+
+function buildAnswerRow(a) {
+	return el('div', { class: 'sc-answer-row', 'data-answer-id': retainedId(a.id) },
+		el('div', { class: 'sc-answer-radio' }),
+		el('input', { type: 'text', class: 'sc-answer-text', placeholder: 'Nhập đáp án...', defaultValue: a.text || '' }),
+		el('span', { class: 'sc-answer-score-label' }, 'Điểm:'),
+		el('input', { type: 'number', class: 'sc-answer-score', defaultValue: a.score ?? a.value ?? '', step: 'any', placeholder: '—', title: 'Chưa cấu hình điểm' }),
+		el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-answer-remove', title: 'Xóa' }, removeIcon())
+	);
 }
-function buildGridHTML(qObj) {
+function buildColumnHeaderContent(label, score, scoreTitle) {
+	return [
+		el('div', { class: 'sc-grid-col-top' },
+			el('input', { type: 'text', class: 'sc-grid-col-label', defaultValue: label, placeholder: 'Nhập tên cột...' }),
+			el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-del-col-btn', title: 'Xóa cột' }, removeIcon())
+		),
+		el('div', { class: 'sc-grid-col-score' },
+			el('span', null, 'Điểm mặc định'),
+			el('input', { type: 'number', class: 'sc-grid-score-input', defaultValue: score, step: 'any', placeholder: '—', title: scoreTitle }),
+			el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', class: 'sc-q-action-btn sc-apply-col-btn', title: 'Áp điểm cho cả cột', 'aria-label': 'Áp điểm cho cả cột' },
+				el('i', { class: 'bi bi-check2-all' }))
+		)
+	];
+}
+function buildScoreCell(value) {
+	return el('td', { class: 'sc-col-cell' },
+		el('input', { type: 'number', class: 'sc-grid-score-input', defaultValue: value, step: 'any', placeholder: '—', title: 'Chưa cấu hình điểm' }));
+}
+function buildGridRowCells({ text, criteria, scoreEnabled, scores, criteriaHidden }) {
+	return [
+		el('td', { class: 'sc-row-handle', title: 'Kéo để sắp xếp' }, '⋮⋮'),
+		el('td', null, el('input', { type: 'text', class: 'sc-grid-row-input', placeholder: 'Nội dung hàng...', defaultValue: text })),
+		el('td', null, el('div', { class: 'sc-criteria-wrap' },
+			el('input', { type: 'text', class: 'sc-grid-criteria-input sc-q-criteria-input', placeholder: 'Tiêu chí', defaultValue: criteria, autocomplete: 'off' }),
+			el('div', { class: criteriaHidden ? 'sc-criteria-dropdown sc-hidden' : 'sc-criteria-dropdown' })
+		)),
+		el('td', { class: 'sc-grid-score-toggle-cell' },
+			el('input', { type: 'checkbox', class: 'sc-grid-score-enabled', checked: scoreEnabled, title: 'Cho phép tính điểm' })),
+		scores.map(buildScoreCell),
+		el('td', null, el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-del-row-btn', title: 'Xóa hàng' }, removeIcon()))
+	];
+}
+function buildGrid(qObj) {
 	const rows = qObj.grid?.rows || [];
 	const cols = qObj.grid?.columns || [];
-	const colHeaders = cols.map((c, ci) => `
-			<th class="sc-col-header" data-column-id="${escHtml(retainedId(c.id))}">
-				<div class="sc-grid-col-top">
-					<input type="text" class="sc-grid-col-label" value="${escHtml(c.label ?? c.text ?? `Cột ${ci + 1}`)}" placeholder="Nhập tên cột...">
-					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
-				</div>
-				<div class="sc-grid-col-score">
-					<span>Điểm mặc định</span>
-					<input type="number" class="sc-grid-score-input" value="${window.QLPKHtml.escape(c.score ?? c.value ?? '')}" step="any" placeholder="—" title="Chưa cấu hình điểm">
-					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
-				</div>
-			</th>
-		`).join('');
-
-	const bodyRows = rows.map((r, ri) => `
-			<tr data-row="${ri}" data-row-id="${escHtml(retainedId(r.question_id ?? r.id))}">
-				<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
-				<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..." value="${escHtml(r.text || '')}"></td>
-				<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" value="${escHtml(r.criteria ?? r.scoring_criteria ?? qObj.criteria)}" autocomplete="off"><div class="sc-criteria-dropdown sc-hidden"></div></div></td>
-				<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" ${r.score_enabled !== false ? 'checked' : ''} title="Cho phép tính điểm"></td>
-				${cols.map(c => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${r.scores?.[c.id] ?? c.score ?? c.value ?? ''}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
-				<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
-			</tr>
-		`).join('');
-
-	return `
-			<div class="sc-grid-wrap">
-				<table class="sc-grid-table">
-					<thead>
-						<tr>
-							<th class="sc-grid-handle-col"></th>
-							<th class="sc-grid-row-col">Hàng</th>
-							<th class="sc-grid-criteria-col">Tiêu chí</th>
-							<th class="sc-grid-score-enabled-col">Tính điểm</th>
-							${colHeaders}
-							<th class="sc-grid-add-col"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-col-btn"><i class="bi bi-plus-lg"></i></button></th>
-						</tr>
-					</thead>
-					<tbody>${bodyRows}</tbody>
-				</table>
-			</div>
-			<div class="sc-grid-actions"><button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-add-row-btn"><i class="bi bi-plus"></i> Thêm hàng</button></div>
-		`;
+	const colHeaders = cols.map((c, ci) => el('th', { class: 'sc-col-header', 'data-column-id': retainedId(c.id) },
+		buildColumnHeaderContent(c.label ?? c.text ?? `Cột ${ci + 1}`, c.score ?? c.value ?? '', 'Chưa cấu hình điểm')));
+	const bodyRows = rows.map((r, ri) => el('tr', { 'data-row': ri, 'data-row-id': retainedId(r.question_id ?? r.id) },
+		buildGridRowCells({
+			text: r.text || '',
+			criteria: r.criteria ?? r.scoring_criteria ?? qObj.criteria ?? '',
+			scoreEnabled: r.score_enabled !== false,
+			scores: cols.map(c => r.scores?.[c.id] ?? c.score ?? c.value ?? ''),
+			criteriaHidden: true
+		})));
+	return [
+		el('div', { class: 'sc-grid-wrap' },
+			el('table', { class: 'sc-grid-table' },
+				el('thead', null, el('tr', null,
+					el('th', { class: 'sc-grid-handle-col' }),
+					el('th', { class: 'sc-grid-row-col' }, 'Hàng'),
+					el('th', { class: 'sc-grid-criteria-col' }, 'Tiêu chí'),
+					el('th', { class: 'sc-grid-score-enabled-col' }, 'Tính điểm'),
+					colHeaders,
+					el('th', { class: 'sc-grid-add-col' },
+						el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'sc-add-col-btn' }, el('i', { class: 'bi bi-plus-lg' })))
+				)),
+				el('tbody', null, bodyRows)
+			)
+		),
+		el('div', { class: 'sc-grid-actions' },
+			el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'sc-add-row-btn' }, el('i', { class: 'bi bi-plus' }), ' Thêm hàng'))
+	];
 }
 function bindCardEvents(card, qObj) {
 	card.querySelector('.sc-q-collapse-btn').addEventListener('click', function () {
@@ -101,9 +119,7 @@ function bindCardEvents(card, qObj) {
 	if (addAnswerBtn) {
 		addAnswerBtn.addEventListener('click', () => {
 			const list = card.querySelector('.sc-answers-list');
-			const div = document.createElement('div');
-			div.innerHTML = buildAnswerRowHTML({ text: '', score: 0 });
-			const row = div.firstElementChild;
+			const row = buildAnswerRow({ text: '', score: 0 });
 			list.appendChild(row);
 			bindAnswerRemove(row);
 			row.querySelector('.sc-answer-text').focus();
@@ -201,22 +217,12 @@ function addGridCol(card) {
 	const newTh = document.createElement('th');
 	newTh.className = 'sc-col-header';
 	newTh.dataset.columnId = genId();
-	newTh.innerHTML = `
-			<div class="sc-grid-col-top">
-				<input type="text" class="sc-grid-col-label" value="Cột ${colCount + 1}" placeholder="Nhập tên cột...">
-				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-col-btn" title="Xóa cột"><i class="bi bi-x-lg"></i></button>
-			</div>
-			<div class="sc-grid-col-score">
-				<span>Điểm mặc định</span>
-				<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="sc-q-action-btn sc-apply-col-btn" title="Áp điểm cho cả cột" aria-label="Áp điểm cho cả cột"><i class="bi bi-check2-all"></i></button>
-			</div>
-		`;
+	replace(newTh, buildColumnHeaderContent(`Cột ${colCount + 1}`, '', null));
 	table.querySelector('thead tr').insertBefore(newTh, addTh);
 	table.querySelectorAll('tbody tr').forEach(tr => {
 		const td = document.createElement('td');
 		td.className = 'sc-col-cell';
-		td.innerHTML = `<input type="number" class="sc-grid-score-input" value="" step="any" placeholder="—">`;
+		td.append(el('input', { type: 'number', class: 'sc-grid-score-input', defaultValue: '', step: 'any', placeholder: '—' }));
 		tr.insertBefore(td, tr.lastElementChild);
 	});
 	markDirty();
@@ -227,14 +233,10 @@ function addGridRow(card) {
 	const headerScoreInputs = table ? [...table.querySelectorAll('thead th.sc-col-header .sc-grid-score-input')] : [];
 	const tr = document.createElement('tr');
 	tr.dataset.rowId = genId();
-	tr.innerHTML = `
-			<td class="sc-row-handle" title="Kéo để sắp xếp">⋮⋮</td>
-			<td><input type="text" class="sc-grid-row-input" placeholder="Nội dung hàng..."></td>
-			<td><div class="sc-criteria-wrap"><input type="text" class="sc-grid-criteria-input sc-q-criteria-input" placeholder="Tiêu chí" autocomplete="off"><div class="sc-criteria-dropdown"></div></div></td>
-			<td class="sc-grid-score-toggle-cell"><input type="checkbox" class="sc-grid-score-enabled" checked title="Cho phép tính điểm"></td>
-			${headerScoreInputs.map(input => `<td class="sc-col-cell"><input type="number" class="sc-grid-score-input" value="${input.value}" step="any" placeholder="—" title="Chưa cấu hình điểm"></td>`).join('')}
-			<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-del-row-btn" title="Xóa hàng"><i class="bi bi-x-lg"></i></button></td>
-		`;
+	replace(tr, buildGridRowCells({
+		text: null, criteria: null, scoreEnabled: true, criteriaHidden: false,
+		scores: headerScoreInputs.map(input => input.value)
+	}));
 	tbody.appendChild(tr);
 	const newCriteriaInput = tr.querySelector('.sc-q-criteria-input');
 	if (newCriteriaInput) bindCriteriaAutocomplete(newCriteriaInput);
@@ -345,7 +347,7 @@ async function save() {
 	const data = collectData();
 	if (!data) { moduleState.state.saving = false; saveBtn.disabled = false; return; }
 
-	saveBtn.innerHTML = '<i class="bi bi-arrow-repeat sc-saving-icon"></i> Đang lưu...';
+	replace(saveBtn, el('i', { class: 'bi bi-arrow-repeat sc-saving-icon' }), ' Đang lưu...');
 
 	function resetBtn() {
 		moduleState.state.saving = false;
@@ -385,4 +387,4 @@ async function save() {
 	}
 }
 
-export { addGridCol, addGridRow, bindAnswerRemove, bindCardEvents, bindGridEvents, buildAnswerRowHTML, buildGridHTML, collectData, reindexBadges, save, validateQuestions };
+export { addGridCol, addGridRow, bindAnswerRemove, bindCardEvents, bindGridEvents, buildAnswerRow, buildGrid, collectData, reindexBadges, save, validateQuestions };

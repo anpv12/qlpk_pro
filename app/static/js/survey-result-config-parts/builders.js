@@ -1,3 +1,5 @@
+import { el } from '../shared/dom.js';
+
 const OPERATORS = [
 	{ value: 'between', label: 'Trong khoảng' },
 	{ value: '>', label: '>' },
@@ -22,11 +24,6 @@ function readNumber(input) {
 
 function genId(prefix) {
 	return prefix + '_' + Math.random().toString(36).slice(2, 9);
-}
-
-function escHtml(str) {
-	if (!str) return '';
-	return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ─── Extract criteria groups from Tab 1 questions ───
@@ -68,81 +65,71 @@ function extractQuestions() {
 
 // ─── Build operator <option> list ───
 function buildOperatorOptions(selected, operators) {
-	return operators.map(op =>
-		`<option value="${op.value}" ${selected === op.value ? 'selected' : ''}>${escHtml(op.label)}</option>`
-	).join('');
+	return operators.map(op => el('option', { value: op.value, selected: selected === op.value }, op.label));
 }
+
+const numberInput = (className, value) => el('input', { type: 'number', class: className, defaultValue: value ?? '', step: 'any' });
 
 // ─── Build score input based on operator ───
 function buildScoreInputs(cond) {
 	if (cond.operator === 'between') {
-		return `<div class="sc-rc-score-range">
-				<input type="number" class="sc-rc-cond-input sc-rc-min-score" value="${cond.min_score ?? ''}" step="any">
-				<span class="sc-rc-score-sep">-</span>
-				<input type="number" class="sc-rc-cond-input sc-rc-max-score" value="${cond.max_score ?? ''}" step="any">
-			</div>`;
+		return el('div', { class: 'sc-rc-score-range' },
+			numberInput('sc-rc-cond-input sc-rc-min-score', cond.min_score),
+			el('span', { class: 'sc-rc-score-sep' }, '-'),
+			numberInput('sc-rc-cond-input sc-rc-max-score', cond.max_score)
+		);
 	}
-	return `<input type="number" class="sc-rc-cond-input sc-rc-single-score" value="${cond.min_score ?? ''}" step="any">`;
+	return numberInput('sc-rc-cond-input sc-rc-single-score', cond.min_score);
 }
+
+const textInput = (className, placeholder, value) => el('input', { type: 'text', class: className, placeholder, defaultValue: value || '' });
 
 // ─── Build a single condition row ───
 function buildConditionRow(cond) {
-	return `<tr data-cond-id="${cond.id}">
-			<td><select class="sc-rc-cond-select sc-rc-cond-operator">${buildOperatorOptions(cond.operator, OPERATORS)}</select></td>
-			<td class="sc-rc-score-cell">${buildScoreInputs(cond)}</td>
-			<td><input type="text" class="sc-rc-cond-input" placeholder="Nhập kết luận..." value="${escHtml(cond.conclusion || '')}"></td>
-			<td><input type="text" class="sc-rc-cond-input" placeholder="Nhập lưu ý..." value="${escHtml(cond.note || '')}"></td>
-			<td><button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-rc-del-btn sc-rc-del-cond" title="Xóa"><i class="bi bi-trash"></i></button></td>
-		</tr>`;
+	return el('tr', { 'data-cond-id': cond.id },
+		el('td', null, el('select', { class: 'sc-rc-cond-select sc-rc-cond-operator' }, buildOperatorOptions(cond.operator, OPERATORS))),
+		el('td', { class: 'sc-rc-score-cell' }, buildScoreInputs(cond)),
+		el('td', null, textInput('sc-rc-cond-input', 'Nhập kết luận...', cond.conclusion)),
+		el('td', null, textInput('sc-rc-cond-input', 'Nhập lưu ý...', cond.note)),
+		el('td', null, el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-rc-del-btn sc-rc-del-cond', title: 'Xóa' }, el('i', { class: 'bi bi-trash' })))
+	);
 }
 
 // ─── Build conditions table ───
 function buildConditionsTable(conditions) {
-	const rows = conditions.map(c => buildConditionRow(c)).join('');
-	return `<table class="sc-rc-cond-table">
-			<thead><tr>
-				<th class="sc-rc-cond-col-operator">Điều kiện</th>
-				<th class="sc-rc-cond-col-score">Điểm đánh giá</th>
-				<th>Kết luận</th>
-				<th>Lưu ý</th>
-				<th class="sc-rc-cond-col-actions"></th>
-			</tr></thead>
-			<tbody>${rows}</tbody>
-		</table>
-		<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="sc-rc-add-btn sc-rc-add-cond"><i class="bi bi-plus"></i> Thêm điều kiện</button>`;
+	return [
+		el('table', { class: 'sc-rc-cond-table' },
+			el('thead', null, el('tr', null,
+				el('th', { class: 'sc-rc-cond-col-operator' }, 'Điều kiện'),
+				el('th', { class: 'sc-rc-cond-col-score' }, 'Điểm đánh giá'),
+				el('th', null, 'Kết luận'),
+				el('th', null, 'Lưu ý'),
+				el('th', { class: 'sc-rc-cond-col-actions' })
+			)),
+			el('tbody', null, conditions.map(c => buildConditionRow(c)))
+		),
+		el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', class: 'sc-rc-add-btn sc-rc-add-cond' }, el('i', { class: 'bi bi-plus' }), ' Thêm điều kiện')
+	];
 }
+
+const alertField = (label, ...control) => el('div', { class: 'sc-rc-alert-field' }, el('label', null, label), control);
 
 // ─── Build alert card ───
 function buildAlertCard(alert, questions) {
-	const qOptions = questions.map(q =>
-		`<option value="${q.id}" ${alert.question_id === q.id ? 'selected' : ''}>${escHtml(q.label)}</option>`
-	).join('');
-
-	return `<div class="sc-rc-alert-card" data-alert-id="${alert.id}">
-			<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="sc-rc-alert-del" title="Xóa"><i class="bi bi-x-lg"></i></button>
-			<div class="sc-rc-alert-grid">
-				<div class="sc-rc-alert-field">
-					<label>Câu hỏi</label>
-					<select class="sc-rc-cond-select sc-rc-alert-question sc-rc-select-full">${qOptions}</select>
-				</div>
-				<div class="sc-rc-alert-field">
-					<label>Kết luận</label>
-					<input type="text" class="sc-rc-cond-input sc-rc-alert-conclusion" placeholder="Nhập kết luận..." value="${escHtml(alert.conclusion || '')}">
-				</div>
-				<div class="sc-rc-alert-field">
-					<label>Điều kiện</label>
-					<div class="sc-rc-alert-row">
-						<select class="sc-rc-cond-select sc-rc-alert-operator">${buildOperatorOptions(alert.operator || '>=', ALERT_OPERATORS)}</select>
-						<label class="sc-rc-inline-label">Điểm</label>
-						<input type="number" class="sc-rc-cond-input sc-rc-alert-threshold" value="${alert.threshold ?? ''}" step="any">
-					</div>
-				</div>
-				<div class="sc-rc-alert-field">
-					<label>Lưu ý</label>
-					<input type="text" class="sc-rc-cond-input sc-rc-alert-note" placeholder="Nhập lưu ý..." value="${escHtml(alert.note || '')}">
-				</div>
-			</div>
-		</div>`;
+	const qOptions = questions.map(q => el('option', { value: q.id, selected: alert.question_id === q.id }, q.label));
+	return el('div', { class: 'sc-rc-alert-card', 'data-alert-id': alert.id },
+		el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'sc-rc-alert-del', title: 'Xóa' }, el('i', { class: 'bi bi-x-lg' })),
+		el('div', { class: 'sc-rc-alert-grid' },
+			alertField('Câu hỏi', el('select', { class: 'sc-rc-cond-select sc-rc-alert-question sc-rc-select-full' }, qOptions)),
+			alertField('Kết luận', textInput('sc-rc-cond-input sc-rc-alert-conclusion', 'Nhập kết luận...', alert.conclusion)),
+			alertField('Điều kiện', el('div', { class: 'sc-rc-alert-row' },
+				el('select', { class: 'sc-rc-cond-select sc-rc-alert-operator' }, buildOperatorOptions(alert.operator || '>=', ALERT_OPERATORS)),
+				el('label', { class: 'sc-rc-inline-label' }, 'Điểm'),
+				numberInput('sc-rc-cond-input sc-rc-alert-threshold', alert.threshold)
+			)),
+			alertField('Lưu ý', textInput('sc-rc-cond-input sc-rc-alert-note', 'Nhập lưu ý...', alert.note))
+		)
+	);
 }
 
-export { ALERT_OPERATORS, OPERATORS, buildAlertCard, buildConditionRow, buildConditionsTable, buildOperatorOptions, buildScoreInputs, escHtml, extractCriteriaGroups, extractQuestions, genId, readNumber };
+export { ALERT_OPERATORS, OPERATORS, buildAlertCard, buildConditionRow, buildConditionsTable, buildOperatorOptions, buildScoreInputs, extractCriteriaGroups, extractQuestions, genId, readNumber };
