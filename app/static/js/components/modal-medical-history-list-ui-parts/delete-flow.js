@@ -1,3 +1,4 @@
+import { el } from '../../shared/dom.js';
 import { buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadSuccessState, deleteQuickSearchExaminationFlow, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, renderState, resolveElement, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveSelectedIndex } from './list-state.js';
 import { setActiveHistoryRow } from './list-bindings.js';
 
@@ -250,12 +251,12 @@ function isExaminingStatus(status) {
 }
 function buildVisitBadge({ isCurrentExam, isToday, paymentStatus }) {
 	if (isCurrentExam) {
-		return '<span class="modal-history-visit-label">Lượt hiện tại</span>';
+		return el('span', { class: 'modal-history-visit-label' }, 'Lượt hiện tại');
 	}
 	if (isToday && paymentStatus !== 'PAID') {
-		return '<span class="modal-history-visit-label">Hôm nay</span>';
+		return el('span', { class: 'modal-history-visit-label' }, 'Hôm nay');
 	}
-	return '';
+	return null;
 }
 function defaultFormatDate(date) {
 	return date ? date.toLocaleDateString('vi-VN') : '';
@@ -282,20 +283,15 @@ function buildHistoryRowFlags(exam, options) {
 function buildHistoryRowActions(exam, index, flags, options) {
 	const actionButtons = [];
 	if (options.showCopyAction !== false) {
-		actionButtons.push(`
-						<button class="btn btn-sm patient-search-modal__history-copy-button ${flags.isCurrentExam ? 'patient-search-modal__history-copy-button--current' : ''} ${flags.isExamining ? 'patient-search-modal__history-copy-button--examining' : ''}" data-action="copy-history" data-index="${index}" title="${flags.isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử'}">
-                            <i class="bi ${flags.isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}"></i>
-                        </button>
-                    `);
+		const modifiers = [flags.isCurrentExam ? 'patient-search-modal__history-copy-button--current' : '', flags.isExamining ? 'patient-search-modal__history-copy-button--examining' : ''];
+		actionButtons.push(el('button', { class: `btn btn-sm patient-search-modal__history-copy-button ${modifiers[0]} ${modifiers[1]}`, 'data-action': 'copy-history', 'data-index': index, title: flags.isCurrentExam ? 'Xem lượt khám hiện tại' : 'Xem lịch sử' },
+			el('i', { class: `bi ${flags.isCurrentExam ? 'bi-eye-fill' : 'bi-eye'}` })));
 	}
 	if (options.showDeleteAction !== false) {
-		actionButtons.push(`
-                        <button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn btn-sm" data-action="delete-history" data-exam-id="${exam.id}" data-index="${index}" title="Xóa lượt khám">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `);
+		actionButtons.push(el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', class: 'btn btn-sm', 'data-action': 'delete-history', 'data-exam-id': exam.id, 'data-index': index, title: 'Xóa lượt khám' },
+			el('i', { class: 'bi bi-trash' })));
 	}
-	return actionButtons.join('');
+	return actionButtons;
 }
 function buildHistoryRowClasses(flags, selectedIndex, index) {
 	return [
@@ -307,7 +303,7 @@ function buildHistoryRowClasses(flags, selectedIndex, index) {
 		flags.isPastHistory ? 'past-exam-history' : ''
 	].filter(Boolean).join(' ');
 }
-function buildHistoryRowHtml(options = {}) {
+function buildHistoryRow(options = {}) {
 	const exam = options.exam || {};
 	const index = options.index || 0;
 	const flags = buildHistoryRowFlags(exam, options);
@@ -319,27 +315,18 @@ function buildHistoryRowHtml(options = {}) {
 	const getStatusText = typeof options.getExaminationStatusText === 'function'
 		? options.getExaminationStatusText
 		: status => status || '';
-	const rowClasses = buildHistoryRowClasses(flags, options.selectedIndex, index);
+	const statusModifiers = `${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}`;
 
-	return `
-                <div class="${rowClasses}" data-index="${index}" data-exam-id="${exam.id}" data-appointment-id="${exam.appointment_id}" data-is-current="${flags.isCurrentExam}">
-                    <div class="col-3 text-start col-history-date">
-                        <span class="modal-history-date-time">${formatDateTime(flags.displayDate, options)}</span>
-                        ${statusBadge}
-                    </div>
-                    <div class="col-5 text-start col-history-diagnosis">
-                        <span class="d-block text-truncate" title="${window.QLPKHtml.escape(description)}">${window.QLPKHtml.escape(description)}</span>
-					</div>
-					<div class="col-2 text-center col-history-payment">
-						<span class="qlpk-status patient-search-modal__exam-status-badge${flags.isExamining ? ' patient-search-modal__exam-status-badge--examining' : ''}${flags.isWaitingPayment ? ' patient-search-modal__exam-status-badge--waiting-payment' : ''}">
-							${getStatusText(exam.status)}
-						</span>
-                    </div>
-                    <div class="col-2 text-center">
-                        ${buildHistoryRowActions(exam, index, flags, options)}
-                    </div>
-                </div>
-            `;
+	return el('div', { class: buildHistoryRowClasses(flags, options.selectedIndex, index), 'data-index': index, 'data-exam-id': exam.id, 'data-appointment-id': exam.appointment_id, 'data-is-current': String(flags.isCurrentExam) },
+		el('div', { class: 'col-3 text-start col-history-date' },
+			el('span', { class: 'modal-history-date-time' }, formatDateTime(flags.displayDate, options)),
+			statusBadge ? [' ', statusBadge] : null),
+		el('div', { class: 'col-5 text-start col-history-diagnosis' },
+			el('span', { class: 'd-block text-truncate', title: description }, description)),
+		el('div', { class: 'col-2 text-center col-history-payment' },
+			el('span', { class: `qlpk-status patient-search-modal__exam-status-badge${statusModifiers}` }, getStatusText(exam.status) ?? '')),
+		el('div', { class: 'col-2 text-center' }, buildHistoryRowActions(exam, index, flags, options))
+	);
 }
 function renderHistoryList(options = {}) {
 	const container = resolveElement(options.container || 'modalMedicalHistory');
@@ -351,14 +338,14 @@ function renderHistoryList(options = {}) {
 		return { state: 'empty', selectedIndex, html: renderState(container, 'empty') };
 	}
 
-	const html = histories.map((exam, index) => buildHistoryRowHtml({
+	const rows = histories.map((exam, index) => buildHistoryRow({
 		...options,
 		exam,
 		index,
 		selectedIndex
-	})).join('');
-	container.innerHTML = html;
-	return { state: 'ready', selectedIndex, html };
+	}));
+	container.replaceChildren(...rows);
+	return { state: 'ready', selectedIndex, html: rows };
 }
 function renderHistoryListWithActiveRow(options = {}) {
 	const result = renderHistoryList(options);
@@ -427,4 +414,4 @@ async function loadAndRenderHistoryList(options = {}) {
 	}
 }
 
-export { buildDeleteConfirmationDialogOptions, buildDeleteConfirmationText, buildDeleteExaminationCatchMessage, buildDeleteExaminationRequestOptions, buildDeleteExaminationUrl, buildHistoryDeleteConfirmState, buildHistoryDeleteFlowState, buildHistoryRowActions, buildHistoryRowClasses, buildHistoryRowFlags, buildHistoryRowHtml, buildQuickDeleteConfirmState, buildVisitBadge, cleanupSweetAlertDialog, createExaminationDeleteFlowAdapter, defaultFormatDate, deleteExaminationCore, deleteHistoryExaminationFlow, formatDateTime, formatVisitDateText, getDisplayDate, isExaminingStatus, isSameDate, loadAndRenderHistoryList, renderHistoryList, renderHistoryListWithActiveRow, resolveAdapterValue, resolveDeleteExaminationErrorMessage };
+export { buildDeleteConfirmationDialogOptions, buildDeleteConfirmationText, buildDeleteExaminationCatchMessage, buildDeleteExaminationRequestOptions, buildDeleteExaminationUrl, buildHistoryDeleteConfirmState, buildHistoryDeleteFlowState, buildHistoryRowActions, buildHistoryRowClasses, buildHistoryRowFlags, buildHistoryRow, buildQuickDeleteConfirmState, buildVisitBadge, cleanupSweetAlertDialog, createExaminationDeleteFlowAdapter, defaultFormatDate, deleteExaminationCore, deleteHistoryExaminationFlow, formatDateTime, formatVisitDateText, getDisplayDate, isExaminingStatus, isSameDate, loadAndRenderHistoryList, renderHistoryList, renderHistoryListWithActiveRow, resolveAdapterValue, resolveDeleteExaminationErrorMessage };

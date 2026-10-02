@@ -1,10 +1,10 @@
 import { moduleState } from './modal-medical-history-list-ui-parts/state.js';
-import { buildExaminationDetailUrl, buildExaminationIdUrl, buildHistoryCopyLoadState, buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadStateHandlers, buildHistoryLoadSuccessState, buildQuickDeleteFlowState, buildSelectedHistoryState, buildStateHtml, copyHistoryToFormFlow, deleteQuickSearchExaminationFlow, extractExaminationId, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, loadCopiedHistoryWithPatient, renderState, resolveAppointmentById, resolveAppointmentExaminationId, resolveCopyHistorySelection, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveQuickDeleteExaminationId, resolveQuickDeleteSelection, resolveSelectableHistoryIndex, resolveSelectedIndex, selectHistoryForModalFlow, selectHistoryRow } from './modal-medical-history-list-ui-parts/list-state.js';
-import { buildDeleteConfirmationDialogOptions, buildDeleteConfirmationText, buildDeleteExaminationCatchMessage, buildDeleteExaminationRequestOptions, buildDeleteExaminationUrl, buildHistoryDeleteConfirmState, buildHistoryDeleteFlowState, buildHistoryRowHtml, buildQuickDeleteConfirmState, buildVisitBadge, cleanupSweetAlertDialog, createExaminationDeleteFlowAdapter, deleteExaminationCore, deleteHistoryExaminationFlow, formatVisitDateText, isExaminingStatus, loadAndRenderHistoryList, renderHistoryList, renderHistoryListWithActiveRow, resolveDeleteExaminationErrorMessage } from './modal-medical-history-list-ui-parts/delete-flow.js';
+import { buildExaminationDetailUrl, buildExaminationIdUrl, buildHistoryCopyLoadState, buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadStateHandlers, buildHistoryLoadSuccessState, buildQuickDeleteFlowState, buildSelectedHistoryState, buildState, copyHistoryToFormFlow, deleteQuickSearchExaminationFlow, extractExaminationId, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, loadCopiedHistoryWithPatient, renderState, resolveAppointmentById, resolveAppointmentExaminationId, resolveCopyHistorySelection, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveQuickDeleteExaminationId, resolveQuickDeleteSelection, resolveSelectableHistoryIndex, resolveSelectedIndex, selectHistoryForModalFlow, selectHistoryRow } from './modal-medical-history-list-ui-parts/list-state.js';
+import { buildDeleteConfirmationDialogOptions, buildDeleteConfirmationText, buildDeleteExaminationCatchMessage, buildDeleteExaminationRequestOptions, buildDeleteExaminationUrl, buildHistoryDeleteConfirmState, buildHistoryDeleteFlowState, buildHistoryRow, buildQuickDeleteConfirmState, buildVisitBadge, cleanupSweetAlertDialog, createExaminationDeleteFlowAdapter, deleteExaminationCore, deleteHistoryExaminationFlow, formatVisitDateText, isExaminingStatus, loadAndRenderHistoryList, renderHistoryList, renderHistoryListWithActiveRow, resolveDeleteExaminationErrorMessage } from './modal-medical-history-list-ui-parts/delete-flow.js';
 import { bindHistoryListActions, bindHistoryListClick, setActiveHistoryRow } from './modal-medical-history-list-ui-parts/list-bindings.js';
 
 moduleState.api = {
-	buildStateHtml: buildStateHtml,
+	buildState: buildState,
 	renderState: renderState,
 	extractHistoryExaminations: extractHistoryExaminations,
 	buildHistoryListUrl: buildHistoryListUrl,
@@ -51,7 +51,7 @@ moduleState.api = {
 	cleanupSweetAlertDialog: cleanupSweetAlertDialog,
 	isExaminingStatus: isExaminingStatus,
 	buildVisitBadge: buildVisitBadge,
-	buildHistoryRowHtml: buildHistoryRowHtml,
+	buildHistoryRow: buildHistoryRow,
 	renderHistoryList: renderHistoryList,
 	renderHistoryListWithActiveRow: renderHistoryListWithActiveRow,
 	loadAndRenderHistoryList: loadAndRenderHistoryList,

@@ -1,3 +1,4 @@
+import { emptyState } from '../../shared/empty-state.js';
 import { setActiveHistoryRow } from './list-bindings.js';
 import { buildQuickDeleteConfirmState } from './delete-flow.js';
 
@@ -5,36 +6,19 @@ function resolveElement(elementOrId) {
 	if (!elementOrId) return null;
 	return typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
 }
-function buildStateHtml(state) {
-	const states = {
-		empty: `
-                <div class="patient-search-modal__empty-state patient-search-modal__empty-state--history">
-                    <span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-                        <i class="bi bi-clipboard patient-search-modal__empty-icon--sm"></i>
-                    </span>
-                    <p class="patient-search-modal__empty-title">Chưa có lịch sử khám</p>
-                    <small class="patient-search-modal__empty-description">Bệnh nhân chưa có lượt khám trước đó</small>
-                </div>
-            `,
-		error: `
-            <div class="patient-search-modal__empty-state patient-search-modal__empty-state--history patient-search-modal__empty-state--error">
-                <span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-                    <i class="bi bi-exclamation-triangle patient-search-modal__empty-icon--sm"></i>
-                </span>
-                <p class="patient-search-modal__empty-title">Lỗi tải lịch sử khám</p>
-                <small class="patient-search-modal__empty-description">Vui lòng thử lại sau</small>
-            </div>
-        `
-	};
-
-	return states[state] || '';
+const HISTORY_STATES = {
+	empty: { modifiers: ['history'], icon: 'bi-clipboard', iconClass: 'patient-search-modal__empty-icon--sm', title: 'Chưa có lịch sử khám', description: 'Bệnh nhân chưa có lượt khám trước đó' },
+	error: { modifiers: ['history', 'error'], icon: 'bi-exclamation-triangle', iconClass: 'patient-search-modal__empty-icon--sm', title: 'Lỗi tải lịch sử khám', description: 'Vui lòng thử lại sau' }
+};
+function buildState(state) {
+	return HISTORY_STATES[state] ? emptyState(HISTORY_STATES[state]) : null;
 }
 function renderState(containerOrId, state) {
 	const container = resolveElement(containerOrId || 'modalMedicalHistory');
-	if (!container) return '';
-	const html = buildStateHtml(state);
-	container.innerHTML = html;
-	return html;
+	if (!container) return null;
+	const node = buildState(state);
+	container.replaceChildren(...(node ? [node] : []));
+	return node;
 }
 function extractHistoryExaminations(payload) {
 	return payload && Array.isArray(payload.examinations) ? payload.examinations : [];
@@ -436,4 +420,4 @@ function getAppointmentPatientName(appointment) {
 	return appointment && appointment.patient_full_name ? appointment.patient_full_name : 'bệnh nhân';
 }
 
-export { buildExaminationDetailUrl, buildExaminationIdUrl, buildHistoryCopyLoadState, buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadStateHandlers, buildHistoryLoadSuccessState, buildQuickDeleteFlowState, buildSelectedHistoryState, buildStateHtml, copyHistoryToFormFlow, deleteQuickSearchExaminationFlow, extractExaminationId, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, loadCopiedHistoryWithPatient, renderState, resolveAppointmentById, resolveAppointmentExaminationId, resolveCopyHistorySelection, resolveElement, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveQuickDeleteExaminationId, resolveQuickDeleteSelection, resolveSelectableHistoryIndex, resolveSelectedIndex, selectHistoryForModalFlow, selectHistoryRow };
+export { buildExaminationDetailUrl, buildExaminationIdUrl, buildHistoryCopyLoadState, buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadStateHandlers, buildHistoryLoadSuccessState, buildQuickDeleteFlowState, buildSelectedHistoryState, buildState, copyHistoryToFormFlow, deleteQuickSearchExaminationFlow, extractExaminationId, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, loadCopiedHistoryWithPatient, renderState, resolveAppointmentById, resolveAppointmentExaminationId, resolveCopyHistorySelection, resolveElement, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveQuickDeleteExaminationId, resolveQuickDeleteSelection, resolveSelectableHistoryIndex, resolveSelectedIndex, selectHistoryForModalFlow, selectHistoryRow };

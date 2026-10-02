@@ -1,3 +1,6 @@
+import { el, replace } from '../shared/dom.js';
+import { emptyState } from '../shared/empty-state.js';
+
 (function (window) {
 	'use strict';
 
@@ -41,46 +44,22 @@
 		return instance;
 	}
 
-	function buildStateHtml(state) {
-		const states = {
-			error: `
-            <div class="patient-search-modal__empty-state patient-search-modal__empty-state--search patient-search-modal__empty-state--error">
-                <span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-                    <i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i>
-                </span>
-                <p class="patient-search-modal__empty-title">Lỗi tải danh sách bệnh nhân</p>
-                <small class="patient-search-modal__empty-description">Vui lòng thử lại thao tác tìm kiếm</small>
-            </div>
-        `,
-			emptySearch: `
-            <div class="patient-search-modal__empty-state patient-search-modal__empty-state--search">
-                <span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-                    <i class="bi bi-search patient-search-modal__empty-icon"></i>
-                </span>
-                <p class="patient-search-modal__empty-title">Nhập tên hoặc mã hồ sơ để tìm kiếm bệnh nhân</p>
-                <small class="patient-search-modal__empty-description">Kết quả tìm kiếm sẽ hiển thị tại đây</small>
-            </div>
-        `,
-			noPatientHistory: `
-            <div class="patient-search-modal__empty-state patient-search-modal__empty-state--history">
-                <span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-                    <i class="bi bi-person patient-search-modal__empty-icon--sm"></i>
-                </span>
-                <p class="patient-search-modal__empty-title">Vui lòng chọn bệnh nhân</p>
-                <small class="patient-search-modal__empty-description">Lịch sử khám sẽ hiển thị theo hồ sơ đã chọn</small>
-            </div>
-        `
-		};
+	const SEARCH_STATES = {
+		error: { modifiers: ['search', 'error'], icon: 'bi-exclamation-triangle', title: 'Lỗi tải danh sách bệnh nhân', description: 'Vui lòng thử lại thao tác tìm kiếm' },
+		emptySearch: { modifiers: ['search'], icon: 'bi-search', title: 'Nhập tên hoặc mã hồ sơ để tìm kiếm bệnh nhân', description: 'Kết quả tìm kiếm sẽ hiển thị tại đây' },
+		noPatientHistory: { modifiers: ['history'], icon: 'bi-person', iconClass: 'patient-search-modal__empty-icon--sm', title: 'Vui lòng chọn bệnh nhân', description: 'Lịch sử khám sẽ hiển thị theo hồ sơ đã chọn' }
+	};
 
-		return states[state] || '';
+	function buildState(state) {
+		return SEARCH_STATES[state] ? emptyState(SEARCH_STATES[state]) : null;
 	}
 
 	function renderState(containerOrId, state) {
 		const container = resolveElement(containerOrId);
-		if (!container) return '';
-		const html = buildStateHtml(state);
-		container.innerHTML = html;
-		return html;
+		if (!container) return null;
+		const node = buildState(state);
+		replace(container, node);
+		return node;
 	}
 
 	function ensureHighlightStyles() {
@@ -163,38 +142,20 @@
 		return openState;
 	}
 
-	function buildPatientRowHtml({ patient, index, selectedPatient, formatDateDisplay, showPatientAction = true }) {
+	function buildPatientRow({ patient, index, selectedPatient, formatDateDisplay, showPatientAction = true }) {
 		const isActive = selectedPatient && selectedPatient.id === patient.id;
 		const formatDate = getDateFormatter(formatDateDisplay);
 		const dateColumnClass = showPatientAction ? 'col-2' : 'col-3';
 		const phoneColumnClass = showPatientAction ? 'col-2' : 'col-3';
-		const actionColumn = showPatientAction
-			? `
-            <div class="col-2 text-center">
-				<button data-qlpk-button="view" data-qlpk-button-variant="soft" class="btn btn-sm patient-search-modal__patient-action" data-action="copy" data-index="${index}" title="Xem lại">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>`
-			: '';
-
-		return `
-            <div class="row border-bottom py-2 align-items-center modal-patient-item${isActive ? ' modal-patient-item-active' : ''}"
-             data-index="${index}">
-            <div class="col-2 text-center patient-search-modal__patient-code">
-                ${window.QLPKHtml.escape(patient.patient_code || '')}
-            </div>
-			<div class="col-4 text-center patient-search-modal__patient-name">
-				${window.QLPKHtml.escape(patient.full_name || '')}
-			</div>
-			<div class="${dateColumnClass} text-center">
-				${patient.date_of_birth ? formatDate(patient.date_of_birth) : ''}
-			</div>
-			<div class="${phoneColumnClass} text-center">
-				${window.QLPKHtml.escape(patient.phone || '')}
-			</div>
-			${actionColumn}
-	        </div>
-	    `;
+		return el('div', { class: `row border-bottom py-2 align-items-center modal-patient-item${isActive ? ' modal-patient-item-active' : ''}`, 'data-index': index },
+			el('div', { class: 'col-2 text-center patient-search-modal__patient-code' }, patient.patient_code || ''),
+			el('div', { class: 'col-4 text-center patient-search-modal__patient-name' }, patient.full_name || ''),
+			el('div', { class: `${dateColumnClass} text-center` }, patient.date_of_birth ? formatDate(patient.date_of_birth) : ''),
+			el('div', { class: `${phoneColumnClass} text-center` }, patient.phone || ''),
+			showPatientAction ? el('div', { class: 'col-2 text-center' },
+				el('button', { 'data-qlpk-button': 'view', 'data-qlpk-button-variant': 'soft', class: 'btn btn-sm patient-search-modal__patient-action', 'data-action': 'copy', 'data-index': index, title: 'Xem lại' },
+					el('i', { class: 'bi bi-eye' }))) : null
+		);
 	}
 
 	function syncPatientActionColumn(containerOrId, showPatientAction) {
@@ -222,14 +183,14 @@
 			return renderState(container, 'emptySearch');
 		}
 
-		const rows = patients.map((patient, index) => buildPatientRowHtml({
+		const rows = patients.map((patient, index) => buildPatientRow({
 			patient,
 			index,
 			selectedPatient: options.selectedPatient,
 			formatDateDisplay: options.formatDateDisplay,
 			showPatientAction
-		})).join('');
-		container.innerHTML = rows;
+		}));
+		replace(container, rows);
 		return rows;
 	}
 
@@ -487,10 +448,10 @@
 	}
 
 	Object.assign(PARTS, {
-		resolveElement, getBootstrapModalApi, showBootstrapModal, hideBootstrapModal, buildStateHtml,
+		resolveElement, getBootstrapModalApi, showBootstrapModal, hideBootstrapModal, buildState,
 		renderState, ensureHighlightStyles, syncWindowState, getDateFormatter, getPatientSearchText,
 		resolvePresetSearch, openSearchModalWithPreset, buildOpenSearchModalState, openSearchModalAndFetch,
-		buildPatientRowHtml, syncPatientActionColumn, renderSearchResults, resolveAutoSelectIndex,
+		buildPatientRow, syncPatientActionColumn, renderSearchResults, resolveAutoSelectIndex,
 		renderHistoryNoPatient, setSelectButtonEnabled, setActivePatientRow, selectAppointmentCard,
 		showHistoryButton, resetModalDom, applySelectedPatientUi, applyNoSearchResultsUi,
 		applySinglePatientSearchUi, bindSearchInput, bindPatientResultsClick, bindModalHidden,

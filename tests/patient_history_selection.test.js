@@ -13,37 +13,26 @@ const SOURCE_FILE = path.join(root, 'app/static/js/components/modal-medical-hist
 
 test('only explicit clicks mark one history row, not the default preview', async () => {
     const marker = 'modal-history-item-user-selected';
-    const rows = [0, 1].map(index => {
-        const classes = new Set();
-        return { dataset: { index: String(index) }, classes, classList: {
-            add(name) { classes.add(name); }, remove(name) { classes.delete(name); }
-        } };
-    });
-    let handler;
-    const container = {
-        innerHTML: '',
-        addEventListener(name, listener) { handler = listener; },
-        querySelectorAll() { return rows.filter(row => row.classes.has(marker)); }
-    };
-    const context = { window: { QLPKHtml: require('./helpers/html-escape').QLPKHtml }, document: {
-        querySelectorAll() { return rows; },
-        querySelector(selector) { return rows[Number(selector.match(/data-index="(\d+)"/)[1])]; }
-    } };
+    const { document } = require('./helpers/fake-dom').createWindow({ html: '<div id="historyList"></div>' });
+    const context = { window: { document, QLPKHtml: require('./helpers/html-escape').QLPKHtml }, document, console };
     runScriptFile(SOURCE_FILE, vm.createContext(context));
     const api = context.window.ModalMedicalHistoryListUi;
+    const container = document.getElementById('historyList');
     const result = api.renderHistoryListWithActiveRow({ container, histories: [
         { id: 1, appointment_id: 11, status: 'EXAMINING' },
         { id: 2, appointment_id: 12, status: 'WAITING_PAYMENT' }
     ], currentAppointmentId: 11 });
     assert.equal(result.selectedIndex, 0);
-    assert.ok(!result.html.includes(marker));
-    assert.ok(rows.every(row => !row.classes.has(marker)));
+    const rows = [...container.querySelectorAll('.modal-history-item')];
+    assert.equal(rows.length, 2);
+    assert.ok(!container.innerHTML.includes(marker));
     const selected = [];
     api.bindHistoryListClick(container, { onSelect(index) { selected.push(index); } });
     for (const row of [rows[0], rows[1], rows[1]]) {
-        await handler({ target: { closest(selector) { return selector === '.modal-history-item' ? row : null; } } });
-        assert.equal(rows.filter(item => item.classes.has(marker)).length, 1);
-        assert.ok(row.classes.has(marker));
+        row.click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(container.querySelectorAll('.' + marker).length, 1);
+        assert.ok(row.classList.contains(marker));
     }
     assert.deepEqual(selected, [0, 1, 1]);
     api.renderHistoryList({ container, histories: [{ id: 3, appointment_id: 13 }] });

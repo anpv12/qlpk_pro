@@ -25,8 +25,8 @@ const {
 	bindSearchInput, bindSearchModalOpenButtons, bindSelectButton, bindSelectPatientFromModalButton,
 	buildAppointmentPostLoadState, buildAutoSelectAfterSearchState, buildCopyHistoryPatientLoadState,
 	buildHistoryTabStateFromStore, buildLinkedRelativePatientState, buildNoSearchResultsState,
-	buildOpenSearchModalState, buildPatientRowHtml, buildPatientSelectionFlowState,
-	buildResetModalState, buildSelectedPatientState, buildSinglePatientSearchState, buildStateHtml,
+	buildOpenSearchModalState, buildPatientRow, buildPatientSelectionFlowState,
+	buildResetModalState, buildSelectedPatientState, buildSinglePatientSearchState, buildState,
 	copyPatientToFormFlow, createAppointmentCopyFormPreparer, createModalSearchStateStore,
 	ensureHighlightStyles, getPatientSearchText, hasAppointmentContext, hideBootstrapModal,
 	loadCopiedPatientFallback, loadCopiedPatientWithAppointmentContext, loadCopyHistoryPatient,
@@ -393,7 +393,7 @@ function createPatientSearchModalFlowAdapter(options = {}) {
 }
 
 const api = {
-	buildStateHtml,
+	buildState,
 	showBootstrapModal,
 	hideBootstrapModal,
 	getPatientSearchText,
@@ -450,7 +450,7 @@ const api = {
 	renderState,
 	ensureHighlightStyles,
 	syncWindowState,
-	buildPatientRowHtml,
+	buildPatientRow,
 	resolveAutoSelectIndex,
 	renderSearchResults,
 	renderHistoryNoPatient,

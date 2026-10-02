@@ -3,53 +3,17 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 (function (window) {
 	'use strict';
 
-	const STATE_HTML = {
-		noPatient: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-gear patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Chọn bệnh nhân để xem dịch vụ</p>
-                <small class="text-muted">Danh sách dịch vụ sẽ hiển thị tại đây</small>
-            </div>
-        `,
-		historyLoading: `
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 mb-0">Đang tải dữ liệu dịch vụ...</p>
-            </div>
-        `,
-		emptyHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard-data patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-1">Chưa có lượt khám nào để hiển thị dịch vụ</p>
-                <small class="text-muted">Vui lòng chọn hoặc tạo lịch sử khám trước</small>
-            </div>
-        `,
-		missingHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard-x patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tìm thấy dữ liệu lịch sử tương ứng</p>
-            </div>
-        `,
-		serviceLoading: `
-        <div class="text-center text-muted py-4">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 mb-0">Đang tải dịch vụ...</p>
-        </div>
-    `,
-		loadError: `
-            <div class="text-center text-danger py-4">
-                <i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tải được danh sách dịch vụ. Vui lòng thử lại.</p>
-            </div>
-        `
+	const STATES = {
+		noPatient: { icon: 'bi-gear', text: 'Chọn bệnh nhân để xem dịch vụ', small: 'Danh sách dịch vụ sẽ hiển thị tại đây' },
+		historyLoading: { spinner: true, text: 'Đang tải dữ liệu dịch vụ...' },
+		emptyHistory: { icon: 'bi-clipboard-data', text: 'Chưa có lượt khám nào để hiển thị dịch vụ', small: 'Vui lòng chọn hoặc tạo lịch sử khám trước' },
+		missingHistory: { icon: 'bi-clipboard-x', text: 'Không tìm thấy dữ liệu lịch sử tương ứng' },
+		serviceLoading: { spinner: true, text: 'Đang tải dịch vụ...' },
+		loadError: { tone: 'danger', icon: 'bi-exclamation-triangle', text: 'Không tải được danh sách dịch vụ. Vui lòng thử lại.' }
 	};
 
-	function buildStateHtml(state) {
-		return STATE_HTML[state] || '';
-	}
-
 	function renderState(container, state) {
-		return window.QLPKHistoryTabCore.renderHtml(container, buildStateHtml(state));
+		return window.QLPKHistoryTabCore.renderStateBlock(container, STATES[state]);
 	}
 
 	const historyTabCore = window.QLPKHistoryTabCore;
@@ -133,7 +97,6 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 	}
 
 	window.ServiceHistoryTabUi = {
-		buildStateHtml,
 		renderState,
 		resolveHistoryState,
 		buildInvoiceHtml,

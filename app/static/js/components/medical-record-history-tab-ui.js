@@ -7,54 +7,21 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 		return options.recordLabel || 'bệnh án';
 	}
 
-	function buildStateHtml(state, options = {}) {
+	function stateSpec(state, options = {}) {
 		const recordLabel = getRecordLabel(options);
-
 		const states = {
-			noPatient: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-file-medical patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Chọn bệnh nhân để xem ${recordLabel}</p>
-            </div>
-        `,
-			historyLoading: `
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 mb-0">Đang tải dữ liệu ${recordLabel}...</p>
-            </div>
-        `,
-			emptyHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard-data patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-1">Chưa có lượt khám nào để hiển thị ${recordLabel}</p>
-                <small class="text-muted">Vui lòng chọn hoặc tạo lịch sử khám trước</small>
-            </div>
-        `,
-			missingHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard-x patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tìm thấy dữ liệu lịch sử tương ứng</p>
-            </div>
-        `,
-			recordLoading: `
-        <div class="text-center text-muted py-4">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 mb-0">Đang tải ${recordLabel}...</p>
-        </div>
-    `,
-			loadError: `
-            <div class="text-center text-danger py-4">
-                <i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tải được ${recordLabel}. Vui lòng thử lại.</p>
-            </div>
-        `
+			noPatient: { icon: 'bi-file-medical', text: `Chọn bệnh nhân để xem ${recordLabel}` },
+			historyLoading: { spinner: true, text: `Đang tải dữ liệu ${recordLabel}...` },
+			emptyHistory: { icon: 'bi-clipboard-data', text: `Chưa có lượt khám nào để hiển thị ${recordLabel}`, small: 'Vui lòng chọn hoặc tạo lịch sử khám trước' },
+			missingHistory: { icon: 'bi-clipboard-x', text: 'Không tìm thấy dữ liệu lịch sử tương ứng' },
+			recordLoading: { spinner: true, text: `Đang tải ${recordLabel}...` },
+			loadError: { tone: 'danger', icon: 'bi-exclamation-triangle', text: `Không tải được ${recordLabel}. Vui lòng thử lại.` }
 		};
-
-		return states[state] || '';
+		return states[state];
 	}
 
 	function renderState(container, state, options = {}) {
-		return window.QLPKHistoryTabCore.renderHtml(container, buildStateHtml(state, options));
+		return window.QLPKHistoryTabCore.renderStateBlock(container, stateSpec(state, options));
 	}
 
 	const historyTabCore = window.QLPKHistoryTabCore;
@@ -157,7 +124,6 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 	}
 
 	window.MedicalRecordHistoryTabUi = {
-		buildStateHtml,
 		renderState,
 		resolveHistoryState,
 		buildRecordHtml,

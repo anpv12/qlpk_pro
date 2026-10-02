@@ -1,51 +1,17 @@
 (function (window) {
 	'use strict';
 
-	const STATE_HTML = {
-		noPatient: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-person patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Chọn bệnh nhân để xem toa thuốc</p>
-            </div>
-        `,
-		historyLoading: `
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 mb-0">Đang tải lịch sử khám...</p>
-            </div>
-        `,
-		emptyHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Chưa có lịch sử khám cho bệnh nhân này</p>
-            </div>
-        `,
-		missingHistory: `
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-clipboard-x patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tìm thấy dữ liệu lịch sử tương ứng</p>
-            </div>
-        `,
-		prescriptionLoading: `
-        <div class="text-center text-muted py-4">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 mb-0">Đang tải toa thuốc...</p>
-        </div>
-    `,
-		loadError: `
-            <div class="text-center text-danger py-4">
-                <i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i>
-                <p class="mt-2 mb-0">Không tải được toa thuốc. Vui lòng thử lại.</p>
-            </div>
-        `
+	const STATES = {
+		noPatient: { icon: 'bi-person', text: 'Chọn bệnh nhân để xem toa thuốc' },
+		historyLoading: { spinner: true, text: 'Đang tải lịch sử khám...' },
+		emptyHistory: { icon: 'bi-clipboard', text: 'Chưa có lịch sử khám cho bệnh nhân này' },
+		missingHistory: { icon: 'bi-clipboard-x', text: 'Không tìm thấy dữ liệu lịch sử tương ứng' },
+		prescriptionLoading: { spinner: true, text: 'Đang tải toa thuốc...' },
+		loadError: { tone: 'danger', icon: 'bi-exclamation-triangle', text: 'Không tải được toa thuốc. Vui lòng thử lại.' }
 	};
 
-	function buildStateHtml(state) {
-		return STATE_HTML[state] || '';
-	}
-
 	function renderState(container, state) {
-		return window.QLPKHistoryTabCore.renderHtml(container, buildStateHtml(state));
+		return window.QLPKHistoryTabCore.renderStateBlock(container, STATES[state]);
 	}
 
 	const historyTabCore = window.QLPKHistoryTabCore;
@@ -136,7 +102,6 @@
 	}
 
 	window.PrescriptionHistoryTabUi = {
-		buildStateHtml,
 		renderState,
 		resolveHistoryState,
 		buildPaginationOptions,

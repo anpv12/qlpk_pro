@@ -1,3 +1,5 @@
+import { emptyState } from '../shared/empty-state.js';
+
 (function (window) {
 	'use strict';
 
@@ -55,29 +57,17 @@
 		return document.querySelector(selector);
 	}
 
-	function buildLoadingHtml(text) {
-		return `
-                    <div class="patient-search-modal__empty-state patient-search-modal__empty-state--loading">
-						<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true">
-							<div class="spinner-border patient-search-modal__spinner" role="status"></div>
-						</span>
-                        <p class="patient-search-modal__empty-title">${text}</p>
-                    </div>
-                `;
+	function buildLoading(text) {
+		return emptyState({ modifiers: ['loading'], spinner: true, title: text });
 	}
 
-	function buildTabErrorHtml(message) {
-		return `
-			<div class="patient-search-modal__empty-state patient-search-modal__empty-state--error">
-				<span class="patient-search-modal__empty-icon-wrap" aria-hidden="true"><i class="bi bi-exclamation-triangle patient-search-modal__empty-icon"></i></span>
-				<p class="patient-search-modal__empty-title">Không tải được dữ liệu tab</p>
-				<small class="patient-search-modal__empty-description">${window.QLPKHtml.escape(message)}</small>
-			</div>`;
+	function buildTabError(message) {
+		return emptyState({ modifiers: ['error'], icon: 'bi-exclamation-triangle', title: 'Không tải được dữ liệu tab', description: message ?? '' });
 	}
 
 	function renderTabError(tabKey, message) {
 		const container = getTabContentElement(tabKey);
-		if (container) container.innerHTML = buildTabErrorHtml(message);
+		if (container) container.replaceChildren(buildTabError(message));
 		console.error(`[ModalFunctionTabsUi] ${tabKey}: ${message}`);
 		return { state: 'dependencyError', key: tabKey, error: message };
 	}
@@ -88,9 +78,9 @@
 			if (key === 'vitalSigns') return;
 			const container = getTabContentElement(key);
 			if (!container) return;
-			container.innerHTML = state === 'loading'
-				? buildLoadingHtml(TAB_CONFIG[key].loadingText)
-				: `<div class="patient-search-modal__empty-state"><span class="patient-search-modal__empty-icon-wrap" aria-hidden="true"><i class="bi bi-person patient-search-modal__empty-icon"></i></span><p class="patient-search-modal__empty-title">Chọn bệnh nhân để xem dữ liệu</p></div>`;
+			container.replaceChildren(state === 'loading'
+				? buildLoading(TAB_CONFIG[key].loadingText)
+				: emptyState({ icon: 'bi-person', title: 'Chọn bệnh nhân để xem dữ liệu' }));
 		});
 		if (typeof options.onVitalSigns === 'function') options.onVitalSigns();
 		return { handled: true, state };
@@ -111,7 +101,7 @@
 		const container = getTabContentElement(key);
 		if (!container) return { handled: false, key };
 
-		container.innerHTML = buildLoadingHtml(config.loadingText);
+		container.replaceChildren(buildLoading(config.loadingText));
 		return { handled: true, key };
 	}
 
@@ -362,8 +352,8 @@
 		getTabKey,
 		getTabContentElement,
 		getActiveTab,
-		buildLoadingHtml,
-		buildTabErrorHtml,
+		buildLoading,
+		buildTabError,
 		renderTabError,
 		clearHistoryTabContent,
 		renderTabLoading,

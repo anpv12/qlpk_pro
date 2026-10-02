@@ -5,8 +5,9 @@ const vm = require('node:vm');
 const { runScriptFile } = require('./helpers/module-source');
 
 function loadContext(files) {
-    const window = {};
-    const context = vm.createContext({ window, document: {}, console });
+    const { document } = require('./helpers/fake-dom').createWindow();
+    const window = { document };
+    const context = vm.createContext({ window, document, console });
     for (const file of files) runScriptFile(`app/static/js/components/${file}`, context);
     return { window };
 }
@@ -24,16 +25,16 @@ test('history tab UIs share one context/history resolver', () => {
     assert.deepEqual(plain(core.resolveHistoryState({ patient: { id: 1 }, histories: [{ id: 9 }], selectedIndex: 5 })), { state: 'ready', history: { id: 9 }, index: 0 });
     assert.equal(core.isContextCurrent({ isContextCurrent: () => false }), false);
     assert.equal(core.isContextCurrent({}), true);
-    const container = { innerHTML: '' };
-    assert.match(window.ServiceHistoryTabUi.renderState(container, 'noPatient'), /Chọn bệnh nhân/);
-    assert.equal(container.innerHTML, window.ServiceHistoryTabUi.buildStateHtml('noPatient'));
+    const container = window.document.createElement('div');
+    assert.match(window.ServiceHistoryTabUi.renderState(container, 'noPatient').textContent, /Chọn bệnh nhân/);
+    assert.match(container.innerHTML, /<i class="bi bi-gear patient-search-modal__empty-icon"><\/i><p class="mt-2 mb-1">Chọn bệnh nhân để xem dịch vụ<\/p><small class="text-muted">/);
 });
 
 test('renderTab resolves container, stale context and pending states through the shared core before fetching', async () => {
     const { window } = loadContext(['history-tab-core.js', 'service-history-tab-ui.js']);
     const ui = window.ServiceHistoryTabUi;
     assert.deepEqual(JSON.parse(JSON.stringify(await ui.renderTab({}))), { state: 'missingContainer' });
-    const container = { innerHTML: '' };
+    const container = window.document.createElement('div');
     assert.deepEqual(JSON.parse(JSON.stringify(await ui.renderTab({ container, isContextCurrent: () => false }))), { state: 'stale' });
     assert.equal(container.innerHTML, '');
     const pending = await ui.renderTab({ container, patient: { id: 1 }, histories: [] });
