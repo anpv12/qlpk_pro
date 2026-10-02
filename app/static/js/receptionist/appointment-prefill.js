@@ -29,7 +29,7 @@
 		const opts = options || {};
 		const servicePackage = window.ReceptionistServicePackage;
 		if (servicePackage && servicePackage.setServiceSelection) {
-			servicePackage.setServiceSelection(appointment, opts.allServices || window.allServices || []);
+			servicePackage.setServiceSelection(appointment, opts.allServices || []);
 		}
 	}
 

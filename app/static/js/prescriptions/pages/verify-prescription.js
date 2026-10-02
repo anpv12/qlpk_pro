@@ -62,7 +62,7 @@ function renderVerifiedPrescription(data) {
 	if (document.fonts?.ready) document.fonts.ready.then(scaler.fit).catch(() => {});
 }
 
-const prescriptionCode = document.body?.dataset?.prescriptionCode || window.QLPK_VERIFY_PRESCRIPTION_CODE || '';
+const prescriptionCode = document.body?.dataset?.prescriptionCode || '';
 fetch('/api/public/prescription/' + encodeURIComponent(prescriptionCode))
 	.then(response => response.json())
 	.then(result => {

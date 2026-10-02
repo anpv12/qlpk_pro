@@ -47,7 +47,7 @@
 		if (window.QLPKCurrentAppointment && typeof window.QLPKCurrentAppointment.apiCall === 'function') {
 			return window.QLPKCurrentAppointment.apiCall;
 		}
-		return window.apiCall || fetch;
+		return fetch;
 	}
 
 	function reloadFamilyMembers() {

@@ -107,7 +107,7 @@
 
 	function latestVisitLabel(options) {
 		if (options.latestVisit) return options.latestVisit;
-		return options.appointmentId || window.currentAppointmentId ? 'Lượt khám Tâm lý gia đang mở' : 'Chưa chọn lượt khám';
+		return options.appointmentId ? 'Lượt khám Tâm lý gia đang mở' : 'Chưa chọn lượt khám';
 	}
 
 	function activateSection(targetId = DEFAULT_SECTION_ID, options = {}) {

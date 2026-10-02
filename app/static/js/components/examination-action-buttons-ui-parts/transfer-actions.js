@@ -180,7 +180,7 @@ function bindReExaminationSourceReset(checkboxOrId, options = {}) {
 	return checkbox;
 }
 function openPersonalDetailSection(section, options = {}) {
-	const openPersonalDetailModal = options.openPersonalDetailModal || window.openPersonalDetailModal;
+	const openPersonalDetailModal = options.openPersonalDetailModal;
 	if (typeof openPersonalDetailModal === 'function') {
 		openPersonalDetailModal(section);
 		return { status: 'opened', section, method: 'openPersonalDetailModal' };
@@ -190,7 +190,7 @@ function openPersonalDetailSection(section, options = {}) {
 		return { status: 'missingOpener', section };
 	}
 
-	const loadAddressDataIntoModal = options.loadAddressDataIntoModal || window.loadAddressDataIntoModal;
+	const loadAddressDataIntoModal = options.loadAddressDataIntoModal;
 	if (typeof loadAddressDataIntoModal === 'function') {
 		loadAddressDataIntoModal();
 	}
@@ -243,7 +243,7 @@ function initRelativeTable(options = {}) {
 }
 function bindTabPrintButtons(options = {}) {
 	const doc = getDocument(options);
-	const printModalTab = options.printModalTabContent || window.printModalTabContent;
+	const printModalTab = options.printModalTabContent;
 	if (typeof printModalTab !== 'function') return [];
 
 	const buttons = Array.from(doc.querySelectorAll(options.selector || '.tab-print-btn'));

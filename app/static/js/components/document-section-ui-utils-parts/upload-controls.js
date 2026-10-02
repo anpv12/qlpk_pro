@@ -15,19 +15,7 @@ function updateNotesAttachmentCount(options = {}) {
 	countEl.setAttribute('aria-label', `${total} tập tin đính kèm`);
 }
 function bindNotesUploadButton(options = {}) {
-	if (options.notesAttachmentChip) return options.notesAttachmentChip;
-	const chipFactory = window.NotesAttachmentChip;
-	if (!chipFactory || typeof chipFactory.init !== 'function') return options.notesAttachmentChip || null;
-	return chipFactory.init({
-		onBeforeOpen: async () => {
-			try {
-				if (typeof options.loadAttachments === 'function') {
-					await options.loadAttachments();
-				}
-			} catch (_) { console.warn('Không thể tải lại tệp đính kèm:', _); }
-		},
-		getTotalCount: () => typeof options.getTotalCount === 'function' ? options.getTotalCount() : 0
-	});
+	return options.notesAttachmentChip || null;
 }
 function ensureDocumentEditingAllowed(options = {}) {
 	if (!options.isLocked) return true;

@@ -37,7 +37,7 @@ function getLastBMIValue(options = {}) {
 	if (typeof options.getLastBMIValue === 'function') {
 		return parseFloat(options.getLastBMIValue()) || 0;
 	}
-	return parseFloat(window._lastBMIValue) || 0;
+	return 0;
 }
 function updateBMIClassification(options = {}) {
 	const doc = getDocument(options);

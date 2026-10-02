@@ -46,7 +46,7 @@ function renderJointExamActionButton(action, className, title, attrs = {}) {
  * @param {Function} options.getAppointmentId - Hàm lấy appointment ID hiện tại
  * @param {Function} options.onReloadFamilyMembers - Callback khi cần reload "Người thân liên kết"
  * @param {Function} options.showToast - Hàm hiển thị toast (default: showCustomToast)
- * @param {Function} options.apiCall - Hàm gọi API (default: window.apiCall)
+ * @param {Function} options.apiCall - Hàm gọi API (default: fetch)
  * @param {Function} options.formatDateDisplay - Hàm format date (default: window.formatDateDisplay)
  */
 class JointExamManager {
@@ -62,7 +62,7 @@ class JointExamManager {
 		this.showToast = options.showToast
 			|| window.showCustomToast
 			|| ((type, msg) => window.QLPKUserFeedback?.show(type, msg));
-		this.apiCall = options.apiCall || window.apiCall || fetch;
+		this.apiCall = options.apiCall || fetch;
 		this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
 
 		// State

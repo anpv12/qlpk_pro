@@ -306,9 +306,6 @@ async function fetchCurrentUser() {
 }
 function applyUserPermissions(permissions) {
 	if (!window.QLPKApiTransport?.session) localStorage.setItem('qlpk_permissions', JSON.stringify(permissions));
-	if (typeof window.checkPermissions === 'function') {
-		window.checkPermissions();
-	}
 	const shell = window.QLPKWorkspaceShell;
 	if (shell && typeof shell.renderLauncher === 'function') shell.renderLauncher();
 	if (shell && typeof shell.renderTabs === 'function') shell.renderTabs();

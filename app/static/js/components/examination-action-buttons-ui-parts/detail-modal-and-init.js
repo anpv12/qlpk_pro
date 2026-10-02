@@ -2,7 +2,7 @@ import { bindCompleteExaminationButton, bindDocumentModalButton, bindEditHistory
 
 function createExaminationFormInitializer(options = {}) {
 	const variant = options.variant || 'doctor';
-	const detailUtils = options.detailModalUtils || window.ClinicalExaminationDetailModalUtils;
+	const detailUtils = options.detailModalUtils;
 
 	function loadDetailModalData(appointmentId) {
 		if (typeof options.loadModalData === 'function') {

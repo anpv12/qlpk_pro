@@ -51,9 +51,13 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 		});
 	}
 
+	// Last record drawn into each container, so a realtime patient edit redraws the same visit's data.
+	const lastRecords = new WeakMap();
+
 	function renderRecord(options = {}) {
 		const html = buildRecordHtml(options);
 		if (options.container) {
+			lastRecords.set(options.container, options);
 			renderDocumentMarkup(options.container, html);
 			if (typeof options.createBarcodesInElement === 'function') {
 				options.createBarcodesInElement(options.container);
@@ -123,11 +127,20 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 		}
 	}
 
+	// Redraws the container's last record with the patient's current fields; false when it shows another patient.
+	function rerenderRecord(container, patient) {
+		const last = container ? lastRecords.get(container) : null;
+		if (!last || !patient || String(last.patient?.id) !== String(patient.id)) return false;
+		renderRecord({ ...last, patient: { ...last.patient, ...patient } });
+		return true;
+	}
+
 	window.MedicalRecordHistoryTabUi = {
 		renderState,
 		resolveHistoryState,
 		buildRecordHtml,
 		renderRecord,
+		rerenderRecord,
 		renderTab
 	};
 })(window);

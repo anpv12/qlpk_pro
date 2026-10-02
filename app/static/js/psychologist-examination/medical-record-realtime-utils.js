@@ -1,19 +1,5 @@
-import { renderDocumentMarkup } from '../shared/dom.js';
-
 (function (window) {
 	'use strict';
-
-	function buildLoadedRecordOptions(options, selectedPatient) {
-		return {
-			clinicInfo: options.getClinicInfoConfig(),
-			patient: selectedPatient,
-			history: { ...(window.currentLoadedHistory || {}), ...(window.currentLoadedExaminationDetail || {}) },
-			examinationDetailsBySection: window.currentLoadedExaminationDetailsBySection || {},
-			prescriptionData: window.currentLoadedPrescriptionData || null,
-			relatives: window.currentLoadedRelatives || [],
-			appointment: window.currentLoadedAppointment || null
-		};
-	}
 
 	function updateMedicalRecordTab(options = {}) {
 		const documentRef = options.document || window.document;
@@ -27,13 +13,8 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 		if (!selectedPatient) return false;
 
 		try {
-			const medicalRecordHtml = options.buildMedicalRecordHTML(buildLoadedRecordOptions(options, selectedPatient));
-
-			renderDocumentMarkup(medicalRecordTab, medicalRecordHtml);
-			if (typeof options.createBarcodesInElement === 'function') {
-				options.createBarcodesInElement(medicalRecordTab);
-			}
-			return true;
+			const recordTab = options.recordTab || window.MedicalRecordHistoryTabUi;
+			return recordTab.rerenderRecord(documentRef.getElementById('medicalRecordContentArea'), selectedPatient);
 		} catch (error) {
 			if (logger && typeof logger.error === 'function') {
 				logger.error('Error updating medical record tab realtime:', error);

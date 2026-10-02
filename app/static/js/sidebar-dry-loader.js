@@ -56,9 +56,6 @@
 
 	function applyEmbeddedPageLayout() {
 		applyWorkspaceShellLayout();
-		if (typeof window.checkPermissions === 'function') {
-			window.checkPermissions();
-		}
 	}
 
 	function ensureAppHeaderLoader() {
@@ -81,10 +78,6 @@
 		await ensureShortcutManagerLoaded();
 		if (window.ShortcutManager && typeof window.ShortcutManager.initGlobal === 'function') {
 			window.ShortcutManager.initGlobal();
-		}
-
-		if (typeof window.checkPermissions === 'function') {
-			window.checkPermissions();
 		}
 	}
 

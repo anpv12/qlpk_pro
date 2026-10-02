@@ -352,7 +352,7 @@ function updateAddressSummary(options = {}) {
 }
 function fillMainAddressFieldFromModal(options = {}) {
 	const values = getModalAddressFormValues(options);
-	const buildFullAddressFromParts = options.buildFullAddressFromParts || window.buildFullAddressFromParts;
+	const buildFullAddressFromParts = options.buildFullAddressFromParts;
 	if (typeof buildFullAddressFromParts !== 'function') return '';
 	const fullAddress = buildFullAddressFromParts(
 		values.address_detail,

@@ -7,7 +7,7 @@ function getConsole(options) {
 }
 
 function getApiCall(options) {
-	return options && options.apiCall ? options.apiCall : window.apiCall;
+	return options?.apiCall;
 }
 
 const mainAddressAutocompleteState = {
