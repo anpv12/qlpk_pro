@@ -80,7 +80,8 @@
   canonical transport, bỏ Bearer riêng; Excel export fetch→Blob download.
   PDF preview dùng canonical fetch POST, không đọc token/sessionStorage riêng.
 
-- Lát51: autocomplete-base/occupation/province/ward và icd-data-loader không
+- Lát51: occupation-autocomplete và icd-data-loader không (autocomplete-base và 7 lớp con
+  không ai khởi tạo, đã gỡ 02/10/2026)
   đọc token hoặc gắn Authorization riêng; window.fetch canonical transport
   sở hữu auth/CSRF/session guard. ICD không gọi legacy getAuthHeader callback;
   session errors propagate thay empty-success. Endpoint/mapping/pagination giữ.

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { runScriptFile } = require('./helpers/module-source');
 
-const files = ['autocomplete-base', 'occupation-autocomplete', 'province-autocomplete', 'ward-autocomplete', 'components/icd-data-loader'];
+const files = ['occupation-autocomplete', 'components/icd-data-loader'];
 
 function harness(cookie) {
     const requests = [];
@@ -36,26 +36,15 @@ for (const cookie of [false, true]) {
     test(`${cookie ? 'cookie' : 'legacy'} shared catalogs use canonical transport for reads and writes`, async () => {
         const { window, requests } = harness(cookie);
         const input = { value: '', dataset: {}, dispatchEvent() {} };
-        const base = { apiEndpoint: '/api/catalog/', items: [], input, hideDropdown() {} };
-        await window.AutocompleteBase.prototype.loadItems.call(base);
-        assert.equal(base.items[0].name, 'Catalog name');
-        await window.AutocompleteBase.prototype.createNewItem.call(base, 'New occupation');
-        assert.equal(base.items.length, 2);
         const occupation = { occupations: [], input, hideDropdown() {} };
         await window.OccupationAutocomplete.prototype.loadOccupations.call(occupation);
         await window.OccupationAutocomplete.prototype.createNewOccupation.call(occupation, 'New occupation');
         assert.equal(occupation.occupations.length, 2);
-        const province = {};
-        await window.ProvinceAutocomplete.prototype.loadItems.call(province);
-        assert.equal(province.items[0].code, '01');
-        const ward = { provinceCode: '01' };
-        await window.WardAutocomplete.prototype.loadItems.call(ward);
-        assert.equal(ward.items[0].code, '01');
         const page = await window.ClinicalIcdDataLoader.loadICDPage('disease', {
             getAuthHeader() { throw new Error('Legacy callback must not run'); }
         });
         assert.equal(page.data[0].icd_code, 'A00');
-        assert.equal(requests.length, 7);
+        assert.equal(requests.length, 3);
         for (const { options } of requests) {
             const headers = new Headers(options?.headers);
             assert.equal(headers.get('Authorization'), cookie ? null : 'Bearer legacy-token');
