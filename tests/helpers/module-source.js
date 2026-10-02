@@ -7,6 +7,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const JS_ROOT = path.join(__dirname, '..', '..', 'app', 'static', 'js');
+const ES_MODULE_SYNTAX = /^(?:import|export)\s/m;
+const loadedModules = new WeakMap();
 const MANIFEST = /^\/\/ Parts \(nạp trước file này\): (.+)$/m;
 // Classic page scripts split into continuation files that share the page scope.
 const FACTORY_SPLIT = /moduleParts\.installers\.push\(function \(inst, outer\)/;
@@ -25,9 +27,23 @@ function esPartFiles(rel, seen = []) {
     return [...parts.flatMap(part => esPartFiles(part, seen)), rel];
 }
 
+// Sibling ES modules `<stem>-*.js` that import `./<stem>.js` and extend it (class method modules), in name order.
+function augmentingModules(rel) {
+    const dir = path.posix.dirname(rel);
+    const stem = path.posix.basename(rel, '.js');
+    return fs.readdirSync(path.join(JS_ROOT, dir))
+        .filter(name => name.startsWith(`${stem}-`) && name.endsWith('.js'))
+        .map(name => (dir === '.' ? name : `${dir}/${name}`))
+        .filter(file => new RegExp(`^import [^\\n]*from '\\./${stem}\\.js';`, 'm').test(fs.readFileSync(path.join(JS_ROOT, file), 'utf8')))
+        .sort((a, b) => (a.endsWith('-methods.js') ? -1 : 0) - (b.endsWith('-methods.js') ? -1 : 0) || a.localeCompare(b));
+}
+
 function moduleFiles(rel) {
     const entry = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
-    if (!MANIFEST.test(entry) && new RegExp(`from ['"]\\./${path.posix.basename(rel, '.js')}-parts/`).test(entry)) return esPartFiles(rel);
+    if (!MANIFEST.test(entry) && ES_MODULE_SYNTAX.test(entry)) {
+        const own = new RegExp(`from ['"]\\./${path.posix.basename(rel, '.js')}-parts/`).test(entry) ? esPartFiles(rel) : [rel];
+        return [...own, ...augmentingModules(rel)];
+    }
     const match = entry.match(MANIFEST);
     const partDir = rel.replace(/\.js$/, '-parts');
     const parts = match ? match[1].split(',').map(name => `${partDir}/${name.trim()}`) : [];
@@ -60,8 +76,6 @@ function toModuleRel(filePath) {
     return rel.startsWith('..') ? null : rel.split(path.sep).join('/');
 }
 
-const ES_MODULE_SYNTAX = /^(?:import|export)\s/m;
-const loadedModules = new WeakMap();
 const RELATIVE_IMPORT = /^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}\/[^'"]+)['"];?\n?/gm;
 
 // An ES module and the relative modules it imports, as one classic script for a vm context. Each module runs in its
@@ -123,7 +137,8 @@ function runScriptFile(filePath, context) {
     if (ES_MODULE_SYNTAX.test(fs.readFileSync(path.join(JS_ROOT, rel), 'utf8'))) {
         // Like a browser module map: a module already evaluated in this context is not evaluated again.
         if (!loadedModules.has(context)) loadedModules.set(context, new Set());
-        return vm.runInContext(esModuleScript(rel, loadedModules.get(context)), context, { filename: rel });
+        for (const file of moduleFiles(rel)) vm.runInContext(esModuleScript(file, loadedModules.get(context)), context, { filename: file });
+        return context;
     }
     return runModuleScript(rel, context);
 }

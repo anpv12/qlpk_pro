@@ -1,282 +1,279 @@
-// Continued in (nạp ngay sau file này, cùng scope trang): joint-exam-manager-methods.js, joint-exam-manager-edit.js
 /**
  * Joint Exam Manager - Module quản lý "Người đi khám cùng"
  * DRY: Dùng chung cho receptionist, doctor, psychologist
  */
 
-(function (window) {
-	'use strict';
 
-	async function confirmJointExamDelete(showToast) {
-		if (!window.QLPKConfirmationDialog) {
-			showToast('error', 'Không thể mở hộp thoại xác nhận. Thao tác đã được hủy.');
-			return false;
-		}
-		return window.QLPKConfirmationDialog.confirm({
-			title: 'Xác nhận xóa',
-			text: 'Bạn có chắc chắn muốn xóa người đi khám cùng này?',
-			confirmText: 'Xóa',
-			variant: 'danger',
-			showToast
-		});
+async function confirmJointExamDelete(showToast) {
+	if (!window.QLPKConfirmationDialog) {
+		showToast('error', 'Không thể mở hộp thoại xác nhận. Thao tác đã được hủy.');
+		return false;
 	}
+	return window.QLPKConfirmationDialog.confirm({
+		title: 'Xác nhận xóa',
+		text: 'Bạn có chắc chắn muốn xóa người đi khám cùng này?',
+		confirmText: 'Xóa',
+		variant: 'danger',
+		showToast
+	});
+}
 
-	function escapeAttribute(value) {
-		return String(value == null ? '' : value)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;');
+function escapeAttribute(value) {
+	return String(value == null ? '' : value)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+function getJointExamActionIcon(action) {
+	switch (action) {
+		case 'edit':
+			return 'bi-pencil-fill';
+		case 'delete':
+			return 'bi-x-lg';
+		case 'save':
+			return 'bi-check-lg';
+		case 'cancel':
+			return 'bi-x-lg';
+		default:
+			return 'bi-info-circle-fill';
 	}
+}
 
-	function getJointExamActionIcon(action) {
-		switch (action) {
-			case 'edit':
-				return 'bi-pencil-fill';
-			case 'delete':
-				return 'bi-x-lg';
-			case 'save':
-				return 'bi-check-lg';
-			case 'cancel':
-				return 'bi-x-lg';
-			default:
-				return 'bi-info-circle-fill';
-		}
-	}
+function renderJointExamActionButton(action, className, title, attrs = {}) {
+	const buttonRole = { edit: 'edit', delete: 'danger', save: 'execute', cancel: 'neutral' }[action] || 'neutral';
+	const attrHtml = Object.keys(attrs)
+		.filter(key => attrs[key] !== undefined && attrs[key] !== null)
+		.map(key => ` ${escapeAttribute(key)}="${escapeAttribute(attrs[key])}"`)
+		.join('');
+	return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" type="button" class="${escapeAttribute(className)}" title="${escapeAttribute(title)}" aria-label="${escapeAttribute(title)}"${attrHtml}><i class="bi ${getJointExamActionIcon(action)}" aria-hidden="true"></i></button>`;
+}
 
-	function renderJointExamActionButton(action, className, title, attrs = {}) {
-		const buttonRole = { edit: 'edit', delete: 'danger', save: 'execute', cancel: 'neutral' }[action] || 'neutral';
-		const attrHtml = Object.keys(attrs)
-			.filter(key => attrs[key] !== undefined && attrs[key] !== null)
-			.map(key => ` ${escapeAttribute(key)}="${escapeAttribute(attrs[key])}"`)
-			.join('');
-		return `<button data-qlpk-button="${buttonRole}" data-qlpk-button-variant="soft" type="button" class="${escapeAttribute(className)}" title="${escapeAttribute(title)}" aria-label="${escapeAttribute(title)}"${attrHtml}><i class="bi ${getJointExamActionIcon(action)}" aria-hidden="true"></i></button>`;
+/**
+ * JointExamManager - Class quản lý người đi khám cùng
+ * @param {Object} options - Cấu hình
+ * @param {Function} options.getAppointmentId - Hàm lấy appointment ID hiện tại
+ * @param {Function} options.onReloadFamilyMembers - Callback khi cần reload "Người thân liên kết"
+ * @param {Function} options.showToast - Hàm hiển thị toast (default: showCustomToast)
+ * @param {Function} options.apiCall - Hàm gọi API (default: window.apiCall)
+ * @param {Function} options.escapeHtml - Hàm escape HTML (default: window.escapeHtml)
+ * @param {Function} options.formatDateDisplay - Hàm format date (default: window.formatDateDisplay)
+ */
+class JointExamManager {
+	constructor(options = {}) {
+		// Required options
+		this.getAppointmentId = options.getAppointmentId || (() => null);
+
+		// Optional callbacks
+		this.onReloadFamilyMembers = options.onReloadFamilyMembers || null;
+		this.getContextToken = options.getContextToken || (() => null);
+
+		// Utility dependencies
+		this.showToast = options.showToast
+			|| window.showCustomToast
+			|| ((type, msg) => window.QLPKUserFeedback?.show(type, msg));
+		this.apiCall = options.apiCall || window.apiCall || fetch;
+		this.escapeHtml = options.escapeHtml || this._defaultEscapeHtml;
+		this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
+
+		// State
+		this.pendingJointExamRow = null;
+		this.pendingJointExamList = [];
+		this.pendingSaveToken = 0;
+		this.pendingSaving = false;
+		this.mutation = null;
+		this.loadRevision = 0;
+		this.editRevision = 0;
+		this.rowContexts = new WeakMap();
+		this.tableActionBound = false;
+
+		// DOM elements (sẽ được set khi init)
+		this.tableBody = null;
+		this.emptyState = null;
+		this.addButton = null;
 	}
 
 	/**
-	 * JointExamManager - Class quản lý người đi khám cùng
-	 * @param {Object} options - Cấu hình
-	 * @param {Function} options.getAppointmentId - Hàm lấy appointment ID hiện tại
-	 * @param {Function} options.onReloadFamilyMembers - Callback khi cần reload "Người thân liên kết"
-	 * @param {Function} options.showToast - Hàm hiển thị toast (default: showCustomToast)
-	 * @param {Function} options.apiCall - Hàm gọi API (default: window.apiCall)
-	 * @param {Function} options.escapeHtml - Hàm escape HTML (default: window.escapeHtml)
-	 * @param {Function} options.formatDateDisplay - Hàm format date (default: window.formatDateDisplay)
+	 * Khởi tạo manager với DOM elements
+	 * @param {string} tableBodyId - ID của tbody element
+	 * @param {string} emptyStateSelector - Selector của empty state element
+	 * @param {string} addButtonSelector - Selector của button thêm mới
 	 */
-	class JointExamManager {
-		constructor(options = {}) {
-			// Required options
-			this.getAppointmentId = options.getAppointmentId || (() => null);
+	init(tableBodyId = 'jointExamTableBody', emptyStateSelector = '.joint-exam-empty-state', addButtonSelector = '.btn-add-joint-exam') {
+		this.tableBody = document.getElementById(tableBodyId);
+		this.emptyState = document.querySelector(emptyStateSelector);
+		this.addButton = document.querySelector(addButtonSelector);
 
-			// Optional callbacks
-			this.onReloadFamilyMembers = options.onReloadFamilyMembers || null;
-			this.getContextToken = options.getContextToken || (() => null);
-
-			// Utility dependencies
-			this.showToast = options.showToast
-				|| window.showCustomToast
-				|| ((type, msg) => window.QLPKUserFeedback?.show(type, msg));
-			this.apiCall = options.apiCall || window.apiCall || fetch;
-			this.escapeHtml = options.escapeHtml || this._defaultEscapeHtml;
-			this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
-
-			// State
-			this.pendingJointExamRow = null;
-			this.pendingJointExamList = [];
-			this.pendingSaveToken = 0;
-			this.pendingSaving = false;
-			this.mutation = null;
-			this.loadRevision = 0;
-			this.editRevision = 0;
-			this.rowContexts = new WeakMap();
-			this.tableActionBound = false;
-
-			// DOM elements (sẽ được set khi init)
-			this.tableBody = null;
-			this.emptyState = null;
-			this.addButton = null;
-		}
-
-		/**
-		 * Khởi tạo manager với DOM elements
-		 * @param {string} tableBodyId - ID của tbody element
-		 * @param {string} emptyStateSelector - Selector của empty state element
-		 * @param {string} addButtonSelector - Selector của button thêm mới
-		 */
-		init(tableBodyId = 'jointExamTableBody', emptyStateSelector = '.joint-exam-empty-state', addButtonSelector = '.btn-add-joint-exam') {
-			this.tableBody = document.getElementById(tableBodyId);
-			this.emptyState = document.querySelector(emptyStateSelector);
-			this.addButton = document.querySelector(addButtonSelector);
-
-			// Setup event listeners
-			if (this.addButton) {
-				this.addButton.addEventListener('click', () => {
-					this.showCreateRow();
-				});
-			}
-
-			this.bindTableActions();
-		}
-
-		bindTableActions() {
-			if (!this.tableBody || this.tableActionBound) return;
-			this.tableBody.addEventListener('click', (event) => {
-				const actionButton = event.target.closest('[data-joint-exam-action]');
-				if (!actionButton || !this.tableBody.contains(actionButton)) return;
-
-				const action = actionButton.dataset.jointExamAction;
-				const rowId = actionButton.dataset.jointExamId;
-				const tempId = actionButton.dataset.jointExamTempId;
-
-				if (action === 'edit' && rowId) {
-					this.edit(Number(rowId));
-				} else if (action === 'delete' && rowId) {
-					this.delete(Number(rowId));
-				} else if (action === 'edit-pending' && tempId) {
-					this.editPending(tempId);
-				} else if (action === 'delete-pending' && tempId) {
-					this.deletePending(tempId);
-				}
+		// Setup event listeners
+		if (this.addButton) {
+			this.addButton.addEventListener('click', () => {
+				this.showCreateRow();
 			});
-			this.tableActionBound = true;
 		}
 
-		/**
-		 * Load danh sách người đi khám cùng
-		 */
-		createContextGuard(options = {}) {
-			const appointmentId = this.getAppointmentId();
-			const token = this.pendingSaveToken;
-			const contextToken = this.getContextToken();
-			return () => token === this.pendingSaveToken && contextToken === this.getContextToken()
-				&& appointmentId === this.getAppointmentId() && options.isCurrentContext?.() !== false;
-		}
+		this.bindTableActions();
+	}
 
-		isLoadBlocked(options) {
-			if (options.allowWhileSaving) return false;
-			if (this.mutation?.isCurrentContext()) return true;
-			return Boolean(this.pendingJointExamRow && this.rowContexts.get(this.pendingJointExamRow)?.()
-				&& !options.discardEditing);
-		}
+	bindTableActions() {
+		if (!this.tableBody || this.tableActionBound) return;
+		this.tableBody.addEventListener('click', (event) => {
+			const actionButton = event.target.closest('[data-joint-exam-action]');
+			if (!actionButton || !this.tableBody.contains(actionButton)) return;
 
-		showJointExamRows(relatives) {
-			if (this.tableBody) this.tableBody.innerHTML = '';
-			const empty = !relatives || relatives.length === 0;
-			this.emptyState?.classList.toggle('active', empty);
-			if (!empty && this.tableBody) this.renderTable(relatives);
-		}
+			const action = actionButton.dataset.jointExamAction;
+			const rowId = actionButton.dataset.jointExamId;
+			const tempId = actionButton.dataset.jointExamTempId;
 
-		async fetchJointExamRows(appointmentId, isCurrentContext) {
-			const response = await this.apiCall(`/api/appointment-relatives/appointment/${appointmentId}`);
-			if (!isCurrentContext()) return null;
-			if (!response.ok) return [];
-			const data = await response.json();
-			if (!isCurrentContext()) return null;
-			if (data.success !== true || !Array.isArray(data.data)) throw new Error('joint-exam-list-unconfirmed');
-			return data.data;
-		}
-
-		async load(options = {}) {
-			if (this.isLoadBlocked(options)) return false;
-			const appointmentId = this.getAppointmentId();
-			const revision = ++this.loadRevision;
-			this.editRevision++;
-			const contextGuard = this.createContextGuard(options);
-			const isCurrentContext = () => contextGuard() && revision === this.loadRevision;
-			if (!isCurrentContext()) return false;
-			this.pendingJointExamRow?.remove();
-			this.pendingJointExamRow = null;
-			if (this.tableBody) this.tableBody.innerHTML = '';
-
-			// Nếu chưa có appointment, hiển thị danh sách tạm
-			if (!appointmentId) {
-				this.renderPendingList();
-				return;
+			if (action === 'edit' && rowId) {
+				this.edit(Number(rowId));
+			} else if (action === 'delete' && rowId) {
+				this.delete(Number(rowId));
+			} else if (action === 'edit-pending' && tempId) {
+				this.editPending(tempId);
+			} else if (action === 'delete-pending' && tempId) {
+				this.deletePending(tempId);
 			}
+		});
+		this.tableActionBound = true;
+	}
 
-			try {
-				const relatives = await this.fetchJointExamRows(appointmentId, isCurrentContext);
-				if (relatives === null) return false;
-				this.showJointExamRows(relatives);
-			} catch (error) {
-				if (!isCurrentContext()) return false;
-				console.error('Error loading joint exam list:', error);
-				this.showJointExamRows([]);
-			}
+	/**
+	 * Load danh sách người đi khám cùng
+	 */
+	createContextGuard(options = {}) {
+		const appointmentId = this.getAppointmentId();
+		const token = this.pendingSaveToken;
+		const contextToken = this.getContextToken();
+		return () => token === this.pendingSaveToken && contextToken === this.getContextToken()
+			&& appointmentId === this.getAppointmentId() && options.isCurrentContext?.() !== false;
+	}
+
+	isLoadBlocked(options) {
+		if (options.allowWhileSaving) return false;
+		if (this.mutation?.isCurrentContext()) return true;
+		return Boolean(this.pendingJointExamRow && this.rowContexts.get(this.pendingJointExamRow)?.()
+			&& !options.discardEditing);
+	}
+
+	showJointExamRows(relatives) {
+		if (this.tableBody) this.tableBody.innerHTML = '';
+		const empty = !relatives || relatives.length === 0;
+		this.emptyState?.classList.toggle('active', empty);
+		if (!empty && this.tableBody) this.renderTable(relatives);
+	}
+
+	async fetchJointExamRows(appointmentId, isCurrentContext) {
+		const response = await this.apiCall(`/api/appointment-relatives/appointment/${appointmentId}`);
+		if (!isCurrentContext()) return null;
+		if (!response.ok) return [];
+		const data = await response.json();
+		if (!isCurrentContext()) return null;
+		if (data.success !== true || !Array.isArray(data.data)) throw new Error('joint-exam-list-unconfirmed');
+		return data.data;
+	}
+
+	async load(options = {}) {
+		if (this.isLoadBlocked(options)) return false;
+		const appointmentId = this.getAppointmentId();
+		const revision = ++this.loadRevision;
+		this.editRevision++;
+		const contextGuard = this.createContextGuard(options);
+		const isCurrentContext = () => contextGuard() && revision === this.loadRevision;
+		if (!isCurrentContext()) return false;
+		this.pendingJointExamRow?.remove();
+		this.pendingJointExamRow = null;
+		if (this.tableBody) this.tableBody.innerHTML = '';
+
+		// Nếu chưa có appointment, hiển thị danh sách tạm
+		if (!appointmentId) {
+			this.renderPendingList();
+			return;
 		}
 
-		lockRowControls(row) {
-			const controls = Array.from(row?.querySelectorAll('input, button, select, textarea') || []);
-			const disabledStates = controls.map(control => control.disabled);
-			controls.forEach(control => { control.disabled = true; });
-			return () => controls.forEach((control, index) => { control.disabled = disabledStates[index]; });
+		try {
+			const relatives = await this.fetchJointExamRows(appointmentId, isCurrentContext);
+			if (relatives === null) return false;
+			this.showJointExamRows(relatives);
+		} catch (error) {
+			if (!isCurrentContext()) return false;
+			console.error('Error loading joint exam list:', error);
+			this.showJointExamRows([]);
 		}
+	}
 
-		async sendRelativeMutation(options, isCurrentContext) {
-			const response = await this.apiCall(options.url, options.request);
+	lockRowControls(row) {
+		const controls = Array.from(row?.querySelectorAll('input, button, select, textarea') || []);
+		const disabledStates = controls.map(control => control.disabled);
+		controls.forEach(control => { control.disabled = true; });
+		return () => controls.forEach((control, index) => { control.disabled = disabledStates[index]; });
+	}
+
+	async sendRelativeMutation(options, isCurrentContext) {
+		const response = await this.apiCall(options.url, options.request);
+		if (!isCurrentContext()) return false;
+		if (!response.ok) throw new Error('joint-exam-write-failed');
+		const result = await response.json();
+		if (!isCurrentContext()) return false;
+		if (result.success !== true || (options.request.method !== 'DELETE' && !result.data?.id)) {
+			throw new Error('joint-exam-write-unconfirmed');
+		}
+		return true;
+	}
+
+	async mutateRelative(options) {
+		if (this.pendingSaving || this.mutation) return false;
+		const row = options.row;
+		const contextGuard = this.createContextGuard();
+		const rowGuard = row && this.rowContexts.get(row);
+		const isCurrentContext = () => contextGuard() && (!rowGuard || rowGuard());
+		if (!isCurrentContext()) return false;
+		const operation = { isCurrentContext: contextGuard };
+		this.mutation = operation;
+		this.loadRevision++;
+		const restoreControls = this.lockRowControls(row);
+		try {
+			if (options.confirm && !await confirmJointExamDelete(this.showToast)) return false;
 			if (!isCurrentContext()) return false;
-			if (!response.ok) throw new Error('joint-exam-write-failed');
-			const result = await response.json();
-			if (!isCurrentContext()) return false;
-			if (result.success !== true || (options.request.method !== 'DELETE' && !result.data?.id)) {
-				throw new Error('joint-exam-write-unconfirmed');
-			}
+			if (!await this.sendRelativeMutation(options, isCurrentContext)) return false;
+			options.onSaved?.();
+			this.showToast('success', options.successMessage);
+			await this.load({ isCurrentContext: contextGuard, allowWhileSaving: true });
+			if (contextGuard()) await this.onReloadFamilyMembers?.();
 			return true;
-		}
-
-		async mutateRelative(options) {
-			if (this.pendingSaving || this.mutation) return false;
-			const row = options.row;
-			const contextGuard = this.createContextGuard();
-			const rowGuard = row && this.rowContexts.get(row);
-			const isCurrentContext = () => contextGuard() && (!rowGuard || rowGuard());
-			if (!isCurrentContext()) return false;
-			const operation = { isCurrentContext: contextGuard };
-			this.mutation = operation;
-			this.loadRevision++;
-			const restoreControls = this.lockRowControls(row);
-			try {
-				if (options.confirm && !await confirmJointExamDelete(this.showToast)) return false;
-				if (!isCurrentContext()) return false;
-				if (!await this.sendRelativeMutation(options, isCurrentContext)) return false;
-				options.onSaved?.();
-				this.showToast('success', options.successMessage);
-				await this.load({ isCurrentContext: contextGuard, allowWhileSaving: true });
-				if (contextGuard()) await this.onReloadFamilyMembers?.();
-				return true;
-			} catch (error) {
-				if (isCurrentContext()) {
-					console.error('Error saving joint exam action:', error);
-					this.showToast('error', 'Không thể lưu thay đổi người đi khám cùng. Vui lòng thử lại.');
-				}
-				return false;
-			} finally {
-				restoreControls();
-				if (this.mutation === operation) this.mutation = null;
+		} catch (error) {
+			if (isCurrentContext()) {
+				console.error('Error saving joint exam action:', error);
+				this.showToast('error', 'Không thể lưu thay đổi người đi khám cùng. Vui lòng thử lại.');
 			}
+			return false;
+		} finally {
+			restoreControls();
+			if (this.mutation === operation) this.mutation = null;
 		}
+	}
 
-		/**
-		 * Render table người đi khám cùng
-		 */
-		renderTable(relatives) {
-			if (!this.tableBody) return;
-			this.renderedContextGuard = this.createContextGuard();
+	/**
+	 * Render table người đi khám cùng
+	 */
+	renderTable(relatives) {
+		if (!this.tableBody) return;
+		this.renderedContextGuard = this.createContextGuard();
 
-			this.tableBody.innerHTML = relatives.map((relative, index) => {
-				// Format ngày đi cùng từ joint_date (ưu tiên), sau đó appointment_date hoặc created_at
-				let jointDate = '';
-				if (relative.joint_date) {
-					jointDate = this.formatDateDisplay(relative.joint_date);
-				} else if (relative.appointment_date) {
-					jointDate = this.formatDateDisplay(relative.appointment_date);
-				} else if (relative.created_at) {
-					const date = new Date(relative.created_at);
-					jointDate = date.toLocaleDateString('vi-VN');
-				}
+		this.tableBody.innerHTML = relatives.map((relative, index) => {
+			// Format ngày đi cùng từ joint_date (ưu tiên), sau đó appointment_date hoặc created_at
+			let jointDate = '';
+			if (relative.joint_date) {
+				jointDate = this.formatDateDisplay(relative.joint_date);
+			} else if (relative.appointment_date) {
+				jointDate = this.formatDateDisplay(relative.appointment_date);
+			} else if (relative.created_at) {
+				const date = new Date(relative.created_at);
+				jointDate = date.toLocaleDateString('vi-VN');
+			}
 
-				return `
+			return `
                 <tr data-id="${relative.id}">
                     <td class="joint-exam-row-index relative-table-center">${index + 1}.</td>
                     <td>${this.escapeHtml(relative.name || '')}</td>
@@ -284,35 +281,35 @@
                     <td>${this.escapeHtml(relative.id_number || '')}</td>
                     <td>${this.escapeHtml(relative.phone || '')}</td>
                     <td class="relative-table-center">${jointDate}</td>
-					<td class="relative-table-center">
+				<td class="relative-table-center">
                         <div class="relative-row-actions">
-							${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id })}
-							${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })}
+						${renderJointExamActionButton('edit', 'edit', 'Chỉnh sửa', { 'data-joint-exam-action': 'edit', 'data-joint-exam-id': relative.id })}
+						${renderJointExamActionButton('delete', 'remove', 'Xóa', { 'data-joint-exam-action': 'delete', 'data-joint-exam-id': relative.id })}
                         </div>
                     </td>
                 </tr>
             `;
-			}).join('');
+		}).join('');
+	}
+
+	/**
+	 * Hiển thị row mới để thêm
+	 */
+	showCreateRow() {
+		if (this.pendingSaving || this.mutation) return;
+		if (!this.tableBody) return;
+		if (this.pendingJointExamRow) {
+			this.showToast('error', 'Vui lòng hoàn thành thao tác hiện tại');
+			return;
 		}
 
-		/**
-		 * Hiển thị row mới để thêm
-		 */
-		showCreateRow() {
-			if (this.pendingSaving || this.mutation) return;
-			if (!this.tableBody) return;
-			if (this.pendingJointExamRow) {
-				this.showToast('error', 'Vui lòng hoàn thành thao tác hiện tại');
-				return;
-			}
+		// Lấy ngày hôm nay để set default
+		const today = new Date();
+		const defaultDate = today.toISOString().split('T')[0];
 
-			// Lấy ngày hôm nay để set default
-			const today = new Date();
-			const defaultDate = today.toISOString().split('T')[0];
-
-			const tr = document.createElement('tr');
-			tr.classList.add('editing-row');
-			tr.innerHTML = `
+		const tr = document.createElement('tr');
+		tr.classList.add('editing-row');
+		tr.innerHTML = `
                 <td class="joint-exam-row-index relative-table-center">+</td>
                 <td class="relative-cell-overlay">
                     <div class="relative-input-wrap">
@@ -340,115 +337,114 @@
                 </td>
             `;
 
-			this.tableBody.prepend(tr);
-			this.pendingJointExamRow = tr;
-			this.editRevision++;
-			this.loadRevision++;
-			const isCurrentContext = this.createContextGuard();
-			this.rowContexts.set(tr, () => isCurrentContext() && this.tableBody.contains(tr));
+		this.tableBody.prepend(tr);
+		this.pendingJointExamRow = tr;
+		this.editRevision++;
+		this.loadRevision++;
+		const isCurrentContext = this.createContextGuard();
+		this.rowContexts.set(tr, () => isCurrentContext() && this.tableBody.contains(tr));
 
-			// Lưu patient_id khi chọn từ hệ thống
-			tr.dataset.relativePatientId = '';
+		// Lưu patient_id khi chọn từ hệ thống
+		tr.dataset.relativePatientId = '';
 
-			// Setup autocomplete cho name input
-			this.setupNameAutocomplete(tr);
+		// Setup autocomplete cho name input
+		this.setupNameAutocomplete(tr);
 
-			// Focus vào input đầu tiên
-			tr.querySelector('#jointExamNameInput').focus();
+		// Focus vào input đầu tiên
+		tr.querySelector('#jointExamNameInput').focus();
 
-			// Event listeners
-			tr.querySelector('.btn-save').addEventListener('click', () => {
-				this.saveNew(tr);
-			});
+		// Event listeners
+		tr.querySelector('.btn-save').addEventListener('click', () => {
+			this.saveNew(tr);
+		});
 
-			tr.querySelector('.btn-cancel').addEventListener('click', () => {
-				if (this.mutation || !isCurrentContext()) return;
-				tr.remove();
-				this.pendingJointExamRow = null;
-			});
+		tr.querySelector('.btn-cancel').addEventListener('click', () => {
+			if (this.mutation || !isCurrentContext()) return;
+			tr.remove();
+			this.pendingJointExamRow = null;
+		});
 
-			// Init Flatpickr for dynamic date input
-			window.initDatepickerWithValue?.(tr.querySelector('#jointExamDateInput'), defaultDate);
-		}
-
-		/**
-		 * Lưu row mới
-		 */
-		async saveNew(tr) {
-			if (this.pendingSaving || this.mutation || this.rowContexts.get(tr)?.() === false) return;
-			const appointmentId = this.getAppointmentId();
-
-			const name = tr.querySelector('#jointExamNameInput').value.trim();
-			const idNumber = tr.querySelector('#jointExamIdNumberInput').value.trim();
-
-			// Lấy relative_patient_id nếu có (khi chọn từ hệ thống)
-			const relativePatientId = tr.dataset.relativePatientId ? parseInt(tr.dataset.relativePatientId) : null;
-
-			// Validation: Nếu chọn từ hệ thống thì không require CCCD/CMND
-			if (!name) {
-				this.showToast('error', 'Vui lòng nhập Họ tên');
-				return;
-			}
-
-			// Chỉ require CCCD/CMND nếu KHÔNG chọn từ hệ thống
-			if (!relativePatientId && !idNumber) {
-				this.showToast('error', 'Vui lòng nhập CCCD/CMND');
-				return;
-			}
-
-			// Validation: Quan hệ là bắt buộc
-			const kinship = tr.querySelector('#jointExamKinshipInput').value.trim();
-			if (!kinship) {
-				this.showToast('error', 'Vui lòng nhập Quan hệ');
-				return;
-			}
-
-			const jointDate = tr.querySelector('#jointExamDateInput').value;
-
-			const data = {
-				name: name,
-				id_number: idNumber,
-				kinship: kinship,
-				phone: tr.querySelector('#jointExamPhoneInput').value.trim() || null,
-				joint_date: jointDate || null,
-				relative_patient_id: relativePatientId
-			};
-
-			// Nếu chưa có appointment, lưu tạm vào pendingJointExamList
-			if (!appointmentId) {
-				const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-				data.temp_id = tempId;
-				data.relative_patient_id = relativePatientId;
-				this.pendingJointExamList.push(data);
-
-				this.showToast('success', 'Đã thêm người đi khám cùng (sẽ lưu khi tạo lịch hẹn)');
-				tr.remove();
-				this.pendingJointExamRow = null;
-				this.renderPendingList();
-				return;
-			}
-
-			// Nếu đã có appointment, lưu vào database
-			data.appointment_id = appointmentId;
-
-			return this.mutateRelative({
-				row: tr,
-				url: '/api/appointment-relatives',
-				request: { method: 'POST', body: JSON.stringify(data) },
-				successMessage: 'Đã thêm người đi khám cùng thành công',
-				onSaved: () => {
-					tr.remove();
-					if (this.pendingJointExamRow === tr) this.pendingJointExamRow = null;
-				}
-			});
-		}
-
+		// Init Flatpickr for dynamic date input
+		window.initDatepickerWithValue?.(tr.querySelector('#jointExamDateInput'), defaultDate);
 	}
 
-	// Export
-	window.JointExamManager = JointExamManager;
+	/**
+	 * Lưu row mới
+	 */
+	async saveNew(tr) {
+		if (this.pendingSaving || this.mutation || this.rowContexts.get(tr)?.() === false) return;
+		const appointmentId = this.getAppointmentId();
 
-	// Methods of JointExamManager after update live in joint-exam-manager-methods.js (loaded right after this file).
-	const moduleParts = (window.QLPKModuleParts = window.QLPKModuleParts || {})['joint-exam-manager'] || (window.QLPKModuleParts['joint-exam-manager'] = {});
-	Object.assign(moduleParts, { JointExamManager, renderJointExamActionButton, confirmJointExamDelete });
-})(window);
+		const name = tr.querySelector('#jointExamNameInput').value.trim();
+		const idNumber = tr.querySelector('#jointExamIdNumberInput').value.trim();
+
+		// Lấy relative_patient_id nếu có (khi chọn từ hệ thống)
+		const relativePatientId = tr.dataset.relativePatientId ? parseInt(tr.dataset.relativePatientId) : null;
+
+		// Validation: Nếu chọn từ hệ thống thì không require CCCD/CMND
+		if (!name) {
+			this.showToast('error', 'Vui lòng nhập Họ tên');
+			return;
+		}
+
+		// Chỉ require CCCD/CMND nếu KHÔNG chọn từ hệ thống
+		if (!relativePatientId && !idNumber) {
+			this.showToast('error', 'Vui lòng nhập CCCD/CMND');
+			return;
+		}
+
+		// Validation: Quan hệ là bắt buộc
+		const kinship = tr.querySelector('#jointExamKinshipInput').value.trim();
+		if (!kinship) {
+			this.showToast('error', 'Vui lòng nhập Quan hệ');
+			return;
+		}
+
+		const jointDate = tr.querySelector('#jointExamDateInput').value;
+
+		const data = {
+			name: name,
+			id_number: idNumber,
+			kinship: kinship,
+			phone: tr.querySelector('#jointExamPhoneInput').value.trim() || null,
+			joint_date: jointDate || null,
+			relative_patient_id: relativePatientId
+		};
+
+		// Nếu chưa có appointment, lưu tạm vào pendingJointExamList
+		if (!appointmentId) {
+			const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+			data.temp_id = tempId;
+			data.relative_patient_id = relativePatientId;
+			this.pendingJointExamList.push(data);
+
+			this.showToast('success', 'Đã thêm người đi khám cùng (sẽ lưu khi tạo lịch hẹn)');
+			tr.remove();
+			this.pendingJointExamRow = null;
+			this.renderPendingList();
+			return;
+		}
+
+		// Nếu đã có appointment, lưu vào database
+		data.appointment_id = appointmentId;
+
+		return this.mutateRelative({
+			row: tr,
+			url: '/api/appointment-relatives',
+			request: { method: 'POST', body: JSON.stringify(data) },
+			successMessage: 'Đã thêm người đi khám cùng thành công',
+			onSaved: () => {
+				tr.remove();
+				if (this.pendingJointExamRow === tr) this.pendingJointExamRow = null;
+			}
+		});
+	}
+
+}
+
+// Export
+window.JointExamManager = JointExamManager;
+
+
+
+export { JointExamManager, renderJointExamActionButton, confirmJointExamDelete };
