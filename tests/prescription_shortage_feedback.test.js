@@ -64,7 +64,7 @@ function feedbackHarness() {
     const host = document.getElementById('qlpkWorkspaceToastHost');
     const classes = { get size() { return host.classList.contains('qlpk-workspace-toast-host--detailed') ? 1 : 0; } };
     const window = { document, setTimeout: (callback, duration) => { timers.push(duration); return timers.length; }, clearTimeout: () => {} };
-    vm.runInNewContext(fs.readFileSync('app/static/js/shared/user-feedback.js', 'utf8'), { window, document });
+    runScriptFile('app/static/js/shared/user-feedback.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window, document }));
     const close = () => host.querySelector('.qlpk-toast__close');
     listeners.click = () => close().dispatchEvent(new (require('./helpers/fake-dom').Event)('click'));
     return { feedback: window.QLPKUserFeedback, host, classes, listeners, timers };

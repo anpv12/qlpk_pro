@@ -30,9 +30,9 @@ function formatVitalDate(value) {
 	const month = String(date.getMonth() + 1).padStart(2, '0');
 	const year = date.getFullYear();
 	return `${day}/${month}/${year}`;
-	}
+}
 
-	function getVitalDate(examination) {
+function getVitalDate(examination) {
 	return formatVitalDate(examination && (examination.examination_date || examination.appointment_date));
 }
 
@@ -40,11 +40,11 @@ function buildVitalHintText(value, examination) {
 	const dateText = getVitalDate(examination);
 	if (dateText) {
 		return `Đo gần nhất ngày ${dateText}: ${value}`;
-		}
-		return `Đo gần nhất: ${value}`;
 	}
+	return `Đo gần nhất: ${value}`;
+}
 
-	function resetVitalsHints(options) {
+function resetVitalsHints(options) {
 	const opts = options || {};
 	const doc = getDocument(opts);
 	vitalLoads.set(doc, {});
@@ -93,7 +93,7 @@ async function loadPreviousVitals(patientId, options) {
 
 	try {
 		const response = await apiCall(`/api/patients/${patientId}/examinations?limit=10`);
-			if (!isCurrentContext() || !response.ok) return;
+		if (!isCurrentContext() || !response.ok) return;
 
 		const data = await response.json();
 		if (!isCurrentContext()) return;

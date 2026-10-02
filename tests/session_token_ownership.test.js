@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 const root = path.join(__dirname, '../app/static/js');
 const owners = new Set([
@@ -27,9 +28,9 @@ test('only session owners read stored credentials or build Authorization headers
 });
 
 function loadTransport(window) {
-    vm.runInNewContext(fs.readFileSync(path.join(root, 'shared/api-transport.js'), 'utf8'), {
+    runScriptFile(path.join(root, 'shared/api-transport.js'), (c => vm.isContext(c) ? c : vm.createContext(c))({
         window, document: { baseURI: window.location.href }, Headers, URL, AbortController,
-    });
+    }));
     return window.QLPKApiTransport;
 }
 

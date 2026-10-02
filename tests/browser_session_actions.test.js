@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function payload(letter = 'a') {
     return { token_type: 'cookie', session_id: letter.repeat(32), csrf_token: letter.repeat(64),
@@ -40,7 +41,7 @@ function harness(locks = lockManager()) {
         } };
     const context = vm.createContext({ window, URL, Headers, Promise, console });
     for (const file of ['browser-session.js', 'browser-session-actions.js']) {
-        vm.runInContext(fs.readFileSync('app/static/js/shared/' + file, 'utf8'), context);
+        runScriptFile('app/static/js/shared/' + file, (c => vm.isContext(c) ? c : vm.createContext(c))(context));
     }
     const owner = window.QLPKBrowserSession.create({ channel: { addEventListener() {}, removeEventListener() {},
         postMessage(message) { messages.push(message); } } });

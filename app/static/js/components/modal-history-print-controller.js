@@ -43,9 +43,9 @@ function getAssetVersion(doc) {
 
 function buildAssetUrl(path, version) {
 	return version ? `${path}?v=${encodeURIComponent(version)}` : path;
-	}
+}
 
-	function buildLoadingDocument(title) {
+function buildLoadingDocument(title) {
 	return `<!DOCTYPE html>
 			<html lang="vi">
 			<head>
@@ -58,9 +58,9 @@ function buildAssetUrl(path, version) {
 			</head>
 			<body><p>Đang chuẩn bị tài liệu in...</p></body>
 			</html>`;
-	}
+}
 
-	function openPrintWindow(title, openWindow) {
+function openPrintWindow(title, openWindow) {
 	if (typeof openWindow !== 'function') {
 		throw new Error('Trình duyệt không hỗ trợ cửa sổ in');
 	}
@@ -142,7 +142,7 @@ const PRINT_DOCUMENT_STYLE = `<style>
 					}
 				</style>`;
 
-	function buildPrintDocument(options = {}) {
+function buildPrintDocument(options = {}) {
 	const version = options.assetVersion || '';
 	const typographyUrl = buildAssetUrl('/static/css/shared/typography.css', version);
 	const colorTokensUrl = buildAssetUrl('/static/css/shared/color-tokens.css', version);
@@ -164,9 +164,9 @@ const PRINT_DOCUMENT_STYLE = `<style>
 				<main class="modal-history-print-content">${options.html}</main>
 			</body>
 			</html>`;
-	}
+}
 
-	function writePrintDocument(printWindow, options) {
+function writePrintDocument(printWindow, options) {
 	return QLPKPdfPreview.render(printWindow, buildPrintDocument(options));
 }
 
@@ -178,7 +178,7 @@ function writePrintError(printWindow, title, message) {
 			<head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
 			<body><h1>Không thể chuẩn bị tài liệu in</h1><p>${escapeHtml(message)}</p></body>
 			</html>`);
-		printWindow.document.close();
+	printWindow.document.close();
 }
 
 function resolveSelection(stateStore) {
@@ -212,14 +212,14 @@ async function renderPrintTarget(renderers, stateStore, target, selection) {
 	const renderer = renderers[target.rendererKey];
 	if (typeof renderer !== 'function') {
 		throw new Error(`Thiếu renderer cho ${target.label}`);
-		}
-		const result = await renderer();
+	}
+	const result = await renderer();
 	if (!result || result.state !== 'ready') {
 		throw new Error(result?.state === 'stale'
 			? 'Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in'
 			: `Không thể tải ${target.label}`);
-		}
-		if (!isSameSelection(selection, resolveSelection(stateStore))) {
+	}
+	if (!isSameSelection(selection, resolveSelection(stateStore))) {
 		throw new Error('Lượt khám đã thay đổi trong khi chuẩn bị tài liệu in');
 	}
 	return result;
@@ -240,7 +240,7 @@ async function writeRenderedTarget(doc, target, result, printWindow, prescriptio
 	const content = doc.getElementById(target.contentId);
 	const html = content?.innerHTML?.trim();
 	if (!html) throw new Error(`Không có nội dung ${target.label} để in`);
-		await writePrintDocument(printWindow, {
+	await writePrintDocument(printWindow, {
 		assetVersion: getAssetVersion(doc),
 		html,
 		title: target.title
@@ -321,16 +321,16 @@ function create(options = {}) {
 		} catch (error) {
 			if (button) button.dataset.pdfPreviewState = 'error';
 			console.error(`[ModalHistoryPrintController] ${targetId}:`, error);
-				if (prescriptionDocument) {
+			if (prescriptionDocument) {
 				prescriptionDocument.renderError(printWindow, {
 					title: target.title,
 					message: `Không thể in ${target.label}`
-					});
-				} else {
+				});
+			} else {
 				writePrintError(printWindow, target.title, `Không thể in ${target.label}`);
-				}
-				showToast('error', `Không thể in ${target.label}. Vui lòng thử lại.`);
-				return { status: 'error', targetId, error };
+			}
+			showToast('error', `Không thể in ${target.label}. Vui lòng thử lại.`);
+			return { status: 'error', targetId, error };
 		} finally {
 			releasePrintButton(button);
 		}

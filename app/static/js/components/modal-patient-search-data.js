@@ -22,9 +22,9 @@ function buildSearchParams(query = '', options = {}) {
 function buildSearchUrl(params) {
 	const searchParams = params instanceof URLSearchParams ? params : new URLSearchParams(params || '');
 	return `/api/patients/modal-search?${searchParams.toString()}`;
-	}
+}
 
-	function extractSearchPatients(payload) {
+function extractSearchPatients(payload) {
 	return payload && Array.isArray(payload.patients) ? payload.patients : [];
 }
 
@@ -90,21 +90,21 @@ function extractPatientPayload(payload) {
 
 function buildPatientDetailUrl(patientId) {
 	return `/api/patients/${patientId}`;
-	}
+}
 
-	function buildLatestAppointmentUrl(patientId) {
+function buildLatestAppointmentUrl(patientId) {
 	return `/api/appointments/?patient_id=${patientId}&per_page=1`;
-	}
+}
 
-	function buildAppointmentDetailUrl(appointmentId) {
+function buildAppointmentDetailUrl(appointmentId) {
 	return `/api/appointments/${appointmentId}`;
-	}
+}
 
-	function buildAppointmentRelativesUrl(appointmentId) {
+function buildAppointmentRelativesUrl(appointmentId) {
 	return `/api/appointment-relatives/appointment/${appointmentId}`;
-	}
+}
 
-	async function fetchExaminationForAppointment(appointmentId, options = {}) {
+async function fetchExaminationForAppointment(appointmentId, options = {}) {
 	try {
 		const historyUi = getHistoryListUi(options);
 		const examResponse = await options.apiCall(historyUi.buildExaminationIdUrl(appointmentId));

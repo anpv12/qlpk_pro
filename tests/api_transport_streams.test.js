@@ -169,7 +169,6 @@ for (const cookie of [false, true]) {
 test('HEAD/null body remains null', async () => {
     const window = { location: { origin: 'https://clinic.test', href: 'https://clinic.test/' },
         localStorage: { getItem: () => null }, fetch: async () => new Response(null, { status: 204 }) };
-    vm.runInNewContext(fs.readFileSync('app/static/js/shared/api-transport.js', 'utf8'),
-        { window, document: { baseURI: window.location.href }, Headers, URL });
+    runScriptFile('app/static/js/shared/api-transport.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window, document: { baseURI: window.location.href }, Headers, URL }));
     assert.equal((await window.fetch('/empty')).body, null);
 });

@@ -357,22 +357,22 @@ async function cancelAppointment(appointmentId, force = false) {
 	}
 }
 
-	function getFormBootstrapOptions() {
-		return {
-			window,
-			console,
-			setTimeout,
-			servicePackage: window.ReceptionistServicePackage,
-			loadServicesForForm,
-			setupAgeCalculation,
-			setupBMICalculation
-		};
+function getFormBootstrapOptions() {
+	return {
+		window,
+		console,
+		setTimeout,
+		servicePackage: window.ReceptionistServicePackage,
+		loadServicesForForm,
+		setupAgeCalculation,
+		setupBMICalculation
+	};
 }
 
-	// Initialize form
-	function initializeForm() {
-		ReceptionistFormBootstrap.initializeForm(getFormBootstrapOptions());
-	}
+// Initialize form
+function initializeForm() {
+	ReceptionistFormBootstrap.initializeForm(getFormBootstrapOptions());
+}
 
 // Load sidebar user info
 async function loadSidebarUserInfo() {

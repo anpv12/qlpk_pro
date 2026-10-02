@@ -8,9 +8,9 @@ const PRESCRIPTION_PAGE_COLORS = {
 
 function missingDependency(name) {
 	return new Error(`Thiếu helper preview đơn thuốc từ modal: ${name}`);
-	}
+}
 
-	function resolveFunction(deps, dependencyName, globalName = dependencyName) {
+function resolveFunction(deps, dependencyName, globalName = dependencyName) {
 	const candidate = deps[dependencyName] || window[globalName];
 	if (typeof candidate !== 'function') {
 		throw missingDependency(globalName);

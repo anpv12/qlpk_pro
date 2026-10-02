@@ -8,9 +8,9 @@ function findById(root, id) {
 	if (root.id === id) return root;
 	if (typeof root.getElementById === 'function') return root.getElementById(id);
 	return typeof root.querySelector === 'function' ? root.querySelector(`#${id}`) : null;
-	}
+}
 
-	function create(options = {}) {
+function create(options = {}) {
 	const sourceDocument = options.document || document;
 	const root = resolveRoot(sourceDocument, options.rootId);
 	const fields = options.fields || {};

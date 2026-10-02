@@ -76,7 +76,7 @@ function setup() {
     };
     const window = { QLPKDoctorModuleRegistry: registry, document, getComputedStyle: () => ({ overflowY: 'visible', overflowX: 'visible' }) };
     const context = vm.createContext({ window, document, console, getComputedStyle: window.getComputedStyle, setTimeout, clearTimeout, HTMLInputElement: class {}, HTMLTextAreaElement: class {}, HTMLSelectElement: class {} });
-    for (const file of ['app/static/js/doctor-examination/module-registry.js', 'app/static/js/doctor-examination/support-runtime.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+    for (const file of ['app/static/js/doctor-examination/module-registry.js', 'app/static/js/doctor-examination/support-runtime.js']) runScriptFile(file, (c => vm.isContext(c) ? c : vm.createContext(c))(context, { filename: file }));
     const REGISTRY = window.QLPKDoctorModuleRegistry;
     REGISTRY.register('doctorComponentConfig', { intake: {}, clinical: {}, workspace: { rootId: 'doctorClinicalWorkspace', defaultSectionId: 'doctorClinicalDecisionPanel' } });
     REGISTRY.register('patientIntakeForm', { create: () => ({ populate: (payload, opts) => calls.intake.push(['populate', payload.patient_info.full_name]), clear: () => calls.intake.push(['clear']), collect: () => ({ full_name: 'BN QA' }), bind: () => calls.intake.push(['bind']) }) });

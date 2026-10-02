@@ -26,7 +26,7 @@ function getElementValue(elementId, defaultValue = '', options = {}) {
 
 	if (element.type === 'radio') {
 		const checked = doc.querySelector(`input[name="${element.name}"]:checked`);
-			return checked ? checked.value : defaultValue;
+		return checked ? checked.value : defaultValue;
 	}
 
 	const pickedDate = readFlatpickrDate(element);
@@ -38,10 +38,10 @@ function getElementValue(elementId, defaultValue = '', options = {}) {
 function warnMissingElement(elementId, logger) {
 	if (logger && typeof logger.warn === 'function') {
 		logger.warn(`Element with ID "${elementId}" not found`);
-		}
 	}
+}
 
-	function readFlatpickrDate(element) {
+function readFlatpickrDate(element) {
 	const instance = element._flatpickr;
 	if (!instance || !instance.selectedDates || instance.selectedDates.length === 0) return undefined;
 	return instance.formatDate(instance.selectedDates[0], element.dataset.dateFormat || 'Y-m-d');

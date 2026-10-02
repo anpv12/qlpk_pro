@@ -104,7 +104,7 @@ test('appointment callers no longer attempt password-based background login', ()
 test('loading shared transport twice preserves one fetch owner', async () => {
     const state = harness();
     const fetcher = state.window.fetch;
-    vm.runInContext(fs.readFileSync('app/static/js/shared/api-transport.js', 'utf8'), state.context);
+    runScriptFile('app/static/js/shared/api-transport.js', (c => vm.isContext(c) ? c : vm.createContext(c))(state.context));
     assert.equal(state.window.fetch, fetcher);
     await state.window.fetch('/api/load');
     assert.equal(state.requests.length, 1);

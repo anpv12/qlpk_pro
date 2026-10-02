@@ -199,8 +199,8 @@ function refreshRelativesAfterPatientChange(payload) {
 
 function initializePage() {
 
-		// Reset form to default values
-		resetFormToDefault();
+	// Reset form to default values
+	resetFormToDefault();
 
 	// Explicitly clear age field on page load
 	setTimeout(() => {
@@ -225,35 +225,35 @@ function initializePage() {
 	initializeDocumentUpload();
 	initializeVisibleMedicalDetails();
 
-		setDefaultAppointmentDateTime();
+	setDefaultAppointmentDateTime();
 
 	// Setup event listeners để remove highlight khi user thay đổi ngày/giờ hẹn
 	setupAppointmentDateTimeListeners();
 }
 
-	const appointmentDateHighlight = ReceptionistAppointmentDateHighlight;
-	const highlightAppointmentDateTimeFields = () => appointmentDateHighlight.highlight({ setTimeout });
-	const setupAppointmentDateTimeListeners = () => appointmentDateHighlight.bindChangeListeners({ setTimeout });
+const appointmentDateHighlight = ReceptionistAppointmentDateHighlight;
+const highlightAppointmentDateTimeFields = () => appointmentDateHighlight.highlight({ setTimeout });
+const setupAppointmentDateTimeListeners = () => appointmentDateHighlight.bindChangeListeners({ setTimeout });
 
-	// Reset form to default values
-	function resetFormToDefault() {
-		receptionistLoadState.token += 1;
-		receptionistLoadState.loading = false;
-		receptionistLoadState.failed = false;
-		state.currentAppointmentId = null;
-		ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
-		ReceptionistFormResetUtils.resetFormToDefault({
-			document,
-			window,
-			localStorage,
-			relativeTableInstance: state.relativeTableInstance,
-			setRelativeTableInstance: value => { state.relativeTableInstance = value; },
-			setCurrentEditId: value => { state.currentEditId = value; },
-			setUploadedDocuments: value => { state.uploadedDocuments = value; },
-			setCurrentPatientId
-		});
+// Reset form to default values
+function resetFormToDefault() {
+	receptionistLoadState.token += 1;
+	receptionistLoadState.loading = false;
+	receptionistLoadState.failed = false;
+	state.currentAppointmentId = null;
+	ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
+	ReceptionistFormResetUtils.resetFormToDefault({
+		document,
+		window,
+		localStorage,
+		relativeTableInstance: state.relativeTableInstance,
+		setRelativeTableInstance: value => { state.relativeTableInstance = value; },
+		setCurrentEditId: value => { state.currentEditId = value; },
+		setUploadedDocuments: value => { state.uploadedDocuments = value; },
+		setCurrentPatientId
+	});
 	window.QLPKPatientIntakeForm.updatePregnancyControls({ document });
-	}
+}
 
 // ========================================
 // JOINT EXAM (NGƯỜI ĐI KHÁM CÙNG) - SỬ DỤNG MODULE DRY
@@ -262,8 +262,8 @@ function initializePage() {
 // Khởi tạo JointExamManager instance
 let jointExamManagerInstance = null;
 
-	const receptionistFormatters = ReceptionistFormatters || {};
-	const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
+const receptionistFormatters = ReceptionistFormatters || {};
+const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
 
 // Lấy appointment ID hiện tại
 function getCurrentAppointmentId() {
@@ -329,14 +329,14 @@ function startMedicalDataAndDocuments() {
 		bindAddressFieldChanges();
 
 		ReceptionistAppointmentListControls.bindWaitingListFilters({
-				document,
-				getCurrentStatus: () => state.currentStatus,
-				getWaitingListFilter: () => state.waitingListFilter,
-				setWaitingListFilter: value => { state.waitingListFilter = value; },
-				loadAppointments,
-				apiCall,
-				showToast: showCustomToast
-			});
+			document,
+			getCurrentStatus: () => state.currentStatus,
+			getWaitingListFilter: () => state.waitingListFilter,
+			setWaitingListFilter: value => { state.waitingListFilter = value; },
+			loadAppointments,
+			apiCall,
+			showToast: showCustomToast
+		});
 
 		// Initialize form
 		initializeForm();

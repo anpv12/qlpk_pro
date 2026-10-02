@@ -102,9 +102,9 @@ function buildPageModels(options = {}) {
 
 function buildAssetUrl(path, version) {
 	return version ? `${path}?v=${encodeURIComponent(version)}` : path;
-	}
+}
 
-	function getAssetVersion(hostDocument) {
+function getAssetVersion(hostDocument) {
 	return hostDocument
 		?.querySelector('meta[name="qlpk-app-version"]')
 		?.getAttribute('content') || '';
@@ -114,9 +114,9 @@ function installPrintDocumentFns1(ctx) {
 	function getDocumentBaseUrl() {
 		const origin = ctx.hostDocument.location?.origin || ctx.hostWindow.location?.origin;
 		return origin && origin !== 'null' ? `${origin}/` : '';
-		}
+	}
 
-		function createDocumentUrl(html) {
+	function createDocumentUrl(html) {
 		const UrlApi = ctx.hostWindow.URL || window.URL;
 		const BlobConstructor = ctx.hostWindow.Blob || window.Blob;
 		if (!UrlApi || typeof UrlApi.createObjectURL !== 'function' || typeof BlobConstructor !== 'function') {
@@ -187,7 +187,7 @@ function installPrintDocumentFns2(ctx) {
 					isPrint: true,
 					renderContext: 'print'
 				})}</article>`
-			)).join('');
+		)).join('');
 	}
 
 	function buildLoadingDocument(title) {
@@ -203,9 +203,9 @@ function installPrintDocumentFns2(ctx) {
 				</head>
 				<body><p>Đang chuẩn bị đơn thuốc...</p></body>
 				</html>`;
-		}
+	}
 
-		function open(input = {}) {
+	function open(input = {}) {
 		const title = input.title || DEFAULT_TITLE;
 		if (typeof ctx.openWindow !== 'function') {
 			throw new Error('Trình duyệt không hỗ trợ cửa sổ in');
@@ -241,9 +241,9 @@ function installPrintDocumentFns2(ctx) {
 					<main class="prescription-print-document__pages">${pagesHtml}</main>
 				</body>
 				</html>`;
-		}
+	}
 
-		Object.assign(ctx, { buildPagesHtml, open, buildDocument });
+	Object.assign(ctx, { buildPagesHtml, open, buildDocument });
 }
 
 function installPrintDocumentFns3(ctx) {
@@ -263,9 +263,9 @@ function installPrintDocumentFns3(ctx) {
 				<head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
 				<body><h1>Không thể chuẩn bị đơn thuốc</h1><p>${escapeHtml(message)}</p></body>
 				</html>`);
-		}
+	}
 
-		Object.assign(ctx, { render, renderError });
+	Object.assign(ctx, { render, renderError });
 }
 
 function create(options = {}) {

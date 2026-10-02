@@ -77,22 +77,22 @@ function formatFileSize(bytes) {
 function getAttachmentUrl(attachmentId, mode = 'download') {
 	if (mode === 'preview') {
 		return `/attachments/${attachmentId}/preview`;
-		}
-		return `/attachments/${attachmentId}/download`;
 	}
+	return `/attachments/${attachmentId}/download`;
+}
 
-	function validateFile(file, options = {}) {
+function validateFile(file, options = {}) {
 	const maxSizeBytes = options.maxSizeBytes || 50 * 1024 * 1024;
 	const maxSizeMb = options.maxSizeMb || 50;
 
 	if (file.size > maxSizeBytes) {
 		showToast(options, 'error', `File ${file.name} quá lớn. Kích thước tối đa ${maxSizeMb}MB.`);
-			return false;
+		return false;
 	}
 
 	if (!ALLOWED_FILE_TYPES.includes(file.type)) {
 		showToast(options, 'error', `File ${file.name} không được hỗ trợ. Chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG.`);
-			return false;
+		return false;
 	}
 
 	return true;
@@ -122,7 +122,7 @@ function showUploadFailure(response, options, shouldShowToast) {
 	if (!shouldShowToast) return;
 	const message = response.status === 413
 		? `Tệp quá lớn. Vui lòng chọn tệp không quá ${options.maxSizeMb || 50} MB.`
-			: 'Không thể tải tài liệu lên. Vui lòng thử lại.';
+		: 'Không thể tải tài liệu lên. Vui lòng thử lại.';
 	showToast(options, 'error', message);
 }
 
@@ -139,7 +139,7 @@ async function uploadFile(file, patientId, options = {}) {
 		const form = getFormData(options);
 		form.append('file', file);
 		const response = await getFetch(options)(`/attachments/patients/${patientId}/attachments`, {
-				method: 'POST',
+			method: 'POST',
 			body: form
 		});
 		if (!isCurrentContext()) return false;
@@ -227,7 +227,7 @@ async function downloadAttachmentWithAuth(attachmentId, filename, options = {}) 
 		const a = doc.createElement('a');
 		a.href = objectUrl;
 		a.download = filename || `attachment-${attachmentId}`;
-			doc.body.appendChild(a);
+		doc.body.appendChild(a);
 		a.click();
 		a.remove();
 		urlApi.revokeObjectURL(objectUrl);

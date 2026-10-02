@@ -34,10 +34,10 @@ function buildHolidayEventContent(event) {
                 </div>
               </div>
             `
-		};
-	}
+	};
+}
 
-	function buildAppointmentEventContent(arg, options = {}) {
+function buildAppointmentEventContent(arg, options = {}) {
 	const doc = options.document || window.document;
 	const doctors = options.doctors || [];
 	const patientName = arg.event.extendedProps.patientName || arg.event.title;
@@ -85,7 +85,7 @@ function decorateToolbar(host, info) {
 	const date = info.view.currentStart;
 	const title = host.querySelector('.fc-toolbar-title');
 	if (title) title.textContent = `Tháng ${date.getMonth() + 1}, ${date.getFullYear()}`;
-		host.querySelectorAll('.fc-button').forEach(button => {
+	host.querySelectorAll('.fc-button').forEach(button => {
 		button.dataset.qlpkButton = 'neutral'; button.dataset.qlpkButtonVariant = 'soft';
 		button.classList.remove('fc-button-primary');
 	});
@@ -102,7 +102,7 @@ function create(host, options = {}, presentation = {}) {
 		dayHeaderFormat: { weekday: 'short' },
 		eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
 		moreLinkText: count => `+${count} lịch`,
-			eventContent: arg => buildEventContent(arg, { doctors: presentation.getDoctors?.() || [] }),
+		eventContent: arg => buildEventContent(arg, { doctors: presentation.getDoctors?.() || [] }),
 		datesSet(info) { decorateToolbar(host, info); options.datesSet?.(info); }
 	});
 }
@@ -113,14 +113,14 @@ function renderStatusCounts(host, counts) {
 	for (const [status, label] of Object.entries(STATUS_LABELS)) {
 		const value = Number(counts[status]) || 0;
 		const row = host.ownerDocument.createElement('div'); row.className = `qlpk-appointment-status status-${status.toLowerCase()}`;
-			const name = host.ownerDocument.createElement('span'); name.textContent = label;
+		const name = host.ownerDocument.createElement('span'); name.textContent = label;
 		const count = host.ownerDocument.createElement('strong'); count.textContent = value;
 		// Thanh tỉ lệ: phần của trạng thái trong tổng lịch đang hiển thị.
 		const track = host.ownerDocument.createElement('span'); track.className = 'qlpk-appointment-status__track'; track.setAttribute('aria-hidden', 'true');
 		const fill = host.ownerDocument.createElement('i'); fill.style.setProperty('--status-share', `${total ? Math.round(value / total * 100) : 0}%`);
-			track.append(fill);
+		track.append(fill);
 		row.title = `${label}: ${value}${total ? ` / ${total} lịch (${Math.round(value / total * 100)}%)` : ''}`;
-			row.append(name, count, track); host.append(row);
+		row.append(name, count, track); host.append(row);
 	}
 }
 

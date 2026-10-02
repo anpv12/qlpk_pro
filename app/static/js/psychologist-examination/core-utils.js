@@ -31,9 +31,9 @@ function formatDateInput(value) {
 	const month = String(dateObj.getMonth() + 1).padStart(2, '0');
 	const day = String(dateObj.getDate()).padStart(2, '0');
 	return `${year}-${month}-${day}`;
-	}
+}
 
-	function formatDisplayDate(value) {
+function formatDisplayDate(value) {
 	if (!value) return '';
 	if (typeof window.formatDateDisplay === 'function') {
 		return window.formatDateDisplay(value);
@@ -41,16 +41,16 @@ function formatDateInput(value) {
 	if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		const [year, month, day] = value.split('-');
 		return `${day}/${month}/${year}`;
-		}
-		const dateObj = new Date(value);
+	}
+	const dateObj = new Date(value);
 	if (Number.isNaN(dateObj.getTime())) return '';
 	const day = String(dateObj.getDate()).padStart(2, '0');
 	const month = String(dateObj.getMonth() + 1).padStart(2, '0');
 	const year = dateObj.getFullYear();
 	return `${day}/${month}/${year}`;
-	}
+}
 
-	function getExaminationStatusText(status) {
+function getExaminationStatusText(status) {
 	const statusMap = {
 		WAITING_TRANSFER: 'Chờ chuyển khám',
 		DOCTOR_EXAM: 'Bác sĩ khám',

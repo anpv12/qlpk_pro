@@ -47,8 +47,7 @@ function harness() {
   context.state = context;
   Object.assign(context, context.window);
   for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'fetchPatientForCopy', 'resetFormForCopiedPatient', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'resetFormToDefault']) {
-    const ending = name === 'resetFormToDefault' ? '\\n\\t\\}' : '\\n\\}';
-    const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?${ending}`));
+    const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
     if (match) vm.runInContext(match[0], context);
   }
   const answer = (request, id) => request.resolve({ ok: true, json: async () => ({ id, full_name: `patient-${id}` }) });

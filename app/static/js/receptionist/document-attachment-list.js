@@ -62,7 +62,7 @@ function buildDocumentsTable(rows) {
 	return el('div', { class: 'receptionist-documents-table-wrap' },
 		el('table', { class: 'receptionist-documents-table' },
 			el('colgroup', {}, TABLE_COLUMNS.map(name => el('col', { class: `receptionist-shared-col-${name}` }))),
-				el('thead', {}, el('tr', {},
+			el('thead', {}, el('tr', {},
 				el('th', { colspan: '4' }, 'Tập tin'),
 				el('th', {}, 'Dung lượng'),
 				el('th', {}, 'Ngày tải'),
@@ -76,7 +76,7 @@ function buildDocumentRow({ id, fileKind, fileIcon, filename, sizeText, dateText
 		el('td', { class: 'document-file-cell', colspan: '4' },
 			el('div', { class: 'document-file-main' },
 				el('span', { class: `document-icon document-icon--${fileKind || ''}` }, el('i', { class: `bi ${fileIcon || ''} qlpk-file-icon` })),
-					el('span', { class: 'document-name', title: filename || '' }, filename || ''))),
+				el('span', { class: 'document-name', title: filename || '' }, filename || ''))),
 		el('td', {}, String(sizeText)),
 		el('td', {}, dateText || ''),
 		el('td', {}, el('span', { class: `qlpk-status ${status.className} document-status-badge` }, status.text)),
@@ -123,7 +123,7 @@ function buildDraftDocumentRow(docItem, options) {
 async function runAttachmentDelete(state, action, id, isCurrentContext) {
 	const options = state.options;
 	const key = `${action}:${id}`;
-		if (state.pending.has(key)) return;
+	if (state.pending.has(key)) return;
 	state.pending.add(key);
 	try {
 		if (action === 'delete') {
@@ -157,7 +157,7 @@ function bindDocumentActions(list) {
 
 		if (action === 'download') {
 			const filename = btn.getAttribute('data-filename') || `attachment-${id}`;
-				if (typeof options.openAttachmentPreviewInNewTab === 'function') {
+			if (typeof options.openAttachmentPreviewInNewTab === 'function') {
 				await options.openAttachmentPreviewInNewTab(id, filename, { isCurrentContext });
 			}
 			return;
@@ -182,9 +182,9 @@ function updateDocumentsCountBadge(total, options) {
 	if (!badge) return;
 	badge.textContent = String(total || 0);
 	badge.setAttribute('aria-label', `${total || 0} tập tin đính kèm`);
-	}
+}
 
-	function renderDocumentsList(options = {}) {
+function renderDocumentsList(options = {}) {
 	const doc = getDocument(options);
 	const documentsList = doc.getElementById('documentsList');
 	if (!documentsList) return;

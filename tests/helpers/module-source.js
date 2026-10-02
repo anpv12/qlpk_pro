@@ -125,10 +125,15 @@ function esModuleScript(rel, seen = new Set(), root = true) {
     __qlpkEsModules[${JSON.stringify(rel)}] = Object.fromEntries(${JSON.stringify(exported)}.map(name => [name, globalThis.window[name]]));
     return;
 }`;
+    // A dependency the harness environment cannot evaluate (a page side effect on a minimal fake DOM) leaves its
+    // exports undefined instead of failing a test that never uses it.
+    const guardOpen = root ? '' : 'try {';
+    const guardClose = root ? '' : `} catch (error) { (globalThis.__qlpkEsModuleErrors = globalThis.__qlpkEsModuleErrors || {})[${JSON.stringify(rel)}] = error; __qlpkEsModules[${JSON.stringify(rel)}] = {}; }`;
     return `${dependencies}
 globalThis.__qlpkEsModules = globalThis.__qlpkEsModules || {};
 (function () {
 ${stubbed}
+${guardOpen}
 ${bindings}
 ${body}
 const __exports = { ${[...new Set([...top, ...exportLists])].join(', ')} };
@@ -138,6 +143,7 @@ for (const [name, value] of Object.entries(__exports)) globalThis[name] = value;
 if (globalThis.window && typeof globalThis.window === 'object' && globalThis.window !== globalThis) {
     for (const name of ${JSON.stringify(exported)}) if (!(name in globalThis.window)) globalThis.window[name] = __exports[name];
 }
+${guardClose}
 })();
 `;
 }
