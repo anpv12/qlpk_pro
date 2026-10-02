@@ -1,6 +1,9 @@
-/* global MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allServices, apiCall, beginReceptionistLoad, buildFullAddressFromParts, currentAppointmentId: writable, currentEditId: writable, jointExamManagerInstance, loadAttachmentsForCurrentPatient, loadProvinces, loadWards, reEnableAgeCalculation, receptionistLoadState, safeSetValue, setCurrentPatientId, setDateOfBirthAndAge, setupAgeCalculation, showCustomToast, temporarilyDisableAgeCalculation, updateAddressSummary */
-/* exported copyPatientToReceptionistFormFromGlobalSearch, currentAppointmentId, currentEditId, getMedicalDraftOptions */
-// save-flow.js: getPatientPopulateOptions, buildSharedFormPayload, populateSharedForms, getMedicalDraftOptions, fetchPatientForCopy, resetFormForCopiedPatient, copyPatientToReceptionistFormFromGlobalSearch (nạp trước save-flow.js, cùng scope trang).
+import { state } from '../page-state.js';
+import { safeSetValue } from '../save-flow.js';
+import { MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allServices, apiCall, beginReceptionistLoad, reEnableAgeCalculation, receptionistLoadState, setCurrentPatientId, setDateOfBirthAndAge, setupAgeCalculation, showCustomToast, temporarilyDisableAgeCalculation } from '../../receptionist-new.js';
+import { buildFullAddressFromParts, loadProvinces, loadWards, updateAddressSummary } from '../../receptionist-new-parts/address.js';
+import { jointExamManagerInstance, loadAttachmentsForCurrentPatient } from '../medical-data-and-documents.js';
+// Patient copy and shared-form population for the receptionist save flow (ES module).
 
 function getPatientPopulateOptions() {
 	return {
@@ -78,8 +81,8 @@ function resetFormForCopiedPatient() {
 		setupAgeCalculation,
 		setCurrentPatientId
 	});
-	currentEditId = null;
-	currentAppointmentId = null;
+	state.currentEditId = null;
+	state.currentAppointmentId = null;
 	window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 	localStorage.removeItem('currentEditId');
 }
@@ -118,3 +121,5 @@ async function copyPatientToReceptionistFormFromGlobalSearch(payload = {}) {
 		if (isCurrentLoad()) receptionistLoadState.loading = false;
 	}
 }
+
+export { copyPatientToReceptionistFormFromGlobalSearch, getMedicalDraftOptions, getPatientPopulateOptions, populateSharedForms };

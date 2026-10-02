@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { runScriptFile, readScriptSource } = require('./helpers/module-source');
-const source = readScriptSource('app/static/js/receptionist-new.js');
+const { runScriptFile, readPageModulesSource } = require('./helpers/module-source');
+const source = readPageModulesSource();
 function harness() {
   const data = { full_name: 'QA', gender: 'Nam', doctor_id: 1, service_id: 2, appointment_date: '2026-09-27', appointment_time: '10:00' };
   const state = { calls: 0, saves: 0, notices: [], modals: 0 };
@@ -18,6 +18,7 @@ function harness() {
     showCustomToast: (...args) => state.notices.push(args), showDuplicatePatientModal: () => { state.modals++; },
     savePatientDataInternal: async () => { state.saves++; return { status: 'saved' }; }
   });
+  context.state = context;
   for (const name of ['checkDuplicatePatient', 'savePatientData']) {
     vm.runInContext(source.match(new RegExp(`async function ${name}\\([^]*?\\n\\}`))[0], context);
   }

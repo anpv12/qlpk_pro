@@ -60,4 +60,16 @@ function readScriptSource(filePath) {
     return rel ? readModuleSource(rel) : fs.readFileSync(filePath, 'utf8');
 }
 
-module.exports = { moduleFiles, readModuleSource, runModuleScript, runScriptFile, readScriptSource };
+// Source of an ES module page group (the receptionist page files), with import/export lines removed, for
+// harnesses that evaluate single functions in a vm context. Shared page state lives in `state`, so a harness
+// sets context.state = context and keeps reading page variables off the context.
+const RECEPTIONIST_PAGE_MODULES = ['receptionist-new-parts/address.js', 'receptionist-new.js', 'receptionist/save-flow-parts/copy-patient.js',
+    'receptionist/save-flow.js', 'receptionist/medical-data-and-documents.js'];
+function readPageModulesSource(rels = RECEPTIONIST_PAGE_MODULES) {
+    return rels.map(rel => fs.readFileSync(path.join(JS_ROOT, rel), 'utf8'))
+        .join('\n')
+        .replace(/^import [^;]+;\n/gm, '')
+        .replace(/^export \{[^}]*\};\n/gm, '');
+}
+
+module.exports = { moduleFiles, readModuleSource, runModuleScript, runScriptFile, readScriptSource, readPageModulesSource, RECEPTIONIST_PAGE_MODULES };

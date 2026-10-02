@@ -1,11 +1,10 @@
-/* global collectFormData, formatDateDisplay, loadAttachmentsForCurrentPatient, resetFormToDefault, safeSetValue, saveReceptionistAppointment, saveReceptionistPatient, uploadReceptionistDraftDocuments, uploadedDocuments */
-/* exported DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, calculatePregnancyWeek, currentAppointmentId, currentEditId, currentPage, currentPatientId, currentStatus, ensureSession, getCurrentLoadId, initializeAutocomplete, isCheckingDuplicate, isSubmitting, loadAppointments, loadDoctorsForForm, loadServicesForForm, perPage, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance, savePatientDataInternal, setCurrentPatientId, setDateOfBirthAndAge, setDefaultAppointmentDateTime, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, totalPages, updateStatusCounts, validateReceptionistFormData, waitingListFilter */
-// Parts (nạp trước file này): address.js
+import { state } from './receptionist/page-state.js';
+import { formatDateDisplay, loadAttachmentsForCurrentPatient, resetFormToDefault } from './receptionist/medical-data-and-documents.js';
+import { collectFormData, safeSetValue, saveReceptionistAppointment, saveReceptionistPatient, uploadReceptionistDraftDocuments } from './receptionist/save-flow.js';
 
-// Continued in (nạp ngay sau file này, cùng scope trang): receptionist/save-flow.js, receptionist/medical-data-and-documents.js
 // Receptionist intake workspace
 let currentPatientId = null;
-let relativeTableInstance = null;
+state.relativeTableInstance = null;
 const receptionistLoadState = { token: 0, loading: false, failed: false };
 
 function beginReceptionistLoad() {
@@ -25,16 +24,16 @@ function setCurrentPatientId(value) {
 		Promise.resolve(loadAttachmentsForCurrentPatient()).catch(() => { });
 	}
 }
-let currentAppointmentId = null;
+state.currentAppointmentId = null;
 let allAppointments = [];
 let currentPage = 1;
-let perPage = 10000; // Hiển thị toàn bộ dữ liệu
+state.perPage = 10000; // Hiển thị toàn bộ dữ liệu
 let totalPages = 1;
 // pendingJointExamList đã được quản lý bởi jointExamManagerInstance
-let currentStatus = 'waiting_transfer';
+state.currentStatus = 'waiting_transfer';
 
 // Filter state cho danh sách bệnh nhân đang chờ
-let waitingListFilter = {
+state.waitingListFilter = {
 	patient_name: '',
 	doctor_id: '',
 	date: ''
@@ -44,8 +43,8 @@ let waitingListFilter = {
 const kinshipOptions = ['Cha', 'Mẹ', 'Cha dượng', 'Mẹ kế', 'Vợ', 'Chồng', 'Vợ cũ', 'Chồng cũ', 'Con trai', 'Con gái', 'Con trai riêng', 'Con gái riêng', 'Con trai nuôi', 'Con gái nuôi', 'Anh trai', 'Em trai', 'Chị gái', 'Em gái', 'Anh trai cùng cha khác mẹ', 'Em trai cùng cha khác mẹ', 'Anh trai cùng mẹ khác cha', 'Em trai cùng mẹ khác cha', 'Chị gái cùng cha khác mẹ', 'Em gái cùng cha khác mẹ', 'Chị gái cùng mẹ khác cha', 'Em gái cùng mẹ khác cha', 'Bạn', 'Bạn thân', 'Đồng nghiệp', 'Hàng xóm', 'Khác'];
 
 function resetAppointmentFormRuntimeState() {
-	currentAppointmentId = null;
-	currentEditId = null;
+	state.currentAppointmentId = null;
+	state.currentEditId = null;
 	localStorage.removeItem('currentEditId');
 }
 
@@ -71,13 +70,13 @@ async function refreshReceptionistAfterSuccessfulSave() {
 	setDefaultAppointmentDateTime();
 
 	currentPage = 1;
-	await loadAppointments(currentStatus, currentPage);
+	await loadAppointments(state.currentStatus, currentPage);
 }
 
 // Form handling variables
-let currentEditId = null;
+state.currentEditId = null;
 let isSubmitting = false;
-let isCheckingDuplicate = false;
+state.isCheckingDuplicate = false;
 let allServices = [];
 
 // Token management
@@ -175,44 +174,28 @@ function setupBMICalculation() {
 	window.ReceptionistFormCalculations.setupBMICalculation(getFormCalculationOptions());
 }
 
-// Hàm tính tuần và ngày tuổi thai từ ngày dự sinh
-function calculatePregnancyWeek(expectedDeliveryDate) {
-	return window.ReceptionistFormCalculations.calculatePregnancyWeek(expectedDeliveryDate);
-}
-
 // ================= Address draft auto-save (cache) & edit auto-update =================
 const ADDRESS_DRAFT_KEY = 'receptionist:new_address_draft';
 const MEDICAL_DRAFT_KEY = 'receptionist:new_medical_draft';
 const DOCUMENT_DRAFT_KEY = 'receptionist:new_documents_draft';
 const PAGE_LOAD_ID_KEY = 'receptionist:page_load_id';
 
-function getCurrentLoadId() {
-	try {
-		let id = sessionStorage.getItem(PAGE_LOAD_ID_KEY);
-		if (!id) {
-			id = String(Date.now());
-			sessionStorage.setItem(PAGE_LOAD_ID_KEY, id);
+function startReceptionistPage() {
+	document.addEventListener('DOMContentLoaded', () => {
+		if (window.ReferralSourceControl) {
+			window.ReferralSourceControl.bind({ document });
 		}
-		return id;
-	} catch (e) {
-		return String(Date.now());
-	}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-	if (window.ReferralSourceControl) {
-		window.ReferralSourceControl.bind({ document });
-	}
-	window.ReceptionistPageSessionBootstrap.bootstrapPageSession({
-		document,
-		sessionStorage,
-		localStorage,
-		pageLoadIdKey: PAGE_LOAD_ID_KEY,
-		draftKeys: [ADDRESS_DRAFT_KEY, MEDICAL_DRAFT_KEY, DOCUMENT_DRAFT_KEY],
-		staleLocalKeys: ['medicalHistoryData'],
-		kinshipOptions
+		window.ReceptionistPageSessionBootstrap.bootstrapPageSession({
+			document,
+			sessionStorage,
+			localStorage,
+			pageLoadIdKey: PAGE_LOAD_ID_KEY,
+			draftKeys: [ADDRESS_DRAFT_KEY, MEDICAL_DRAFT_KEY, DOCUMENT_DRAFT_KEY],
+			staleLocalKeys: ['medicalHistoryData'],
+			kinshipOptions
+		});
 	});
-});
+}
 
 // Initialize autocomplete for personal info fields
 function initializeAutocomplete() {
@@ -225,17 +208,17 @@ function initializeAutocomplete() {
 async function loadAppointments(status = 'waiting_transfer', page = 1) {
 	try {
 		// Build API URL với filter params
-		let apiUrl = `/api/?examination_status=${status}&page=${page}&per_page=${perPage}&receptionist=true`;
+		let apiUrl = `/api/?examination_status=${status}&page=${page}&per_page=${state.perPage}&receptionist=true`;
 
 		// Thêm filter params nếu có
-		if (waitingListFilter.patient_name) {
-			apiUrl += `&patient_name=${encodeURIComponent(waitingListFilter.patient_name)}`;
+		if (state.waitingListFilter.patient_name) {
+			apiUrl += `&patient_name=${encodeURIComponent(state.waitingListFilter.patient_name)}`;
 		}
-		if (waitingListFilter.doctor_id) {
-			apiUrl += `&doctor_id=${waitingListFilter.doctor_id}`;
+		if (state.waitingListFilter.doctor_id) {
+			apiUrl += `&doctor_id=${state.waitingListFilter.doctor_id}`;
 		}
-		if (waitingListFilter.date) {
-			apiUrl += `&appointment_date=${waitingListFilter.date}`;
+		if (state.waitingListFilter.date) {
+			apiUrl += `&appointment_date=${state.waitingListFilter.date}`;
 		}
 
 		const response = await apiCall(apiUrl);
@@ -274,7 +257,7 @@ function renderAppointmentsTable() {
 		document,
 		getAllAppointments: () => allAppointments,
 		getCurrentPage: () => currentPage,
-		getPerPage: () => perPage,
+		getPerPage: () => state.perPage,
 		formatDateDisplay
 	});
 }
@@ -285,7 +268,7 @@ function updatePagination() {
 		document,
 		getAllAppointments: () => allAppointments,
 		getCurrentPage: () => currentPage,
-		getPerPage: () => perPage,
+		getPerPage: () => state.perPage,
 		getTotalPages: () => totalPages
 	});
 }
@@ -400,9 +383,9 @@ async function savePatientDataInternal(formData) {
 	if (isSubmitting) return { status: 'skipped', reason: 'saving' };
 	const token = receptionistLoadState.token;
 	let patientId = currentPatientId;
-	const appointmentId = currentAppointmentId;
+	const appointmentId = state.currentAppointmentId;
 	const formSnapshot = JSON.stringify(collectFormData());
-	const hasNewChanges = () => JSON.stringify(collectFormData()) !== formSnapshot || uploadedDocuments.length > 0;
+	const hasNewChanges = () => JSON.stringify(collectFormData()) !== formSnapshot || state.uploadedDocuments.length > 0;
 	const isCurrentContext = () => token === receptionistLoadState.token && patientId === currentPatientId
 		&& !receptionistLoadState.loading && !receptionistLoadState.failed;
 	isSubmitting = true;
@@ -444,3 +427,5 @@ function buildReceptionistSubmission(formData) {
 	});
 	return { patientData, appointmentData, validationError: appointmentSubmit.getAppointmentValidationError(appointmentData) };
 }
+
+export { startReceptionistPage, DOCUMENT_DRAFT_KEY, MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, currentPage, currentPatientId, ensureSession, initializeAutocomplete, isSubmitting, loadAppointments, loadDoctorsForForm, loadServicesForForm, reEnableAgeCalculation, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, savePatientDataInternal, setCurrentPatientId, setDateOfBirthAndAge, setDefaultAppointmentDateTime, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, temporarilyDisableAgeCalculation, totalPages, updateStatusCounts, validateReceptionistFormData };

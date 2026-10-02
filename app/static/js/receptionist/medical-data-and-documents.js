@@ -1,5 +1,8 @@
-/* global DOCUMENT_DRAFT_KEY, apiCall, bindAddressFieldChanges, cancelAppointment, currentAppointmentId: writable, currentEditId: writable, currentPage, currentPatientId, currentStatus: writable, editAppointment, ensureSession, getMedicalDraftOptions, getPatientPopulateOptions, initializeAutocomplete, initializeForm, loadAppointments, loadDoctorsForForm, loadProvinces, loadServicesForForm, loadSidebarUserInfo, perPage: writable, populateSharedForms, receptionistLoadState, relativeTableInstance: writable, savePatientData, setCurrentPatientId, setDefaultAppointmentDateTime, showCustomToast, totalPages, transferAppointment, updateStatusCounts, waitingListFilter: writable */
-/* exported currentEditId, formatDateDisplay, highlightAppointmentDateTimeFields, jointExamManagerInstance, loadAttachmentsForCurrentPatient, perPage, renderDocumentsList, resetFormToDefault, savePendingJointExamList, uploadFile, uploadedDocuments */
+import { state } from './page-state.js';
+import { DOCUMENT_DRAFT_KEY, apiCall, currentPage, currentPatientId, ensureSession, initializeAutocomplete, loadAppointments, loadDoctorsForForm, loadServicesForForm, receptionistLoadState, setCurrentPatientId, setDefaultAppointmentDateTime, showCustomToast, totalPages, updateStatusCounts } from '../receptionist-new.js';
+import { getMedicalDraftOptions, getPatientPopulateOptions, populateSharedForms } from './save-flow-parts/copy-patient.js';
+import { cancelAppointment, editAppointment, initializeForm, loadSidebarUserInfo, savePatientData, transferAppointment } from './save-flow.js';
+import { bindAddressFieldChanges, loadProvinces } from '../receptionist-new-parts/address.js';
 
 // Load patient medical data from API
 async function loadPatientMedicalData(patientId) {
@@ -45,7 +48,7 @@ async function initializeVisibleMedicalDetails() {
 }
 
 // Document upload functions
-let uploadedDocuments = []; // nháp trong phiên (chưa upload)
+state.uploadedDocuments = []; // nháp trong phiên (chưa upload)
 let attachments = []; // tài liệu đã lưu trên server
 let uploadInitialized = false;
 let attachmentMaxSizeBytes = 50 * 1024 * 1024;
@@ -66,8 +69,8 @@ function getDocumentAttachmentControlsOptions() {
 		loadAttachmentsForCurrentPatient,
 		getCurrentPatientId: () => window.currentPatientId,
 		getContextToken: () => receptionistLoadState.token,
-		getUploadedDocuments: () => uploadedDocuments,
-		setUploadedDocuments: value => { uploadedDocuments = value; },
+		getUploadedDocuments: () => state.uploadedDocuments,
+		setUploadedDocuments: value => { state.uploadedDocuments = value; },
 		getAttachments: () => attachments,
 		setAttachments: value => { attachments = value; },
 		getUploadInitialized: () => uploadInitialized,
@@ -119,7 +122,7 @@ function getDocumentAttachmentListOptions() {
 		getContextToken: () => receptionistLoadState.token,
 		utils: documentAttachmentUtils,
 		getAttachments: () => attachments,
-		getUploadedDocuments: () => uploadedDocuments,
+		getUploadedDocuments: () => state.uploadedDocuments,
 		formatDateDisplay,
 		openAttachmentPreviewInNewTab,
 		apiCall,
@@ -152,8 +155,8 @@ function getDocumentAttachmentOptions() {
 		fetch,
 		showConfirmationDialog: window.QLPKConfirmationDialog?.confirm,
 		showToast: showCustomToast,
-		getUploadedDocuments: () => uploadedDocuments,
-		setUploadedDocuments: value => { uploadedDocuments = value; },
+		getUploadedDocuments: () => state.uploadedDocuments,
+		setUploadedDocuments: value => { state.uploadedDocuments = value; },
 		renderDocumentsList
 	};
 }
@@ -173,11 +176,11 @@ function deleteDocument(docId, options = {}) {
 // Initialize page
 
 function refreshRelativesAfterPatientChange(payload) {
-	const handledRelativeUpdate = typeof relativeTableInstance.applyPatientChanged === 'function'
-		? relativeTableInstance.applyPatientChanged(payload)
+	const handledRelativeUpdate = typeof state.relativeTableInstance.applyPatientChanged === 'function'
+		? state.relativeTableInstance.applyPatientChanged(payload)
 		: false;
-	if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof relativeTableInstance.reload === 'function') {
-		relativeTableInstance.reload();
+	if (!handledRelativeUpdate && payload.action !== 'family_member_updated' && typeof state.relativeTableInstance.reload === 'function') {
+		state.relativeTableInstance.reload();
 	}
 }
 
@@ -202,7 +205,7 @@ function initializePage() {
 	// Load initial data
 	loadDoctorsForForm();
 	loadProvinces();
-	loadAppointments(currentStatus, currentPage);
+	loadAppointments(state.currentStatus, currentPage);
 	updateStatusCounts();
 
 	// Initialize document upload
@@ -224,74 +227,42 @@ function initializePage() {
 		receptionistLoadState.token += 1;
 		receptionistLoadState.loading = false;
 		receptionistLoadState.failed = false;
-		currentAppointmentId = null;
+		state.currentAppointmentId = null;
 		window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 		window.ReceptionistFormResetUtils.resetFormToDefault({
 			document,
 			window,
 			localStorage,
-			relativeTableInstance,
-			setRelativeTableInstance: value => { relativeTableInstance = value; },
-			setCurrentEditId: value => { currentEditId = value; },
-			setUploadedDocuments: value => { uploadedDocuments = value; },
+			relativeTableInstance: state.relativeTableInstance,
+			setRelativeTableInstance: value => { state.relativeTableInstance = value; },
+			setCurrentEditId: value => { state.currentEditId = value; },
+			setUploadedDocuments: value => { state.uploadedDocuments = value; },
 			setCurrentPatientId
 		});
 	window.QLPKPatientIntakeForm.updatePregnancyControls({ document });
 	}
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', async function () {
-	if (!await ensureSession()) return;
+// ========================================
+// JOINT EXAM (NGƯỜI ĐI KHÁM CÙNG) - SỬ DỤNG MODULE DRY
+// ========================================
 
-	initializePage();
+// Khởi tạo JointExamManager instance
+let jointExamManagerInstance = null;
 
-	window.ReceptionistAppointmentListControls.bindListControls({
-		document,
-		window,
-		getCurrentStatus: () => currentStatus,
-		setCurrentStatus: value => { currentStatus = value; },
-		getCurrentPage: () => currentPage,
-		getTotalPages: () => totalPages,
-		setPerPage: value => { perPage = value; },
-		loadAppointments,
-		updateStatusCounts,
-		editAppointment,
-		transferAppointment,
-		cancelAppointment
-	});
+	const receptionistFormatters = window.ReceptionistFormatters || {};
+	const escapeHtml = receptionistFormatters.escapeHtml;
+	const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
 
-	bindAddressFieldChanges();
+// Lấy appointment ID hiện tại
+function getCurrentAppointmentId() {
+	return state.currentAppointmentId;
+}
 
-	window.ReceptionistAppointmentListControls.bindWaitingListFilters({
-			document,
-			getCurrentStatus: () => currentStatus,
-			getWaitingListFilter: () => waitingListFilter,
-			setWaitingListFilter: value => { waitingListFilter = value; },
-			loadAppointments,
-			apiCall,
-			showToast: showCustomToast
-		});
+async function savePendingJointExamList(appointmentId, options = {}) {
+	return window.ReceptionistJointExamOrchestration.savePendingList(jointExamManagerInstance, appointmentId, options);
+}
 
-	// Initialize form
-	initializeForm();
-	initializeAutocomplete();
-
-	window.ReceptionistFormInputGuards.bindAgeInputGuard({ document });
-	window.QLPKPatientIntakeForm.bind({ document, apiCall });
-
-	window.ReceptionistJointExamOrchestration.bindModalControls(
-		Object.assign({}, getPatientPopulateOptions(), {
-			getManager: () => jointExamManagerInstance
-		})
-	);
-
-	window.ReceptionistFormSaveControls.bindSaveInfoButton({
-		document,
-		savePatientData: () => savePatientData()
-	});
-
-	window.ReceptionistAppointmentPrefill.bindReExamSourceReset(getPatientPopulateOptions());
-
+function registerRealtimeRefresh() {
 	if (window.QLPKRealtimePageHooks) {
 		window.QLPKRealtimePageHooks.register({
 			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'document.changed', 'catalog.changed', 'busy_schedule.changed'],
@@ -311,58 +282,100 @@ document.addEventListener('DOMContentLoaded', async function () {
 					return;
 				}
 
-				if (isCurrentPatient && event.type === 'patient.changed' && relativeTableInstance) {
+				if (isCurrentPatient && event.type === 'patient.changed' && state.relativeTableInstance) {
 					refreshRelativesAfterPatientChange(payload);
 				}
 
-				loadAppointments(currentStatus, currentPage);
+				loadAppointments(state.currentStatus, currentPage);
 				updateStatusCounts();
 			}
 		});
 	}
-
-});
-
-window.ReceptionistPatientRelativesTable.bindInitialLoad(
-	Object.assign({}, getPatientPopulateOptions(), {
-		getInstance: () => relativeTableInstance,
-		setInstance: value => { relativeTableInstance = value; }
-	})
-);
-
-// ========================================
-// JOINT EXAM (NGƯỜI ĐI KHÁM CÙNG) - SỬ DỤNG MODULE DRY
-// ========================================
-
-// Khởi tạo JointExamManager instance
-let jointExamManagerInstance = null;
-
-	const receptionistFormatters = window.ReceptionistFormatters || {};
-	const escapeHtml = receptionistFormatters.escapeHtml;
-	const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
-
-// Lấy appointment ID hiện tại
-function getCurrentAppointmentId() {
-	return currentAppointmentId;
 }
 
-window.ReceptionistJointExamOrchestration.bindInitialLoad(
-	Object.assign({}, getPatientPopulateOptions(), {
-		getInstance: () => jointExamManagerInstance,
-		setInstance: value => { jointExamManagerInstance = value; },
-		getAppointmentId: getCurrentAppointmentId,
-		getContextToken: () => receptionistLoadState.token,
-		onReloadFamilyMembers: () => {
-			if (relativeTableInstance) {
-				relativeTableInstance.reload();
-			}
-		},
-		showToast: showCustomToast,
-		escapeHtml,
-		formatDateDisplay
-	})
-);
+function startMedicalDataAndDocuments() {
+	document.addEventListener('DOMContentLoaded', async function () {
+		if (!await ensureSession()) return;
 
-async function savePendingJointExamList(appointmentId, options = {}) {
-	return window.ReceptionistJointExamOrchestration.savePendingList(jointExamManagerInstance, appointmentId, options);
+		initializePage();
+
+		window.ReceptionistAppointmentListControls.bindListControls({
+			document,
+			window,
+			getCurrentStatus: () => state.currentStatus,
+			setCurrentStatus: value => { state.currentStatus = value; },
+			getCurrentPage: () => currentPage,
+			getTotalPages: () => totalPages,
+			setPerPage: value => { state.perPage = value; },
+			loadAppointments,
+			updateStatusCounts,
+			editAppointment,
+			transferAppointment,
+			cancelAppointment
+		});
+
+		bindAddressFieldChanges();
+
+		window.ReceptionistAppointmentListControls.bindWaitingListFilters({
+				document,
+				getCurrentStatus: () => state.currentStatus,
+				getWaitingListFilter: () => state.waitingListFilter,
+				setWaitingListFilter: value => { state.waitingListFilter = value; },
+				loadAppointments,
+				apiCall,
+				showToast: showCustomToast
+			});
+
+		// Initialize form
+		initializeForm();
+		initializeAutocomplete();
+
+		window.ReceptionistFormInputGuards.bindAgeInputGuard({ document });
+		window.QLPKPatientIntakeForm.bind({ document, apiCall });
+
+		window.ReceptionistJointExamOrchestration.bindModalControls(
+			Object.assign({}, getPatientPopulateOptions(), {
+				getManager: () => jointExamManagerInstance
+			})
+		);
+
+		window.ReceptionistFormSaveControls.bindSaveInfoButton({
+			document,
+			savePatientData: () => savePatientData()
+		});
+
+		window.ReceptionistAppointmentPrefill.bindReExamSourceReset(getPatientPopulateOptions());
+
+		registerRealtimeRefresh();
+
+	});
+
+	// Same DOMContentLoaded order as the former classic script: session check starts, then the relatives table and joint-exam manager initialize.
+	document.addEventListener('DOMContentLoaded', () => {
+		window.ReceptionistPatientRelativesTable.bindInitialLoad(
+			Object.assign({}, getPatientPopulateOptions(), {
+				getInstance: () => state.relativeTableInstance,
+				setInstance: value => { state.relativeTableInstance = value; }
+			})
+		);
+
+		window.ReceptionistJointExamOrchestration.bindInitialLoad(
+			Object.assign({}, getPatientPopulateOptions(), {
+				getInstance: () => jointExamManagerInstance,
+				setInstance: value => { jointExamManagerInstance = value; },
+				getAppointmentId: getCurrentAppointmentId,
+				getContextToken: () => receptionistLoadState.token,
+				onReloadFamilyMembers: () => {
+					if (state.relativeTableInstance) {
+						state.relativeTableInstance.reload();
+					}
+				},
+				showToast: showCustomToast,
+				escapeHtml,
+				formatDateDisplay
+			})
+		);
+	});
 }
+
+export { startMedicalDataAndDocuments, formatDateDisplay, highlightAppointmentDateTimeFields, jointExamManagerInstance, loadAttachmentsForCurrentPatient, renderDocumentsList, resetFormToDefault, savePendingJointExamList, uploadFile };

@@ -5,9 +5,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const { runScriptFile, readPageModulesSource } = require('./helpers/module-source');
 const root = path.join(__dirname, '../app/static/js');
-const page = readScriptSource(path.join(root, 'receptionist-new.js'));
+const page = readPageModulesSource();
 
 function deferred() {
   let resolve;
@@ -38,6 +38,7 @@ function harness() {
     savePendingJointExamList: async () => ({ status: 'saved' }), resets: 0,
     $: () => ({ focus() {} })
   });
+  context.state = context;
   for (const filename of ['receptionist/appointment-submit.js', 'components/document-section-ui-utils.js']) {
     runScriptFile(path.join(root, filename), context);
   }

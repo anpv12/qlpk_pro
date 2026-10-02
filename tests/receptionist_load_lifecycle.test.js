@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const { runScriptFile, readScriptSource } = require('./helpers/module-source');
-const source = readScriptSource(path.join(__dirname, '../app/static/js/receptionist-new.js'));
+const { runScriptFile, readPageModulesSource } = require('./helpers/module-source');
+const source = readPageModulesSource();
 
 function deferred() {
   let resolve;
@@ -44,7 +44,8 @@ function harness() {
       ReceptionistPatientRelativesTable: { syncPatient() {} }
     }
   });
-  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'fetchPatientForCopy', 'resetFormForCopiedPatient', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'saveAddressToServerIfEditing', 'resetFormToDefault']) {
+  context.state = context;
+  for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'fetchPatientForCopy', 'resetFormForCopiedPatient', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'resetFormToDefault']) {
     const ending = name === 'resetFormToDefault' ? '\\n\\t\\}' : '\\n\\}';
     const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?${ending}`));
     if (match) vm.runInContext(match[0], context);
@@ -90,12 +91,11 @@ test('Populate false chặn thông báo thành công và gán appointment', asyn
   assert.equal(state.notices.some(item => item[0] === 'info'), false);
 });
 
-test('Tải lỗi hiện tại chặn lưu hành chính và tự lưu địa chỉ', async () => {
+test('Tải lỗi hiện tại chặn lưu hành chính', async () => {
   const state = harness();
   state.context.receptionistLoadState.failed = true;
   state.context.window.currentPatientId = 1;
   assert.equal((await state.context.savePatientDataInternal({})).reason, 'not-ready');
-  assert.equal((await state.context.saveAddressToServerIfEditing()).reason, 'not-ready');
   assert.equal(state.requests.length, 0);
 });
 

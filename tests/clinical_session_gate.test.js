@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { runScriptFile, readScriptSource } = require('./helpers/module-source');
+const { runScriptFile, readScriptSource, readPageModulesSource } = require('./helpers/module-source');
 
 const runtimeFiles = [
     ['components/page-core-utils.js', 'ClinicalPageCoreUtils'],
@@ -133,7 +133,7 @@ test('legacy alias/storage fallback và thiếu credential dùng cùng một own
 
 test('các entry page await gate, không dùng Promise như boolean', () => {
     const doctor = readScriptSource('app/static/js/doctor-examination.js');
-    const receptionist = readScriptSource('app/static/js/receptionist-new.js');
+    const receptionist = readPageModulesSource();
     const psychologist = fs.readFileSync('app/static/js/psychologist-examination.js', 'utf8');
     assert.match(doctor, /DOMContentLoaded', async \(\) => \{\s*if \(!await ensureSession\(\)\) return;/);
     assert.match(doctor, /async function loadAppointments[\s\S]*?if \(!await ensureSession\(\)\) return null;/);

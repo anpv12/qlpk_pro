@@ -1,6 +1,7 @@
-/* global DOCUMENT_DRAFT_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildFullAddressFromParts, buildReceptionistConfirmOptions, calculatePregnancyWeek, copyPatientToReceptionistFormFromGlobalSearch, currentAppointmentId: writable, currentPage, currentPatientId, currentStatus, getCurrentLoadId, getPatientPopulateOptions, highlightAppointmentDateTimeFields, isCheckingDuplicate: writable, isSubmitting, jointExamManagerInstance, loadAppointments, loadServicesForForm, populateSharedForms, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, relativeTableInstance: writable, renderDocumentsList, saveAddressToServerIfEditing, savePatientDataInternal, savePendingJointExamList, setCurrentPatientId, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, updateStatusCounts, uploadFile, uploadedDocuments: writable, validateReceptionistFormData */
-/* exported cancelAppointment, collectFormData, currentAppointmentId, editAppointment, initializeForm, loadSidebarUserInfo, safeSetValue, savePatientData, saveReceptionistAppointment, saveReceptionistPatient, transferAppointment, uploadReceptionistDraftDocuments */
-// Parts (nạp trước file này): copy-patient.js
+import { state } from './page-state.js';
+import { DOCUMENT_DRAFT_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, currentPage, currentPatientId, isSubmitting, loadAppointments, loadServicesForForm, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, savePatientDataInternal, setCurrentPatientId, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, updateStatusCounts, validateReceptionistFormData } from '../receptionist-new.js';
+import { highlightAppointmentDateTimeFields, jointExamManagerInstance, renderDocumentsList, savePendingJointExamList, uploadFile } from './medical-data-and-documents.js';
+import { copyPatientToReceptionistFormFromGlobalSearch, getPatientPopulateOptions, populateSharedForms } from './save-flow-parts/copy-patient.js';
 
 // Returns { patientId } on success, otherwise { status } ('stale' | 'patientError'); throws on an invalid id.
 async function saveReceptionistPatient(patientId, patientData, isCurrentContext) {
@@ -25,8 +26,8 @@ async function saveReceptionistPatient(patientId, patientData, isCurrentContext)
 async function uploadReceptionistDraftDocuments(patientId, isCurrentContext) {
 	await window.ClinicalDocumentSectionUiUtils.uploadDraftDocumentsForPatient(patientId, {
 		isCurrentContext,
-		getUploadedDocuments: () => uploadedDocuments,
-		setUploadedDocuments: value => { uploadedDocuments = value; renderDocumentsList(); },
+		getUploadedDocuments: () => state.uploadedDocuments,
+		setUploadedDocuments: value => { state.uploadedDocuments = value; renderDocumentsList(); },
 		sessionStorage,
 		documentDraftKey: DOCUMENT_DRAFT_KEY,
 		uploadFile: async (file, targetId, options) => {
@@ -71,7 +72,7 @@ async function saveReceptionistAppointment(appointmentData, appointmentId, isCur
 	if (!isCurrentContext()) return { status: 'stale' };
 	const savedAppointmentId = verifiedAppointmentId(appointmentResult, appointmentId);
 	if (!appointmentId) {
-		currentAppointmentId = savedAppointmentId;
+		state.currentAppointmentId = savedAppointmentId;
 	}
 	const jointResult = await savePendingJointExamList(savedAppointmentId, { isCurrentContext });
 	if (!isCurrentContext()) return { status: 'stale' };
@@ -114,9 +115,9 @@ async function checkDuplicatePatient(formData) {
 
 async function savePatientData() {
 	if (receptionistLoadState.loading || receptionistLoadState.failed) return { status: 'skipped', reason: 'not-ready' };
-	if (isSubmitting || isCheckingDuplicate) return { status: 'skipped', reason: 'saving' };
+	if (isSubmitting || state.isCheckingDuplicate) return { status: 'skipped', reason: 'saving' };
 	const loadToken = receptionistLoadState.token;
-	isCheckingDuplicate = true;
+	state.isCheckingDuplicate = true;
 
 	try {
 		const formData = collectFormData();
@@ -153,7 +154,7 @@ async function savePatientData() {
 		console.error('Error in savePatientData:', error);
 		showCustomToast('error', 'Lỗi khi lưu thông tin bệnh nhân');
 	} finally {
-		isCheckingDuplicate = false;
+		state.isCheckingDuplicate = false;
 	}
 }
 
@@ -198,7 +199,7 @@ async function editAppointment(appointmentId) {
 
 	const isCurrentLoad = beginReceptionistLoad();
 	window.ReceptionistFormResetUtils.clearSharedFields({ document, window });
-	currentAppointmentId = null;
+	state.currentAppointmentId = null;
 
 	// Đồng bộ currentPatientId + refresh attachment count/list
 	setCurrentPatientId(appointment.patient_id);
@@ -260,15 +261,15 @@ function applyLoadedAppointment(appointment) {
 	window.ReceptionistServicePackage.setServiceSelection(appointment, allServices);
 
 	setCurrentPatientId(appointment.patient_id);
-	currentAppointmentId = appointment.id;
+	state.currentAppointmentId = appointment.id;
 
 	window.ReceptionistAppointmentPrefill.applyEditReExamState(appointment, getPatientPopulateOptions());
 
 	// Xóa pending list khi load appointment (vì đã có appointment rồi)
 	window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 
-	relativeTableInstance = window.ReceptionistPatientRelativesTable.syncPatient(
-		relativeTableInstance,
+	state.relativeTableInstance = window.ReceptionistPatientRelativesTable.syncPatient(
+		state.relativeTableInstance,
 		appointment.patient_id,
 		Object.assign({}, getPatientPopulateOptions(), {
 			syncAppointmentDate: true,
@@ -290,7 +291,7 @@ async function transferAppointment(appointmentId) {
 	}
 
 	window.TransferModal.openWithErrorHandling([appointmentId], 'receptionist', function () {
-		loadAppointments(currentStatus, currentPage);
+		loadAppointments(state.currentStatus, currentPage);
 		updateStatusCounts();
 	});
 }
@@ -322,7 +323,7 @@ async function cancelAppointment(appointmentId, force = false) {
 
 		if (response.ok && data.success) {
 			showCustomToast('success', 'Hủy lịch hẹn thành công');
-			loadAppointments(currentStatus, currentPage);
+			loadAppointments(state.currentStatus, currentPage);
 			updateStatusCounts();
 		} else if (response.status === 409 && data.requires_force) {
 			// Đang trong quá trình khám — hỏi xác nhận lần 2
@@ -378,8 +379,4 @@ async function loadPreviousVitals(patientId) {
 	});
 }
 
-window.calculatePregnancyWeek = calculatePregnancyWeek;
-window.saveAddressToServerIfEditing = saveAddressToServerIfEditing;
-window.buildFullAddressFromParts = buildFullAddressFromParts;
-window.getCurrentLoadId = getCurrentLoadId;
-window.safeSetValue = safeSetValue;
+export { cancelAppointment, collectFormData, editAppointment, initializeForm, loadSidebarUserInfo, safeSetValue, savePatientData, saveReceptionistAppointment, saveReceptionistPatient, transferAppointment, uploadReceptionistDraftDocuments };

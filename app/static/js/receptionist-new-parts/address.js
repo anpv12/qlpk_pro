@@ -1,36 +1,8 @@
-/* global apiCall, receptionistLoadState */
-/* exported bindAddressFieldChanges, buildFullAddressFromParts, loadProvinces, saveAddressToServerIfEditing, updateAddressSummary */
-// receptionist-new.js: buildFullAddressFromParts, getMainAddressFormValues, saveAddressToServerIfEditing, loadProvinces, loadWards, updateAddressSummary, bindAddressFieldChanges (nạp trước receptionist-new.js, cùng scope trang).
+import { apiCall } from '../receptionist-new.js';
+// Main-form address helpers for the receptionist page (ES module).
 
 function buildFullAddressFromParts(addressDetail, ward, district, province) {
 	return window.ReceptionistAddressMainForm.buildFullAddressFromParts(addressDetail, ward, district, province);
-}
-
-function getMainAddressFormValues() {
-	return window.ReceptionistAddressMainForm.getMainAddressFormValues({ document });
-}
-
-async function saveAddressToServerIfEditing() {
-	if (receptionistLoadState.loading || receptionistLoadState.failed) return { status: 'skipped', reason: 'not-ready' };
-	try {
-		if (!window.currentPatientId) return;
-		const pid = window.currentPatientId;
-		const { address_detail, province, district, ward, address } = getMainAddressFormValues();
-		const body = {
-			address_detail,
-			province,
-			district,
-			ward,
-			address
-		};
-		await apiCall(`/api/patients/${pid}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-	} catch (e) {
-		console.warn('Không thể lưu địa chỉ bệnh nhân:', e);
-	}
 }
 
 // Load regions (main form) - replacing Provinces
@@ -59,6 +31,9 @@ function updateAddressSummary() {
 function bindAddressFieldChanges() {
 	window.ReceptionistAddressMainForm.bindAddressFieldChanges({
 		document,
+		apiCall,
 		loadWards
 	});
 }
+
+export { bindAddressFieldChanges, buildFullAddressFromParts, loadProvinces, loadWards, updateAddressSummary };
