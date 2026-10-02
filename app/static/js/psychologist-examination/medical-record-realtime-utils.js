@@ -1,3 +1,5 @@
+import { renderDocumentMarkup } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -27,7 +29,7 @@
 		try {
 			const medicalRecordHtml = options.buildMedicalRecordHTML(buildLoadedRecordOptions(options, selectedPatient));
 
-			medicalRecordTab.innerHTML = medicalRecordHtml;
+			renderDocumentMarkup(medicalRecordTab, medicalRecordHtml);
 			if (typeof options.createBarcodesInElement === 'function') {
 				options.createBarcodesInElement(medicalRecordTab);
 			}

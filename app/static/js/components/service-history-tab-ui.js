@@ -1,3 +1,5 @@
+import { renderDocumentMarkup } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -75,7 +77,7 @@
 	function renderInvoice(options = {}) {
 		const invoiceHtml = buildInvoiceHtml(options);
 		if (options.container) {
-			options.container.innerHTML = invoiceHtml;
+			renderDocumentMarkup(options.container, invoiceHtml);
 			if (typeof options.createBarcodesInElement === 'function') {
 				options.createBarcodesInElement(options.container);
 			}

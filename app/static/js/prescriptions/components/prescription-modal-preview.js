@@ -1,3 +1,5 @@
+import { el, renderDocumentMarkup, replace } from '../../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -66,11 +68,10 @@
 
 			const totalPages = prescriptions.length;
 			if (totalPages === 0) {
-				contentArea.innerHTML = `
-					<div class="text-center text-muted py-4">
-						<i class="bi bi-clipboard" style="font-size: var(--qlpk-font-size-5xl, 32px);"></i>
-						<p class="mt-2 mb-0">Lượt khám này không có đơn thuốc</p>
-					</div>`;
+				const emptyIcon = el('i', { class: 'bi bi-clipboard' });
+				emptyIcon.style.setProperty('font-size', 'var(--qlpk-font-size-5xl, 32px)');
+				replace(contentArea, el('div', { class: 'text-center text-muted py-4' },
+					emptyIcon, el('p', { class: 'mt-2 mb-0' }, 'Lượt khám này không có đơn thuốc')));
 				return;
 			}
 
@@ -94,7 +95,7 @@
 				combinedHtml += previewHtml;
 			});
 
-			contentArea.innerHTML = combinedHtml;
+			renderDocumentMarkup(contentArea, combinedHtml);
 			createBarcodesInElement(contentArea);
 		}
 

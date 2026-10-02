@@ -103,15 +103,14 @@ test('button tokens have one owner and future designers are routed to the contra
 });
 
 test('shared confirmation uses explicit danger intent without inferring labels', () => {
-    let markup = '';
+    const { createWindow } = require('./helpers/fake-dom');
+    const { document } = createWindow();
     const window = {};
-    vm.runInNewContext(read('app/static/js/custom-modal.js'), {
-        window,
-        document: { body: { insertAdjacentHTML: (_, html) => { markup = html; } }, getElementById: () => ({ addEventListener: () => {} }), addEventListener: () => {} },
-        setTimeout: () => {},
-    });
-    window.CustomModal.confirm('Arbitrary', 'Arbitrary', 'warning', 'danger');
-    assert.match(markup, /data-qlpk-button="danger" data-qlpk-button-variant="solid"/);
+    vm.runInNewContext(read('app/static/js/custom-modal.js'), { window, document, setTimeout: () => {} });
+    window.CustomModal.confirm('<b>Arbitrary</b>', 'Arbitrary', 'warning', 'danger');
+    assert.match(document.body.innerHTML, /data-qlpk-button="danger" data-qlpk-button-variant="solid"/);
+    assert.match(document.body.innerHTML, /&lt;b&gt;Arbitrary/, 'messages are text, never markup');
+    document.body.replaceChildren();
     window.CustomModal.confirm('Arbitrary');
-    assert.match(markup, /data-qlpk-button="execute" data-qlpk-button-variant="solid"/);
+    assert.match(document.body.innerHTML, /data-qlpk-button="execute" data-qlpk-button-variant="solid"/);
 });

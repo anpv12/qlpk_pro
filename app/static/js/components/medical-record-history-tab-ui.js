@@ -1,3 +1,5 @@
+import { renderDocumentMarkup } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -85,7 +87,7 @@
 	function renderRecord(options = {}) {
 		const html = buildRecordHtml(options);
 		if (options.container) {
-			options.container.innerHTML = html;
+			renderDocumentMarkup(options.container, html);
 			if (typeof options.createBarcodesInElement === 'function') {
 				options.createBarcodesInElement(options.container);
 			}

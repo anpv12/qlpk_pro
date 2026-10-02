@@ -94,7 +94,7 @@ function processImportRows(raw, fileName) {
 	apiRequest('/api/expenses/bulk', 'POST', { items }).then(res => {
 		state.rows = res.items.concat(state.rows);
 		render();
-		window.CustomModal.alert(`Đã import <b>${res.items.length}</b> khoản chi từ file <b>${window.QLPKHtml.escape(fileName)}</b>`);
+		window.CustomModal.alert(el('span', null, 'Đã import ', el('b', null, res.items.length), ' khoản chi từ file ', el('b', null, fileName)));
 	}).catch(e => {
 		console.error('Import error:', e);
 		window.CustomModal.alert('Lỗi import dữ liệu');

@@ -67,9 +67,10 @@ export function setVisible(node, visible) {
 	if (node) node.hidden = !visible;
 }
 
-// The one sanctioned HTML-string sink: documents produced by the shared print builders
-// (prescriptions/shared/prescription-document-template.js), which escape their data fields with
-// prescriptionFormEscape and emit one markup for screen, print window and PDF. Page data must use el()/replace().
+// The one sanctioned HTML-string sink: printable documents produced by the shared document builders
+// (prescriptions/shared/prescription-document-template.js; the medical record and service invoice builders in
+// components/modal-history-data-runtime-parts/). They escape every data field and emit one markup for the screen
+// preview, the print window and the PDF. Page UI and data must use el()/replace().
 export function renderDocumentMarkup(node, documentHtml) {
 	node.innerHTML = documentHtml;
 	return node;
