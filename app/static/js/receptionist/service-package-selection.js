@@ -39,103 +39,122 @@
 			(service.code && normalizeSearchText(service.code).includes(query)));
 	}
 
-	function handleServiceDropdownKeydown($dropdown, e) {
-		const $items = $dropdown.find('.service-autocomplete-item');
-		const $active = $items.filter('.active');
+	function handleServiceDropdownKeydown(dropdown, e) {
+		const items = [...dropdown.querySelectorAll('.service-autocomplete-item')];
+		const active = items.find(item => item.classList.contains('active'));
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			if ($active.length === 0) {
-				$items.first().addClass('active');
+			if (!active) {
+				items[0]?.classList.add('active');
 			} else {
-				$active.removeClass('active').next('.service-autocomplete-item').addClass('active');
+				active.classList.remove('active');
+				const next = active.nextElementSibling;
+				if (next && next.matches('.service-autocomplete-item')) next.classList.add('active');
 			}
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			if ($active.length) {
-				$active.removeClass('active').prev('.service-autocomplete-item').addClass('active');
+			if (active) {
+				active.classList.remove('active');
+				const prev = active.previousElementSibling;
+				if (prev && prev.matches('.service-autocomplete-item')) prev.classList.add('active');
 			}
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			if ($active.length) {
-				$active.trigger('click');
-			}
+			if (active) active.click();
 		} else if (e.key === 'Escape') {
-			$dropdown.removeClass('show');
+			dropdown.classList.remove('show');
 		}
 	}
 
-	function initServiceAutocomplete(inputId, dropdownId, hiddenId, servicesList, $) {
-		const $input = $(`#${inputId}`);
-		const $dropdown = $(`#${dropdownId}`);
-		const $hidden = $(`#${hiddenId}`);
-		const namespace = `.qlpkServiceAutocomplete_${inputId}`;
-		$input.off(namespace);
-		$(document).off(namespace);
-		$dropdown.empty().removeClass('show');
+	function createServiceItem(service, onSelect) {
+		const doc = window.document;
+		const item = doc.createElement('div');
+		item.className = 'service-autocomplete-item';
+		const name = doc.createElement('span');
+		name.className = 'service-name';
+		name.textContent = service.name || '';
+		const price = doc.createElement('span');
+		price.className = 'service-price';
+		price.textContent = `${Number(service.default_price || 0).toLocaleString()} VNĐ`;
+		item.append(name, price);
+		item.addEventListener('click', () => onSelect(service));
+		return item;
+	}
+
+	const serviceAutocompleteBindings = new Map();
+
+	function initServiceAutocomplete(inputId, dropdownId, hiddenId, servicesList) {
+		const doc = window.document;
+		const input = doc.getElementById(inputId);
+		const dropdown = doc.getElementById(dropdownId);
+		const hidden = doc.getElementById(hiddenId);
+		serviceAutocompleteBindings.get(inputId)?.abort();
+		if (!input || !dropdown) return;
+		const binding = new AbortController();
+		serviceAutocompleteBindings.set(inputId, binding);
+		const { signal } = binding;
+		const setHidden = value => { if (hidden) hidden.value = value; };
+		dropdown.replaceChildren();
+		dropdown.classList.remove('show');
+
+		function selectService(selected) {
+			input.value = selected.name;
+			setHidden(selected.id);
+			dropdown.classList.remove('show');
+		}
 
 		function renderDropdown(list) {
 			if (!list || list.length === 0) {
-				$dropdown.html('<div class="service-autocomplete-no-results">Không tìm thấy dịch vụ phù hợp</div>').addClass('show');
+				const empty = doc.createElement('div');
+				empty.className = 'service-autocomplete-no-results';
+				empty.textContent = 'Không tìm thấy dịch vụ phù hợp';
+				dropdown.replaceChildren(empty);
+				dropdown.classList.add('show');
 				return;
 			}
-			$dropdown.empty().addClass('show');
-			list.forEach(service => {
-				const $item = $('<div class="service-autocomplete-item">')
-					.append($('<span class="service-name">').text(service.name || ''))
-					.append($('<span class="service-price">').text(`${Number(service.default_price || 0).toLocaleString()} VNĐ`))
-					.data('service', service)
-					.on('click', function () {
-						const selected = $(this).data('service');
-						$input.val(selected.name);
-						$hidden.val(selected.id);
-						$dropdown.removeClass('show');
-						$input.trigger('serviceSelected', [selected]);
-					});
-				$dropdown.append($item);
-			});
+			dropdown.replaceChildren(...list.map(service => createServiceItem(service, selectService)));
+			dropdown.classList.add('show');
 		}
 
-		$input.on(`focus${namespace}`, function () {
-			const query = normalizeSearchText($(this).val());
+		input.addEventListener('focus', () => {
+			const query = normalizeSearchText(input.value);
 			renderDropdown(query ? filterServicesByQuery(servicesList, query) : servicesList);
-		});
+		}, { signal });
 
-		$input.on(`input${namespace}`, function () {
-			const query = normalizeSearchText($(this).val());
-			$hidden.val('');
+		input.addEventListener('input', () => {
+			const query = normalizeSearchText(input.value);
+			setHidden('');
 			if (!query) {
-				$hidden.val('');
 				renderDropdown(servicesList);
 				return;
 			}
-			const filtered = filterServicesByQuery(servicesList, query);
-			if (filtered.length === 0) {
-				$hidden.val('');
-			}
-			renderDropdown(filtered);
-		});
+			renderDropdown(filterServicesByQuery(servicesList, query));
+		}, { signal });
 
-		$(document).on(`click${namespace}`, function (e) {
-			if (!$(e.target).closest(`#${inputId}, #${dropdownId}`).length) {
-				$dropdown.removeClass('show');
+		doc.addEventListener('click', e => {
+			if (!e.target.closest(`#${inputId}, #${dropdownId}`)) {
+				dropdown.classList.remove('show');
 			}
-		});
+		}, { signal });
 
-		$input.on(`keydown${namespace}`, function (e) {
-			handleServiceDropdownKeydown($dropdown, e);
-		});
+		input.addEventListener('keydown', e => handleServiceDropdownKeydown(dropdown, e), { signal });
 	}
 
-	function setServiceSelection(appointment, servicesList, $) {
+	function setFieldValue(id, value) {
+		const field = window.document.getElementById(id);
+		if (field) field.value = value;
+	}
+
+	function setServiceSelection(appointment, servicesList) {
 		if (appointment.service_id && servicesList && servicesList.length > 0) {
 			const service = servicesList.find(item => String(item.id) === String(appointment.service_id));
-			$('#serviceType').val(service ? service.name : '');
-			$('#serviceTypeId').val(appointment.service_id);
+			setFieldValue('serviceType', service ? service.name : '');
+			setFieldValue('serviceTypeId', appointment.service_id);
 			return true;
 		}
 
-		$('#serviceType').val('');
-		$('#serviceTypeId').val('');
+		setFieldValue('serviceType', '');
+		setFieldValue('serviceTypeId', '');
 		return false;
 	}
 

@@ -5,8 +5,20 @@
 		return options && options.document ? options.document : window.document;
 	}
 
-	function getJQuery(options) {
-		return options && options.$ ? options.$ : window.$;
+	const listenerBindings = new Map();
+
+	function rebindListeners(key, elements, types, handler) {
+		listenerBindings.get(key)?.abort();
+		const binding = new AbortController();
+		listenerBindings.set(key, binding);
+		elements.filter(Boolean).forEach(element => {
+			types.forEach(type => element.addEventListener(type, handler, { signal: binding.signal }));
+		});
+	}
+
+	function setAgeValue(doc, age) {
+		const ageEl = doc.getElementById('age');
+		if (ageEl) ageEl.value = age ? age : '';
 	}
 
 	function safeSetValue(options, elementId, value) {
@@ -45,8 +57,8 @@
 	}
 
 	function temporarilyDisableAgeCalculation(options = {}) {
-		const $ = getJQuery(options);
-		$('#dateOfBirth').off('change.ageCalculation input.ageCalculation blur.ageCalculation');
+		void options;
+		listenerBindings.get('ageCalculation')?.abort();
 	}
 
 	function reEnableAgeCalculation(options = {}) {
@@ -83,7 +95,6 @@
 
 	function setupAgeCalculation(options = {}) {
 		const doc = getDocument(options);
-		const $ = getJQuery(options);
 		const dateOfBirthEl = doc.getElementById('dateOfBirth');
 		if (!dateOfBirthEl) {
 			window.setTimeout(() => {
@@ -95,31 +106,26 @@
 			return;
 		}
 
-		$('#dateOfBirth').off('change.ageCalculation input.ageCalculation blur.ageCalculation');
-		$('#dateOfBirth').on('change.ageCalculation input.ageCalculation blur.ageCalculation', function () {
-			const dateOfBirth = $(this).val();
-			if (dateOfBirth) {
-				const age = calculateAge(dateOfBirth);
-				$('#age').val(age ? age : '');
-			} else {
-				$('#age').val('');
-			}
+		rebindListeners('ageCalculation', [dateOfBirthEl], ['change', 'input', 'blur'], () => {
+			const dateOfBirth = dateOfBirthEl.value;
+			setAgeValue(doc, dateOfBirth ? calculateAge(dateOfBirth) : '');
 		});
 
 		const currentValue = dateOfBirthEl.value;
 		if (currentValue) {
-			const age = calculateAge(currentValue);
-			$('#age').val(age ? age : '');
+			setAgeValue(doc, calculateAge(currentValue));
 		}
 	}
 
 	function setupBMICalculation(options = {}) {
-		const $ = getJQuery(options);
-		$('#weight, #height').on('input', function () {
-			const weight = parseFloat($('#weight').val()) || 0;
-			const height = parseFloat($('#height').val()) || 0;
-			const bmi = calculateBMI(weight, height);
-			$('#bmi').val(bmi);
+		const doc = getDocument(options);
+		const weightEl = doc.getElementById('weight');
+		const heightEl = doc.getElementById('height');
+		rebindListeners('bmiCalculation', [weightEl, heightEl], ['input'], () => {
+			const weight = parseFloat(weightEl?.value) || 0;
+			const height = parseFloat(heightEl?.value) || 0;
+			const bmiEl = doc.getElementById('bmi');
+			if (bmiEl) bmiEl.value = calculateBMI(weight, height);
 		});
 	}
 

@@ -14,12 +14,7 @@
 		const element = doc.getElementById(elementId);
 		if (!element) return;
 
-		const jquery = options && options.$ ? options.$ : window.$;
-		if (jquery) {
-			jquery(element).trigger('change');
-		} else if (typeof window.Event === 'function') {
-			element.dispatchEvent(new window.Event('change', { bubbles: true }));
-		}
+		element.dispatchEvent(new window.Event('change', { bubbles: true }));
 	}
 
 	function applyDoctor(appointment, options) {
@@ -34,7 +29,7 @@
 		const opts = options || {};
 		const servicePackage = window.ReceptionistServicePackage;
 		if (servicePackage && servicePackage.setServiceSelection) {
-			servicePackage.setServiceSelection(appointment, opts.allServices || window.allServices || [], opts.$ || window.$);
+			servicePackage.setServiceSelection(appointment, opts.allServices || window.allServices || []);
 		}
 	}
 

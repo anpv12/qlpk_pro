@@ -1,81 +1,60 @@
 (function (window) {
 	'use strict';
 
-	function getJQuery(options) {
-		return options && options.$ ? options.$ : window.jQuery;
-	}
+	const FIELD_SELECTOR = '.receptionist-field, .form-group, .mb-3, .col-md-6, .col-12';
+	const FIELD_IDS = ['appointmentDate', 'appointmentTime'];
+	let changeBinding = null;
 
 	function getSetTimeout(options) {
 		return options && options.setTimeout ? options.setTimeout : window.setTimeout.bind(window);
 	}
 
-	function getFields($) {
-		return {
-			appointmentDateEl: $('#appointmentDate'),
-			appointmentTimeEl: $('#appointmentTime')
-		};
+	function getFields() {
+		return FIELD_IDS.map(id => window.document.getElementById(id)).filter(Boolean);
 	}
 
-	function addWarningLabels(appointmentDateEl, appointmentTimeEl) {
-		const fieldSelector = '.receptionist-field, .form-group, .mb-3, .col-md-6, .col-12';
-		const dateLabel = appointmentDateEl.closest(fieldSelector).find('label').first();
-		const timeLabel = appointmentTimeEl.closest(fieldSelector).find('label').first();
-
-		if (dateLabel.length && !dateLabel.find('.error-warning-text').length) {
-			dateLabel.append('<span class="error-warning-text">Cần thay đổi</span>');
-		}
-		if (timeLabel.length && !timeLabel.find('.error-warning-text').length) {
-			timeLabel.append('<span class="error-warning-text">Cần thay đổi</span>');
-		}
+	function addWarningLabel(field) {
+		const label = field.closest(FIELD_SELECTOR)?.querySelector('label');
+		if (!label || label.querySelector('.error-warning-text')) return;
+		const warning = window.document.createElement('span');
+		warning.className = 'error-warning-text';
+		warning.textContent = 'Cần thay đổi';
+		label.append(warning);
 	}
 
 	function highlight(options) {
-		const opts = options || {};
-		const $ = getJQuery(opts);
-		const schedule = getSetTimeout(opts);
-		if (!$) return;
+		const schedule = getSetTimeout(options || {});
+		const fields = getFields();
+		fields.forEach(field => {
+			field.classList.add('appointment-error-highlight');
+			addWarningLabel(field);
+		});
 
-		const { appointmentDateEl, appointmentTimeEl } = getFields($);
-		appointmentDateEl.addClass('appointment-error-highlight');
-		appointmentTimeEl.addClass('appointment-error-highlight');
-		addWarningLabels(appointmentDateEl, appointmentTimeEl);
-
-		if (appointmentDateEl[0] && typeof appointmentDateEl[0].scrollIntoView === 'function') {
-			appointmentDateEl[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+		const dateEl = window.document.getElementById('appointmentDate');
+		if (dateEl && typeof dateEl.scrollIntoView === 'function') {
+			dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		}
 		schedule(() => {
-			appointmentDateEl.focus();
-			appointmentDateEl.addClass('shake-on-focus');
+			if (!dateEl) return;
+			dateEl.focus();
+			dateEl.classList.add('shake-on-focus');
 		}, 300);
 	}
 
-	function remove(options) {
-		const $ = getJQuery(options || {});
-		if (!$) return;
-
-		const { appointmentDateEl, appointmentTimeEl } = getFields($);
-		appointmentDateEl.removeClass('appointment-error-highlight shake-on-focus');
-		appointmentTimeEl.removeClass('appointment-error-highlight shake-on-focus');
-
-		const fieldSelector = '.receptionist-field, .form-group, .mb-3, .col-md-6, .col-12';
-		appointmentDateEl.closest(fieldSelector).find('label .error-warning-text').remove();
-		appointmentTimeEl.closest(fieldSelector).find('label .error-warning-text').remove();
+	function remove() {
+		getFields().forEach(field => {
+			field.classList.remove('appointment-error-highlight', 'shake-on-focus');
+			field.closest(FIELD_SELECTOR)?.querySelectorAll('label .error-warning-text').forEach(node => node.remove());
+		});
 	}
 
-	function bindChangeListeners(options) {
-		const opts = options || {};
-		const $ = getJQuery(opts);
-		if (!$) return;
-
-		$('#appointmentDate, #appointmentTime').off('change.appointment-error').on('change.appointment-error', function () {
-			remove(opts);
-		});
-
-		$('#appointmentDate, #appointmentTime').off('focus.appointment-error').on('focus.appointment-error', function () {
-			const $this = $(this);
-			$this.off('input.appointment-error').on('input.appointment-error', function () {
-				remove(opts);
-			});
+	function bindChangeListeners() {
+		changeBinding?.abort();
+		changeBinding = new AbortController();
+		const { signal } = changeBinding;
+		getFields().forEach(field => {
+			field.addEventListener('change', remove, { signal });
+			field.addEventListener('focus', () => field.addEventListener('input', remove, { signal, once: false }), { signal, once: true });
 		});
 	}
 

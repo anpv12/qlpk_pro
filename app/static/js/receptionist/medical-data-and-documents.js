@@ -216,8 +216,8 @@ function initializePage() {
 }
 
 	const appointmentDateHighlight = window.ReceptionistAppointmentDateHighlight;
-	const highlightAppointmentDateTimeFields = () => appointmentDateHighlight.highlight({ $, setTimeout });
-	const setupAppointmentDateTimeListeners = () => appointmentDateHighlight.bindChangeListeners({ $, setTimeout });
+	const highlightAppointmentDateTimeFields = () => appointmentDateHighlight.highlight({ setTimeout });
+	const setupAppointmentDateTimeListeners = () => appointmentDateHighlight.bindChangeListeners({ setTimeout });
 
 	// Reset form to default values
 	function resetFormToDefault() {

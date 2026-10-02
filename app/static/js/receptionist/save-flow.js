@@ -257,7 +257,7 @@ function applyLoadedAppointment(appointment) {
 		safeSetValue('appointmentTime', date.toTimeString().slice(0, 5));
 	}
 	safeSetValue('doctorId', appointment.doctor_id);
-	window.ReceptionistServicePackage.setServiceSelection(appointment, allServices, $);
+	window.ReceptionistServicePackage.setServiceSelection(appointment, allServices);
 
 	setCurrentPatientId(appointment.patient_id);
 	currentAppointmentId = appointment.id;
@@ -349,7 +349,6 @@ async function cancelAppointment(appointmentId, force = false) {
 
 	function getFormBootstrapOptions() {
 		return {
-			$,
 			window,
 			console,
 			setTimeout,

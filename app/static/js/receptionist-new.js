@@ -128,7 +128,6 @@ function loadDoctorsForForm() {
 
 function loadServicesForForm() {
 	return window.ReceptionistCatalogLoaders.loadServicesForForm({
-		$,
 		showCustomToast,
 		servicePackage: window.ReceptionistServicePackage,
 		setServices: services => {
@@ -141,7 +140,6 @@ function getFormCalculationOptions() {
 	return {
 		document,
 		window,
-		$,
 		safeSetValue
 	};
 }
@@ -318,6 +316,11 @@ function showDuplicatePatientModal(duplicatePatients) {
 	});
 }
 
+function hideDuplicatePatientModal() {
+	const modalEl = document.getElementById('duplicatePatientModal');
+	if (modalEl) window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+}
+
 // Handle duplicate choice
 function handleDuplicateChoice(action) {
 
@@ -327,7 +330,7 @@ function handleDuplicateChoice(action) {
 		setCurrentPatientId(selectedDuplicatePatient.id);
 
 		// Close modal and continue with save process (skip duplicate check)
-		$('#duplicatePatientModal').modal('hide');
+		hideDuplicatePatientModal();
 		setTimeout(() => {
 			savePatientDataWithoutDuplicateCheck();
 		}, 100);
@@ -336,7 +339,7 @@ function handleDuplicateChoice(action) {
 
 		setCurrentPatientId(null);
 
-		$('#duplicatePatientModal').modal('hide');
+		hideDuplicatePatientModal();
 		setTimeout(() => {
 			savePatientDataWithoutDuplicateCheck();
 		}, 100);
@@ -370,7 +373,7 @@ function showReceptionistValidationError(error) {
 	if (!error) return;
 	showCustomToast('error', 'Dữ liệu tiếp nhận chưa hợp lệ. Vui lòng kiểm tra lại.');
 	if (error.fieldId) {
-		$(`#${error.fieldId}`).focus();
+		document.getElementById(error.fieldId)?.focus();
 	}
 }
 

@@ -19,7 +19,6 @@ function getPatientPopulateOptions() {
 		RelativeTableManager: window.RelativeTableManager,
 		JointExamManager: window.JointExamManager,
 		bootstrap: window.bootstrap,
-		$,
 		window
 	};
 }

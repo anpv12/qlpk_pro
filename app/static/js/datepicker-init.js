@@ -233,17 +233,11 @@ window.initDatepickers = initDatepickers;
 // FIX: Bootstrap Modal stealing focus from Flatpickr (appended to body)
 // This override prevents Bootstrap from forcing focus back to the modal when clicking outside
 document.addEventListener('DOMContentLoaded', function () {
-	// Check if Bootstrap modal exists (works with both jQuery and vanilla Bootstrap)
 	if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-		// Bootstrap 5 approach
 		const originalShow = bootstrap.Modal.prototype.show;
 		bootstrap.Modal.prototype.show = function () {
 			this._config.focus = false;
 			originalShow.call(this);
 		};
-	} else if (typeof jQuery !== 'undefined' && jQuery.fn.modal && jQuery.fn.modal.Constructor) {
-		// Bootstrap 3/4 with jQuery approach
-		jQuery.fn.modal.Constructor.prototype._enforceFocus = function () { };
-		jQuery.fn.modal.Constructor.prototype.enforceFocus = function () { };
 	}
 });

@@ -62,7 +62,7 @@
 	function loadServicesForForm(options = {}) {
 		const servicePackage = options.servicePackage || window.ReceptionistServicePackage;
 		return loadCatalog('services', '/services', services => {
-			servicePackage.initServiceAutocomplete('serviceType', 'serviceTypeDropdown', 'serviceTypeId', services, options.$ || window.$);
+			servicePackage.initServiceAutocomplete('serviceType', 'serviceTypeDropdown', 'serviceTypeId', services);
 			options.setServices?.(services);
 		}, options);
 	}

@@ -9,10 +9,6 @@
 		return options && options.document ? options.document : window.document;
 	}
 
-	function getJquery(options) {
-		return options && options.$ ? options.$ : window.$;
-	}
-
 	function buildFullAddress(patient, options) {
 		if (!patient) return '';
 		if (options && options.buildFullAddressFromParts) {
@@ -52,17 +48,13 @@
 		}
 	}
 
-	function triggerChange(element, jquery) {
+	function triggerChange(element) {
 		if (!element) return;
-		if (jquery) {
-			jquery(element).trigger('change');
-		} else if (typeof window.Event === 'function') {
-			element.dispatchEvent(new window.Event('change', { bubbles: true }));
-		}
+		element.dispatchEvent(new window.Event('change', { bubbles: true }));
 	}
 
 	async function syncProvince(patient, context) {
-		const { opts, isCurrentLoad, doc, jquery, mainAddressForm } = context;
+		const { opts, isCurrentLoad, doc, mainAddressForm } = context;
 		if (!patient.province) return;
 		const provinceSelect = doc.querySelector('select#province');
 		if (provinceSelect) {
@@ -71,7 +63,7 @@
 			}
 			if (!isCurrentLoad()) return false;
 			provinceSelect.value = patient.province;
-			triggerChange(provinceSelect, jquery);
+			triggerChange(provinceSelect);
 		} else if (typeof mainAddressForm.setMainAddressProvinceValue === 'function') {
 			await mainAddressForm.setMainAddressProvinceValue(patient.province, opts);
 		} else {
@@ -82,12 +74,12 @@
 	}
 
 	async function syncDistrict(patient, context) {
-		const { opts, isCurrentLoad, doc, jquery } = context;
+		const { opts, isCurrentLoad, doc } = context;
 		if (!patient.district) return;
 		const districtSelect = doc.querySelector('select#district');
 		if (districtSelect && districtSelect.options && districtSelect.options.length > 1) {
 			districtSelect.value = patient.district;
-			triggerChange(districtSelect, jquery);
+			triggerChange(districtSelect);
 			if (patient.province && opts.loadWards) {
 				await opts.loadWards(patient.province, patient.district);
 			}
@@ -114,7 +106,7 @@
 		const opts = options || {};
 		const isCurrentLoad = () => opts.isCurrentLoad?.() !== false;
 		const context = {
-			opts, isCurrentLoad, doc: getDocument(opts), jquery: getJquery(opts),
+			opts, isCurrentLoad, doc: getDocument(opts),
 			mainAddressForm: window.ReceptionistAddressMainForm || {}
 		};
 		for (const sync of [syncProvince, syncDistrict, syncWard]) {

@@ -177,24 +177,6 @@
                 }
             }
         });
-
-        // 2. Override jQuery.fn.val để bắt được sự kiện gán giá trị bằng jQuery
-        // (ví dụ khi gọi $('#pulse').val(80))
-        if (window.jQuery) {
-            const originalVal = window.jQuery.fn.val;
-            window.jQuery.fn.val = function() {
-                if (arguments.length > 0) {
-                    const res = originalVal.apply(this, arguments);
-                    this.each(function() {
-                        if (ids.includes(this.id)) {
-                            validateField(this);
-                        }
-                    });
-                    return res;
-                }
-                return originalVal.apply(this, arguments);
-            };
-        }
     }
 
     // Khởi động
