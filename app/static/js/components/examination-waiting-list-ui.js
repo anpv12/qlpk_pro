@@ -23,14 +23,14 @@
 		});
 	}
 
-	function buildWaitingListPatientCardHtml(appointment, index, options = {}) {
+	function buildWaitingListPatientCard(appointment, index, options = {}) {
 		const queueCard = window.QLPKWaitingQueueCardUi;
 
-		if (!queueCard || typeof queueCard.renderAppointmentCard !== 'function') {
-			return '';
+		if (!queueCard || typeof queueCard.buildAppointmentCard !== 'function') {
+			return null;
 		}
 
-		return queueCard.renderAppointmentCard({
+		return queueCard.buildAppointmentCard({
 			appointment,
 			index,
 			variant: options.variant || 'timeline',
@@ -120,9 +120,9 @@
 
 		if (panel) panel.classList.remove('qlpk-queue-panel--empty');
 		setEmptyStateVisible(emptyState, false);
-		tbody.innerHTML = filteredAppointments
-			.map((appointment, index) => buildWaitingListPatientCardHtml(appointment, index, options))
-			.join('');
+		tbody.replaceChildren(...filteredAppointments
+			.map((appointment, index) => buildWaitingListPatientCard(appointment, index, options))
+			.filter(Boolean));
 		bindWaitingListPatientCardEvents(tbody, options);
 		const selectedId = options.getSelectedAppointmentId?.();
 		if (selectedId) tbody.querySelector(`.qlpk-waiting-card[data-appointment-id="${Number(selectedId)}"]`)?.classList.add('is-selected');
@@ -313,7 +313,7 @@
 
 	window.ClinicalExaminationWaitingListUi = Object.freeze({
 		filterAppointmentsByPatientQuery,
-		buildWaitingListPatientCardHtml,
+		buildWaitingListPatientCard,
 		renderAppointmentsTable,
 		loadCombinedAppointments,
 		createWaitingListAdapter,

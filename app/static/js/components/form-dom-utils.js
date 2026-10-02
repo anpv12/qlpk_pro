@@ -1,5 +1,5 @@
 import { moduleState } from './form-dom-utils-parts/state.js';
-import { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearPlaceholderValues, collectClinicalAdministrativeFormData, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, resetDomField, resetDomFields, safeSetInnerHTML, safeSetValue, updateElements } from './form-dom-utils-parts/collect-payloads.js';
+import { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearPlaceholderValues, collectClinicalAdministrativeFormData, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, resetDomField, resetDomFields, safeSetValue, updateElements } from './form-dom-utils-parts/collect-payloads.js';
 import { createFormDomAdapter, resetPsychologistWorkflowFormDomState, resetPsychologistWorkflowPageState, resetWorkflowFormDomState, resetWorkflowPageState } from './form-dom-utils-parts/reset-state.js';
 
 moduleState.DEFAULT_PATIENT_AUTOSAVE_FIELDS = [
@@ -41,7 +41,6 @@ moduleState.PSYCHOLOGIST_WORKFLOW_PLACEHOLDER_FIELDS = [
 moduleState.api = {
 	getElementValue: getElementValue,
 	safeSetValue: safeSetValue,
-	safeSetInnerHTML: safeSetInnerHTML,
 	updateElements: updateElements,
 	getHiddenOrModalValue: getHiddenOrModalValue,
 	collectClinicalAdministrativeFormData: collectClinicalAdministrativeFormData,

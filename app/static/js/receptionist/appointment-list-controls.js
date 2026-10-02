@@ -180,15 +180,15 @@
 		});
 	}
 
-	function renderWaitingQueueCard(appointment, index, options = {}) {
+	function buildWaitingQueueCard(appointment, index, options = {}) {
 		const queueCard = window.QLPKWaitingQueueCardUi;
-		if (!queueCard || typeof queueCard.renderAppointmentCard !== 'function') return '';
+		if (!queueCard || typeof queueCard.buildAppointmentCard !== 'function') return null;
 
 		const currentPage = getCurrentPage(options) || 1;
 		const perPage = getPerPage(options) || getAllAppointments(options).length || 1;
 		const formatDateDisplay = getFormatDateDisplay(options);
 
-		return queueCard.renderAppointmentCard({
+		return queueCard.buildAppointmentCard({
 			appointment,
 			index,
 			currentPage,
@@ -321,9 +321,9 @@
 		if (emptyState) emptyState.classList.add('receptionist-hidden');
 
 		hideSeverityTooltip();
-		tbody.innerHTML = appointments
-			.map((appointment, index) => renderWaitingQueueCard(appointment, index, opts))
-			.join('');
+		tbody.replaceChildren(...appointments
+			.map((appointment, index) => buildWaitingQueueCard(appointment, index, opts))
+			.filter(Boolean));
 		bindSeverityTooltips(tbody);
 	}
 

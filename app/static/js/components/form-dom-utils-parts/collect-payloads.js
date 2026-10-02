@@ -20,12 +20,6 @@ function safeSetValue(elementId, value, context = {}) {
 	}
 	return true;
 }
-function safeSetInnerHTML(elementId, html, context = {}) {
-	const element = getDocument(context).getElementById(elementId);
-	if (!element) return false;
-	element.innerHTML = html;
-	return true;
-}
 function updateElements(elements, context = {}) {
 	const results = {};
 	for (const [elementId, value] of Object.entries(elements || {})) {
@@ -463,4 +457,4 @@ function resetAutocompleteValues(names = []) {
 	});
 }
 
-export { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, bindWorkflowShellAdapters, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearAgeField, clearPageAgeField, clearPlaceholderValues, collectClinicalAdministrativeFormData, getDocument, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, isPlaceholderValue, resetAutocompleteValues, resetDomField, resetDomFields, resolvePatientAutoSaveValue, runWorkflowShellLoaders, safeSetInnerHTML, safeSetValue, scheduleWorkflowShellDeferredTasks, setDomValue, updateElements };
+export { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, bindWorkflowShellAdapters, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearAgeField, clearPageAgeField, clearPlaceholderValues, collectClinicalAdministrativeFormData, getDocument, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, isPlaceholderValue, resetAutocompleteValues, resetDomField, resetDomFields, resolvePatientAutoSaveValue, runWorkflowShellLoaders, safeSetValue, scheduleWorkflowShellDeferredTasks, setDomValue, updateElements };

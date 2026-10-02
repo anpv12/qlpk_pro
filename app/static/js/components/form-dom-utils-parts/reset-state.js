@@ -1,5 +1,5 @@
 import { moduleState } from './state.js';
-import { clearAgeField, clearPlaceholderValues, getDocument, getElementValue, resetAutocompleteValues, resetDomField, resetDomFields, safeSetInnerHTML, safeSetValue, setDomValue, updateElements } from './collect-payloads.js';
+import { clearAgeField, clearPlaceholderValues, getDocument, getElementValue, resetAutocompleteValues, resetDomField, resetDomFields, safeSetValue, setDomValue, updateElements } from './collect-payloads.js';
 
 function resetWorkflowVisitFields(doc, options) {
 	const scope = { document: doc };
@@ -97,9 +97,6 @@ function createFormDomAdapter(context = {}) {
 				return referralSourceControl.setValue(value, { document: getDocument(context) });
 			}
 			return safeSetValue(elementId, value, context);
-		},
-		safeSetInnerHTML(elementId, html) {
-			return safeSetInnerHTML(elementId, html, context);
 		},
 		updateElements(elements) {
 			return updateElements(elements, context);

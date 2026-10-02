@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const source = fs.readFileSync('app/static/js/doctor-examination/re-examination-calendar.js', 'utf8');
 const css = fs.readFileSync('app/static/css/components/re-examination-calendar.css', 'utf8');
 const shared = fs.readFileSync('app/static/js/components/appointment-calendar.js', 'utf8');
+const page = fs.readFileSync('app/templates/doctor-examination.html', 'utf8');
 
 test('empty months show only the calendar while retaining loading and error feedback', () => {
     assert.doesNotMatch(source, /Không có lịch hẹn trong khoảng đang xem/);
@@ -28,7 +29,8 @@ test('calendar resizes when async notices change available height and disconnect
 });
 
 test('daily overflow list stays separate and appointment clicks cannot open details', () => {
-    assert.match(source, /<dialog class="doctor-reexam-calendar__detail"/);
+    assert.match(page, /<template id="doctorReexamCalendarTemplate">[\s\S]*<dialog class="doctor-reexam-calendar__detail"/);
+    assert.match(source, /getElementById\('doctorReexamCalendarTemplate'\)\.content\.firstElementChild\.cloneNode\(true\)/);
     assert.match(source, /el\('detail'\)\.showModal\(\)/);
     assert.match(source, /el\('detail'\)\.addEventListener\('cancel', event => event\.stopPropagation\(\)\)/);
     assert.match(source, /row\.textContent = /);

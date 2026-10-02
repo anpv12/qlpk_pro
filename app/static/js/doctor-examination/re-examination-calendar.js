@@ -131,31 +131,7 @@ function installReExamCalendarFns2(ctx) {
 function installReExamCalendarFns3(ctx) {
 	function initialize() {
 		if (ctx.dialog) return;
-		ctx.dialog = document.createElement('dialog');
-		ctx.dialog.className = 'doctor-reexam-calendar';
-		ctx.dialog.setAttribute('aria-labelledby', 'doctorReexamCalendarTitle');
-		ctx.dialog.innerHTML = `
-			<header class="doctor-reexam-calendar__header" data-qlpk-button-surface="dark"><strong id="doctorReexamCalendarTitle"><i class="bi bi-calendar3"></i> Lịch tái khám — Chọn ngày & giờ</strong><button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close-top" aria-label="Đóng">×</button></header>
-			<div class="doctor-reexam-calendar__body">
-				<aside class="doctor-reexam-calendar__sidebar">
-					<section><h3>Lịch tái khám</h3><div class="doctor-reexam-calendar__inputs">
-						<label>Ngày<input type="date" data-reexam="date"></label><label>Giờ<input type="time" data-reexam="time" step="60"></label>
-					</div></section>
-					<section class="doctor-reexam-calendar__choices" data-reexam="choices"></section>
-					<section class="doctor-reexam-calendar__statuses"><h3>Trạng thái</h3><div data-reexam="counts"></div></section>
-				</aside>
-				<main class="doctor-reexam-calendar__main"><div class="doctor-reexam-calendar__notice" data-reexam="loading" role="status"></div><div data-reexam="calendar"></div></main>
-			</div>
-			<footer class="doctor-reexam-calendar__footer"><div><strong data-reexam="selection"></strong><div><small>Bấm Lưu ở màn khám để lưu thay đổi.</small></div><p data-reexam="error" role="alert" hidden></p></div><div class="doctor-reexam-calendar__actions">
-				<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" data-reexam="clear" class="btn btn-sm">Bỏ hẹn tái khám</button>
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="retry" class="btn btn-outline-secondary btn-sm" hidden>Thử lại</button>
-				<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" data-reexam="close" class="btn btn-outline-secondary btn-sm">Đóng</button>
-				<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" data-reexam="confirm" class="btn btn-sm">✓ Xác nhận lịch tái khám</button>
-			</div></footer>
-			<dialog class="doctor-reexam-calendar__detail" data-reexam="detail" aria-labelledby="doctorReexamDetailTitle">
-				<h3 id="doctorReexamDetailTitle">Lịch hẹn trong ngày</h3><div data-reexam="detail-content"></div>
-				<button type="button" class="btn btn-sm" data-qlpk-button="neutral" data-qlpk-button-variant="soft" data-reexam="close-detail">Đóng danh sách</button>
-			</dialog>`;
+		ctx.dialog = document.getElementById('doctorReexamCalendarTemplate').content.firstElementChild.cloneNode(true);
 		document.body.append(ctx.dialog);
 		ctx.el('choices').append(document.getElementById('doctorReexamChoiceFields').content.cloneNode(true));
 		ctx.initializeChoices();

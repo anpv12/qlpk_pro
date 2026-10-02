@@ -1,3 +1,5 @@
+import { el } from '../shared/dom.js';
+
 (function (window, document) {
 	'use strict';
 	const attachmentLoads = new WeakMap();
@@ -200,7 +202,7 @@
 	}
 
 	function showAttachmentListError(list, message) {
-		if (list) list.innerHTML = `<div class="text-danger py-3">${window.QLPKHtml.escape(message)}</div>`;
+		if (list) list.replaceChildren(el('div', { class: 'text-danger py-3' }, message));
 	}
 
 	function createContextGuard(options = {}) {

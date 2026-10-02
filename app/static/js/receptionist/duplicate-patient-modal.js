@@ -1,3 +1,5 @@
+import { el, icon } from '../shared/dom.js';
+
 (function (window, document) {
 	'use strict';
 
@@ -7,15 +9,6 @@
 
 	function getBootstrap(options) {
 		return options && options.bootstrap ? options.bootstrap : window.bootstrap;
-	}
-
-	function escapeHtml(value) {
-		return String(value || '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;');
 	}
 
 	function setUpdateButtonEnabled(doc, enabled) {
@@ -69,22 +62,16 @@
 			selectPatientCard();
 		});
 
-		patientCard.innerHTML = `
-            <div class="duplicate-patient-card__icon" aria-hidden="true">
-                <i class="bi bi-person-circle"></i>
-            </div>
-            <div class="duplicate-patient-card__body">
-                <div class="duplicate-patient-card__title-row">
-                    <strong>${escapeHtml(patient.full_name)}</strong>
-                    <span>${escapeHtml(patient.patient_code || 'Chưa có mã')}</span>
-                </div>
-                <div class="duplicate-patient-card__meta">
-                    <span>SĐT: ${escapeHtml(patient.phone || 'Chưa có')}</span>
-                    <span>CCCD: ${escapeHtml(patient.id_number || 'Chưa có')}</span>
-                </div>
-            </div>
-            <i class="bi bi-check-circle-fill duplicate-patient-selected-icon is-hidden" aria-hidden="true"></i>
-        `;
+		patientCard.replaceChildren(
+			el('div', { class: 'duplicate-patient-card__icon', 'aria-hidden': 'true' }, icon('bi-person-circle')),
+			el('div', { class: 'duplicate-patient-card__body' },
+				el('div', { class: 'duplicate-patient-card__title-row' },
+					el('strong', {}, patient.full_name || ''),
+					el('span', {}, patient.patient_code || 'Chưa có mã')),
+				el('div', { class: 'duplicate-patient-card__meta' },
+					el('span', {}, `SĐT: ${patient.phone || 'Chưa có'}`),
+					el('span', {}, `CCCD: ${patient.id_number || 'Chưa có'}`))),
+			el('i', { class: 'bi bi-check-circle-fill duplicate-patient-selected-icon is-hidden', 'aria-hidden': 'true' }));
 
 		return patientCard;
 	}
