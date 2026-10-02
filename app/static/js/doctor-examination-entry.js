@@ -48,7 +48,6 @@ import './components/icd-autocomplete.js';
 import './clinic-config.js';
 import './prescriptions/shared/prescription-type-contract.js';
 import './prescriptions/shared/prescription-dose-utils.js';
-import './prescriptions/shared/prescription-document-template-parts/moh-form.js';
 import './prescriptions/shared/prescription-document-template.js';
 import './prescriptions/components/prescription-print-document.js';
 import './prescriptions/components/prescription-modal-preview.js';

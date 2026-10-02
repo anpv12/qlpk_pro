@@ -1,151 +1,96 @@
-/* global buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType */
-/* exported prescriptionQuantityWords */
+import { prescriptionFormEscape, prescriptionFormUsage, prescriptionMedicineTitle } from './prescription-form-text.js';
+import { buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType } from './prescription-document-template-parts/moh-form.js';
 // Shared Prescription Template Helpers
 // ============================================
-// Dose helpers are legacy global aliases of PrescriptionDoseUtils; the guard pattern keeps classic pages compatible.
 // ============================================
-// Parts (nạp trước file này): moh-form.js
 
-if (typeof toNumber === 'undefined') {
-	var toNumber = function toNumber(value, fallback) {
-		if (fallback === undefined) fallback = 0;
-		const num = Number(value);
-		return Number.isFinite(num) ? num : fallback;
-	};
+function buildFullAddressFromParts(addressDetail, ward, district, province) {
+	const parts = [];
+	if (addressDetail && addressDetail.trim()) parts.push(addressDetail.trim());
+	if (ward && ward.trim()) parts.push(ward.trim());
+	if (district && district.trim()) parts.push(district.trim());
+	if (province && province.trim()) parts.push(province.trim());
+	return parts.length ? parts.join(', ') : '';
 }
 
-if (typeof buildFullAddressFromParts === 'undefined') {
-	var buildFullAddressFromParts = function buildFullAddressFromParts(addressDetail, ward, district, province) {
-		const parts = [];
-		if (addressDetail && addressDetail.trim()) parts.push(addressDetail.trim());
-		if (ward && ward.trim()) parts.push(ward.trim());
-		if (district && district.trim()) parts.push(district.trim());
-		if (province && province.trim()) parts.push(province.trim());
-		return parts.length ? parts.join(', ') : '';
-	};
-}
-
-if (typeof parseGlobalUsagePayload === 'undefined') {
-	var parseGlobalUsagePayload = function parseGlobalUsagePayload(usageStr) {
-		if (!usageStr) return { note: '' };
-		try {
-			if (typeof usageStr === 'object') return usageStr;
-			return JSON.parse(usageStr);
-		} catch (e) {
-			return { note: String(usageStr) };
-		}
-	};
-}
-
-if (typeof isRawPrescriptionIcdValue === 'undefined') {
-	var isRawPrescriptionIcdValue = function isRawPrescriptionIcdValue(value) {
-		if (value === null || value === undefined || value === '') return false;
-		if (Array.isArray(value)) return true;
-		if (typeof value === 'number') return true;
-		if (typeof value !== 'string') return false;
-		const text = value.trim();
-		return /^\d+$/.test(text) || /^\[\s*\d+(\s*,\s*\d+)*\s*\]$/.test(text);
-	};
-}
-
-if (typeof pickPrescriptionDisplayText === 'undefined') {
-	var pickPrescriptionDisplayText = function pickPrescriptionDisplayText() {
-		for (let i = 0; i < arguments.length; i++) {
-			const candidate = arguments[i];
-			if (candidate === null || candidate === undefined) continue;
-			if (Array.isArray(candidate)) continue;
-			let text = '';
-			if (typeof candidate === 'object') {
-				text = candidate.text || candidate.diagnosis_text || candidate.diagnosis || '';
-			} else {
-				text = String(candidate);
-			}
-			text = text.trim();
-			if (text && !isRawPrescriptionIcdValue(text)) return text;
-		}
-		return '';
-	};
-}
-
-if (typeof buildPrescriptionDocumentViewModel === 'undefined') {
-	var buildPrescriptionDocumentViewModel = function buildPrescriptionDocumentViewModel(data) {
-		data = data || {};
-		const history = { ...(data.history || {}) };
-		const examinationDetail = { ...(data.examinationDetail || {}) };
-		const prescriptionData = data.prescriptionData || {};
-		const appointment = data.appointment || {};
-
-		const diagnosisText = pickPrescriptionDisplayText(
-			examinationDetail.diagnosis_text,
-			examinationDetail.diagnosis,
-			history.diagnosis_text,
-			history.diagnosis,
-			appointment.examination?.diagnosis,
-			prescriptionData.diagnosis
-		);
-		const benhKemTheoText = pickPrescriptionDisplayText(
-			examinationDetail.benh_kem_theo_text,
-			examinationDetail.benh_kem_theo,
-			history.benh_kem_theo_text,
-			history.benh_kem_theo,
-			appointment.examination?.benh_kem_theo,
-			prescriptionData.benh_kem_theo
-		);
-
-		// Use the resolved display text; otherwise blank out raw ICD values.
-		function applyDisplayText(field, text) {
-			[examinationDetail, history].forEach(target => {
-				if (text) target[field] = text;
-				else if (isRawPrescriptionIcdValue(target[field])) target[field] = '';
-			});
-		}
-		applyDisplayText('diagnosis', diagnosisText);
-		applyDisplayText('benh_kem_theo', benhKemTheoText);
-
-		return {
-			...data,
-			patient: data.patient || {},
-			history,
-			examinationDetail,
-			examinationDetailsBySection: data.examinationDetailsBySection || {},
-			prescriptionData,
-			relatives: Array.isArray(data.relatives) ? data.relatives : []
-		};
-	};
-	if (typeof window !== 'undefined') {
-		window.buildPrescriptionDocumentViewModel = buildPrescriptionDocumentViewModel;
+function parseGlobalUsagePayload(usageStr) {
+	if (!usageStr) return { note: '' };
+	try {
+		if (typeof usageStr === 'object') return usageStr;
+		return JSON.parse(usageStr);
+	} catch (e) {
+		return { note: String(usageStr) };
 	}
 }
 
-function requirePrescriptionDoseUtils() {
-	if (!window.PrescriptionDoseUtils) throw new Error('Thiếu tiện ích liều thuốc dùng chung');
-	return window.PrescriptionDoseUtils;
+function isRawPrescriptionIcdValue(value) {
+	if (value === null || value === undefined || value === '') return false;
+	if (Array.isArray(value)) return true;
+	if (typeof value === 'number') return true;
+	if (typeof value !== 'string') return false;
+	const text = value.trim();
+	return /^\d+$/.test(text) || /^\[\s*\d+(\s*,\s*\d+)*\s*\]$/.test(text);
 }
 
-if (typeof parseFractionalQuantity === 'undefined') {
-	var parseFractionalQuantity = function parseFractionalQuantity(value) {
-		return requirePrescriptionDoseUtils().parseDose(value, null);
-	};
+function pickPrescriptionDisplayText() {
+	for (let i = 0; i < arguments.length; i++) {
+		const candidate = arguments[i];
+		if (candidate === null || candidate === undefined) continue;
+		if (Array.isArray(candidate)) continue;
+		let text = '';
+		if (typeof candidate === 'object') {
+			text = candidate.text || candidate.diagnosis_text || candidate.diagnosis || '';
+		} else {
+			text = String(candidate);
+		}
+		text = text.trim();
+		if (text && !isRawPrescriptionIcdValue(text)) return text;
+	}
+	return '';
 }
 
-if (typeof formatDoseAsFraction === 'undefined') {
-	var formatDoseAsFraction = function formatDoseAsFraction(value) {
-		return requirePrescriptionDoseUtils().formatDose(value);
-	};
-}
+function buildPrescriptionDocumentViewModel(data) {
+	data = data || {};
+	const history = { ...(data.history || {}) };
+	const examinationDetail = { ...(data.examinationDetail || {}) };
+	const prescriptionData = data.prescriptionData || {};
+	const appointment = data.appointment || {};
 
-if (typeof normalizeScheduleData === 'undefined') {
-	var normalizeScheduleData = function normalizeScheduleData(rawSchedule) {
-		const doseUtils = requirePrescriptionDoseUtils();
-		return doseUtils.normalizeSchedule(rawSchedule, undefined, { defaultMode: doseUtils.USAGE_MODES.TIMES_PER_DAY });
-	};
-}
+	const diagnosisText = pickPrescriptionDisplayText(
+		examinationDetail.diagnosis_text,
+		examinationDetail.diagnosis,
+		history.diagnosis_text,
+		history.diagnosis,
+		appointment.examination?.diagnosis,
+		prescriptionData.diagnosis
+	);
+	const benhKemTheoText = pickPrescriptionDisplayText(
+		examinationDetail.benh_kem_theo_text,
+		examinationDetail.benh_kem_theo,
+		history.benh_kem_theo_text,
+		history.benh_kem_theo,
+		appointment.examination?.benh_kem_theo,
+		prescriptionData.benh_kem_theo
+	);
 
-if (typeof parseMedicineUsagePayload === 'undefined') {
-	var parseMedicineUsagePayload = function parseMedicineUsagePayload(rawUsage) {
-		const doseUtils = requirePrescriptionDoseUtils();
-		const parsed = doseUtils.parseUsage(rawUsage, undefined, { defaultMode: doseUtils.USAGE_MODES.TIMES_PER_DAY });
-		return { note: parsed.note, note_mode: parsed.noteMode, schedule: parsed.schedule };
+	// Use the resolved display text; otherwise blank out raw ICD values.
+	function applyDisplayText(field, text) {
+		[examinationDetail, history].forEach(target => {
+			if (text) target[field] = text;
+			else if (isRawPrescriptionIcdValue(target[field])) target[field] = '';
+		});
+	}
+	applyDisplayText('diagnosis', diagnosisText);
+	applyDisplayText('benh_kem_theo', benhKemTheoText);
+
+	return {
+		...data,
+		patient: data.patient || {},
+		history,
+		examinationDetail,
+		examinationDetailsBySection: data.examinationDetailsBySection || {},
+		prescriptionData,
+		relatives: Array.isArray(data.relatives) ? data.relatives : []
 	};
 }
 
@@ -214,74 +159,6 @@ function formatGenderDisplay(value) {
 	if (['female', 'nu', 'nữ', 'f', 'woman'].includes(normalized)) return 'Nữ';
 	if (['other', 'khac', 'khác'].includes(normalized)) return 'Khác';
 	return value;
-}
-
-/** Pure formatting only: never normalize missing dosage into a clinical default. */
-function prescriptionFormEscape(value) {
-	return String(value ?? '').replace(/[&<>"']/g, char => ({
-		'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-	})[char]);
-}
-
-function readUnitDigit(one, ten, digits) {
-	if (one === 1 && ten > 1) return 'mốt';
-	if (one === 5 && ten) return 'lăm';
-	return digits[one];
-}
-
-function prescriptionQuantityWords(value) {
-	const digits = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-	const number = Number(value);
-	if (!Number.isFinite(number) || number < 0 || number > 9999999999) return '';
-	const integerWords = (number) => {
-		if (number === 0) return digits[0];
-		const triplet = (number, full) => {
-			const hundred = Math.floor(number / 100);
-			const ten = Math.floor(number / 10) % 10;
-			const one = number % 10;
-			const parts = [];
-			if (hundred || full) parts.push(digits[hundred], 'trăm');
-			if (ten > 1) parts.push(digits[ten], 'mươi');
-			else if (ten === 1) parts.push('mười');
-			else if (one && (hundred || full)) parts.push('lẻ');
-			if (one) parts.push(readUnitDigit(one, ten, digits));
-			return parts.join(' ');
-		};
-		const groups = [];
-		let rest = number;
-		while (rest > 0) { groups.push(rest % 1000); rest = Math.floor(rest / 1000); }
-		return groups.map((group, index) => group
-			? triplet(group, index < groups.length - 1 && group < 100) + (['', ' nghìn', ' triệu', ' tỷ'][index])
-			: '').reverse().filter(Boolean).join(' ');
-	};
-	const [integer, decimal] = String(number).split('.');
-	return integerWords(Number(integer)) + (decimal ? ' phẩy ' + [...decimal].map(digit => digits[Number(digit)]).join(' ') : '');
-}
-
-function prescriptionFormUsage(medicine) {
-	let payload = {};
-	try {
-		payload = typeof medicine.usage === 'object' && medicine.usage !== null
-			? medicine.usage : JSON.parse(medicine.usage || '{}');
-	} catch (_) { payload = { note: medicine.usage || '' }; }
-	if (!payload || typeof payload !== 'object') payload = { note: String(payload ?? '') };
-	const note = String(payload.note || '').trim();
-	return prescriptionFormEscape(note);
-}
-
-function prescriptionMedicineTitle(medicine) {
-	const generic = String(medicine.generic_name || '').trim();
-	const name = String(medicine.name || '').trim();
-	let title = generic && !name.toLowerCase().startsWith(generic.toLowerCase()) ? generic + ' (' + name + ')' : name;
-	const strength = String(medicine.strength || '').trim();
-	if (!strength) return title;
-	const compact = value => value.toLowerCase().replace(/\s+/g, '');
-	const literal = compact(strength).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	// Match the complete strength, never a substring of 110 mg or 10 mg/ml.
-	if (new RegExp('(^|[^\\d.,])' + literal + '(?=$|[(),;])').test(compact(title))) return title;
-	const amount = strength.match(/^(\d+(?:[.,]\d+)?)\s+\S/);
-	if (amount && generic && title.toLowerCase() === (generic + ' ' + amount[1]).toLowerCase()) title = generic;
-	return title + ' ' + strength;
 }
 
 /** Web presentation only. Shares clinical formatters with the paper form below. */
@@ -440,3 +317,4 @@ if (typeof window !== 'undefined') {
 		version: 2
 	});
 }
+

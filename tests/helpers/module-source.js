@@ -47,10 +47,29 @@ function toModuleRel(filePath) {
     return rel.startsWith('..') ? null : rel.split(path.sep).join('/');
 }
 
-// Runs a script file (any path form) in a context; split modules run their parts first.
+const ES_MODULE_SYNTAX = /^(?:import|export)\s/m;
+const RELATIVE_IMPORT = /^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}\/[^'"]+)['"];?\n?/gm;
+
+// An ES module and the relative modules it imports, dependencies first (each once), as one script:
+// import/export lines are dropped, so a vm context sees every top-level declaration as a global.
+function esModuleScript(rel, seen = new Set()) {
+    if (seen.has(rel)) return '';
+    seen.add(rel);
+    const source = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
+    const dependencies = [...source.matchAll(RELATIVE_IMPORT)]
+        .map(match => path.posix.normalize(path.posix.join(path.posix.dirname(rel), match[1])))
+        .map(dependency => esModuleScript(dependency, seen));
+    const body = source.replace(RELATIVE_IMPORT, '').replace(/^export \{[^}]*\};?\n?/gm, '').replace(/^export (?=(?:async )?function|const|let|class)/gm, '');
+    return dependencies.join('\n') + '\n' + body;
+}
+
+// Runs a script file (any path form) in a context; split modules run their parts first, ES modules their imports.
 function runScriptFile(filePath, context) {
     const rel = toModuleRel(filePath);
     if (!rel) return vm.runInContext(fs.readFileSync(filePath, 'utf8'), context, { filename: filePath });
+    if (ES_MODULE_SYNTAX.test(fs.readFileSync(path.join(JS_ROOT, rel), 'utf8'))) {
+        return vm.runInContext(esModuleScript(rel), context, { filename: rel });
+    }
     return runModuleScript(rel, context);
 }
 
@@ -72,4 +91,4 @@ function readPageModulesSource(rels = RECEPTIONIST_PAGE_MODULES) {
         .replace(/^export \{[^}]*\};\n/gm, '');
 }
 
-module.exports = { moduleFiles, readModuleSource, runModuleScript, runScriptFile, readScriptSource, readPageModulesSource, RECEPTIONIST_PAGE_MODULES };
+module.exports = { esModuleScript, moduleFiles, readModuleSource, runModuleScript, runScriptFile, readScriptSource, readPageModulesSource, RECEPTIONIST_PAGE_MODULES };

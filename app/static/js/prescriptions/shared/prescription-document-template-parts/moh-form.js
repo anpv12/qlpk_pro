@@ -1,6 +1,4 @@
-/* global prescriptionFormEscape, prescriptionFormUsage, prescriptionMedicineTitle, prescriptionQuantityWords */
-/* exported buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType */
-// prescription-document-template.js: MOH_BLANK, mohField, mohLine, resolvePrescriptionFormType, buildMohMedicineRows, buildMohDateLine, buildMohHeaderHtml, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, buildMohContactHtml (nạp trước prescription-document-template.js, cùng scope trang).
+import { prescriptionFormEscape, prescriptionFormUsage, prescriptionMedicineTitle, prescriptionQuantityWords } from '../prescription-form-text.js';
 
 /** Paper/verify form; field labels follow the user's Đơn H.docx. */
 const MOH_BLANK = '<span class="moh-blank" aria-label="Để trống"></span>';
@@ -88,3 +86,5 @@ function buildMohContactHtml(ctx, controlled) {
 		mohLine('- Tên bố hoặc mẹ của trẻ hoặc người đưa trẻ đến khám bệnh, chữa bệnh:', ctx.under72Months ? ctx.companions.join(', ') : '', 'moh-companion') + '</footer>' +
 		(controlled ? mohLine('Căn cước công dân của người nhận thuốc:', '', 'moh-recipient') : '');
 }
+
+export { buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType };

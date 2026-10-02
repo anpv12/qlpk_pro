@@ -26,11 +26,14 @@
 	register('icdDataLoader', window.ClinicalIcdDataLoader, { owner: 'shared/icd' });
 	register('prescriptionPrintDocument', window.PrescriptionPrintDocument, { owner: 'shared/prescription-print' });
 	register('doctorPrescriptionPrint', window.createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
-	register('prescriptionDocumentTemplate', {
-		getClinicInfoConfig: window.getClinicInfoConfig,
-		buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML,
-		buildPrescriptionScreenHTML: window.buildPrescriptionScreenHTML
-	}, { owner: 'shared/prescription-document' });
+	// The template module registers itself; this only covers a page where it already ran.
+	if (typeof window.buildPrescriptionPreviewHTML === 'function') {
+		register('prescriptionDocumentTemplate', {
+			getClinicInfoConfig: window.getClinicInfoConfig,
+			buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML,
+			buildPrescriptionScreenHTML: window.buildPrescriptionScreenHTML
+		}, { owner: 'shared/prescription-document' });
+	}
 
 	window.QLPKDoctorModuleRegistry.register('doctorPlatformBoundaries', Object.freeze({
 		register,

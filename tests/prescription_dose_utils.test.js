@@ -59,18 +59,6 @@ test('Doctor model computes quantities through the shared dose owner', () => {
     assert.equal(model.parseMedicineUsage('tối 1v').schedule.mode, 'time_slots');
 });
 
-test('legacy template aliases delegate to the shared owner and keep their mode default', () => {
-    const context = vm.createContext({ window: {}, document: {}, console });
-    vm.runInContext(read(DOSE_UTILS), context);
-    vm.runInContext(read(TEMPLATE), context);
-    assert.equal(context.formatDoseAsFraction(0.5), '1/2');
-    assert.equal(context.parseFractionalQuantity(''), null);
-    assert.equal(context.parseMedicineUsagePayload('tối 1v').schedule.mode, 'times_per_day');
-    const stored = context.parseMedicineUsagePayload('{"note":"sau ăn","schedule":{"mode":"time_slots","time_slots":{"morning":0.5}}}');
-    assert.equal(stored.note, 'sau ăn');
-    assert.equal(stored.schedule.time_slots.morning, 0.5);
-});
-
 test('only one dose implementation is wired into every prescription surface', () => {
     const model = read(MODEL);
     const template = read(TEMPLATE);
