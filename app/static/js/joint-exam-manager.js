@@ -1,4 +1,5 @@
 import { el, replace } from './shared/dom.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 /**
  * Joint Exam Manager - Module quản lý "Người đi khám cùng"
  * DRY: Dùng chung cho receptionist, doctor, psychologist
@@ -6,11 +7,7 @@ import { el, replace } from './shared/dom.js';
 
 
 async function confirmJointExamDelete(showToast) {
-	if (!window.QLPKConfirmationDialog) {
-		showToast('error', 'Không thể mở hộp thoại xác nhận. Thao tác đã được hủy.');
-		return false;
-	}
-	return window.QLPKConfirmationDialog.confirm({
+	return QLPKConfirmationDialog.confirm({
 		title: 'Xác nhận xóa',
 		text: 'Bạn có chắc chắn muốn xóa người đi khám cùng này?',
 		confirmText: 'Xóa',

@@ -2,6 +2,9 @@ import { state } from './state.js';
 import { el, icon, replace } from '../shared/dom.js';
 import { apiRequest, closeAllAc, columns, computeRow, fmtNum, loadExpenses, normalizeSearchText, render, saveColumnsToServer, setCtVisible } from '../chi-tieu.js';
 import { getFilteredRows } from './grid-and-filters.js';
+import { CustomModal } from '../custom-modal.js';
+import { QLPKInlineActions } from '../shared/inline-actions.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 function importCSV(input) {
 	const file = input.files[0];
@@ -14,7 +17,7 @@ function importCSV(input) {
 			const wb = XLSX.read(e.target.result, { type: 'array' });
 			const ws = wb.Sheets[wb.SheetNames[0]];
 			const raw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-			if (raw.length < 2) { window.CustomModal.alert('File không có dữ liệu'); return; }
+			if (raw.length < 2) { CustomModal.alert('File không có dữ liệu'); return; }
 			processImportRows(raw, file.name);
 		};
 		reader.readAsArrayBuffer(file);
@@ -23,7 +26,7 @@ function importCSV(input) {
 		reader.onload = function (e) {
 			const text = e.target.result;
 			const lines = text.split(/\r?\n/).filter(l => l.trim());
-			if (lines.length < 2) { window.CustomModal.alert('File không có dữ liệu'); return; }
+			if (lines.length < 2) { CustomModal.alert('File không có dữ liệu'); return; }
 			const raw = lines.map(l => parseCSVLine(l));
 			processImportRows(raw, file.name);
 		};
@@ -89,15 +92,15 @@ function processImportRows(raw, fileName) {
 		items.push(row);
 	}
 
-	if (!items.length) { window.CustomModal.alert('File không có dữ liệu hợp lệ'); return; }
+	if (!items.length) { CustomModal.alert('File không có dữ liệu hợp lệ'); return; }
 
 	apiRequest('/api/expenses/bulk', 'POST', { items }).then(res => {
 		state.rows = res.items.concat(state.rows);
 		render();
-		window.CustomModal.alert(el('span', null, 'Đã import ', el('b', null, res.items.length), ' khoản chi từ file ', el('b', null, fileName)));
+		CustomModal.alert(el('span', null, 'Đã import ', el('b', null, res.items.length), ' khoản chi từ file ', el('b', null, fileName)));
 	}).catch(e => {
 		console.error('Import error:', e);
-		window.CustomModal.alert('Lỗi import dữ liệu');
+		CustomModal.alert('Lỗi import dữ liệu');
 	});
 }
 
@@ -171,11 +174,11 @@ async function addRow() {
 		setTimeout(() => { const tb = document.getElementById('chiBody'); const fr = tb.firstElementChild; if (fr) { const inp = fr.querySelector('.cell-input'); if (inp) inp.focus(); } }, 50);
 	} catch (e) {
 		console.error('Add row error:', e);
-		window.CustomModal.alert('Lỗi thêm khoản chi');
+		CustomModal.alert('Lỗi thêm khoản chi');
 	}
 }
 function deleteRow(ri) {
-	window.CustomModal.confirm('Xóa khoản chi này?', 'Xác nhận xóa', 'warning', 'danger').then(async confirmed => {
+	CustomModal.confirm('Xóa khoản chi này?', 'Xác nhận xóa', 'warning', 'danger').then(async confirmed => {
 		if (!confirmed) return;
 		const row = state.rows[ri];
 		try {
@@ -184,7 +187,7 @@ function deleteRow(ri) {
 			render();
 		} catch (e) {
 			console.error('Delete error:', e);
-			window.CustomModal.alert('Lỗi xóa khoản chi');
+			CustomModal.alert('Lỗi xóa khoản chi');
 		}
 	});
 }
@@ -269,7 +272,7 @@ function renderFormulaPicker() {
 }
 function saveCol() {
 	const name = document.getElementById('colName').value.trim();
-	if (!name) { window.CustomModal.alert('Vui lòng nhập tên cột', 'Thiếu thông tin', 'warning'); return; }
+	if (!name) { CustomModal.alert('Vui lòng nhập tên cột', 'Thiếu thông tin', 'warning'); return; }
 	const type = document.getElementById('colType').value;
 	const formula = type === 'formula' ? document.getElementById('colFormula').value : undefined;
 	const options = type === 'select' ? document.getElementById('colOptions').value.split('\n').map(s => s.trim()).filter(Boolean) : undefined;
@@ -285,7 +288,7 @@ function saveCol() {
 	saveColumnsToServer();
 }
 function deleteCol(colId) {
-	window.CustomModal.confirm('Xóa cột này?', 'Xác nhận xóa cột', 'warning', 'danger').then(confirmed => {
+	CustomModal.confirm('Xóa cột này?', 'Xác nhận xóa cột', 'warning', 'danger').then(confirmed => {
 		if (!confirmed) return;
 		const idx = columns.findIndex(c => c.id === colId);
 		if (idx > -1) columns.splice(idx, 1);
@@ -299,7 +302,7 @@ function registerFinanceRealtime() {
 	if (window.QLPKRealtimeClient && typeof window.QLPKRealtimeClient.start === 'function') {
 		window.QLPKRealtimeClient.start();
 	}
-	if (!window.QLPKRealtimePageHooks) return;
+	if (!QLPKRealtimePageHooks) return;
 
 	let pendingReload = false;
 	function reloadWhenIdle() {
@@ -317,7 +320,7 @@ function registerFinanceRealtime() {
 		loadExpenses();
 	}
 
-	window.QLPKRealtimePageHooks.register({
+	QLPKRealtimePageHooks.register({
 		types: ['finance.changed'],
 		debounceMs: 500,
 		handler: reloadWhenIdle,
@@ -325,6 +328,6 @@ function registerFinanceRealtime() {
 }
 
 
-window.QLPKInlineActions.register({ addRow, appendFormulaToken, deleteCol, deleteRow, editCol, formatNumberCell, hideAddCol, importCSV, onTypeChange, saveCol, scheduleCloseAc, showAddCol, showRawNumberCell, toggleConfig, triggerImportFile, updateCell });
+QLPKInlineActions.register({ addRow, appendFormulaToken, deleteCol, deleteRow, editCol, formatNumberCell, hideAddCol, importCSV, onTypeChange, saveCol, scheduleCloseAc, showAddCol, showRawNumberCell, toggleConfig, triggerImportFile, updateCell });
 
 export { registerFinanceRealtime, updateCell };

@@ -9,9 +9,12 @@ import './utils.js';
 import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
 import { surveyCreateModal } from './survey-template-create.js';
 import './survey-result-config.js';
+import { AppointmentUtils } from './utils.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { currentPage: 1, perPage: 10, searchTerm: '', templates: [], performers: [], currentTemplateId: null, documentTemplateId: null, canManage: false, mutating: false, revision: 0 };
-const toast = (type, message) => window.AppointmentUtils?.showToast(type, message);
+const toast = (type, message) => AppointmentUtils?.showToast(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 const escapeRegExp = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const createModal = () => surveyCreateModal;
@@ -288,13 +291,13 @@ function init() {
 		showLoginRequired();
 		return;
 	}
-	state.pagination = window.QLPKPagination.create({ onChange(page, size) {
+	state.pagination = QLPKPagination.create({ onChange(page, size) {
 		state.currentPage = page;
 		state.perPage = size;
 		loadTemplates();
 	} });
 	bindEvents();
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['catalog.changed'],
 		filter: event => ['survey_template', 'survey_criteria'].includes(event?.payload?.entity),
 		handler(event) {

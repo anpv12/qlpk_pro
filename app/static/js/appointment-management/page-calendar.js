@@ -6,6 +6,7 @@ import { showBusySchedulePopup } from './page-busy-sync.js';
 import { openEditModal } from './page-edit-modal.js';
 import { AppointmentManagementCalendarDateUtils } from './calendar-date-utils.js';
 import { requestJson } from '../shared/http-json.js';
+import { QLPKAppointmentCalendar } from '../components/appointment-calendar.js';
 // Khởi tạo FullCalendar, kéo thả/đổi thời lượng lịch hẹn.
 
 // Bản cũ: nút header ghi cờ này để màn Lịch hẹn tự mở form Thêm; cờ sót lại làm form tự mở
@@ -137,7 +138,7 @@ function initializeCalendar() {
 	const calendarEl = document.getElementById('calendar');
 	if (!calendarEl) return;
 
-	state.calendar = window.QLPKAppointmentCalendar.create(calendarEl, {
+	state.calendar = QLPKAppointmentCalendar.create(calendarEl, {
 		timeZone: 'local', // Đảm bảo sử dụng timezone local
 		// Title sẽ được format lại trong datesSet callback
 		expandRows: true,

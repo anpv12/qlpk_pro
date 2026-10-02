@@ -6,6 +6,7 @@ import { clearSurveyResponsesFromStorage, reviewOrderId, saveSurveyResponsesToSt
 import { showQuestion } from './questions.js';
 import { submitSurvey } from './submit.js';
 import { setSurveyProgressBar } from '../patient-survey-parts/display.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 // data-* values coerced the way the former data() helper did ("3" -> 3, "true" -> true), so stored scores keep their types.
 function dataValue(node, name) {
@@ -146,7 +147,7 @@ function bindNavigationEvents() {
         }
     });
     on(byId('start-over'), 'click', async () => {
-        const confirmed = await window.QLPKConfirmationDialog.confirm({
+        const confirmed = await QLPKConfirmationDialog.confirm({
             text: 'Bạn có chắc muốn bắt đầu lại? Tất cả câu trả lời sẽ bị mất.',
             confirmText: 'Bắt đầu lại',
             variant: 'warning',

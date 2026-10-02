@@ -9,6 +9,9 @@ import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { downloadFile, HttpError, requestJson } from './shared/http-json.js';
 import { setupIngredientAutocomplete } from './drug-interaction-autocomplete.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const API_BASE = '/api/drug-interactions';
 const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
@@ -53,7 +56,7 @@ function renderPage(items, offset) {
 	replace(body, items.map((item, index) => interactionRow(item, offset + index + 1)));
 }
 
-const pagination = window.QLPKPagination.createClient({ render: renderPage });
+const pagination = QLPKPagination.createClient({ render: renderPage });
 
 async function loadInteractions() {
 	try {
@@ -145,7 +148,7 @@ async function saveInteraction(event) {
 }
 
 async function removeInteraction(id) {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa tương tác này?')) return;
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa tương tác này?')) return;
 	try {
 		await requestJson(`${API_BASE}/${id}`, { method: 'DELETE' });
 		toast('success', 'Đã xóa');
@@ -202,7 +205,7 @@ async function init() {
 	setupIngredientAutocomplete(byId('di-med2'), byId('di-med2-id'), ingredients, normalize);
 	setupSearch();
 	bindActions();
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['inventory.changed'], debounceMs: 500,
 		async handler(event) {
 			const entity = event && event.payload ? event.payload.entity : null;

@@ -96,13 +96,13 @@ function topLevelNames(body) {
     return [...names];
 }
 
-function esModuleScript(rel, seen = new Set()) {
+function esModuleScript(rel, seen = new Set(), root = true) {
     if (seen.has(rel)) return '';
     seen.add(rel);
     const source = fs.readFileSync(path.join(JS_ROOT, rel), 'utf8');
     const resolve = spec => path.posix.normalize(path.posix.join(path.posix.dirname(rel), spec));
     const imports = [...source.matchAll(RELATIVE_IMPORT)].map(match => ({ from: resolve(match[1]), clause: match[0] }));
-    const dependencies = imports.map(item => esModuleScript(item.from, seen)).join('\n');
+    const dependencies = imports.map(item => esModuleScript(item.from, seen, false)).join('\n');
     const bindings = imports.map(({ from, clause }) => {
         const named = clause.match(/\{([^}]*)\}/);
         if (!named) return '';
@@ -120,9 +120,15 @@ function esModuleScript(rel, seen = new Set()) {
         .concat(exportLists.map(part => part.split(':')[0].trim())))];
     const body = source.replace(RELATIVE_IMPORT, '').replace(/^export \{[^}]*\};?\n?/gm, '').replace(/^export (?=(?:async )?function|const|let|class)/gm, '');
     const top = topLevelNames(body);
+    // A dependency whose every export the harness already stubbed on its fake window is replaced by those stubs.
+    const stubbed = root || !exported.length ? '' : `if (globalThis.window && globalThis.window !== globalThis && ${JSON.stringify(exported)}.every(name => name in globalThis.window)) {
+    __qlpkEsModules[${JSON.stringify(rel)}] = Object.fromEntries(${JSON.stringify(exported)}.map(name => [name, globalThis.window[name]]));
+    return;
+}`;
     return `${dependencies}
 globalThis.__qlpkEsModules = globalThis.__qlpkEsModules || {};
 (function () {
+${stubbed}
 ${bindings}
 ${body}
 const __exports = { ${[...new Set([...top, ...exportLists])].join(', ')} };

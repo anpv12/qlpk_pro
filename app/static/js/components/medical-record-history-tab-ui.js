@@ -1,4 +1,5 @@
 import { renderDocumentMarkup } from '../shared/dom.js';
+import { QLPKHistoryTabCore } from './history-tab-core.js';
 
 (function (window) {
 	'use strict';
@@ -21,10 +22,10 @@ import { renderDocumentMarkup } from '../shared/dom.js';
 	}
 
 	function renderState(container, state, options = {}) {
-		return window.QLPKHistoryTabCore.renderStateBlock(container, stateSpec(state, options));
+		return QLPKHistoryTabCore.renderStateBlock(container, stateSpec(state, options));
 	}
 
-	const historyTabCore = window.QLPKHistoryTabCore;
+	const historyTabCore = QLPKHistoryTabCore;
 	const isCurrent = historyTabCore.isContextCurrent;
 	const resolveHistoryState = historyTabCore.resolveHistoryState;
 

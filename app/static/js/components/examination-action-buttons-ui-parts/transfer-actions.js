@@ -1,3 +1,5 @@
+import { RelativeTableManager } from '../../relative-table.js';
+
 function resolveElement(elementOrId, fallbackId) {
 	const target = elementOrId || fallbackId;
 	if (!target) return null;
@@ -116,7 +118,7 @@ function bindPersonalDetailEditButtons(options = {}) {
 function initRelativeTable(options = {}) {
 	const doc = getDocument(options);
 	const container = resolveElement(options.container, null) || doc.querySelector(options.selector || '.relative-table-component');
-	const manager = options.relativeTableManager || window.RelativeTableManager;
+	const manager = options.relativeTableManager || RelativeTableManager;
 	if (!container || !manager || typeof manager.init !== 'function') return null;
 
 	const instance = manager.init(container, {

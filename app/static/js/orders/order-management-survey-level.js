@@ -2,6 +2,7 @@ import { state } from './order-management-state.js';
 import { apiCall, showCustomToast } from '../order-management.js';
 import { refreshCurrentOrderStatus, renderTimeline } from './order-management-actions.js';
 import { loadOrderSurvey } from './order-management-detail.js';
+import { QLPKInlineActions } from '../shared/inline-actions.js';
 
 // Function để cập nhật alignment của input dựa trên giá trị (số thì căn phải, text thì căn trái)
 function updateLevelInputAlignment(inputElement) {
@@ -264,6 +265,6 @@ async function checkSurveyStatusUpdate(examinationId) {
 }
 
 
-window.QLPKInlineActions.register({ saveSurveyLevelForOrder, updateLevelInputAlignment });
+QLPKInlineActions.register({ saveSurveyLevelForOrder, updateLevelInputAlignment });
 
 export { checkSurveyStatusUpdate, clearSurveyRealtimeContext, copySurveyLink, initializeSurveyRealtimeContext, loadSavedSurveyLevels };

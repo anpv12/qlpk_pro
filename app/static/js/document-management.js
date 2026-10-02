@@ -8,6 +8,8 @@ import './custom-modal.js';
 import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { HttpError, requestJson } from './shared/http-json.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { currentFolderId: null, isUserAdmin: false };
 const alertError = (message, type = 'error') => window.QLPKUserFeedback?.show(type, message);
@@ -100,7 +102,7 @@ function openFolderModal({ parentId = '', id = '', name = '', iconName, title })
 }
 
 async function deleteFolder(id) {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa thư mục này? Thư mục phải trống (không có file hay thư mục con) mới có thể xóa.')) return;
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa thư mục này? Thư mục phải trống (không có file hay thư mục con) mới có thể xóa.')) return;
 	try {
 		await requestJson(`/api/document-folders/${id}`, { method: 'DELETE' });
 		if (state.currentFolderId === id) {
@@ -202,7 +204,7 @@ function uploadFiles(files) {
 }
 
 async function deleteDocument(button) {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa tài liệu này? Hành động này sẽ xóa cả file trên Google Drive.')) return;
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa tài liệu này? Hành động này sẽ xóa cả file trên Google Drive.')) return;
 	replace(button, spinner());
 	try {
 		await requestJson(`/api/documents/${button.getAttribute('data-id')}`, { method: 'DELETE' });
@@ -253,7 +255,7 @@ function bind() {
 }
 
 bind();
-window.QLPKRealtimePageHooks?.register({
+QLPKRealtimePageHooks?.register({
 	types: ['document.changed'], debounceMs: 500,
 	handler(event) {
 		loadFolderTree();

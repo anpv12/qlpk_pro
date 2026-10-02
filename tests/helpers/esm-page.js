@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { installDom, Event } = require('./fake-dom');
+require('./esm-stubs');
 
 const JS_ROOT = path.join(__dirname, '..', '..', 'app', 'static', 'js');
 let sequence = 0;

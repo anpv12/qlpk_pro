@@ -3,12 +3,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 const source = fs.readFileSync('app/static/js/components/appointment-calendar.js', 'utf8');
 
 function setup() {
     const document = { createElement(tag) { return { tag, children: [], style: {}, appendChild(child) { this.children.push(child); } }; } };
     const window = { document, FullCalendar: { Calendar: function (host, options) { this.options = options; this.host = host; } } };
-    vm.runInNewContext(source, { window });
+    runScriptFile('app/static/js/components/appointment-calendar.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window }));
     return { api: window.QLPKAppointmentCalendar, document };
 }
 

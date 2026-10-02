@@ -2,6 +2,8 @@ import { el, replace } from '../shared/dom.js';
 import { moduleState } from './state.js';
 import { bindCardEvents, buildAnswerRow, buildGrid, reindexBadges, save } from './question-editor.js';
 import { QLPKSearchNormalization } from '../shared/search-normalization.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 function normalizeSearchText(value) {
 	return QLPKSearchNormalization?.normalizeSearchText(value)
@@ -141,7 +143,7 @@ async function open(mode, templateId) {
 async function close(force = false) {
 	if (moduleState.state.saving && force !== true) return;
 	if (!force && hasUnsavedChanges()) {
-		const confirmed = await window.QLPKConfirmationDialog.confirm({
+		const confirmed = await QLPKConfirmationDialog.confirm({
 			text: 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?',
 			confirmText: 'Đóng',
 			variant: 'warning',
@@ -193,8 +195,8 @@ function refreshCriteriaCache() {
 	moduleState.criteriaCache = null;
 }
 function registerRealtimeHooks() {
-	if (!window.QLPKRealtimePageHooks) return;
-	window.QLPKRealtimePageHooks.register({
+	if (!QLPKRealtimePageHooks) return;
+	QLPKRealtimePageHooks.register({
 		types: ['catalog.changed'],
 		filter: event => event?.payload?.entity === 'survey_criteria',
 		handler: refreshCriteriaCache,

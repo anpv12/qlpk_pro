@@ -13,6 +13,8 @@ import { exportPaymentData, printInvoice, printInvoices } from './payment-waitin
 import { deleteService, editService, saveEditService, saveNewService } from './payment-waiting/services.js';
 import { editPayment, loadExaminationDetailModal } from './payment-waiting/detail.js';
 import { deletePayment, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist } from './payment-waiting/invoice.js';
+import { QLPKPdfPreview } from './shared/pdf-preview.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 // Payment Waiting Management JavaScript
 state.currentPage = 1;
@@ -79,7 +81,7 @@ async function openInvoiceWindow(examinationId) {
 		}
 
 		const html = await response.text();
-		await window.QLPKPdfPreview.render(invoiceWindow, html);
+		await QLPKPdfPreview.render(invoiceWindow, html);
 	} catch (error) {
 		showCustomToast('error', 'Không thể mở hóa đơn. Vui lòng thử lại.');
 	}
@@ -104,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	state.selectedItems = [];
 	loadPaymentData();
 	bindEvents();
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed'],
 		debounceMs: 500,
 		handler: () => loadPaymentData(),

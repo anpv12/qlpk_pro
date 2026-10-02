@@ -1,6 +1,7 @@
 import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
 import { FILTER_INPUT_DEBOUNCE_MS, apiCall, filterState, formatDisplayDate, getStatusBadge, loadOrders, selectedOrderIds, showConfirmDialog, showCustomToast } from '../order-management.js';
+import { ClinicalOrderStatusUtils } from './order-status-utils.js';
 
 // Render timeline
 function surveyClosureText(order) {
@@ -24,7 +25,7 @@ function renderTimeline(order) {
     const current = states.indexOf(order.status);
     const timestamps = {sent: order.created_at, survey_sent: order.survey_sent_at, has_result: order.result_at, completed: order.completed_at};
     replace(target, states.map((value, index) => {
-        const label = window.ClinicalOrderStatusUtils.getOrderStatusConfig(value).label;
+        const label = ClinicalOrderStatusUtils.getOrderStatusConfig(value).label;
         const reached = index === current && value !== 'completed' ? 'active' : 'done';
         const step = timestamps[value] ? reached : 'pending';
         const detail = timelineStepDetail(order, value, timestamps);

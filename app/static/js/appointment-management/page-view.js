@@ -9,6 +9,7 @@ import { AppointmentManagementPatientDuplicateWarningUtils } from './patient-dup
 import { AppointmentManagementStatusFormatUtils } from './status-format-utils.js';
 import { AppointmentManagementPageActionsUtils } from './page-actions-utils.js';
 import { hideModal } from '../shared/dom-query.js';
+import { QLPKAppointmentCalendar } from '../components/appointment-calendar.js';
 // Kiểm tra lịch trống, cảnh báo trùng, làm mới view, thống kê, xuất Excel.
 
 // Hàm kiểm tra bác sĩ có rảnh không cho drag & drop
@@ -220,7 +221,7 @@ function updateStats() {
 	const statusCounts = AppointmentManagementFilterUtils.countByStatus(filteredAppointments);
 
 	// Cập nhật số lượng cho các badge
-	window.QLPKAppointmentCalendar.renderStatusCounts(document.querySelector('.appt-status-list'), statusCounts);
+	QLPKAppointmentCalendar.renderStatusCounts(document.querySelector('.appt-status-list'), statusCounts);
 }
 
 // Hàm xuất Excel — gọi backend API với openpyxl format

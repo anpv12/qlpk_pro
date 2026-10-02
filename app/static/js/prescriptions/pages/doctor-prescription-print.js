@@ -1,3 +1,5 @@
+import { PrescriptionPrintDocument } from '../components/prescription-print-document.js';
+
 (function (window) {
 	'use strict';
 
@@ -10,7 +12,7 @@
 				printDocument = deps.printDocument;
 				return printDocument;
 			}
-			const factory = deps.printDocumentFactory || window.PrescriptionPrintDocument?.create;
+			const factory = deps.printDocumentFactory || PrescriptionPrintDocument?.create;
 			if (typeof factory !== 'function') {
 				throw new Error('Thiếu component in đơn thuốc dùng chung');
 			}

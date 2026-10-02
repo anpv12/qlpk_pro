@@ -10,6 +10,9 @@ import './clinic-pagination.js';
 import '../realtime-page-hooks.js';
 import { byId, debounce, delegate, el, icon, on, replace } from '../shared/dom.js';
 import { downloadFile, requestJson } from '../shared/http-json.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKPagination } from './clinic-pagination.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 function toast(type, message) {
 	return window.QLPKUserFeedback?.show(type, message);
@@ -112,7 +115,7 @@ function createEditor(view, state, config, load) {
 		}
 	}
 	async function remove(id) {
-		if (!await window.QLPKConfirmationDialog.confirmDelete(text.deleteConfirm)) return;
+		if (!await QLPKConfirmationDialog.confirmDelete(text.deleteConfirm)) return;
 		try {
 			const res = await requestJson(`${config.api}/${id}`, { method: 'DELETE' });
 			if (res.success) {
@@ -160,7 +163,7 @@ export function mountCatalogDictionaryPage(config) {
 	const pagination = { current: null };
 	const load = createList(view, state, config, pagination);
 	const editor = createEditor(view, state, config, load);
-	pagination.current = window.QLPKPagination.create({ onChange(page, size) {
+	pagination.current = QLPKPagination.create({ onChange(page, size) {
 		state.page = page;
 		state.pageSize = size;
 		load();
@@ -181,7 +184,7 @@ export function mountCatalogDictionaryPage(config) {
 		else editor.remove(id);
 	});
 	bindImport(view, config, load);
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['inventory.changed'], debounceMs: 500,
 		handler(event) {
 			const entity = event && event.payload ? event.payload.entity : null;

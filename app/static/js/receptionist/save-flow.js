@@ -2,6 +2,15 @@ import { state } from './page-state.js';
 import { DOCUMENT_DRAFT_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, currentPage, currentPatientId, isSubmitting, loadAppointments, loadServicesForForm, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, savePatientDataInternal, setCurrentPatientId, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, updateStatusCounts, validateReceptionistFormData } from '../receptionist-new.js';
 import { highlightAppointmentDateTimeFields, jointExamManagerInstance, renderDocumentsList, savePendingJointExamList, uploadFile } from './medical-data-and-documents.js';
 import { copyPatientToReceptionistFormFromGlobalSearch, getPatientPopulateOptions, populateSharedForms } from './save-flow-parts/copy-patient.js';
+import { ClinicalDocumentSectionUiUtils } from '../components/document-section-ui-utils.js';
+import { ReceptionistAppointmentPrefill } from './appointment-prefill.js';
+import { ReceptionistAppointmentSubmit } from './appointment-submit.js';
+import { ReceptionistFormBootstrap } from './form-bootstrap.js';
+import { ReceptionistFormDataUtils } from './form-data-utils.js';
+import { ReceptionistFormResetUtils } from './form-reset-utils.js';
+import { ReceptionistJointExamOrchestration } from './joint-exam-orchestration.js';
+import { ReceptionistPageSessionBootstrap } from './page-session-bootstrap.js';
+import { ReceptionistPatientVitalsHistory } from './patient-vitals-history.js';
 
 // Returns { patientId } on success, otherwise { status } ('stale' | 'patientError'); throws on an invalid id.
 async function saveReceptionistPatient(patientId, patientData, isCurrentContext) {
@@ -24,7 +33,7 @@ async function saveReceptionistPatient(patientId, patientData, isCurrentContext)
 }
 
 async function uploadReceptionistDraftDocuments(patientId, isCurrentContext) {
-	await window.ClinicalDocumentSectionUiUtils.uploadDraftDocumentsForPatient(patientId, {
+	await ClinicalDocumentSectionUiUtils.uploadDraftDocumentsForPatient(patientId, {
 		isCurrentContext,
 		getUploadedDocuments: () => state.uploadedDocuments,
 		setUploadedDocuments: value => { state.uploadedDocuments = value; renderDocumentsList(); },
@@ -58,7 +67,7 @@ function verifiedAppointmentId(appointmentResult, appointmentId) {
 
 async function saveReceptionistAppointment(appointmentData, appointmentId, isCurrentContext, hasNewChanges) {
 	if (!isCurrentContext()) return { status: 'stale' };
-	const appointmentSubmit = window.ReceptionistAppointmentSubmit;
+	const appointmentSubmit = ReceptionistAppointmentSubmit;
 	const appointmentRequest = appointmentSubmit.resolveAppointmentRequest(appointmentId);
 	const appointmentResponse = await apiCall(appointmentRequest.url, {
 		method: appointmentRequest.method,
@@ -161,7 +170,7 @@ async function savePatientData() {
 // Collect form data using DOM helpers
 
 function collectFormData() {
-	return window.ReceptionistFormDataUtils.collectFormData({
+	return ReceptionistFormDataUtils.collectFormData({
 		document,
 		window,
 		console,
@@ -170,7 +179,7 @@ function collectFormData() {
 }
 
 function safeSetValue(elementId, value) {
-	return window.ReceptionistFormDataUtils.safeSetValue(elementId, value, {
+	return ReceptionistFormDataUtils.safeSetValue(elementId, value, {
 		document,
 		window
 	});
@@ -198,7 +207,7 @@ async function editAppointment(appointmentId) {
 	}
 
 	const isCurrentLoad = beginReceptionistLoad();
-	window.ReceptionistFormResetUtils.clearSharedFields({ document, window });
+	ReceptionistFormResetUtils.clearSharedFields({ document, window });
 	state.currentAppointmentId = null;
 
 	// Đồng bộ currentPatientId + refresh attachment count/list
@@ -263,10 +272,10 @@ function applyLoadedAppointment(appointment) {
 	setCurrentPatientId(appointment.patient_id);
 	state.currentAppointmentId = appointment.id;
 
-	window.ReceptionistAppointmentPrefill.applyEditReExamState(appointment, getPatientPopulateOptions());
+	ReceptionistAppointmentPrefill.applyEditReExamState(appointment, getPatientPopulateOptions());
 
 	// Xóa pending list khi load appointment (vì đã có appointment rồi)
-	window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
+	ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 
 	state.relativeTableInstance = window.ReceptionistPatientRelativesTable.syncPatient(
 		state.relativeTableInstance,
@@ -362,17 +371,17 @@ async function cancelAppointment(appointmentId, force = false) {
 
 	// Initialize form
 	function initializeForm() {
-		window.ReceptionistFormBootstrap.initializeForm(getFormBootstrapOptions());
+		ReceptionistFormBootstrap.initializeForm(getFormBootstrapOptions());
 	}
 
 // Load sidebar user info
 async function loadSidebarUserInfo() {
-	return window.ReceptionistPageSessionBootstrap.loadSidebarUserInfo({ document });
+	return ReceptionistPageSessionBootstrap.loadSidebarUserInfo({ document });
 }
 
 async function loadPreviousVitals(patientId) {
-	if (!window.ReceptionistPatientVitalsHistory) return;
-	return window.ReceptionistPatientVitalsHistory.loadPreviousVitals(patientId, {
+	if (!ReceptionistPatientVitalsHistory) return;
+	return ReceptionistPatientVitalsHistory.loadPreviousVitals(patientId, {
 		...getPatientPopulateOptions(),
 		getCurrentPatientId: () => currentPatientId,
 		getContextToken: () => receptionistLoadState.token

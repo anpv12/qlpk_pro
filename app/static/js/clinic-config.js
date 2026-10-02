@@ -1,5 +1,5 @@
 // Cấu hình thông tin phòng khám dùng chung
-window.clinicInfo = {
+export const clinicInfo = {
     name: 'PHÒNG KHÁM SƠN TÂM',
     address: '702/121 Điện Biên Phủ, P.Vườn Lài, TP.HCM',
     phone: '0938549609',

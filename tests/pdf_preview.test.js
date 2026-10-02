@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup(response = {ok: true, blob: async () => ({type: 'application/pdf'})}) {
     const calls = [];
@@ -23,7 +24,7 @@ function setup(response = {ok: true, blob: async () => ({type: 'application/pdf'
     class DOMParser {
         parseFromString(html) { return {querySelectorAll: () => [], documentElement: {outerHTML: html}}; }
     }
-    vm.runInNewContext(fs.readFileSync('app/static/js/shared/pdf-preview.js', 'utf8'), {window, DOMParser, URL, AbortController});
+    runScriptFile('app/static/js/shared/pdf-preview.js', (c => vm.isContext(c) ? c : vm.createContext(c))({window, DOMParser, URL, AbortController}));
     return {window, tab, calls, cleanup: () => cleanup()};
 }
 
@@ -60,7 +61,7 @@ test('print controls bind inside the modal even with a scoped document', () => {
     const root = {querySelectorAll: () => [button]};
     const document = {getElementById: () => root, querySelectorAll: () => []};
     const window = {};
-    vm.runInNewContext(fs.readFileSync('app/static/js/components/modal-history-print-controller.js', 'utf8'), {window, document});
+    runScriptFile('app/static/js/components/modal-history-print-controller.js', (c => vm.isContext(c) ? c : vm.createContext(c))({window, document}));
     window.ModalHistoryPrintController.create({document, stateStore: {getState: () => ({})}}).bind();
     assert.equal(bound, true);
 });

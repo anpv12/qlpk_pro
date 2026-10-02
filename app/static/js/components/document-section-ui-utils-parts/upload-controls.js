@@ -1,3 +1,7 @@
+import { QLPKConfirmationDialog } from '../../shared/confirmation-dialog.js';
+import { ReceptionistDocumentAttachmentList } from '../../receptionist/document-attachment-list.js';
+import { ReceptionistDocumentAttachmentUtils } from '../../receptionist/document-attachment-utils.js';
+
 function getDocument(options = {}) {
 	return options.document || window.document;
 }
@@ -256,7 +260,7 @@ async function confirmDocumentDelete(options = {}) {
 	if (typeof options.confirmDelete === 'function') {
 		return options.confirmDelete();
 	}
-	const showConfirmationDialog = options.showConfirmationDialog || window.QLPKConfirmationDialog?.confirm;
+	const showConfirmationDialog = options.showConfirmationDialog || QLPKConfirmationDialog?.confirm;
 	if (typeof showConfirmationDialog !== 'function') return false;
 	return showConfirmationDialog(buildDocumentDeleteConfirmationOptions());
 }
@@ -296,14 +300,14 @@ function resolveAttachmentPreviewOpener(options, attachmentUtils, doc, showToast
 	});
 }
 function renderSharedDocumentList(options = {}) {
-	const renderer = window.ReceptionistDocumentAttachmentList;
+	const renderer = ReceptionistDocumentAttachmentList;
 	if (!renderer || typeof renderer.renderDocumentsList !== 'function') {
 		logDocumentListError(options, 'Thiếu renderer tài liệu dùng chung');
 		return false;
 	}
 
 	const doc = getDocument(options);
-	const attachmentUtils = window.ReceptionistDocumentAttachmentUtils;
+	const attachmentUtils = ReceptionistDocumentAttachmentUtils;
 	if (!attachmentUtils) {
 		logDocumentListError(options, 'Thiếu tiện ích tài liệu dùng chung');
 		return false;

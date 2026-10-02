@@ -4,6 +4,7 @@ import { requestJson } from '../shared/http-json.js';
 import { getSafeApiErrorMessage, isInvoiceLocked, showCustomToast } from '../payment-waiting.js';
 import { formatCurrency } from './output.js';
 import { loadServicesForModal } from './detail.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 const LOCKED_MESSAGE = 'Hóa đơn đã xác nhận, không thể chỉnh sửa';
 const modalOf = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
@@ -227,7 +228,7 @@ async function saveEditService(serviceId) {
 async function deleteService(serviceId) {
 	const examinationId = editableExaminationId();
 	if (!examinationId) return;
-	const confirmed = await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa dịch vụ này?', { title: 'Xác nhận xóa?', showToast: (type, message) => showCustomToast(type, message) });
+	const confirmed = await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa dịch vụ này?', { title: 'Xác nhận xóa?', showToast: (type, message) => showCustomToast(type, message) });
 	if (!confirmed) return;
 	try {
 		await requestJson(`/api/examination-detail/${examinationId}/services/${serviceId}`, { method: 'DELETE' });

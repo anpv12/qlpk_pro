@@ -11,6 +11,8 @@ import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { PERMISSIONS } from './group-permissions.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { groups: [], editingId: null, deletingId: null };
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
@@ -38,7 +40,7 @@ function renderPage(groups) {
 			actionButton('danger', 'delete-btn', 'Xoá', 'bi-trash', group.id)))));
 }
 
-const pagination = window.QLPKPagination.createClient({ render: renderPage });
+const pagination = QLPKPagination.createClient({ render: renderPage });
 
 function renderTable() {
 	const keyword = normalize(byId('searchInput').value);
@@ -161,7 +163,7 @@ on(byId('addGroupBtn'), 'click', () => openEditor(null));
 on(byId('confirmDeleteGroupBtn'), 'click', confirmDelete);
 on(byId('groupForm'), 'submit', saveGroup);
 byId('logoutBtn')?.addEventListener('click', () => window.QLPKAppHeader?.logout());
-window.QLPKRealtimePageHooks?.register({
+QLPKRealtimePageHooks?.register({
 	types: ['catalog.changed'],
 	filter: event => ['group', 'user_group'].includes(event && event.payload ? event.payload.entity : ''),
 	handler: () => fetchGroups().catch(() => {}),

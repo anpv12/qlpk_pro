@@ -7,6 +7,8 @@ import './realtime-page-hooks.js';
 import './components/clinic-pagination.js';
 import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { bindImportExport } from './icd-management/import-export.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { page: 1, pageSize: 10, search: '', group: '', currentId: null, editMode: false, saving: false, revision: 0 };
 const FORM_FIELDS = '#addICDForm input, #addICDForm textarea, #editICDForm input, #editICDForm textarea';
@@ -222,14 +224,14 @@ function bind() {
 	bindImportExport({ showToast, reload: reloadCurrentPage });
 }
 
-state.pagination = window.QLPKPagination.create({ onChange(page, size) {
+state.pagination = QLPKPagination.create({ onChange(page, size) {
 	state.pageSize = size;
 	loadICDList(page);
 } });
 bind();
 loadICDList();
 loadDiseaseGroups();
-window.QLPKRealtimePageHooks?.register({
+QLPKRealtimePageHooks?.register({
 	types: ['catalog.changed'],
 	filter: event => event && event.payload && event.payload.entity === 'icd',
 	handler() {

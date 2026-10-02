@@ -24,4 +24,4 @@ moduleState.api = {
 	createPageCoreAdapter: createPageCoreAdapter
 };
 
-window.ClinicalPageCoreUtils = moduleState.api;
+export const ClinicalPageCoreUtils = moduleState.api;

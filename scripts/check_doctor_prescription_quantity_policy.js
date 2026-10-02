@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { runScriptFile } = require('../tests/helpers/module-source');
 
 const root = path.resolve(__dirname, '..');
 const sourcePath = path.join(root, 'app/static/js/doctor-examination/prescription-model.js');
@@ -31,19 +32,8 @@ const windowStub = {
 	}
 };
 
-for (const dependencyPath of [typeContractPath, doseUtilsPath]) {
-	vm.runInNewContext(fs.readFileSync(dependencyPath, 'utf8'), {
-		window: windowStub,
-		console,
-		Date
-	}, { filename: dependencyPath });
-}
-
-vm.runInNewContext(fs.readFileSync(sourcePath, 'utf8'), {
-	window: windowStub,
-	console,
-	Date
-}, { filename: sourcePath });
+const context = vm.createContext({ window: windowStub, console, Date });
+for (const file of [typeContractPath, doseUtilsPath, sourcePath]) runScriptFile(file, context);
 
 const model = modules.get('prescriptionModel');
 if (!model) throw new Error('Không lấy được prescriptionModel');

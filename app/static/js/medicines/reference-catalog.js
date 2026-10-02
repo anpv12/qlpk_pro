@@ -5,6 +5,8 @@ import '../sidebar-dry-loader.js';
 import '../components/clinic-pagination.js';
 import '../realtime-page-hooks.js';
 import { el, icon, replace } from '../shared/dom.js';
+import { QLPKPagination } from '../components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 let currentPage = 1;
 let pageSize = 10;
@@ -305,7 +307,7 @@ async function syncDavCatalog() {
 
 (function init() {
     if (!ensureToken()) return;
-    listPagination = window.QLPKPagination.create({ onChange(page, size) {
+    listPagination = QLPKPagination.create({ onChange(page, size) {
         currentPage = page;
         pageSize = size;
         loadData();
@@ -341,8 +343,8 @@ async function syncDavCatalog() {
     document.getElementById('syncDavBtn').addEventListener('click', syncDavCatalog);
     document.getElementById('referenceExportButton').addEventListener('click', exportDavCatalog);
 
-    if (window.QLPKRealtimePageHooks) {
-        window.QLPKRealtimePageHooks.register({
+    if (QLPKRealtimePageHooks) {
+        QLPKRealtimePageHooks.register({
             types: ['inventory.changed'],
             debounceMs: 500,
             handler: function (event) {

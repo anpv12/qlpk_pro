@@ -1,6 +1,7 @@
 import { emptyState } from '../../shared/empty-state.js';
 import { setActiveHistoryRow } from './list-bindings.js';
 import { buildQuickDeleteConfirmState } from './delete-flow.js';
+import { ModalFunctionTabsUi } from '../modal-function-tabs-ui.js';
 
 function resolveElement(elementOrId) {
 	if (!elementOrId) return null;
@@ -136,10 +137,10 @@ function selectHistoryForModalFlow(index, options = {}) {
 	if (typeof options.syncState === 'function') options.syncState(selectedHistoryState);
 	if (typeof options.dispatchContent === 'function') {
 		options.dispatchContent(selectedHistoryState);
-	} else if (window.ModalFunctionTabsUi && typeof window.ModalFunctionTabsUi.dispatchActiveTabRender === 'function') {
+	} else if (ModalFunctionTabsUi && typeof ModalFunctionTabsUi.dispatchActiveTabRender === 'function') {
 		const renderers = typeof options.getRenderers === 'function' ? options.getRenderers() : options.renderers;
 		if (renderers) {
-			window.ModalFunctionTabsUi.dispatchActiveTabRender({ renderers });
+			ModalFunctionTabsUi.dispatchActiveTabRender({ renderers });
 		}
 	}
 	return selectedHistoryState;

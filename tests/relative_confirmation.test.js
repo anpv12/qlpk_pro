@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { createWindow } = require('./helpers/fake-dom');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
-function harness(result, missingOwner = false) {
+function harness(result) {
     const calls = [], messages = [], requests = [];
     const window = {
         QLPKUserFeedback: { show: (...args) => messages.push(args) },
@@ -20,7 +20,6 @@ function harness(result, missingOwner = false) {
     for (const file of ['shared/confirmation-dialog.js', 'components/patient-search-dropdown.js', 'joint-exam-manager.js', 'relative-table.js']) {
         runScriptFile(`app/static/js/${file}`, context);
     }
-    if (missingOwner) delete window.QLPKConfirmationDialog;
     const joint = new window.JointExamManager({
         showToast: window.QLPKUserFeedback.show,
         apiCall: async (...args) => { requests.push(args); return { ok: true, json: async () => ({ success: true }) }; }
@@ -45,16 +44,6 @@ for (const result of ['cancel', 'missing', 'reject']) {
         assert.equal(state.messages.length, result === 'cancel' ? 0 : 3);
     });
 }
-
-test('missing shared confirmation owner fails closed with feedback', async () => {
-    const state = harness('confirm', true);
-    await state.joint.delete(91);
-    await state.joint.deletePending(1);
-    await state.relatives.handleDelete({ id: 92 });
-    assert.equal(state.requests.length, 0);
-    assert.equal(state.joint.pendingJointExamList.length, 2);
-    assert.equal(state.messages.length, 3);
-});
 
 test('confirmed deletions retain original endpoints and delete only the selected pending row', async () => {
     const state = harness('confirm');

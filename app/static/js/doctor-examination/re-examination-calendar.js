@@ -1,6 +1,5 @@
 // Selection-only modal. Prescription form owns patient context, draft and save.
-import '../components/appointment-calendar.js';
-const calendarPresentation = globalThis.QLPKAppointmentCalendar;
+import { QLPKAppointmentCalendar as calendarPresentation } from '../components/appointment-calendar.js';
 let calendarAssets;
 function loadCalendarAssets() {
 	if (window.FullCalendar) return Promise.resolve();

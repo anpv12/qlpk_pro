@@ -7,6 +7,9 @@
 import { byId, delegate, el, icon, on, replace } from '../shared/dom.js';
 import { requestJson } from '../shared/http-json.js';
 import { QLPKSearchNormalization } from '../shared/search-normalization.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKPagination } from './clinic-pagination.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
@@ -58,7 +61,7 @@ function createList(config, state) {
 		}
 		replace(body, items.map(item => el('tr', {}, config.cells(item).map(cell => el('td', {}, cell)), el('td', {}, rowActions(config, item.id)))));
 	};
-	const pagination = window.QLPKPagination.createClient({ render });
+	const pagination = QLPKPagination.createClient({ render });
 	return {
 		show: items => pagination.setItems(items),
 		async load() {
@@ -109,7 +112,7 @@ function bindEditor(config, state, list) {
 		modal(config.edit.modal).show();
 	};
 	const remove = async id => {
-		if (!await window.QLPKConfirmationDialog.confirmDelete(text.deleteConfirm)) return;
+		if (!await QLPKConfirmationDialog.confirmDelete(text.deleteConfirm)) return;
 		send(list, { url: config.itemUrl(id), method: 'DELETE', done: text.deleted, failed: text.deleteFailed, log: `Error deleting ${config.logName}:` });
 	};
 	delegate(byId(config.tableBody), 'click', '[data-crud-action]', (event, button) => {
@@ -131,7 +134,7 @@ export function mountModalCrudPage(config) {
 		const term = normalize(event.target.value);
 		list.show(state.items.filter(item => config.searchValues(item).some(value => value && normalize(value).includes(term))));
 	});
-	window.QLPKRealtimePageHooks?.register({ types: ['catalog.changed'], filter: config.realtimeFilter, debounceMs: 350, handler(event) {
+	QLPKRealtimePageHooks?.register({ types: ['catalog.changed'], filter: config.realtimeFilter, debounceMs: 350, handler(event) {
 		config.onRealtime?.(event);
 		list.load();
 	} });

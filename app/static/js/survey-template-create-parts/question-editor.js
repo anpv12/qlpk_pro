@@ -2,6 +2,7 @@ import { el, replace } from '../shared/dom.js';
 import { moduleState } from './state.js';
 import { close, genId, isChoiceType, isGridType, markDirty, normalizeQuestionType, overlayEl, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab } from './page-state.js';
 import { bindCriteriaAutocomplete } from './criteria-autocomplete.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 const removeIcon = () => el('i', { class: 'bi bi-x-lg' });
 
@@ -167,7 +168,7 @@ function bindGridEvents(card) {
 		button.disabled = true;
 		try {
 			const message = `Thay điểm của tất cả các hàng trong cột bằng ${Number(value)}? Điểm đã nhập sẽ bị thay thế.`;
-			const confirmed = await window.QLPKConfirmationDialog.confirm({
+			const confirmed = await QLPKConfirmationDialog.confirm({
 				text: message,
 				confirmText: 'Thay điểm',
 				variant: 'warning',

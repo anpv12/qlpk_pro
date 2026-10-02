@@ -1,10 +1,13 @@
 import { createHistoryDeleteFlow, installSearchFlow1, pickFlowPassthroughOptions } from './modal-patient-search-ui-parts/search-flow-installers.js';
+import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
+import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
+import { ModalPatientSearchData } from './modal-patient-search-data.js';
 
 const REGISTRY = window.QLPKDoctorModuleRegistry;
 const resolveUi = (name, fallback) => REGISTRY?.get?.(name) || fallback;
-const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', window.ModalFunctionTabsUi);
-const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', window.ModalMedicalHistoryListUi);
-const DATA = window.ModalPatientSearchData;
+const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
+const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
+const DATA = ModalPatientSearchData;
 if (!DATA) throw new Error('Thiếu ModalPatientSearchData');
 const {
 	buildSearchParams, buildSearchUrl, extractSearchPatients, buildSearchSuccessState, buildSearchErrorState,

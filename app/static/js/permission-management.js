@@ -7,6 +7,7 @@ import './realtime-page-hooks.js';
 import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const ROLE_LABELS = { admin: 'Quản trị viên', doctor: 'Bác sĩ', PSYCHOLOGIST: 'Tâm lý gia', staff: 'Nhân viên', cashier: 'Thu ngân' };
 const state = { users: [], groups: [], selectedUserId: null, selectedGroupIds: [], userFilter: '', groupFilter: '', revision: 0, ready: false };
@@ -135,7 +136,7 @@ function bind() {
 
 bind();
 saveButton().disabled = true;
-window.QLPKRealtimePageHooks?.register({
+QLPKRealtimePageHooks?.register({
 	types: ['catalog.changed'],
 	filter: event => ['user', 'group', 'user_group'].includes(event && event.payload ? event.payload.entity : ''),
 	handler: () => reloadPermissionData().catch(() => {}),

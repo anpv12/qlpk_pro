@@ -2,13 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function load() {
     const listeners = {};
     const document = { addEventListener: (type, fn) => { listeners[type] = fn; } };
     const window = { document };
     const context = { window, document, console: { error: () => {} }, Element: class {}, JSON };
-    vm.runInNewContext(fs.readFileSync('app/static/js/shared/inline-actions.js', 'utf8'), context);
+    runScriptFile('app/static/js/shared/inline-actions.js', (c => vm.isContext(c) ? c : vm.createContext(c))(context));
     return { window, listeners, Element: context.Element };
 }
 

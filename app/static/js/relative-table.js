@@ -1,4 +1,5 @@
 import { el, replace } from './shared/dom.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 const API_BASE = '/api/family-members';
 let instanceCounter = 0;
 
@@ -31,11 +32,7 @@ const notify = (type, message) => {
 };
 
 const confirmDialog = async (message) => {
-	if (!window.QLPKConfirmationDialog) {
-		notify('error', 'Không thể mở hộp thoại xác nhận. Thao tác đã được hủy.');
-		return false;
-	}
-	return window.QLPKConfirmationDialog.confirm({
+	return QLPKConfirmationDialog.confirm({
 		title: 'Xác nhận',
 		text: message,
 		confirmText: 'Đồng ý',
@@ -451,8 +448,6 @@ const RelativeTableManager = {
 	}
 };
 
-window.RelativeTableManager = RelativeTableManager;
-
-
-
 export { RelativeTable, notify, toInputDate, API_BASE, renderRelativeActionButton, formatDateDisplay };
+
+export { RelativeTableManager };

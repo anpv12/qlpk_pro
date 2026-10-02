@@ -16,7 +16,7 @@ function loadDialog(result) {
             }
         }
     };
-    vm.runInNewContext(SOURCE, { window });
+    runScriptFile('app/static/js/shared/confirmation-dialog.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window }));
     return { dialog: window.QLPKConfirmationDialog, calls };
 }
 

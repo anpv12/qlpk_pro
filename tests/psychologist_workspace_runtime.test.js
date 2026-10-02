@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { pageScripts } = require('./helpers/module-graph');
+const { runScriptFile } = require('./helpers/module-source');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -132,7 +133,7 @@ function createHarness() {
     }
   };
 
-  vm.runInNewContext(runtimeSource, { window, document, console });
+  runScriptFile(path.join(__dirname, '..', 'app/static/js/psychologist-examination/workspace-runtime.js'), vm.createContext({ window, document, console }));
   const runtime = window.QLPKPsychologistWorkspaceRuntime;
   runtime.bind({ document });
 

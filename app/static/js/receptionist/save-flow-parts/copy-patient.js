@@ -3,6 +3,10 @@ import { safeSetValue } from '../save-flow.js';
 import { MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allServices, apiCall, beginReceptionistLoad, reEnableAgeCalculation, receptionistLoadState, setCurrentPatientId, setDateOfBirthAndAge, setupAgeCalculation, showCustomToast, temporarilyDisableAgeCalculation } from '../../receptionist-new.js';
 import { buildFullAddressFromParts, loadProvinces, loadWards, updateAddressSummary } from '../../receptionist-new-parts/address.js';
 import { jointExamManagerInstance, loadAttachmentsForCurrentPatient } from '../medical-data-and-documents.js';
+import { ReceptionistAppointmentListControls } from '../appointment-list-controls.js';
+import { ReceptionistFormResetUtils } from '../form-reset-utils.js';
+import { ReceptionistJointExamOrchestration } from '../joint-exam-orchestration.js';
+import { RelativeTableManager } from '../../relative-table.js';
 // Patient copy and shared-form population for the receptionist save flow (ES module).
 
 function getPatientPopulateOptions() {
@@ -19,7 +23,7 @@ function getPatientPopulateOptions() {
 		apiCall,
 		allServices,
 		document,
-		RelativeTableManager: window.RelativeTableManager,
+		RelativeTableManager: RelativeTableManager,
 		JointExamManager: window.JointExamManager,
 		bootstrap: window.bootstrap,
 		window
@@ -75,7 +79,7 @@ async function fetchPatientForCopy(patientId, isCurrentLoad) {
 }
 
 function resetFormForCopiedPatient() {
-	window.ReceptionistFormResetUtils.clearFormForCopy({
+	ReceptionistFormResetUtils.clearFormForCopy({
 		document,
 		window,
 		setupAgeCalculation,
@@ -83,7 +87,7 @@ function resetFormForCopiedPatient() {
 	});
 	state.currentEditId = null;
 	state.currentAppointmentId = null;
-	window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
+	ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 	localStorage.removeItem('currentEditId');
 }
 
@@ -106,7 +110,7 @@ async function copyPatientToReceptionistFormFromGlobalSearch(payload = {}) {
 		if (populated === false) throw new Error('patient-load-incomplete');
 
 		setCurrentPatientId(patient.id);
-		window.ReceptionistAppointmentListControls?.activateResponsiveWorkspacePane?.('main', { document, window });
+		ReceptionistAppointmentListControls?.activateResponsiveWorkspacePane?.('main', { document, window });
 		try { await loadAttachmentsForCurrentPatient(); } catch (attachmentError) { console.warn('Không thể tải tệp đính kèm:', attachmentError); }
 		if (!isCurrentLoad()) return false;
 		receptionistLoadState.failed = false;

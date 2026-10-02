@@ -6,12 +6,13 @@ import { getCurrentEditAppointmentStatus, getEditStatusTransitionBlockMessage, n
 import { AppointmentManagementIcdMultiselectUtils } from './icd-multiselect-utils.js';
 import { hideModal } from '../shared/dom-query.js';
 import { requestJson } from '../shared/http-json.js';
+import { CustomModal } from '../custom-modal.js';
 // Modal thêm: validation, lưu, trạng thái sửa, ICD.
 
 // ===== CÁC HÀM GỬI THÔNG BÁO =====
 function getPageActionsOptions() {
 	return {
-		CustomModal: window.CustomModal,
+		CustomModal: CustomModal,
 		showCustomToast: showCustomToast
 	};
 }
@@ -97,7 +98,7 @@ function updateEditAppointmentStatus(newStatus) {
 	const statusText = getStatusText(normalizedStatus);
 
 	// Sử dụng custom modal thay vì confirm
-	window.CustomModal.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thành "${statusText}"?`, 'Xác nhận thay đổi trạng thái').then((confirmed) => {
+	CustomModal.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thành "${statusText}"?`, 'Xác nhận thay đổi trạng thái').then((confirmed) => {
 		if (!confirmed) return;
 		requestJson(`/api/${appointmentId}`, { method: 'PUT', json: { status: normalizedStatus } }).then(() => {
 			showCustomToast('success', `Đã cập nhật trạng thái thành "${statusText}" thành công!`);

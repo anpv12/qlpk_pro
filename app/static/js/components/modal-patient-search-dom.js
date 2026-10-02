@@ -1,5 +1,7 @@
 import { el, replace } from '../shared/dom.js';
 import { emptyState } from '../shared/empty-state.js';
+import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
+import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 
 (function (window) {
 	'use strict';
@@ -7,8 +9,8 @@ import { emptyState } from '../shared/empty-state.js';
 	const PARTS = window.QLPKModalPatientSearchParts || (window.QLPKModalPatientSearchParts = {});
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
 	const resolveUi = (name, fallback) => REGISTRY?.get?.(name) || fallback;
-	const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', window.ModalFunctionTabsUi);
-	const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', window.ModalMedicalHistoryListUi);
+	const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
+	const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
 
 	function resolveElement(elementOrId) {
 		if (!elementOrId) return null;

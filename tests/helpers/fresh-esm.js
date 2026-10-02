@@ -9,6 +9,7 @@ const { pathToFileURL } = require('node:url');
 
 const JS_ROOT = path.join(__dirname, '..', '..', 'app', 'static', 'js');
 register(pathToFileURL(path.join(__dirname, 'fresh-esm-hooks.mjs')));
+require('./esm-stubs');
 let graph = 0;
 
 // One new module graph; every module imported through the returned function shares it.

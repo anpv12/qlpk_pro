@@ -19,5 +19,5 @@ moduleState.MEDICAL_RECORD_LABELS = {
 
 moduleState.MEDICAL_RECORD_DETAIL_LEAD = '\n\t\t\t\t\t\t\n\t\t\t\t\t\t';
 
-window.ModalHistoryDataRuntime = Object.freeze({ create: create });
-window.QLPKDoctorModuleRegistry?.register?.('modalHistoryDataRuntime', window.ModalHistoryDataRuntime);
+export const ModalHistoryDataRuntime = Object.freeze({ create: create });
+window.QLPKDoctorModuleRegistry?.register?.('modalHistoryDataRuntime', ModalHistoryDataRuntime);

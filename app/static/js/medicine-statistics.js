@@ -7,6 +7,7 @@ import './realtime-page-hooks.js';
 import { delegate } from './shared/dom.js';
 import { authHeaders, formatMoney, formatNumber, getFilterParams, hideLoading, showLoading, showToast, state } from './medicine-statistics/shared.js';
 import { renderInventoryTable, renderPrescriptionHistoryTable, renderPrescriptionsTable } from './medicine-statistics/tables.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 function debounce(fn, wait) {
 	let timer;
@@ -388,4 +389,4 @@ loadDoctorsFilter();
 switchTab(sessionStorage.getItem('medicineStatsActiveTab') || 'prescriptions');
 setupEventListeners();
 delegate(document, 'click', '[data-stats-tab]', (event, link) => switchTab(link.dataset.statsTab));
-window.QLPKRealtimePageHooks?.register({ types: ['inventory.changed'], debounceMs: 500, handler: () => applyFilters() });
+QLPKRealtimePageHooks?.register({ types: ['inventory.changed'], debounceMs: 500, handler: () => applyFilters() });

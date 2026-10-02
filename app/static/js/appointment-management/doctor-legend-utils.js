@@ -1,5 +1,7 @@
+import { QLPKAppointmentCalendar } from '../components/appointment-calendar.js';
+
 function getDoctorLegendColor(doctor) {
-	return window.QLPKAppointmentCalendar.resolveDoctorDotColor(doctor?.id, doctor ? [doctor] : []);
+	return QLPKAppointmentCalendar.resolveDoctorDotColor(doctor?.id, doctor ? [doctor] : []);
 }
 
 function createLegendItem(doc, doctor, index) {

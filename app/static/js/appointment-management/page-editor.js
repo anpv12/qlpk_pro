@@ -11,6 +11,7 @@ import { afterDataChanged } from './page-view.js';
 import { AppointmentManagementFeedbackUtils } from './feedback-utils.js';
 import { addClass, fieldValue, rebindDelegate, removeClass, setText } from '../shared/dom-query.js';
 import { requestJson } from '../shared/http-json.js';
+import { CustomModal } from '../custom-modal.js';
 // Modal thêm, sự kiện lịch, tóm tắt editor, breadcrumb, xóa, thông báo.
 
 // Mở modal add với ngày đã chọn
@@ -208,7 +209,7 @@ async function doDeleteAppointment(appointmentId, force = false) {
 	} catch (error) {
 		if (error?.status === 409 && error.data?.requires_force) {
 			// Đang trong quá trình khám — hỏi xác nhận lần 2
-			const confirmed = await window.CustomModal.confirm('Lịch hẹn đang được sử dụng trong ca khám. Bạn có chắc muốn xóa?', 'Xác nhận xóa/ẩn', 'warning', 'danger');
+			const confirmed = await CustomModal.confirm('Lịch hẹn đang được sử dụng trong ca khám. Bạn có chắc muốn xóa?', 'Xác nhận xóa/ẩn', 'warning', 'danger');
 			if (confirmed) doDeleteAppointment(appointmentId, true);
 		} else {
 			// 400 blocked hoặc lỗi khác — hiển thị thông báo

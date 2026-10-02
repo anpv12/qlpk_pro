@@ -1,3 +1,5 @@
+import { QLPKHistoryTabCore } from './history-tab-core.js';
+
 (function (window) {
 	'use strict';
 
@@ -11,10 +13,10 @@
 	};
 
 	function renderState(container, state) {
-		return window.QLPKHistoryTabCore.renderStateBlock(container, STATES[state]);
+		return QLPKHistoryTabCore.renderStateBlock(container, STATES[state]);
 	}
 
-	const historyTabCore = window.QLPKHistoryTabCore;
+	const historyTabCore = QLPKHistoryTabCore;
 	const isCurrent = historyTabCore.isContextCurrent;
 	const resolveHistoryState = historyTabCore.resolveHistoryState;
 

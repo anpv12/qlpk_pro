@@ -29,6 +29,8 @@ import { AppointmentManagementPageInteractionsUtils } from './appointment-manage
 import './appointment-management/mini-calendar-bootstrap-utils.js';
 import { fieldValue, hideModal, rebind, rebindDelegate, removeClass, setFieldValue, setProp } from './shared/dom-query.js';
 import { openAddAppointmentWithDate } from './appointment-management/page-open-add.js';
+import { CustomModal } from './custom-modal.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 Object.assign(state, {
 	doctors: [],
@@ -142,7 +144,7 @@ function bindEditModalEvents() {
 	onDocument('click', '#editDeleteAppointmentBtn', () => {
 		const appointmentId = state.editAppointmentId;
 		if (!appointmentId) return;
-		window.CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(confirmed => {
+		CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(confirmed => {
 			if (!confirmed) return;
 			hideModal('#editAppointmentModal');
 			doDeleteAppointment(appointmentId);
@@ -199,7 +201,7 @@ function bindBusyScheduleEvents() {
 }
 
 function registerRealtimeRefresh() {
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'busy_schedule.changed'],
 		debounceMs: 500,
 		handler: event => {

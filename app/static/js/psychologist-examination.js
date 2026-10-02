@@ -1,9 +1,23 @@
 // Psychologist Examination - New Layout
 
 // Global variables
+import { ClinicalAddressDraftUtils } from './components/address-draft-utils.js';
+import { ClinicalAddressHierarchyUtils } from './components/address-hierarchy-utils.js';
+import { ClinicalDocumentFileUtils } from './components/document-file-utils.js';
+import { ClinicalDocumentSectionUiUtils } from './components/document-section-ui-utils.js';
+import { ClinicalExaminationFormLockUtils } from './components/examination-form-lock-utils.js';
+import { ClinicalPageCoreUtils } from './components/page-core-utils.js';
+import { PsychologistExaminationCoreUtils } from './psychologist-examination/core-utils.js';
+import { PsychologistWorkspaceUi } from './psychologist-examination/workspace-ui.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKPsychologistPatientHistoryBridge } from './psychologist-examination/patient-history-bridge.js';
+import { QLPKPsychologistWorkspaceRuntime } from './psychologist-examination/workspace-runtime.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKWorkflowTwoPane } from './components/workflow-two-pane.js';
+
 let currentPatientId = null;
 let psychologistRelativeTableInstance = null;
-const pageCoreAdapter = window.ClinicalPageCoreUtils.createPageCoreAdapter({
+const pageCoreAdapter = ClinicalPageCoreUtils.createPageCoreAdapter({
 	document,
 	window,
 	localStorage,
@@ -38,7 +52,7 @@ window.QLPKPsychologistSetCurrentAppointmentId = value => { currentAppointmentId
 window.QLPKPsychologistSetLoading = value => { isLoadingExaminationData = Boolean(value); };
 
 // Helpers
-const psychologistCoreUtils = window.PsychologistExaminationCoreUtils;
+const psychologistCoreUtils = PsychologistExaminationCoreUtils;
 if (!psychologistCoreUtils) {
 	throw new Error('PsychologistExaminationCoreUtils is not loaded');
 }
@@ -46,15 +60,15 @@ if (!psychologistCoreUtils) {
 const formatDisplayDate = psychologistCoreUtils.formatDisplayDate;
 const psychologistGetExaminationStatusText = psychologistCoreUtils.getExaminationStatusText;
 const psychologistGetExaminationStatusBadgeClass = psychologistCoreUtils.getExaminationStatusBadgeClass;
-const psychologistWorkspaceUi = window.PsychologistWorkspaceUi;
-const psychologistWorkspaceRuntime = window.QLPKPsychologistWorkspaceRuntime;
+const psychologistWorkspaceUi = PsychologistWorkspaceUi;
+const psychologistWorkspaceRuntime = QLPKPsychologistWorkspaceRuntime;
 
 // Session and form state used by the canonical inline workspace.
 const PAGE_LOAD_ID_KEY = 'qlpk_page_load_id';
 const ADDRESS_DRAFT_KEY = 'qlpk_address_draft';
 const DOCUMENT_DRAFT_KEY = 'qlpk_document_draft';
 
-const addressDraftAdapter = window.ClinicalAddressDraftUtils.createAddressDraftAdapter({
+const addressDraftAdapter = ClinicalAddressDraftUtils.createAddressDraftAdapter({
 	document,
 	sessionStorage,
 	pageLoadIdKey: PAGE_LOAD_ID_KEY,
@@ -71,7 +85,7 @@ function apiCall(url, options = {}) {
 // Read by the shared joint-exam bootstrap (same contract as the doctor page).
 window.QLPKCurrentAppointment = { getId: () => currentAppointmentId, apiCall };
 
-const addressHierarchyAdapter = window.ClinicalAddressHierarchyUtils.createAddressHierarchyAdapter({
+const addressHierarchyAdapter = ClinicalAddressHierarchyUtils.createAddressHierarchyAdapter({
 	document,
 	apiCall,
 	console,
@@ -251,11 +265,11 @@ let uploadInitialized = false;
 
 let notesAttachmentChip = null;
 
-const documentFileAdapter = window.ClinicalDocumentFileUtils.createDocumentFileAdapter({
+const documentFileAdapter = ClinicalDocumentFileUtils.createDocumentFileAdapter({
 	showError: message => window.showCustomToast('error', message)
 });
 
-const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
+const documentSectionAdapter = ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
 	document,
 	getContextToken: () => window.QLPKPsychologistPageState?.contextToken,
 	sessionStorage,
@@ -268,7 +282,7 @@ const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExami
 	formatFileSize: bytes => documentFileAdapter.formatFileSize(bytes),
 	formatDisplayDate,
 	showToast: (type, message) => window.showCustomToast(type, message),
-	showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
+	showConfirmationDialog: options => QLPKConfirmationDialog.confirm(options),
 	console,
 	getIsLocked: () => isFormLocked,
 	getUploadInitialized: () => uploadInitialized,
@@ -320,7 +334,7 @@ function resetFormToDefault() {
 }
 // Event listeners
 document.addEventListener('DOMContentLoaded', async function () {
-	const bootstrapResult = await window.ClinicalPageCoreUtils.initializeExaminationPageBootstrap({
+	const bootstrapResult = await ClinicalPageCoreUtils.initializeExaminationPageBootstrap({
 		document,
 		window,
 		pageCoreAdapter,
@@ -343,8 +357,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 	psychologistWorkspaceUi?.bind({ document });
 	psychologistWorkspaceUi?.clearWorkspace({ document });
 
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
+	if (QLPKRealtimePageHooks) {
+		QLPKRealtimePageHooks.register({
 			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'order.changed', 'survey.changed', 'patient.changed', 'document.changed', 'catalog.changed', 'busy_schedule.changed'],
 			debounceMs: 500,
 			handler: function (event) {
@@ -365,11 +379,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 		});
 	}
 
-	window.QLPKPsychologistPatientHistoryBridge.create({
+	QLPKPsychologistPatientHistoryBridge.create({
 		document,
 		apiCall,
 		showToast: window.showCustomToast,
-		showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
+		showConfirmationDialog: options => QLPKConfirmationDialog.confirm(options),
 		formatDisplayDate,
 		getAppointments: () => allAppointments,
 		getCurrentPatientData: () => window.currentPatientData,
@@ -409,7 +423,7 @@ async function selectPatientCard(appointmentId) {
 		clearExaminationFormOnError: () => psychologistWorkspaceRuntime?.clear({ document }),
 		afterExaminationFormLoad: () => {
 			isLoadingExaminationData = false;
-			window.QLPKWorkflowTwoPane?.activate?.('main', { document });
+			QLPKWorkflowTwoPane?.activate?.('main', { document });
 			psychologistWorkspaceUi?.showWorkspace({
 				document,
 				patient: window.currentPatientData,
@@ -442,7 +456,7 @@ window.showTransferMenu = window.ExaminationActionButtonsUi.createTransferMenuHa
  * Load ICD data from API with search query
  * Note: This function is available to shared ICD autocomplete consumers.
  */
-const copyViewLockController = window.ClinicalExaminationFormLockUtils.createWorkflowCopyViewLockController({
+const copyViewLockController = ClinicalExaminationFormLockUtils.createWorkflowCopyViewLockController({
 	document,
 	afterApplyLockState: locked => documentSectionAdapter.setDocumentSectionLockState(locked),
 	setLocked: locked => { isFormLocked = locked; }

@@ -2,6 +2,7 @@ import { showInventoryOverlay } from './inventory-overlay.js';
 import { getUserFacingResponseMessage, showCustomToast } from '../medicine-management.js';
 import { byId, debounce, el, replace } from '../shared/dom.js';
 import { requestJson } from '../shared/http-json.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 // ========== QUẢN LÝ NHÀ CUNG CẤP ==========
 let suppliers = [];
@@ -135,7 +136,7 @@ function editSupplier(supplierId) {
 
 // Hàm xóa nhà cung cấp
 async function deleteSupplier(supplierId) {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa nhà cung cấp này?')) {
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa nhà cung cấp này?')) {
 		return;
 	}
 

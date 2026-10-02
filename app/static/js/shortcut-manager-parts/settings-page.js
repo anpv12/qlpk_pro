@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
 import { apiCall, captureCombo, claimSettingsPage, clearSessionState, currentUser, hideMessage, initRouteOptions, isAdminUser, normalizeComboText, readShortcutSaveError, refreshShortcuts, renderRows, resolveShortcutSaveRequest, showMessage } from './session-and-keys.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 function installShortcutSettings1(ctx) {
 	const getCurrentScope = () => {
@@ -74,7 +75,7 @@ function installShortcutSettings1(ctx) {
 
 function installShortcutSettings2(ctx) {
 	async function deleteShortcut(id) {
-		if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
+		if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc muốn xóa phím tắt này?')) return;
 		if (!moduleState.settingsCurrent()) return;
 		try {
 			const res = await apiCall(`/api/user-shortcuts/${id}`, { method: 'DELETE' });

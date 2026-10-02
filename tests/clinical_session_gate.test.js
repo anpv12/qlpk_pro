@@ -138,5 +138,5 @@ test('các entry page await gate, không dùng Promise như boolean', () => {
     assert.match(doctor, /DOMContentLoaded', async \(\) => \{\s*if \(!await ensureSession\(\)\) return;/);
     assert.match(doctor, /async function loadAppointments[\s\S]*?if \(!await ensureSession\(\)\) return null;/);
     assert.match(receptionist, /DOMContentLoaded', async function \(\) \{\s*if \(!await ensureSession\(\)\) return;/);
-    assert.match(psychologist, /const bootstrapResult = await window.ClinicalPageCoreUtils.initializeExaminationPageBootstrap/);
+    assert.match(psychologist, /const bootstrapResult = await (?:window\.)?ClinicalPageCoreUtils.initializeExaminationPageBootstrap/);
 });

@@ -1,3 +1,5 @@
+import { QLPKIcdAutocomplete } from '../components/icd-autocomplete.js';
+
 const instances = {
 	add: null,
 	edit: null
@@ -28,7 +30,7 @@ function getInstance(mode) {
 function setupICDMultiSelect(fieldId, mode) {
 	if (getInstance(mode)) return getInstance(mode);
 	const root = getRoot(fieldId);
-	const Component = window.QLPKIcdAutocomplete;
+	const Component = QLPKIcdAutocomplete;
 	if (!root || typeof Component !== 'function') return null;
 
 	instances[mode] = new Component(root, {

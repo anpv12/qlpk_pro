@@ -1,3 +1,6 @@
+import { QLPKPatientInfoForm } from './patient-info-form.js';
+import { QLPKPatientVisitInfoForm } from './patient-visit-info-form.js';
+
 (function (window, document) {
 	'use strict';
 
@@ -33,8 +36,8 @@
 	function create(options = {}) {
 		let config = mergeConfig(options.config);
 		let contextToken = 0;
-		const patientInfo = options.patientInfo || resolveSubForm(window.QLPKPatientInfoForm, config.patient);
-		const patientVisit = options.patientVisit || resolveSubForm(window.QLPKPatientVisitInfoForm, config.visit);
+		const patientInfo = options.patientInfo || resolveSubForm(QLPKPatientInfoForm, config.patient);
+		const patientVisit = options.patientVisit || resolveSubForm(QLPKPatientVisitInfoForm, config.visit);
 
 		function ensureComponents() {
 			if (!patientInfo || typeof patientInfo.populate !== 'function' || typeof patientInfo.collect !== 'function') {

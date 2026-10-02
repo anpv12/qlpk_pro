@@ -1,7 +1,7 @@
 import { bindDocumentUploadControls, bindNotesUploadButton, buildDocumentDeleteConfirmationOptions, confirmDocumentDelete, deleteDraftDocument, downloadDraftDocument, ensureDocumentEditingAllowed, handleDraftFileUpload, loadAttachmentsForCurrentPatient, setDocumentSectionLockState, updateNotesAttachmentCount, uploadAttachmentForCurrentPatient, uploadDraftDocumentsForPatient, uploadFileToPatient } from './document-section-ui-utils-parts/upload-controls.js';
 import { createDocumentSectionAdapter, createExaminationDocumentSectionAdapter } from './document-section-ui-utils-parts/section-adapters.js';
 
-window.ClinicalDocumentSectionUiUtils = {
+export const ClinicalDocumentSectionUiUtils = {
 	updateNotesAttachmentCount: updateNotesAttachmentCount,
 	bindNotesUploadButton: bindNotesUploadButton,
 	ensureDocumentEditingAllowed: ensureDocumentEditingAllowed,

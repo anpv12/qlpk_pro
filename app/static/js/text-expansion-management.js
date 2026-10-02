@@ -9,6 +9,9 @@ import './components/clinic-pagination.js';
 import './text-expansion.js';
 import { byId, debounce, delegate, el, icon, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
+import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { page: 1, pageSize: 10, revision: 0 };
 const CATEGORY_LABELS = { medical: 'Y tế', psychological: 'Tâm lý', general: 'Chung' };
@@ -132,7 +135,7 @@ function saveTextExpansion() {
 }
 
 async function deleteTextExpansion(id) {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa từ viết tắt này?')) return;
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa từ viết tắt này?')) return;
 	mutate(() => requestJson(`/api/text-expansions/${id}`, { method: 'DELETE' }), () => {
 		toast('success', 'Xóa thành công');
 		afterChange();
@@ -187,7 +190,7 @@ function downloadTemplate() {
 }
 
 async function resetAll() {
-	if (!await window.QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!', { confirmText: 'Xóa tất cả' })) return;
+	if (!await QLPKConfirmationDialog.confirmDelete('Bạn có chắc chắn muốn xóa TẤT CẢ từ viết tắt? Hành động này không thể hoàn tác!', { confirmText: 'Xóa tất cả' })) return;
 	mutate(() => requestJson('/api/text-expansions/reset', { method: 'POST' }), () => {
 		toast('success', 'Reset thành công');
 		afterChange(1);
@@ -201,11 +204,11 @@ delegate(document, 'click', '[data-te-action]', (event, button) => PAGE_ACTIONS[
 on(byId('categoryFilter'), 'change', () => loadTextExpansions());
 on(byId('statusFilter'), 'change', () => loadTextExpansions());
 on(byId('searchInput'), 'keyup', debounce(() => loadTextExpansions(1), 500));
-state.pagination = window.QLPKPagination.create({ onChange(page, size) {
+state.pagination = QLPKPagination.create({ onChange(page, size) {
 	state.pageSize = size;
 	loadTextExpansions(page);
 } });
-window.QLPKRealtimePageHooks?.register({
+QLPKRealtimePageHooks?.register({
 	types: ['catalog.changed'],
 	filter: event => event && event.payload && event.payload.entity === 'text_expansion',
 	handler: () => afterChange(),

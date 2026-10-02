@@ -1,3 +1,6 @@
+import { PrescriptionDoseUtils } from '../prescriptions/shared/prescription-dose-utils.js';
+import { PrescriptionTypeContract } from '../prescriptions/shared/prescription-type-contract.js';
+
 (function (window) {
 	'use strict';
 
@@ -6,10 +9,10 @@
 
 	const { textOf } = RUNTIME;
 
-	const TYPE_CONTRACT = window.PrescriptionTypeContract;
+	const TYPE_CONTRACT = PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 
-	const DOSE = window.PrescriptionDoseUtils;
+	const DOSE = PrescriptionDoseUtils;
 	if (!DOSE) throw new Error('Thiếu tiện ích liều thuốc dùng chung');
 
 	const PRESCRIPTION_USAGE_MODES = DOSE.USAGE_MODES;

@@ -7,6 +7,7 @@ import './realtime-page-hooks.js';
 import { byId, delegate, el, icon, replace } from './shared/dom.js';
 import { bindExamStatsChartInteractions, buildExamStatsChartOption, buildICDChartOption } from './dashboard/charts.js';
 import { emptyState, examDetailRows, icdDetailRows, referralDetailRows, renderAppointments, renderReferralSources, renderStaffOnline } from './dashboard/panels.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const state = { charts: {} };
 const fmtISO = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -205,7 +206,7 @@ function bind() {
 		title: `${tag.dataset.sourceLabel} — ${Number(tag.dataset.sourceCount || 0) || 0} lượt khám`,
 		url: `/api/dashboard/referral-source-detail?source=${encodeURIComponent(tag.dataset.sourceKey)}&from_date=${state.referralSourceFromDate}&to_date=${state.referralSourceToDate}`,
 		rows: referralDetailRows, logName: 'Referral source' }));
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'presence.changed'],
 		debounceMs: 500,
 		handler(event) {

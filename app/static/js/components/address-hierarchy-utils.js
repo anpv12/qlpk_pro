@@ -1,7 +1,7 @@
 import { callVietnamAddressAPI, clearSelectOptions, collectPersonalDetailModalValues, fillMainAddressFieldFromModal, getModalAddressFormValues, loadAddressHierarchy, loadDistricts, loadDistrictsModal, loadProvinces, loadProvincesForModal, loadProvincesModal, loadWards, loadWardsModal, normalizeAddressName, setSelectByApprox, setSelectValueWithFallback, tryFallbackAPI, updateAddressSummary } from './address-hierarchy-utils-parts/address-api.js';
 import { createAddressHierarchyAdapter, handleDistrictChange, handlePersonalDetailModalClose, handleProvinceChange, hasPersonalDetailModalAddressData, savePersonalDetailAddressToServerIfEditing, setupMainAddressChangeHandlers, syncPersonalDetailModalIfNeeded, syncPersonalDetailModalToMainForm } from './address-hierarchy-utils-parts/address-modal-sync.js';
 
-window.ClinicalAddressHierarchyUtils = {
+export const ClinicalAddressHierarchyUtils = {
 	callVietnamAddressAPI: callVietnamAddressAPI,
 	tryFallbackAPI: tryFallbackAPI,
 	normalizeAddressName: normalizeAddressName,

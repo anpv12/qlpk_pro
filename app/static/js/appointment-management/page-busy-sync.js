@@ -11,6 +11,7 @@ import { AppointmentManagementCalendarSyncDateUtils } from './calendar-sync-date
 import { AppointmentManagementCalendarSyncFilterUtils } from './calendar-sync-filter-utils.js';
 import { AppointmentManagementCalendarSyncStatusUtils } from './calendar-sync-status-utils.js';
 import { AppointmentManagementCalendarSyncTableUtils } from './calendar-sync-table-utils.js';
+import { CustomModal } from '../custom-modal.js';
 // Lịch bận realtime và đồng bộ Google Calendar.
 
 function showBusySchedulePopup(event) {
@@ -59,7 +60,7 @@ function loadCalendarStatus() {
 function initSyncCalendarModal() {
 	AppointmentManagementCalendarSyncModalUtils.initializeSyncCalendarModal({
 		abortCalendarSyncRequests: () => AppointmentManagementCalendarSyncRuntimeUtils.abortCalendarSyncRequests(),
-		customModal: window.CustomModal,
+		customModal: CustomModal,
 		filterSyncTable,
 		flatpickrInstance: window.flatpickr || null,
 		loadSyncData,

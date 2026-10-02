@@ -12,6 +12,7 @@ import { HttpError, requestJson } from './shared/http-json.js';
 import { formatDateTime, formatTimeRangeReadable, statusIndicator } from './doctor-busy-schedule/format.js';
 import { setQuickTime, setQuickTimeSelection, setRange } from './doctor-busy-schedule/quick-time.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const DEFAULT_REASONS = ['Họp định kỳ', 'Nghỉ phép', 'Khám ngoài', 'Đào tạo', 'Hội nghị', 'Nghỉ ốm', 'Công tác', 'Nghỉ lễ'];
 const state = { user: null, schedules: [], revision: 0, reasons: null, reasonsTime: null, editingId: null };
@@ -298,4 +299,4 @@ function bind() {
 bind();
 loadUserInfo();
 loadMyBusySchedules();
-window.QLPKRealtimePageHooks?.register({ types: ['busy_schedule.changed'], debounceMs: 500, handler: loadMyBusySchedules });
+QLPKRealtimePageHooks?.register({ types: ['busy_schedule.changed'], debounceMs: 500, handler: loadMyBusySchedules });

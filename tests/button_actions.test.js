@@ -8,6 +8,7 @@ const vm = require('node:vm');
 const { readMedicineManagementSource } = require('./helpers/medicine-management-source');
 const { readCssSource, stylesheetOwner } = require('./helpers/css-source');
 const { readTemplateSource } = require('./helpers/template-source');
+const { runScriptFile } = require('./helpers/module-source');
 const root = path.join(__dirname, '..');
 const read = name => readCssSource(path.join(root, name));
 const css = read('app/static/css/shared/button-actions.css');
@@ -15,7 +16,7 @@ const css = read('app/static/css/shared/button-actions.css');
 test('shared action renderer uses explicit roles, not displayed labels', () => {
     const { document } = require('./helpers/fake-dom').createWindow();
     const window = { document };
-    vm.runInNewContext(read('app/static/js/shared/icon-system.js'), { window });
+    runScriptFile('app/static/js/shared/icon-system.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window }));
     const icons = window.QLPKIconSystem;
     for (const [action, role] of Object.entries({ add: 'execute', save: 'execute', view: 'view', edit: 'edit', delete: 'danger', cancel: 'neutral', download: 'neutral' })) {
         const button = icons.createActionButton({ action, label: 'Arbitrary label' });
@@ -110,7 +111,7 @@ test('shared confirmation uses explicit danger intent without inferring labels',
     const { createWindow } = require('./helpers/fake-dom');
     const { document } = createWindow();
     const window = {};
-    vm.runInNewContext(read('app/static/js/custom-modal.js'), { window, document, setTimeout: () => {} });
+    runScriptFile('app/static/js/custom-modal.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window, document, setTimeout: () => {} }));
     window.CustomModal.confirm('<b>Arbitrary</b>', 'Arbitrary', 'warning', 'danger');
     assert.match(document.body.innerHTML, /data-qlpk-button="danger" data-qlpk-button-variant="solid"/);
     assert.match(document.body.innerHTML, /&lt;b&gt;Arbitrary/, 'messages are text, never markup');

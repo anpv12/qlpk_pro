@@ -22,7 +22,7 @@ test('order slices stay small and only declare at top level (bootstrap lives in 
         const topLevel = source.split('\n').filter(line => /^[^\s/}*]/.test(line));
         const allowed = file === 'order-management.js'
             ? /^(?:async\s+)?function |^(?:let|const) |^import |^export |^state\.\w+ = |^document\.addEventListener\('DOMContentLoaded', initializePage\);$/
-            : /^(?:async\s+)?function |^(?:let|const) |^import |^export |^state\.\w+ = |^window\.QLPKInlineActions\.register\(/;
+            : /^(?:async\s+)?function |^(?:let|const) |^import |^export |^state\.\w+ = |^(?:window\.)?QLPKInlineActions\.register\(/;
         for (const line of topLevel) assert.match(line, allowed, `${file}: ${line}`);
     }
     assert.match(read('order-management.js'), /\ndocument\.addEventListener\('DOMContentLoaded', initializePage\);\n$/);

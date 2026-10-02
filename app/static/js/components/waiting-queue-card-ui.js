@@ -341,10 +341,10 @@ function buildAppointmentCard(options = {}) {
 	return options.variant === 'timeline' ? buildTimelineCard(model, options) : buildQueueCard(model, options);
 }
 
-window.QLPKWaitingQueueCardUi = Object.freeze({
+export const QLPKWaitingQueueCardUi = Object.freeze({
 	joinClasses,
 	buildAppointmentCard,
 	formatPatientCodeText,
 	formatPatientGenderText
 });
-window.QLPKDoctorModuleRegistry?.register?.('waitingQueueCardUi', window.QLPKWaitingQueueCardUi);
+window.QLPKDoctorModuleRegistry?.register?.('waitingQueueCardUi', QLPKWaitingQueueCardUi);

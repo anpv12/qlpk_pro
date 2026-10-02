@@ -35,7 +35,7 @@ JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 10
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
-MAX_WINDOW_GLOBALS = 142
+MAX_WINDOW_GLOBALS = 76
 CSS_ROOT = ROOT / "app" / "static" / "css"
 MAX_CSS_LINES = 500
 
@@ -220,9 +220,9 @@ def window_read_findings() -> list[str]:
         assigned.update(re.findall(r"\bwindow\.([A-Za-z_$][\w$]*)\s*=(?!=)", text))
         assigned.update(re.findall(r"\(\s*options\.window\s*\|\|\s*window\s*\)\.([\w$]+)\s*=(?!=)", text))
         assigned.update(re.findall(r"defineProperty\(window,\s*'([\w$]+)'", text))
-        for match in re.finditer(r"\bwindow\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))", text):
+        for match in re.finditer(r"\b(?:window|globalThis)\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))", text):
             reads.setdefault(match.group(1), f"{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}")
-    return [f"{where}: window.{name} is read but never assigned (import the module or drop the dead fallback)"
+    return [f"{where}: window/globalThis.{name} is read but never assigned (import the module or drop the dead fallback)"
             for name, where in sorted(reads.items()) if name not in assigned and name not in WINDOW_PLATFORM_PROPERTIES]
 
 

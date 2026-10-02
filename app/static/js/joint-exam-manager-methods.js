@@ -1,5 +1,6 @@
 import { el, replace } from './shared/dom.js';
 import { JointExamManager, confirmJointExamDelete, renderJointExamActionButton } from './joint-exam-manager.js';
+import { QLPKPatientSearchDropdown } from './components/patient-search-dropdown.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 const methods = {
 	/**
@@ -314,7 +315,7 @@ const methods = {
 			row.dataset.relativePatientId = '';
 			this.applyLinkedPatientState(row, false);
 		};
-		const handlers = window.QLPKPatientSearchDropdown.attach({
+		const handlers = QLPKPatientSearchDropdown.attach({
 			row,
 			nameInput,
 			dropdown,
@@ -337,7 +338,7 @@ const methods = {
 			throw new Error('JointExamManager.searchPatients requires autocomplete lifecycle callbacks');
 		}
 
-		const searchDropdown = window.QLPKPatientSearchDropdown;
+		const searchDropdown = QLPKPatientSearchDropdown;
 		try {
 			const url = `/api/family-members/search?search=${encodeURIComponent(query)}&per_page=${perPage}`;
 			const response = await this.apiCall(url, { method: 'GET' });

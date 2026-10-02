@@ -1,4 +1,5 @@
 import { MedicinePriceEditor } from './price-editor.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 // Page callbacks set by the entry: openExisting(id) edits a medicine already in stock,
 // packagingChanged() refreshes the packaging summary after DAV defaults fill the form.
@@ -302,8 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
         onChange: (_, {action, item}) => { if (action === 'select') choose(item); }
     });
     el('medicineModal').addEventListener('hide.bs.modal', () => closeDropdown());
-    if (window.QLPKRealtimePageHooks) {
-        window.QLPKRealtimePageHooks.register({types: ['inventory.changed'], handler: clearCache});
+    if (QLPKRealtimePageHooks) {
+        QLPKRealtimePageHooks.register({types: ['inventory.changed'], handler: clearCache});
     }
     reset();
 });

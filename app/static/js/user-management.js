@@ -11,6 +11,8 @@ import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { bindColorSwatches, openAddUser, openEditUser, saveUser, uploadAvatar, uploadLicense } from './user-management-form.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKPagination } from './components/clinic-pagination.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 const ROLE_LABELS = { admin: 'Admin', doctor: 'Bác sĩ', staff: 'Nhân viên', cashier: 'Thu ngân', PSYCHOLOGIST: 'Tâm lý gia' };
 const ROLE_DISPLAY = { admin: 'Quản trị viên', doctor: 'Bác sĩ', staff: 'Nhân viên', cashier: 'Thu ngân', PSYCHOLOGIST: 'Tâm lý gia' };
@@ -36,7 +38,7 @@ function renderPage(users, offset) {
 		el('td', {}, actionButton('edit', 'edit-btn', 'Sửa', 'bi-pencil-square', user.id), ' ', actionButton('danger', 'delete-btn', 'Xoá', 'bi-trash', user.id)))));
 }
 
-const pagination = window.QLPKPagination.createClient({ render: renderPage });
+const pagination = QLPKPagination.createClient({ render: renderPage });
 const filters = () => ({ search: byId('searchInput').value, role: byId('roleFilter').value, status: byId('statusFilter').value });
 
 async function fetchUsers(params = filters()) {
@@ -112,7 +114,7 @@ if (!window.QLPKApiTransport.hasSession()) {
 	window.location.href = '/login.html';
 } else {
 	bind();
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['catalog.changed'],
 		filter: event => ['user', 'group', 'user_group'].includes(event && event.payload ? event.payload.entity : ''),
 		handler: reload,

@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
 import { getReferralSourceControl } from './reset-state.js';
+import { SidebarUserInfoUi } from '../sidebar-user-info-ui.js';
 
 function getDocument(context = {}) {
 	return context.document || window.document;
@@ -361,7 +362,7 @@ function scheduleWorkflowShellDeferredTasks(options, doc) {
 	return true;
 }
 function runWorkflowShellLoaders(options, doc) {
-	const sidebarUi = options.sidebarUserInfoUi || window.SidebarUserInfoUi;
+	const sidebarUi = options.sidebarUserInfoUi || SidebarUserInfoUi;
 	if (sidebarUi && typeof sidebarUi.loadSidebarUserInfo === 'function') {
 		sidebarUi.loadSidebarUserInfo({ document: doc });
 	}

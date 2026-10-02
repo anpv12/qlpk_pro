@@ -4,6 +4,8 @@ import { requestJson } from '../shared/http-json.js';
 import { getSafeApiErrorMessage, showCustomToast } from '../payment-waiting.js';
 import { handleSmartMoneyInput } from './output.js';
 import { loadPaymentData } from './list.js';
+import { CustomModal } from '../custom-modal.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 
 const moneyValue = id => handleSmartMoneyInput(byId(id)?.value) || 0;
 const moneyText = id => handleSmartMoneyInput(byId(id)?.textContent) || 0;
@@ -34,7 +36,7 @@ async function confirmInvoice(examinationId) {
 	if (amountPaid < finalAmount) return showCustomToast('error', 'Số tiền trả chưa đủ để xác nhận hóa đơn');
 	if (changeAmount < 0) return showCustomToast('error', 'Tiền thối không hợp lệ');
 
-	const confirmed = await window.QLPKConfirmationDialog.confirm({
+	const confirmed = await QLPKConfirmationDialog.confirm({
 		title: 'Xác nhận hóa đơn?',
 		text: 'Bạn có chắc chắn muốn xác nhận hóa đơn này? Sau khi xác nhận, không thể chỉnh sửa nữa.',
 		icon: 'question',
@@ -81,7 +83,7 @@ function toggleAllPrescriptions() {
 
 // Delete payment - hiển thị modal chọn hành động trả lại
 async function deletePayment(paymentId) {
-	const confirmed = await window.CustomModal.confirm('Bạn muốn thực hiện hành động gì?', 'Chọn hành động');
+	const confirmed = await CustomModal.confirm('Bạn muốn thực hiện hành động gì?', 'Chọn hành động');
 	if (confirmed) showActionSelectionModal(paymentId);
 }
 
@@ -114,7 +116,7 @@ function showActionSelectionModal(paymentId) {
 async function returnTo(action, paymentId) {
 	const { status, target, label } = RETURN_TARGETS[action];
 	window.bootstrap.Modal.getInstance(byId('actionSelectionModal'))?.hide();
-	const confirmed = await window.CustomModal.confirm(`Bạn có chắc chắn muốn trả bệnh nhân này về ${target}?`, label);
+	const confirmed = await CustomModal.confirm(`Bạn có chắc chắn muốn trả bệnh nhân này về ${target}?`, label);
 	if (!confirmed) return;
 	try {
 		await requestJson(`/examinations/${paymentId}/status`, { method: 'PUT', json: { status } });

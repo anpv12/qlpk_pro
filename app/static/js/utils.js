@@ -1,17 +1,5 @@
 // Utility functions để tránh trùng lặp code
 
-window.QLPKSharedUtils = window.QLPKSharedUtils || {};
-
-window.QLPKSharedUtils.escapeHtml = function (value) {
-	if (value === null || value === undefined) return '';
-	return String(value)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#039;');
-};
-
 const AppointmentUtils = {
 	// Hàm format datetime
 	formatDateTime: function (dateTimeStr) {
@@ -155,6 +143,7 @@ const AppointmentUtils = {
 };
 
 // Export cho sử dụng global
-window.AppointmentUtils = AppointmentUtils;
+
 window.formatDateDisplay = AppointmentUtils.formatDateDisplay;
 
+export { AppointmentUtils };

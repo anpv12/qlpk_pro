@@ -1,3 +1,5 @@
+import { RelativeTableManager } from '../relative-table.js';
+
 (function (window) {
 	'use strict';
 
@@ -6,7 +8,7 @@
 	}
 
 	function getRelativeTableManager(options) {
-		return options && options.RelativeTableManager ? options.RelativeTableManager : window.RelativeTableManager;
+		return options && options.RelativeTableManager ? options.RelativeTableManager : RelativeTableManager;
 	}
 
 	function getRelativeContainer(options) {

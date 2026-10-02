@@ -6,6 +6,7 @@ import '../shared/prescription-dose-utils.js';
 import '../shared/prescription-document-template.js';
 import '../components/prescription-preview-scaler.js';
 import { byId, el, renderDocumentMarkup, replace } from '../../shared/dom.js';
+import { createPrescriptionPreviewScaler } from '../components/prescription-preview-scaler.js';
 
 function banner(icon, text, sub) {
 	return el('div', { class: 'verify-banner invalid' }, el('span', { class: 'icon' }, icon), el('span', { class: 'text' }, text), el('div', { class: 'sub' }, sub));
@@ -55,7 +56,7 @@ function renderVerifiedPrescription(data) {
 	const previewContainer = area.querySelector('.prescription-preview');
 	if (!previewContainer) return;
 	previewContainer.appendChild(verificationBadge(data));
-	const scaler = window.createPrescriptionPreviewScaler({ area, preview: previewContainer, documentWidth: 800 });
+	const scaler = createPrescriptionPreviewScaler({ area, preview: previewContainer, documentWidth: 800 });
 	previewContainer.querySelectorAll('img').forEach(img => img.addEventListener('load', scaler.fit, { once: true }));
 	requestAnimationFrame(scaler.fit);
 	window.addEventListener('resize', scaler.fit, { passive: true });

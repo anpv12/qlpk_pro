@@ -1,4 +1,5 @@
 import { moduleState } from './state.js';
+import { clinicInfo } from '../../clinic-config.js';
 
 function escapeHtml(value) {
 	return String(value == null ? '' : value)
@@ -121,7 +122,7 @@ function getClinicInfo() {
 			console.error('Không tải được cấu hình phòng khám:', error);
 		}
 	}
-	return window.clinicInfo || {};
+	return clinicInfo || {};
 }
 function buildClinicHeader(clinicInfo = {}, patientCode = '') {
 	const clinic = {

@@ -1,6 +1,13 @@
 import { state } from './receptionist/page-state.js';
 import { formatDateDisplay, loadAttachmentsForCurrentPatient, resetFormToDefault } from './receptionist/medical-data-and-documents.js';
 import { collectFormData, safeSetValue, saveReceptionistAppointment, saveReceptionistPatient, uploadReceptionistDraftDocuments } from './receptionist/save-flow.js';
+import { ReceptionistAppointmentListControls } from './receptionist/appointment-list-controls.js';
+import { ReceptionistAppointmentSubmit } from './receptionist/appointment-submit.js';
+import { ReceptionistCatalogLoaders } from './receptionist/catalog-loaders.js';
+import { ReceptionistDuplicatePatientModal } from './receptionist/duplicate-patient-modal.js';
+import { ReceptionistPageCoreUtils } from './receptionist/page-core-utils.js';
+import { ReceptionistPageSessionBootstrap } from './receptionist/page-session-bootstrap.js';
+import { ReceptionistPatientVitalsHistory } from './receptionist/patient-vitals-history.js';
 
 // Receptionist intake workspace
 let currentPatientId = null;
@@ -17,7 +24,7 @@ function beginReceptionistLoad() {
 function setCurrentPatientId(value) {
 	currentPatientId = value;
 	window.currentPatientId = value;
-	window.ReceptionistPatientVitalsHistory?.resetVitalsHints({ document });
+	ReceptionistPatientVitalsHistory?.resetVitalsHints({ document });
 
 	// Tự load danh sách tài liệu khi đổi bệnh nhân.
 	if (typeof loadAttachmentsForCurrentPatient === 'function') {
@@ -81,16 +88,16 @@ let allServices = [];
 
 // Token management
 function ensureSession() {
-	return window.ReceptionistPageCoreUtils.ensureSession();
+	return ReceptionistPageCoreUtils.ensureSession();
 }
 
 function apiCall(url, options = {}) {
-	return window.ReceptionistPageCoreUtils.apiCall(url, options, { fetch });
+	return ReceptionistPageCoreUtils.apiCall(url, options, { fetch });
 }
 
 // Toast notification
 function showCustomToast(type, message) {
-	window.ReceptionistPageCoreUtils.showCustomToast(type, message, { Swal });
+	ReceptionistPageCoreUtils.showCustomToast(type, message, { Swal });
 }
 
 function buildReceptionistConfirmOptions({ title, text, icon = 'warning', confirmText = 'Xác nhận', cancelText = 'Hủy', variant = 'danger' }) {
@@ -119,14 +126,14 @@ function buildReceptionistConfirmOptions({ title, text, icon = 'warning', confir
 }
 
 function loadDoctorsForForm() {
-	return window.ReceptionistCatalogLoaders.loadDoctorsForForm({
+	return ReceptionistCatalogLoaders.loadDoctorsForForm({
 		window,
 		showCustomToast
 	});
 }
 
 function loadServicesForForm() {
-	return window.ReceptionistCatalogLoaders.loadServicesForForm({
+	return ReceptionistCatalogLoaders.loadServicesForForm({
 		showCustomToast,
 		servicePackage: window.ReceptionistServicePackage,
 		setServices: services => {
@@ -185,7 +192,7 @@ function startReceptionistPage() {
 		if (window.ReferralSourceControl) {
 			window.ReferralSourceControl.bind({ document });
 		}
-		window.ReceptionistPageSessionBootstrap.bootstrapPageSession({
+		ReceptionistPageSessionBootstrap.bootstrapPageSession({
 			document,
 			sessionStorage,
 			localStorage,
@@ -253,7 +260,7 @@ async function loadAppointments(status = 'waiting_transfer', page = 1) {
 
 // Render appointments table
 function renderAppointmentsTable() {
-	window.ReceptionistAppointmentListControls.renderAppointmentsTable({
+	ReceptionistAppointmentListControls.renderAppointmentsTable({
 		document,
 		getAllAppointments: () => allAppointments,
 		getCurrentPage: () => currentPage,
@@ -264,7 +271,7 @@ function renderAppointmentsTable() {
 
 // Update pagination
 function updatePagination() {
-	window.ReceptionistAppointmentListControls.updatePagination({
+	ReceptionistAppointmentListControls.updatePagination({
 		document,
 		getAllAppointments: () => allAppointments,
 		getCurrentPage: () => currentPage,
@@ -275,7 +282,7 @@ function updatePagination() {
 
 // Update status counts
 async function updateStatusCounts() {
-	return window.ReceptionistAppointmentListControls.updateStatusCounts({
+	return ReceptionistAppointmentListControls.updateStatusCounts({
 		document,
 		apiCall
 	});
@@ -288,7 +295,7 @@ let selectedDuplicatePatient = null;
 function showDuplicatePatientModal(duplicatePatients) {
 	selectedDuplicatePatient = null;
 
-	window.ReceptionistDuplicatePatientModal.show({
+	ReceptionistDuplicatePatientModal.show({
 		document,
 		bootstrap,
 		duplicatePatients,
@@ -415,7 +422,7 @@ async function savePatientDataInternal(formData) {
 }
 
 function buildReceptionistSubmission(formData) {
-	const appointmentSubmit = window.ReceptionistAppointmentSubmit;
+	const appointmentSubmit = ReceptionistAppointmentSubmit;
 	if (!appointmentSubmit) {
 		throw new Error('ReceptionistAppointmentSubmit helper is not loaded');
 	}

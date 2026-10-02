@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { el, icon, replace } from '../shared/dom.js';
 import { fpFrom, fpTo } from './revenue-charts.js';
 import { columns, computeRow, fmtNum, getCat, normalizeSearchText, render, setCtVisible } from '../chi-tieu.js';
+import { QLPKInlineActions } from '../shared/inline-actions.js';
 
 function setPreset(preset) {
 	state.activePreset = preset;
@@ -438,6 +439,6 @@ function downloadTemplate() {
 		}).catch(e => console.error('Template download error:', e));
 }
 
-window.QLPKInlineActions.register({ downloadTemplate, exportExcel, handleTypeChange, selectPresetItem, setPreset, setSort, toggleMultiSelect, togglePresetDD, toggleMonthGroup: toggleCtMonthGroup });
+QLPKInlineActions.register({ downloadTemplate, exportExcel, handleTypeChange, selectPresetItem, setPreset, setSort, toggleMultiSelect, togglePresetDD, toggleMonthGroup: toggleCtMonthGroup });
 
 export { clearActivePreset, getFilteredRows, isInDateRange, parseDateStr, renderGrid, setPreset };

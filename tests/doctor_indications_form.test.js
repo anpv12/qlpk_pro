@@ -126,7 +126,7 @@ function createHarness() {
   const window = { QLPKDoctorModuleRegistry: registry };
   for (const file of ['order-status-utils.js', 'order-selection-state-utils.js']) {
     const utilsPath = path.join(__dirname, '..', 'app/static/js/orders', file);
-    vm.runInNewContext(fs.readFileSync(utilsPath, 'utf8'), { window, console });
+    runScriptFile(utilsPath, (c => vm.isContext(c) ? c : vm.createContext(c))({ window, console }));
   }
   runScriptFile(SOURCE_FILE, vm.createContext({ window, document, console }));
   return {

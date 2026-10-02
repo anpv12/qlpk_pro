@@ -21,6 +21,7 @@ import { addBatchImportRow, confirmBatchImport, showImportBatchModal, showImport
 import { showSupplierManagement } from './medicines/management-suppliers.js';
 import { loadImportLedger, switchImportTab } from './medicines/management-import-ledger.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 
 // Medicine Management JavaScript
 
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initializeAutocompleteComponents();
 	initializeSaleUnitAutocomplete();
 
-	window.QLPKRealtimePageHooks?.register({
+	QLPKRealtimePageHooks?.register({
 		types: ['inventory.changed'],
 		debounceMs: 500,
 		handler: () => {

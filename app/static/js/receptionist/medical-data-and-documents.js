@@ -3,6 +3,19 @@ import { DOCUMENT_DRAFT_KEY, apiCall, currentPage, currentPatientId, ensureSessi
 import { getMedicalDraftOptions, getPatientPopulateOptions, populateSharedForms } from './save-flow-parts/copy-patient.js';
 import { cancelAppointment, editAppointment, initializeForm, loadSidebarUserInfo, savePatientData, transferAppointment } from './save-flow.js';
 import { bindAddressFieldChanges, loadProvinces } from '../receptionist-new-parts/address.js';
+import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { ReceptionistAppointmentDateHighlight } from './appointment-date-highlight.js';
+import { ReceptionistAppointmentListControls } from './appointment-list-controls.js';
+import { ReceptionistAppointmentPrefill } from './appointment-prefill.js';
+import { ReceptionistDocumentAttachmentList } from './document-attachment-list.js';
+import { ReceptionistDocumentAttachmentUtils } from './document-attachment-utils.js';
+import { ReceptionistFormInputGuards } from './form-input-guards.js';
+import { ReceptionistFormResetUtils } from './form-reset-utils.js';
+import { ReceptionistFormSaveControls } from './form-save-controls.js';
+import { ReceptionistFormatters } from './formatters.js';
+import { ReceptionistJointExamOrchestration } from './joint-exam-orchestration.js';
+import { ReceptionistMedicalInfoDraft } from './medical-info-draft.js';
 
 // Load patient medical data from API
 async function loadPatientMedicalData(patientId) {
@@ -31,8 +44,8 @@ async function loadPatientMedicalData(patientId) {
 async function initializeVisibleMedicalDetails() {
 	let draftResult = { hasValidDraft: false };
 	try {
-		draftResult = window.ReceptionistMedicalInfoDraft.loadDraft(getMedicalDraftOptions());
-		window.ReceptionistMedicalInfoDraft.bindAutoSave(getMedicalDraftOptions());
+		draftResult = ReceptionistMedicalInfoDraft.loadDraft(getMedicalDraftOptions());
+		ReceptionistMedicalInfoDraft.bindAutoSave(getMedicalDraftOptions());
 	} catch (e) {
 		console.error('Error loading medical draft:', e);
 	}
@@ -62,7 +75,7 @@ function getDocumentAttachmentControlsOptions() {
 		documentDraftKey: DOCUMENT_DRAFT_KEY,
 		apiCall,
 		showToast: showCustomToast,
-		showConfirmationDialog: window.QLPKConfirmationDialog?.confirm,
+		showConfirmationDialog: QLPKConfirmationDialog?.confirm,
 		validateFile,
 		uploadFile,
 		renderDocumentsList,
@@ -127,7 +140,7 @@ function getDocumentAttachmentListOptions() {
 		openAttachmentPreviewInNewTab,
 		apiCall,
 		showToast: showCustomToast,
-		showConfirmationDialog: window.QLPKConfirmationDialog?.confirm,
+		showConfirmationDialog: QLPKConfirmationDialog?.confirm,
 		loadAttachmentsForCurrentPatient,
 		downloadDraftDocument: downloadDocument,
 		deleteDraftDocument: deleteDocument
@@ -135,7 +148,7 @@ function getDocumentAttachmentListOptions() {
 }
 
 function renderDocumentsList() {
-	window.ReceptionistDocumentAttachmentList.renderDocumentsList(getDocumentAttachmentListOptions());
+	ReceptionistDocumentAttachmentList.renderDocumentsList(getDocumentAttachmentListOptions());
 }
 
 async function loadAttachmentsForCurrentPatient() {
@@ -143,7 +156,7 @@ async function loadAttachmentsForCurrentPatient() {
 }
 
 const documentAttachmentControls = window.ReceptionistDocumentAttachmentControls;
-const documentAttachmentUtils = window.ReceptionistDocumentAttachmentUtils;
+const documentAttachmentUtils = ReceptionistDocumentAttachmentUtils;
 
 function getDocumentAttachmentOptions() {
 	return {
@@ -153,7 +166,7 @@ function getDocumentAttachmentOptions() {
 		document,
 		URL,
 		fetch,
-		showConfirmationDialog: window.QLPKConfirmationDialog?.confirm,
+		showConfirmationDialog: QLPKConfirmationDialog?.confirm,
 		showToast: showCustomToast,
 		getUploadedDocuments: () => state.uploadedDocuments,
 		setUploadedDocuments: value => { state.uploadedDocuments = value; },
@@ -218,7 +231,7 @@ function initializePage() {
 	setupAppointmentDateTimeListeners();
 }
 
-	const appointmentDateHighlight = window.ReceptionistAppointmentDateHighlight;
+	const appointmentDateHighlight = ReceptionistAppointmentDateHighlight;
 	const highlightAppointmentDateTimeFields = () => appointmentDateHighlight.highlight({ setTimeout });
 	const setupAppointmentDateTimeListeners = () => appointmentDateHighlight.bindChangeListeners({ setTimeout });
 
@@ -228,8 +241,8 @@ function initializePage() {
 		receptionistLoadState.loading = false;
 		receptionistLoadState.failed = false;
 		state.currentAppointmentId = null;
-		window.ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
-		window.ReceptionistFormResetUtils.resetFormToDefault({
+		ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
+		ReceptionistFormResetUtils.resetFormToDefault({
 			document,
 			window,
 			localStorage,
@@ -249,7 +262,7 @@ function initializePage() {
 // Khởi tạo JointExamManager instance
 let jointExamManagerInstance = null;
 
-	const receptionistFormatters = window.ReceptionistFormatters || {};
+	const receptionistFormatters = ReceptionistFormatters || {};
 	const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
 
 // Lấy appointment ID hiện tại
@@ -258,12 +271,12 @@ function getCurrentAppointmentId() {
 }
 
 async function savePendingJointExamList(appointmentId, options = {}) {
-	return window.ReceptionistJointExamOrchestration.savePendingList(jointExamManagerInstance, appointmentId, options);
+	return ReceptionistJointExamOrchestration.savePendingList(jointExamManagerInstance, appointmentId, options);
 }
 
 function registerRealtimeRefresh() {
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
+	if (QLPKRealtimePageHooks) {
+		QLPKRealtimePageHooks.register({
 			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'document.changed', 'catalog.changed', 'busy_schedule.changed'],
 			debounceMs: 500,
 			handler: function (event) {
@@ -298,7 +311,7 @@ function startMedicalDataAndDocuments() {
 
 		initializePage();
 
-		window.ReceptionistAppointmentListControls.bindListControls({
+		ReceptionistAppointmentListControls.bindListControls({
 			document,
 			window,
 			getCurrentStatus: () => state.currentStatus,
@@ -315,7 +328,7 @@ function startMedicalDataAndDocuments() {
 
 		bindAddressFieldChanges();
 
-		window.ReceptionistAppointmentListControls.bindWaitingListFilters({
+		ReceptionistAppointmentListControls.bindWaitingListFilters({
 				document,
 				getCurrentStatus: () => state.currentStatus,
 				getWaitingListFilter: () => state.waitingListFilter,
@@ -329,21 +342,21 @@ function startMedicalDataAndDocuments() {
 		initializeForm();
 		initializeAutocomplete();
 
-		window.ReceptionistFormInputGuards.bindAgeInputGuard({ document });
+		ReceptionistFormInputGuards.bindAgeInputGuard({ document });
 		window.QLPKPatientIntakeForm.bind({ document, apiCall });
 
-		window.ReceptionistJointExamOrchestration.bindModalControls(
+		ReceptionistJointExamOrchestration.bindModalControls(
 			Object.assign({}, getPatientPopulateOptions(), {
 				getManager: () => jointExamManagerInstance
 			})
 		);
 
-		window.ReceptionistFormSaveControls.bindSaveInfoButton({
+		ReceptionistFormSaveControls.bindSaveInfoButton({
 			document,
 			savePatientData: () => savePatientData()
 		});
 
-		window.ReceptionistAppointmentPrefill.bindReExamSourceReset(getPatientPopulateOptions());
+		ReceptionistAppointmentPrefill.bindReExamSourceReset(getPatientPopulateOptions());
 
 		registerRealtimeRefresh();
 
@@ -358,7 +371,7 @@ function startMedicalDataAndDocuments() {
 			})
 		);
 
-		window.ReceptionistJointExamOrchestration.bindInitialLoad(
+		ReceptionistJointExamOrchestration.bindInitialLoad(
 			Object.assign({}, getPatientPopulateOptions(), {
 				getInstance: () => jointExamManagerInstance,
 				setInstance: value => { jointExamManagerInstance = value; },

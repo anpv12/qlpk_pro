@@ -1,4 +1,5 @@
 import { QLPKSearchNormalization } from '../shared/search-normalization.js';
+import { QLPKWaitingQueueCardUi } from './waiting-queue-card-ui.js';
 
 (function (window) {
 	'use strict';
@@ -26,7 +27,7 @@ import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 	}
 
 	function buildWaitingListPatientCard(appointment, index, options = {}) {
-		const queueCard = window.QLPKWaitingQueueCardUi;
+		const queueCard = QLPKWaitingQueueCardUi;
 
 		if (!queueCard || typeof queueCard.buildAppointmentCard !== 'function') {
 			return null;

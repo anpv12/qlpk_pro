@@ -3,6 +3,7 @@ import { el, replace } from '../shared/dom.js';
 import { apiRequest, loadExpenses, mountCtChart, render, setCtVisible } from '../chi-tieu.js';
 import { clearActivePreset, setPreset } from './grid-and-filters.js';
 import { QLPKHtml } from '../shared/html-escape.js';
+import { QLPKInlineActions } from '../shared/inline-actions.js';
 
 function renderThuChiChart(labels, thuValues, chiValues) {
 	const dom = document.getElementById('thuChiChart');
@@ -457,6 +458,6 @@ function initGlobalDateFilter() {
 	loadExpenses();
 }
 
-window.QLPKInlineActions.register({ exportChiTieuExcel, exportRevenueExcel, exportThuChiExcel, setRevView });
+QLPKInlineActions.register({ exportChiTieuExcel, exportRevenueExcel, exportThuChiExcel, setRevView });
 
 export { fpFrom, fpTo, getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart };

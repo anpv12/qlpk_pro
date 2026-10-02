@@ -1,6 +1,7 @@
 import { moduleState } from './doctor-examination-parts/state.js';
 import { bindRealtimeRefresh, initializeWaitingQueue, loadAppointments, selectPatientCard } from './doctor-examination-parts/patient-load-and-init.js';
 import { exitHistoryView, reloadCurrentAppointment, requestWorkspaceLeave } from './doctor-examination-parts/queue-and-view-mode.js';
+import { QLPKDoctorComponentContext } from './doctor-examination/component-context.js';
 
 moduleState.PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
 if (!moduleState.PAGE_RUNTIME) throw new Error('Thiếu Doctor page runtime');
@@ -9,7 +10,7 @@ if (!moduleState.REGISTRY) throw new Error('Thiếu Doctor module registry');
 moduleState.COMPONENT_CONFIG = moduleState.REGISTRY.require('doctorComponentConfig');
 moduleState.SUPPORT_RUNTIME = moduleState.REGISTRY.get('supportRuntime');
 if (!moduleState.SUPPORT_RUNTIME) throw new Error('Thiếu Doctor support runtime');
-moduleState.COMPONENT_CONTEXT_API = window.QLPKDoctorComponentContext;
+moduleState.COMPONENT_CONTEXT_API = QLPKDoctorComponentContext;
 if (!moduleState.COMPONENT_CONTEXT_API?.create) throw new Error('Thiếu Doctor component context');
 ({ apiCall: moduleState.apiCall, ensureSession: moduleState.ensureSession, formatDateDisplay: moduleState.formatDateDisplay, getAuthHeader: moduleState.getAuthHeader, showCustomToast: moduleState.showCustomToast } = moduleState.PAGE_RUNTIME);
 

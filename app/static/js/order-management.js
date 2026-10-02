@@ -13,6 +13,7 @@ import { checkSurveyStatusUpdate } from './orders/order-management-survey-level.
 import { loadOrderDetail } from './orders/order-management-detail.js';
 import { deleteOrder } from './orders/order-management-actions.js';
 import { initializePage } from './orders/order-management-init.js';
+import { ClinicalOrderStatusUtils } from './orders/order-status-utils.js';
 
 // Order Management - Quản lý chỉ định CLS
 
@@ -161,7 +162,7 @@ function formatDateOnly(dateString) {
 
 // Get status badge HTML
 function getStatusBadge(status) {
-    const config = window.ClinicalOrderStatusUtils.getOrderStatusConfig(status);
+    const config = ClinicalOrderStatusUtils.getOrderStatusConfig(status);
     return el('span', { class: `qlpk-status status-pill ${config.className} ${status ?? ''}` }, config.label ?? '');
 }
 

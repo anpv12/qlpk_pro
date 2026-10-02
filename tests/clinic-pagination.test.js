@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
+const { runScriptFile } = require('./helpers/module-source');
 
 class Element {
     constructor() { this.children = []; this.dataset = {}; this.events = {}; this.attributes = {}; }
@@ -17,7 +18,7 @@ function setup() {
     const nodes = Object.fromEntries(['clinicPagination', 'clinicPageSize', 'clinicPageInfo', 'clinicPageLinks'].map(id => [id, new Element()]));
     nodes.clinicPagination.querySelector = selector => nodes[selector.slice(1)];
     const context = { window: {}, document: { getElementById: id => nodes[id], createElement: () => new Element() } };
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../app/static/js/components/clinic-pagination.js'), 'utf8'), context);
+    runScriptFile(path.join(__dirname, '../app/static/js/components/clinic-pagination.js'), (c => vm.isContext(c) ? c : vm.createContext(c))(context));
     const controls = () => nodes.clinicPageLinks.children.flatMap(li => li.children);
     const click = label => {
         const target = controls().find(button => button.attributes['aria-label'] === label);

@@ -2,6 +2,7 @@ import { state } from './order-management-state.js';
 import { applyFilters, batchDeleteOrders, selectOrderGroup, setupAutoFilterListeners } from './order-management-actions.js';
 import { filterState, loadOrders, selectedOrderIds, showCustomToast, updateSelectedCount } from '../order-management.js';
 import { checkSurveyStatusUpdate } from './order-management-survey-level.js';
+import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
 
 // Initialize page
 function runOrderPageInit1(ctx) {
@@ -133,8 +134,8 @@ function runOrderPageInit2(ctx) {
 
 	// Load initial data
 	loadOrders();
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
+	if (QLPKRealtimePageHooks) {
+		QLPKRealtimePageHooks.register({
 			types: ['order.changed', 'examination.changed', 'survey.changed', 'catalog.changed'],
 			debounceMs: 500,
 			handler: async function (event) {

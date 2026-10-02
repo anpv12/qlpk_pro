@@ -1,4 +1,5 @@
 import { el, replace } from '../shared/dom.js';
+import { PrescriptionTypeContract } from '../prescriptions/shared/prescription-type-contract.js';
 
 (function (window) {
 	'use strict';
@@ -8,7 +9,7 @@ import { el, replace } from '../shared/dom.js';
 	const MODEL = REGISTRY.get('prescriptionModel');
 	if (!RUNTIME || !MODEL) throw new Error('Thiếu Doctor prescription dependencies');
 
-	const TYPE_CONTRACT = window.PrescriptionTypeContract;
+	const TYPE_CONTRACT = PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 
 	const { formatDoseValue, PRESCRIPTION_SLOT_DEFS, PRESCRIPTION_USAGE_MODES } = MODEL;

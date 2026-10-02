@@ -59,5 +59,5 @@ moduleState.api = {
 	bindHistoryListClick: bindHistoryListClick,
 	bindHistoryListActions: bindHistoryListActions
 };
-window.ModalMedicalHistoryListUi = Object.freeze(moduleState.api);
-window.QLPKDoctorModuleRegistry?.register?.('modalMedicalHistoryListUi', window.ModalMedicalHistoryListUi);
+export const ModalMedicalHistoryListUi = Object.freeze(moduleState.api);
+window.QLPKDoctorModuleRegistry?.register?.('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);

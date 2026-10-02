@@ -12,6 +12,7 @@ import { isInDateRange, parseDateStr, renderGrid } from './chi-tieu/grid-and-fil
 import { getRevDateRange, initGlobalDateFilter, loadAndRenderRevenue, renderThuChiChart } from './chi-tieu/revenue-charts.js';
 import { QLPKHtml } from './shared/html-escape.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
+import { QLPKInlineActions } from './shared/inline-actions.js';
 
 let activeTab = (location.hash === '#chi') ? 'chi' : 'tonghop';
 
@@ -436,7 +437,7 @@ function renderThuChiSummary(totalThu, totalChi, todayText, topDateText) {
 			el('span', { class: 'ss-item' }, el('span', { class: 'ss-emoji' }, '📆'), ' Chi nhiều nhất: ', topDateText)));
 }
 
-window.QLPKInlineActions.register({ openAcList, render, selectAc, switchTab });
+QLPKInlineActions.register({ openAcList, render, selectAc, switchTab });
 
 export { activeTab, apiRequest, closeAllAc, columns, computeRow, fmtNum, getCat, loadExpenses, mountCtChart, normalizeSearchText, render, saveColumnsToServer, setCtVisible, switchTab };
 

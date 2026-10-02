@@ -1,5 +1,6 @@
 import { prescriptionFormEscape, prescriptionFormUsage, prescriptionMedicineTitle } from './prescription-form-text.js';
 import { buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType } from './prescription-document-template-parts/moh-form.js';
+import { clinicInfo } from '../../clinic-config.js';
 // Shared Prescription Template Helpers
 // ============================================
 // ============================================
@@ -97,10 +98,10 @@ function buildPrescriptionDocumentViewModel(data) {
 // ============================================
 
 function getClinicInfoConfig() {
-	if (!window.clinicInfo || typeof window.clinicInfo !== 'object') {
+	if (!clinicInfo || typeof clinicInfo !== 'object') {
 		throw new Error('Thiếu cấu hình phòng khám');
 	}
-	return window.clinicInfo;
+	return clinicInfo;
 }
 
 function formatVietnamDate(dateInput) {

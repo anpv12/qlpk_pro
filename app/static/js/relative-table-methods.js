@@ -1,5 +1,6 @@
 import { el, replace } from './shared/dom.js';
 import { API_BASE, RelativeTable, formatDateDisplay, notify, renderRelativeActionButton, toInputDate } from './relative-table.js';
+import { QLPKPatientSearchDropdown } from './components/patient-search-dropdown.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 function trimmedValue(row, selector) {
 	const input = row.querySelector(selector);
@@ -148,7 +149,7 @@ const methods = {
 			return;
 		}
 
-		return window.QLPKPatientSearchDropdown.attach({
+		return QLPKPatientSearchDropdown.attach({
 			row,
 			nameInput,
 			dropdown,
@@ -170,7 +171,7 @@ const methods = {
 			throw new Error('RelativeTable.searchPatients requires autocomplete lifecycle callbacks');
 		}
 
-		const searchDropdown = window.QLPKPatientSearchDropdown;
+		const searchDropdown = QLPKPatientSearchDropdown;
 		try {
 			const response = await this.request(`${API_BASE}/search?search=${encodeURIComponent(query)}&per_page=${perPage}`, {
 				method: 'GET'

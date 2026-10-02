@@ -45,6 +45,7 @@ function harness() {
     }
   });
   context.state = context;
+  Object.assign(context, context.window);
   for (const name of ['beginReceptionistLoad', 'buildSharedFormPayload', 'populateSharedForms', 'applyLoadedAppointment', 'editAppointment', 'copyPatientToReceptionistFormFromGlobalSearch', 'fetchPatientForCopy', 'resetFormForCopiedPatient', 'loadPatientMedicalData', 'savePatientDataInternal', 'buildReceptionistSubmission', 'saveReceptionistPatient', 'uploadReceptionistDraftDocuments', 'resetFormToDefault']) {
     const ending = name === 'resetFormToDefault' ? '\\n\\t\\}' : '\\n\\}';
     const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?${ending}`));

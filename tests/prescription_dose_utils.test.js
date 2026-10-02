@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { pageScripts } = require('./helpers/module-graph');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 const DOSE_UTILS = 'app/static/js/prescriptions/shared/prescription-dose-utils.js';
 const TEMPLATE = 'app/static/js/prescriptions/shared/prescription-document-template.js';
@@ -11,7 +12,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 function loadDoseUtils() {
     const context = vm.createContext({ window: {}, console });
-    vm.runInContext(read(DOSE_UTILS), context);
+    runScriptFile(DOSE_UTILS, (c => vm.isContext(c) ? c : vm.createContext(c))(context));
     return context.window.PrescriptionDoseUtils;
 }
 
@@ -28,7 +29,7 @@ function loadModel() {
     };
     const context = vm.createContext({ window, console, Date });
     for (const file of ['app/static/js/prescriptions/shared/prescription-type-contract.js', DOSE_UTILS, MODEL]) {
-        vm.runInContext(read(file), context);
+        runScriptFile(file, (c => vm.isContext(c) ? c : vm.createContext(c))(context));
     }
     return modules.get('prescriptionModel');
 }
