@@ -1,174 +1,132 @@
+import { state } from './page-state.js';
+import { getStatusText, showCustomToast, updateAppointmentEditorSummary } from './page-editor.js';
+import { AppointmentManagementAddModalUiUtils } from './add-modal-ui-utils.js';
+import { afterDataChanged, checkDoctorAvailabilityBeforeCreate, showConflictWarning, showPatientDuplicateWarning } from './page-view.js';
+import { getCurrentEditAppointmentStatus, getEditStatusTransitionBlockMessage, normalizeAppointmentStatus, refreshEditStatusDropdown, updateEditStatusFlag } from './page-edit-modal.js';
+import { AppointmentManagementIcdMultiselectUtils } from './icd-multiselect-utils.js';
+import { hideModal } from '../shared/dom-query.js';
+import { requestJson } from '../shared/http-json.js';
 // Modal thêm: validation, lưu, trạng thái sửa, ICD.
-// Hàm dùng chung qua window.AppointmentManagementPage; state trang nằm ở page.state.
-(function (window) {
-	const page = window.AppointmentManagementPage || (window.AppointmentManagementPage = { state: {} });
-	const state = page.state;
 
-	// ===== CÁC HÀM GỬI THÔNG BÁO =====
-	function getPageActionsOptions() {
-		return {
-			$,
-			CustomModal: window.CustomModal,
-			showCustomToast: page.showCustomToast
-		};
+// ===== CÁC HÀM GỬI THÔNG BÁO =====
+function getPageActionsOptions() {
+	return {
+		CustomModal: window.CustomModal,
+		showCustomToast: showCustomToast
+	};
+}
+
+// ===== ADD APPOINTMENT MODAL SETUP =====
+
+function initializePhase3Features() {
+
+	try {
+		// Khởi tạo form validation
+		initializeFormValidation();
+
+	} catch (error) {
+		console.error('Không thể khởi tạo form thêm lịch hẹn:', error);
 	}
+}
 
-	// ===== ADD APPOINTMENT MODAL SETUP =====
+// Khởi tạo form validation
+function initializeFormValidation() {
+	AppointmentManagementAddModalUiUtils.initializeFormValidation();
+}
 
-	function initializePhase3Features() {
+// Submit form với loading state
+function submitAppointmentForm() {
+	const submitButton = document.getElementById('submitForm');
+	const setSubmitting = submitting => {
+		if (!submitButton) return;
+		submitButton.disabled = submitting;
+		submitButton.classList.toggle('btn-loading', submitting);
+	};
+	setSubmitting(true);
+	const formData = AppointmentManagementAddModalUiUtils.buildAddAppointmentFormData({ getSelectedICDsString });
 
-		try {
-			// Khởi tạo form validation
-			initializeFormValidation();
-
-		} catch (error) {
-			console.error('Không thể khởi tạo form thêm lịch hẹn:', error);
+	// Kiểm tra lịch bận trước khi tạo lịch hẹn
+	checkDoctorAvailabilityBeforeCreate(formData, async (isAvailable, conflictInfo) => {
+		if (!isAvailable) {
+			showConflictWarning(conflictInfo, formData, false);
+			setSubmitting(false);
+			return;
 		}
-	}
-
-	// Khởi tạo form validation
-	function initializeFormValidation() {
-		window.AppointmentManagementAddModalUiUtils.initializeFormValidation({ $ });
-	}
-
-	// Submit form với loading state
-	function submitAppointmentForm() {
-		const $submitBtn = $('#submitForm');
-
-		$submitBtn.addClass('btn-loading').prop('disabled', true);
-
-		const formData = window.AppointmentManagementAddModalUiUtils.buildAddAppointmentFormData({
-			$,
-			getSelectedICDsString
-		});
-
-		// Kiểm tra lịch bận trước khi tạo lịch hẹn
-		page.checkDoctorAvailabilityBeforeCreate(formData, function (isAvailable, conflictInfo) {
-			if (!isAvailable) {
-				// Hiển thị cảnh báo xung đột
-				page.showConflictWarning(conflictInfo, formData, false);
-				$submitBtn.removeClass('btn-loading').prop('disabled', false);
+		try {
+			const response = await requestJson('/api/', { method: 'POST', json: formData, signal: AbortSignal.timeout(10000) });
+			// Patient trùng với thay đổi quan trọng: hiển thị cảnh báo và chờ xác nhận
+			if (response?.requires_confirmation) {
+				showPatientDuplicateWarning(response, formData);
 				return;
 			}
-
-			// Nếu bác sĩ rảnh, tiếp tục tạo lịch hẹn
-			$.ajax({
-				url: '/api/',
-				method: 'POST',
-				contentType: 'application/json',
-				data: JSON.stringify(formData),
-				timeout: 10000, // 10 seconds timeout
-				success: function (response) {
-					// Kiểm tra xem có yêu cầu confirm không (patient trùng với thay đổi quan trọng)
-					if (response.requires_confirmation) {
-						// Hiển thị popup cảnh báo và yêu cầu confirm
-						page.showPatientDuplicateWarning(response, formData);
-						$submitBtn.removeClass('btn-loading').prop('disabled', false);
-						return;
-					}
-
-					page.showCustomToast('success', 'Thêm lịch hẹn thành công!');
-					$('#addAppointmentModal').modal('hide');
-					page.afterDataChanged();
-				},
-				error: function (xhr, status) {
-
-					let errorMsg = 'Không thể thêm lịch hẹn. Vui lòng kiểm tra lại.';
-					if (status === 'timeout') {
-						errorMsg = 'Thao tác mất quá nhiều thời gian. Vui lòng thử lại.';
-					}
-
-					page.showCustomToast('error', errorMsg);
-				},
-				complete: function () {
-					$submitBtn.removeClass('btn-loading').prop('disabled', false);
-				}
-			});
-		});
-	}
-
-	// Simple form validation for Add Appointment modal (bỏ logic step cũ)
-	function isAddFormValid() {
-		return window.AppointmentManagementAddModalUiUtils.isAddFormValid($);
-	}
-
-	// Function to update appointment status from edit modal
-	function updateEditAppointmentStatus(newStatus) {
-		const appointmentId = $('#editAppointmentModal').data('appointmentId');
-		const normalizedStatus = page.normalizeAppointmentStatus(newStatus);
-		const currentStatus = page.getCurrentEditAppointmentStatus();
-		const blockMessage = page.getEditStatusTransitionBlockMessage(currentStatus, normalizedStatus);
-		if (blockMessage) {
-			page.showCustomToast('warning', blockMessage);
-			page.refreshEditStatusDropdown(currentStatus);
-			return;
+			showCustomToast('success', 'Thêm lịch hẹn thành công!');
+			hideModal('#addAppointmentModal');
+			afterDataChanged();
+		} catch (error) {
+			showCustomToast('error', error?.name === 'TimeoutError'
+				? 'Thao tác mất quá nhiều thời gian. Vui lòng thử lại.'
+				: 'Không thể thêm lịch hẹn. Vui lòng kiểm tra lại.');
+		} finally {
+			setSubmitting(false);
 		}
-
-		if (!appointmentId) {
-			page.showCustomToast('error', 'Không tìm thấy ID lịch hẹn!');
-			return;
-		}
-
-		const statusText = page.getStatusText(normalizedStatus);
-
-		// Sử dụng custom modal thay vì confirm
-		window.CustomModal.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thành "${statusText}"?`, 'Xác nhận thay đổi trạng thái').then((confirmed) => {
-			if (confirmed) {
-				$.ajax({
-					url: `/api/${appointmentId}`,
-					method: 'PUT',
-					contentType: 'application/json',
-						data: JSON.stringify({
-							status: normalizedStatus
-						}),
-						success: function () {
-							page.showCustomToast('success', `Đã cập nhật trạng thái thành "${statusText}" thành công!`);
-							if (state.editCurrentAppointment) {
-								state.editCurrentAppointment.status = normalizedStatus;
-							}
-							page.updateEditStatusFlag(normalizedStatus);
-							page.updateAppointmentEditorSummary('edit');
-							page.afterDataChanged();
-						},
-					error: function () {
-						page.showCustomToast('error', 'Không thể cập nhật trạng thái. Vui lòng thử lại.');
-					}
-				});
-			}
-		});
-	}
-
-	function initializeICDMultiSelect() {
-		window.AppointmentManagementIcdMultiselectUtils.initializeICDMultiSelect($);
-	}
-
-	function setupICDMultiSelect(fieldId, mode) {
-		window.AppointmentManagementIcdMultiselectUtils.setupICDMultiSelect($, fieldId, mode);
-	}
-
-	function getSelectedICDsString(mode) {
-		return window.AppointmentManagementIcdMultiselectUtils.getSelectedICDsString(mode);
-	}
-
-	async function setSelectedICDsFromString(icdString, mode) {
-		return window.AppointmentManagementIcdMultiselectUtils.setSelectedICDsFromString($, icdString, mode);
-	}
-
-	function clearSelectedICDs(mode) {
-		window.AppointmentManagementIcdMultiselectUtils.clearSelectedICDs($, mode);
-	}
-
-	Object.assign(page, {
-		getPageActionsOptions,
-		initializePhase3Features,
-		initializeFormValidation,
-		submitAppointmentForm,
-		isAddFormValid,
-		updateEditAppointmentStatus,
-		initializeICDMultiSelect,
-		setupICDMultiSelect,
-		getSelectedICDsString,
-		setSelectedICDsFromString,
-		clearSelectedICDs
 	});
-})(window);
+}
+
+// Simple form validation for Add Appointment modal (bỏ logic step cũ)
+function isAddFormValid() {
+	return AppointmentManagementAddModalUiUtils.isAddFormValid();
+}
+
+// Function to update appointment status from edit modal
+function updateEditAppointmentStatus(newStatus) {
+	const appointmentId = state.editAppointmentId;
+	const normalizedStatus = normalizeAppointmentStatus(newStatus);
+	const currentStatus = getCurrentEditAppointmentStatus();
+	const blockMessage = getEditStatusTransitionBlockMessage(currentStatus, normalizedStatus);
+	if (blockMessage) {
+		showCustomToast('warning', blockMessage);
+		refreshEditStatusDropdown(currentStatus);
+		return;
+	}
+
+	if (!appointmentId) {
+		showCustomToast('error', 'Không tìm thấy ID lịch hẹn!');
+		return;
+	}
+
+	const statusText = getStatusText(normalizedStatus);
+
+	// Sử dụng custom modal thay vì confirm
+	window.CustomModal.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thành "${statusText}"?`, 'Xác nhận thay đổi trạng thái').then((confirmed) => {
+		if (!confirmed) return;
+		requestJson(`/api/${appointmentId}`, { method: 'PUT', json: { status: normalizedStatus } }).then(() => {
+			showCustomToast('success', `Đã cập nhật trạng thái thành "${statusText}" thành công!`);
+			if (state.editCurrentAppointment) state.editCurrentAppointment.status = normalizedStatus;
+			updateEditStatusFlag(normalizedStatus);
+			updateAppointmentEditorSummary('edit');
+			afterDataChanged();
+		}, () => showCustomToast('error', 'Không thể cập nhật trạng thái. Vui lòng thử lại.'));
+	});
+}
+
+function initializeICDMultiSelect() {
+	AppointmentManagementIcdMultiselectUtils.initializeICDMultiSelect();
+}
+
+function setupICDMultiSelect(fieldId, mode) {
+	AppointmentManagementIcdMultiselectUtils.setupICDMultiSelect(fieldId, mode);
+}
+
+function getSelectedICDsString(mode) {
+	return AppointmentManagementIcdMultiselectUtils.getSelectedICDsString(mode);
+}
+
+async function setSelectedICDsFromString(icdString, mode) {
+	return AppointmentManagementIcdMultiselectUtils.setSelectedICDsFromString(icdString, mode);
+}
+
+function clearSelectedICDs(mode) {
+	AppointmentManagementIcdMultiselectUtils.clearSelectedICDs(mode);
+}
+
+export { clearSelectedICDs, getPageActionsOptions, getSelectedICDsString, initializeFormValidation, initializeICDMultiSelect, initializePhase3Features, isAddFormValid, setSelectedICDsFromString, setupICDMultiSelect, submitAppointmentForm, updateEditAppointmentStatus };

@@ -1,174 +1,133 @@
-(function (window) {
-	'use strict';
+import { el, replace } from '../shared/dom.js';
+import { rebind, rebindDelegate } from '../shared/dom-query.js';
 
-	function normalizeServiceSearchText(value) {
-		return window.QLPKSearchNormalization?.normalizeSearchText(value)
-			|| String(value || '')
-				.normalize('NFKD')
-				.toLowerCase()
-				.replace(/[\u0300-\u036f]/g, '')
-				.replace(/đ/g, 'd')
-				.trim();
+function normalizeServiceSearchText(value) {
+	return window.QLPKSearchNormalization?.normalizeSearchText(value)
+		|| String(value || '')
+			.normalize('NFKD')
+			.toLowerCase()
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/đ/g, 'd')
+			.trim();
+}
+
+function formatPrice(price) {
+	return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+}
+
+const noResults = text => el('div', { class: 'autocomplete-no-results' }, text);
+
+function renderServiceLoadError() {
+	document.querySelectorAll('#addServiceDropdown, #editServiceDropdown').forEach(dropdown => {
+		replace(dropdown, noResults('Lỗi tải dữ liệu dịch vụ'));
+		dropdown.classList.add('show');
+	});
+}
+
+// Service shown by each dropdown item
+const itemServices = new WeakMap();
+
+function renderServiceDropdown(dropdown, list) {
+	dropdown.classList.add('show');
+	if (!list || list.length === 0) {
+		replace(dropdown, noResults('Không tìm thấy dịch vụ phù hợp'));
+		return;
 	}
+	replace(dropdown, list.map(service => {
+		const item = el('div', { class: 'autocomplete-item' },
+			el('span', { class: 'autocomplete-item-name' }, service.name || ''),
+			el('span', { class: 'autocomplete-item-price' }, formatPrice(service.default_price || 0)));
+		itemServices.set(item, service);
+		return item;
+	}));
+}
 
-	function formatPrice(price) {
-		return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+function moveActive(dropdown, step) {
+	const items = [...dropdown.querySelectorAll('.autocomplete-item')];
+	const index = items.findIndex(item => item.classList.contains('active'));
+	if (index === -1) {
+		if (step > 0) items[0]?.classList.add('active');
+		return;
 	}
+	items[index].classList.remove('active');
+	items[index + step]?.classList.add('active');
+}
 
-	function renderServiceLoadError($) {
-		$('#addServiceDropdown, #editServiceDropdown')
-			.html('<div class="autocomplete-no-results">Lỗi tải dữ liệu dịch vụ</div>')
-			.addClass('show');
-	}
+// Service name autocomplete: picking an item fills the input/hidden id and emits qlpk:service-selected (detail = service)
+function initializeServiceAutocomplete(options) {
+	const input = document.getElementById(options.inputId);
+	const dropdown = document.getElementById(options.dropdownId);
+	const hidden = document.getElementById(options.hiddenId);
+	if (!input || !dropdown || !hidden) return;
+	const getServices = typeof options.getServices === 'function' ? options.getServices : () => [];
+	const key = `serviceAutocomplete${options.inputId}`;
+	const render = list => renderServiceDropdown(dropdown, list);
 
-	function renderServiceDropdown($, $dropdown, list) {
-		if (!list || list.length === 0) {
-			$dropdown.html('<div class="autocomplete-no-results">Không tìm thấy dịch vụ phù hợp</div>').addClass('show');
+	rebindDelegate(dropdown, 'click', '.autocomplete-item', key, function () {
+		const selected = itemServices.get(this);
+		input.value = selected.name;
+		hidden.value = selected.id;
+		dropdown.classList.remove('show');
+		input.dispatchEvent(new CustomEvent('qlpk:service-selected', { bubbles: true, detail: selected }));
+	});
+	rebind(input, 'focus', key, () => {
+		if (!normalizeServiceSearchText(input.value)) render(getServices());
+		else input.dispatchEvent(new Event('input', { bubbles: true }));
+	});
+	rebind(input, 'input', key, () => {
+		const query = normalizeServiceSearchText(input.value);
+		if (!query) {
+			hidden.value = '';
+			render(getServices());
 			return;
 		}
-
-		$dropdown.empty().addClass('show');
-		list.forEach(service => {
-			const $item = $('<div class="autocomplete-item">')
-				.data('service', service);
-			$item.append(
-				$('<span class="autocomplete-item-name">').text(service.name || ''),
-				$('<span class="autocomplete-item-price">').text(formatPrice(service.default_price || 0))
-			);
-			$dropdown.append($item);
-		});
-	}
-
-	function initializeServiceAutocomplete(options) {
-		const $ = options.$;
-		const $input = $(`#${options.inputId}`);
-		const $dropdown = $(`#${options.dropdownId}`);
-		const $hidden = $(`#${options.hiddenId}`);
-		const getServices = typeof options.getServices === 'function' ? options.getServices : () => [];
-		const eventNamespace = `.serviceAutocomplete${options.inputId}`;
-
-		function renderDropdown(list) {
-			renderServiceDropdown($, $dropdown, list);
+		const filtered = getServices().filter(service =>
+			normalizeServiceSearchText(service.name).includes(query) ||
+			(service.code && normalizeServiceSearchText(service.code).includes(query)));
+		if (filtered.length === 0) hidden.value = '';
+		render(filtered);
+	});
+	rebind(document, 'click', key, event => {
+		if (!(event.target instanceof Element) || !event.target.closest(`#${options.inputId}, #${options.dropdownId}`)) dropdown.classList.remove('show');
+	});
+	rebind(input, 'keydown', key, event => {
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			moveActive(dropdown, event.key === 'ArrowDown' ? 1 : -1);
+		} else if (event.key === 'Enter') {
+			event.preventDefault();
+			dropdown.querySelector('.autocomplete-item.active')?.click();
+		} else if (event.key === 'Escape') {
+			dropdown.classList.remove('show');
 		}
+	});
+}
 
-		$dropdown.off(`click${eventNamespace}`, '.autocomplete-item').on(`click${eventNamespace}`, '.autocomplete-item', function () {
-			const selected = $(this).data('service');
-			$input.val(selected.name);
-			$hidden.val(selected.id);
-			$dropdown.removeClass('show');
-			$input.trigger('serviceSelected', [selected]);
-		});
-
-		$input.off(`focus${eventNamespace}`).on(`focus${eventNamespace}`, function () {
-			const query = normalizeServiceSearchText($(this).val());
-			if (!query) {
-				renderDropdown(getServices());
-			} else {
-				$input.trigger('input');
-			}
-		});
-
-		$input.off(`input${eventNamespace}`).on(`input${eventNamespace}`, function () {
-			const query = normalizeServiceSearchText($(this).val());
-			if (!query) {
-				$hidden.val('');
-				renderDropdown(getServices());
-				return;
-			}
-
-			const filtered = getServices().filter(service =>
-				normalizeServiceSearchText(service.name).includes(query) ||
-				(service.code && normalizeServiceSearchText(service.code).includes(query))
-			);
-
-			if (filtered.length === 0) {
-				$hidden.val('');
-			}
-			renderDropdown(filtered);
-		});
-
-		$(document).off(`click${eventNamespace}`).on(`click${eventNamespace}`, function (event) {
-			if (!$(event.target).closest(`#${options.inputId}, #${options.dropdownId}`).length) {
-				$dropdown.removeClass('show');
-			}
-		});
-
-		$input.off(`keydown${eventNamespace}`).on(`keydown${eventNamespace}`, function (event) {
-			const $items = $dropdown.find('.autocomplete-item');
-			const $active = $items.filter('.active');
-
-			if (event.key === 'ArrowDown') {
-				event.preventDefault();
-				if ($active.length === 0) {
-					$items.first().addClass('active');
-				} else {
-					$active.removeClass('active').next('.autocomplete-item').addClass('active');
-				}
-			} else if (event.key === 'ArrowUp') {
-				event.preventDefault();
-				if ($active.length > 0) {
-					$active.removeClass('active').prev('.autocomplete-item').addClass('active');
-				}
-			} else if (event.key === 'Enter') {
-				event.preventDefault();
-				if ($active.length > 0) {
-					$active.click();
-				}
-			} else if (event.key === 'Escape') {
-				$dropdown.removeClass('show');
-			}
-		});
+function packageOptions(packages) {
+	if (!packages || packages.length === 0) {
+		return [el('option', { value: '', disabled: true }, 'Chưa có gói nào. Vui lòng thêm từ quản trị!')];
 	}
+	return packages.map(pkg => el('option', { value: pkg.id, 'data-duration': pkg.duration_minutes, 'data-price': pkg.price },
+		`${pkg.name || ''} - ${formatPrice(pkg.price || 0)}`));
+}
 
-	function updatePriceDisplay(options) {
-		return options;
-	}
+const packageSelects = () => ['addPackage', 'editPackage'].map(id => document.getElementById(id)).filter(Boolean);
 
-	function updateEditPriceDisplay(options) {
-		return options;
-	}
+function populatePackageSelects(packages) {
+	packageSelects().forEach(select => replace(select, el('option', { value: '' }, 'Chọn gói'), packageOptions(packages)));
+}
 
-	function populatePackageSelects($, packages) {
-		const packageSelect = $('#addPackage');
-		const editPackageSelect = $('#editPackage');
+function renderPackageSelectError() {
+	packageSelects().forEach(select => replace(select, el('option', { value: '', disabled: true }, 'Lỗi tải dữ liệu gói')));
+}
 
-		packageSelect.empty();
-		editPackageSelect.empty();
-		packageSelect.append($('<option>').val('').text('Chọn gói'));
-		editPackageSelect.append($('<option>').val('').text('Chọn gói'));
+const AppointmentManagementServicePackageControlsUtils = {
+	formatPrice,
+	initializeServiceAutocomplete,
+	populatePackageSelects,
+	renderPackageSelectError,
+	renderServiceDropdown,
+	renderServiceLoadError
+};
 
-		if (packages && packages.length > 0) {
-			packages.forEach(pkg => {
-				const optionText = `${pkg.name || ''} - ${formatPrice(pkg.price || 0)}`;
-				const $option = $('<option>')
-					.val(pkg.id)
-					.attr('data-duration', pkg.duration_minutes)
-					.attr('data-price', pkg.price)
-					.text(optionText);
-				packageSelect.append($option.clone());
-				editPackageSelect.append($option);
-			});
-		} else {
-			packageSelect.append($('<option>').val('').prop('disabled', true).text('Chưa có gói nào. Vui lòng thêm từ quản trị!'));
-			editPackageSelect.append($('<option>').val('').prop('disabled', true).text('Chưa có gói nào. Vui lòng thêm từ quản trị!'));
-		}
-	}
-
-	function renderPackageSelectError($) {
-		const packageSelect = $('#addPackage');
-		const editPackageSelect = $('#editPackage');
-		packageSelect.empty().append('<option value="" disabled>Lỗi tải dữ liệu gói</option>');
-		editPackageSelect.empty().append('<option value="" disabled>Lỗi tải dữ liệu gói</option>');
-	}
-
-	window.AppointmentManagementServicePackageControlsUtils = {
-		formatPrice,
-		initializeServiceAutocomplete,
-		populatePackageSelects,
-		renderPackageSelectError,
-		renderServiceDropdown,
-		renderServiceLoadError,
-		updateEditPriceDisplay,
-		updatePriceDisplay
-	};
-})(window);
+export { AppointmentManagementServicePackageControlsUtils };

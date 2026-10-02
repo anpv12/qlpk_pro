@@ -1,196 +1,134 @@
+import { state } from './page-state.js';
+import { AppointmentManagementBusySchedulePopupUtils } from './busy-schedule-popup-utils.js';
+import { AppointmentManagementBusyScheduleUtils } from './busy-schedule-utils.js';
+import { loadDoctorBusySchedulesData } from './page-data.js';
+import { AppointmentManagementCalendarConnectionUtils } from './calendar-connection-utils.js';
+import { AppointmentManagementCalendarSyncModalUtils } from './calendar-sync-modal-utils.js';
+import { AppointmentManagementCalendarSyncRuntimeUtils } from './calendar-sync-runtime-utils.js';
+import { showCustomToast } from './page-editor.js';
+import { AppointmentManagementCalendarSyncControlsUtils } from './calendar-sync-controls-utils.js';
+import { AppointmentManagementCalendarSyncDateUtils } from './calendar-sync-date-utils.js';
+import { AppointmentManagementCalendarSyncFilterUtils } from './calendar-sync-filter-utils.js';
+import { AppointmentManagementCalendarSyncStatusUtils } from './calendar-sync-status-utils.js';
+import { AppointmentManagementCalendarSyncTableUtils } from './calendar-sync-table-utils.js';
 // Lịch bận realtime và đồng bộ Google Calendar.
-// Hàm dùng chung qua window.AppointmentManagementPage; state trang nằm ở page.state.
-(function (window) {
-	const page = window.AppointmentManagementPage || (window.AppointmentManagementPage = { state: {} });
-	const state = page.state;
 
-	function showBusySchedulePopup(event) {
-		window.AppointmentManagementBusySchedulePopupUtils.showBusySchedulePopup($, event);
-	}
+function showBusySchedulePopup(event) {
+	AppointmentManagementBusySchedulePopupUtils.showBusySchedulePopup(event);
+}
 
-	// Function kiểm tra xem bác sĩ có đang bận trong thời gian hiện tại không
-	function isDoctorCurrentlyBusy(busySchedules) {
-		return window.AppointmentManagementBusyScheduleUtils.isDoctorCurrentlyBusy(busySchedules);
-	}
+// Function kiểm tra xem bác sĩ có đang bận trong thời gian hiện tại không
+function isDoctorCurrentlyBusy(busySchedules) {
+	return AppointmentManagementBusyScheduleUtils.isDoctorCurrentlyBusy(busySchedules);
+}
 
-	// Function kiểm tra xem bác sĩ có lịch bận trong tương lai không (chưa bắt đầu)
-	function isDoctorFutureBusy(busySchedules) {
-		return window.AppointmentManagementBusyScheduleUtils.isDoctorFutureBusy(busySchedules);
-	}
+// Function kiểm tra xem bác sĩ có lịch bận trong tương lai không (chưa bắt đầu)
+function isDoctorFutureBusy(busySchedules) {
+	return AppointmentManagementBusyScheduleUtils.isDoctorFutureBusy(busySchedules);
+}
 
-	// Function lọc các lịch bận chưa kết thúc
-	function filterActiveBusySchedules(busySchedules) {
-		return window.AppointmentManagementBusyScheduleUtils.filterActiveBusySchedules(busySchedules);
-	}
+// Function lọc các lịch bận chưa kết thúc
+function filterActiveBusySchedules(busySchedules) {
+	return AppointmentManagementBusyScheduleUtils.filterActiveBusySchedules(busySchedules);
+}
 
-	// Lưu dữ liệu lịch bận hiện tại cho popup và các callback realtime.
-	function updateBusyDoctorsPanel(busySchedules) {
-		state.currentBusySchedules = busySchedules || [];
-	}
+// Lưu dữ liệu lịch bận hiện tại cho popup và các callback realtime.
+function updateBusyDoctorsPanel(busySchedules) {
+	state.currentBusySchedules = busySchedules || [];
+}
 
-		// Setup local cross-tab update cho busy schedules bằng BroadcastChannel
-	function setupRealtimeBusyScheduleUpdate() {
-		// Hàm này được gọi mỗi lần render calendar; chỉ thiết lập listener realtime MỘT lần
-		// để tránh gắn chồng listener 'storage' (leak) và gọi AJAX refresh thừa mỗi lần render.
-		if (window.busyScheduleRealtimeInitialized) {
-			return;
-		}
-		window.busyScheduleRealtimeInitialized = true;
+// Hàm refresh busy schedules 1 lần (không loop); request bị hủy bởi lần tải mới thì bỏ qua
+function refreshBusySchedulesOnce() {
+	loadDoctorBusySchedulesData(state.currentCalendarDateFrom, state.currentCalendarDateTo)
+		.then(busySchedules => updateBusyDoctorsPanel(Array.isArray(busySchedules) ? busySchedules : []), () => {});
+}
 
-		// Sử dụng BroadcastChannel để lắng nghe thay đổi từ các tab/component khác
-		if ('BroadcastChannel' in window) {
-			// Close existing channel nếu có
-			if (window.busyScheduleChannel) {
-				window.busyScheduleChannel.close();
-			}
+// ========== Google Calendar Integration ==========
 
-			window.busyScheduleChannel = new BroadcastChannel('busy_schedule_updates');
-
-		window.busyScheduleChannel.onmessage = function (event) {
-			if (event.data && event.data.type === 'BUSY_SCHEDULE_CHANGED') {
-				refreshBusySchedulesOnce();
-			}
-		};
-	} else {
-		// Fallback: sử dụng storage event cho các browsers cũ
-		window.addEventListener('storage', function (event) {
-			if (event.key === 'busy_schedule_version') {
-				refreshBusySchedulesOnce();
-			}
-		});
-	}
-
-	}
-
-	// Hàm refresh busy schedules 1 lần (không loop)
-	function refreshBusySchedulesOnce() {
-		page.loadDoctorBusySchedulesData(state.currentCalendarDateFrom, state.currentCalendarDateTo)
-			.done(function (response) {
-				// Đảm bảo response là array (giống như loadDoctorBusySchedules)
-				let busySchedules = [];
-				if (response && response.success && response.data && Array.isArray(response.data)) {
-					busySchedules = response.data;
-				} else if (Array.isArray(response)) {
-					busySchedules = response;
-				} else if (response && response.items && Array.isArray(response.items)) {
-					busySchedules = response.items;
-				}
-
-				// Cập nhật panel với dữ liệu mới (bao gồm status text)
-				updateBusyDoctorsPanel(busySchedules);
-			});
-	}
-
-	// ========== Google Calendar Integration ==========
-
-	// Load trạng thái kết nối Google Calendar
-	function loadCalendarStatus() {
-		return window.AppointmentManagementCalendarConnectionUtils.loadCalendarStatus({
-			$,
-			hasSession: () => window.QLPKApiTransport.hasSession()
-		});
-	}
-
-	// =====================================================
-	// CALENDAR SYNC DASHBOARD
-	// =====================================================
-
-	function initSyncCalendarModal() {
-		window.AppointmentManagementCalendarSyncModalUtils.initializeSyncCalendarModal({
-			$,
-			abortCalendarSyncRequests: () => window.AppointmentManagementCalendarSyncRuntimeUtils.abortCalendarSyncRequests(),
-			customModal: window.CustomModal,
-			filterSyncTable,
-			flatpickrInstance: typeof flatpickr !== 'undefined' ? flatpickr : null,
-			loadSyncData,
-			showCustomToast: page.showCustomToast,
-			syncAppointments,
-			syncControlsUtils: window.AppointmentManagementCalendarSyncControlsUtils,
-			syncDateUtils: window.AppointmentManagementCalendarSyncDateUtils,
-			updateSyncButtonStates,
-			validateCalendarConnections
-		});
-	}
-
-	function getCalendarSyncRuntimeOptions() {
-		return {
-			$,
-			controlsUtils: window.AppointmentManagementCalendarSyncControlsUtils,
-			filterUtils: window.AppointmentManagementCalendarSyncFilterUtils,
-			hasSession: () => window.QLPKApiTransport.hasSession(),
-			renderSyncTable,
-			showCustomToast: page.showCustomToast,
-			statusUtils: window.AppointmentManagementCalendarSyncStatusUtils,
-			syncAppointments,
-			syncDateUtils: window.AppointmentManagementCalendarSyncDateUtils,
-			tableUtils: window.AppointmentManagementCalendarSyncTableUtils,
-			updateSyncBadgesAfterVerify,
-			updateSyncButtonStates,
-			updateSyncCounters,
-			verifyCalendarEvents
-		};
-	}
-
-	// Validate tất cả connections để đảm bảo data integrity
-	function validateCalendarConnections() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.validateCalendarConnections(getCalendarSyncRuntimeOptions());
-	}
-
-	function loadSyncData() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.loadSyncData(getCalendarSyncRuntimeOptions());
-	}
-
-	function renderSyncTable(data) {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.renderSyncTable(getCalendarSyncRuntimeOptions(), data);
-	}
-
-	function updateSyncButtonStates() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.updateSyncButtonStates(getCalendarSyncRuntimeOptions());
-	}
-
-	// Verify calendar events thực tế trên Google Calendar
-	function verifyCalendarEvents(appointmentIds) {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.verifyCalendarEvents(getCalendarSyncRuntimeOptions(), appointmentIds);
-	}
-
-	// Cập nhật badges count sau khi verify
-	function updateSyncBadgesAfterVerify() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.updateSyncBadgesAfterVerify(getCalendarSyncRuntimeOptions());
-	}
-
-	function syncAppointments(appointmentIds) {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.syncAppointments(getCalendarSyncRuntimeOptions(), appointmentIds);
-	}
-
-	// Cập nhật các counter trên header sau khi sync
-	function updateSyncCounters() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.updateSyncCounters(getCalendarSyncRuntimeOptions());
-	}
-
-	// Filter bảng sync theo search text và status
-	function filterSyncTable() {
-		return window.AppointmentManagementCalendarSyncRuntimeUtils.filterSyncTable(getCalendarSyncRuntimeOptions());
-	}
-
-	Object.assign(page, {
-		showBusySchedulePopup,
-		isDoctorCurrentlyBusy,
-		isDoctorFutureBusy,
-		filterActiveBusySchedules,
-		updateBusyDoctorsPanel,
-		setupRealtimeBusyScheduleUpdate,
-		refreshBusySchedulesOnce,
-		loadCalendarStatus,
-		initSyncCalendarModal,
-		getCalendarSyncRuntimeOptions,
-		validateCalendarConnections,
-		loadSyncData,
-		renderSyncTable,
-		updateSyncButtonStates,
-		verifyCalendarEvents,
-		updateSyncBadgesAfterVerify,
-		syncAppointments,
-		updateSyncCounters,
-		filterSyncTable
+// Load trạng thái kết nối Google Calendar
+function loadCalendarStatus() {
+	return AppointmentManagementCalendarConnectionUtils.loadCalendarStatus({
+		hasSession: () => window.QLPKApiTransport.hasSession()
 	});
-})(window);
+}
+
+// =====================================================
+// CALENDAR SYNC DASHBOARD
+// =====================================================
+
+function initSyncCalendarModal() {
+	AppointmentManagementCalendarSyncModalUtils.initializeSyncCalendarModal({
+		abortCalendarSyncRequests: () => AppointmentManagementCalendarSyncRuntimeUtils.abortCalendarSyncRequests(),
+		customModal: window.CustomModal,
+		filterSyncTable,
+		flatpickrInstance: window.flatpickr || null,
+		loadSyncData,
+		showCustomToast: showCustomToast,
+		syncAppointments,
+		syncControlsUtils: AppointmentManagementCalendarSyncControlsUtils,
+		syncDateUtils: AppointmentManagementCalendarSyncDateUtils,
+		updateSyncButtonStates,
+		validateCalendarConnections
+	});
+}
+
+function getCalendarSyncRuntimeOptions() {
+	return {
+		controlsUtils: AppointmentManagementCalendarSyncControlsUtils,
+		filterUtils: AppointmentManagementCalendarSyncFilterUtils,
+		hasSession: () => window.QLPKApiTransport.hasSession(),
+		renderSyncTable,
+		showCustomToast: showCustomToast,
+		statusUtils: AppointmentManagementCalendarSyncStatusUtils,
+		syncAppointments,
+		syncDateUtils: AppointmentManagementCalendarSyncDateUtils,
+		tableUtils: AppointmentManagementCalendarSyncTableUtils,
+		updateSyncBadgesAfterVerify,
+		updateSyncButtonStates,
+		updateSyncCounters,
+		verifyCalendarEvents
+	};
+}
+
+// Validate tất cả connections để đảm bảo data integrity
+function validateCalendarConnections() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.validateCalendarConnections(getCalendarSyncRuntimeOptions());
+}
+
+function loadSyncData() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.loadSyncData(getCalendarSyncRuntimeOptions());
+}
+
+function renderSyncTable(data) {
+	return AppointmentManagementCalendarSyncRuntimeUtils.renderSyncTable(getCalendarSyncRuntimeOptions(), data);
+}
+
+function updateSyncButtonStates() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.updateSyncButtonStates(getCalendarSyncRuntimeOptions());
+}
+
+// Verify calendar events thực tế trên Google Calendar
+function verifyCalendarEvents(appointmentIds) {
+	return AppointmentManagementCalendarSyncRuntimeUtils.verifyCalendarEvents(getCalendarSyncRuntimeOptions(), appointmentIds);
+}
+
+// Cập nhật badges count sau khi verify
+function updateSyncBadgesAfterVerify() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.updateSyncBadgesAfterVerify(getCalendarSyncRuntimeOptions());
+}
+
+function syncAppointments(appointmentIds) {
+	return AppointmentManagementCalendarSyncRuntimeUtils.syncAppointments(getCalendarSyncRuntimeOptions(), appointmentIds);
+}
+
+// Cập nhật các counter trên header sau khi sync
+function updateSyncCounters() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.updateSyncCounters(getCalendarSyncRuntimeOptions());
+}
+
+// Filter bảng sync theo search text và status
+function filterSyncTable() {
+	return AppointmentManagementCalendarSyncRuntimeUtils.filterSyncTable(getCalendarSyncRuntimeOptions());
+}
+
+export { filterActiveBusySchedules, filterSyncTable, getCalendarSyncRuntimeOptions, initSyncCalendarModal, isDoctorCurrentlyBusy, isDoctorFutureBusy, loadCalendarStatus, loadSyncData, refreshBusySchedulesOnce, renderSyncTable, showBusySchedulePopup, syncAppointments, updateBusyDoctorsPanel, updateSyncBadgesAfterVerify, updateSyncButtonStates, updateSyncCounters, validateCalendarConnections, verifyCalendarEvents };

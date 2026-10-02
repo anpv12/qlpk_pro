@@ -19,7 +19,6 @@
 
 	{% include 'partials/flatpickr.html' %}
 	<link rel="stylesheet" href="/static/css/holiday-calendar.css?v={{ app_version }}">
-	<script src="/static/vendor/jquery@3.7.1/jquery.min.js"></script>
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
 	<script src="/static/vendor/fullcalendar@5.11.3/main.min.js"></script>
 	<script src="/static/js/sidebar-dry-loader.js?v={{ app_version }}"></script>
@@ -132,49 +131,14 @@
 
 	<script src="/static/js/custom-modal.js?v={{ app_version }}"></script>
 	<script src="/static/js/shared/icon-system.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/status-format-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/filter-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/conflict-warning-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/patient-duplicate-warning-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/service-package-controls-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/doctor-controls-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/feedback-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/allergy-format-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/edit-modal-ui-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/add-modal-ui-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/icd-data-loader.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/autocomplete-field.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/icd-autocomplete.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/icd-multiselect-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-actions-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/doctor-legend-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/components/appointment-calendar.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-event-source-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-date-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/busy-schedule-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/busy-schedule-panel-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/busy-schedule-popup-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-connection-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-table-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-status-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-date-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-filter-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-controls-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-modal-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/calendar-sync-runtime-utils.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-interactions-utils.js?v={{ app_version }}"></script>
 	<script src="/static/js/realtime-page-hooks.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-data.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-view.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-calendar.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-edit-modal.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-editor.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-add-modal.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management/page-busy-sync.js?v={{ app_version }}"></script>
-	<script src="/static/js/appointment-management.js?v={{ app_version }}"></script>
+	<script type="module" src="/static/js/appointment-management.js?v={{ app_version }}"></script>
 	<script src="/static/js/text-expansion.js?v={{ app_version }}"></script>
 
-	<script src="/static/js/appointment-management/mini-calendar-bootstrap-utils.js?v={{ app_version }}"></script>
 </body>
 
 </html>

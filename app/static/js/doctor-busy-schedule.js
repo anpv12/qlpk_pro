@@ -174,7 +174,6 @@ async function saveBusySchedule(data) {
 		state.editingId = null;
 		setSubmitLabels(false);
 		loadMyBusySchedules();
-		if (typeof window.notifyBusyScheduleChanged === 'function') window.notifyBusyScheduleChanged();
 		Object.assign(state, { reasons: null, reasonsTime: null });
 	} catch (error) {
 		button.disabled = false;
@@ -231,7 +230,6 @@ async function deleteBusySchedule(id) {
 		showAlert('Xóa lịch bận thành công!', 'success');
 		window.bootstrap.Modal.getInstance(byId('deleteConfirmModal'))?.hide();
 		loadMyBusySchedules();
-		if (typeof window.notifyBusyScheduleChanged === 'function') window.notifyBusyScheduleChanged();
 	} catch {
 		showAlert('Không thể xóa lịch bận. Vui lòng thử lại.', 'error');
 	}

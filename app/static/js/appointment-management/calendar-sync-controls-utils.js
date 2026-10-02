@@ -1,151 +1,135 @@
-(function (window) {
-	'use strict';
+import { setProp, setText } from '../shared/dom-query.js';
+import { el, icon, replace } from '../shared/dom.js';
 
-	function buildLoadingRowHtml() {
-		return `
-			<tr>
-				<td colspan="7" class="appointment-sync-loading-cell">
-					<div class="spinner-border appointment-sync-spinner" role="status"></div>
-					<div class="appointment-sync-loading-text">Đang tải dữ liệu...</div>
-				</td>
-			</tr>
-		`;
-	}
+function buildLoadingRow() {
+	return el('tr', {}, el('td', { colspan: 7, class: 'appointment-sync-loading-cell' },
+		el('div', { class: 'spinner-border appointment-sync-spinner', role: 'status' }),
+		el('div', { class: 'appointment-sync-loading-text' }, 'Đang tải dữ liệu...')));
+}
 
-	function buildErrorRowHtml() {
-		return `
-			<tr>
-				<td colspan="7" class="appointment-sync-error-cell">
-					<i class="bi bi-exclamation-triangle appointment-empty-icon appointment-sync-empty-icon"></i>
-					Không thể tải dữ liệu đồng bộ. Vui lòng thử lại.
-				</td>
-			</tr>
-		`;
-	}
+function buildErrorRow() {
+	return el('tr', {}, el('td', { colspan: 7, class: 'appointment-sync-error-cell' },
+		icon('bi-exclamation-triangle', 'appointment-empty-icon appointment-sync-empty-icon'), ' Không thể tải dữ liệu đồng bộ. Vui lòng thử lại.'));
+}
 
-	function getSyncedAppointmentIds(appointments) {
-		return (appointments || [])
-			.filter(appointment => appointment.sync_status === 'synced')
-			.map(appointment => appointment.id);
-	}
+function getSyncedAppointmentIds(appointments) {
+	return (appointments || [])
+		.filter(appointment => appointment.sync_status === 'synced')
+		.map(appointment => appointment.id);
+}
 
-	function collectAppointmentIds($, selector) {
-		const appointmentIds = [];
-		$(selector).each(function () {
-			appointmentIds.push(parseInt($(this).data('appt-id')));
-		});
-		return appointmentIds;
-	}
+const appointmentIdsOf = selector => [...document.querySelectorAll(selector)].map(node => parseInt(node.dataset.apptId));
 
-	function collectMissingAppointmentIds($, tableBodySelector) {
-		return collectAppointmentIds($, `${tableBodySelector} tr[data-sync-status="missing"]`);
-	}
+function collectMissingAppointmentIds(tableBodySelector) {
+	return appointmentIdsOf(`${tableBodySelector} tr[data-sync-status="missing"]`);
+}
 
-	function collectSelectedAppointmentIds($, tableBodySelector) {
-		return collectAppointmentIds($, `${tableBodySelector} input.sync-checkbox:checked`);
-	}
+function collectSelectedAppointmentIds(tableBodySelector) {
+	return appointmentIdsOf(`${tableBodySelector} input.sync-checkbox:checked`);
+}
 
-	function setVisibleCheckboxesChecked($, tableBodySelector, isChecked) {
-		$(`${tableBodySelector} input[type="checkbox"].sync-checkbox:visible`).prop('checked', isChecked);
-	}
+// Rows hidden by the filter or a collapsed date group are left untouched
+function setVisibleCheckboxesChecked(tableBodySelector, isChecked) {
+	document.querySelectorAll(`${tableBodySelector} input[type="checkbox"].sync-checkbox`).forEach(box => {
+		if (!box.closest('tr')?.hidden) box.checked = isChecked;
+	});
+}
 
-	function updateSelectedButtonState($, tableBodySelector, selectedButtonSelector) {
-		const checkedCount = $(`${tableBodySelector} input.sync-checkbox:checked`).length;
-		$(selectedButtonSelector).prop('disabled', checkedCount === 0);
-		return checkedCount;
-	}
+function updateSelectedButtonState(tableBodySelector, selectedButtonSelector) {
+	const checkedCount = document.querySelectorAll(`${tableBodySelector} input.sync-checkbox:checked`).length;
+	setProp(selectedButtonSelector, 'disabled', checkedCount === 0);
+	return checkedCount;
+}
 
-	function countSyncedRows($, tableBodySelector) {
-		return $(`${tableBodySelector} tr[data-sync-status="synced"]`).length;
-	}
+function countSyncedRows(tableBodySelector) {
+	return document.querySelectorAll(`${tableBodySelector} tr[data-sync-status="synced"]`).length;
+}
 
-	function getSyncStatusCounts($, tableBodySelector) {
-		const counts = {
-			total: 0,
-			synced: 0,
-			missing: 0,
-			error: 0
-		};
+function getSyncStatusCounts(tableBodySelector) {
+	const counts = { total: 0, synced: 0, missing: 0, error: 0 };
+	document.querySelectorAll(`${tableBodySelector} tr[data-appt-id]`).forEach(row => {
+		const status = row.getAttribute('data-sync-status');
+		counts.total += 1;
+		if (status in counts && status !== 'total') counts[status] += 1;
+	});
+	return counts;
+}
 
-		$(`${tableBodySelector} tr[data-appt-id]`).each(function () {
-			const status = $(this).attr('data-sync-status');
-			counts.total += 1;
-			if (status === 'synced') counts.synced += 1;
-			else if (status === 'missing') counts.missing += 1;
-			else if (status === 'error') counts.error += 1;
-		});
-
-		return counts;
-	}
-
-	function getBadgeTextsFromCounts(counts) {
-		return {
-			total: 'Tổng: ' + counts.total,
-			synced: 'Đã đồng bộ: ' + counts.synced,
-			missing: 'Thiếu: ' + counts.missing,
-			error: 'Lỗi: ' + counts.error
-		};
-	}
-
-	function renderSyncBadgeTexts($, badgeTexts, selectors) {
-		const badgeSelectors = selectors || {};
-		$(badgeSelectors.total || '#syncBadgeTotal').text(badgeTexts.total);
-		$(badgeSelectors.synced || '#syncBadgeSynced').text(badgeTexts.synced);
-		$(badgeSelectors.missing || '#syncBadgeMissing').text(badgeTexts.missing);
-		$(badgeSelectors.error || '#syncBadgeError').text(badgeTexts.error);
-	}
-
-	function updateBadgesAfterRowStatusChange($, options) {
-		const counts = getSyncStatusCounts($, options.tableBodySelector);
-		renderSyncBadgeTexts($, getBadgeTextsFromCounts(counts), options.badgeSelectors);
-		$(options.allMissingButtonSelector).prop('disabled', counts.missing === 0);
-		return counts;
-	}
-
-	function setBulkButtonsDisabled($, disabled) {
-		$('#syncAllMissingBtn, #syncSelectedBtn').prop('disabled', disabled);
-	}
-
-	function setActionButtonsLoading($, appointmentIds) {
-		(appointmentIds || []).forEach(apptId => {
-			const $button = $(`.action-btn[data-appt-id="${apptId}"]`);
-			$button.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Đang sync...');
-		});
-	}
-
-	function resetActionButtonsToDefault($, appointmentIds) {
-		(appointmentIds || []).forEach(apptId => {
-			const $button = $(`.action-btn[data-appt-id="${apptId}"]`);
-			$button.removeClass('appointment-button--success appointment-button--warning appointment-button--neutral')
-				.addClass('appointment-button--primary sync-single-btn')
-				.prop('disabled', false)
-				.html('<i class="bi bi-arrow-repeat"></i> Đồng bộ');
-		});
-	}
-
-	function applyActionButtonState($button, state) {
-		$button.removeClass(state.removeClass)
-			.addClass(state.addClass)
-			.prop('disabled', state.disabled)
-			.html(state.html);
-	}
-
-	window.AppointmentManagementCalendarSyncControlsUtils = {
-		applyActionButtonState,
-		buildErrorRowHtml,
-		buildLoadingRowHtml,
-		collectMissingAppointmentIds,
-		collectSelectedAppointmentIds,
-		countSyncedRows,
-		getBadgeTextsFromCounts,
-		getSyncedAppointmentIds,
-		getSyncStatusCounts,
-		renderSyncBadgeTexts,
-		resetActionButtonsToDefault,
-		setActionButtonsLoading,
-		setBulkButtonsDisabled,
-		setVisibleCheckboxesChecked,
-		updateBadgesAfterRowStatusChange,
-		updateSelectedButtonState
+function getBadgeTextsFromCounts(counts) {
+	return {
+		total: 'Tổng: ' + counts.total,
+		synced: 'Đã đồng bộ: ' + counts.synced,
+		missing: 'Thiếu: ' + counts.missing,
+		error: 'Lỗi: ' + counts.error
 	};
-})(window);
+}
+
+function renderSyncBadgeTexts(badgeTexts, selectors = {}) {
+	setText(selectors.total || '#syncBadgeTotal', badgeTexts.total);
+	setText(selectors.synced || '#syncBadgeSynced', badgeTexts.synced);
+	setText(selectors.missing || '#syncBadgeMissing', badgeTexts.missing);
+	setText(selectors.error || '#syncBadgeError', badgeTexts.error);
+}
+
+function updateBadgesAfterRowStatusChange(options) {
+	const counts = getSyncStatusCounts(options.tableBodySelector);
+	renderSyncBadgeTexts(getBadgeTextsFromCounts(counts), options.badgeSelectors);
+	setProp(options.allMissingButtonSelector, 'disabled', counts.missing === 0);
+	return counts;
+}
+
+function setBulkButtonsDisabled(disabled) {
+	setProp('#syncAllMissingBtn, #syncSelectedBtn', 'disabled', disabled);
+}
+
+const actionButtons = appointmentId => document.querySelectorAll(`.action-btn[data-appt-id="${appointmentId}"]`);
+
+function setActionButtonsLoading(appointmentIds) {
+	(appointmentIds || []).forEach(apptId => actionButtons(apptId).forEach(button => {
+		button.disabled = true;
+		replace(button, icon('bi-hourglass-split'), ' Đang sync...');
+	}));
+}
+
+const DEFAULT_BUTTON_STATE = {
+	addClass: 'appointment-button--primary sync-single-btn',
+	disabled: false,
+	content: () => [icon('bi-arrow-repeat'), ' Đồng bộ'],
+	removeClass: 'appointment-button--success appointment-button--warning appointment-button--neutral'
+};
+
+function resetActionButtonsToDefault(appointmentIds) {
+	(appointmentIds || []).forEach(apptId => actionButtons(apptId).forEach(button => applyActionButtonState(button, DEFAULT_BUTTON_STATE)));
+}
+
+// buttonState: { removeClass, addClass, disabled, content: () => nodes }
+function applyActionButtonState(button, buttonState) {
+	if (!button) return;
+	button.classList.remove(...buttonState.removeClass.split(/\s+/).filter(Boolean));
+	button.classList.add(...buttonState.addClass.split(/\s+/).filter(Boolean));
+	button.disabled = buttonState.disabled;
+	replace(button, buttonState.content());
+}
+
+const AppointmentManagementCalendarSyncControlsUtils = {
+	DEFAULT_BUTTON_STATE,
+	actionButtons,
+	applyActionButtonState,
+	buildErrorRow,
+	buildLoadingRow,
+	collectMissingAppointmentIds,
+	collectSelectedAppointmentIds,
+	countSyncedRows,
+	getBadgeTextsFromCounts,
+	getSyncedAppointmentIds,
+	getSyncStatusCounts,
+	renderSyncBadgeTexts,
+	resetActionButtonsToDefault,
+	setActionButtonsLoading,
+	setBulkButtonsDisabled,
+	setVisibleCheckboxesChecked,
+	updateBadgesAfterRowStatusChange,
+	updateSelectedButtonState
+};
+
+export { AppointmentManagementCalendarSyncControlsUtils };

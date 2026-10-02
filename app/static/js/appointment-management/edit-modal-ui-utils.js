@@ -1,76 +1,51 @@
-(function (window) {
-	'use strict';
+import { rebind, setFieldValue, setProp, toggleClass } from '../shared/dom-query.js';
+import { icon, replace } from '../shared/dom.js';
+import { clearAllFieldErrors as clearAllEditFieldErrors, clearFieldError as clearEditFieldError, showFieldError as showEditFieldError } from './field-errors.js';
 
-	function showEditFieldError($, selector, message) {
-		$(selector).addClass('is-invalid');
-		$(selector).siblings('.invalid-feedback').text(message);
-	}
+const STATUS_FLAG_CLASSES = ['appointment-status-flag--scheduled', 'appointment-status-flag--confirmed', 'appointment-status-flag--no-show', 'appointment-status-flag--cancelled'];
 
-	function clearEditFieldError($, target) {
-		const field = target && target.jquery ? target : $(target);
-		field.removeClass('is-invalid');
-		field.siblings('.invalid-feedback').text('');
-	}
+function updateEditStatusFlag(options) {
+	const flag = document.getElementById('editStatusFlag');
+	if (!flag) return;
+	const status = options.status;
+	flag.classList.remove(...STATUS_FLAG_CLASSES);
+	flag.classList.add(`appointment-status-flag--${String(status || '').toLowerCase().replace(/_/g, '-')}`);
+	replace(flag, icon(options.getStatusIcon(status), 'me-1'), options.getStatusText(status));
+}
 
-	function clearAllEditFieldErrors($) {
-		$('.is-invalid').removeClass('is-invalid');
-		$('.invalid-feedback').text('');
-	}
+const NS = 'appointmentEditValidation';
 
-	function updateEditStatusFlag(options) {
-		const $ = options.$;
-		const status = options.status;
-		const statusText = options.getStatusText(status);
-		const statusIcon = options.getStatusIcon(status);
+function initializeEditFormValidation(options) {
+	rebind('#editPatientName, #editPatientPhone, #editPatientEmail', 'input', NS, function () {
+		options.clearEditFieldError(this);
+	});
+	rebind('input[name="editAppointmentType"]', 'change', NS, function () {
+		const selectedType = this.value;
+		if (selectedType !== 'service' && selectedType !== 'package') return;
+		const isService = selectedType === 'service';
+		toggleClass('#editServiceSelection', 'appointment-hidden', !isService);
+		toggleClass('#editPackageSelection', 'appointment-hidden', isService);
+		if (isService) {
+			setFieldValue('#editPackage', '');
+		} else {
+			setFieldValue('#editService', '');
+			setFieldValue('#editServiceId', '');
+		}
+		setProp('#editService', 'required', isService);
+		setProp('#editPackage', 'required', !isService);
+	});
+	rebind('#editPackage', 'change', NS, function () {
+		const duration = this.selectedOptions[0]?.dataset.duration;
+		if (duration) setFieldValue('#editDuration', duration);
+	});
+}
 
-		$('#editStatusFlag')
-			.removeClass('appointment-status-flag--scheduled appointment-status-flag--confirmed appointment-status-flag--no-show appointment-status-flag--cancelled')
-			.addClass(`appointment-status-flag--${String(status || '').toLowerCase().replace(/_/g, '-')}`)
-			.html(`<i class="bi ${statusIcon} me-1"></i>${window.QLPKHtml.escape(statusText)}`);
-	}
+const AppointmentManagementEditModalUiUtils = {
+	clearAllEditFieldErrors,
+	clearEditFieldError,
+	initializeEditFormValidation,
+	showEditFieldError,
+	updateEditStatusFlag
+};
 
-	function initializeEditFormValidation(options) {
-		const $ = options.$;
-
-		$('#editPatientName, #editPatientPhone, #editPatientEmail').off('input.appointmentEditValidation').on('input.appointmentEditValidation', function () {
-			options.clearEditFieldError($(this));
-		});
-
-		$('input[name="editAppointmentType"]').off('change.appointmentEditValidation').on('change.appointmentEditValidation', function () {
-			const selectedType = $(this).val();
-
-			if (selectedType === 'service') {
-				$('#editServiceSelection').show();
-				$('#editPackageSelection').hide();
-				$('#editPackage').val('');
-				$('#editService').prop('required', true);
-				$('#editPackage').prop('required', false);
-			} else if (selectedType === 'package') {
-				$('#editServiceSelection').hide();
-				$('#editPackageSelection').show();
-				$('#editService').val('');
-				$('#editServiceId').val('');
-				$('#editService').prop('required', false);
-				$('#editPackage').prop('required', true);
-			}
-		});
-
-		$('#editPackage').off('change.appointmentEditValidation').on('change.appointmentEditValidation', function () {
-			const selectedOption = $(this).find('option:selected');
-			const duration = selectedOption.data('duration');
-
-			if (duration) {
-				$('#editDuration').val(duration);
-			}
-		});
-
-	}
-
-	window.AppointmentManagementEditModalUiUtils = {
-		clearAllEditFieldErrors,
-		clearEditFieldError,
-		initializeEditFormValidation,
-		showEditFieldError,
-		updateEditStatusFlag
-	};
-})(window);
+export { AppointmentManagementEditModalUiUtils };

@@ -33,9 +33,9 @@ class Metric:
     exclude: tuple[str, ...] = ()
 
 
-MAX_JQUERY = 433
-MAX_HTML_SINKS = 193
-MAX_CLASSIC_SCRIPTS = 376
+MAX_JQUERY = 110
+MAX_HTML_SINKS = 171
+MAX_CLASSIC_SCRIPTS = 340
 
 METRICS = [
     Metric(

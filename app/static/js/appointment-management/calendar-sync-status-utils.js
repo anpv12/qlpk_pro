@@ -1,165 +1,112 @@
-(function (window) {
-	'use strict';
+import { el, icon } from '../shared/dom.js';
 
-	function escapeHtml(value) {
-		return String(value ?? '')
-			.replace(/&/g, '&amp;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-	}
+// Status chip in the sync table: variant success|warning|danger|neutral|info
+function syncBadge(variant, iconName, label, title) {
+	return el('span', { class: `qlpk-status appointment-sync-badge appointment-sync-badge--${variant}`, title }, icon(iconName), ` ${label}`);
+}
 
-	function buildVerifySyncStatusBadge(result) {
-		switch (result.sync_status) {
-			case 'full':
-				return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
-			case 'partial':
-				return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
-			default:
-				return '';
-		}
-	}
+const FULL_BADGE = () => syncBadge('success', 'bi-check-circle-fill', 'Đã đồng bộ');
+const PARTIAL_BADGE = () => syncBadge('warning', 'bi-exclamation-triangle', 'Thiếu');
 
-	function buildVerifyDoctorBadge(result) {
-		const doctorLabel = escapeHtml(result.doctor_role || 'Bác sĩ');
-		const doctorTitleName = escapeHtml(result.doctor_name) || doctorLabel;
-		if (result.doctor_verified === true) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${doctorTitleName}: Đã xác nhận trên GCal">
-									<i class="bi bi-check-circle-fill"></i> ${doctorLabel}
-								</span>`;
-		}
-		if (result.doctor_verified === false) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${doctorTitleName}: Không tìm thấy event trên GCal">
-									<i class="bi bi-x-circle-fill"></i> ${doctorLabel}
-								</span>`;
-		}
-		return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel}: Chưa có event">
-									<i class="bi bi-dash-circle"></i> ${doctorLabel}
-								</span>`;
-	}
+function buildVerifySyncStatusBadge(result) {
+	if (result.sync_status === 'full') return FULL_BADGE();
+	if (result.sync_status === 'partial') return PARTIAL_BADGE();
+	return null;
+}
 
-	function buildVerifyReceptionistBadge(result) {
-		if (result.receptionist_verified === true) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Đã xác nhận trên GCal">
-									<i class="bi bi-check-circle-fill"></i> Lễ tân
-								</span>`;
-		}
-		if (result.receptionist_verified === false) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${escapeHtml(result.receptionist_name) || 'Lễ tân'}: Không tìm thấy event trên GCal">
-									<i class="bi bi-x-circle-fill"></i> Lễ tân
-								</span>`;
-		}
-		return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân: Chưa có event">
-								<i class="bi bi-dash-circle"></i> Lễ tân
-							</span>`;
-	}
+// Verified on Google Calendar (true), not found (false) or no event yet (other)
+function verifyBadge(verified, label, name) {
+	if (verified === true) return syncBadge('success', 'bi-check-circle-fill', label, `${name || label}: Đã xác nhận trên GCal`);
+	if (verified === false) return syncBadge('danger', 'bi-x-circle-fill', label, `${name || label}: Không tìm thấy event trên GCal`);
+	return syncBadge('neutral', 'bi-dash-circle', label, `${label}: Chưa có event`);
+}
 
-	function buildVerifyEventsIconsHtml(result) {
-		return buildVerifySyncStatusBadge(result) + buildVerifyDoctorBadge(result) + buildVerifyReceptionistBadge(result);
-	}
+function buildVerifyEventsIcons(result) {
+	return [
+		buildVerifySyncStatusBadge(result),
+		verifyBadge(result.doctor_verified, result.doctor_role || 'Bác sĩ', result.doctor_name),
+		verifyBadge(result.receptionist_verified, 'Lễ tân', result.receptionist_name),
+	];
+}
 
-	function getVerifyRowStatus(result) {
-		return result.sync_status === 'full' ? 'synced' : 'missing';
-	}
+function getVerifyRowStatus(result) {
+	return result.sync_status === 'full' ? 'synced' : 'missing';
+}
 
-	function getVerifyButtonState(result) {
-		if (result.sync_status === 'full') {
-			return {
-				addClass: 'appointment-button--success',
-				disabled: true,
-				html: '<i class="bi bi-check-circle"></i> Đã đồng bộ',
-				removeClass: 'appointment-button--neutral appointment-button--primary appointment-button--warning sync-single-btn'
-			};
-		}
+const buttonContent = (iconName, label) => [icon(iconName), ` ${label}`];
 
+function getVerifyButtonState(result) {
+	if (result.sync_status === 'full') {
 		return {
-			addClass: 'appointment-button--primary sync-single-btn',
-			disabled: false,
-			html: '<i class="bi bi-arrow-repeat"></i> Đồng bộ',
-			removeClass: 'appointment-button--neutral appointment-button--success appointment-button--warning'
+			addClass: 'appointment-button--success',
+			disabled: true,
+			content: () => buttonContent('bi-check-circle', 'Đã đồng bộ'),
+			removeClass: 'appointment-button--neutral appointment-button--primary appointment-button--warning sync-single-btn'
 		};
 	}
-
-	function buildSyncResultStatusBadge(result) {
-		if (result.sync_status === 'full') {
-			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success"><i class="bi bi-check-circle-fill"></i> Đã đồng bộ</span>';
-		}
-		if (result.sync_status === 'partial') {
-			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--warning"><i class="bi bi-exclamation-triangle"></i> Thiếu</span>';
-		}
-		return '';
-	}
-
-	function buildSyncResultDoctorBadge(result) {
-		const doctorLabel = escapeHtml(result.doctor_role || 'Bác sĩ');
-		if (result.doctor_verified === true) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="${doctorLabel}"><i class="bi bi-check-circle-fill"></i> ${doctorLabel}</span>`;
-		}
-		if (result.doctor_verified === false) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="${doctorLabel} - Lỗi"><i class="bi bi-x-circle-fill"></i> ${doctorLabel}</span>`;
-		}
-		if (result.doctor_verified === null) {
-			return `<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="${doctorLabel} chưa kết nối"><i class="bi bi-dash-circle"></i> ${doctorLabel}</span>`;
-		}
-		return '';
-	}
-
-	function buildSyncResultReceptionistBadge(result) {
-		if (result.receptionist_verified === true) {
-			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--success" title="Lễ tân"><i class="bi bi-check-circle-fill"></i> Lễ tân</span>';
-		}
-		if (result.receptionist_verified === false) {
-			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--danger" title="Lễ tân - Lỗi"><i class="bi bi-x-circle-fill"></i> Lễ tân</span>';
-		}
-		if (result.receptionist_verified === null) {
-			return '<span class="qlpk-status appointment-sync-badge appointment-sync-badge--neutral" title="Lễ tân chưa kết nối"><i class="bi bi-dash-circle"></i> Lễ tân</span>';
-		}
-		return '';
-	}
-
-	function buildSyncResultIconsHtml(result) {
-		return buildSyncResultStatusBadge(result) + buildSyncResultDoctorBadge(result) + buildSyncResultReceptionistBadge(result);
-	}
-
-	function getSyncResultRowStatus(result) {
-		if (result.sync_status === 'full') return 'synced';
-		if (result.sync_status === 'partial') return 'partial';
-		return 'error';
-	}
-
-	function getSyncResultButtonState(result) {
-		if (result.sync_status === 'full') {
-			return {
-				addClass: 'appointment-button--success',
-				disabled: true,
-				html: '<i class="bi bi-check-circle"></i> Đã đồng bộ',
-				removeClass: 'appointment-button--primary appointment-button--warning sync-single-btn'
-			};
-		}
-		if (result.sync_status === 'partial') {
-			return {
-				addClass: 'appointment-button--warning',
-				disabled: true,
-				html: '<i class="bi bi-exclamation-circle"></i> Một phần',
-				removeClass: 'appointment-button--primary appointment-button--success sync-single-btn'
-			};
-		}
-
-		return {
-			addClass: 'appointment-button--primary sync-single-btn',
-			disabled: false,
-			html: '<i class="bi bi-arrow-repeat"></i> Đồng bộ',
-			removeClass: 'appointment-button--success appointment-button--warning'
-		};
-	}
-
-	window.AppointmentManagementCalendarSyncStatusUtils = {
-		buildSyncResultIconsHtml,
-		buildVerifyEventsIconsHtml,
-		getSyncResultButtonState,
-		getSyncResultRowStatus,
-		getVerifyButtonState,
-		getVerifyRowStatus
+	return {
+		addClass: 'appointment-button--primary sync-single-btn',
+		disabled: false,
+		content: () => buttonContent('bi-arrow-repeat', 'Đồng bộ'),
+		removeClass: 'appointment-button--neutral appointment-button--success appointment-button--warning'
 	};
-})(window);
+}
+
+// Result of a sync run: true = synced, false = failed, null = account not connected
+function syncResultBadge(verified, label) {
+	if (verified === true) return syncBadge('success', 'bi-check-circle-fill', label, label);
+	if (verified === false) return syncBadge('danger', 'bi-x-circle-fill', label, `${label} - Lỗi`);
+	if (verified === null) return syncBadge('neutral', 'bi-dash-circle', label, `${label} chưa kết nối`);
+	return null;
+}
+
+function buildSyncResultIcons(result) {
+	return [
+		buildVerifySyncStatusBadge(result),
+		syncResultBadge(result.doctor_verified, result.doctor_role || 'Bác sĩ'),
+		syncResultBadge(result.receptionist_verified, 'Lễ tân'),
+	];
+}
+
+function getSyncResultRowStatus(result) {
+	if (result.sync_status === 'full') return 'synced';
+	if (result.sync_status === 'partial') return 'partial';
+	return 'error';
+}
+
+function getSyncResultButtonState(result) {
+	if (result.sync_status === 'full') {
+		return {
+			addClass: 'appointment-button--success',
+			disabled: true,
+			content: () => buttonContent('bi-check-circle', 'Đã đồng bộ'),
+			removeClass: 'appointment-button--primary appointment-button--warning sync-single-btn'
+		};
+	}
+	if (result.sync_status === 'partial') {
+		return {
+			addClass: 'appointment-button--warning',
+			disabled: true,
+			content: () => buttonContent('bi-exclamation-circle', 'Một phần'),
+			removeClass: 'appointment-button--primary appointment-button--success sync-single-btn'
+		};
+	}
+	return {
+		addClass: 'appointment-button--primary sync-single-btn',
+		disabled: false,
+		content: () => buttonContent('bi-arrow-repeat', 'Đồng bộ'),
+		removeClass: 'appointment-button--success appointment-button--warning'
+	};
+}
+
+const AppointmentManagementCalendarSyncStatusUtils = {
+	buildSyncResultIcons,
+	buildVerifyEventsIcons,
+	getSyncResultButtonState,
+	getSyncResultRowStatus,
+	getVerifyButtonState,
+	getVerifyRowStatus,
+	syncBadge
+};
+
+export { AppointmentManagementCalendarSyncStatusUtils };

@@ -1,324 +1,166 @@
+import { state } from './page-state.js';
+import { AppointmentManagementDoctorControlsUtils } from './doctor-controls-utils.js';
+import { refreshView } from './page-view.js';
+import { showCustomToast } from './page-editor.js';
+import { AppointmentManagementDoctorLegendUtils } from './doctor-legend-utils.js';
+import { AppointmentManagementServicePackageControlsUtils } from './service-package-controls-utils.js';
+import { AppointmentManagementCalendarDateUtils } from './calendar-date-utils.js';
+import { AppointmentManagementBusyScheduleUtils } from './busy-schedule-utils.js';
+import { HttpError, requestJson } from '../shared/http-json.js';
 // Tải dữ liệu nền: bác sĩ, dịch vụ, gói, lịch hẹn, ngày lễ, lịch bận.
-// Hàm dùng chung qua window.AppointmentManagementPage; state trang nằm ở page.state.
-(function (window) {
-	const page = window.AppointmentManagementPage || (window.AppointmentManagementPage = { state: {} });
-	const state = page.state;
 
-	// Load danh sách bác sĩ
-	function loadDoctors() {
-		$.ajax({
-			url: '/users/doctors',
-			method: 'GET',
-			success: function (res) {
-				state.doctors = res;
-				window.AppointmentManagementDoctorControlsUtils.populateMainDoctorControls($, state.doctors);
-
-				// Lấy thông tin user hiện tại và set filter tự động
-				setupDoctorFilterForCurrentUser();
-
-				// Build legend bác sĩ — màu
-				buildDoctorLegend();
-				if (state.calendar && state.allAppointments.length) {
-					page.refreshView();
-				}
-			},
-			error: function (xhr) {
-
-				// Handle authentication error
-				if (xhr.status === 401) {
-					page.showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-				} else {
-					page.showCustomToast('error', 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
-				}
-			}
-		});
+// Load danh sách bác sĩ
+async function loadDoctors() {
+	try {
+		state.doctors = await requestJson('/users/doctors');
+	} catch (error) {
+		showCustomToast('error', error?.status === 401 ? 'Lỗi xác thực. Vui lòng đăng nhập lại.' : 'Không thể tải danh sách bác sĩ. Vui lòng thử lại.');
+		return;
 	}
+	AppointmentManagementDoctorControlsUtils.populateMainDoctorControls(state.doctors);
+	// Lấy thông tin user hiện tại và set filter tự động
+	setupDoctorFilterForCurrentUser();
+	buildDoctorLegend();
+	if (state.calendar && state.allAppointments.length) refreshView();
+}
 
-	// Build legend bác sĩ — màu trong sidebar
-	function buildDoctorLegend() {
-		window.AppointmentManagementDoctorLegendUtils.buildDoctorLegend({
-			document,
-			$,
-			doctors: state.doctors,
-			getSelectedRoleFilter: () => state.selectedRoleFilter,
-			setSelectedRoleFilter: value => { state.selectedRoleFilter = value; },
-			setSelectedDoctor: value => { state.selectedDoctor = value; },
-			refreshView: page.refreshView
-		});
+// Build legend bác sĩ — màu trong sidebar
+function buildDoctorLegend() {
+	AppointmentManagementDoctorLegendUtils.buildDoctorLegend({
+		document,
+		doctors: state.doctors,
+		getSelectedRoleFilter: () => state.selectedRoleFilter,
+		setSelectedRoleFilter: value => { state.selectedRoleFilter = value; },
+		setSelectedDoctor: value => { state.selectedDoctor = value; },
+		refreshView
+	});
+}
+
+// Setup doctorFilter theo role của user hiện tại
+function setupDoctorFilterForCurrentUser() {
+	window.QLPKApiTransport.currentUser().then(currentUser => {
+		if (currentUser && currentUser.id) applyDoctorFilterSettings(currentUser);
+	});
+}
+
+// Áp dụng cài đặt filter theo user role
+function applyDoctorFilterSettings(currentUser) {
+	AppointmentManagementDoctorControlsUtils.applyDoctorFilterSettings({
+		currentUser,
+		setSelectedDoctor: value => { state.selectedDoctor = value; }
+	});
+}
+
+// Load danh sách dịch vụ; resolves false when the list could not be loaded
+async function loadServices() {
+	try {
+		state.services = await requestJson('/services/');
+	} catch (error) {
+		console.error('Lỗi tải dịch vụ:', error);
+		AppointmentManagementServicePackageControlsUtils.renderServiceLoadError();
+		return false;
 	}
+	initServiceAutocomplete('addService', 'addServiceDropdown', 'addServiceId');
+	initServiceAutocomplete('editService', 'editServiceDropdown', 'editServiceId');
+	return true;
+}
 
-	// Setup doctorFilter theo role của user hiện tại
-	function setupDoctorFilterForCurrentUser() {
-		window.QLPKApiTransport.currentUser().then(currentUser => {
-			if (currentUser && currentUser.id) applyDoctorFilterSettings(currentUser);
-		});
+// Hàm khởi tạo autocomplete cho service input
+function initServiceAutocomplete(inputId, dropdownId, hiddenId) {
+	AppointmentManagementServicePackageControlsUtils.initializeServiceAutocomplete({
+		inputId,
+		dropdownId,
+		hiddenId,
+		getServices: () => state.services
+	});
+}
+
+// Load danh sách gói dịch vụ
+async function loadPackages() {
+	try {
+		state.packages = await requestJson('/packages/');
+	} catch {
+		AppointmentManagementServicePackageControlsUtils.renderPackageSelectError();
+		return false;
 	}
+	AppointmentManagementServicePackageControlsUtils.populatePackageSelects(state.packages);
+	return true;
+}
 
-	// Áp dụng cài đặt filter theo user role
-	function applyDoctorFilterSettings(currentUser) {
-		window.AppointmentManagementDoctorControlsUtils.applyDoctorFilterSettings({
-			$,
-			currentUser,
-			setSelectedDoctor: value => { state.selectedDoctor = value; }
-		});
-	}
+function appendDateRangeParams(url, dateFrom, dateTo) {
+	let result = url;
+	if (dateFrom) result += `&date_from=${encodeURIComponent(dateFrom)}`;
+	if (dateTo) result += `&date_to=${encodeURIComponent(dateTo)}`;
+	return result;
+}
 
-	// Load danh sách dịch vụ
-	function loadServices() {
-		return $.get('/services/', function (res) {
-			state.services = res;
-			initServiceAutocomplete('addService', 'addServiceDropdown', 'addServiceId');
-			initServiceAutocomplete('editService', 'editServiceDropdown', 'editServiceId');
-		}).fail(function (xhr, status, error) {
-			console.error('Lỗi tải dịch vụ:', error);
-			window.AppointmentManagementServicePackageControlsUtils.renderServiceLoadError($);
-		});
-	}
+function toRangeStartDateTime(dateValue) {
+	return dateValue ? `${dateValue}T00:00:00` : '';
+}
 
-	// Hàm khởi tạo autocomplete cho service input
-	function initServiceAutocomplete(inputId, dropdownId, hiddenId) {
-		window.AppointmentManagementServicePackageControlsUtils.initializeServiceAutocomplete({
-			$,
-			inputId,
-			dropdownId,
-			hiddenId,
-			getServices: () => state.services
-		});
-	}
+function toRangeEndDateTime(dateValue) {
+	return dateValue ? `${dateValue}T23:59:59` : '';
+}
 
-	// Load service prices when service is selected
-	function loadServicePrices(serviceId) {
-		if (!serviceId) return;
+// One in-flight request per key; a newer call aborts the previous one, which then rejects with its AbortError.
+function startRequest(key, abortPrevious) {
+	if (abortPrevious) state[key]?.abort();
+	const controller = new AbortController();
+	state[key] = controller;
+	return controller.signal;
+}
 
-		$.ajax({
-			url: `/services/${serviceId}`,
-			method: 'GET',
-			success: function (data) {
-				window.currentServicePrices = data.prices || [];
-				updatePriceDisplay();
-				updateEditPriceDisplay();
-			},
-			error: function () {
-			}
-		});
-	}
+const isAbort = error => error?.name === 'AbortError';
 
-	// Update price display based on selected target type
-	function updatePriceDisplay() {
-		window.AppointmentManagementServicePackageControlsUtils.updatePriceDisplay({
-			$,
-			services: state.services,
-			currentServicePrices: window.currentServicePrices
-		});
-	}
-
-	// Format price function
-	function formatPrice(price) {
-		return window.AppointmentManagementServicePackageControlsUtils.formatPrice(price);
-	}
-
-	// Update price display for edit modal
-	function updateEditPriceDisplay() {
-		window.AppointmentManagementServicePackageControlsUtils.updateEditPriceDisplay({
-			$,
-			services: state.services
-		});
-	}
-
-	// Load danh sách gói dịch vụ
-	function loadPackages() {
-		return $.get('/packages/', function (res) {
-			state.packages = res;
-			window.AppointmentManagementServicePackageControlsUtils.populatePackageSelects($, state.packages);
-		}).fail(function () {
-			window.AppointmentManagementServicePackageControlsUtils.renderPackageSelectError($);
-		});
-	}
-
-	function abortActiveRequest(request) {
-		if (request && request.readyState !== 4) {
-			request.abort();
+async function loadAppointmentsData(dateFrom, dateTo, options = {}) {
+	const signal = startRequest('appointmentsRequest', options.abortPrevious !== false);
+	try {
+		return (await requestJson(appendDateRangeParams('/api/?per_page=10000', dateFrom, dateTo), { signal })).appointments || [];
+	} catch (error) {
+		if (isAbort(error)) throw error;
+		if (error instanceof HttpError && error.status === 401) {
+			showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
+			throw error;
 		}
+		return [];
 	}
+}
 
-	function appendDateRangeParams(url, dateFrom, dateTo) {
-		let result = url;
-		if (dateFrom) result += `&date_from=${encodeURIComponent(dateFrom)}`;
-		if (dateTo) result += `&date_to=${encodeURIComponent(dateTo)}`;
-		return result;
-	}
+// Helper: lấy date range từ FullCalendar view hiện tại
+function getCalendarDateRange() {
+	return AppointmentManagementCalendarDateUtils.getCalendarDateRange(state.calendar);
+}
 
-	function toRangeStartDateTime(dateValue) {
-		return dateValue ? `${dateValue}T00:00:00` : '';
-	}
-
-	function toRangeEndDateTime(dateValue) {
-		return dateValue ? `${dateValue}T23:59:59` : '';
-	}
-
-	function loadAppointmentsData(dateFrom, dateTo, options = {}) {
-		const deferred = $.Deferred();
-		const shouldAbortPrevious = options.abortPrevious !== false;
-
-		if (shouldAbortPrevious) {
-			abortActiveRequest(state.appointmentsRequest);
-		}
-
-		let url = '/api/?per_page=10000';
-		url = appendDateRangeParams(url, dateFrom, dateTo);
-
-		state.appointmentsRequest = $.ajax({
-			url: url,
-			method: 'GET',
-			success: function (res) {
-				deferred.resolve(res.appointments || []);
-			},
-			error: function (xhr, status) {
-				if (status === 'abort') {
-					deferred.reject(status);
-					return;
-				}
-
-				// Handle authentication error
-				if (xhr.status === 401) {
-					page.showCustomToast('error', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-					deferred.reject('unauthorized');
-				} else {
-					deferred.resolve([]);
-				}
-			}
-		});
-
-		return deferred.promise();
-	}
-
-	// Hàm load lịch hẹn theo khoảng thời gian (date range)
-	function loadAllAppointments(dateFrom, dateTo, callback) {
-		loadAppointmentsData(dateFrom, dateTo)
-			.done(function (appointments) {
-				state.allAppointments = appointments;
-				if (typeof callback === 'function') callback();
-			})
-			.fail(function (status) {
-				if (status === 'abort') return;
-				state.allAppointments = [];
-				if (typeof callback === 'function') callback();
+// Ngày lễ: tải một lần, các lời gọi đồng thời dùng chung một request
+function loadHolidaysData() {
+	if (state.cachedHolidays) return Promise.resolve(state.cachedHolidays);
+	if (!state.holidaysRequestPromise) {
+		state.holidaysRequestPromise = requestJson('/holidays/')
+			.then(holidays => (Array.isArray(holidays) ? holidays : []), () => [])
+			.then(holidays => {
+				state.cachedHolidays = holidays;
+				state.holidaysRequestPromise = null;
+				return holidays;
 			});
 	}
+	return state.holidaysRequestPromise;
+}
 
-	// Helper: lấy date range từ FullCalendar view hiện tại
-	function getCalendarDateRange() {
-		return window.AppointmentManagementCalendarDateUtils.getCalendarDateRange(state.calendar);
+async function loadDoctorBusySchedulesData(dateFrom, dateTo, options = {}) {
+	const signal = startRequest('busySchedulesRequest', options.abortPrevious !== false);
+	const url = appendDateRangeParams('/api/doctor-busy-schedules?status=active', toRangeStartDateTime(dateFrom), toRangeEndDateTime(dateTo));
+	try {
+		const res = await requestJson(url, { signal });
+		return res?.success && res.data ? res.data : [];
+	} catch (error) {
+		if (isAbort(error)) throw error;
+		return [];
 	}
+}
 
-	function loadHolidaysData() {
-		if (state.cachedHolidays) {
-			return $.Deferred().resolve(state.cachedHolidays).promise();
-		}
+// Hàm lấy text hiển thị cho lý do bận
+function getReasonText(reason) {
+	return AppointmentManagementBusyScheduleUtils.getReasonText(reason);
+}
 
-		if (state.holidaysRequestPromise) {
-			return state.holidaysRequestPromise;
-		}
-
-		const deferred = $.Deferred();
-		state.holidaysRequestPromise = deferred.promise();
-
-		$.ajax({
-			url: '/holidays/',
-			method: 'GET',
-			success: function (holidays) {
-				state.cachedHolidays = Array.isArray(holidays) ? holidays : [];
-				deferred.resolve(state.cachedHolidays);
-			},
-			error: function () {
-				state.cachedHolidays = [];
-				deferred.resolve(state.cachedHolidays);
-			},
-			complete: function () {
-				state.holidaysRequestPromise = null;
-			}
-		});
-
-		return deferred.promise();
-	}
-
-	// Hàm load ngày lễ
-	function loadHolidays(callback) {
-		return loadHolidaysData().done(function (holidays) {
-			if (typeof callback === 'function') callback(holidays);
-		});
-	}
-
-	function loadDoctorBusySchedulesData(dateFrom, dateTo, options = {}) {
-		const deferred = $.Deferred();
-		const shouldAbortPrevious = options.abortPrevious !== false;
-
-		if (shouldAbortPrevious) {
-			abortActiveRequest(state.busySchedulesRequest);
-		}
-
-		let url = '/api/doctor-busy-schedules?status=active';
-		const rangeStart = toRangeStartDateTime(dateFrom);
-		const rangeEnd = toRangeEndDateTime(dateTo);
-		url = appendDateRangeParams(url, rangeStart, rangeEnd);
-
-		state.busySchedulesRequest = $.ajax({
-			url: url,
-			method: 'GET',
-			success: function (res) {
-				if (res.success && res.data) {
-					deferred.resolve(res.data);
-				} else {
-					deferred.resolve([]);
-				}
-			},
-			error: function (xhr, status) {
-				if (status === 'abort') {
-					deferred.reject(status);
-					return;
-				}
-				deferred.resolve([]);
-			}
-		});
-
-		return deferred.promise();
-	}
-
-	// Hàm load lịch bận của bác sĩ
-	function loadDoctorBusySchedules(callback, dateFrom, dateTo) {
-		return loadDoctorBusySchedulesData(dateFrom, dateTo).done(function (busySchedules) {
-			if (typeof callback === 'function') callback(busySchedules);
-		});
-	}
-
-	// Hàm lấy text hiển thị cho lý do bận
-	function getReasonText(reason) {
-		return window.AppointmentManagementBusyScheduleUtils.getReasonText(reason);
-	}
-
-	Object.assign(page, {
-		loadDoctors,
-		buildDoctorLegend,
-		setupDoctorFilterForCurrentUser,
-		applyDoctorFilterSettings,
-		loadServices,
-		initServiceAutocomplete,
-		loadServicePrices,
-		updatePriceDisplay,
-		formatPrice,
-		updateEditPriceDisplay,
-		loadPackages,
-		abortActiveRequest,
-		appendDateRangeParams,
-		toRangeStartDateTime,
-		toRangeEndDateTime,
-		loadAppointmentsData,
-		loadAllAppointments,
-		getCalendarDateRange,
-		loadHolidaysData,
-		loadHolidays,
-		loadDoctorBusySchedulesData,
-		loadDoctorBusySchedules,
-		getReasonText
-	});
-})(window);
+export { appendDateRangeParams, applyDoctorFilterSettings, buildDoctorLegend, getCalendarDateRange, isAbort, getReasonText, initServiceAutocomplete, loadAppointmentsData, loadDoctorBusySchedulesData, loadDoctors, loadHolidaysData, loadPackages, loadServices, setupDoctorFilterForCurrentUser, toRangeEndDateTime, toRangeStartDateTime };

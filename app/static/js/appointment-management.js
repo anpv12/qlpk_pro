@@ -1,369 +1,238 @@
-(function () {
-function runAppointmentPage1(ctx) {
-	const page = window.AppointmentManagementPage || (window.AppointmentManagementPage = { state: {} });
-	const state = page.state;
-	Object.assign(ctx, { page, state });
-	Object.assign(state, {
-		doctors: [],
-		services: [],
-		packages: [],
-		allAppointments: [],
-		viewAppointments: [],
-		selectedDoctor: '',
-		selectedRoleFilter: '',
-		searchKeyword: '',
-		statusFilter: '',
-		typeFilter: '',
-		fromDate: '',
-		toDate: '',
-		calendar: undefined,
-		calendarResizeObserver: null,
-		calendarResizeFrame: null,
-		calendarDataRequestSeq: 0,
-		appointmentsRequest: null,
-		busySchedulesRequest: null,
-		cachedHolidays: null,
-		holidaysRequestPromise: null,
-		currentCalendarHolidays: [],
-		currentCalendarBusySchedules: [],
-		currentCalendarDateFrom: '',
-		currentCalendarDateTo: '',
-		editCurrentAppointment: null,
-		APPOINTMENT_STATUS_VALUES: ['SCHEDULED', 'CONFIRMED', 'NO_SHOW', 'CANCELLED'],
-		currentBusySchedules: []
+import { state } from './appointment-management/page-state.js';
+import { clearStaleHeaderAppointmentModalRequest, initializeCalendar } from './appointment-management/page-calendar.js';
+import { loadDoctors, loadPackages, loadServices } from './appointment-management/page-data.js';
+import { bindAppointmentEditorSummaries, closeModalAndResetBreadcrumb, doDeleteAppointment, showCustomToast, updateAppointmentEditorSummary, updateBreadcrumb } from './appointment-management/page-editor.js';
+import { afterDataChanged, exportToExcel, refreshView } from './appointment-management/page-view.js';
+import { AppointmentManagementPageActionsUtils } from './appointment-management/page-actions-utils.js';
+import { AppointmentManagementAddModalUiUtils } from './appointment-management/add-modal-ui-utils.js';
+import { getPageActionsOptions, initializeICDMultiSelect, initializePhase3Features, isAddFormValid, setupICDMultiSelect, submitAppointmentForm, updateEditAppointmentStatus } from './appointment-management/page-add-modal.js';
+import { clearAllEditFieldErrors, submitEditAppointmentForm, updateEditStatusFlag } from './appointment-management/page-edit-modal.js';
+import { AppointmentManagementBusySchedulePopupUtils } from './appointment-management/busy-schedule-popup-utils.js';
+import { initSyncCalendarModal, loadCalendarStatus, refreshBusySchedulesOnce } from './appointment-management/page-busy-sync.js';
+import { AppointmentManagementBusySchedulePanelUtils } from './appointment-management/busy-schedule-panel-utils.js';
+import { AppointmentManagementCalendarConnectionUtils } from './appointment-management/calendar-connection-utils.js';
+import { AppointmentManagementPageInteractionsUtils } from './appointment-management/page-interactions-utils.js';
+import './appointment-management/mini-calendar-bootstrap-utils.js';
+import { fieldValue, hideModal, rebind, rebindDelegate, removeClass, setFieldValue, setProp } from './shared/dom-query.js';
+import { openAddAppointmentWithDate } from './appointment-management/page-open-add.js';
+
+Object.assign(state, {
+	doctors: [],
+	services: [],
+	packages: [],
+	allAppointments: [],
+	viewAppointments: [],
+	selectedDoctor: '',
+	selectedRoleFilter: '',
+	searchKeyword: '',
+	statusFilter: '',
+	typeFilter: '',
+	fromDate: '',
+	toDate: '',
+	calendar: undefined,
+	calendarResizeObserver: null,
+	calendarResizeFrame: null,
+	calendarDataRequestSeq: 0,
+	appointmentsRequest: null,
+	busySchedulesRequest: null,
+	cachedHolidays: null,
+	holidaysRequestPromise: null,
+	currentCalendarHolidays: [],
+	currentCalendarBusySchedules: [],
+	currentCalendarDateFrom: '',
+	currentCalendarDateTo: '',
+	editCurrentAppointment: null,
+	editAppointmentId: undefined,
+	editPatientId: undefined,
+	APPOINTMENT_STATUS_VALUES: ['SCHEDULED', 'CONFIRMED', 'NO_SHOW', 'CANCELLED'],
+	currentBusySchedules: []
+});
+
+const NS = 'appointmentManagement';
+const onDocument = (type, selector, handler) => rebindDelegate(document, type, selector, NS, handler);
+
+function initializeTooltips() {
+	document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(trigger => {
+		new window.bootstrap.Tooltip(trigger, { trigger: 'hover focus', delay: { show: 500, hide: 100 } });
 	});
-	// Khi load trang lần đầu
-	$(document).ready(function () {
-		// Initialize tooltips với cấu hình rõ ràng
-		const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-		tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-			new bootstrap.Tooltip(tooltipTriggerEl, {
-				trigger: 'hover focus',
-				delay: { show: 500, hide: 100 }
-			});
-		});
-
-		// Mặc định hiển thị calendar view
-		$('#calendarViewContainer').show();
-
-		// Khởi tạo calendar ngay lập tức
-		page.initializeCalendar();
-
-		// Load data và kiểm tra
-		// datesSet callback sẽ tự động load data khi calendar render lần đầu
-
-		// Load doctors, services và packages để kiểm tra
-		page.loadDoctors();
-		page.loadServices();
-		page.loadPackages();
-		page.bindAppointmentEditorSummaries();
-
-		// Hiển thị thông báo nếu không có data
-		setTimeout(function () {
-			if ((!state.services || state.services.length === 0) && (!state.packages || state.packages.length === 0)) {
-				page.showCustomToast('warning', 'Chưa có dịch vụ/gói nào. Vui lòng thêm từ quản trị → Dịch vụ/Gói dịch vụ!');
-			}
-		}, 2000);
-	});
-	// Sự kiện filter - date picker đã được xóa khỏi UI
-	$(document).off('change.appointmentManagement', '#doctorFilter').on('change.appointmentManagement', '#doctorFilter', function () {
-		state.selectedDoctor = $(this).val();
-		// Clear role filter when specific doctor is selected
-		state.selectedRoleFilter = '';
-		document.querySelectorAll('.appt-panel-label.active').forEach(el => el.classList.remove('active'));
-		page.refreshView();
-	});
-	// Load XLSX library
-	window.AppointmentManagementPageActionsUtils.ensureXlsxLibrary(document);
-	// Sự kiện xuất dữ liệu
-	$(document).off('click.appointmentManagement', '#exportDataBtn').on('click.appointmentManagement', '#exportDataBtn', function (e) {
-		e.preventDefault();
-		page.exportToExcel();
-	});
-	// Hàm mở modal tạo mới lịch hẹn với ngày tuỳ chỉnh (global để gọi từ mini calendar)
-	page.clearStaleHeaderAppointmentModalRequest();
 }
 
-function runAppointmentPage2(ctx) {
-	const { page, state } = ctx;
-	window.openAddAppointmentWithDate = function (dateStr) {
-		window.AppointmentManagementAddModalUiUtils.openAddAppointmentWithDate({
-			$,
-			dateStr,
-			loadDoctorsForAdd: page.loadDoctorsForAdd,
-			loadServices: page.loadServices,
-			loadPackages: page.loadPackages
-		});
-	};
-	// Sự kiện thêm lịch hẹn (nút header)
-	$(document).off('click.appointmentManagement', '[data-bs-target="#addAppointmentModal"]').on('click.appointmentManagement', '[data-bs-target="#addAppointmentModal"]', function () {
-		window.openAddAppointmentWithDate();
+// List filter, export and the add-appointment entry points
+function bindListAndAddEvents() {
+	onDocument('change', '#doctorFilter', function () {
+		state.selectedDoctor = this.value;
+		// Clear role filter when specific doctor is selected
+		state.selectedRoleFilter = '';
+		removeClass('.appt-panel-label.active', 'active');
+		refreshView();
 	});
-	// Sự kiện đóng modal add
-	$(document).off('hidden.bs.modal.appointmentManagement', '#addAppointmentModal').on('hidden.bs.modal.appointmentManagement', '#addAppointmentModal', function () {
-		window.AppointmentManagementAddModalUiUtils.resetAddAppointmentForm($);
-		page.updateAppointmentEditorSummary('add');
+	onDocument('click', '#exportDataBtn', event => {
+		event.preventDefault();
+		exportToExcel();
 	});
-	// Event handlers for edit modal
-	$(document).off('shown.bs.modal.appointmentManagement', '#editAppointmentModal').on('shown.bs.modal.appointmentManagement', '#editAppointmentModal', function () {
-		// Ensure submit button is always visible when modal is shown
-		$('#editSubmitBtn').show();
-
-		// Init ICD multi-select
-		page.setupICDMultiSelect('editMedicalHistory', 'edit');
-
-		// Đảm bảo status flag được cập nhật khi modal hiển thị
-		const appointmentId = $('#editAppointmentModal').data('appointmentId');
-		if (appointmentId && state.editCurrentAppointment) {
-			setTimeout(() => {
-				page.updateEditStatusFlag(state.editCurrentAppointment.status);
-			}, 50);
+	onDocument('click', '[data-bs-target="#addAppointmentModal"]', () => openAddAppointmentWithDate());
+	onDocument('hidden.bs.modal', '#addAppointmentModal', () => {
+		AppointmentManagementAddModalUiUtils.resetAddAppointmentForm();
+		updateAppointmentEditorSummary('add');
+	});
+	rebind('#addAppointmentModal', 'shown.bs.modal', 'appointmentAddPrepare', () => {
+		try {
+			AppointmentManagementAddModalUiUtils.prepareAddModalShown({
+				document,
+				setDatepickerValue: window.setDatepickerValue,
+				setupICDMultiSelect,
+				initializePhase3Features
+			});
+			updateAppointmentEditorSummary('add');
+		} catch (error) {
+			console.error('Không thể mở form thêm lịch hẹn:', error);
 		}
+	});
+	onDocument('click', '#submitForm', function () {
+		// Prevent double click; re-enabled when validation fails
+		if (this.disabled) return;
+		this.disabled = true;
+		if (!isAddFormValid()) {
+			this.disabled = false;
+			return;
+		}
+		submitAppointmentForm();
+	});
+	// Duration follows the chosen service or package
+	['add', 'edit'].forEach(mode => onDocument('qlpk:service-selected', `#${mode}Service`, event => {
+		if (event.detail?.duration_minutes) setFieldValue(`#${mode}Duration`, event.detail.duration_minutes);
+	}));
+	onDocument('change', '#addPackage', function () {
+		AppointmentManagementAddModalUiUtils.applySelectedDuration(this, false);
+	});
+	rebind('input[name="appointmentType"]', 'change', NS, function () {
+		AppointmentManagementAddModalUiUtils.applyAppointmentTypeSelection(this.value, true);
+	});
+}
 
+const EDIT_PATIENT_FIELDS = '#editPatientName, #editPatientPhone, #editPatientCCCD, #editPatientEmail, #editPatientDOB, #editMedicalHistorySearch, #editAllergies, #editCurrentMedication';
+
+function bindEditModalEvents() {
+	onDocument('shown.bs.modal', '#editAppointmentModal', () => {
+		setupICDMultiSelect('editMedicalHistory', 'edit');
+		// Đảm bảo status flag được cập nhật khi modal hiển thị
+		if (state.editAppointmentId && state.editCurrentAppointment) {
+			setTimeout(() => updateEditStatusFlag(state.editCurrentAppointment.status), 50);
+		}
 		// Đảm bảo tooltip không tự động show
 		setTimeout(() => {
-			$('[data-bs-toggle="tooltip"]').each(function () {
-				const tooltip = bootstrap.Tooltip.getInstance(this);
-				if (tooltip) {
-					tooltip.hide();
-				}
-			});
+			document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(trigger => window.bootstrap.Tooltip.getInstance(trigger)?.hide());
 		}, 100);
 	});
 	// Xóa lịch hẹn từ modal chỉnh sửa
-	$(document).off('click.appointmentManagement', '#editDeleteAppointmentBtn').on('click.appointmentManagement', '#editDeleteAppointmentBtn', function () {
-		const appointmentId = $('#editAppointmentModal').data('appointmentId');
+	onDocument('click', '#editDeleteAppointmentBtn', () => {
+		const appointmentId = state.editAppointmentId;
 		if (!appointmentId) return;
-
-		window.CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(function (confirmed) {
+		window.CustomModal.confirm('Lịch hẹn sẽ bị ẩn khỏi danh sách và đánh dấu đã hủy. Bạn chắc chắn muốn tiếp tục?', 'Xác nhận xóa/ẩn', 'warning', 'danger').then(confirmed => {
 			if (!confirmed) return;
-			$('#editAppointmentModal').modal('hide');
-			page.doDeleteAppointment(appointmentId);
+			hideModal('#editAppointmentModal');
+			doDeleteAppointment(appointmentId);
 		});
 	});
-	$(document).off('click.appointmentManagement', '#sendEmailReminderBtn').on('click.appointmentManagement', '#sendEmailReminderBtn', function () {
-		window.AppointmentManagementPageActionsUtils.sendEmailReminder(page.getPageActionsOptions());
-	});
-	$(document).off('click.appointmentManagement', '[data-edit-appointment-status]').on('click.appointmentManagement', '[data-edit-appointment-status]', function (event) {
+	onDocument('click', '#sendEmailReminderBtn', () => AppointmentManagementPageActionsUtils.sendEmailReminder(getPageActionsOptions()));
+	onDocument('click', '[data-edit-appointment-status]', function (event) {
 		event.preventDefault();
-		const newStatus = $(this).data('editAppointmentStatus');
-		if (newStatus) {
-			page.updateEditAppointmentStatus(newStatus);
-		}
+		const newStatus = this.dataset.editAppointmentStatus;
+		if (newStatus) updateEditAppointmentStatus(newStatus);
 	});
-	$(document).off('click.appointmentManagement', '[data-appointment-action="close-edit-modal"]').on('click.appointmentManagement', '[data-appointment-action="close-edit-modal"]', function (event) {
+	onDocument('click', '[data-appointment-action="close-edit-modal"]', event => {
 		event.preventDefault();
-		page.closeModalAndResetBreadcrumb();
+		closeModalAndResetBreadcrumb();
 	});
-	$(document).off('hidden.bs.modal.appointmentManagement', '#editAppointmentModal').on('hidden.bs.modal.appointmentManagement', '#editAppointmentModal', function () {
-		// Reset form
-		$('#editAppointmentForm')[0].reset();
-		$('#editAppointmentModal').removeData('appointmentId');
-		$('#editAppointmentModal').removeData('patientId');
-
-		// Clear errors
-		page.clearAllEditFieldErrors();
-
-		// Enable all fields (use the real template ids)
-		$('#editPatientName, #editPatientPhone, #editPatientCCCD, #editPatientEmail, #editPatientDOB, #editMedicalHistorySearch, #editAllergies, #editCurrentMedication').prop('disabled', false).removeClass('bg-light');
-
-		// Ensure submit button is always visible for single form
-		$('#editSubmitBtn').show();
-
+	onDocument('hidden.bs.modal', '#editAppointmentModal', () => {
+		document.querySelector('#editAppointmentForm').reset();
+		state.editAppointmentId = undefined;
+		state.editPatientId = undefined;
+		clearAllEditFieldErrors();
+		setProp(EDIT_PATIENT_FIELDS, 'disabled', false);
+		removeClass(EDIT_PATIENT_FIELDS, 'bg-light');
 		// Xóa cấp 3 "CHI TIẾT" khỏi breadcrumb
-		page.updateBreadcrumb();
+		updateBreadcrumb();
+	});
+	onDocument('click', '#editSubmitBtn', event => {
+		event.preventDefault();
+		event.stopPropagation();
+		const missing = [
+			[!fieldValue('#editPatientName').trim(), 'Vui lòng nhập họ và tên bệnh nhân'],
+			[!fieldValue('#editAppointmentDate'), 'Vui lòng chọn ngày hẹn'],
+			[!fieldValue('#editAppointmentTime'), 'Vui lòng chọn giờ hẹn'],
+			[!fieldValue('#editDoctor'), 'Vui lòng chọn bác sĩ khám'],
+		].find(([isMissing]) => isMissing);
+		if (missing) {
+			showCustomToast('error', missing[1]);
+			return;
+		}
+		submitEditAppointmentForm();
 	});
 }
 
-function runAppointmentPage3(ctx) {
-	const { page } = ctx;
-	// Khởi tạo modal events khi document ready
-	$(document).ready(function () {
-		// Khởi tạo modal khi shown
-		$('#addAppointmentModal').off('shown.bs.modal.appointmentAddPrepare').on('shown.bs.modal.appointmentAddPrepare', function () {
-
-			try {
-				window.AppointmentManagementAddModalUiUtils.prepareAddModalShown({
-					$,
-					document,
-					setDatepickerValue: window.setDatepickerValue,
-					setupICDMultiSelect: page.setupICDMultiSelect,
-					initializePhase3Features: page.initializePhase3Features
-				});
-				page.updateAppointmentEditorSummary('add');
-
-			} catch (error) {
-				console.error('Không thể mở form thêm lịch hẹn:', error);
-			}
-		});
-
-	});
-	// Submit button click handler
-	$(document).off('click.appointmentManagement', '#submitForm').on('click.appointmentManagement', '#submitForm', function () {
-
-		// Prevent double click
-		const $submitBtn = $(this);
-		if ($submitBtn.prop('disabled')) {
-			return;
-		}
-
-		// Set submitting state
-		$submitBtn.prop('disabled', true);
-
-		// Validate tối thiểu các field bắt buộc
-		if (!page.isAddFormValid()) {
-			$submitBtn.prop('disabled', false); // Re-enable nếu validation fail
-			return;
-		}
-
-		// Nếu tất cả valid, submit form
-		page.submitAppointmentForm();
-	});
-	$(document).off('serviceSelected.appointmentManagement', '#addService').on('serviceSelected.appointmentManagement', '#addService', function (event, selectedService) {
-		if (selectedService?.duration_minutes) {
-			$('#addDuration').val(selectedService.duration_minutes);
-		}
-		if (selectedService?.id) {
-			page.loadServicePrices(selectedService.id);
-		}
-	});
-	$(document).off('serviceSelected.appointmentManagement', '#editService').on('serviceSelected.appointmentManagement', '#editService', function (event, selectedService) {
-		if (selectedService?.duration_minutes) {
-			$('#editDuration').val(selectedService.duration_minutes);
-		}
-		if (selectedService?.id) {
-			page.loadServicePrices(selectedService.id);
-		}
-	});
-	// Auto-fill duration khi chọn gói
-	$(document).off('change.appointmentManagement', '#addPackage').on('change.appointmentManagement', '#addPackage', function () {
-		window.AppointmentManagementAddModalUiUtils.applySelectedDuration($, this, false);
-	});
-	// Toggle service/package selection
-	$('input[name="appointmentType"]').off('change.appointmentManagement').on('change.appointmentManagement', function () {
-		window.AppointmentManagementAddModalUiUtils.applyAppointmentTypeSelection($, $(this).val(), true);
-	});
-	// Initialize ICD multi-select when page loads
-	page.initializeICDMultiSelect();
-}
-
-function runAppointmentPage4(ctx) {
-	const { page, state } = ctx;
-	// Đảm bảo event handler cho nút submit edit được khởi tạo
-	$(document).off('click.appointmentManagement', '#editSubmitBtn').on('click.appointmentManagement', '#editSubmitBtn', function (e) {
-		e.preventDefault();
-		e.stopPropagation();
-
-		// Validate các trường bắt buộc
-		const fullName = $('#editPatientName').val().trim();
-		const appointmentDate = $('#editAppointmentDate').val();
-		const appointmentTime = $('#editAppointmentTime').val();
-		const doctor = $('#editDoctor').val();
-
-		if (!fullName) {
-			page.showCustomToast('error', 'Vui lòng nhập họ và tên bệnh nhân');
-			return;
-		}
-
-		if (!appointmentDate) {
-			page.showCustomToast('error', 'Vui lòng chọn ngày hẹn');
-			return;
-		}
-
-		if (!appointmentTime) {
-			page.showCustomToast('error', 'Vui lòng chọn giờ hẹn');
-			return;
-		}
-
-		if (!doctor) {
-			page.showCustomToast('error', 'Vui lòng chọn bác sĩ khám');
-			return;
-		}
-
-		page.submitEditAppointmentForm();
-	});
-	$(document).off('click.appointmentManagement', '[data-busy-schedule-action="close"]').on('click.appointmentManagement', '[data-busy-schedule-action="close"]', function () {
-		window.AppointmentManagementBusySchedulePopupUtils.closeBusySchedulePopup($);
-	});
-	// Helper function để broadcast busy schedule changes (gọi từ các nơi tạo/xóa/update)
-	window.notifyBusyScheduleChanged = function () {
-		if ('BroadcastChannel' in window) {
-			const channel = new BroadcastChannel('busy_schedule_updates');
-			channel.postMessage({ type: 'BUSY_SCHEDULE_CHANGED', timestamp: Date.now() });
-			channel.close();
-		}
-		// Fallback: cập nhật localStorage để trigger storage event ở các tab khác
-		localStorage.setItem('busy_schedule_version', Date.now().toString());
-
-		// Cũng refresh local panel
-		page.refreshBusySchedulesOnce();
-	};
-	$(document).off('click.appointmentManagement', '[data-doctor-busy-action="open"]').on('click.appointmentManagement', '[data-doctor-busy-action="open"]', function () {
-		const doctorId = $(this).data('doctorId');
-		const doctorName = $(this).data('doctorName');
-		window.AppointmentManagementBusySchedulePopupUtils.showDoctorBusySchedules(
-			$,
-			window.AppointmentManagementBusySchedulePanelUtils,
-			doctorId,
-			doctorName,
+function bindBusyScheduleEvents() {
+	onDocument('click', '[data-busy-schedule-action="close"]', () => AppointmentManagementBusySchedulePopupUtils.closeBusySchedulePopup());
+	onDocument('click', '[data-doctor-busy-action="open"]', function () {
+		AppointmentManagementBusySchedulePopupUtils.showDoctorBusySchedules(
+			AppointmentManagementBusySchedulePanelUtils,
+			Number(this.dataset.doctorId) || this.dataset.doctorId,
+			this.dataset.doctorName,
 			state.currentBusySchedules
 		);
 	});
-	$(document).off('click.appointmentManagement', '[data-doctor-busy-action="close"]').on('click.appointmentManagement', '[data-doctor-busy-action="close"]', function () {
-		window.AppointmentManagementBusySchedulePopupUtils.closeDoctorBusyPopup($);
-	});
-	// Cleanup khi rời khỏi trang
-	$(window).off('beforeunload.appointmentManagement').on('beforeunload.appointmentManagement', function () {
-		if (window.updateTimeout) {
-			clearTimeout(window.updateTimeout);
+	onDocument('click', '[data-doctor-busy-action="close"]', () => AppointmentManagementBusySchedulePopupUtils.closeDoctorBusyPopup());
+}
+
+function registerRealtimeRefresh() {
+	window.QLPKRealtimePageHooks?.register({
+		types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'busy_schedule.changed'],
+		debounceMs: 500,
+		handler: event => {
+			if (event.type === 'busy_schedule.changed') {
+				refreshBusySchedulesOnce();
+				return;
+			}
+			if (event.type === 'catalog.changed') {
+				loadDoctors();
+				loadServices();
+				loadPackages();
+			}
+			afterDataChanged();
 		}
 	});
-	window.AppointmentManagementCalendarConnectionUtils.initializeCalendarConnection({
-		$,
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	initializeTooltips();
+	// datesSet callback sẽ tự động load data khi calendar render lần đầu
+	initializeCalendar();
+	loadDoctors();
+	loadServices();
+	loadPackages();
+	bindAppointmentEditorSummaries();
+	setTimeout(() => {
+		if ((!state.services || state.services.length === 0) && (!state.packages || state.packages.length === 0)) {
+			showCustomToast('warning', 'Chưa có dịch vụ/gói nào. Vui lòng thêm từ quản trị → Dịch vụ/Gói dịch vụ!');
+		}
+	}, 2000);
+
+	clearStaleHeaderAppointmentModalRequest();
+	bindListAndAddEvents();
+	initializeICDMultiSelect();
+	bindEditModalEvents();
+	bindBusyScheduleEvents();
+	AppointmentManagementCalendarConnectionUtils.initializeCalendarConnection({
 		hasSession: () => window.QLPKApiTransport.hasSession(),
-		loadCalendarStatus: page.loadCalendarStatus,
-		onReady: page.initSyncCalendarModal,
-		showCustomToast: page.showCustomToast,
+		loadCalendarStatus,
+		onReady: initSyncCalendarModal,
+		showCustomToast,
 		window
 	});
-}
-
-function runAppointmentPage5(ctx) {
-	const { page, state } = ctx;
-	window.AppointmentManagementPageInteractionsUtils.initializePageInteractions({
-		$,
+	AppointmentManagementPageInteractionsUtils.initializePageInteractions({
 		document,
-		refreshView: page.refreshView,
-		setSearchKeyword: function (value) {
-			state.searchKeyword = value;
-		}
+		refreshView,
+		setSearchKeyword: value => { state.searchKeyword = value; }
 	});
-	if (window.QLPKRealtimePageHooks) {
-		window.QLPKRealtimePageHooks.register({
-			types: ['appointment.changed', 'examination.changed', 'payment.changed', 'patient.changed', 'catalog.changed', 'busy_schedule.changed'],
-			debounceMs: 500,
-			handler: function (event) {
-				if (event.type === 'busy_schedule.changed') {
-					page.refreshBusySchedulesOnce();
-					return;
-				}
-				if (event.type === 'catalog.changed') {
-					page.loadDoctors();
-					page.loadServices();
-					page.loadPackages();
-				}
-				page.afterDataChanged();
-			}
-		});
-	}
-}
-
-$(function () {
-	const ctx = {};
-	runAppointmentPage1(ctx);
-	runAppointmentPage2(ctx);
-	runAppointmentPage3(ctx);
-	runAppointmentPage4(ctx);
-	runAppointmentPage5(ctx);
+	registerRealtimeRefresh();
 });
-})();

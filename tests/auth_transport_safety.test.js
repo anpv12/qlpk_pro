@@ -115,7 +115,8 @@ test('appointment callers no longer attempt password-based background login', ()
     const source = ['appointment-management.js', ...fs.readdirSync('app/static/js/appointment-management').filter(name => name.startsWith('page-') && !name.endsWith('-utils.js')).map(name => `appointment-management/${name}`)]
         .map(file => fs.readFileSync(`app/static/js/${file}`, 'utf8')).join('\n');
     assert.doesNotMatch(source, /autoLogin|token\/refresh/);
-    assert.match(source, /deferred\.reject\('unauthorized'\)/);
+    // A 401 on the appointment list is reported once and propagated, never retried with stored credentials.
+    assert.match(source, /error\.status === 401\) \{\n\t\t\tshowCustomToast\('error', 'Lỗi xác thực\. Vui lòng đăng nhập lại\.'\);\n\t\t\tthrow error;/);
 });
 
 test('loading shared transport twice preserves one fetch owner', async () => {

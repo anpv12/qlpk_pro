@@ -1,292 +1,202 @@
-(function (window) {
-	'use strict';
-
-	function getTodayAndCurrentTime(now) {
-		const date = now || new Date();
-		return {
-			today: date.toISOString().slice(0, 10),
-			currentTime: date.toTimeString().slice(0, 5)
-		};
-	}
-
-	function showFieldError($, selector, message) {
-		$(selector).addClass('is-invalid');
-		$(selector).siblings('.invalid-feedback').text(message);
-	}
-
-	function clearFieldError($, selector) {
-		$(selector).removeClass('is-invalid');
-		$(selector).siblings('.invalid-feedback').text('');
-	}
-
-	function clearAllFieldErrors($) {
-		$('.is-invalid').removeClass('is-invalid');
-		$('.invalid-feedback').text('');
-	}
-
-	function isValidEmail(email) {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
-	}
-
-	function isValidPhone(phone) {
-		const phoneRegex = /^[0-9]{8,11}$/;
-		return phoneRegex.test(phone.replace(/\s/g, ''));
-	}
-
-	function initializeFormValidation(options) {
-		const $ = options.$;
-		const namespace = '.appointmentAddValidation';
-
-		$('#addPatientName').off(`blur${namespace}`).on(`blur${namespace}`, function () {
-			const value = $(this).val().trim();
-			if (!value) {
-				showFieldError($, this, 'Vui lòng nhập họ và tên');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-
-		$('#addPatientPhone').off(`blur${namespace}`).on(`blur${namespace}`, function () {
-			const value = $(this).val().trim();
-			if (value && !isValidPhone(value)) {
-				showFieldError($, this, 'Số điện thoại không hợp lệ');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-
-		$('#addPatientEmail').off(`blur${namespace}`).on(`blur${namespace}`, function () {
-			const value = $(this).val().trim();
-			if (value && !isValidEmail(value)) {
-				showFieldError($, this, 'Email không hợp lệ');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-
-		$('#addAppointmentDate').off(`blur${namespace}`).on(`blur${namespace}`, function () {
-			const value = $(this).val();
-			if (!value) {
-				showFieldError($, this, 'Vui lòng chọn ngày hẹn');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-
-		$('#addAppointmentTime').off(`blur${namespace}`).on(`blur${namespace}`, function () {
-			const value = $(this).val();
-			if (!value) {
-				showFieldError($, this, 'Vui lòng chọn giờ hẹn');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-
-		$('#addDoctor').off(`change${namespace}`).on(`change${namespace}`, function () {
-			const value = $(this).val();
-			if (!value) {
-				showFieldError($, this, 'Vui lòng chọn bác sĩ');
-			} else {
-				clearFieldError($, this);
-			}
-		});
-	}
-
-	function openAddAppointmentWithDate(options) {
-		const $ = options.$;
-		const current = getTodayAndCurrentTime();
-		const dateStr = options.dateStr;
-
-		$('#addAppointmentModal').data('selectedDate', dateStr || current.today);
-		$('#addAppointmentDate').val(dateStr || current.today);
-		$('#addAppointmentDate').attr('min', current.today);
-		$('#addAppointmentTime').val(current.currentTime);
-
-		$('#addAppointmentModal').modal('show');
-		options.loadDoctorsForAdd();
-		options.loadServices();
-		options.loadPackages();
-	}
-
-	function resetAddAppointmentForm($) {
-		const form = $('#addAppointmentForm')[0];
-		if (form) {
-			form.reset();
-		}
-
-		$('#serviceSelection').show();
-		$('#packageSelection').hide();
-	}
-
-	function applyAppointmentTypeSelection($, type, shouldClearOpposite) {
-		if (type === 'service') {
-			$('#serviceSelection').show();
-			$('#packageSelection').hide();
-			if (shouldClearOpposite) {
-				$('#addPackage').val('');
-			}
-		} else {
-			$('#serviceSelection').hide();
-			$('#packageSelection').show();
-			if (shouldClearOpposite) {
-				$('#addService').val('');
-				$('#addServiceId').val('');
-			}
-		}
-		if (!$('#addDuration').val()) {
-			$('#addDuration').val('60');
-		}
-	}
-
-	function applySelectedDuration($, element, includeLegacyDurationSelect) {
-		const selectedOption = $(element).find('option:selected');
-		const duration = selectedOption.data('duration');
-		if (duration) {
-			$('#addDuration').val(duration);
-			if (includeLegacyDurationSelect) {
-				$('select[name="duration_minutes"]').val(duration);
-			}
-		}
-	}
-
-	function prepareAddModalShown(options) {
-		const $ = options.$;
-		const current = getTodayAndCurrentTime();
-		const selectedDate = $('#addAppointmentModal').data('selectedDate');
-		const defaultDate = selectedDate || current.today;
-		const dateInput = options.document.getElementById('addAppointmentDate');
-
-		options.setDatepickerValue(dateInput, defaultDate, true);
-		$('#addAppointmentDate').attr('min', current.today);
-
-		if (!$('#addAppointmentTime').val()) {
-			$('#addAppointmentTime').val(current.currentTime);
-		}
-
-		$('#addAppointmentModal').removeData('selectedDate');
-		options.setupICDMultiSelect('addMedicalHistory', 'add');
-		options.initializePhase3Features();
-	}
-
-	function resetAddModalForOpen(options) {
-		const $ = options.$;
-		const form = $('#addAppointmentForm')[0];
-		if (form) {
-			form.reset();
-		}
-
-		clearAllFieldErrors($);
-		$('#addDuration').val('60');
-		$('#addPatientName, #addPatientPhone, #addPatientEmail, #addPatientDOB').prop('disabled', false);
-		$('#addMedicalHistory, #addAllergies, #addCurrentMedication').prop('disabled', false);
-		$('#addPatientName, #addPatientPhone, #addPatientEmail, #addPatientDOB').removeClass('bg-light');
-		$('#addMedicalHistory, #addAllergies, #addCurrentMedication').removeClass('bg-light');
-		window.AppointmentManagementAllergyFormatUtils?.clearFieldValue($('#addAllergies'));
-
-		options.clearSelectedICDs('add');
-		options.loadDoctorsForAdd();
-		options.loadServices();
-		options.loadPackages();
-
-		$('#addAppointmentModal').data('selectedDate', options.dateStr);
-		$('#addAppointmentModal').modal('show');
-	}
-
-	function isAddFormValid($) {
-		let valid = true;
-		const $date = $('#addAppointmentDate');
-		const $time = $('#addAppointmentTime');
-		const $doctor = $('#addDoctor');
-		const $service = $('#addService');
-		const $package = $('#addPackage');
-		const appointmentType = $('input[name="appointmentType"]:checked').val();
-
-		$date.removeClass('is-invalid');
-		$time.removeClass('is-invalid');
-		$doctor.removeClass('is-invalid');
-		$service.removeClass('is-invalid');
-		$package.removeClass('is-invalid');
-
-		if (!$date.val()) {
-			$date.addClass('is-invalid');
-			valid = false;
-		}
-		if (!$time.val()) {
-			$time.addClass('is-invalid');
-			valid = false;
-		}
-		if (!$doctor.val()) {
-			$doctor.addClass('is-invalid');
-			valid = false;
-		}
-		if (appointmentType === 'service' && !$('#addServiceId').val()) {
-			$service.addClass('is-invalid');
-			valid = false;
-		}
-		if (appointmentType === 'package' && !$package.val()) {
-			$package.addClass('is-invalid');
-			valid = false;
-		}
-
-		return valid;
-	}
-
-	function buildAddAppointmentFormData(options) {
-		const $ = options.$;
-		const appointmentDate = $('#addAppointmentDate').val();
-		const appointmentTime = $('#addAppointmentTime').val();
-		const fullDateTime = appointmentDate + 'T' + appointmentTime;
-		const appointmentType = $('input[name="appointmentType"]:checked').val();
-		const durationMinutes = parseInt($('#addDuration').val(), 10) || 60;
-
-		const formData = {
-			appointment_date: fullDateTime,
-			doctor_id: $('#addDoctor').val(),
-			appointment_category: $('input[name="appointmentCategory"]:checked').val(),
-			appointment_type: appointmentType,
-			service_id: appointmentType === 'service' ? ($('#addServiceId').val() || null) : null,
-			package_id: appointmentType === 'package' ? ($('#addPackage').val() || null) : null,
-			duration_minutes: durationMinutes,
-			status: $('#addStatus').val(),
-			main_reason: $('#addMainReason').val().trim(),
-			main_symptoms: $('#addSymptoms').val().trim()
-		};
-
-		formData.full_name = $('#addPatientName').val().trim();
-		formData.phone = $('#addPatientPhone').val().trim();
-		formData.id_number = $('#addPatientCCCD').val().trim();
-		formData.email = $('#addPatientEmail').val().trim();
-		formData.physical_history = options.getSelectedICDsString('add');
-		formData.allergies = window.AppointmentManagementAllergyFormatUtils
-			? window.AppointmentManagementAllergyFormatUtils.getSubmitValue($('#addAllergies'))
-			: $('#addAllergies').val().trim();
-		formData.current_medication = $('#addCurrentMedication').val().trim();
-		formData.main_symptoms = $('#addSymptoms').val().trim();
-
-		const dob = $('#addPatientDOB').val();
-		if (dob && dob.trim()) {
-			formData.date_of_birth = dob;
-		}
-
-		return formData;
-	}
-
-	window.AppointmentManagementAddModalUiUtils = {
-		applyAppointmentTypeSelection,
-		applySelectedDuration,
-		buildAddAppointmentFormData,
-		clearAllFieldErrors,
-		clearFieldError,
-		getTodayAndCurrentTime,
-		initializeFormValidation,
-		isAddFormValid,
-		isValidEmail,
-		isValidPhone,
-		openAddAppointmentWithDate,
-		prepareAddModalShown,
-		resetAddAppointmentForm,
-		resetAddModalForOpen,
-		showFieldError
+import { AppointmentManagementAllergyFormatUtils } from './allergy-format-utils.js';
+import { fieldValue, rebind, removeClass, setAttr, setFieldValue, setProp, showModal, toggleClass } from '../shared/dom-query.js';
+import { clearAllFieldErrors, clearFieldError, showFieldError } from './field-errors.js';
+function getTodayAndCurrentTime(now) {
+	const date = now || new Date();
+	return {
+		today: date.toISOString().slice(0, 10),
+		currentTime: date.toTimeString().slice(0, 5)
 	};
-})(window);
+}
+
+function isValidEmail(email) {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email);
+}
+
+function isValidPhone(phone) {
+	const phoneRegex = /^[0-9]{8,11}$/;
+	return phoneRegex.test(phone.replace(/\s/g, ''));
+}
+
+const FIELD_RULES = [
+	['addPatientName', 'blur', value => (value.trim() ? '' : 'Vui lòng nhập họ và tên')],
+	['addPatientPhone', 'blur', value => (value.trim() && !isValidPhone(value.trim()) ? 'Số điện thoại không hợp lệ' : '')],
+	['addPatientEmail', 'blur', value => (value.trim() && !isValidEmail(value.trim()) ? 'Email không hợp lệ' : '')],
+	['addAppointmentDate', 'blur', value => (value ? '' : 'Vui lòng chọn ngày hẹn')],
+	['addAppointmentTime', 'blur', value => (value ? '' : 'Vui lòng chọn giờ hẹn')],
+	['addDoctor', 'change', value => (value ? '' : 'Vui lòng chọn bác sĩ')],
+];
+
+function initializeFormValidation() {
+	FIELD_RULES.forEach(([id, type, check]) => rebind(`#${id}`, type, 'appointmentAddValidation', function () {
+		const message = check(this.value);
+		if (message) showFieldError(this, message);
+		else clearFieldError(this);
+	}));
+}
+
+// Date chosen on the calendar for the next opening of the add modal (consumed by prepareAddModalShown).
+let selectedAddDate;
+
+function openAddAppointmentWithDate(options) {
+	const current = getTodayAndCurrentTime();
+	const dateStr = options.dateStr;
+
+	selectedAddDate = dateStr || current.today;
+	setFieldValue('#addAppointmentDate', dateStr || current.today);
+	setAttr('#addAppointmentDate', 'min', current.today);
+	setFieldValue('#addAppointmentTime', current.currentTime);
+
+	showModal('#addAppointmentModal');
+	options.loadDoctorsForAdd();
+	options.loadServices();
+	options.loadPackages();
+}
+
+const showSection = (selector, visible) => toggleClass(selector, 'appointment-hidden', !visible);
+
+function resetAddAppointmentForm() {
+	document.querySelector('#addAppointmentForm')?.reset();
+	showSection('#serviceSelection', true);
+	showSection('#packageSelection', false);
+}
+
+function applyAppointmentTypeSelection(type, shouldClearOpposite) {
+	showSection('#serviceSelection', type === 'service');
+	showSection('#packageSelection', type !== 'service');
+	if (type === 'service') {
+		if (shouldClearOpposite) {
+			setFieldValue('#addPackage', '');
+		}
+	} else {
+		if (shouldClearOpposite) {
+			setFieldValue('#addService', '');
+			setFieldValue('#addServiceId', '');
+		}
+	}
+	if (!fieldValue('#addDuration')) {
+		setFieldValue('#addDuration', '60');
+	}
+}
+
+function applySelectedDuration(element, includeLegacyDurationSelect) {
+	const duration = element?.selectedOptions?.[0]?.dataset.duration;
+	if (duration) {
+		setFieldValue('#addDuration', duration);
+		if (includeLegacyDurationSelect) {
+			setFieldValue('select[name="duration_minutes"]', duration);
+		}
+	}
+}
+
+function prepareAddModalShown(options) {
+	const current = getTodayAndCurrentTime();
+	const selectedDate = selectedAddDate;
+	const defaultDate = selectedDate || current.today;
+	const dateInput = options.document.getElementById('addAppointmentDate');
+
+	options.setDatepickerValue(dateInput, defaultDate, true);
+	setAttr('#addAppointmentDate', 'min', current.today);
+
+	if (!fieldValue('#addAppointmentTime')) {
+		setFieldValue('#addAppointmentTime', current.currentTime);
+	}
+
+	selectedAddDate = undefined;
+	options.setupICDMultiSelect('addMedicalHistory', 'add');
+	options.initializePhase3Features();
+}
+
+function resetAddModalForOpen(options) {
+	const form = document.querySelector('#addAppointmentForm');
+	if (form) {
+		form.reset();
+	}
+
+	clearAllFieldErrors();
+	setFieldValue('#addDuration', '60');
+	setProp('#addPatientName, #addPatientPhone, #addPatientEmail, #addPatientDOB', 'disabled', false);
+	setProp('#addMedicalHistory, #addAllergies, #addCurrentMedication', 'disabled', false);
+	removeClass('#addPatientName, #addPatientPhone, #addPatientEmail, #addPatientDOB', 'bg-light');
+	removeClass('#addMedicalHistory, #addAllergies, #addCurrentMedication', 'bg-light');
+	AppointmentManagementAllergyFormatUtils.clearFieldValue(document.getElementById('addAllergies'));
+
+	options.clearSelectedICDs('add');
+	options.loadDoctorsForAdd();
+	options.loadServices();
+	options.loadPackages();
+
+	selectedAddDate = options.dateStr;
+	showModal('#addAppointmentModal');
+}
+
+function isAddFormValid() {
+	const appointmentType = fieldValue('input[name="appointmentType"]:checked');
+	const invalid = {
+		'#addAppointmentDate': !fieldValue('#addAppointmentDate'),
+		'#addAppointmentTime': !fieldValue('#addAppointmentTime'),
+		'#addDoctor': !fieldValue('#addDoctor'),
+		'#addService': appointmentType === 'service' && !fieldValue('#addServiceId'),
+		'#addPackage': appointmentType === 'package' && !fieldValue('#addPackage'),
+	};
+	Object.entries(invalid).forEach(([selector, isInvalid]) => toggleClass(selector, 'is-invalid', isInvalid));
+	return !Object.values(invalid).some(Boolean);
+}
+
+function buildAddAppointmentFormData(options) {
+	const appointmentDate = fieldValue('#addAppointmentDate');
+	const appointmentTime = fieldValue('#addAppointmentTime');
+	const fullDateTime = appointmentDate + 'T' + appointmentTime;
+	const appointmentType = fieldValue('input[name="appointmentType"]:checked');
+	const durationMinutes = parseInt(fieldValue('#addDuration'), 10) || 60;
+
+	const formData = {
+		appointment_date: fullDateTime,
+		doctor_id: fieldValue('#addDoctor'),
+		appointment_category: fieldValue('input[name="appointmentCategory"]:checked'),
+		appointment_type: appointmentType,
+		service_id: appointmentType === 'service' ? (fieldValue('#addServiceId') || null) : null,
+		package_id: appointmentType === 'package' ? (fieldValue('#addPackage') || null) : null,
+		duration_minutes: durationMinutes,
+		status: fieldValue('#addStatus'),
+		main_reason: fieldValue('#addMainReason').trim(),
+		main_symptoms: fieldValue('#addSymptoms').trim()
+	};
+
+	formData.full_name = fieldValue('#addPatientName').trim();
+	formData.phone = fieldValue('#addPatientPhone').trim();
+	formData.id_number = fieldValue('#addPatientCCCD').trim();
+	formData.email = fieldValue('#addPatientEmail').trim();
+	formData.physical_history = options.getSelectedICDsString('add');
+	formData.allergies = AppointmentManagementAllergyFormatUtils.getSubmitValue(document.getElementById('addAllergies'));
+	formData.current_medication = fieldValue('#addCurrentMedication').trim();
+	formData.main_symptoms = fieldValue('#addSymptoms').trim();
+
+	const dob = fieldValue('#addPatientDOB');
+	if (dob && dob.trim()) {
+		formData.date_of_birth = dob;
+	}
+
+	return formData;
+}
+
+const AppointmentManagementAddModalUiUtils = {
+	applyAppointmentTypeSelection,
+	applySelectedDuration,
+	buildAddAppointmentFormData,
+	clearAllFieldErrors,
+	clearFieldError,
+	getTodayAndCurrentTime,
+	initializeFormValidation,
+	isAddFormValid,
+	isValidEmail,
+	isValidPhone,
+	openAddAppointmentWithDate,
+	prepareAddModalShown,
+	resetAddAppointmentForm,
+	resetAddModalForOpen,
+	showFieldError
+};
+
+export { AppointmentManagementAddModalUiUtils };

@@ -20,6 +20,10 @@ export function setText(selector, text) {
     all(selector).forEach(node => { node.textContent = text == null ? '' : String(text); });
 }
 
+export function setAttr(selector, name, value) {
+    all(selector).forEach(node => node.setAttribute(name, String(value)));
+}
+
 export function setProp(selector, name, value) {
     all(selector).forEach(node => { node[name] = value; });
 }
@@ -63,4 +67,40 @@ export function showModal(selector) {
 export function hideModal(selector) {
     const node = document.querySelector(selector);
     if (node) window.bootstrap.Modal.getOrCreateInstance(node).hide();
+}
+
+const bound = new WeakMap();
+const nodesOf = target => (typeof target === 'string' ? all(target) : [].concat(target).filter(Boolean));
+
+// Replaces the listener previously bound under `key` for this event (the jQuery .off('type.ns').on('type.ns') pattern).
+// The handler runs with `this` set to the element, like a jQuery handler.
+export function rebind(target, type, key, handler) {
+    nodesOf(target).forEach(node => {
+        if (!bound.has(node)) bound.set(node, new Map());
+        const listeners = bound.get(node);
+        const id = `${type}|${key}`;
+        if (listeners.has(id)) node.removeEventListener(type, listeners.get(id));
+        const listener = event => handler.call(node, event);
+        listeners.set(id, listener);
+        node.addEventListener(type, listener);
+    });
+}
+
+// Delegated variant: one listener on root for every current and future match of selector, `this` = the match.
+export function rebindDelegate(root, type, selector, key, handler) {
+    rebind(root, type, `${key}|${selector}`, event => {
+        const match = event.target instanceof Element ? event.target.closest(selector) : null;
+        if (match && root.contains(match)) handler.call(match, event);
+    });
+}
+
+export function unbind(target, type, key) {
+    nodesOf(target).forEach(node => {
+        const listeners = bound.get(node);
+        const id = `${type}|${key}`;
+        if (listeners?.has(id)) {
+            node.removeEventListener(type, listeners.get(id));
+            listeners.delete(id);
+        }
+    });
 }
