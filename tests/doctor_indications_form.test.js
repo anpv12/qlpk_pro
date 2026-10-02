@@ -26,6 +26,8 @@ function createElement(id) {
     removeAttribute() {},
     querySelector() { return null; },
     querySelectorAll() { return []; },
+    replaceChildren() {},
+    append() {},
     focus() {}
   };
 }
@@ -54,6 +56,9 @@ function createHarness() {
   const inRadio = elements.get('doctorIndicationLocationIn');
   inRadio.checked = true;
   const document = {
+    // Rendering builds nodes; this harness only checks state and payloads, so built nodes are inert stubs.
+    createElement: tag => ({ ...createElement(''), tagName: tag.toUpperCase(), nodeType: 1, className: '' }),
+    createTextNode: text => ({ nodeType: 3, data: String(text) }),
     getElementById(id) { return elements.get(id) || null; },
     querySelector(selector) {
       return selector === 'input[name="doctorIndicationLocation"]:checked' ? inRadio : null;

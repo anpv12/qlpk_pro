@@ -1,3 +1,4 @@
+import { el, replace } from '../shared/dom.js';
 import { DEFAULT_CONFIG, installServicesFormFns7 } from './doctor-services-form-parts/defaults-and-summary.js';
 
 const REGISTRY = window.QLPKDoctorModuleRegistry;
@@ -12,8 +13,6 @@ const {
 	textOf,
 	toNumber,
 	normalizeId,
-	escapeHtml,
-	escapeAttr,
 	formatCurrency,
 	draftRowsWithoutRuntimeIds,
 	markRestoredRows,
@@ -74,8 +73,8 @@ function installServicesFormFns1(ctx) {
 
 	function renderServiceRemoveButton() {
 		const iconSystem = REGISTRY.get('iconSystem');
-		if (iconSystem && typeof iconSystem.renderActionButton === 'function') {
-			return iconSystem.renderActionButton({
+		if (iconSystem && typeof iconSystem.createActionButton === 'function') {
+			return iconSystem.createActionButton({
 				action: 'delete',
 				title: 'Xóa dịch vụ',
 				label: 'Xóa dịch vụ',
@@ -83,7 +82,7 @@ function installServicesFormFns1(ctx) {
 				className: 'doctor-service-selection__remove'
 			});
 		}
-		return '<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="doctor-workspace-button doctor-service-selection__remove" data-service-row-action="remove">Xóa</button>';
+		return el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'doctor-workspace-button doctor-service-selection__remove', 'data-service-row-action': 'remove' }, 'Xóa');
 	}
 
 	Object.assign(ctx, {
@@ -127,12 +126,12 @@ function installServicesFormFns2(ctx) {
 		pager.hidden = !visible;
 		if (status) status.textContent = visible ? `${page} / ${pages}` : '';
 		if (pageSelect) {
-			pageSelect.innerHTML = visible
+			replace(pageSelect, visible
 				? Array.from({ length: pages }, (_, index) => {
 					const value = index + 1;
-					return `<option value="${value}"${value === page ? ' selected' : ''}>Trang ${value} / ${pages}</option>`;
-				}).join('')
-				: '';
+					return el('option', { value, selected: value === page }, `Trang ${value} / ${pages}`);
+				})
+				: []);
 			pageSelect.disabled = ctx.STATE.serviceCatalogLoading;
 		}
 		pager.querySelectorAll('[data-service-catalog-page]').forEach(button => {
@@ -158,12 +157,13 @@ function installServicesFormFns3(ctx) {
 			return;
 		}
 		list.hidden = false;
-		list.innerHTML = ctx.STATE.serviceCatalog.map(item => {
+		replace(list, ctx.STATE.serviceCatalog.map(item => {
 			const optionKey = `service:${item.id}`;
 			const selected = ctx.isCatalogServiceSelected(item);
 			ctx.STATE.serviceOptions.set(optionKey, item);
-			return `<button type="button" class="doctor-service-catalog__item${selected ? ' is-selected' : ''}" data-service-catalog-select="${escapeAttr(optionKey)}" aria-pressed="${selected}" ${selected ? 'disabled' : ''}><span>${escapeHtml(item.name)}</span></button>`;
-		}).join('');
+			return el('button', { type: 'button', class: `doctor-service-catalog__item${selected ? ' is-selected' : ''}`, 'data-service-catalog-select': optionKey, 'aria-pressed': String(selected), disabled: Boolean(selected) },
+				el('span', null, item.name ?? ''));
+		}));
 		if (empty) empty.hidden = true;
 		ctx.renderPagination(doc);
 	}
@@ -181,12 +181,18 @@ function installServicesFormFns3(ctx) {
 			return;
 		}
 		list.hidden = false;
-		list.innerHTML = ctx.STATE.services.map(service => `<article class="doctor-service-selection__row" data-service-row-id="${escapeAttr(service.uid)}">
-				<strong class="doctor-service-selection__name">${escapeHtml(service.name || 'Chưa đặt tên dịch vụ')}</strong>
-				<span class="doctor-service-selection__price">${formatCurrency(service.amount)}</span>
-				<label class="doctor-service-selection__quantity"><span class="visually-hidden">Số lượng ${escapeHtml(service.name || 'dịch vụ')}</span><input type="number" min="1" value="${escapeAttr(service.quantity)}" data-service-field="quantity" aria-label="Số lượng ${escapeAttr(service.name || 'dịch vụ')}"></label>
-				${ctx.renderServiceRemoveButton()}
-			</article>`).join('');
+		replace(list, ctx.STATE.services.map(service => el('article', { class: 'doctor-service-selection__row', 'data-service-row-id': service.uid },
+			el('strong', { class: 'doctor-service-selection__name' }, service.name || 'Chưa đặt tên dịch vụ'),
+			' ',
+			el('span', { class: 'doctor-service-selection__price' }, formatCurrency(service.amount)),
+			' ',
+			el('label', { class: 'doctor-service-selection__quantity' },
+				el('span', { class: 'visually-hidden' }, `Số lượng ${service.name || 'dịch vụ'}`),
+				el('input', { type: 'number', min: '1', defaultValue: service.quantity ?? '', 'data-service-field': 'quantity', 'aria-label': `Số lượng ${service.name || 'dịch vụ'}` })
+			),
+			' ',
+			ctx.renderServiceRemoveButton()
+		)));
 		if (empty) empty.hidden = true;
 		ctx.renderEstimatedTotal(doc);
 		renderCatalog(doc);

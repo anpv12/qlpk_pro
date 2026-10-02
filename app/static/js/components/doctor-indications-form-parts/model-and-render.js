@@ -1,3 +1,4 @@
+import { el as createEl, replace } from '../../shared/dom.js';
 // Mỗi instance gọi installer: state instance qua inst, hằng/hàm cấp module qua outer.
 const installers = [];
 installers.push(function (inst, outer) {
@@ -194,8 +195,8 @@ installers.push(function (inst, outer) {
 	}
 	function renderActionButton(action, title, attrs = {}) {
 		const iconSystem = outer.REGISTRY.get('iconSystem');
-		if (iconSystem && typeof iconSystem.renderActionButton === 'function') {
-			return iconSystem.renderActionButton({
+		if (iconSystem && typeof iconSystem.createActionButton === 'function') {
+			return iconSystem.createActionButton({
 				action,
 				title,
 				label: title,
@@ -204,7 +205,8 @@ installers.push(function (inst, outer) {
 			});
 		}
 		const icon = action === 'delete' ? 'trash3' : 'pencil';
-		return `<button data-qlpk-button="${action === 'delete' ? 'danger' : 'edit'}" data-qlpk-button-variant="soft" type="button" class="doctor-indications-table__action" title="${inst.escapeAttr(title)}" aria-label="${inst.escapeAttr(title)}"${Object.entries(attrs).map(([key, value]) => ` ${inst.escapeAttr(key)}="${inst.escapeAttr(value)}"`).join('')}><i class="bi bi-${icon}" aria-hidden="true"></i></button>`;
+		return createEl('button', { 'data-qlpk-button': action === 'delete' ? 'danger' : 'edit', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'doctor-indications-table__action', title, 'aria-label': title, ...attrs },
+			createEl('i', { class: `bi bi-${icon}`, 'aria-hidden': 'true' }));
 	}
 	function normalizeRow(item = {}) {
 		const id = inst.normalizeId(item.id);
@@ -287,11 +289,11 @@ installers.push(function (inst, outer) {
 		const select = inst.el(doc, 'performer');
 		if (!select) return;
 		const currentValue = select.value;
-		select.innerHTML = '<option value="">Chọn người thực hiện</option>' + inst.STATE.performers.map(user => {
+		replace(select, createEl('option', { value: '' }, 'Chọn người thực hiện'), inst.STATE.performers.map(user => {
 			const id = inst.normalizeId(user.id || user.user_id);
 			const name = inst.textOf(user.full_name || user.name || user.username);
-			return id && name ? `<option value="${inst.escapeAttr(id)}" data-user-name="${inst.escapeAttr(name)}">${inst.escapeHtml(name)}</option>` : '';
-		}).join('');
+			return id && name ? createEl('option', { value: id, 'data-user-name': name }, name) : null;
+		}));
 		if (currentValue && select.querySelector(`option[value="${CSS.escape(currentValue)}"]`)) select.value = currentValue;
 	}
 
@@ -304,22 +306,29 @@ installers.push(function (inst) {
 		if (count) count.textContent = `${inst.STATE.rows.length} chỉ định`;
 		if (!list) return;
 		if (!inst.STATE.rows.length) {
-			list.innerHTML = '<tr class="doctor-indications-table__empty"><td colspan="6"><i class="bi bi-clipboard2-x qlpk-section-icon" aria-hidden="true"></i><span>Chưa có chỉ định trong lượt khám này.</span></td></tr>';
+			replace(list, createEl('tr', { class: 'doctor-indications-table__empty' },
+				createEl('td', { colspan: '6' }, createEl('i', { class: 'bi bi-clipboard2-x qlpk-section-icon', 'aria-hidden': 'true' }), createEl('span', null, 'Chưa có chỉ định trong lượt khám này.'))));
 			return;
 		}
-		list.innerHTML = inst.STATE.rows.map((row, index) => {
+		replace(list, inst.STATE.rows.map((row, index) => {
 			const status = inst.getStatusConfig(row.status);
 			const locked = (row.status === 'completed' || (row.survey_template_id && ['survey_sent', 'has_result'].includes(row.status)));
 			const performer = inst.getPerformerName(row) || '—';
-			return `<tr data-doctor-indication-row="${inst.escapeAttr(row.tempId)}">
-					<td>${index + 1}</td>
-					<td><strong>${inst.escapeHtml(row.order_name || 'Chưa có tên')}</strong> <span class="qlpk-feedback-token doctor-indications-location-badge">${row.location_type === 'in' ? 'Trong cơ sở' : 'Ngoài cơ sở'}</span></td>
-					<td>${inst.escapeHtml(performer)}</td>
-					<td>${inst.formatDate(row.scheduled_for)}</td>
-					<td><span class="qlpk-status doctor-indications-status ${inst.escapeAttr(status.className || '')}">${inst.escapeHtml(status.label || row.status || 'Chuyển thực hiện')}</span></td>
-					<td>${inst.renderActionButton('edit', locked ? 'Không thể sửa chỉ định đã hoàn thành' : 'Sửa chỉ định', { 'data-doctor-indication-action': 'edit', 'data-doctor-indication-id': row.tempId, disabled: locked })}${inst.renderActionButton('delete', 'Xóa chỉ định', { 'data-doctor-indication-action': 'delete', 'data-doctor-indication-id': row.tempId })}</td>
-				</tr>`;
-		}).join('');
+			return createEl('tr', { 'data-doctor-indication-row': row.tempId },
+				createEl('td', null, index + 1),
+				createEl('td', null,
+					createEl('strong', null, row.order_name || 'Chưa có tên'), ' ',
+					createEl('span', { class: 'qlpk-feedback-token doctor-indications-location-badge' }, row.location_type === 'in' ? 'Trong cơ sở' : 'Ngoài cơ sở')
+				),
+				createEl('td', null, performer),
+				createEl('td', null, inst.formatDate(row.scheduled_for)),
+				createEl('td', null, createEl('span', { class: `qlpk-status doctor-indications-status ${status.className || ''}` }, status.label || row.status || 'Chuyển thực hiện')),
+				createEl('td', null,
+					inst.renderActionButton('edit', locked ? 'Không thể sửa chỉ định đã hoàn thành' : 'Sửa chỉ định', { 'data-doctor-indication-action': 'edit', 'data-doctor-indication-id': row.tempId, disabled: Boolean(locked) }),
+					inst.renderActionButton('delete', 'Xóa chỉ định', { 'data-doctor-indication-action': 'delete', 'data-doctor-indication-id': row.tempId })
+				)
+			);
+		}));
 	}
 	function render(doc) {
 		if (!inst.el(doc, 'root')) return false;
@@ -332,9 +341,9 @@ installers.push(function (inst) {
 	function setSubmitMode(doc, editing) {
 		const submit = inst.el(doc, 'submit');
 		if (!submit) return;
-		submit.innerHTML = editing
-			? '<i class="bi bi-check-circle qlpk-button-icon" aria-hidden="true"></i><span>Cập nhật</span>'
-			: '<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i><span>Thêm chỉ định</span>';
+		replace(submit,
+			createEl('i', { class: `bi ${editing ? 'bi-check-circle' : 'bi-plus-circle'} qlpk-button-icon`, 'aria-hidden': 'true' }),
+			createEl('span', null, editing ? 'Cập nhật' : 'Thêm chỉ định'));
 	}
 	function resetForm(doc) {
 		const performer = inst.el(doc, 'performer');
