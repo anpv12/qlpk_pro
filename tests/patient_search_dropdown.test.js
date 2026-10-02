@@ -123,6 +123,7 @@ test('relative and joint-exam components delegate the autocomplete lifecycle to 
     for (const entry of ['doctor-examination-entry.js', 'receptionist-new-entry.js']) {
         assert.match(fs.readFileSync(`app/static/js/${entry}`, 'utf8'), /patient-search-dropdown\.js';\nimport '\.\/relative-table\.js'/, entry);
     }
-    const html = fs.readFileSync('app/templates/psychologist-examination.html', 'utf8');
-    assert.ok(html.indexOf('components/patient-search-dropdown.js') < html.indexOf('/static/js/relative-table.js'));
+    for (const entry of ['psychologist-examination-entry.js']) {
+        assert.match(fs.readFileSync(`app/static/js/${entry}`, 'utf8'), /patient-search-dropdown\.js';\nimport '\.\/relative-table\.js'/, entry);
+    }
 });

@@ -90,9 +90,37 @@ def read_css_source(path: Path) -> str:
     )
 
 
+MODULE_SCRIPT = re.compile(r'<script[^>]*type="module"[^>]*\bsrc="/static/js/([^"?]+)')
+
+
+def module_graph(entry: Path, seen: list[Path] | None = None) -> list[Path]:
+    """An ES module and every relative module it imports, depth-first in import order (each once)."""
+    seen = [] if seen is None else seen
+    entry = entry.resolve()
+    if entry in seen or not entry.is_file():
+        return seen
+    seen.append(entry)
+    for spec in RELATIVE_IMPORT.findall(entry.read_text(encoding="utf-8", errors="ignore")):
+        module_graph(entry.parent / spec, seen)
+    return seen
+
+
+def read_template_source(path: Path) -> str:
+    """Template text plus one ``<!-- module import: /static/js/... -->`` line per module its module scripts reach,
+    so asset checks see scripts a page now imports from its entry instead of listing them as tags."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    imported: list[Path] = []
+    for entry in MODULE_SCRIPT.findall(text):
+        module_graph(JS_ROOT / entry, imported)
+    lines = [f"<!-- module import: /static/js/{p.relative_to(JS_ROOT.resolve()).as_posix()} -->" for p in imported]
+    return text + ("\n" + "\n".join(lines) if lines else "")
+
+
 def read_source(path: Path) -> str:
     """Text of a file; split JS entries, split Python modules and split stylesheets include their parts."""
     path = Path(path)
+    if path.suffix == ".html":
+        return read_template_source(path)
     if path.suffix == ".css":
         return read_css_source(path)
     if path.suffix == ".js":

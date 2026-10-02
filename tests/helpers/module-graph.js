@@ -23,4 +23,15 @@ function pageModuleScripts(templateName, entryFile) {
     return seen;
 }
 
-module.exports = { JS_ROOT, pageModuleScripts };
+// Every app script a page runs, in order: classic <script> tags, and each module tag expanded to its import graph.
+function pageScripts(templateName) {
+    const template = fs.readFileSync(path.join(ROOT, 'app/templates', templateName), 'utf8');
+    const scripts = [];
+    for (const match of template.matchAll(/<script(?<module> type="module")? src="\/static\/js\/(?<file>[^"?]+)/g)) {
+        const files = match.groups.module ? pageModuleScripts(templateName, match.groups.file) : [match.groups.file];
+        for (const file of files) if (!scripts.includes(file)) scripts.push(file);
+    }
+    return scripts;
+}
+
+module.exports = { JS_ROOT, pageModuleScripts, pageScripts };

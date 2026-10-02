@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { pageScripts } = require('./helpers/module-graph');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
@@ -69,8 +70,8 @@ test('only one dose implementation is wired into every prescription surface', ()
     assert.ok(doseImport > 0 && doseImport < entry.indexOf("import './prescriptions/shared/prescription-document-template.js';"));
     assert.ok(doseImport < entry.indexOf("import './doctor-examination/prescription-model.js';"));
     for (const page of ['app/templates/psychologist-examination.html', 'app/templates/verify-prescription.html']) {
-        const html = read(page);
-        const doseScript = html.indexOf('/static/js/prescriptions/shared/prescription-dose-utils.js');
-        assert.ok(doseScript > 0 && doseScript < html.indexOf('/static/js/prescriptions/shared/prescription-document-template.js'), page);
+        const scripts = pageScripts(page.replace('app/templates/', ''));
+        const doseScript = scripts.indexOf('prescriptions/shared/prescription-dose-utils.js');
+        assert.ok(doseScript >= 0 && doseScript < scripts.indexOf('prescriptions/shared/prescription-document-template.js'), page);
     }
 });

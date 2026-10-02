@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const { pageScripts } = require('./helpers/module-graph');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -16,8 +17,10 @@ test('Trang TLG dùng form hành chính inline, không nạp modal cũ', () => {
   const page = fs.readFileSync(path.join(__dirname, '../app/static/js/psychologist-examination.js'), 'utf8');
   const patientForm = fs.readFileSync(path.join(__dirname, '../app/static/js/components/patient-info-form.js'), 'utf8');
   const patientTemplate = fs.readFileSync(path.join(__dirname, '../app/templates/partials/patient-info-form.html'), 'utf8');
-  assert.equal(template.includes('/static/js/personal-detail-modal-dry.js'), false);
-  assert.ok(template.includes('/static/js/components/patient-info-form.js'));
+  const scripts = pageScripts('psychologist-examination.html');
+  assert.equal(scripts.includes('personal-detail-modal-dry.js'), false);
+  assert.ok(scripts.includes('components/patient-info-form.js'));
+  assert.equal(template.includes('personal-detail-modal-dry'), false);
   assert.ok(page.includes('personalDetailOptions: { bindings: {} }'));
   assert.ok(patientForm.includes('bindInlineDetailPanels(options)'));
   for (const panel of ['genderInlineDetailPanel', 'identityInlineDetailPanel', 'occupationInlineDetailPanel']) {
