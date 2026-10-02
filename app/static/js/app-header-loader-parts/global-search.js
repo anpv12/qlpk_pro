@@ -134,7 +134,7 @@ function renderGlobalSearchGroup(group) {
 function renderGlobalSearchResults(payload) {
 	const { results } = globalSearchElements();
 	if (!results) return;
-	results.innerHTML = '';
+	results.replaceChildren();
 	const groups = payload && Array.isArray(payload.groups) ? payload.groups : [];
 	if (payload && Object.prototype.hasOwnProperty.call(payload, 'selected_patient_id')) {
 		moduleState.globalSearchSelectedPatientId = payload.selected_patient_id ? Number(payload.selected_patient_id) : null;

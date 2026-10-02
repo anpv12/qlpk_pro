@@ -76,7 +76,7 @@ const methods = {
 		if (!this.tableBody) return;
 
 		if (this.pendingJointExamList.length === 0) {
-			this.tableBody.innerHTML = '';
+			this.tableBody.replaceChildren();
 			if (this.emptyState) this.emptyState.classList.add('active');
 			return;
 		}

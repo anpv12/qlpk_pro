@@ -324,7 +324,7 @@ function medicalHistoryPopulatePrevRiskBadge(appointmentData) {
     if (assessment.level) fields.push({ label: 'Mức độ nguy cơ', value: assessment.level, note: '' });
 
     let foundLevel = null;
-    details.innerHTML = '';
+    details.replaceChildren();
 
     fields.forEach(field => {
         const label = field.label;

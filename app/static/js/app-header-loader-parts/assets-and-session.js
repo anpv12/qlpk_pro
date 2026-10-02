@@ -131,7 +131,7 @@ function updateSearchScope(user) {
 	const normalized = normalizeRole(user.role) || 'role';
 	const currentValue = scope.value;
 
-	scope.innerHTML = '';
+	scope.replaceChildren();
 	const allOption = document.createElement('option');
 	allOption.value = 'all';
 	allOption.textContent = 'Toàn bộ';
@@ -356,7 +356,7 @@ function setGlobalSearchStatus(text, visible = true) {
 }
 function clearGlobalSearchResults(options = {}) {
 	const { results } = globalSearchElements();
-	if (results) results.innerHTML = '';
+	if (results) results.replaceChildren();
 	moduleState.globalSearchGroups = [];
 	moduleState.globalSearchFlatItems = [];
 	moduleState.globalSearchActiveIndex = -1;

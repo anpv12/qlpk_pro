@@ -111,7 +111,7 @@
 		if (!duplicateList) return;
 		bindActionButtons(options);
 
-		duplicateList.innerHTML = '';
+		duplicateList.replaceChildren();
 		duplicateList.setAttribute('role', 'listbox');
 		duplicateList.setAttribute('aria-label', 'Danh sách bệnh nhân trùng');
 		(options.duplicatePatients || []).forEach((patient, index) => {

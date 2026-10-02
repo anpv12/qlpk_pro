@@ -262,7 +262,7 @@ function renderNotifications() {
 	const { list, empty, readAllBtn } = notificationElements();
 	if (!list) return;
 
-	list.innerHTML = '';
+	list.replaceChildren();
 	const items = Array.isArray(moduleState.notificationItems) ? moduleState.notificationItems : [];
 	items.forEach(notification => list.appendChild(renderNotificationItem(notification)));
 	list.classList.toggle('is-empty', items.length === 0);
@@ -279,7 +279,7 @@ function renderNotificationCenter() {
 	if (!centerList) return;
 
 	const items = getFilteredNotificationCenterItems();
-	centerList.innerHTML = '';
+	centerList.replaceChildren();
 	items.forEach(notification => centerList.appendChild(renderNotificationItem(notification)));
 
 	const hasItems = items.length > 0;

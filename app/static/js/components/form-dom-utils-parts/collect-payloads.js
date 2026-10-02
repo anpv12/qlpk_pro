@@ -354,7 +354,7 @@ function clearPageAgeField(doc) {
 	if (!ageField) return false;
 	ageField.value = '';
 	ageField.textContent = '';
-	ageField.innerHTML = '';
+	ageField.replaceChildren();
 	return true;
 }
 function scheduleWorkflowShellDeferredTasks(options, doc) {
@@ -435,7 +435,7 @@ function clearAgeField(elementId = 'age', context = {}) {
 	if (!element) return false;
 	element.value = '';
 	element.textContent = '';
-	element.innerHTML = '';
+	element.replaceChildren();
 	return true;
 }
 function isPlaceholderValue(element) {

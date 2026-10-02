@@ -98,7 +98,7 @@ function resetState() {
 	if (nameEl) nameEl.value = '';
 	byId('scValidationMessage')?.remove();
 	if (descEl) descEl.value = '';
-	if (list) list.innerHTML = '';
+	if (list) list.replaceChildren();
 	renderPerformerOptions();
 	setSaveButtonIdle();
 	moduleState.criteriaCache = null;
@@ -250,7 +250,7 @@ async function loadTemplate(id) {
 		}
 	} catch (err) {
 		if (revision !== moduleState.state.loadRevision) return;
-		questionsListEl().innerHTML = '';
+		questionsListEl().replaceChildren();
 		showToast('error', 'Không thể tải mẫu khảo sát. Vui lòng thử lại.');
 	} finally {
 		if (revision === moduleState.state.loadRevision) {

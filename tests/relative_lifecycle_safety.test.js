@@ -234,7 +234,7 @@ test('Clear phải dispose dropdown của dòng cũ', () => {
 test('Khởi tạo không có bệnh nhân hiện trạng thái rỗng giống clear()', () => {
   const classes = new Set();
   const emptyState = { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } };
-  const tableBody = { innerHTML: 'x' };
+  const tableBody = { innerHTML: 'x', replaceChildren() { this.innerHTML = ''; } };
   const container = {
     innerHTML: '',
     querySelector: selector => (selector === 'tbody' ? tableBody : selector === '.relative-empty-state' ? emptyState : null)

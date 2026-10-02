@@ -61,7 +61,7 @@ function feedbackHarness() {
     const timers = [];
     const listeners = {};
     const classes = new Set();
-    const host = { innerHTML: '', classList: { toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name) },
+    const host = { innerHTML: '', replaceChildren() { this.innerHTML = ''; }, classList: { toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name) },
         querySelector: () => ({ addEventListener: (name, callback) => { listeners[name] = callback; } }) };
     const document = { getElementById: name => name === 'qlpkWorkspaceToastHost' ? host : null };
     const window = { document, setTimeout: (callback, duration) => { timers.push(duration); return timers.length; }, clearTimeout: () => {} };

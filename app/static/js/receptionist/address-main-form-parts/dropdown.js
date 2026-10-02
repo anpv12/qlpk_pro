@@ -106,7 +106,7 @@ function positionMainAddressDropdown(input, dropdown) {
 }
 
 function renderMainAddressDropdown(input, dropdown, items, onSelect, emptyText) {
-	dropdown.innerHTML = '';
+	dropdown.replaceChildren();
 
 	if (!items.length) {
 		const empty = document.createElement('div');

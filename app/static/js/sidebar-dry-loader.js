@@ -42,7 +42,7 @@
 
 		const sidebarContainer = document.getElementById(SIDEBAR_CONTAINER_ID);
 		if (sidebarContainer) {
-			sidebarContainer.innerHTML = '';
+			sidebarContainer.replaceChildren();
 			sidebarContainer.classList.add('qlpk-shell-sidebar-disabled');
 			sidebarContainer.classList.remove('col-md-2', 'col-md-3', 'col-lg-2', 'col-lg-3');
 		}

@@ -17,7 +17,7 @@ function renderOrderSurveyContent(html, qrCode = '') {
 			return;
 		}
 		// Clear content first to prevent any accumulation
-		surveyContent.innerHTML = '';
+		surveyContent.replaceChildren();
 		// Then set new content
 		surveyContent.innerHTML = html;
 	} catch (error) {

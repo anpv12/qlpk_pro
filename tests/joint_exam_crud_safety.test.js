@@ -33,7 +33,7 @@ function harness() {
     onReloadFamilyMembers: () => { state.familyLoads++; },
     apiCall: (url, options) => { const pending = deferred(); requests.push({ url, options, ...pending }); return pending.promise; }
   });
-  manager.tableBody = { innerHTML: 'old', contains: () => !state.removed, querySelector: () => row };
+  manager.tableBody = { innerHTML: 'old', replaceChildren() { this.innerHTML = ''; }, contains: () => !state.removed, querySelector: () => row };
   manager.load = async () => { state.reloads++; };
   const invoke = action => action === 'create' ? manager.saveNew(row) : action === 'update' ? manager.update(row, 20) : manager.delete(20);
   return { manager, requests, confirmation, state, row, inputs, invoke, originalLoad: window.JointExamManager.prototype.load };

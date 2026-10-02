@@ -101,7 +101,7 @@ test('Clear khi reload đang chờ không render danh sách ca cũ', async () =>
   const pending = deferred();
   delete state.manager.load;
   const rendered = [];
-  state.manager.tableBody = { innerHTML: 'new' };
+  state.manager.tableBody = { innerHTML: 'new', replaceChildren() { this.innerHTML = ''; } };
   state.manager.renderTable = rows => rendered.push(rows);
   state.manager.apiCall = () => pending.promise;
   const loading = state.manager.load();

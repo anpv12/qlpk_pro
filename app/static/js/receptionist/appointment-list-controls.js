@@ -311,7 +311,7 @@
 
 		if (appointments.length === 0) {
 			hideSeverityTooltip();
-			tbody.innerHTML = '';
+			tbody.replaceChildren();
 			if (panel) panel.classList.add('qlpk-queue-panel--empty');
 			if (emptyState) emptyState.classList.remove('receptionist-hidden');
 			return;

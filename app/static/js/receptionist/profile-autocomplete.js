@@ -88,7 +88,7 @@
 		}
 
 		function showDropdown(filteredOptions, rawValue = '') {
-			dropdown.innerHTML = '';
+			dropdown.replaceChildren();
 			const creatableValue = rawValue.trim();
 			const shouldShowCreate = creatableValue.length > 0 && !hasExactOption(creatableValue);
 

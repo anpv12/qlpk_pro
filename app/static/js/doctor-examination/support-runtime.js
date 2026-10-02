@@ -328,7 +328,7 @@
 	function hideDropdown(dropdown) {
 		if (!dropdown) return;
 		dropdown.hidden = true;
-		dropdown.innerHTML = '';
+		dropdown.replaceChildren();
 	}
 
 	function hideAllDropdowns(doc = document) {

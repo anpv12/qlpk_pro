@@ -158,7 +158,7 @@ class JointExamManager {
 	}
 
 	showJointExamRows(relatives) {
-		if (this.tableBody) this.tableBody.innerHTML = '';
+		if (this.tableBody) this.tableBody.replaceChildren();
 		const empty = !relatives || relatives.length === 0;
 		this.emptyState?.classList.toggle('active', empty);
 		if (!empty && this.tableBody) this.renderTable(relatives);
@@ -184,7 +184,7 @@ class JointExamManager {
 		if (!isCurrentContext()) return false;
 		this.pendingJointExamRow?.remove();
 		this.pendingJointExamRow = null;
-		if (this.tableBody) this.tableBody.innerHTML = '';
+		if (this.tableBody) this.tableBody.replaceChildren();
 
 		// Nếu chưa có appointment, hiển thị danh sách tạm
 		if (!appointmentId) {

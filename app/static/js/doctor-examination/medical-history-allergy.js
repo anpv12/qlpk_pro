@@ -174,7 +174,7 @@ function medicalHistoryAllergySync() {
 function medicalHistoryRestoreAllergy(entries) {
   const tbody = medicalHistoryGetComponent().getElement('drugAllergyBody');
   if (!tbody) return;
-  tbody.innerHTML = '';
+  tbody.replaceChildren();
   _allergyRowCounter = 0;
   const chipArea = medicalHistoryGetComponent().getElement('drugAllergyChips');
   if (chipArea) chipArea.querySelectorAll('.medical-history-chip, .medical-history-chip-row').forEach(c => c.remove());
@@ -239,7 +239,7 @@ async function fetchAllergenSuggestions(q, input, dropdown, positionDropdown) {
     const data = await res.json();
     if (!data.success) return;
 
-    dropdown.innerHTML = '';
+    dropdown.replaceChildren();
     const items = data.data || [];
     const exactMatch = q && items.some(i => normalizeAllergySearchText(i.ten_di_nguyen) === normalizeAllergySearchText(q));
 

@@ -373,7 +373,7 @@ class RelativeTable {
 
 	renderRows(rows) {
 		const isCurrentContext = this.createContextGuard();
-		this.tableBody.innerHTML = '';
+		this.tableBody.replaceChildren();
 		if (!rows || rows.length === 0) {
 			this.emptyState.classList.add('active');
 			return;

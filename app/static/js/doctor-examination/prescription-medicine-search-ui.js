@@ -60,7 +60,7 @@
 			ctx.state.timer = null;
 			ctx.state.token += 1;
 			dropdown.hidden = true;
-			dropdown.innerHTML = '';
+			dropdown.replaceChildren();
 			ctx.state.input?.removeAttribute('aria-busy');
 			setInputState(ctx.state.input, false);
 			ctx.state.input = null;

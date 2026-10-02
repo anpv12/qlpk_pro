@@ -69,7 +69,7 @@ for (const cookie of [true, false]) {
         state.responses.push(new Response(JSON.stringify({ data: [{ id: 2, name: 'QA' }] })));
         assert.equal(await state.actions.loadFamilyMembers(7), true);
         assert.equal(state.component.state.safetyPlan.familyMembers[0].id, 2);
-        const dropdown = { innerHTML: '', style: {} };
+        const dropdown = { innerHTML: '', style: {}, replaceChildren() { this.innerHTML = ''; } };
         state.responses.push(new Response(JSON.stringify({ success: true, data: [] })));
         await state.actions.fetchAllergenSuggestions('', {}, dropdown);
         assert.equal(dropdown.style.display, 'none');

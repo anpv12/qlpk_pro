@@ -16,6 +16,7 @@ class FakeElement {
         this.isConnected = true;
         this.rect = { top: 100, bottom: 130, left: 40, width: 300 };
     }
+    replaceChildren() { this.innerHTML = ''; }
     setAttribute(key, value) { this.attributes[key] = String(value); }
     getAttribute(key) { return key in this.attributes ? this.attributes[key] : null; }
     removeAttribute(key) { delete this.attributes[key]; }

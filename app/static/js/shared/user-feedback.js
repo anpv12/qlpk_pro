@@ -98,7 +98,7 @@
 		hostWindow.clearTimeout(host._qlpkToastTimer);
 		hostWindow.clearTimeout(host._qlpkToastHideTimer);
 		if (structured) {
-			host.querySelector('.qlpk-toast__close').addEventListener('click', () => { host.innerHTML = ''; });
+			host.querySelector('.qlpk-toast__close').addEventListener('click', () => { host.replaceChildren(); });
 		}
 		const duration = Number(options.duration) > 0 ? Number(options.duration) : defaultDuration;
 		host._qlpkToastTimer = hostWindow.setTimeout(() => hideToast(host, hostWindow), duration);
@@ -140,12 +140,12 @@
 	function hideToast(host, hostWindow) {
 		const toast = host.querySelector('.qlpk-workspace-toast');
 		if (!toast) {
-			host.innerHTML = '';
+			host.replaceChildren();
 			return;
 		}
 		toast.classList.add('is-hiding');
 		host._qlpkToastHideTimer = hostWindow.setTimeout(() => {
-			host.innerHTML = '';
+			host.replaceChildren();
 		}, 180);
 	}
 

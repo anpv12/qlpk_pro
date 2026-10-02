@@ -151,7 +151,7 @@ function installServicesFormFns3(ctx) {
 		if (!list) return;
 		ctx.STATE.serviceOptions.clear();
 		if (!ctx.STATE.serviceCatalog.length) {
-			list.innerHTML = '';
+			list.replaceChildren();
 			list.hidden = true;
 			if (empty) empty.hidden = false;
 			ctx.renderPagination(doc);
@@ -173,7 +173,7 @@ function installServicesFormFns3(ctx) {
 		const empty = getElement(doc, ctx.getDomId('selectionEmpty'));
 		if (!list) return;
 		if (!ctx.STATE.services.length) {
-			list.innerHTML = '';
+			list.replaceChildren();
 			list.hidden = true;
 			if (empty) empty.hidden = false;
 			ctx.renderEstimatedTotal(doc);

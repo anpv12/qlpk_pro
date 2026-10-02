@@ -195,7 +195,7 @@ function initializePage() {
 		if (ageField) {
 			ageField.value = '';
 			ageField.textContent = '';
-			ageField.innerHTML = '';
+			ageField.replaceChildren();
 		}
 	}, 100);
 

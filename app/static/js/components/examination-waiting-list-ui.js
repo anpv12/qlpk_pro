@@ -112,7 +112,7 @@
 		);
 
 		if (filteredAppointments.length === 0) {
-			tbody.innerHTML = '';
+			tbody.replaceChildren();
 			if (panel) panel.classList.add('qlpk-queue-panel--empty');
 			setEmptyStateVisible(emptyState, true);
 			return filteredAppointments;

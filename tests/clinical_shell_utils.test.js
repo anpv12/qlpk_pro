@@ -117,6 +117,7 @@ function loadScript(file) {
 function createElement(id, log) {
   return {
     id, value: '', textContent: '', innerHTML: '', disabled: false, checked: false, classList: { add() {}, remove() {} },
+    replaceChildren() { this.innerHTML = ''; },
     listeners: [],
     addEventListener(type, handler, options = {}) {
       this.listeners.push({ type, handler, signal: options.signal });

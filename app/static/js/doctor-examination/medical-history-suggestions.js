@@ -137,7 +137,7 @@ function runHistorySuggestions2(ctx) {
 
 	  // Xóa gợi ý cũ, giữ lại nhãn nhóm
 	  const label = container.querySelector('.medical-history-group-label');
-	  container.innerHTML = '';
+	  container.replaceChildren();
 	  if (label) container.appendChild(label);
 
 	  let col72, col73, col74;
@@ -227,7 +227,7 @@ function runHistorySuggestions3() {
 
 	  // Xóa gợi ý cũ, giữ lại nhãn nhóm
 	  const label = container.querySelector('.medical-history-group-label');
-	  container.innerHTML = '';
+	  container.replaceChildren();
 	  if (label) container.appendChild(label);
 
 	  gdGroups[groupName].forEach(itemInfo => {

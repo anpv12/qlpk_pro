@@ -387,7 +387,7 @@ function resetConfig() {
 	currentConfig = { scoring_method: 'total', calculation_type: 'sum', conditions: [], group_configs: {}, special_alerts: [] };
 	activeGroupTab = null;
 	const root = document.getElementById('scResultConfigRoot');
-	if (root) root.innerHTML = '';
+	if (root) root.replaceChildren();
 }
 
 function validateConditionGroup(name, conditions) {

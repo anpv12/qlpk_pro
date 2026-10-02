@@ -199,7 +199,7 @@ function renderTabs() {
 
 	const tabs = readTabs();
 	const activeId = activeTabId();
-	container.innerHTML = '';
+	container.replaceChildren();
 
 	if (!tabs.length) {
 		container.classList.add('qlpk-workspace-tabs--empty');
@@ -320,7 +320,7 @@ function renderLauncherGrid() {
 	if (!grid) return;
 
 	const query = normalizeLauncherSearchText(document.getElementById('qlpkAppLauncherSearch')?.value || '');
-	grid.innerHTML = '';
+	grid.replaceChildren();
 	grid.classList.toggle('is-searching', Boolean(query));
 
 	if (query) {
