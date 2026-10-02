@@ -68,6 +68,9 @@ function apiCall(url, options = {}) {
 	return pageCoreAdapter.apiCall(url, options);
 }
 
+// Read by the shared joint-exam bootstrap (same contract as the doctor page).
+window.QLPKCurrentAppointment = { getId: () => currentAppointmentId, apiCall };
+
 const addressHierarchyAdapter = window.ClinicalAddressHierarchyUtils.createAddressHierarchyAdapter({
 	document,
 	apiCall,
@@ -97,15 +100,6 @@ async function syncModalDataToMainForm(saveToDb = false) {
 	return addressHierarchyAdapter.syncPersonalDetailModalToMainForm(saveToDb);
 }
 
-async function handleAddressModalClose() {
-	return addressHierarchyAdapter.handlePersonalDetailModalClose({
-		buildFullAddressFromParts: window.buildFullAddressFromParts,
-		fillMainAddressFieldFromModal: true,
-		clearDraftOnNew: true
-	});
-}
-
-window.handleAddressModalClose = handleAddressModalClose;
 const loadProvinces = addressHierarchyAdapter.loadProvinces;
 
 const psychologistWaitingListAdapter = window.ClinicalExaminationWaitingListUi.createWaitingListAdapter({
@@ -291,8 +285,6 @@ const documentSectionAdapter = window.ClinicalDocumentSectionUiUtils.createExami
 
 const validateFile = documentFileAdapter.validateFile;
 
-window.downloadDocument = documentSectionAdapter.downloadDocument;
-window.deleteDocument = documentSectionAdapter.deleteDocument;
 
 // Initialize page
 function initializePage() {

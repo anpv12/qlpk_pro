@@ -1,5 +1,10 @@
-// Psychological examination loads the shared inline-history feature set after
-// its classic base component has attached to the psychologist history root.
+// Psychological examination: the page module first (same order as the former classic scripts: page,
+// then the joint-exam manager and its bootstrap), then the shared inline-history feature set.
+import './psychologist-examination.js';
+import './joint-exam-manager.js';
+import './joint-exam-manager-methods.js';
+import './joint-exam-manager-edit.js';
+import './components/joint-exam-page-bootstrap.js';
 import './doctor-examination/medical-history-context.js';
 import './doctor-examination/medical-history-core.js';
 import './doctor-examination/medical-history-workbench.js';
