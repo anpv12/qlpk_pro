@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { runScriptFile } = require('./helpers/module-source');
 
 function setup() {
     const modules = {
@@ -61,12 +62,11 @@ test('editor keeps current stock and allocations without showing movement histor
     };
     const window = {QLPKHtml: require('./helpers/html-escape').QLPKHtml, QLPKDoctorModuleRegistry: {get: name => modules[name], register: (name, api) => {modules[name] = api;}},
         PrescriptionTypeContract: {DOCUMENT_TYPES: ['BASIC'], toDocumentType: () => 'BASIC', getLabel: () => 'Cơ bản'}};
-    vm.runInNewContext(fs.readFileSync('app/static/js/doctor-examination/prescription-row-renderer.js', 'utf8'), {window, Intl});
-    const nodes = new Map();
-    const root = {querySelector: selector => {
-        if (!nodes.has(selector)) nodes.set(selector, {dataset: {}});
-        return nodes.get(selector);
-    }};
+    const { createWindow } = require('./helpers/fake-dom');
+    const { document } = createWindow({ html: '<table id="doctorPrescriptionTable"><thead id="doctorPrescriptionTableHead"></thead><tbody id="doctorPrescriptionList"></tbody></table><div id="doctorPrescriptionEmptyState"></div>' });
+    runScriptFile('app/static/js/doctor-examination/prescription-row-renderer.js', vm.createContext({window, document, Intl}));
+    const root = document;
+    const nodes = new Map([['#doctorPrescriptionList', document.getElementById('doctorPrescriptionList')]]);
     const row = {uid: 'qa', medicineId: 1, name: 'Thuốc', unit: 'viên', quantity: 2, currentStockQuantity: 20,
         batchAllocation: {batch_allocation_status: 'allocated', batch_allocations: [{batch_id: 1, batch_number: '<lô>', quantity: 2}],
             stock_movements: [{id: 10, type: 'export', quantity: -2, batch_number: '<lô>', balance_after: 0,
@@ -79,7 +79,7 @@ test('editor keeps current stock and allocations without showing movement histor
     assert.match(html, /Tồn tổng hiện tại: <strong>20<\/strong>/);
     assert.doesNotMatch(html, /Tồn sau từng giao dịch|Tồn lô sau giao dịch|Tồn tổng sau giao dịch|<details/);
     assert.match(html, /Đã cấp 2 viên/);
-    assert.match(html, /&lt;lô>/);
+    assert.match(html, /&lt;lô&gt;/);
     row.batchAllocation.batch_allocation_status = 'partially_tracked';
     assert.doesNotMatch(render(), /doctor-prescription-batches|Tồn sau từng giao dịch/);
     row.isExternal = true;

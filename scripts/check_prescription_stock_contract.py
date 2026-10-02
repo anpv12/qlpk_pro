@@ -112,19 +112,19 @@ def main():
     _require(prescription_ui, "inventoryMessage: buildInventorySaveMessage(data)", "prescription success message result", errors)
     _require(support_modules, "successMessages", "support save feedback propagation", errors)
     _require(save_controller, "supportResult.successMessages[0]", "workspace save feedback display", errors)
-    _require(row_renderer, 'class="doctor-prescription-batch"', "always-visible Doctor batch block", errors)
+    _require(row_renderer, "class: 'doctor-prescription-batch'", "always-visible Doctor batch block", errors)
     _require(row_renderer, "function updateBatchAllocation", "targeted batch status renderer", errors)
-    _require(row_renderer, "if (!state) return '';", "no allocation state renders no batch block", errors)
+    _require(row_renderer, "if (!state) return null;", "no allocation state renders no batch block", errors)
     _require(
         row_renderer,
-        "if (status !== 'allocated' || !allocations.length) return '';",
+        "if (status !== 'allocated' || !allocations.length) return null;",
         "allocated-only batch detail guard hides passive states",
         errors,
     )
     _require(row_renderer, "Cần lưu để cập nhật lô", "pending allocation feedback", errors)
-    _require(row_renderer, "Đã cấp ${escapeHtml(formatAllocationQuantity(allocation.quantity))}", "allocated quantity per lot", errors)
-    _require(row_renderer, "Tồn tổng hiện tại: <strong>", "single current stock display label", errors)
-    _require(row_renderer, 'class="doctor-prescription-table__quantity-unit-input"', "external unit editor beside quantity", errors)
+    _require(row_renderer, "`Đã cấp ${formatAllocationQuantity(allocation.quantity)} ${unit}`", "allocated quantity per lot", errors)
+    _require(row_renderer, "'Tồn tổng hiện tại: ', el('strong'", "single current stock display label", errors)
+    _require(row_renderer, "class: 'doctor-prescription-table__quantity-unit-input'", "external unit editor beside quantity", errors)
     _require(row_renderer, "row.isExternal", "unit editor source guard", errors)
     for retired_stock_ui in (
         "getEffectiveAvailableStock",

@@ -1,3 +1,5 @@
+import { el, replace } from '../shared/dom.js';
+
 (function (window) {
 	'use strict';
 
@@ -9,7 +11,6 @@
 	const TYPE_CONTRACT = window.PrescriptionTypeContract;
 	if (!TYPE_CONTRACT) throw new Error('Thiếu contract loại đơn thuốc dùng chung');
 
-	const { escapeHtml, escapeAttr } = RUNTIME;
 	const { formatDoseValue, PRESCRIPTION_SLOT_DEFS, PRESCRIPTION_USAGE_MODES } = MODEL;
 	const DEFAULT_DOM = {
 		list: 'doctorPrescriptionList',
@@ -22,37 +23,41 @@
 		const scheduleHeaders = mode === PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY
 			? ['Liều/lần', 'Lần/ngày']
 			: PRESCRIPTION_SLOT_DEFS.map(slot => slot.label);
-		return `
-			<tr class="doctor-prescription-table__header-row doctor-prescription-table__header-row--group">
-				<th rowspan="2" scope="col" class="doctor-prescription-table__stt">STT</th>
-				<th rowspan="2" scope="col" class="doctor-prescription-table__medicine-heading">Thuốc / hoạt chất</th>
-				<th colspan="${scheduleHeaders.length}" scope="colgroup" class="doctor-prescription-table__schedule-heading">Lịch uống</th>
-				<th rowspan="2" scope="col" class="doctor-prescription-table__route-heading">Đường dùng</th>
-				<th rowspan="2" scope="col" class="doctor-prescription-table__quantity-heading">Số lượng</th>
-				<th rowspan="2" scope="col" class="doctor-prescription-table__total-heading">Thành tiền</th>
-				<th rowspan="2" scope="col" class="doctor-prescription-table__actions-heading"><span class="visually-hidden">Thao tác</span></th>
-			</tr>
-			<tr class="doctor-prescription-table__header-row doctor-prescription-table__header-row--slots">
-				${scheduleHeaders.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join('')}
-			</tr>`;
+		return [
+			el('tr', { class: 'doctor-prescription-table__header-row doctor-prescription-table__header-row--group' },
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__stt' }, 'STT'),
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__medicine-heading' }, 'Thuốc / hoạt chất'),
+				el('th', { colspan: scheduleHeaders.length, scope: 'colgroup', class: 'doctor-prescription-table__schedule-heading' }, 'Lịch uống'),
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__route-heading' }, 'Đường dùng'),
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__quantity-heading' }, 'Số lượng'),
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__total-heading' }, 'Thành tiền'),
+				el('th', { rowspan: '2', scope: 'col', class: 'doctor-prescription-table__actions-heading' }, el('span', { class: 'visually-hidden' }, 'Thao tác'))
+			),
+			el('tr', { class: 'doctor-prescription-table__header-row doctor-prescription-table__header-row--slots' },
+				scheduleHeaders.map(label => el('th', { scope: 'col' }, label))
+			)
+		];
 	}
 
 	function buildDoseInput(row, field, label, value, placeholder = '-') {
-		return `<input type="text" inputmode="decimal" value="${escapeAttr(formatDoseValue(value))}" data-prescription-field="${escapeAttr(field)}" aria-label="${escapeAttr(label)}" placeholder="${escapeAttr(placeholder)}">`;
+		return el('input', { type: 'text', inputmode: 'decimal', defaultValue: formatDoseValue(value) ?? '', 'data-prescription-field': field, 'aria-label': label, placeholder });
+	}
+
+	function doseCell(input) {
+		return el('td', { class: 'doctor-prescription-table__dose-cell' }, input);
 	}
 
 	function buildScheduleCells(row, mode) {
 		if (mode === PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY) {
 			const schedule = row.schedule && row.schedule.times_per_day ? row.schedule.times_per_day : {};
 			return [
-				`<td class="doctor-prescription-table__dose-cell">${buildDoseInput(row, 'qtyPerTime', 'Liều mỗi lần', schedule.qty_per_time, '0')}</td>`,
-				`<td class="doctor-prescription-table__dose-cell">${buildDoseInput(row, 'timesPerDay', 'Số lần mỗi ngày', schedule.times_per_day, '1')}</td>`
+				doseCell(buildDoseInput(row, 'qtyPerTime', 'Liều mỗi lần', schedule.qty_per_time, '0')),
+				doseCell(buildDoseInput(row, 'timesPerDay', 'Số lần mỗi ngày', schedule.times_per_day, '1'))
 			];
 		}
 
 		const schedule = row.schedule && row.schedule.time_slots ? row.schedule.time_slots : {};
-		return PRESCRIPTION_SLOT_DEFS.map(slot => `
-			<td class="doctor-prescription-table__dose-cell">${buildDoseInput(row, slot.field, slot.label, schedule[slot.field])}</td>`);
+		return PRESCRIPTION_SLOT_DEFS.map(slot => doseCell(buildDoseInput(row, slot.field, slot.label, schedule[slot.field])));
 	}
 
 	function formatAllocationQuantity(value) {
@@ -68,92 +73,104 @@
 		return Number.isFinite(parsed) ? parsed : null;
 	}
 
-	function buildCurrentStockHtml(row) {
-		if (row.isExternal || !row.medicineId) return '';
+	function buildCurrentStock(row) {
+		if (row.isExternal || !row.medicineId) return null;
 		const stock = getCurrentStockQuantity(row);
-		if (stock === null) return '';
-		return `<span class="doctor-prescription-table__stock">Tồn tổng hiện tại: <strong>${escapeHtml(formatAllocationQuantity(stock))}</strong> ${escapeHtml(row.unit || 'đơn vị')}</span>`;
+		if (stock === null) return null;
+		return el('span', { class: 'doctor-prescription-table__stock' },
+			'Tồn tổng hiện tại: ', el('strong', null, formatAllocationQuantity(stock)), ' ', row.unit || 'đơn vị');
 	}
 
-	function buildBatchAllocationHtml(row, showAllocation) {
-		if (!showAllocation || row.isExternal) return '';
+	function buildBatchAllocation(row, showAllocation) {
+		if (!showAllocation || row.isExternal) return null;
 		const state = row.batchAllocation;
 		const status = state?.batch_allocation_status || '';
 		if (row.batchAllocationStale) {
-			return '<div class="doctor-prescription-batches" data-status="pending"><span><i class="bi bi-hourglass-split" aria-hidden="true"></i>Cần lưu để cập nhật lô</span></div>';
+			return el('div', { class: 'doctor-prescription-batches', 'data-status': 'pending' },
+				el('span', null, el('i', { class: 'bi bi-hourglass-split', 'aria-hidden': 'true' }), 'Cần lưu để cập nhật lô'));
 		}
-		if (!state) return '';
+		if (!state) return null;
 
 		const allocations = Array.isArray(state.batch_allocations) ? state.batch_allocations : [];
-		if (status !== 'allocated' || !allocations.length) return '';
+		if (status !== 'allocated' || !allocations.length) return null;
 		const unit = row.unit || state.unit || 'đơn vị';
-		return `
-			<div class="doctor-prescription-batches" data-status="${escapeAttr(status)}" aria-label="Phân bổ thuốc theo lô">
-				${allocations.map(allocation => `
-					<div class="doctor-prescription-batch">
-						<strong>Lô ${escapeHtml(allocation.batch_number || allocation.batch_id || '')}</strong>
-						<span>Đã cấp ${escapeHtml(formatAllocationQuantity(allocation.quantity))} ${escapeHtml(unit)}</span>
-					</div>`).join('')}
-			</div>`;
+		return el('div', { class: 'doctor-prescription-batches', 'data-status': status, 'aria-label': 'Phân bổ thuốc theo lô' },
+			allocations.map(allocation => el('div', { class: 'doctor-prescription-batch' },
+				el('strong', null, `Lô ${allocation.batch_number || allocation.batch_id || ''}`),
+				' ',
+				el('span', null, `Đã cấp ${formatAllocationQuantity(allocation.quantity)} ${unit}`)
+			))
+		);
 	}
 
-	function buildPrescriptionRowHtml(row, index, mode, getRowTotal, showAllocation) {
+	function buildMedicineCell(row, showAllocation) {
 		const activeIngredient = row.genericName || row.name || 'Chưa rõ';
-		const strength = row.strength ? `<span>${escapeHtml(row.strength)}</span>` : '';
-		const source = row.isExternal
-			? '<span class="doctor-prescription-table__source">Thuốc ngoài</span>'
-			: '';
+		return el('td', { rowspan: '2', class: 'doctor-prescription-table__medicine-cell' },
+			el('div', { class: 'doctor-prescription-table__medicine-copy' },
+				el('div', { class: 'doctor-prescription-cell__input doctor-prescription-cell__input--search' },
+					el('input', { type: 'text', defaultValue: row.name ?? '', 'data-prescription-field': 'name', autocomplete: 'off', placeholder: row.isExternal ? 'Nhập thuốc ngoài' : 'Tìm thuốc trong kho', 'aria-label': 'Tên thuốc', role: 'combobox', 'aria-autocomplete': 'list', 'aria-controls': 'doctorMedicineDropdown', 'aria-expanded': 'false' })
+				),
+				' ',
+				el('div', { class: 'doctor-prescription-table__medicine-meta' },
+					el('span', null, `Hoạt chất: ${activeIngredient}`),
+					row.strength ? [' ', el('span', null, row.strength)] : null,
+					row.isExternal ? [' ', el('span', { class: 'doctor-prescription-table__source' }, 'Thuốc ngoài')] : null
+				),
+				buildCurrentStock(row),
+				buildBatchAllocation(row, showAllocation)
+			)
+		);
+	}
+
+	function buildQuantityCell(row) {
 		const quantityUnit = row.isExternal
-			? `<input type="text" class="doctor-prescription-table__quantity-unit-input" value="${escapeAttr(row.unit)}" data-prescription-field="unit" aria-label="Đơn vị cấp phát thuốc ngoài" placeholder="đơn vị">`
-			: `<small data-prescription-row-unit>${escapeHtml(row.unit || 'đơn vị')}</small>`;
+			? el('input', { type: 'text', class: 'doctor-prescription-table__quantity-unit-input', defaultValue: row.unit ?? '', 'data-prescription-field': 'unit', 'aria-label': 'Đơn vị cấp phát thuốc ngoài', placeholder: 'đơn vị' })
+			: el('small', { 'data-prescription-row-unit': true }, row.unit || 'đơn vị');
+		return el('td', { class: 'doctor-prescription-table__quantity-cell' },
+			el('div', { class: 'doctor-prescription-table__quantity-control doctor-prescription-table__quantity-control--calculated' },
+				el('input', { type: 'text', class: 'doctor-prescription-table__quantity-value', defaultValue: formatDoseValue(row.quantity) || '0', 'data-prescription-field': 'quantity', 'aria-label': 'Tổng số lượng tự tính', 'aria-readonly': 'true', title: 'Tự tính từ lịch uống và số ngày điều trị', readonly: true }),
+				' ',
+				quantityUnit
+			)
+		);
+	}
+
+	function buildPrescriptionRows(row, index, mode, getRowTotal, showAllocation) {
 		const scheduleCellCount = mode === PRESCRIPTION_USAGE_MODES.TIMES_PER_DAY
 			? 2
 			: PRESCRIPTION_SLOT_DEFS.length;
 		const noteColspan = scheduleCellCount + 3;
+		const documentType = TYPE_CONTRACT.toDocumentType(row.prescriptionType);
+		const external = row.isExternal ? ' is-external' : '';
 
-		return `
-			<tr class="doctor-prescription-table__body-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}" data-prescription-type="${escapeAttr(TYPE_CONTRACT.toDocumentType(row.prescriptionType))}" data-prescription-source="${row.isExternal ? 'external' : 'stock'}">
-				<td rowspan="2" class="doctor-prescription-table__stt-cell">${index + 1}</td>
-				<td rowspan="2" class="doctor-prescription-table__medicine-cell">
-					<div class="doctor-prescription-table__medicine-copy">
-						<div class="doctor-prescription-cell__input doctor-prescription-cell__input--search">
-							<input type="text" value="${escapeAttr(row.name)}" data-prescription-field="name" autocomplete="off" placeholder="${row.isExternal ? 'Nhập thuốc ngoài' : 'Tìm thuốc trong kho'}" aria-label="Tên thuốc" role="combobox" aria-autocomplete="list" aria-controls="doctorMedicineDropdown" aria-expanded="false">
-						</div>
-						<div class="doctor-prescription-table__medicine-meta">
-							<span>Hoạt chất: ${escapeHtml(activeIngredient)}</span>
-							${strength}
-							${source}
-						</div>
-						${buildCurrentStockHtml(row)}
-						${buildBatchAllocationHtml(row, showAllocation)}
-					</div>
-				</td>
-				${buildScheduleCells(row, mode).join('')}
-				<td class="doctor-prescription-table__route-cell">
-					<input type="text" value="${escapeAttr(row.route)}" data-prescription-field="route" aria-label="Đường dùng" placeholder="Uống">
-				</td>
-				<td class="doctor-prescription-table__quantity-cell">
-					<div class="doctor-prescription-table__quantity-control doctor-prescription-table__quantity-control--calculated">
-						<input type="text" class="doctor-prescription-table__quantity-value" value="${escapeAttr(formatDoseValue(row.quantity) || '0')}" data-prescription-field="quantity" aria-label="Tổng số lượng tự tính" aria-readonly="true" title="Tự tính từ lịch uống và số ngày điều trị" readonly>
-						${window.QLPKHtml.escape(quantityUnit)}
-					</div>
-				</td>
-				<td class="doctor-prescription-table__total-cell"><strong data-prescription-row-total>${getRowTotal(row)}</strong></td>
-				<td rowspan="2" class="doctor-prescription-table__actions-cell">
-					<button data-qlpk-button="danger" data-qlpk-button-variant="soft" type="button" class="doctor-prescription-table__remove" data-prescription-row-action="remove" aria-label="Xóa thuốc" title="Xóa thuốc">
-						<i class="bi bi-trash3" aria-hidden="true"></i>
-					</button>
-				</td>
-			</tr>
-			<tr class="doctor-prescription-table__note-row${row.isExternal ? ' is-external' : ''}" data-prescription-row-id="${escapeAttr(row.uid)}" data-prescription-type="${escapeAttr(TYPE_CONTRACT.toDocumentType(row.prescriptionType))}">
-				<td colspan="${noteColspan}" class="doctor-prescription-table__note-cell">
-					<div class="doctor-prescription-table__note-line">
-						<i class="bi bi-card-text" aria-hidden="true"></i>
-						<span>Ghi chú</span>
-						<input type="text" value="${escapeAttr(row.usageNote)}" data-prescription-field="usageNote" aria-label="Ghi chú thuốc" placeholder="Thêm ghi chú cách dùng thuốc">
-					</div>
-				</td>
-			</tr>`;
+		return [
+			el('tr', { class: `doctor-prescription-table__body-row${external}`, 'data-prescription-row-id': row.uid, 'data-prescription-type': documentType, 'data-prescription-source': row.isExternal ? 'external' : 'stock' },
+				el('td', { rowspan: '2', class: 'doctor-prescription-table__stt-cell' }, index + 1),
+				buildMedicineCell(row, showAllocation),
+				buildScheduleCells(row, mode),
+				el('td', { class: 'doctor-prescription-table__route-cell' },
+					el('input', { type: 'text', defaultValue: row.route ?? '', 'data-prescription-field': 'route', 'aria-label': 'Đường dùng', placeholder: 'Uống' })
+				),
+				buildQuantityCell(row),
+				el('td', { class: 'doctor-prescription-table__total-cell' }, el('strong', { 'data-prescription-row-total': true }, getRowTotal(row))),
+				el('td', { rowspan: '2', class: 'doctor-prescription-table__actions-cell' },
+					el('button', { 'data-qlpk-button': 'danger', 'data-qlpk-button-variant': 'soft', type: 'button', class: 'doctor-prescription-table__remove', 'data-prescription-row-action': 'remove', 'aria-label': 'Xóa thuốc', title: 'Xóa thuốc' },
+						el('i', { class: 'bi bi-trash3', 'aria-hidden': 'true' })
+					)
+				)
+			),
+			el('tr', { class: `doctor-prescription-table__note-row${external}`, 'data-prescription-row-id': row.uid, 'data-prescription-type': documentType },
+				el('td', { colspan: noteColspan, class: 'doctor-prescription-table__note-cell' },
+					el('div', { class: 'doctor-prescription-table__note-line' },
+						el('i', { class: 'bi bi-card-text', 'aria-hidden': 'true' }),
+						' ',
+						el('span', null, 'Ghi chú'),
+						' ',
+						el('input', { type: 'text', defaultValue: row.usageNote ?? '', 'data-prescription-field': 'usageNote', 'aria-label': 'Ghi chú thuốc', placeholder: 'Thêm ghi chú cách dùng thuốc' })
+					)
+				)
+			)
+		];
 	}
 
 	function getTableColumnCount(mode) {
@@ -163,18 +180,18 @@
 		return scheduleCellCount + 6;
 	}
 
-	function buildGroupHeaderHtml(type, code, colCount) {
+	function buildGroupHeader(type, code, colCount) {
 		const modifier = String(type).toLowerCase();
-		const codeText = code ? `Mã đơn thuốc: ${escapeHtml(code)}` : 'Chưa cấp mã đơn';
-		return `
-			<tr class="doctor-prescription-table__group-row doctor-prescription-table__group-row--${escapeAttr(modifier)}" data-prescription-group="${escapeAttr(type)}">
-				<td colspan="${colCount}" class="doctor-prescription-table__group-cell">
-					<div class="doctor-prescription-table__group-inner">
-						<span class="doctor-prescription-table__group-title">${escapeHtml(TYPE_CONTRACT.getLabel(type))}</span>
-						<span class="doctor-prescription-table__group-code${code ? '' : ' is-empty'}">${codeText}</span>
-					</div>
-				</td>
-			</tr>`;
+		const codeText = code ? `Mã đơn thuốc: ${code}` : 'Chưa cấp mã đơn';
+		return el('tr', { class: `doctor-prescription-table__group-row doctor-prescription-table__group-row--${modifier}`, 'data-prescription-group': type },
+			el('td', { colspan: colCount, class: 'doctor-prescription-table__group-cell' },
+				el('div', { class: 'doctor-prescription-table__group-inner' },
+					el('span', { class: 'doctor-prescription-table__group-title' }, TYPE_CONTRACT.getLabel(type)),
+					' ',
+					el('span', { class: `doctor-prescription-table__group-code${code ? '' : ' is-empty'}` }, codeText)
+				)
+			)
+		);
 	}
 
 	function groupRowsByDocumentType(rows) {
@@ -187,22 +204,22 @@
 	}
 
 	// Each stocked medicine shows its batch allocation once, on its first row.
-	function buildGroupedRowsHtml(rows, mode, options) {
+	function buildGroupedRows(rows, mode, options) {
 		const renderedMedicineAllocations = new Set();
 		const codesByType = options.codesByType || {};
 		const colCount = getTableColumnCount(mode);
-		const html = [];
+		const nodes = [];
 		groupRowsByDocumentType(rows).forEach((groupRows, type) => {
 			if (!groupRows.length) return;
-			html.push(buildGroupHeaderHtml(type, codesByType[type], colCount));
+			nodes.push(buildGroupHeader(type, codesByType[type], colCount));
 			groupRows.forEach((row, groupIndex) => {
 				const allocationKey = row && !row.isExternal && row.medicineId ? String(row.medicineId) : '';
 				const showAllocation = Boolean(allocationKey) && !renderedMedicineAllocations.has(allocationKey);
 				if (showAllocation) renderedMedicineAllocations.add(allocationKey);
-				html.push(buildPrescriptionRowHtml(row, groupIndex, mode, options.getRowTotal, showAllocation));
+				nodes.push(...buildPrescriptionRows(row, groupIndex, mode, options.getRowTotal, showAllocation));
 			});
 		});
-		return html.join('');
+		return nodes;
 	}
 
 	function render(options = {}) {
@@ -218,8 +235,8 @@
 		const rows = Array.isArray(options.rows) ? options.rows : [];
 		const mode = options.mode || PRESCRIPTION_USAGE_MODES.TIME_SLOTS;
 		body.dataset.prescriptionMode = mode;
-		if (head) head.innerHTML = buildTableHeader(mode);
-		body.innerHTML = rows.length ? buildGroupedRowsHtml(rows, mode, options) : '';
+		if (head) replace(head, buildTableHeader(mode));
+		replace(body, rows.length ? buildGroupedRows(rows, mode, options) : []);
 		if (table) table.hidden = !rows.length;
 		if (empty) empty.hidden = Boolean(rows.length);
 		if (typeof options.afterRender === 'function') options.afterRender(doc);
@@ -248,21 +265,21 @@
 		const copy = rowElement?.querySelector('.doctor-prescription-table__medicine-copy');
 		if (!copy) return false;
 		const currentStock = copy.querySelector('.doctor-prescription-table__stock');
-		const stockHtml = buildCurrentStockHtml(row);
-		if (stockHtml) {
-			if (currentStock) currentStock.outerHTML = stockHtml;
-			else copy.insertAdjacentHTML('beforeend', stockHtml);
+		const stock = buildCurrentStock(row);
+		if (stock) {
+			if (currentStock) currentStock.replaceWith(stock);
+			else copy.append(stock);
 		} else {
 			currentStock?.remove();
 		}
 		const current = copy.querySelector('.doctor-prescription-batches');
-		const html = buildBatchAllocationHtml(row, Boolean(options.showAllocation));
-		if (!html) {
+		const allocation = buildBatchAllocation(row, Boolean(options.showAllocation));
+		if (!allocation) {
 			current?.remove();
 			return Boolean(current);
 		}
-		if (current) current.outerHTML = html;
-		else copy.insertAdjacentHTML('beforeend', html);
+		if (current) current.replaceWith(allocation);
+		else copy.append(allocation);
 		return true;
 	}
 
