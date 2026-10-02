@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 import { API_BASE, RelativeTable, formatDateDisplay, notify, renderRelativeActionButton, toInputDate } from './relative-table.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 function trimmedValue(row, selector) {
@@ -19,6 +20,42 @@ function readNewRelativeRow(row) {
 	};
 }
 
+// Cells of a relative row in edit mode (inputs prefilled; identity/phone locked when linked to a patient record).
+function editRowCells(item, instanceId, linkedToPatient) {
+	return [
+		el('td', { class: 'relative-table-index' }, '#'),
+		el('td', { class: 'relative-cell-overlay' },
+			el('div', { class: 'relative-input-wrap' },
+				el('input', { 'aria-label': 'Họ tên người thân', class: 'relative-row-input relative-name-input', list: `relative-name-list-${instanceId}`, placeholder: 'Nhập họ tên', autocomplete: 'off', defaultValue: item.name || '' }),
+				' ',
+				el('div', { class: 'relative-search-dropdown', id: `relative-search-dropdown-${instanceId}` })
+			)
+		),
+		el('td', null,
+			el('input', { 'aria-label': 'Quan hệ', class: 'relative-row-input', list: `relative-relationship-list-${instanceId}`, defaultValue: item.kinship || '' })
+		),
+		el('td', null,
+			el('input', { 'aria-label': 'CCCD/CMND', class: 'relative-row-input relative-id-number-input', defaultValue: item.id_number || '', disabled: linkedToPatient })
+		),
+		el('td', null,
+			el('input', { 'aria-label': 'Số điện thoại', class: 'relative-row-input relative-phone-input', defaultValue: item.phone || '', disabled: linkedToPatient })
+		),
+		el('td', { class: 'relative-table-center' },
+			el('input', { 'aria-label': 'Liên hệ khẩn cấp', type: 'checkbox', class: 'relative-emergency-contact-checkbox', checked: Boolean(item.emergency_contact) })
+		),
+		el('td', null,
+			el('input', { 'aria-label': 'Ngày đi khám cùng', class: 'relative-row-input relative-date-input js-datepicker', 'data-date-format': 'Y-m-d', 'data-alt-format': 'd/m/Y', placeholder: 'dd/mm/yyyy' })
+		),
+		el('td', null,
+			el('div', { class: 'relative-row-actions' },
+				renderRelativeActionButton('save', 'btn-save', 'Lưu'),
+				' ',
+				renderRelativeActionButton('cancel', 'btn-cancel', 'Hủy')
+			)
+		)
+	];
+}
+
 const methods = {
 	showCreateRow() {
 		if (this.readOnly || this.mutation) return;
@@ -26,28 +63,38 @@ const methods = {
 
 		const tr = document.createElement('tr');
 		tr.classList.add('editing-row');
-		tr.innerHTML = `
-                <td class="relative-table-index">+</td>
-				<td class="relative-cell-overlay">
-					<div class="relative-input-wrap">
-						<input aria-label="Họ tên người thân" class="relative-row-input relative-name-input" list="relative-name-list-${this.instanceId}" placeholder="Nhập họ tên" autocomplete="off">
-						<div class="relative-search-dropdown" id="relative-search-dropdown-${this.instanceId}"></div>
-					</div>
-				</td>
-                <td><input aria-label="Quan hệ" class="relative-row-input" list="relative-relationship-list-${this.instanceId}" placeholder="Quan hệ"></td>
-                <td><input aria-label="CCCD/CMND" class="relative-row-input relative-id-number-input" placeholder="CCCD/CMND"></td>
-                <td><input aria-label="Số điện thoại" class="relative-row-input relative-phone-input" placeholder="Số điện thoại"></td>
-				<td class="relative-table-center">
-					<input aria-label="Liên hệ khẩn cấp" type="checkbox" class="relative-emergency-contact-checkbox">
-                </td>
-                <td><input aria-label="Ngày đi khám cùng" class="relative-row-input relative-date-input js-datepicker" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy"></td>
-				<td>
-					<div class="relative-row-actions">
-						${renderRelativeActionButton('save', 'btn-save', 'Lưu')}
-						${renderRelativeActionButton('cancel', 'btn-cancel', 'Hủy')}
-					</div>
-				</td>
-            `;
+		replace(tr, [
+			el('td', { class: 'relative-table-index' }, '+'),
+			el('td', { class: 'relative-cell-overlay' },
+				el('div', { class: 'relative-input-wrap' },
+					el('input', { 'aria-label': 'Họ tên người thân', class: 'relative-row-input relative-name-input', list: `relative-name-list-${this.instanceId}`, placeholder: 'Nhập họ tên', autocomplete: 'off' }),
+					' ',
+					el('div', { class: 'relative-search-dropdown', id: `relative-search-dropdown-${this.instanceId}` })
+				)
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'Quan hệ', class: 'relative-row-input', list: `relative-relationship-list-${this.instanceId}`, placeholder: 'Quan hệ' })
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'CCCD/CMND', class: 'relative-row-input relative-id-number-input', placeholder: 'CCCD/CMND' })
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'Số điện thoại', class: 'relative-row-input relative-phone-input', placeholder: 'Số điện thoại' })
+			),
+			el('td', { class: 'relative-table-center' },
+				el('input', { 'aria-label': 'Liên hệ khẩn cấp', type: 'checkbox', class: 'relative-emergency-contact-checkbox' })
+			),
+			el('td', null,
+				el('input', { 'aria-label': 'Ngày đi khám cùng', class: 'relative-row-input relative-date-input js-datepicker', 'data-date-format': 'Y-m-d', 'data-alt-format': 'd/m/Y', placeholder: 'dd/mm/yyyy' })
+			),
+			el('td', null,
+				el('div', { class: 'relative-row-actions' },
+					renderRelativeActionButton('save', 'btn-save', 'Lưu'),
+					' ',
+					renderRelativeActionButton('cancel', 'btn-cancel', 'Hủy')
+				)
+			)
+		]);
 		this.tableBody.prepend(tr);
 		this.pendingRow = tr;
 		this.loadRevision++;
@@ -229,40 +276,13 @@ const methods = {
 		const originalRelativePatientId = item.relative_patient_id || null;
 
 		// Disable phone và id_number input nếu có relativePatientId (chọn từ hệ thống)
-		const phoneDisabled = originalRelativePatientId > 0 ? 'disabled' : '';
-		const idNumberDisabled = phoneDisabled;
+		const linkedToPatient = originalRelativePatientId > 0;
 
 		targetRow.classList.add('editing-row');
 		// Preserve current linked patient id (if any) so we can update it when saving
 		targetRow.dataset.relativePatientId = item.relative_patient_id || '';
 
-		targetRow.innerHTML = `
-                <td class="relative-table-index">#</td>
-				<td class="relative-cell-overlay">
-					<div class="relative-input-wrap">
-                        <input aria-label="Họ tên người thân" class="relative-row-input relative-name-input"
-                               list="relative-name-list-${this.instanceId}"
-                               placeholder="Nhập họ tên"
-                               autocomplete="off"
-                               value="${this.escape(item.name)}">
-						<div class="relative-search-dropdown"
-							 id="relative-search-dropdown-${this.instanceId}"></div>
-                    </div>
-                </td>
-                <td><input aria-label="Quan hệ" class="relative-row-input" list="relative-relationship-list-${this.instanceId}" value="${this.escape(item.kinship)}"></td>
-                <td><input aria-label="CCCD/CMND" class="relative-row-input relative-id-number-input" value="${this.escape(item.id_number || '')}" ${idNumberDisabled}></td>
-                <td><input aria-label="Số điện thoại" class="relative-row-input relative-phone-input" value="${this.escape(item.phone || '')}" ${phoneDisabled}></td>
-				<td class="relative-table-center">
-					<input aria-label="Liên hệ khẩn cấp" type="checkbox" class="relative-emergency-contact-checkbox" ${item.emergency_contact ? 'checked' : ''}>
-                </td>
-                <td><input aria-label="Ngày đi khám cùng" class="relative-row-input relative-date-input js-datepicker" data-date-format="Y-m-d" data-alt-format="d/m/Y" placeholder="dd/mm/yyyy"></td>
-                <td>
-                    <div class="relative-row-actions">
-                        ${renderRelativeActionButton('save', 'btn-save', 'Lưu')}
-                        ${renderRelativeActionButton('cancel', 'btn-cancel', 'Hủy')}
-                    </div>
-                </td>
-            `;
+		replace(targetRow, editRowCells(item, this.instanceId, linkedToPatient));
 
 		// Enable autocomplete + patient search for edit row as well
 		const dropdownHandlers = this.setupNameAutocomplete(targetRow) || {};

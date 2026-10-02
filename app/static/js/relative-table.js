@@ -1,3 +1,4 @@
+import { el, replace } from './shared/dom.js';
 const API_BASE = '/api/family-members';
 let instanceCounter = 0;
 
@@ -96,78 +97,80 @@ const toInputDate = (value) => {
 };
 
 const renderRelativeActionButton = (action, className, title) => {
-	if (!window.QLPKIconSystem || typeof window.QLPKIconSystem.renderActionButton !== 'function') return '';
-	return window.QLPKIconSystem.renderActionButton({ action, title, label: title, className });
+	if (!window.QLPKIconSystem || typeof window.QLPKIconSystem.createActionButton !== 'function') return null;
+	return window.QLPKIconSystem.createActionButton({ action, title, label: title, className });
 };
 
 const renderAddRelativeButton = () => {
-	if (window.QLPKIconSystem && typeof window.QLPKIconSystem.renderIconTextButton === 'function') {
-		return window.QLPKIconSystem.renderIconTextButton({
+	if (window.QLPKIconSystem && typeof window.QLPKIconSystem.createIconTextButton === 'function') {
+		return window.QLPKIconSystem.createIconTextButton({
 			action: 'add',
 			label: 'Thêm người thân',
 			className: 'btn-add-relative relative-table-add-btn'
 		});
 	}
-	return `
-			<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn-add-relative relative-table-add-btn">
-				<i class="bi bi-plus-circle qlpk-button-icon" aria-hidden="true"></i><span>Thêm người thân</span>
-			</button>
-		`;
+	return el('button', { 'data-qlpk-button': 'execute', 'data-qlpk-button-variant': 'solid', type: 'button', class: 'btn-add-relative relative-table-add-btn' },
+		el('i', { class: 'bi bi-plus-circle qlpk-button-icon', 'aria-hidden': 'true' }),
+		el('span', null, 'Thêm người thân')
+	);
 };
 
-const buildRelativeTableMarkup = (table, relationshipOptionsHtml) => {
-	return `
-                <div class="relative-table-card ${table.readOnly ? 'readonly' : ''}">
-                    <div class="relative-table-header">
-                        <h6><i class="bi bi-people-fill relative-table-title-icon qlpk-section-icon" aria-hidden="true"></i>Người thân liên kết</h6>
-                        <div class="relative-table-actions">
-                            ${renderAddRelativeButton()}
-                        </div>
-                    </div>
-                    <div class="relative-table-body">
-						<div class="relative-table-scroll">
-							<table class="relative-table">
-								<colgroup>
-									<col class="receptionist-shared-col-index">
-									<col class="receptionist-shared-col-name">
-									<col class="receptionist-shared-col-relation">
-									<col class="receptionist-shared-col-id-number">
-									<col class="receptionist-shared-col-phone">
-									<col class="receptionist-shared-col-emergency">
-									<col class="receptionist-shared-col-date">
-									<col class="receptionist-shared-col-actions">
-								</colgroup>
-								<thead>
-                                    <tr>
-                                        <th>STT</th>
-                                        <th>Họ tên</th>
-                                        <th>Quan hệ</th>
-                                        <th>CCCD/CMND</th>
-                                        <th>Số điện thoại</th>
-                                        <th>Liên hệ khẩn cấp</th>
-                                        <th>Ngày khám cùng</th>
-										<th class="joint-exam-action-column">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="relative-empty-state">
-                            <p class="relative-empty-state__title">Chưa có người thân nào được liên kết</p>
-                            <p class="relative-empty-state__subtitle">Thêm ít nhất một liên hệ để hỗ trợ bệnh nhân.</p>
-                        </div>
-                    </div>
-                </div>
-                <datalist id="relative-name-list-${table.instanceId}">
-                    <option value="Đặng Thị Minh An"></option>
-                    <option value="Trần Quốc Huy"></option>
-                    <option value="Phạm Anh Thư"></option>
-                    <option value="Nguyễn Văn An"></option>
-                </datalist>
-                <datalist id="relative-relationship-list-${table.instanceId}">
-                    ${relationshipOptionsHtml}
-                </datalist>
-            `;
+const buildRelativeTableNodes = (table, relationshipOptions) => {
+	return [
+		el('div', { class: `relative-table-card ${table.readOnly ? 'readonly' : ''}` },
+			el('div', { class: 'relative-table-header' },
+				el('h6', null,
+					el('i', { class: 'bi bi-people-fill relative-table-title-icon qlpk-section-icon', 'aria-hidden': 'true' }),
+					'Người thân liên kết'
+				),
+				' ',
+				el('div', { class: 'relative-table-actions' }, renderAddRelativeButton())
+			),
+			' ',
+			el('div', { class: 'relative-table-body' },
+				el('div', { class: 'relative-table-scroll' },
+					el('table', { class: 'relative-table' },
+						el('colgroup', null,
+							el('col', { class: 'receptionist-shared-col-index' }),
+							el('col', { class: 'receptionist-shared-col-name' }),
+							el('col', { class: 'receptionist-shared-col-relation' }),
+							el('col', { class: 'receptionist-shared-col-id-number' }),
+							el('col', { class: 'receptionist-shared-col-phone' }),
+							el('col', { class: 'receptionist-shared-col-emergency' }),
+							el('col', { class: 'receptionist-shared-col-date' }),
+							el('col', { class: 'receptionist-shared-col-actions' })
+						),
+						el('thead', null,
+							el('tr', null,
+								el('th', null, 'STT'),
+								el('th', null, 'Họ tên'),
+								el('th', null, 'Quan hệ'),
+								el('th', null, 'CCCD/CMND'),
+								el('th', null, 'Số điện thoại'),
+								el('th', null, 'Liên hệ khẩn cấp'),
+								el('th', null, 'Ngày khám cùng'),
+								el('th', { class: 'joint-exam-action-column' }, 'Thao tác')
+							)
+						),
+						el('tbody')
+					)
+				),
+				' ',
+				el('div', { class: 'relative-empty-state' },
+					el('p', { class: 'relative-empty-state__title' }, 'Chưa có người thân nào được liên kết'),
+					' ',
+					el('p', { class: 'relative-empty-state__subtitle' }, 'Thêm ít nhất một liên hệ để hỗ trợ bệnh nhân.')
+				)
+			)
+		),
+		el('datalist', { id: `relative-name-list-${table.instanceId}` },
+			el('option', { value: 'Đặng Thị Minh An' }),
+			el('option', { value: 'Trần Quốc Huy' }),
+			el('option', { value: 'Phạm Anh Thư' }),
+			el('option', { value: 'Nguyễn Văn An' })
+		),
+		el('datalist', { id: `relative-relationship-list-${table.instanceId}` }, relationshipOptions)
+	];
 };
 
 class RelativeTable {
@@ -200,11 +203,10 @@ class RelativeTable {
 	}
 
 	render() {
-		const relationshipOptionsHtml = (this.relationshipOptions || DEFAULT_RELATIONSHIP_OPTIONS)
-			.map((option) => `<option value="${this.escape(option)}"></option>`)
-			.join('');
+		const relationshipOptions = (this.relationshipOptions || DEFAULT_RELATIONSHIP_OPTIONS)
+			.map(option => el('option', { value: option }));
 
-		this.container.innerHTML = buildRelativeTableMarkup(this, relationshipOptionsHtml);
+		replace(this.container, buildRelativeTableNodes(this, relationshipOptions));
 
 		this.tableBody = this.container.querySelector('tbody');
 		this.emptyState = this.container.querySelector('.relative-empty-state');
@@ -358,17 +360,38 @@ class RelativeTable {
 	}
 
 	showLoading() {
-		this.tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8">
-                        <div class="relative-loading">
-                            <span class="relative-spinner"></span>
-                            Đang tải dữ liệu...
-                        </div>
-                    </td>
-                </tr>
-            `;
+		replace(this.tableBody, el('tr', null,
+			el('td', { colspan: '8' },
+				el('div', { class: 'relative-loading' }, el('span', { class: 'relative-spinner' }), ' Đang tải dữ liệu...')
+			)
+		));
 		this.emptyState.classList.remove('active');
+	}
+
+	rowCells(item, index, jointExamDate) {
+		const nameContent = this.enablePatientLinks && item.relative_patient_id
+			? el('a', { href: '#', class: 'relative-name-link', 'data-relative-patient': item.relative_patient_id }, item.name || '')
+			: el('span', null, item.name || '');
+		return [
+			el('td', { class: 'relative-table-index' }, `${index + 1}.`),
+			el('td', null, el('div', { class: 'relative-name-cell' }, nameContent)),
+			el('td', null, item.kinship || ''),
+			el('td', null, item.id_number || ''),
+			el('td', null, item.phone || ''),
+			el('td', { class: 'relative-table-center' },
+				item.emergency_contact ? el('i', { class: 'bi bi-check-circle-fill relative-table-emergency-icon', 'aria-hidden': 'true' }) : null
+			),
+			el('td', null, jointExamDate ? formatDateDisplay(jointExamDate) : ''),
+			el('td', null,
+				el('div', { class: 'relative-row-actions' },
+					this.readOnly ? null : [
+						renderRelativeActionButton('edit', 'edit', 'Chỉnh sửa'),
+						' ',
+						renderRelativeActionButton('delete', 'remove', 'Xóa dòng')
+					]
+				)
+			)
+		];
 	}
 
 	renderRows(rows) {
@@ -383,32 +406,7 @@ class RelativeTable {
 			const tr = document.createElement('tr');
 			const jointExamDate = item.joint_exam_date || this.currentAppointmentDate;
 			tr.dataset.memberId = item.id || '';
-			const nameContent = this.enablePatientLinks && item.relative_patient_id
-				? `<a href="#" class="relative-name-link" data-relative-patient="${item.relative_patient_id}">${this.escape(item.name)}</a>`
-				: `<span>${this.escape(item.name)}</span>`;
-			tr.innerHTML = `
-                    <td class="relative-table-index">${index + 1}.</td>
-                    <td>
-                        <div class="relative-name-cell">
-                            ${nameContent}
-                        </div>
-                    </td>
-                    <td>${this.escape(item.kinship)}</td>
-                    <td>${this.escape(item.id_number || '')}</td>
-                    <td>${this.escape(item.phone || '')}</td>
-						<td class="relative-table-center">
-							${item.emergency_contact ? '<i class="bi bi-check-circle-fill relative-table-emergency-icon" aria-hidden="true"></i>' : ''}
-                    </td>
-					<td>${jointExamDate ? formatDateDisplay(jointExamDate) : ''}</td>
-					<td>
-						<div class="relative-row-actions">
-							${this.readOnly ? '' : `
-								${renderRelativeActionButton('edit', 'edit', 'Chỉnh sửa')}
-								${renderRelativeActionButton('delete', 'remove', 'Xóa dòng')}
-							`}
-						</div>
-                    </td>
-                `;
+			replace(tr, this.rowCells(item, index, jointExamDate));
 			if (!this.readOnly) {
 				const editBtn = tr.querySelector('.edit');
 				const removeBtn = tr.querySelector('.remove');
@@ -433,14 +431,6 @@ class RelativeTable {
 
 			this.tableBody.appendChild(tr);
 		});
-	}
-
-	escape(value) {
-		if (!value) return '';
-		return value.toString()
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
 	}
 
 }

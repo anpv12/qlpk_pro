@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { createWindow } = require('./helpers/fake-dom');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function deferred() {
@@ -15,8 +16,7 @@ function deferred() {
 function harness() {
   const messages = [];
   const confirmation = deferred();
-  const container = { querySelector: () => null };
-  const document = { querySelector: () => container };
+  const { document } = createWindow({ html: '<div id="relatives"></div>' });
   const window = { QLPKUserFeedback: { show: (...args) => messages.push(args) }, QLPKConfirmationDialog: { confirm: () => confirmation.promise } };
   runScriptFile('app/static/js/relative-table.js', vm.createContext({ window, document, console }));
   const table = window.RelativeTableManager.init('#relatives', { patientId: 10 });
@@ -232,19 +232,13 @@ test('Clear phải dispose dropdown của dòng cũ', () => {
 });
 
 test('Khởi tạo không có bệnh nhân hiện trạng thái rỗng giống clear()', () => {
-  const classes = new Set();
-  const emptyState = { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } };
-  const tableBody = { innerHTML: 'x', replaceChildren() { this.innerHTML = ''; } };
-  const container = {
-    innerHTML: '',
-    querySelector: selector => (selector === 'tbody' ? tableBody : selector === '.relative-empty-state' ? emptyState : null)
-  };
-  const document = { querySelector: () => container };
+  const { document } = createWindow({ html: '<div id="relatives"></div>' });
   const window = { QLPKUserFeedback: { show() {} } };
   runScriptFile('app/static/js/relative-table.js', vm.createContext({ window, document, console }));
   const table = window.RelativeTableManager.init('#relatives', {});
-  assert.equal(classes.has('active'), true);
-  assert.equal(tableBody.innerHTML, '');
+  const emptyState = document.querySelector('.relative-empty-state');
+  assert.equal(emptyState.classList.contains('active'), true);
+  assert.equal(document.querySelector('#relatives tbody').innerHTML, '');
   table.clear();
-  assert.equal(classes.has('active'), true);
+  assert.equal(emptyState.classList.contains('active'), true);
 });

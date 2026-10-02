@@ -2,16 +2,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { createWindow } = require('./helpers/fake-dom');
 const { runScriptFile } = require('./helpers/module-source');
 
 function harness(cookie = true) {
     const requests = [], responses = [], effects = [];
-    const document = {
-        baseURI: 'https://clinic.test/',
-        querySelector: () => ({ querySelector: () => null }),
-        body: { appendChild() {} },
-        createElement: () => ({ click: () => effects.push('download'), remove() {} }),
-    };
+    const { document } = createWindow({ html: '<div id="relatives"></div>', url: 'https://clinic.test/' });
+    const createNode = document.createElement.bind(document);
+    // Download links are observed; every other element is a real fake-DOM node.
+    document.createElement = tag => (tag === 'a' ? { click: () => effects.push('download'), remove() {} } : createNode(tag));
+    document.body.appendChild = node => node;
     const window = {
         document, navigator: {}, FormData,
         location: { origin: 'https://clinic.test', href: 'https://clinic.test/' },

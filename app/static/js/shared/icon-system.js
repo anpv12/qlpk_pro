@@ -135,6 +135,61 @@
 		return `<button class="qlpk-icon-text-button qlpk-icon-text-button--${escapeHtml(action)}${className}"${renderAttributes(attrs)}>${renderActionIcon(action, { className: 'qlpk-button-icon' })}<span>${escapeHtml(label)}</span></button>`;
 	}
 
+	// Node builders: same markup as the render* string helpers, built as elements (data never parsed as HTML).
+	function createNode(tag, className, attrs = {}) {
+		const node = window.document.createElement(tag);
+		node.className = className;
+		Object.keys(attrs).forEach(key => {
+			if (attrs[key] === false || attrs[key] == null) return;
+			node.setAttribute(key, attrs[key] === true ? '' : String(attrs[key]));
+		});
+		return node;
+	}
+
+	function createIcon(iconClass, options = {}) {
+		const extraClass = options.className ? ` ${options.className}` : '';
+		return createNode('i', `bi ${iconClass}${extraClass}`, options.label ? { 'aria-label': options.label } : { 'aria-hidden': 'true' });
+	}
+
+	function createActionIcon(action, options = {}) {
+		return createIcon(getActionIcon(action), options);
+	}
+
+	function createActionButton(options = {}) {
+		const action = options.action || 'view';
+		const label = options.label || options.title || action;
+		const title = options.title || label;
+		const className = options.className ? ` ${options.className}` : '';
+		const attrs = Object.assign({}, options.attrs || {}, {
+			type: options.type || 'button',
+			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
+			'data-qlpk-button-variant': 'soft',
+			title,
+			'aria-label': label
+		});
+		const button = createNode('button', `btn btn-sm qlpk-icon-action qlpk-icon-action--${action}${className}`, attrs);
+		button.append(createActionIcon(action));
+		return button;
+	}
+
+	function createIconTextButton(options = {}) {
+		const action = options.action || 'add';
+		const label = options.label || options.title || action;
+		const title = options.title || label;
+		const className = options.className ? ` ${options.className}` : '';
+		const attrs = Object.assign({}, options.attrs || {}, {
+			type: options.type || 'button',
+			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
+			'data-qlpk-button-variant': options.buttonVariant || 'soft',
+			title
+		});
+		const button = createNode('button', `qlpk-icon-text-button qlpk-icon-text-button--${action}${className}`, attrs);
+		const text = window.document.createElement('span');
+		text.textContent = label;
+		button.append(createActionIcon(action, { className: 'qlpk-button-icon' }), text);
+		return button;
+	}
+
 	function renderFeedbackIcon(type, options = {}) {
 		return renderIcon(getFeedbackIcon(type), options);
 	}
@@ -164,6 +219,10 @@
 		renderIconTextButton,
 		renderFeedbackIcon,
 		renderSourceIcon,
-		renderFileIcon
+		renderFileIcon,
+		createIcon,
+		createActionIcon,
+		createActionButton,
+		createIconTextButton
 	};
 })(window);

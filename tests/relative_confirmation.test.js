@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { createWindow } = require('./helpers/fake-dom');
 const { runScriptFile, readScriptSource } = require('./helpers/module-source');
 
 function harness(result, missingOwner = false) {
@@ -14,8 +15,8 @@ function harness(result, missingOwner = false) {
             return { isConfirmed: result === 'confirm' };
         } }
     };
-    const container = { querySelector: () => null };
-    const context = vm.createContext({ window, document: { querySelector: () => container }, console });
+    const { document } = createWindow({ html: '<div id="relatives"></div>' });
+    const context = vm.createContext({ window, document, console });
     for (const file of ['shared/confirmation-dialog.js', 'components/patient-search-dropdown.js', 'joint-exam-manager.js', 'relative-table.js']) {
         runScriptFile(`app/static/js/${file}`, context);
     }
