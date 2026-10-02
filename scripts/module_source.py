@@ -15,9 +15,30 @@ CONTINUED = re.compile(r"^// Continued in \(nạp ngay sau file này, cùng scop
 JS_ROOT = Path(__file__).resolve().parents[1] / "app" / "static" / "js"
 
 
+RELATIVE_IMPORT = re.compile(r"""^import\s+(?:[^'"]*?from\s+)?['"](\.{1,2}/[^'"]+)['"]""", re.M)
+
+
+def es_module_files(path: Path, seen: list[Path] | None = None) -> list[Path]:
+    """An ES module after the modules it imports from its own ``<stem>-parts/`` folder (dependencies first, once)."""
+    seen = [] if seen is None else seen
+    path = path.resolve()
+    if path in seen:
+        return []
+    seen.append(path)
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    files: list[Path] = []
+    for spec in RELATIVE_IMPORT.findall(text):
+        target = (path.parent / spec).resolve()
+        if target.is_file() and target.parent == path.with_name(path.stem + "-parts"):
+            files += es_module_files(target, seen)
+    return files + [path]
+
+
 def module_files(path: Path) -> list[Path]:
     """Load order: the entry's parts, the entry, then its continuation files (each expanded the same way)."""
     text = path.read_text(encoding="utf-8", errors="ignore")
+    if not MANIFEST.search(text) and re.search(r"from ['\"]\./" + re.escape(path.stem) + r"-parts/", text):
+        return es_module_files(path)
     match = MANIFEST.search(text)
     part_dir = path.with_name(path.stem + "-parts")
     parts = [part_dir / name.strip() for name in match.group(1).split(",")] if match else []
