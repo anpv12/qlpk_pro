@@ -90,9 +90,7 @@ function bindClinicalAccordions(root) {
 
 function renderPatientHeader(options = {}) {
 	const doc = options.document || document;
-	const patient = Object.prototype.hasOwnProperty.call(options, 'patient')
-		? (options.patient || {})
-		: (window.currentPatientData || {});
+	const patient = options.patient || {};
 	const heading = doc.getElementById('psychologistClinicalHeading');
 	const code = doc.getElementById('psychologistPatientCode');
 	const latestVisit = doc.getElementById('psychologistPatientLatestVisit');

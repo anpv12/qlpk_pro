@@ -285,7 +285,7 @@ test('initializeWorkflowPageShell giữ thứ tự reset → sidebar → loaders
   timers.forEach(([fn]) => fn());
   assert.equal(log.at(-1), 'loadAddressDraftFromCache');
   assert.equal(doc.elements.get('age').value, '');
-  assert.equal(typeof win.occupationAutocomplete, 'object');
+  assert.equal(typeof win.getOccupationAutocomplete(), 'object');
 });
 
 test('initializeWorkflowPageShell không lỗi khi thiếu setTimeout/jQuery/adapter tùy chọn', () => {

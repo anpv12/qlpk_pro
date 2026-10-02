@@ -36,7 +36,6 @@ function bindRealtimeUpdates(options = {}) {
 		const selectedPatient = typeof options.getSelectedPatient === 'function' ? options.getSelectedPatient() : null;
 		if (!selectedPatient || selectedPatient[field] === value) return false;
 		selectedPatient[field] = value;
-		if (typeof options.syncWindowState === 'function') options.syncWindowState();
 		if (typeof options.updateMedicalRecordTab === 'function') options.updateMedicalRecordTab();
 		return true;
 	};

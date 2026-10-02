@@ -70,7 +70,7 @@ function bindRealtimeWhenReady(adapter, document) {
 function create(options = {}) {
 	const document = options.document || window.document;
 	const getAppointments = options.getAppointments || (() => []);
-	const getCurrentPatientData = options.getCurrentPatientData || (() => window.currentPatientData);
+	const getCurrentPatientData = options.getCurrentPatientData || (() => null);
 	const getCurrentAppointmentId = options.getCurrentAppointmentId || (() => null);
 	const getFormatDateDisplay = options.getFormatDateDisplay || (() => window.formatDateDisplay || null);
 	const formatDisplayDate = options.formatDisplayDate || getFormatDateDisplay();
@@ -106,7 +106,6 @@ function create(options = {}) {
 				formatDisplayDate
 			})
 		});
-		window.QLPKPsychologistPatientHistoryModal = patientHistoryModal;
 
 		const modalSearchContext = patientHistoryModal.context;
 		const patientSearchModalElement = modalSearchContext.elements.modal;
@@ -119,12 +118,10 @@ function create(options = {}) {
 			document,
 			console,
 			getSelectedPatient: () => modalSearchState.get('selectedPatient'),
-			syncWindowState: () => modalPatientSearchFlow.syncWindowState(),
 			getClinicInfoConfig: patientHistoryModal.dataRuntime.getClinicInfo,
 			buildMedicalRecordHTML: patientHistoryModal.dataRuntime.buildMedicalRecordHTML,
 			createBarcodesInElement: patientHistoryModal.dataRuntime.createBarcodesInElement
 		});
-		window.updateMedicalRecordTab = medicalRecordRealtimeAdapter.updateMedicalRecordTab;
 
 		bindRealtimeWhenReady(medicalRecordRealtimeAdapter, document);
 
@@ -147,7 +144,9 @@ function create(options = {}) {
 			patientHistoryModal,
 			modalSearchContext,
 			modalPatientSearchFlow,
-			prepareFormForCopy
+			prepareFormForCopy,
+			getSelectedPatient: () => modalSearchState.get('selectedPatient'),
+			updateMedicalRecordTab: medicalRecordRealtimeAdapter.updateMedicalRecordTab
 		};
 	}
 

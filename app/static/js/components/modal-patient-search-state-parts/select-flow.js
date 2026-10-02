@@ -46,7 +46,6 @@ function selectPatientForModalFlow(patients, index, options = {}) {
 	if (typeof options.applySelectionState === 'function') {
 		options.applySelectionState(selectionState);
 	}
-	if (typeof options.syncState === 'function') options.syncState(selectionState);
 
 	const selectedPatientIdentity = selectionState.identity;
 	moduleState.applySelectedPatientUi(index, options);

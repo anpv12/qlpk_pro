@@ -388,32 +388,17 @@ function setSelectEnsureOption(elementId, value, options = {}) {
 	}
 	element.value = value || '';
 }
-function getWindowAutocompleteValue(instanceName, fallbackId, options = {}) {
-	const win = options.window || window;
-	const instance = win[instanceName];
-	if (instance && typeof instance.getValue === 'function') return instance.getValue() || '';
-	return getElementValue(fallbackId, options);
-}
 function getModalOccupationValue(options = {}) {
-	const win = options.window || window;
-	if (win.modalOccupationAutocomplete && typeof win.modalOccupationAutocomplete.getValue === 'function') {
-		return win.modalOccupationAutocomplete.getValue() || '';
-	}
 	const occupationField = getDocument(options).getElementById('occupation');
 	return occupationField ? occupationField.value || '' : getElementValue('modalOccupation', options);
 }
 function getModalSexualOrientationValue(options = {}) {
-	const win = options.window || window;
-	if (win.sexualOrientationAutocomplete && typeof win.sexualOrientationAutocomplete.getValue === 'function') {
-		return win.sexualOrientationAutocomplete.getValue() || '';
-	}
 	const sexualOrientationField = getDocument(options).getElementById('sexualOrientation');
 	return sexualOrientationField ? sexualOrientationField.value || '' : getElementValue('modalSexualOrientation', options);
 }
 function calculateModalPregnancyWeek(expectedDeliveryDate, options = {}) {
 	if (!expectedDeliveryDate) return null;
-	const win = options.window || window;
-	const calculatePregnancyWeek = options.calculatePregnancyWeek || win.calculatePregnancyWeek;
+	const calculatePregnancyWeek = options.calculatePregnancyWeek;
 	if (typeof calculatePregnancyWeek !== 'function') return null;
 	const result = calculatePregnancyWeek(expectedDeliveryDate);
 	return result && result.weeks >= 0 ? result.weeks : null;
@@ -427,13 +412,13 @@ function collectPersonalDetailModalValues(options = {}) {
 		district: '',
 		ward: getElementValue('modalWard', options),
 		id_number: getElementValue('modalIdCard', options),
-		nationality: getWindowAutocompleteValue('modalNationalityAutocomplete', 'modalNationality', options),
-		religion: getWindowAutocompleteValue('modalReligionAutocomplete', 'modalReligion', options),
-		ethnicity: getWindowAutocompleteValue('modalEthnicityAutocomplete', 'modalEthnicity', options),
+		nationality: getElementValue('modalNationality', options),
+		religion: getElementValue('modalReligion', options),
+		ethnicity: getElementValue('modalEthnicity', options),
 		occupation: getModalOccupationValue(options),
 		don_vi_cong_tac: getElementValue('modalDonViCongTac', options),
 		dia_chi_cong_ty: getElementValue('modalDiaChiCongTy', options),
-		education_level: getWindowAutocompleteValue('modalEducationLevelAutocomplete', 'modalEducationLevel', options),
+		education_level: getElementValue('modalEducationLevel', options),
 		gender: getElementValue('modalGender', options),
 		sexual_orientation: getModalSexualOrientationValue(options),
 		mang_thai: doc.getElementById('modalMangThai')?.checked || false,
@@ -451,4 +436,4 @@ async function putPatientFields(patientId, body, options = {}) {
 	} catch (error) { console.warn('Không thể lưu địa chỉ bệnh nhân:', error); }
 }
 
-export { appendAddressOptions, calculateModalPregnancyWeek, callVietnamAddressAPI, clearSelectOptions, collectPersonalDetailModalValues, fetchDistrictsByProvinceCode, fetchWardsByDistrictCode, fillMainAddressFieldFromModal, getApiCall, getConsole, getDocument, getElementValue, getEncodeURIComponent, getModalAddressFormValues, getModalOccupationValue, getModalSexualOrientationValue, getSearchParamsCtor, getWindowAutocompleteValue, loadAddressHierarchy, loadDistricts, loadDistrictsModal, loadProvinces, loadProvincesForModal, loadProvincesModal, loadWards, loadWardsModal, normalizeAddressName, putPatientFields, setMainValue, setSelectByApprox, setSelectEnsureOption, setSelectValueWithFallback, tryFallbackAPI, updateAddressSummary };
+export { appendAddressOptions, calculateModalPregnancyWeek, callVietnamAddressAPI, clearSelectOptions, collectPersonalDetailModalValues, fetchDistrictsByProvinceCode, fetchWardsByDistrictCode, fillMainAddressFieldFromModal, getApiCall, getConsole, getDocument, getElementValue, getEncodeURIComponent, getModalAddressFormValues, getModalOccupationValue, getModalSexualOrientationValue, getSearchParamsCtor, loadAddressHierarchy, loadDistricts, loadDistrictsModal, loadProvinces, loadProvincesForModal, loadProvincesModal, loadWards, loadWardsModal, normalizeAddressName, putPatientFields, setMainValue, setSelectByApprox, setSelectEnsureOption, setSelectValueWithFallback, tryFallbackAPI, updateAddressSummary };

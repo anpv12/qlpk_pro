@@ -69,12 +69,6 @@ import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 		return true;
 	}
 
-	function syncWindowState(options = {}) {
-		if (options.exposeLegacyWindowState === false || typeof window === 'undefined') return options;
-		window.modalSelectedPatient = options.selectedPatient;
-		return options;
-	}
-
 	function getDateFormatter(formatDateDisplay) {
 		if (typeof formatDateDisplay === 'function') return formatDateDisplay;
 		if (typeof window.formatDateDisplay === 'function') return window.formatDateDisplay;
@@ -451,7 +445,7 @@ import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 
 	Object.assign(PARTS, {
 		resolveElement, getBootstrapModalApi, showBootstrapModal, hideBootstrapModal, buildState,
-		renderState, ensureHighlightStyles, syncWindowState, getDateFormatter, getPatientSearchText,
+		renderState, ensureHighlightStyles, getDateFormatter, getPatientSearchText,
 		resolvePresetSearch, openSearchModalWithPreset, buildOpenSearchModalState, openSearchModalAndFetch,
 		buildPatientRow, syncPatientActionColumn, renderSearchResults, resolveAutoSelectIndex,
 		renderHistoryNoPatient, setSelectButtonEnabled, setActivePatientRow, selectAppointmentCard,

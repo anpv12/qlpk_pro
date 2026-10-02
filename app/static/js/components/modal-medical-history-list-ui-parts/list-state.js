@@ -55,20 +55,14 @@ function buildHistoryLoadStateHandlers(options = {}) {
 	const assign = (setter, value) => {
 		if (typeof setter === 'function') setter(value);
 	};
-	const syncState = () => {
-		if (typeof options.syncState === 'function') options.syncState();
-	};
-
 	return {
 		onLoadStart(loadStartState) {
 			assign(options.setMedicalHistoryLoading, loadStartState.medicalHistoryLoading);
-			syncState();
 			assign(options.setCurrentPatientId, loadStartState.currentPatientId);
 		},
 		onLoadSuccess(successState) {
 			assign(options.setMedicalHistoryData, successState.medicalHistoryData);
 			assign(options.setSelectedHistoryIndex, successState.selectedHistoryIndex);
-			syncState();
 		},
 		onLoadError(errorState) {
 			assign(options.setMedicalHistoryData, errorState.medicalHistoryData);
@@ -76,7 +70,6 @@ function buildHistoryLoadStateHandlers(options = {}) {
 		},
 		onLoadFinish(finishState) {
 			assign(options.setMedicalHistoryLoading, finishState.medicalHistoryLoading);
-			syncState();
 		},
 		onAfterLoad() {
 			if (typeof options.onAfterLoad === 'function') options.onAfterLoad();
@@ -134,7 +127,6 @@ function selectHistoryForModalFlow(index, options = {}) {
 	if (typeof options.applySelectedHistoryState === 'function') {
 		options.applySelectedHistoryState(selectedHistoryState);
 	}
-	if (typeof options.syncState === 'function') options.syncState(selectedHistoryState);
 	if (typeof options.dispatchContent === 'function') {
 		options.dispatchContent(selectedHistoryState);
 	} else if (ModalFunctionTabsUi && typeof ModalFunctionTabsUi.dispatchActiveTabRender === 'function') {

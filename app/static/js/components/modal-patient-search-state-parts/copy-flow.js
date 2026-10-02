@@ -320,7 +320,6 @@ function applyAutoSelectAfterSearchForFlow(options = {}) {
 			if (typeof options.applyNoResultsState === 'function') {
 				options.applyNoResultsState(autoSelectState);
 			}
-			if (typeof options.syncState === 'function') options.syncState(autoSelectState);
 		},
 		updateContent: options.updateContent,
 		selectPatient: options.selectPatient

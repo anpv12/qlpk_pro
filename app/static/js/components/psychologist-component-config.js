@@ -1,3 +1,4 @@
+import { state as psychologistPageState } from '../psychologist-examination/page-state.js';
 const PSYCHOLOGIST_HISTORY_ROOT = 'psychologistHistoryPanel';
 const PSYCHOLOGIST_INTAKE_ROOT = 'psychologistReceptionistIntakePanel';
 const PSYCHOLOGIST_CLINICAL_ROOT = 'psychologistClinicalDecisionPanel';
@@ -11,8 +12,8 @@ window.QLPKMedicalHistoryBootstrapConfig = {
 	autoInit: false,
 	pageRuntime: window.QLPKDoctorPageRuntime || null,
 	workbenchRootSelector: '.inline-tien-su--doctor-flat',
-	isLoading: () => Boolean(window.QLPKPsychologistPageState?.isLoadingExaminationData),
-	getPatientId: () => window.QLPKPsychologistPageState?.currentPatientId || null,
+	isLoading: () => Boolean(psychologistPageState.isLoadingExaminationData),
+	getPatientId: () => psychologistPageState.currentPatientId || null,
 	normalizePayload: payload => {
 		const history = payload?.medical_history || {};
 		const patient = history.patient || {};

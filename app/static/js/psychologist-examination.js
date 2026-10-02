@@ -19,8 +19,12 @@ import { ClinicalFormDomUtils } from './components/form-dom-utils.js';
 import { ClinicalVitalCalculationUtils } from './components/vital-calculation-utils.js';
 import { OccupationAutocomplete } from './occupation-autocomplete.js';
 import { ReferralSourceControl } from './referral-source-control.js';
+import { state as psychologistPageState } from './psychologist-examination/page-state.js';
 
 let currentPatientId = null;
+let currentPatientData = null;
+// Patient history modal, its selected patient and the medical record redraw, set once the history bridge binds.
+let patientHistory = null;
 let psychologistRelativeTableInstance = null;
 const pageCoreAdapter = ClinicalPageCoreUtils.createPageCoreAdapter({
 	document,
@@ -52,9 +56,6 @@ let isFormLocked = false;
 let patientSearchQuery = ''; // Từ khóa tìm kiếm bệnh nhân
 let isLoadingExaminationData = false; // Flag để tạm tắt auto save khi đang load dữ liệu
 
-window.QLPKPsychologistSetCurrentPatientId = value => setCurrentPatientId(value);
-window.QLPKPsychologistSetCurrentAppointmentId = value => { currentAppointmentId = value || null; };
-window.QLPKPsychologistSetLoading = value => { isLoadingExaminationData = Boolean(value); };
 
 // Helpers
 const psychologistCoreUtils = PsychologistExaminationCoreUtils;
@@ -88,13 +89,14 @@ function apiCall(url, options = {}) {
 }
 
 // Read by the shared joint-exam bootstrap (same contract as the doctor page).
-window.QLPKCurrentAppointment = { getId: () => currentAppointmentId, apiCall };
+window.QLPKCurrentAppointment = { getId: () => currentAppointmentId, getContextToken: () => psychologistPageState.contextToken, apiCall };
 
 const addressHierarchyAdapter = ClinicalAddressHierarchyUtils.createAddressHierarchyAdapter({
 	document,
 	apiCall,
 	console,
-	encodeURIComponent
+	encodeURIComponent,
+	getCurrentPatientId: () => currentPatientId
 });
 
 const saveAddressDraftToCache = () => addressDraftAdapter.saveAddressDraftToCache();
@@ -189,19 +191,15 @@ async function savePatientDataInternal(formData) {
 		setCurrentPatientId,
 		showToast: window.showCustomToast,
 		afterPatientSaved: (patientResult, patientData) => {
-			const selectedModalPatient = window.modalSelectedPatient;
+			const selectedModalPatient = patientHistory?.getSelectedPatient();
 			if (selectedModalPatient) {
 				Object.assign(selectedModalPatient, patientData);
 				selectedModalPatient.id = patientResult.id;
-				if (typeof window.updateMedicalRecordTab === 'function') {
-					window.updateMedicalRecordTab();
-				}
+				patientHistory.updateMedicalRecordTab();
 			}
 		}
 	});
 }
-
-window.QLPKPsychologistSaveBase = () => savePatientDataInternal(collectFormData());
 
 async function savePatientData() {
 	return psychologistWorkspaceRuntime.save();
@@ -258,7 +256,7 @@ function initializeForm() {
 
 async function loadPatientIntoForm(patient, examination = null, appointment = null) {
 	if (!patient) return { status: 'missingPatient' };
-	window.currentPatientData = patient;
+	currentPatientData = patient;
 	setCurrentPatientId(patient.id);
 	if (appointment?.id) currentAppointmentId = appointment.id;
 	return { status: 'staged', patient, examination, appointment };
@@ -277,7 +275,8 @@ const documentFileAdapter = ClinicalDocumentFileUtils.createDocumentFileAdapter(
 
 const documentSectionAdapter = ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
 	document,
-	getContextToken: () => window.QLPKPsychologistPageState?.contextToken,
+	getCurrentPatientId: () => currentPatientId,
+	getContextToken: () => psychologistPageState.contextToken,
 	sessionStorage,
 	documentDraftKey: DOCUMENT_DRAFT_KEY,
 	apiCall,
@@ -359,7 +358,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 		savePatientData
 	});
 	if (bootstrapResult.status !== 'initialized') return;
-	psychologistWorkspaceRuntime?.bind({ document });
+	psychologistWorkspaceRuntime?.bind({ document, page: {
+		setLoading: value => { isLoadingExaminationData = Boolean(value); },
+		setCurrentPatient: patient => { currentPatientData = patient; },
+		setCurrentPatientId: value => setCurrentPatientId(value),
+		setCurrentAppointmentId: value => { currentAppointmentId = value || null; },
+		baseSave: () => savePatientDataInternal(collectFormData()),
+		openHistory: () => patientHistory?.patientHistoryModal?.open?.()
+	} });
 	psychologistWorkspaceUi?.bind({ document });
 	psychologistWorkspaceUi?.clearWorkspace({ document });
 
@@ -385,14 +391,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 		});
 	}
 
-	QLPKPsychologistPatientHistoryBridge.create({
+	patientHistory = QLPKPsychologistPatientHistoryBridge.create({
 		document,
 		apiCall,
 		showToast: window.showCustomToast,
 		showConfirmationDialog: options => QLPKConfirmationDialog.confirm(options),
 		formatDisplayDate,
 		getAppointments: () => allAppointments,
-		getCurrentPatientData: () => window.currentPatientData,
+		getCurrentPatientData: () => currentPatientData,
 		getCurrentAppointmentId: () => currentAppointmentId,
 		getFormatDateDisplay: () => window.formatDateDisplay || formatDisplayDate,
 		setLoadingState: value => { isLoadingExaminationData = value; },
@@ -433,7 +439,7 @@ async function selectPatientCard(appointmentId) {
 			QLPKWorkflowTwoPane?.activate?.('main', { document });
 			psychologistWorkspaceUi?.showWorkspace({
 				document,
-				patient: window.currentPatientData,
+				patient: currentPatientData,
 				appointmentId: currentAppointmentId
 			});
 		},

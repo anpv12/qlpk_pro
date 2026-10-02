@@ -92,8 +92,6 @@ function setCurrentPatientId(value, options = {}) {
 	if (typeof options.setLocalPatientId === 'function') {
 		options.setLocalPatientId(value);
 	}
-	const targetWindow = options.window || window;
-	targetWindow.currentPatientId = value;
 	if (typeof options.updateNotesAttachmentCount === 'function') {
 		options.updateNotesAttachmentCount();
 	}

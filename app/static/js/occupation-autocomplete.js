@@ -1,4 +1,5 @@
 import { el } from './shared/dom.js';
+import { getOccupationAutocomplete, setOccupationAutocomplete } from './components/occupation-field.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 
 /**
@@ -345,8 +346,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo autocomplete cho field nghề nghiệp (chỉ nếu chưa có và cả input và dropdown đều tồn tại)
     const occupationInput = document.getElementById('occupation');
     const occupationDropdown = document.getElementById('occupationDropdown');
-    if (occupationInput && occupationDropdown && !window.occupationAutocomplete) {
-        window.occupationAutocomplete = new OccupationAutocomplete('occupation', 'occupationDropdown');
+    if (occupationInput && occupationDropdown && !getOccupationAutocomplete()) {
+        setOccupationAutocomplete(new OccupationAutocomplete('occupation', 'occupationDropdown'));
     }
 });
 

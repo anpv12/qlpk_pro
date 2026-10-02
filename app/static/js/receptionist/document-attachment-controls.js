@@ -11,7 +11,7 @@ function getSessionStorage(options) {
 }
 
 function getCurrentPatientId(options) {
-	return typeof options.getCurrentPatientId === 'function' ? options.getCurrentPatientId() : window.currentPatientId;
+	return typeof options.getCurrentPatientId === 'function' ? options.getCurrentPatientId() : null;
 }
 
 function getUploadedDocuments(options) {

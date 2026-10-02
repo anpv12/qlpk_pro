@@ -35,7 +35,7 @@ JS_ROOT = ROOT / "app" / "static" / "js"
 MAX_FUNCTION_LINES = 80
 MAX_PY_COMPLEXITY = 10
 # Ratchet: page scripts share state through window globals; new code must not add more (lower it when removing).
-MAX_WINDOW_GLOBALS = 40
+MAX_WINDOW_GLOBALS = 27
 CSS_ROOT = ROOT / "app" / "static" / "css"
 MAX_CSS_LINES = 500
 
@@ -195,7 +195,7 @@ def window_global_findings() -> list[str]:
 
 # Browser and vendor properties a page may read from window, plus developer-only debug switches.
 WINDOW_PLATFORM_PROPERTIES = {
-    "Blob", "BroadcastChannel", "Element", "Event", "FormData", "HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement",
+    "AbortSignal", "Blob", "BroadcastChannel", "Element", "Event", "FormData", "HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement",
     "ReadableStream", "URL", "URLSearchParams", "addEventListener", "clearInterval", "clearTimeout", "console", "dispatchEvent",
     "document", "encodeURIComponent", "getComputedStyle", "history", "indexedDB", "innerHeight", "innerWidth", "localStorage",
     "location", "matchMedia", "navigator", "open", "pageXOffset", "pageYOffset", "removeEventListener", "requestAnimationFrame",
@@ -217,10 +217,10 @@ def window_read_findings() -> list[str]:
         if 'vendor' in path.parts or '.min.' in path.name:
             continue
         text = _script_code(path.read_text(encoding='utf-8', errors='ignore'))
-        assigned.update(re.findall(r"\bwindow\.([A-Za-z_$][\w$]*)\s*=(?!=)", text))
+        assigned.update(re.findall(r"\b(?:window|win|targetWindow|pageWindow)\.([A-Za-z_$][\w$]*)\s*=(?!=)", text))
         assigned.update(re.findall(r"\(\s*options\.window\s*\|\|\s*window\s*\)\.([\w$]+)\s*=(?!=)", text))
         assigned.update(re.findall(r"defineProperty\(window,\s*'([\w$]+)'", text))
-        for match in re.finditer(r"\b(?:window|globalThis)\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))", text):
+        for match in re.finditer(r"\b(?:window|globalThis|win|targetWindow|pageWindow)\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))", text):
             reads.setdefault(match.group(1), f"{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}")
     return [f"{where}: window/globalThis.{name} is read but never assigned (import the module or drop the dead fallback)"
             for name, where in sorted(reads.items()) if name not in assigned and name not in WINDOW_PLATFORM_PROPERTIES]

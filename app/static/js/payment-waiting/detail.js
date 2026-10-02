@@ -38,7 +38,6 @@ async function loadExaminationDetailModal(paymentId) {
 	try {
 		const data = await requestJson(`/api/examination-detail/${paymentId}`);
 		byId('examinationDetailModal').dataset.examinationId = paymentId;
-		window.currentExaminationId = paymentId;
 		renderExaminationDetailContent(data, paymentId);
 	} catch (error) {
 		let message = 'Không thể tải thông tin hóa đơn';

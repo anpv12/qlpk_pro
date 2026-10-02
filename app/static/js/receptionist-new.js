@@ -28,7 +28,6 @@ function beginReceptionistLoad() {
 
 function setCurrentPatientId(value) {
 	currentPatientId = value;
-	window.currentPatientId = value;
 	ReceptionistPatientVitalsHistory?.resetVitalsHints({ document });
 
 	// Tự load danh sách tài liệu khi đổi bệnh nhân.
@@ -411,7 +410,6 @@ async function savePatientDataInternal(formData) {
 		if (saved.status) return saved;
 		patientId = saved.patientId;
 		currentPatientId = patientId;
-		window.currentPatientId = patientId;
 		await uploadReceptionistDraftDocuments(patientId, isCurrentContext);
 		if (!isCurrentContext()) return { status: 'stale' };
 		appointmentData.patient_id = patientId;

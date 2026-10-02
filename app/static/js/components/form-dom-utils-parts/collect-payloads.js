@@ -1,3 +1,4 @@
+import { getOccupationAutocomplete, setOccupationAutocomplete } from '../occupation-field.js';
 import { moduleState } from './state.js';
 import { getReferralSourceControl } from './reset-state.js';
 import { SidebarUserInfoUi } from '../sidebar-user-info-ui.js';
@@ -209,7 +210,7 @@ function resolvePatientAutoSaveValue(element, field, context = {}) {
 		return field.getValue(element, context);
 	}
 	if (field.valueResolver === 'occupation') {
-		const autocomplete = context.occupationAutocomplete || window.occupationAutocomplete;
+		const autocomplete = context.occupationAutocomplete || getOccupationAutocomplete();
 		if (autocomplete && typeof autocomplete.getValue === 'function') {
 			return autocomplete.getValue();
 		}
@@ -253,7 +254,6 @@ function reportMissingOccupation(options) {
 
 function initializeOccupationAutocomplete(options = {}) {
 	const doc = getDocument(options);
-	const win = options.window || window;
 	const AutocompleteCtor = options.OccupationAutocomplete || OccupationAutocomplete;
 	const inputId = options.inputId || 'occupation';
 	const dropdownId = options.dropdownId || 'occupationDropdown';
@@ -265,21 +265,20 @@ function initializeOccupationAutocomplete(options = {}) {
 		return false;
 	}
 
-	win.occupationAutocomplete = null;
-	win.occupationAutocomplete = new AutocompleteCtor(inputId, dropdownId);
+	setOccupationAutocomplete(null);
+	setOccupationAutocomplete(new AutocompleteCtor(inputId, dropdownId));
 
 	if (typeof options.autoSaveField === 'function') {
-		bindOccupationAutoSave(occupationInput, win, options.autoSaveField);
+		bindOccupationAutoSave(occupationInput, options.autoSaveField);
 	}
 
 	return true;
 }
 
-function bindOccupationAutoSave(occupationInput, win, autoSaveField) {
+function bindOccupationAutoSave(occupationInput, autoSaveField) {
 	rebindNamespaced(occupationInput, 'blur.patientAutoSave change.patientAutoSave', function () {
-		const value = (win.occupationAutocomplete && win.occupationAutocomplete.getValue)
-			? win.occupationAutocomplete.getValue()
-			: this.value;
+		const autocomplete = getOccupationAutocomplete();
+		const value = autocomplete && autocomplete.getValue ? autocomplete.getValue() : this.value;
 		autoSaveField('occupation', value);
 	});
 }
@@ -451,13 +450,8 @@ function clearPlaceholderValues(fieldIds = [], context = {}) {
 		if (isPlaceholderValue(element)) element.value = '';
 	});
 }
-function resetAutocompleteValues(names = []) {
-	names.forEach(name => {
-		const autocomplete = window[name];
-		if (autocomplete && typeof autocomplete.setValue === 'function') {
-			autocomplete.setValue('');
-		}
-	});
+function resetOccupationAutocomplete() {
+	getOccupationAutocomplete()?.setValue?.('');
 }
 
-export { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, bindWorkflowShellAdapters, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearAgeField, clearPageAgeField, clearPlaceholderValues, collectClinicalAdministrativeFormData, getDocument, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, isPlaceholderValue, resetAutocompleteValues, resetDomField, resetDomFields, resolvePatientAutoSaveValue, runWorkflowShellLoaders, safeSetValue, scheduleWorkflowShellDeferredTasks, setDomValue, updateElements };
+export { bindAgeInputGuard, bindNumericInputGuard, bindPatientFormAutoSaveFields, bindPatientFormAutoSaveSafely, bindWorkflowShellAdapters, buildAppointmentClinicalUpdatePayload, buildPatientSavePayload, clearAgeField, clearPageAgeField, clearPlaceholderValues, collectClinicalAdministrativeFormData, getDocument, getElementValue, getHiddenOrModalValue, initializeDocumentSectionShell, initializeOccupationAutocomplete, initializeWorkflowFormShell, initializeWorkflowPageShell, isPlaceholderValue, resetOccupationAutocomplete, resetDomField, resetDomFields, resolvePatientAutoSaveValue, runWorkflowShellLoaders, safeSetValue, scheduleWorkflowShellDeferredTasks, setDomValue, updateElements };

@@ -1,26 +1,16 @@
 import { PsychologistWorkspaceUi } from './workspace-ui.js';
 import { QLPKPsychologistComponentConfig } from '../components/psychologist-component-config.js';
 import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
+import { state } from './page-state.js';
 
 const REGISTRY = window.QLPKDoctorModuleRegistry;
 const PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
 if (!REGISTRY || !PAGE_RUNTIME) throw new Error('Thiếu runtime dùng chung cho màn Tâm lý gia');
 
 const config = QLPKPsychologistComponentConfig || {};
-const state = {
-	bound: false,
-	isLoadingExaminationData: false,
-	loadFailed: false,
-	currentAppointmentId: null,
-	currentPatientId: null,
-	currentPatientData: null,
-	contextToken: 0,
-	payload: null,
-	saving: false,
-	completing: false
-};
-
-window.QLPKPsychologistPageState = state;
+// Page callbacks set by bind({ page }): setLoading, setCurrentPatient, setCurrentPatientId,
+// setCurrentAppointmentId, baseSave, openHistory.
+let pageHooks = {};
 
 let patientIntake = null;
 let clinicalForm = null;
@@ -38,19 +28,19 @@ function showToast(type, message) {
 
 function setLoading(value) {
 	state.isLoadingExaminationData = Boolean(value);
-	window.QLPKPsychologistSetLoading?.(state.isLoadingExaminationData);
+	pageHooks.setLoading?.(state.isLoadingExaminationData);
 }
 
 function setCurrentPatient(patient) {
 	state.currentPatientData = patient || null;
 	state.currentPatientId = patient?.id ? Number(patient.id) : null;
-	window.currentPatientData = state.currentPatientData;
-	window.QLPKPsychologistSetCurrentPatientId?.(state.currentPatientId);
+	pageHooks.setCurrentPatient?.(state.currentPatientData);
+	pageHooks.setCurrentPatientId?.(state.currentPatientId);
 }
 
 function setCurrentAppointment(appointmentId) {
 	state.currentAppointmentId = appointmentId ? Number(appointmentId) : null;
-	window.QLPKPsychologistSetCurrentAppointmentId?.(state.currentAppointmentId);
+	pageHooks.setCurrentAppointmentId?.(state.currentAppointmentId);
 }
 
 function getHistoryComponent() {
@@ -278,7 +268,7 @@ function saveSkipReason() {
 }
 
 function runBaseSave(options) {
-	const baseSave = options.baseSave || window.QLPKPsychologistSaveBase;
+	const baseSave = options.baseSave || pageHooks.baseSave;
 	if (typeof baseSave !== 'function') throw new Error('base-save-unavailable');
 	return baseSave();
 }
@@ -344,6 +334,7 @@ async function complete() {
 }
 
 function bind(options = {}) {
+	if (options.page) pageHooks = options.page;
 	createComponents();
 	configureSupportRuntime();
 	const doc = options.document || document;
@@ -356,7 +347,7 @@ function bind(options = {}) {
 		root?.addEventListener('click', event => {
 			if (event.target.closest('#historyBtn')) {
 				event.preventDefault();
-				window.QLPKPsychologistPatientHistoryModal?.open?.();
+				pageHooks.openHistory?.();
 			}
 			if (event.target.closest('#completeExaminationBtn')) {
 				event.preventDefault();

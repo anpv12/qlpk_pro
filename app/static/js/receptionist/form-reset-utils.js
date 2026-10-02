@@ -68,12 +68,7 @@ function clearStaleLocalStorage(options = {}) {
 }
 
 function setCurrentPatientId(value, options = {}) {
-	if (typeof options.setCurrentPatientId === 'function') {
-		options.setCurrentPatientId(value);
-		return;
-	}
-
-	getWindow(options).currentPatientId = value;
+	options.setCurrentPatientId?.(value);
 }
 
 function clearRelativeTable(options = {}) {

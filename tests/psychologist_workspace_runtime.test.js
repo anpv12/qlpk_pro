@@ -125,9 +125,6 @@ function createHarness() {
       indications: {}
     },
     QLPKPatientIntakeForm: { create: () => intake },
-    QLPKPsychologistSetLoading: value => loadingStates.push(Boolean(value)),
-    QLPKPsychologistSetCurrentPatientId() {},
-    QLPKPsychologistSetCurrentAppointmentId() {},
     PsychologistWorkspaceUi: {
       showWorkspace(options) { workspaceStates.push(options); }
     }
@@ -135,9 +132,10 @@ function createHarness() {
 
   runScriptFile(path.join(__dirname, '..', 'app/static/js/psychologist-examination/workspace-runtime.js'), vm.createContext({ window, document, console }));
   const runtime = window.QLPKPsychologistWorkspaceRuntime;
-  runtime.bind({ document });
+  const page = { setLoading: value => loadingStates.push(Boolean(value)), setCurrentPatientId() {}, setCurrentAppointmentId() {} };
+  runtime.bind({ document, page });
 
-  return { runtime, document, calls, loadingStates, workspaceStates, componentStats, responses, window, toasts, clinical, services, indications, intake, history };
+  return { runtime, page, document, calls, loadingStates, workspaceStates, componentStats, responses, window, toasts, clinical, services, indications, intake, history };
 }
 
 function queueLoad(harness, id = 101) {
@@ -227,14 +225,14 @@ function readyHarness() {
   const harness = createHarness();
   harness.runtime.getState().currentAppointmentId = 101;
   harness.runtime.getState().currentPatientId = 1;
-  harness.window.QLPKPsychologistSaveBase = async () => ({ status: 'saved' });
+  harness.page.baseSave = async () => ({ status: 'saved' });
   return harness;
 }
 
 for (const status of ['patientError', 'appointmentError', 'skipped', 'stale', 'error']) {
   test(`Hoàn thành bị chặn nếu lưu trả ${status}`, async () => {
     const harness = readyHarness();
-    harness.window.QLPKPsychologistSaveBase = async () => ({ status });
+    harness.page.baseSave = async () => ({ status });
     assert.equal((await harness.runtime.complete()).status, status);
     assert.deepEqual(harness.calls, []);
     assert.equal(harness.toasts.some(toast => toast.type === 'success'), false);
@@ -243,7 +241,7 @@ for (const status of ['patientError', 'appointmentError', 'skipped', 'stale', 'e
 
 test('Base saved nhưng có thay đổi mới không cho Hoàn thành', async () => {
   const harness = readyHarness();
-  harness.window.QLPKPsychologistSaveBase = async () => ({ status: 'saved', hasNewChanges: true });
+  harness.page.baseSave = async () => ({ status: 'saved', hasNewChanges: true });
   assert.equal((await harness.runtime.complete()).status, 'error');
   assert.deepEqual(harness.calls, []);
 });
@@ -299,14 +297,14 @@ test('Hoàn thành bị chặn khi chưa chọn ca, loading hoặc đang lưu', 
 
 test('Không có owner lưu hành chính thì không báo lưu thành công', async () => {
   const harness = readyHarness();
-  delete harness.window.QLPKPsychologistSaveBase;
+  delete harness.page.baseSave;
   assert.equal((await harness.runtime.save()).status, 'error');
   assert.equal(harness.toasts.some(toast => toast.type === 'success'), false);
 });
 
 test('Kết quả lưu hành chính không rõ trạng thái không cho Hoàn thành', async () => {
   const harness = readyHarness();
-  harness.window.QLPKPsychologistSaveBase = async () => undefined;
+  harness.page.baseSave = async () => undefined;
   assert.equal((await harness.runtime.complete()).status, 'error');
   assert.deepEqual(harness.calls, []);
 });
@@ -355,7 +353,7 @@ test('Lâm sàng dirty lưu sạch vẫn hoàn thành được', async () => {
 test('Đổi ca trong lúc lưu hành chính không lưu tiếp lâm sàng và không Hoàn thành', async () => {
   const harness = readyHarness();
   const saving = deferred();
-  harness.window.QLPKPsychologistSaveBase = () => saving.promise;
+  harness.page.baseSave = () => saving.promise;
   let clinicalSaves = 0;
   harness.clinical.hasUnsavedChanges = () => true;
   harness.clinical.getSaveState = () => ({ detailDirtySections: new Set(['section']) });

@@ -78,9 +78,6 @@ function printInvoice() {
 			const urlParams = new URLSearchParams(window.location.search);
 			examinationId = urlParams.get('examination_id');
 		}
-		if (!examinationId && window.currentExaminationId) {
-			examinationId = window.currentExaminationId;
-		}
 		if (!examinationId) {
 			const apiUrl = window.location.href;
 			const match = apiUrl.match(/\/examination-detail\/(\d+)/);

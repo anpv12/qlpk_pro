@@ -1,5 +1,5 @@
 import { moduleState } from './state.js';
-import { clearAgeField, clearPlaceholderValues, getDocument, getElementValue, resetAutocompleteValues, resetDomField, resetDomFields, safeSetValue, setDomValue, updateElements } from './collect-payloads.js';
+import { clearAgeField, clearPlaceholderValues, getDocument, getElementValue, resetOccupationAutocomplete, resetDomField, resetDomFields, safeSetValue, setDomValue, updateElements } from './collect-payloads.js';
 import { ReferralSourceControl } from '../../referral-source-control.js';
 
 function resetWorkflowVisitFields(doc, options) {
@@ -32,7 +32,7 @@ function resetWorkflowFormDomState(options = {}) {
 		if (storage && typeof storage.removeItem === 'function') storage.removeItem(key);
 	});
 
-	resetAutocompleteValues(options.autocompleteNames || []);
+	if (options.resetOccupationAutocomplete) resetOccupationAutocomplete();
 	return true;
 }
 function resetPsychologistWorkflowFormDomState(options = {}) {
@@ -40,7 +40,7 @@ function resetPsychologistWorkflowFormDomState(options = {}) {
 		...options,
 		fieldsToReset: options.fieldsToReset || moduleState.PSYCHOLOGIST_WORKFLOW_RESET_FIELDS,
 		placeholderFields: options.placeholderFields || moduleState.PSYCHOLOGIST_WORKFLOW_PLACEHOLDER_FIELDS,
-		autocompleteNames: options.autocompleteNames || ['occupationAutocomplete', 'sexualOrientationAutocomplete']
+		resetOccupationAutocomplete: true
 	});
 }
 function resetWorkflowPageState(options = {}) {

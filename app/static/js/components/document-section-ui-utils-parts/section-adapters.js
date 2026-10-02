@@ -203,7 +203,7 @@ function createExaminationDocumentSectionAdapter(options = {}) {
 		formatFileSize: options.formatFileSize,
 		formatDraftDate,
 		showToast,
-		getCurrentPatientId: options.getCurrentPatientId || (() => window.currentPatientId),
+		getCurrentPatientId: options.getCurrentPatientId,
 		getIsLocked: options.getIsLocked,
 		getUploadInitialized: options.getUploadInitialized,
 		setUploadInitialized: options.setUploadInitialized,

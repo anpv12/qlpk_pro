@@ -2,15 +2,15 @@ import { callVietnamAddressAPI, clearSelectOptions, collectPersonalDetailModalVa
 
 async function savePersonalDetailAddressToServerIfEditing(options = {}) {
 	try {
-		const win = options.window || window;
-		if (!win.currentPatientId) return false;
+		const patientId = options.getCurrentPatientId?.();
+		if (!patientId) return false;
 		const values = getModalAddressFormValues(options);
-		const buildFullAddressFromParts = options.buildFullAddressFromParts || win.buildFullAddressFromParts;
+		const buildFullAddressFromParts = options.buildFullAddressFromParts;
 		const address = typeof buildFullAddressFromParts === 'function'
 			? buildFullAddressFromParts(values.address_detail, values.ward, values.district, values.province)
 			: '';
 
-		await putPatientFields(win.currentPatientId, {
+		await putPatientFields(patientId, {
 			address_detail: values.address_detail,
 			province: values.province,
 			district: values.district,
@@ -27,28 +27,20 @@ function ensureMainOccupationFromModal(options = {}) {
 	const occupationField = doc.getElementById('occupation');
 	if (!occupationField || occupationField.value) return '';
 
-	let modalOccupation = '';
-	const win = options.window || window;
-	if (win.modalOccupationAutocomplete && typeof win.modalOccupationAutocomplete.getValue === 'function') {
-		modalOccupation = win.modalOccupationAutocomplete.getValue() || '';
-	} else {
-		modalOccupation = getElementValue('modalOccupation', options);
-	}
+	const modalOccupation = getElementValue('modalOccupation', options);
 	if (modalOccupation) occupationField.value = modalOccupation;
 	return modalOccupation;
 }
 function clearAddressDraftCacheIfAvailable(options = {}) {
-	const win = options.window || window;
-	if (typeof win.clearAddressDraftCache === 'function') {
-		win.clearAddressDraftCache();
+	if (typeof options.clearAddressDraftCache === 'function') {
+		options.clearAddressDraftCache();
 		return true;
 	}
 	return false;
 }
 function saveAddressDraftToCacheIfAvailable(options = {}) {
-	const win = options.window || window;
-	if (typeof win.saveAddressDraftToCache === 'function') {
-		win.saveAddressDraftToCache();
+	if (typeof options.saveAddressDraftToCache === 'function') {
+		options.saveAddressDraftToCache();
 		return true;
 	}
 	return false;
@@ -66,8 +58,7 @@ async function handlePersonalDetailModalClose(options = {}) {
 		ensureMainOccupationFromModal(options);
 	}
 
-	const win = options.window || window;
-	if (win.currentPatientId) {
+	if (options.getCurrentPatientId?.()) {
 		if (options.saveAddressToServerOnEdit) {
 			await savePersonalDetailAddressToServerIfEditing(options);
 		}
@@ -124,9 +115,8 @@ async function savePersonalDetails(patientId, values, options) {
 
 async function syncPersonalDetailModalToMainForm(options = {}) {
 	try {
-		const win = options.window || window;
 		const values = collectPersonalDetailModalValues(options);
-		const buildFullAddressFromParts = options.buildFullAddressFromParts || win.buildFullAddressFromParts;
+		const buildFullAddressFromParts = options.buildFullAddressFromParts;
 
 		if ((values.province || values.address_detail) && typeof buildFullAddressFromParts === 'function') {
 			const full = buildFullAddressFromParts(values.address_detail, values.ward, values.district, values.province);
@@ -142,8 +132,9 @@ async function syncPersonalDetailModalToMainForm(options = {}) {
 		const mainGenderSelect = getDocument(options).getElementById('gender');
 		if (mainGenderSelect && values.gender) mainGenderSelect.value = values.gender;
 
-		if (options.saveToDb && win.currentPatientId) {
-			await savePersonalDetails(win.currentPatientId, values, options);
+		const patientId = options.getCurrentPatientId?.();
+		if (options.saveToDb && patientId) {
+			await savePersonalDetails(patientId, values, options);
 		}
 		return values;
 	} catch (error) {
@@ -272,23 +263,23 @@ function createAddressHierarchyAdapter(options = {}) {
 	adapter.syncPersonalDetailModalToMainForm = (saveToDb = false, extraOptions = {}) => syncPersonalDetailModalToMainForm({
 		...baseOptions(),
 		...extraOptions,
-		window: options.window || window,
+		getCurrentPatientId: options.getCurrentPatientId,
 		saveToDb
 	});
 	adapter.syncPersonalDetailModalIfNeeded = (extraOptions = {}) => syncPersonalDetailModalIfNeeded({
 		...baseOptions(),
 		...extraOptions,
-		window: options.window || window
+		getCurrentPatientId: options.getCurrentPatientId
 	});
 	adapter.savePersonalDetailAddressToServerIfEditing = (extraOptions = {}) => savePersonalDetailAddressToServerIfEditing({
 		...baseOptions(),
 		...extraOptions,
-		window: options.window || window
+		getCurrentPatientId: options.getCurrentPatientId
 	});
 	adapter.handlePersonalDetailModalClose = (extraOptions = {}) => handlePersonalDetailModalClose({
 		...baseOptions(),
 		...extraOptions,
-		window: options.window || window
+		getCurrentPatientId: options.getCurrentPatientId
 	});
 	adapter.fillMainAddressFieldFromModal = (buildFullAddressFromParts) => fillMainAddressFieldFromModal({
 		...baseOptions(),

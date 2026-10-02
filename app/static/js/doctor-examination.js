@@ -1,6 +1,6 @@
 import { moduleState } from './doctor-examination-parts/state.js';
-import { bindRealtimeRefresh, initializeWaitingQueue, loadAppointments, selectPatientCard } from './doctor-examination-parts/patient-load-and-init.js';
-import { exitHistoryView, reloadCurrentAppointment, requestWorkspaceLeave } from './doctor-examination-parts/queue-and-view-mode.js';
+import { bindRealtimeRefresh, initializeWaitingQueue } from './doctor-examination-parts/patient-load-and-init.js';
+import { reloadCurrentAppointment } from './doctor-examination-parts/queue-and-view-mode.js';
 import { QLPKDoctorComponentContext } from './doctor-examination/component-context.js';
 
 moduleState.PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
@@ -72,15 +72,6 @@ window.QLPKCurrentAppointment = {
 	getId: () => moduleState.state.currentAppointmentId,
 	getPatientId: () => moduleState.state.currentPatientId,
 	isLoading: () => moduleState.state.isLoadingExaminationData,
+	getContextToken: () => moduleState.state.loadToken,
 	apiCall: moduleState.apiCall
 };
-window.QLPKDoctorPage = Object.freeze({
-	context: moduleState.COMPONENT_CONTEXT,
-	state: moduleState.COMPONENT_CONTEXT.state,
-	getState: () => moduleState.state,
-	selectPatientCard: selectPatientCard,
-	exitHistoryView: exitHistoryView,
-	loadAppointments: loadAppointments,
-	reloadCurrentAppointment: reloadCurrentAppointment,
-	requestWorkspaceLeave: requestWorkspaceLeave
-});

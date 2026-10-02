@@ -83,7 +83,7 @@ function getDocumentAttachmentControlsOptions() {
 		uploadFile,
 		renderDocumentsList,
 		loadAttachmentsForCurrentPatient,
-		getCurrentPatientId: () => window.currentPatientId,
+		getCurrentPatientId: () => currentPatientId,
 		getContextToken: () => receptionistLoadState.token,
 		getUploadedDocuments: () => state.uploadedDocuments,
 		setUploadedDocuments: value => { state.uploadedDocuments = value; },
@@ -134,7 +134,7 @@ async function uploadFile(file, patientId, options = {}) {
 function getDocumentAttachmentListOptions() {
 	return {
 		document,
-		getCurrentPatientId: () => window.currentPatientId,
+		getCurrentPatientId: () => currentPatientId,
 		getContextToken: () => receptionistLoadState.token,
 		utils: documentAttachmentUtils,
 		getAttachments: () => attachments,
@@ -163,7 +163,7 @@ const documentAttachmentUtils = ReceptionistDocumentAttachmentUtils;
 
 function getDocumentAttachmentOptions() {
 	return {
-		getCurrentPatientId: () => window.currentPatientId,
+		getCurrentPatientId: () => currentPatientId,
 		getContextToken: () => receptionistLoadState.token,
 		window,
 		document,

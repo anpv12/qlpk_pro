@@ -25,7 +25,6 @@
 			apiCall: options.apiCall,
 			showToast: options.showToast,
 			buildContextOptions: () => ({
-				exposeLegacyWindowState: false,
 				getCurrentPatientData,
 				getCurrentAppointmentId,
 				getFormatDateDisplay: () => formatDateDisplay,

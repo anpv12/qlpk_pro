@@ -63,8 +63,7 @@ import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 		const manager = new window.JointExamManager({
 			getAppointmentId: getCurrentAppointmentId,
-			getContextToken: () => window.QLPKDoctorPage?.getState().loadToken
-				?? window.QLPKPsychologistPageState?.contextToken,
+			getContextToken: () => window.QLPKCurrentAppointment?.getContextToken?.(),
 			onReloadFamilyMembers: reloadFamilyMembers,
 			showToast,
 			apiCall: getApiCall(),

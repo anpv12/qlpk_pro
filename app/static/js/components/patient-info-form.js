@@ -1,3 +1,4 @@
+import { getOccupationAutocomplete } from './occupation-field.js';
 import { QLPKComponentDomScope } from './component-dom-scope.js';
 import { ReceptionistAddressMainForm } from '../receptionist/address-main-form.js';
 import { ReceptionistFormCalculations } from '../receptionist/form-calculations.js';
@@ -183,11 +184,8 @@ function normalizePayload(payload = {}) {
 	};
 }
 
-function setAutocompleteValue(name, value) {
-	const autocomplete = window[name];
-	if (autocomplete && typeof autocomplete.setValue === 'function') {
-		autocomplete.setValue(value || '');
-	}
+function setOccupationValue(value) {
+	getOccupationAutocomplete()?.setValue?.(value || '');
 }
 
 function clear(options = {}) {
@@ -195,8 +193,7 @@ function clear(options = {}) {
 	PATIENT_FIELD_IDS.forEach(fieldId => setValue(doc, fieldId, ''));
 	setValue(doc, 'mangThai', false);
 	setValue(doc, 'reExaminationCheck', false);
-	setAutocompleteValue('occupationAutocomplete', '');
-	setAutocompleteValue('sexualOrientationAutocomplete', '');
+	setOccupationValue('');
 }
 
 function populate(payload = {}, options = {}) {
@@ -226,8 +223,7 @@ function populate(payload = {}, options = {}) {
 	setValue(doc, 'ethnicityValue', patient.ethnicity);
 	setValue(doc, 'educationLevel', patient.education_level);
 	setValue(doc, 'educationLevelValue', patient.education_level);
-	setAutocompleteValue('occupationAutocomplete', patient.occupation);
-	setAutocompleteValue('sexualOrientationAutocomplete', patient.sexual_orientation);
+	setOccupationValue(patient.occupation);
 	setValue(doc, 'mangThai', patient.mang_thai);
 	setValue(doc, 'ngayDuSinh', patient.expected_delivery_date);
 	setValue(doc, 'soTuanThai', patient.so_tuan_thai);

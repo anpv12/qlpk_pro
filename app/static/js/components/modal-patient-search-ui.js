@@ -38,7 +38,7 @@ const {
 	resetModalStateForFlow, resolveAutoSelectIndex, resolveModalPatientId, resolvePatientAtIndex,
 	resolvePatientIdentity, resolvePresetSearch, resolveWorkflowModalElements, selectAppointmentCard,
 	selectAppointmentPatientFlow, selectPatientForModalFlow, setActivePatientRow,
-	setSelectButtonEnabled, showBootstrapModal, showHistoryButton, syncWindowState
+	setSelectButtonEnabled, showBootstrapModal, showHistoryButton
 } = PARTS;
 
 function createWorkflowModalSearchContext(options = {}) {
@@ -63,7 +63,6 @@ function createWorkflowModalSearchContext(options = {}) {
 		getHistoryTabRenderers: () => historyTabRenderers
 	});
 
-	flow.syncWindowState();
 	ensureHighlightStyles();
 
 	const appointmentFetchers = buildAppointmentHistoryFetchers({
@@ -109,16 +108,6 @@ function runSearchFlow1(ctx) {
 	ctx.searchRequestToken = 0;
 	ctx.historyRequestToken = 0;
 	ctx.flow = {};
-	ctx.flow.syncWindowState = () => {
-		const state = ctx.getState();
-		return syncWindowState({
-			exposeLegacyWindowState: ctx.options.exposeLegacyWindowState,
-			selectedPatient: state.selectedPatient,
-			medicalHistoryLoading: state.medicalHistoryLoading,
-			medicalHistoryData: state.medicalHistoryData,
-			selectedHistoryIndex: state.selectedHistoryIndex
-		});
-	};
 	ctx.flow.renderSearchResults = (isError = false) => {
 		const state = ctx.getState();
 		return renderSearchResults({
@@ -160,7 +149,6 @@ function runSearchFlow1(ctx) {
 					selectedHistoryIndex: autoSelectState.selectedHistoryIndex
 				});
 			},
-			syncState: ctx.flow.syncWindowState,
 			updateContent: ctx.flow.updateContent,
 			selectPatient: ctx.flow.selectPatient
 		});
@@ -192,7 +180,6 @@ function runSearchFlow2(ctx) {
 			setSelectedHistoryIndex(value) {
 				ctx.setState({ selectedHistoryIndex: value });
 			},
-			syncState: ctx.flow.syncWindowState,
 			onAfterLoad() {
 				const tabsUi = getTabsUi(ctx.options);
 				if (tabsUi && typeof tabsUi.dispatchActiveTabRender === 'function') {
@@ -272,7 +259,6 @@ function runSearchFlow3(ctx) {
 					selectedHistoryIndex: selectionState.selectedHistoryIndex
 				});
 			},
-			syncState: ctx.flow.syncWindowState,
 			renderActiveTabLoading: ctx.options.renderActiveTabLoading,
 			loadHistory: ctx.flow.loadMedicalHistory,
 			updateContent: ctx.flow.updateContent,
@@ -288,7 +274,6 @@ function runSearchFlow3(ctx) {
 				const currentRevision = Number(ctx.getState().contextRevision) || 0;
 				ctx.setState({ selectedHistoryIndex: value, contextRevision: currentRevision + 1 });
 			},
-			syncState: ctx.flow.syncWindowState,
 			getRenderers: ctx.getRenderers
 		});
 	};
@@ -452,7 +437,6 @@ const api = {
 	buildPatientSelectionFlowState,
 	renderState,
 	ensureHighlightStyles,
-	syncWindowState,
 	buildPatientRow,
 	resolveAutoSelectIndex,
 	renderSearchResults,
