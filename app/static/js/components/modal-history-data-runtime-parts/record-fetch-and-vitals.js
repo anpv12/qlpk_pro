@@ -1,3 +1,4 @@
+import { el } from '../../shared/dom.js';
 import { buildClinicHeader, buildMedicalRecordAdminHtml, buildMedicalRecordExaminationHtml, buildMedicalRecordInquiryHtml, buildMedicalRecordModel, buildMedicineRows, buildServiceInvoiceHTML, escapeHtml, formatDate, formatMultiline, formatPrescriptionType, formatSignatureDate, getClinicInfo, resolvePrescriptionDays, toNumber } from './formatters-and-record.js';
 
 function buildMedicalRecordTreatmentHtml(model) {
@@ -186,19 +187,24 @@ function installVitalSignsFns2(ctx) {
 		const containerWidth = wrapper.clientWidth || 600;
 		const numCols = Math.max(items.length, 10, Math.floor(Math.max(containerWidth - 165, 0) / 80));
 		const totalMinWidth = 165 + numCols * 80;
-		const cols = `<col class="vital-grid-col-label">${Array.from({ length: numCols }, () => '<col class="vital-grid-col-data">').join('')}`;
-		const headerCells = (key, emptyClass) => Array.from({ length: numCols }, (_, index) => {
+		const indexes = Array.from({ length: numCols }, (_, index) => index);
+		const headerCells = (key, emptyClass) => indexes.map(index => {
 			const item = items[index];
-			return item ? `<th>${escapeHtml(item[key])}</th>` : `<th class="${emptyClass}">-</th>`;
-		}).join('');
+			return item ? el('th', {}, String(item[key] ?? '')) : el('th', { class: emptyClass }, '-');
+		});
 		const rows = [
 			['Huyết áp (mmHg)', 'bloodPressureRaw'], ['Nhịp thở (lần/phút)', 'breathing'], ['Mạch (bpm)', 'pulse'],
 			['Nhiệt độ (°C)', 'temperature'], ['Cân nặng (kg)', 'weight'], ['Chiều cao (cm)', 'height'], ['BMI', 'bmi']
-		].map(([label, key]) => `<tr><td class="vital-label-col">${label}</td>${Array.from({ length: numCols }, (_, index) => {
+		].map(([label, key]) => el('tr', {}, el('td', { class: 'vital-label-col' }, label), indexes.map(index => {
 			const value = items[index]?.[key];
-			return `<td>${value === null || value === undefined || value === '' ? '-' : escapeHtml(value)}</td>`;
-		}).join('')}</tr>`).join('');
-		wrapper.innerHTML = `<table class="vital-signs-grid-table" style="width:${totalMinWidth}px"><colgroup>${cols}</colgroup><thead><tr><th class="vital-label-col" rowspan="2">Chỉ số \\ Thời gian</th>${headerCells('dateLabel', 'vital-grid-empty-date')}</tr><tr>${headerCells('timeLabel', 'vital-grid-empty-time')}</tr></thead><tbody>${rows}</tbody></table>`;
+			return el('td', {}, value === null || value === undefined || value === '' ? '-' : String(value));
+		})));
+		wrapper.replaceChildren(el('table', { class: 'vital-signs-grid-table', style: `width:${totalMinWidth}px` },
+			el('colgroup', {}, el('col', { class: 'vital-grid-col-label' }), indexes.map(() => el('col', { class: 'vital-grid-col-data' }))),
+			el('thead', {},
+				el('tr', {}, el('th', { class: 'vital-label-col', rowspan: '2' }, 'Chỉ số \\ Thời gian'), headerCells('dateLabel', 'vital-grid-empty-date')),
+				el('tr', {}, headerCells('timeLabel', 'vital-grid-empty-time'))),
+			el('tbody', {}, rows)));
 		ctx.setDisplay(wrapper, true);
 	}
 

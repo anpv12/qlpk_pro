@@ -1,3 +1,5 @@
+import { el } from './shared/dom.js';
+
 /**
  * Occupation Autocomplete Component
  * Thay thế combobox thông thường bằng autocomplete input với dropdown gợi ý
@@ -115,33 +117,19 @@ class OccupationAutocomplete {
     populateDropdown() {
         if (!this.dropdown) return;
         
-        let html = '';
-        
+        let items;
         if (this.filteredOccupations.length === 0) {
-            // Không tìm thấy nghề nghiệp nào
-            if (this.input && this.input.value.trim()) {
-                // Có text input -> hiển thị nút "Tạo mới"
-                html = `
-                    <div class="occupation-item new-occupation" data-new="true" data-name="${window.QLPKHtml.escape(this.input.value)}">
-                        <i class="bi bi-plus-circle me-2"></i>Tạo mới: "${window.QLPKHtml.escape(this.input.value)}"
-                    </div>
-                `;
-            } else {
-                // Không có text input -> hiển thị "Không tìm thấy"
-                html = '<div class="occupation-item no-results">Không tìm thấy nghề nghiệp</div>';
-            }
+            const query = this.input ? this.input.value : '';
+            items = query.trim()
+                ? [el('div', { class: 'occupation-item new-occupation', 'data-new': 'true', 'data-name': query },
+                    el('i', { class: 'bi bi-plus-circle me-2' }), `Tạo mới: "${query}"`)]
+                : [el('div', { class: 'occupation-item no-results' }, 'Không tìm thấy nghề nghiệp')];
         } else {
-            // Có kết quả search -> hiển thị danh sách nghề nghiệp
-            this.filteredOccupations.forEach((occ, index) => {
-                html += `
-                    <div class="occupation-item" data-index="${index}" data-id="${occ.id}" data-name="${window.QLPKHtml.escape(occ.name)}">
-                        ${window.QLPKHtml.escape(occ.name)}
-                    </div>
-                `;
-            });
+            items = this.filteredOccupations.map((occ, index) => el('div', {
+                class: 'occupation-item', 'data-index': String(index), 'data-id': String(occ.id), 'data-name': occ.name ?? ''
+            }, occ.name ?? ''));
         }
-        
-        this.dropdown.innerHTML = html;
+        this.dropdown.replaceChildren(...items);
         
         // Bind click events
         this.dropdown.querySelectorAll('.occupation-item').forEach(item => {

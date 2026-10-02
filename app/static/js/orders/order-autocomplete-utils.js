@@ -1,3 +1,5 @@
+import { el } from '../shared/dom.js';
+
 (function () {
 	'use strict';
 
@@ -47,40 +49,30 @@
 		return surveyMatches.slice(0, maxResults);
 	}
 
-	function renderOrderAutocompleteDropdownHtml(matches = [], options = {}) {
-		const escapeHtml = options.escapeHtml || window.QLPKHtml.escape;
+	function buildOrderAutocompleteItems(matches = [], options = {}) {
 		const formatCurrency = options.formatCurrency || ((value) => value);
 		const selectedIndex = Number.isInteger(options.selectedIndex) ? options.selectedIndex : -1;
 
 		return (matches || []).map((item, index) => {
-			const activeClass = index === selectedIndex ? 'active' : '';
-			const questionCount = item.question_count || 0;
 			const pricingInfo = item.pricing_type === 'time_based'
 				? `${formatCurrency(item.price_per_minute || 0)}/phút`
 				: (item.service_name || 'Chưa liên kết dịch vụ');
-			const pricingHtml = options.showSurveyPricing
-				? `<div class="text-muted small order-autocomplete-pricing"><i class="bi bi-currency-dollar"></i> ${pricingInfo}</div>`
-				: '';
-			const descriptionHtml = options.showSurveyDescription !== false && item.description
-				? `<div class="text-muted small order-autocomplete-survey-description">${escapeHtml(item.description)}</div>`
-				: '';
-
-			return `
-				<div class="autocomplete-item survey-item ${activeClass}"
-					 data-survey-id="${item.surveyTemplateId}"
-					 data-index="${index}"
-					 role="option"
-					 aria-selected="${index === selectedIndex}">
-					<div class="d-flex align-items-center gap-2">
-						<i class="bi bi-clipboard-pulse order-autocomplete-survey-icon"></i>
-						<span class="fw-semibold order-autocomplete-survey-name">${escapeHtml(item.name || '')}</span>
-						<span class="badge order-autocomplete-survey-badge">${questionCount} câu hỏi</span>
-					</div>
-					${descriptionHtml}
-					${pricingHtml}
-				</div>
-			`;
-		}).join('');
+			return el('div', {
+				class: `autocomplete-item survey-item${index === selectedIndex ? ' active' : ''}`,
+				'data-survey-id': String(item.surveyTemplateId),
+				'data-index': String(index),
+				role: 'option',
+				'aria-selected': String(index === selectedIndex)
+			},
+			el('div', { class: 'd-flex align-items-center gap-2' },
+				el('i', { class: 'bi bi-clipboard-pulse order-autocomplete-survey-icon' }),
+				el('span', { class: 'fw-semibold order-autocomplete-survey-name' }, item.name || ''),
+				el('span', { class: 'badge order-autocomplete-survey-badge' }, `${item.question_count || 0} câu hỏi`)),
+			options.showSurveyDescription !== false && item.description
+				? el('div', { class: 'text-muted small order-autocomplete-survey-description' }, item.description) : null,
+			options.showSurveyPricing
+				? el('div', { class: 'text-muted small order-autocomplete-pricing' }, el('i', { class: 'bi bi-currency-dollar' }), ` ${pricingInfo}`) : null);
+		});
 	}
 
 	function setAutocompleteDropdownVisible(dropdown, visible) {
@@ -136,7 +128,7 @@
 		if (!matches || matches.length === 0) {
 			dropdown.classList.toggle('is-empty', Boolean(options.emptyText));
 			if (options.emptyText) {
-				dropdown.innerHTML = `<div class="autocomplete-empty" role="status">${(options.escapeHtml || String)(options.emptyText)}</div>`;
+				dropdown.replaceChildren(el('div', { class: 'autocomplete-empty', role: 'status' }, options.emptyText));
 				setAutocompleteDropdownVisible(dropdown, true);
 				return false;
 			}
@@ -145,13 +137,12 @@
 		}
 
 		dropdown.classList.remove('is-empty');
-		dropdown.innerHTML = renderOrderAutocompleteDropdownHtml(matches, {
+		dropdown.replaceChildren(...buildOrderAutocompleteItems(matches, {
 			selectedIndex: options.selectedIndex,
-			escapeHtml: options.escapeHtml,
 			formatCurrency: options.formatCurrency,
 			showSurveyPricing: options.showSurveyPricing,
 			showSurveyDescription: options.showSurveyDescription
-		});
+		}));
 		setAutocompleteDropdownVisible(dropdown, options.displayValue !== 'none');
 
 		bindAutocompleteItemHover(dropdown, options.onSelectedIndexChange);
@@ -207,7 +198,6 @@
 
 		const renderDropdown = (matches) => renderAutocompleteDropdown(dropdown, matches, {
 			selectedIndex,
-			escapeHtml: options.escapeHtml,
 			formatCurrency: options.formatCurrency,
 			showSurveyPricing: options.showSurveyPricing,
 			showSurveyDescription: options.showSurveyDescription,
@@ -455,7 +445,7 @@
 
 	const api = {
 		buildOrderAutocompleteMatches,
-		renderOrderAutocompleteDropdownHtml,
+		buildOrderAutocompleteItems,
 		renderAutocompleteDropdown,
 		setupOrderFormAutocomplete,
 		setActiveAutocompleteItem,

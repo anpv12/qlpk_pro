@@ -1,4 +1,5 @@
 // Shared components and psychologist slices, in the order the page used to load them as classic scripts.
+import './occupation-autocomplete.js';
 import './components/patient-search-dropdown.js';
 import './relative-table.js';
 import './relative-table-methods.js';

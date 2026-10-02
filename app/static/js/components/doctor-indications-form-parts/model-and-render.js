@@ -181,7 +181,6 @@ installers.push(function (inst, outer) {
 			selectFirstOnEnter: true,
 			showSurveyDescription: false,
 			emptyText: 'Không có mẫu khảo sát phù hợp; bạn vẫn có thể nhập tên tự do.',
-			escapeHtml: inst.escapeHtml,
 			onInput: () => inst.clearNameSelection(doc, { clearText: false, hide: false }),
 			onSurveySelect: (surveyId, context) => {
 				const item = inst.STATE.surveyIndex.get(Number(surveyId));

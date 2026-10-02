@@ -26,8 +26,10 @@ function deferred() {
 
 function harness() {
   const listeners = {};
-  const list = { innerHTML: '', contains: () => true, addEventListener: (event, handler) => { listeners[event] = handler; } };
-  const document = { getElementById: id => id === 'documentsList' ? list : null };
+  const { document } = require('./helpers/fake-dom').createWindow({ html: '<div id="documentsList"></div>' });
+  const list = document.getElementById('documentsList');
+  list.contains = () => true;
+  list.addEventListener = (event, handler) => { listeners[event] = handler; };
   const window = { document };
   const context = vm.createContext({ window, document, console, FormData: class { append() {} } });
   for (const name of ['receptionist/document-attachment-utils.js', 'receptionist/document-attachment-controls.js', 'receptionist/document-attachment-list.js', 'components/document-section-ui-utils.js']) {

@@ -1,4 +1,5 @@
 // Shared components and receptionist slices, in the order the page used to load them as classic scripts.
+import './occupation-autocomplete.js';
 import './receptionist/formatters.js';
 import './components/patient-search-dropdown.js';
 import './relative-table.js';
