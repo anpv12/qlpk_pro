@@ -6,6 +6,8 @@ import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 import { QLPKIcdAutocomplete } from '../components/icd-autocomplete.js';
 import { ReceptionistDocumentAttachmentList } from '../receptionist/document-attachment-list.js';
 import { ReceptionistDocumentAttachmentUtils } from '../receptionist/document-attachment-utils.js';
+import { ClinicalIcdDataLoader } from '../components/icd-data-loader.js';
+import { ReceptionistDocumentAttachmentControls } from '../receptionist/document-attachment-controls.js';
 
 (function (window) {
 	'use strict';
@@ -29,10 +31,10 @@ import { ReceptionistDocumentAttachmentUtils } from '../receptionist/document-at
 	register('orderAutocompleteUtils', ClinicalOrderAutocompleteUtils, { owner: 'shared/orders' });
 	register('documentAttachmentUtils', ReceptionistDocumentAttachmentUtils, { owner: 'shared/documents' });
 	register('documentAttachmentList', ReceptionistDocumentAttachmentList, { owner: 'shared/documents' });
-	register('documentAttachmentControls', window.ReceptionistDocumentAttachmentControls, { owner: 'shared/documents' });
+	register('documentAttachmentControls', ReceptionistDocumentAttachmentControls, { owner: 'shared/documents' });
 	register('icdAutocomplete', QLPKIcdAutocomplete, { owner: 'shared/icd' });
 	register('autocompleteField', window.QLPKAutocompleteField, { owner: 'shared/autocomplete' });
-	register('icdDataLoader', window.ClinicalIcdDataLoader, { owner: 'shared/icd' });
+	register('icdDataLoader', ClinicalIcdDataLoader, { owner: 'shared/icd' });
 	register('prescriptionPrintDocument', PrescriptionPrintDocument, { owner: 'shared/prescription-print' });
 	register('doctorPrescriptionPrint', window.createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
 	// The template module registers itself; this only covers a page where it already ran.

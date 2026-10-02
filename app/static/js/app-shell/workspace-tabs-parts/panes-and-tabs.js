@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
 import { activeTabId, buildLauncherRows, captureAccess, clearActiveTabId, configuredNavItem, createWorkspaceHost, ensureCurrentTab, flattenLeaves, getWorkspaceAppVersion, hasPermission, hrefMatchesItem, normalizeHref, normalizeLauncherSearchText, normalizedLabel, readTabs, resubscribeRealtimeRooms, saveTabs, setActiveTabId, tabFromItem, toEmbedHref, visibleItems, watchShellMetrics } from './access-and-launcher.js';
+import { QLPKUserFeedback } from '../../shared/user-feedback.js';
 
 function ensureIframePane(tab) {
 	const frameHost = document.getElementById('qlpkWorkspaceFrameHost') || createWorkspaceHost();
@@ -392,7 +393,7 @@ function init() {
 			if (permitted && !moduleState.initialized) init();
 			else if (permitted) { renderTabs(); renderLauncher(); }
 			else { renderTabs(); renderLauncher(); setLauncherOpen(false); }
-			if (moduleState.sessionBlocked) window.QLPKUserFeedback?.show('error', 'Phiên đã thay đổi. Vui lòng tải lại trang trước khi tiếp tục.');
+			if (moduleState.sessionBlocked) QLPKUserFeedback?.show('error', 'Phiên đã thay đổi. Vui lòng tải lại trang trước khi tiếp tục.');
 		});
 		if (['unknown', 'loading'].includes(session.owner.snapshot().status)) {
 			void session.owner.ready().catch(() => {});

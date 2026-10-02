@@ -14,6 +14,7 @@ import { loadOrderDetail } from './orders/order-management-detail.js';
 import { deleteOrder } from './orders/order-management-actions.js';
 import { initializePage } from './orders/order-management-init.js';
 import { ClinicalOrderStatusUtils } from './orders/order-status-utils.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 // Order Management - Quản lý chỉ định CLS
 
@@ -83,7 +84,7 @@ function apiCall(url, options = {}) {
 
 // Toast notification
 function showCustomToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+	return QLPKUserFeedback?.show(type, message);
 }
 
 // Confirm dialog với SweetAlert2

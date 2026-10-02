@@ -12,6 +12,7 @@ import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 import { QLPKPagination } from './components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const API_BASE = '/api/drug-interactions';
 const ACTIVE_INGREDIENT_API = '/api/active-ingredient?limit=10000';
@@ -19,7 +20,7 @@ const state = { interactions: [], ingredients: [], editingId: null };
 const FIELDS = ['consequence', 'mechanism', 'management', 'notes'];
 
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 
 function typeBadge(contra, classes) {

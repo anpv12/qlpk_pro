@@ -3,6 +3,7 @@ import { moduleState } from './state.js';
 import { close, genId, isChoiceType, isGridType, markDirty, normalizeQuestionType, overlayEl, retainedId, saveButton, setSaveButtonIdle, setScVisible, showToast, surveyDescInput, surveyNameInput, surveyPerformerInput, switchTab } from './page-state.js';
 import { bindCriteriaAutocomplete } from './criteria-autocomplete.js';
 import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 const removeIcon = () => el('i', { class: 'bi bi-x-lg' });
 
@@ -172,7 +173,7 @@ function bindGridEvents(card) {
 				text: message,
 				confirmText: 'Thay điểm',
 				variant: 'warning',
-				showToast: (type, msg) => window.QLPKUserFeedback?.show(type, msg)
+				showToast: (type, msg) => QLPKUserFeedback?.show(type, msg)
 			});
 			if (!confirmed || revision !== moduleState.state.loadRevision || moduleState.state.saving || !th.isConnected || input.value !== value) return;
 			const colIdx = [...table.querySelectorAll('thead th.sc-col-header')].indexOf(th);

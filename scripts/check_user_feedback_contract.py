@@ -73,7 +73,7 @@ def check_runtime(errors: list[str]) -> None:
 
     runtime = RUNTIME_JS.read_text(encoding="utf-8")
     for needle in (
-        "window.QLPKUserFeedback",
+        "export const QLPKUserFeedback",
         "resolveError",
         "reportError",
         "network.unavailable",

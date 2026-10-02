@@ -1,4 +1,5 @@
 import { QLPKComponentDomScope } from './component-dom-scope.js';
+import { ReferralSourceControl } from '../referral-source-control.js';
 
 const VISIT_FIELD_IDS = [
 	'mainReason',
@@ -31,17 +32,17 @@ function valueOf(...values) {
 function setValue(doc, elementId, value) {
 	const element = doc.getElementById(elementId);
 	if (!element) return false;
-	if (elementId === 'referralSource' && window.ReferralSourceControl && typeof window.ReferralSourceControl.setValue === 'function') {
-		return window.ReferralSourceControl.setValue(value || '', { document: doc });
+	if (elementId === 'referralSource' && ReferralSourceControl && typeof ReferralSourceControl.setValue === 'function') {
+		return ReferralSourceControl.setValue(value || '', { document: doc });
 	}
 	element.value = value == null ? '' : String(value);
 	return true;
 }
 
 function getValue(doc, elementId) {
-	if (elementId === 'referralSource' && window.ReferralSourceControl && typeof window.ReferralSourceControl.getValue === 'function') {
+	if (elementId === 'referralSource' && ReferralSourceControl && typeof ReferralSourceControl.getValue === 'function') {
 		if (!doc.getElementById(elementId)) return '';
-		return window.ReferralSourceControl.getValue({ document: doc }) || '';
+		return ReferralSourceControl.getValue({ document: doc }) || '';
 	}
 	const element = doc.getElementById(elementId);
 	return element ? String(element.value || '').trim() : '';
@@ -107,8 +108,8 @@ function collect(options = {}) {
 
 function bind(options = {}) {
 	const doc = getDocument(options);
-	if (window.ReferralSourceControl && typeof window.ReferralSourceControl.bind === 'function') {
-		window.ReferralSourceControl.bind({ document: doc });
+	if (ReferralSourceControl && typeof ReferralSourceControl.bind === 'function') {
+		ReferralSourceControl.bind({ document: doc });
 	}
 }
 

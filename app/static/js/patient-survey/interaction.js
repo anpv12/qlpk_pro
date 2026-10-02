@@ -7,6 +7,7 @@ import { showQuestion } from './questions.js';
 import { submitSurvey } from './submit.js';
 import { setSurveyProgressBar } from '../patient-survey-parts/display.js';
 import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 // data-* values coerced the way the former data() helper did ("3" -> 3, "true" -> true), so stored scores keep their types.
 function dataValue(node, name) {
@@ -151,7 +152,7 @@ function bindNavigationEvents() {
             text: 'Bạn có chắc muốn bắt đầu lại? Tất cả câu trả lời sẽ bị mất.',
             confirmText: 'Bắt đầu lại',
             variant: 'warning',
-            showToast: (type, message) => window.QLPKUserFeedback?.show(type, message)
+            showToast: (type, message) => QLPKUserFeedback?.show(type, message)
         });
         if (confirmed) {
             state.surveyResponses = {};

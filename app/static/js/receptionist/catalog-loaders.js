@@ -1,3 +1,6 @@
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+import { ReceptionistServicePackage } from './service-package-selection.js';
+
 const loads = new WeakMap();
 
 async function loadCatalog(kind, url, apply, options) {
@@ -18,7 +21,7 @@ async function loadCatalog(kind, url, apply, options) {
 		return true;
 	} catch (error) {
 		if (state[kind] !== revision) return false;
-		reportCatalogFailure(kind, options, pageWindow);
+		reportCatalogFailure(kind, options);
 		return false;
 	}
 }
@@ -28,11 +31,11 @@ function catalogLoadState(doc) {
 	return loads.get(doc);
 }
 
-function reportCatalogFailure(kind, options, pageWindow) {
+function reportCatalogFailure(kind, options) {
 	const message = kind === 'doctors'
 		? 'Không thể tải danh sách người khám. Vui lòng tải lại trang.'
 		: 'Không thể tải danh sách dịch vụ. Vui lòng tải lại trang.';
-	const showToast = options.showCustomToast || pageWindow.QLPKUserFeedback?.show;
+	const showToast = options.showCustomToast || QLPKUserFeedback?.show;
 	showToast?.('error', message);
 }
 
@@ -58,7 +61,7 @@ function loadDoctorsForForm(options = {}) {
 }
 
 function loadServicesForForm(options = {}) {
-	const servicePackage = options.servicePackage || window.ReceptionistServicePackage;
+	const servicePackage = options.servicePackage || ReceptionistServicePackage;
 	return loadCatalog('services', '/services', services => {
 		servicePackage.initServiceAutocomplete('serviceType', 'serviceTypeDropdown', 'serviceTypeId', services);
 		options.setServices?.(services);

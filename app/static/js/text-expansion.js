@@ -1,6 +1,3 @@
-(function (window, document) {
-'use strict';
-
 // Global variables
 let textExpansions = {};
 let isLoaded = false;
@@ -205,7 +202,7 @@ function removeCustomAbbreviation(abbreviation) {
 }
 
 // Export functions for global use
-window.textExpansion = {
+export const textExpansion = {
     expandText: expandText,
     getAvailableAbbreviations: getAvailableAbbreviations,
     hasAbbreviation: hasAbbreviation,
@@ -216,4 +213,3 @@ window.textExpansion = {
     isLoaded: isExpansionCacheCurrent,
     getCount: () => getAvailableAbbreviations().length
 };
-})(window, document);

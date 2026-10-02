@@ -1,4 +1,5 @@
 // Utility functions để tránh trùng lặp code
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const AppointmentUtils = {
 	// Hàm format datetime
@@ -80,7 +81,7 @@ const AppointmentUtils = {
 
 	// Hàm show toast notification
 	showToast: function (type, message) {
-		return window.QLPKUserFeedback?.show(type, message);
+		return QLPKUserFeedback?.show(type, message);
 	},
 
 	// Hàm parse local datetime

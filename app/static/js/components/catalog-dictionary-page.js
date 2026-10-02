@@ -13,9 +13,10 @@ import { downloadFile, requestJson } from '../shared/http-json.js';
 import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 import { QLPKPagination } from './clinic-pagination.js';
 import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 function toast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+	return QLPKUserFeedback?.show(type, message);
 }
 
 function actionButton(action, id) {

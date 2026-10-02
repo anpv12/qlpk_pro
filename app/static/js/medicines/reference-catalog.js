@@ -7,6 +7,7 @@ import '../realtime-page-hooks.js';
 import { el, icon, replace } from '../shared/dom.js';
 import { QLPKPagination } from '../components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 let currentPage = 1;
 let pageSize = 10;
@@ -68,7 +69,7 @@ function formatDate(value) {
 }
 
 function showToast(message, type = 'success') {
-		return window.QLPKUserFeedback?.show(type, message);
+		return QLPKUserFeedback?.show(type, message);
 }
 
 function updateSummary(summary = {}) {

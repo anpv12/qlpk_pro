@@ -9,6 +9,8 @@ import { updateDashboard } from './management-overview.js';
 import { setProp } from '../shared/dom-query.js';
 import { byId, el, replace } from '../shared/dom.js';
 import { requestJson } from '../shared/http-json.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+import { initDatepickers } from '../datepicker-init.js';
 
 // ========== FUNCTIONS CHO NHẬP KHO THEO ĐƠN HÀNG ==========
 let batchRowCounter = 0;
@@ -101,8 +103,8 @@ function addBatchImportRow() {
 
 	// Khởi tạo Flatpickr cho input ngày hết hạn vừa tạo
 	const expiryDateInput = row.querySelector('.batch-expiry-date');
-	if (expiryDateInput && typeof window.initDatepickers === 'function') {
-		window.initDatepickers(expiryDateInput);
+	if (expiryDateInput && typeof initDatepickers === 'function') {
+		initDatepickers(expiryDateInput);
 	}
 }
 
@@ -376,7 +378,7 @@ async function confirmBatchImport() {
 		showCustomToast('success', `Nhập kho thành công! Đã lưu ${response.total_batches} dòng nhập và đơn giá riêng.`);
 	} catch (error) {
 		console.error('Lỗi khi nhập kho:', error);
-		window.QLPKUserFeedback.reportError(error, {fallback: 'Không thể nhập kho. Vui lòng kiểm tra dữ liệu và thử lại.'});
+		QLPKUserFeedback.reportError(error, {fallback: 'Không thể nhập kho. Vui lòng kiểm tra dữ liệu và thử lại.'});
 	} finally {
 		isImportingBatch = false;
 		setProp('#confirmImportBatchBtn', 'disabled', false);

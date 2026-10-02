@@ -1,3 +1,5 @@
+import { MedicalRecordHistoryTabUi } from '../components/medical-record-history-tab-ui.js';
+
 function updateMedicalRecordTab(options = {}) {
 	const documentRef = options.document || window.document;
 	const logger = options.console || window.console;
@@ -10,7 +12,7 @@ function updateMedicalRecordTab(options = {}) {
 	if (!selectedPatient) return false;
 
 	try {
-		const recordTab = options.recordTab || window.MedicalRecordHistoryTabUi;
+		const recordTab = options.recordTab || MedicalRecordHistoryTabUi;
 		return recordTab.rerenderRecord(documentRef.getElementById('medicalRecordContentArea'), selectedPatient);
 	} catch (error) {
 		if (logger && typeof logger.error === 'function') {

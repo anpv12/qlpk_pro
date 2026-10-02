@@ -13,11 +13,12 @@ import { bindColorSwatches, openAddUser, openEditUser, saveUser, uploadAvatar, u
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKPagination } from './components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const ROLE_LABELS = { admin: 'Admin', doctor: 'Bác sĩ', staff: 'Nhân viên', cashier: 'Thu ngân', PSYCHOLOGIST: 'Tâm lý gia' };
 const ROLE_DISPLAY = { admin: 'Quản trị viên', doctor: 'Bác sĩ', staff: 'Nhân viên', cashier: 'Thu ngân', PSYCHOLOGIST: 'Tâm lý gia' };
 const state = { users: [], editingUserId: null, userIdToDelete: null, revision: 0, currentAvatarUrl: '', currentLicenseCertificateUrl: '', currentLicenseCertificateFileName: '' };
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const roleLabel = role => (!role ? 'Chưa phân quyền' : ROLE_LABELS[role] || role);
 

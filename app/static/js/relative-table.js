@@ -1,5 +1,6 @@
 import { el, replace } from './shared/dom.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 const API_BASE = '/api/family-members';
 let instanceCounter = 0;
 
@@ -28,7 +29,7 @@ const DEFAULT_RELATIONSHIP_OPTIONS = [
 ];
 
 const notify = (type, message) => {
-	window.QLPKUserFeedback.show(type, message);
+	QLPKUserFeedback.show(type, message);
 };
 
 const confirmDialog = async (message) => {

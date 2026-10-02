@@ -31,7 +31,7 @@ test('cashier slices stay small and only declare at top level (bootstrap lives i
             assert.match(line, allowed, `${file}: ${line}`);
         }
     }
-    assert.match(read('payment-waiting.js'), /window\.QLPKUserFeedback\?\.show\(type, message\)/);
+    assert.match(read('payment-waiting.js'), /(?:window\.)?QLPKUserFeedback\?\.show\(type, message\)/);
 });
 
 test('top-level names are declared by exactly one cashier slice', () => {

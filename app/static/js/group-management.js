@@ -13,6 +13,7 @@ import { PERMISSIONS } from './group-permissions.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKPagination } from './components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const state = { groups: [], editingId: null, deletingId: null };
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
@@ -121,7 +122,7 @@ async function confirmDelete() {
 		fetchGroups().catch(() => {});
 		state.deletingId = null;
 	} catch {
-		window.QLPKUserFeedback?.show('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
+		QLPKUserFeedback?.show('error', 'Không thể xóa nhóm quyền. Vui lòng thử lại.');
 	}
 }
 

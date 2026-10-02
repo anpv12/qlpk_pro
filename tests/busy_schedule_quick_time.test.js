@@ -4,16 +4,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { installDom } = require('./helpers/fake-dom');
+require('./helpers/esm-stubs');
 
 const template = fs.readFileSync('app/templates/doctor-busy-schedule.html', 'utf8');
 const FORM = template.slice(template.indexOf('<form id="busyScheduleForm"'), template.indexOf('</form>') + 7);
 const source = fs.readFileSync('app/static/js/doctor-busy-schedule.js', 'utf8');
 let sequence = 0;
 
-async function harness(useDatepicker = true) {
+async function harness() {
     const window = installDom({ html: `${FORM}<button id="outside" class="active" data-quick-time-outside></button>` });
     const inputs = new Map();
-    if (useDatepicker) window.setDatepickerValue = (input, value, trigger) => { assert.equal(trigger, true); inputs.set(input.getAttribute('name'), value); };
+    window.setDatepickerValue = (input, value, trigger) => { assert.equal(trigger, true); inputs.set(input.getAttribute('name'), value); };
     const module = await import(`${pathToFileURL(path.join(__dirname, '../app/static/js/doctor-busy-schedule/quick-time.js')).href}?case=${++sequence}`);
     const buttons = [...window.document.querySelectorAll('#busyScheduleForm [data-quick-time]')];
     return { module, buttons, window, inputs, outside: window.document.getElementById('outside') };
@@ -52,13 +53,6 @@ test('two hours starts now and remains two hours long', async () => {
     const end = state.inputs.get('end_datetime');
     assert.ok(start.getTime() >= before && start.getTime() <= Date.now());
     assert.equal(end - start, 7200000);
-});
-
-test('plain inputs still work when datepicker is unavailable', async () => {
-    const state = await harness(false);
-    state.module.setQuickTime('morning', state.buttons[0]);
-    assert.match(state.window.document.querySelector('input[name="start_datetime"]').value, /T08:00$/);
-    assert.match(state.window.document.querySelector('input[name="end_datetime"]').value, /T12:00$/);
 });
 
 test('template declares the five presets on the buttons themselves', () => {

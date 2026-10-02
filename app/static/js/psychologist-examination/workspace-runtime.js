@@ -1,5 +1,6 @@
 import { PsychologistWorkspaceUi } from './workspace-ui.js';
 import { QLPKPsychologistComponentConfig } from '../components/psychologist-component-config.js';
+import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
 
 const REGISTRY = window.QLPKDoctorModuleRegistry;
 const PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
@@ -84,7 +85,7 @@ function createComponents() {
 }
 
 function createPatientIntake() {
-	const intakeFactory = window.QLPKPatientIntakeForm;
+	const intakeFactory = QLPKPatientIntakeForm;
 	if (!intakeFactory?.create) throw new Error('Thiếu component Hành chính dùng chung');
 	const intake = config.intake || {};
 	return intakeFactory.create({

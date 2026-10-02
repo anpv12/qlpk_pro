@@ -14,6 +14,11 @@ import { QLPKPsychologistPatientHistoryBridge } from './psychologist-examination
 import { QLPKPsychologistWorkspaceRuntime } from './psychologist-examination/workspace-runtime.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 import { QLPKWorkflowTwoPane } from './components/workflow-two-pane.js';
+import { ClinicalExaminationWaitingListUi } from './components/examination-waiting-list-ui.js';
+import { ClinicalFormDomUtils } from './components/form-dom-utils.js';
+import { ClinicalVitalCalculationUtils } from './components/vital-calculation-utils.js';
+import { OccupationAutocomplete } from './occupation-autocomplete.js';
+import { ReferralSourceControl } from './referral-source-control.js';
 
 let currentPatientId = null;
 let psychologistRelativeTableInstance = null;
@@ -116,7 +121,7 @@ async function syncModalDataToMainForm(saveToDb = false) {
 
 const loadProvinces = addressHierarchyAdapter.loadProvinces;
 
-const psychologistWaitingListAdapter = window.ClinicalExaminationWaitingListUi.createWaitingListAdapter({
+const psychologistWaitingListAdapter = ClinicalExaminationWaitingListUi.createWaitingListAdapter({
 	document,
 	apiCall,
 	statuses: ['psychologist_exam', 'conclusion'],
@@ -141,7 +146,7 @@ const psychologistWaitingListAdapter = window.ClinicalExaminationWaitingListUi.c
 	setTotalPages: nextTotalPages => { totalPages = nextTotalPages; },
 	updatePagination: () => pageCoreAdapter.updatePagination(),
 	formatDateDisplay: date => window.formatDateDisplay ? window.formatDateDisplay(date) : formatDisplayDate(date),
-	calculateAge: window.ClinicalVitalCalculationUtils.calculateAge,
+	calculateAge: ClinicalVitalCalculationUtils.calculateAge,
 	showError: () => window.showCustomToast('error', 'Lỗi khi tải danh sách lịch hẹn')
 });
 
@@ -177,10 +182,10 @@ async function savePatientDataInternal(formData) {
 			&& psychologistWorkspaceRuntime?.getState?.().contextToken === contextToken,
 		syncModalDataIfNeeded,
 		getCurrentPatientId: () => patientId,
-		buildPatientPayload: data => window.ClinicalFormDomUtils.buildPatientSavePayload(data),
+		buildPatientPayload: data => ClinicalFormDomUtils.buildPatientSavePayload(data),
 		uploadDraftDocumentsForPatient: (savedPatientId, uploadOptions) => documentSectionAdapter.uploadDraftDocumentsForPatient(savedPatientId, uploadOptions),
 		getCurrentAppointmentId: () => appointmentId,
-		buildAppointmentPayload: data => window.ClinicalFormDomUtils.buildAppointmentClinicalUpdatePayload(data),
+		buildAppointmentPayload: data => ClinicalFormDomUtils.buildAppointmentClinicalUpdatePayload(data),
 		setCurrentPatientId,
 		showToast: window.showCustomToast,
 		afterPatientSaved: (patientResult, patientData) => {
@@ -204,9 +209,9 @@ async function savePatientData() {
 
 // ===== DOM UTILITY FUNCTIONS =====
 
-const formDomAdapter = window.ClinicalFormDomUtils.createFormDomAdapter({
+const formDomAdapter = ClinicalFormDomUtils.createFormDomAdapter({
 	document,
-	getReferralSourceControl: () => window.ReferralSourceControl
+	getReferralSourceControl: () => ReferralSourceControl
 });
 const getElementValue = formDomAdapter.getElementValue;
 
@@ -216,7 +221,7 @@ function collectFormData() {
 	const historySnapshot = history?.collect?.() || {};
 	const getInlineHistoryValue = (_hiddenFieldId, modalFieldId) => getElementValue(modalFieldId);
 
-	return window.ClinicalFormDomUtils.collectClinicalAdministrativeFormData({
+	return ClinicalFormDomUtils.collectClinicalAdministrativeFormData({
 		document,
 		getElementValue,
 		getMedicalHistoryValue: getInlineHistoryValue,
@@ -229,20 +234,20 @@ function collectFormData() {
 
 // Initialize form
 function initializeForm() {
-	window.ClinicalFormDomUtils.initializeWorkflowFormShell({
+	ClinicalFormDomUtils.initializeWorkflowFormShell({
 		document,
 		window,
 		console,
 		setTimeout,
 		loadProvinces,
-		vitalUtils: window.ClinicalVitalCalculationUtils,
+		vitalUtils: ClinicalVitalCalculationUtils,
 		autoSaveBMI: (bmi) => {
 			if (typeof autoSavePatientField === 'function') {
 				autoSavePatientField('bmi', bmi);
 			}
 		},
 		setupMainAddressChangeHandlers: () => addressHierarchyAdapter.setupMainAddressChangeHandlers(),
-		occupationOptions: { OccupationAutocomplete: window.OccupationAutocomplete },
+		occupationOptions: { OccupationAutocomplete: OccupationAutocomplete },
 		documentSectionAdapter,
 		getElementValue,
 		autoSaveField: autoSavePatientField
@@ -303,7 +308,7 @@ const validateFile = documentFileAdapter.validateFile;
 
 // Initialize page
 function initializePage() {
-	window.ClinicalFormDomUtils.initializeWorkflowPageShell({
+	ClinicalFormDomUtils.initializeWorkflowPageShell({
 		document,
 		window,
 		console,
@@ -314,7 +319,7 @@ function initializePage() {
 		loadAppointments,
 		currentStatus,
 		currentPage,
-		occupationOptions: { OccupationAutocomplete: window.OccupationAutocomplete },
+		occupationOptions: { OccupationAutocomplete: OccupationAutocomplete },
 		documentSectionAdapter,
 		addressDraftAdapter,
 		saveAddressDraftToCache,
@@ -325,7 +330,7 @@ function initializePage() {
 
 // Reset form to default values
 function resetFormToDefault() {
-	window.ClinicalFormDomUtils.resetPsychologistWorkflowPageState({
+	ClinicalFormDomUtils.resetPsychologistWorkflowPageState({
 		document,
 		localStorage,
 		relativeTable: psychologistRelativeTableInstance,

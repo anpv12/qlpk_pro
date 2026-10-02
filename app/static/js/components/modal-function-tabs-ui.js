@@ -1,4 +1,7 @@
 import { emptyState } from '../shared/empty-state.js';
+import { MedicalRecordHistoryTabUi } from './medical-record-history-tab-ui.js';
+import { PrescriptionHistoryTabUi } from './prescription-history-tab-ui.js';
+import { ServiceHistoryTabUi } from './service-history-tab-ui.js';
 
 const TAB_CONFIG = {
 	prescription: {
@@ -243,9 +246,9 @@ async function renderServiceHistoryTab(options = {}) {
 		? options.context.getBaseOptions('services')
 		: null;
 	if (!tabOptions) return renderTabError('services', 'Thiếu context dữ liệu lịch sử dịch vụ.');
-	if (!window.ServiceHistoryTabUi) return renderTabError('services', 'Không thể hiển thị dịch vụ. Vui lòng tải lại trang.');
+	if (!ServiceHistoryTabUi) return renderTabError('services', 'Không thể hiển thị dịch vụ. Vui lòng tải lại trang.');
 
-	return window.ServiceHistoryTabUi.renderTab({
+	return ServiceHistoryTabUi.renderTab({
 		...tabOptions,
 		fetchServicesForAppointment: options.fetchServicesForAppointment,
 		buildServiceInvoiceHTML: options.buildServiceInvoiceHTML,
@@ -261,9 +264,9 @@ async function renderMedicalRecordHistoryTab(options = {}) {
 		? options.context.getBaseOptions(tabKey)
 		: null;
 	if (!tabOptions) return renderTabError(tabKey, 'Thiếu context dữ liệu bệnh án.');
-	if (!window.MedicalRecordHistoryTabUi) return renderTabError(tabKey, 'Không thể hiển thị bệnh án. Vui lòng tải lại trang.');
+	if (!MedicalRecordHistoryTabUi) return renderTabError(tabKey, 'Không thể hiển thị bệnh án. Vui lòng tải lại trang.');
 
-	return window.MedicalRecordHistoryTabUi.renderTab({
+	return MedicalRecordHistoryTabUi.renderTab({
 		...tabOptions,
 		recordLabel: options.recordLabel,
 		...(options.appointmentFetchers || {}),
@@ -280,9 +283,9 @@ async function renderPrescriptionHistoryTab(options = {}) {
 		? options.context.getBaseOptions('prescription')
 		: null;
 	if (!tabOptions) return renderTabError('prescription', 'Thiếu context dữ liệu toa thuốc.');
-	if (!window.PrescriptionHistoryTabUi) return renderTabError('prescription', 'Không thể hiển thị đơn thuốc. Vui lòng tải lại trang.');
+	if (!PrescriptionHistoryTabUi) return renderTabError('prescription', 'Không thể hiển thị đơn thuốc. Vui lòng tải lại trang.');
 
-	return window.PrescriptionHistoryTabUi.renderTab({
+	return PrescriptionHistoryTabUi.renderTab({
 		...tabOptions,
 		...(options.appointmentFetchers || {}),
 		setupPrescriptionTabPagination: options.setupPrescriptionTabPagination,

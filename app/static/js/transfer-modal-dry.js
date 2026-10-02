@@ -2,6 +2,7 @@
 // (markup: templates/partials/transfer-modal.html, included by each page).
 import { el, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 let currentTransferData = emptyTransferData();
 // Called after a successful transfer (reloads the caller's list)
@@ -91,11 +92,11 @@ function openTransferModal(appointmentIds, fromRole, onSuccess, options = {}) {
 	if (transferring) return;
 	authContext = captureAuthContext();
 	if (!authContext()) {
-		window.QLPKUserFeedback.show('error', 'Phiên đăng nhập chưa sẵn sàng. Vui lòng tải lại trang.');
+		QLPKUserFeedback.show('error', 'Phiên đăng nhập chưa sẵn sàng. Vui lòng tải lại trang.');
 		return;
 	}
 	if (!modalNode()) {
-		window.QLPKUserFeedback.show('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
+		QLPKUserFeedback.show('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
 		return;
 	}
 	sessionToken += 1;
@@ -207,7 +208,7 @@ async function loadPersonList(role, callback) {
 function finishTransfer(onSuccess) {
 	setTransferring(false);
 	bootstrapModal().hide();
-	window.QLPKUserFeedback.show('success', 'Đã chuyển khám.');
+	QLPKUserFeedback.show('success', 'Đã chuyển khám.');
 	const examinationModal = byId('addExaminationModal');
 	if (examinationModal) window.bootstrap.Modal.getInstance(examinationModal)?.hide();
 	if (typeof onSuccess === 'function') onSuccess();
@@ -233,14 +234,14 @@ async function transferAppointments(appointmentIds, toRole, toPersonId) {
 		if (!isCurrentSession(token)) return;
 		if (result?.success !== true || !Number.isInteger(result.updated_count)) throw new Error('transfer_unconfirmed');
 		if (result.updated_count !== new Set(appointmentIds.map(Number)).size) {
-			window.QLPKUserFeedback.show('warning', 'Máy chủ chưa xác nhận chuyển đủ các lượt đã chọn. Vui lòng kiểm tra lại danh sách trước khi thử tiếp.');
+			QLPKUserFeedback.show('warning', 'Máy chủ chưa xác nhận chuyển đủ các lượt đã chọn. Vui lòng kiểm tra lại danh sách trước khi thử tiếp.');
 			return;
 		}
 		finishTransfer(onSuccess);
 	} catch (error) {
 		if (!isCurrentSession(token)) return;
 		console.error('Transfer failed:', error);
-		window.QLPKUserFeedback.show('error', 'Không thể chuyển khám. Vui lòng kiểm tra lại.');
+		QLPKUserFeedback.show('error', 'Không thể chuyển khám. Vui lòng kiểm tra lại.');
 	} finally {
 		if (token === sessionToken) setTransferring(false);
 	}
@@ -270,12 +271,12 @@ function onConfirmClick(event) {
 	event.preventDefault();
 	event.stopPropagation();
 	if (!currentTransferData.toRole) {
-		window.QLPKUserFeedback.show('error', 'Vui lòng chọn role chuyển đến');
+		QLPKUserFeedback.show('error', 'Vui lòng chọn role chuyển đến');
 		return;
 	}
 	// Yêu cầu chọn người nhận cho tất cả các role (kể cả lễ tân)
 	if (!currentTransferData.toPersonId) {
-		window.QLPKUserFeedback.show('error', 'Vui lòng chọn người nhận');
+		QLPKUserFeedback.show('error', 'Vui lòng chọn người nhận');
 		return;
 	}
 	transferAppointments(currentTransferData.appointmentIds, currentTransferData.toRole, currentTransferData.toPersonId);

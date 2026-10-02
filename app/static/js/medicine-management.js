@@ -22,6 +22,7 @@ import { showSupplierManagement } from './medicines/management-suppliers.js';
 import { loadImportLedger, switchImportTab } from './medicines/management-import-ledger.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 // Medicine Management JavaScript
 
@@ -270,7 +271,7 @@ function bindEvents() {
 
 // Show toast notification
 function showCustomToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message, { duration: 5000 });
+	return QLPKUserFeedback?.show(type, message, { duration: 5000 });
 }
 
 export { debounce, escapeHtml, getUserFacingResponseMessage, medicinePageSize, normalizeSearchText, setElementVisible, setPackagingInfoActive, showCustomToast };

@@ -1,5 +1,6 @@
 import { el } from '../shared/dom.js';
 import { ReceptionistDocumentAttachmentUtils } from './document-attachment-utils.js';
+import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
 
 const actionStates = new WeakMap();
 
@@ -190,7 +191,7 @@ function renderDocumentsList(options = {}) {
 	if (!documentsList) return;
 	actionStates.set(documentsList, {
 		options,
-		isCurrentContext: window.ReceptionistDocumentAttachmentControls.createContextGuard(options),
+		isCurrentContext: ReceptionistDocumentAttachmentControls.createContextGuard(options),
 		pending: actionStates.get(documentsList)?.pending || new Set()
 	});
 	bindDocumentActions(documentsList);

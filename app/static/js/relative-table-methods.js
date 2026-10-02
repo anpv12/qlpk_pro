@@ -1,6 +1,7 @@
 import { el, replace } from './shared/dom.js';
 import { API_BASE, RelativeTable, formatDateDisplay, notify, renderRelativeActionButton, toInputDate } from './relative-table.js';
 import { QLPKPatientSearchDropdown } from './components/patient-search-dropdown.js';
+import { initDatepickerWithValue } from './datepicker-init.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 function trimmedValue(row, selector) {
 	const input = row.querySelector(selector);
@@ -137,7 +138,7 @@ const methods = {
 		}
 
 		// Init Flatpickr for dynamic date input
-		window.initDatepickerWithValue?.(tr.querySelector('.relative-date-input'), this.currentAppointmentDate);
+		initDatepickerWithValue?.(tr.querySelector('.relative-date-input'), this.currentAppointmentDate);
 	},
 
 	setupNameAutocomplete(row) {
@@ -328,7 +329,7 @@ const methods = {
 		});
 
 		// Init Flatpickr for dynamic date input in edit row
-		window.initDatepickerWithValue?.(targetRow.querySelector('.relative-date-input'), item.joint_exam_date || this.currentAppointmentDate);
+		initDatepickerWithValue?.(targetRow.querySelector('.relative-date-input'), item.joint_exam_date || this.currentAppointmentDate);
 	},
 
 	async handleDelete(item) {

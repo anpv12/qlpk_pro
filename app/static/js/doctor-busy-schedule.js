@@ -13,10 +13,11 @@ import { formatDateTime, formatTimeRangeReadable, statusIndicator } from './doct
 import { setQuickTime, setQuickTimeSelection, setRange } from './doctor-busy-schedule/quick-time.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const DEFAULT_REASONS = ['Họp định kỳ', 'Nghỉ phép', 'Khám ngoài', 'Đào tạo', 'Hội nghị', 'Nghỉ ốm', 'Công tác', 'Nghỉ lễ'];
 const state = { user: null, schedules: [], revision: 0, reasons: null, reasonsTime: null, editingId: null };
-const showAlert = (message, type = 'info') => window.QLPKUserFeedback?.show(type, message, { duration: 5000 });
+const showAlert = (message, type = 'info') => QLPKUserFeedback?.show(type, message, { duration: 5000 });
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const field = name => document.querySelector(`input[name="${name}"]`);
 const submitLabel = editing => [icon(editing ? 'bi-check-lg' : 'bi-plus-lg', 'me-2'), editing ? 'Cập nhật lịch bận' : 'Tạo lịch bận'];
@@ -44,7 +45,7 @@ function validateDateTimeInputs() {
 	const startTime = new Date(startVal);
 	const endTime = new Date(endVal);
 	if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) return;
-	const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+	const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 	if (startTime >= endTime) toast('error', 'Thời gian kết thúc phải sau thời gian bắt đầu');
 	else if (endTime < new Date()) toast('error', 'Không thể tạo lịch bận trong quá khứ');
 	else toast('success', `Thời gian bận: ${Math.round((endTime - startTime) / (1000 * 60 * 60))} giờ`);

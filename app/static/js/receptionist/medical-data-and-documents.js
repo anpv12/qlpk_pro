@@ -16,6 +16,9 @@ import { ReceptionistFormSaveControls } from './form-save-controls.js';
 import { ReceptionistFormatters } from './formatters.js';
 import { ReceptionistJointExamOrchestration } from './joint-exam-orchestration.js';
 import { ReceptionistMedicalInfoDraft } from './medical-info-draft.js';
+import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
+import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
+import { ReceptionistPatientRelativesTable } from './patient-relatives-table.js';
 
 // Load patient medical data from API
 async function loadPatientMedicalData(patientId) {
@@ -155,7 +158,7 @@ async function loadAttachmentsForCurrentPatient() {
 	return documentAttachmentControls.loadAttachmentsForCurrentPatient(getDocumentAttachmentControlsOptions());
 }
 
-const documentAttachmentControls = window.ReceptionistDocumentAttachmentControls;
+const documentAttachmentControls = ReceptionistDocumentAttachmentControls;
 const documentAttachmentUtils = ReceptionistDocumentAttachmentUtils;
 
 function getDocumentAttachmentOptions() {
@@ -252,7 +255,7 @@ function resetFormToDefault() {
 		setUploadedDocuments: value => { state.uploadedDocuments = value; },
 		setCurrentPatientId
 	});
-	window.QLPKPatientIntakeForm.updatePregnancyControls({ document });
+	QLPKPatientIntakeForm.updatePregnancyControls({ document });
 }
 
 // ========================================
@@ -343,7 +346,7 @@ function startMedicalDataAndDocuments() {
 		initializeAutocomplete();
 
 		ReceptionistFormInputGuards.bindAgeInputGuard({ document });
-		window.QLPKPatientIntakeForm.bind({ document, apiCall });
+		QLPKPatientIntakeForm.bind({ document, apiCall });
 
 		ReceptionistJointExamOrchestration.bindModalControls(
 			Object.assign({}, getPatientPopulateOptions(), {
@@ -364,7 +367,7 @@ function startMedicalDataAndDocuments() {
 
 	// Same DOMContentLoaded order as the former classic script: session check starts, then the relatives table and joint-exam manager initialize.
 	document.addEventListener('DOMContentLoaded', () => {
-		window.ReceptionistPatientRelativesTable.bindInitialLoad(
+		ReceptionistPatientRelativesTable.bindInitialLoad(
 			Object.assign({}, getPatientPopulateOptions(), {
 				getInstance: () => state.relativeTableInstance,
 				setInstance: value => { state.relativeTableInstance = value; }

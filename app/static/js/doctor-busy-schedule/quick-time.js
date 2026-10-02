@@ -1,4 +1,6 @@
 // Quick time presets for the busy schedule form; buttons carry data-quick-time="morning|afternoon|evening|allday|2hours".
+import { setDatepickerValue } from '../datepicker-init.js';
+
 const HOUR = 60 * 60 * 1000;
 const PRESETS = {
 	morning: today => [today + 8 * HOUR, today + 12 * HOUR],
@@ -8,22 +10,12 @@ const PRESETS = {
 	'2hours': (today, now) => [now, now + 2 * HOUR],
 };
 
-export function formatForInput(date) {
-	const pad = value => String(value).padStart(2, '0');
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-// Writes both datetime fields through the Flatpickr helper when present, else as plain input values.
+// Writes both datetime fields through the shared datepicker helper (Flatpickr, or the plain value before it initialises).
 export function setRange(startTime, endTime) {
 	const start = document.querySelector('input[name="start_datetime"]');
 	const end = document.querySelector('input[name="end_datetime"]');
-	if (typeof window.setDatepickerValue === 'function') {
-		if (start) window.setDatepickerValue(start, startTime, true);
-		if (end) window.setDatepickerValue(end, endTime, true);
-		return;
-	}
-	if (start) start.value = formatForInput(startTime);
-	if (end) end.value = formatForInput(endTime);
+	if (start) setDatepickerValue(start, startTime, true);
+	if (end) setDatepickerValue(end, endTime, true);
 }
 
 export function setQuickTimeSelection(button) {

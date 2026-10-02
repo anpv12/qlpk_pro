@@ -9,6 +9,7 @@ import { AppointmentManagementAllergyFormatUtils } from './allergy-format-utils.
 import { afterDataChanged, checkDoctorAvailabilityBeforeCreate, showConflictWarning } from './page-view.js';
 import { fieldValue, hideModal, setFieldValue, setProp, showModal, toggleClass } from '../shared/dom-query.js';
 import { requestJson } from '../shared/http-json.js';
+import { setDatepickerValue } from '../datepicker-init.js';
 // Modal sửa lịch hẹn: mở, điền form, trạng thái, lưu.
 
 // Mở modal edit
@@ -160,7 +161,7 @@ function fillEditPatientFields(appointment) {
 		const appointmentDate = new Date(appointment.appointment_date);
 		const dateStr = appointmentDate.toISOString().split('T')[0];
 		const timeStr = appointmentDate.toTimeString().slice(0, 5);
-		window.setDatepickerValue(document.getElementById('editAppointmentDate'), dateStr, true);
+		setDatepickerValue(document.getElementById('editAppointmentDate'), dateStr, true);
 		setFieldValue('#editAppointmentTime', timeStr);
 	}
 
@@ -169,7 +170,7 @@ function fillEditPatientFields(appointment) {
 	setFieldValue('#editPatientEmail', appointment.patient_email || appointment.patient_info?.email || '');
 
 	const dobValue = appointment.patient_date_of_birth || appointment.patient_info?.date_of_birth || '';
-	window.setDatepickerValue(document.getElementById('editPatientDOB'), dobValue, true);
+	setDatepickerValue(document.getElementById('editPatientDOB'), dobValue, true);
 }
 
 function showEditServiceMode(isService) {

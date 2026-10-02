@@ -351,4 +351,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Export để sử dụng ở file khác
-window.OccupationAutocomplete = OccupationAutocomplete;
+
+export { OccupationAutocomplete };

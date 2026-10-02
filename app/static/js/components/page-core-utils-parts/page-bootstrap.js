@@ -1,4 +1,7 @@
 import { addButtonAnimationCSS, apiCall, autoSavePatientFormFieldShell, bindPaginationControls, bindRefreshButtons, ensureCurrentAppointmentIdForAutoSave, ensureSession, getAuthHeader, getDocument, resolveOptionValue, runPatientDataInternalSave, saveAppointmentClinicalUpdate, savePatientRecord, setCurrentPatientId, showAutoSaveIndicator, updatePagination } from './api-and-indicators.js';
+import { ClinicalExaminationWaitingListUi } from '../examination-waiting-list-ui.js';
+import { ClinicalFormDomUtils } from '../form-dom-utils.js';
+import { ExaminationActionButtonsUi } from '../examination-action-buttons-ui.js';
 
 function createPageCoreAdapter(options = {}) {
 	const coreOptions = () => ({
@@ -95,8 +98,8 @@ function bindBootstrapRelativeTable(options, context) {
 	return relativeTableInstance;
 }
 function bindBootstrapWaitingList(options, context) {
-	const { doc, targetWindow, pageCoreAdapter } = context;
-	const waitingListUi = options.waitingListUi || targetWindow.ClinicalExaminationWaitingListUi;
+	const { doc, pageCoreAdapter } = context;
+	const waitingListUi = options.waitingListUi || ClinicalExaminationWaitingListUi;
 	if (waitingListUi && typeof waitingListUi.bindStatusTabs === 'function') {
 		waitingListUi.bindStatusTabs({
 			document: doc,
@@ -133,9 +136,9 @@ function callIfAvailable(owner, method, ...args) {
 }
 
 function bindBootstrapFormControls(options, context) {
-	const { actionButtonsUi, targetWindow } = context;
+	const { actionButtonsUi } = context;
 	callIfAvailable(options, 'initializeForm');
-	callIfAvailable(options.formDomUtils || targetWindow.ClinicalFormDomUtils, 'bindAgeInputGuard', options.ageField || 'age');
+	callIfAvailable(options.formDomUtils || ClinicalFormDomUtils, 'bindAgeInputGuard', options.ageField || 'age');
 	callIfAvailable(actionButtonsUi, 'bindPersonalDetailEditButtons', options.personalDetailOptions || {});
 	callIfAvailable(options.medicalHistoryModalAdapter, 'bindOpenButton', {
 		isFormLocked: options.isFormLocked,
@@ -166,7 +169,7 @@ async function initializeExaminationPageBootstrap(options = {}) {
 		doc,
 		targetWindow,
 		pageCoreAdapter,
-		actionButtonsUi: options.actionButtonsUi || targetWindow.ExaminationActionButtonsUi
+		actionButtonsUi: options.actionButtonsUi || ExaminationActionButtonsUi
 	};
 	const relativeTableInstance = bindBootstrapRelativeTable(options, context);
 	bindBootstrapWaitingList(options, context);

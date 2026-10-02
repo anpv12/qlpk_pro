@@ -1,3 +1,5 @@
+import { ReceptionistServicePackage } from './service-package-selection.js';
+
 function getSafeSetValue(options) {
 	return options && options.safeSetValue ? options.safeSetValue : function () { return false; };
 }
@@ -24,7 +26,7 @@ function applyDoctor(appointment, options) {
 function applyServiceSelection(appointment, options) {
 	if (!appointment || !appointment.service_id) return;
 	const opts = options || {};
-	const servicePackage = window.ReceptionistServicePackage;
+	const servicePackage = ReceptionistServicePackage;
 	if (servicePackage && servicePackage.setServiceSelection) {
 		servicePackage.setServiceSelection(appointment, opts.allServices || []);
 	}

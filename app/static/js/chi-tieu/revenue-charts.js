@@ -4,6 +4,7 @@ import { apiRequest, loadExpenses, mountCtChart, render, setCtVisible } from '..
 import { clearActivePreset, setPreset } from './grid-and-filters.js';
 import { QLPKHtml } from '../shared/html-escape.js';
 import { QLPKInlineActions } from '../shared/inline-actions.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 function renderThuChiChart(labels, thuValues, chiValues) {
 	const dom = document.getElementById('thuChiChart');
@@ -80,10 +81,10 @@ function renderThuChiChart(labels, thuValues, chiValues) {
 async function exportThuChiExcel() {
 	try {
 		const range = getRevDateRange();
-		if (!range) { window.QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu để xuất'); return; }
+		if (!range) { QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu để xuất'); return; }
 		const url = `/api/dashboard/export-thu-chi?from_date=${range.fromISO}&to_date=${range.toISO}`;
 		const response = await fetch(url);
-		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
+		if (!response.ok) { QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
@@ -96,7 +97,7 @@ async function exportThuChiExcel() {
 		URL.revokeObjectURL(a.href);
 	} catch (e) {
 		console.error('Export thu chi error:', e);
-		window.QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
+		QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
 	}
 };
 
@@ -105,10 +106,10 @@ async function exportChiTieuExcel() {
 	try {
 		const fromEl = document.getElementById('dateFrom');
 		const toEl = document.getElementById('dateTo');
-		if (!fromEl || !toEl || !fromEl.value || !toEl.value) { window.QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu'); return; }
+		if (!fromEl || !toEl || !fromEl.value || !toEl.value) { QLPKUserFeedback?.show('warning', 'Chưa có dữ liệu'); return; }
 		const url = `/api/expenses/export?from=${encodeURIComponent(fromEl.value)}&to=${encodeURIComponent(toEl.value)}`;
 		const response = await fetch(url);
-		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
+		if (!response.ok) { QLPKUserFeedback?.show('error', 'Lỗi xuất Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
@@ -121,7 +122,7 @@ async function exportChiTieuExcel() {
 		URL.revokeObjectURL(a.href);
 	} catch (e) {
 		console.error('Export chi tieu error:', e);
-		window.QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
+		QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
 	}
 };
 
@@ -422,7 +423,7 @@ async function exportRevenueExcel() {
 		if (!range) return;
 		const url = `/api/dashboard/export-excel?from_date=${range.fromISO}&to_date=${range.toISO}`;
 		const response = await fetch(url);
-		if (!response.ok) { window.QLPKUserFeedback?.show('error', 'L\u1ed7i xu\u1ea5t Excel'); return; }
+		if (!response.ok) { QLPKUserFeedback?.show('error', 'L\u1ed7i xu\u1ea5t Excel'); return; }
 		const blob = await response.blob();
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
@@ -435,7 +436,7 @@ async function exportRevenueExcel() {
 		URL.revokeObjectURL(a.href);
 	} catch (e) {
 		console.error('Export error:', e);
-		window.QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
+		QLPKUserFeedback?.show('error', 'Không thể xuất dữ liệu. Vui lòng thử lại.');
 	}
 };
 

@@ -27,14 +27,14 @@ function esPartFiles(rel, partDir = rel.replace(/\.js$/, '-parts'), seen = []) {
     return [...parts.flatMap(part => esPartFiles(part, partDir, seen)), rel];
 }
 
-// Sibling ES modules `<stem>-*.js` that import `./<stem>.js` and extend it (class method modules), in name order.
+// Sibling ES modules `<stem>-*.js` that import `./<stem>.js` and extend its prototype (class method modules), in name order.
 function augmentingModules(rel) {
     const dir = path.posix.dirname(rel);
     const stem = path.posix.basename(rel, '.js');
     return fs.readdirSync(path.join(JS_ROOT, dir))
         .filter(name => name.startsWith(`${stem}-`) && name.endsWith('.js'))
         .map(name => (dir === '.' ? name : `${dir}/${name}`))
-        .filter(file => new RegExp(`^import [^\\n]*from '\\./${stem}\\.js';`, 'm').test(fs.readFileSync(path.join(JS_ROOT, file), 'utf8')))
+        .filter(file => { const text = fs.readFileSync(path.join(JS_ROOT, file), 'utf8'); return new RegExp(`^import [^\\n]*from '\\./${stem}\\.js';`, 'm').test(text) && /\.prototype\b/.test(text); })
         .sort((a, b) => (a.endsWith('-methods.js') ? -1 : 0) - (b.endsWith('-methods.js') ? -1 : 0) || a.localeCompare(b));
 }
 

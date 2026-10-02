@@ -2,18 +2,20 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const { loadPage, flush, Event } = require('./helpers/esm-page');
+const { runScriptFile } = require('./helpers/module-source');
 
 const template = fs.readFileSync(path.join(__dirname, '../app/templates/icd-management.html'), 'utf8');
 const BODY = template.slice(template.indexOf('<body'), template.lastIndexOf('</body>')).replace(/<script[\s\S]*?<\/script>/g, '').replace(/^<body[^>]*>/, '')
     .replace("{% include 'partials/clinic-pagination.html' %}", fs.readFileSync(path.join(__dirname, '../app/templates/partials/clinic-pagination.html'), 'utf8'));
-const transport = fs.readFileSync(path.join(__dirname, '../app/static/js/shared/api-transport.js'), 'utf8');
 
 async function setup() {
     let pager;
     const page = await loadPage('icd-management.js', { html: BODY, url: 'https://clinic.test/icd-management.html', before(window) {
         window.localStorage.setItem('qlpk_token', 'active-qa-session');
-        new Function('window', 'document', 'localStorage', transport)(window, window.document, window.localStorage);
+        runScriptFile(path.join(__dirname, '../app/static/js/shared/api-transport.js'), vm.createContext({ window, document: window.document, localStorage: window.localStorage,
+            Headers, URL, Request, Response, AbortController, FormData, Blob, console, setTimeout, clearTimeout }));
         globalThis.fetch = window.fetch;
         window.QLPKPagination = { create: () => (pager = { update(value) { this.value = value; } }) };
         window.QLPKUserFeedback = { show() {} };

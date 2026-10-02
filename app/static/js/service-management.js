@@ -7,6 +7,7 @@ import './components/clinic-pagination.js';
 import { byId, el, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { bindExcelImport, mountModalCrudPage, statusBadge } from './components/modal-crud-page.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const formatPrice = price => new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
 const price = { invalid: value => value === '' || value === null || value === undefined, message: 'Vui lòng nhập đơn giá' };
@@ -21,7 +22,7 @@ async function loadCategories() {
 		replace(byId('editServiceCategory'), options());
 	} catch (error) {
 		console.error('Error loading categories:', error);
-		window.QLPKUserFeedback?.show('error', 'Không thể tải danh mục dịch vụ. Vui lòng thử lại.');
+		QLPKUserFeedback?.show('error', 'Không thể tải danh mục dịch vụ. Vui lòng thử lại.');
 	}
 }
 

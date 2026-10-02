@@ -28,7 +28,6 @@ function setDatepickerValue(elementIdOrElement, value, triggerChange = true) {
 }
 
 // Make globally available
-window.setDatepickerValue = setDatepickerValue;
 
 /**
  * Set a Y-m-d (or ISO datetime) value on a dynamic input, then initialise Flatpickr on it.
@@ -41,8 +40,6 @@ function initDatepickerWithValue(input, value) {
 	}
 	initDatepickers(input);
 }
-
-window.initDatepickerWithValue = initDatepickerWithValue;
 
 function isDatepickerDisabled(el) {
 	return el.dataset.datepickerDisabled === 'true'
@@ -228,7 +225,6 @@ document.addEventListener('shown.bs.modal', function () {
 });
 
 // Make function globally available for manual initialization
-window.initDatepickers = initDatepickers;
 
 // FIX: Bootstrap Modal stealing focus from Flatpickr (appended to body)
 // This override prevents Bootstrap from forcing focus back to the modal when clicking outside
@@ -241,3 +237,5 @@ document.addEventListener('DOMContentLoaded', function () {
 		};
 	}
 });
+
+export { initDatepickerWithValue, initDatepickers, setDatepickerValue };

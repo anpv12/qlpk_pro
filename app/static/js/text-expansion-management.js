@@ -12,12 +12,14 @@ import { requestJson } from './shared/http-json.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 import { QLPKPagination } from './components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { textExpansion } from './text-expansion.js';
 
 const state = { page: 1, pageSize: 10, revision: 0 };
 const CATEGORY_LABELS = { medical: 'Y tế', psychological: 'Tâm lý', general: 'Chung' };
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
-const refreshLiveCache = () => window.textExpansion?.refreshTextExpansions?.();
+const refreshLiveCache = () => textExpansion?.refreshTextExpansions?.();
 
 function categoryBadge(category) {
 	const known = Object.hasOwn(CATEGORY_LABELS, category);

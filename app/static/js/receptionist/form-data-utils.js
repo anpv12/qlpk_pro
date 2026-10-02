@@ -1,3 +1,8 @@
+import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
+import { ReceptionistServicePackage } from './service-package-selection.js';
+import { ReferralSourceControl } from '../referral-source-control.js';
+import { setDatepickerValue } from '../datepicker-init.js';
+
 function getDocument(options = {}) {
 	return options.document || window.document;
 }
@@ -10,8 +15,8 @@ function getElementValue(elementId, defaultValue = '', options = {}) {
 	const doc = getDocument(options);
 	const win = getWindow(options);
 
-	if (elementId === 'referralSource' && win.ReferralSourceControl) {
-		return win.ReferralSourceControl.getValue({ document: doc }) || defaultValue;
+	if (elementId === 'referralSource' && ReferralSourceControl) {
+		return ReferralSourceControl.getValue({ document: doc }) || defaultValue;
 	}
 
 	const element = doc.getElementById(elementId);
@@ -49,10 +54,9 @@ function readFlatpickrDate(element) {
 
 function safeSetValue(elementId, value, options = {}) {
 	const doc = getDocument(options);
-	const win = getWindow(options);
 
-	if (elementId === 'referralSource' && win.ReferralSourceControl) {
-		return win.ReferralSourceControl.setValue(value, { document: doc });
+	if (elementId === 'referralSource' && ReferralSourceControl) {
+		return ReferralSourceControl.setValue(value, { document: doc });
 	}
 
 	const element = doc.getElementById(elementId);
@@ -62,8 +66,8 @@ function safeSetValue(elementId, value, options = {}) {
 			return true;
 		}
 		if (element._flatpickr) {
-			if (typeof win.setDatepickerValue === 'function') {
-				win.setDatepickerValue(element, value || null, false);
+			if (typeof setDatepickerValue === 'function') {
+				setDatepickerValue(element, value || null, false);
 			} else {
 				element._flatpickr.setDate(value || null, false);
 			}
@@ -87,9 +91,8 @@ function toFloat(value, fallback = 0) {
 
 function collectFormData(options = {}) {
 	const doc = getDocument(options);
-	const win = getWindow(options);
-	const servicePackage = options.servicePackage || win.ReceptionistServicePackage;
-	const patientIntakeForm = win.QLPKPatientIntakeForm;
+	const servicePackage = options.servicePackage || ReceptionistServicePackage;
+	const patientIntakeForm = QLPKPatientIntakeForm;
 	if (!patientIntakeForm || typeof patientIntakeForm.collect !== 'function') {
 		throw new Error('Shared patient intake component is not available');
 	}

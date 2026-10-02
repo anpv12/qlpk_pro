@@ -7,6 +7,7 @@ import { ReceptionistAppointmentListControls } from '../appointment-list-control
 import { ReceptionistFormResetUtils } from '../form-reset-utils.js';
 import { ReceptionistJointExamOrchestration } from '../joint-exam-orchestration.js';
 import { RelativeTableManager } from '../../relative-table.js';
+import { QLPKPatientIntakeForm } from '../../components/patient-intake-form.js';
 // Patient copy and shared-form population for the receptionist save flow (ES module).
 
 function getPatientPopulateOptions() {
@@ -40,7 +41,7 @@ function buildSharedFormPayload({ appointment = {}, patient = {}, examination = 
 
 async function populateSharedForms({ appointment = {}, patient = {}, examination = {} } = {}, options = {}) {
 	if (options.isCurrentLoad?.() === false) return false;
-	const patientIntakeForm = window.QLPKPatientIntakeForm;
+	const patientIntakeForm = QLPKPatientIntakeForm;
 	if (!patientIntakeForm || typeof patientIntakeForm.populate !== 'function') {
 		throw new Error('Shared patient intake component is not available');
 	}

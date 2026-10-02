@@ -31,6 +31,7 @@ import { fieldValue, hideModal, rebind, rebindDelegate, removeClass, setFieldVal
 import { openAddAppointmentWithDate } from './appointment-management/page-open-add.js';
 import { CustomModal } from './custom-modal.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { setDatepickerValue } from './datepicker-init.js';
 
 Object.assign(state, {
 	doctors: [],
@@ -95,7 +96,7 @@ function bindListAndAddEvents() {
 		try {
 			AppointmentManagementAddModalUiUtils.prepareAddModalShown({
 				document,
-				setDatepickerValue: window.setDatepickerValue,
+				setDatepickerValue: setDatepickerValue,
 				setupICDMultiSelect,
 				initializePhase3Features
 			});

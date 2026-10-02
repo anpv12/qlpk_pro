@@ -1,5 +1,6 @@
 import { el, replace } from './shared/dom.js';
 import { JointExamManager, renderJointExamActionButton } from './joint-exam-manager.js';
+import { initDatepickerWithValue } from './datepicker-init.js';
 // Gắn vào prototype như method của class (non-enumerable, writable, configurable).
 const methods = {
 	/**
@@ -109,7 +110,7 @@ const methods = {
 		cells[1].querySelector('input').focus();
 
 		// Init Flatpickr for dynamic date input in edit row
-		window.initDatepickerWithValue?.(row.querySelector('td:nth-child(6) input'), jointDateValue);
+		initDatepickerWithValue?.(row.querySelector('td:nth-child(6) input'), jointDateValue);
 	},
 
 };

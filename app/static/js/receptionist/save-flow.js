@@ -11,6 +11,9 @@ import { ReceptionistFormResetUtils } from './form-reset-utils.js';
 import { ReceptionistJointExamOrchestration } from './joint-exam-orchestration.js';
 import { ReceptionistPageSessionBootstrap } from './page-session-bootstrap.js';
 import { ReceptionistPatientVitalsHistory } from './patient-vitals-history.js';
+import { ReceptionistPatientRelativesTable } from './patient-relatives-table.js';
+import { ReceptionistServicePackage } from './service-package-selection.js';
+import { setDatepickerValue } from '../datepicker-init.js';
 
 // Returns { patientId } on success, otherwise { status } ('stale' | 'patientError'); throws on an invalid id.
 async function saveReceptionistPatient(patientId, patientData, isCurrentContext) {
@@ -174,7 +177,7 @@ function collectFormData() {
 		document,
 		window,
 		console,
-		servicePackage: window.ReceptionistServicePackage
+		servicePackage: ReceptionistServicePackage
 	});
 }
 
@@ -258,8 +261,8 @@ function applyLoadedAppointment(appointment) {
 		const appointmentDateInput = document.getElementById('appointmentDate');
 		if (appointmentDateInput && appointmentDateInput._flatpickr) {
 			appointmentDateInput._flatpickr.setDate(dateStr, true); // true = trigger onChange
-		} else if (window.setDatepickerValue) {
-			window.setDatepickerValue(appointmentDateInput, dateStr, true);
+		} else if (setDatepickerValue) {
+			setDatepickerValue(appointmentDateInput, dateStr, true);
 		} else {
 			safeSetValue('appointmentDate', dateStr);
 		}
@@ -267,7 +270,7 @@ function applyLoadedAppointment(appointment) {
 		safeSetValue('appointmentTime', date.toTimeString().slice(0, 5));
 	}
 	safeSetValue('doctorId', appointment.doctor_id);
-	window.ReceptionistServicePackage.setServiceSelection(appointment, allServices);
+	ReceptionistServicePackage.setServiceSelection(appointment, allServices);
 
 	setCurrentPatientId(appointment.patient_id);
 	state.currentAppointmentId = appointment.id;
@@ -277,7 +280,7 @@ function applyLoadedAppointment(appointment) {
 	// Xóa pending list khi load appointment (vì đã có appointment rồi)
 	ReceptionistJointExamOrchestration.clearPendingList(jointExamManagerInstance);
 
-	state.relativeTableInstance = window.ReceptionistPatientRelativesTable.syncPatient(
+	state.relativeTableInstance = ReceptionistPatientRelativesTable.syncPatient(
 		state.relativeTableInstance,
 		appointment.patient_id,
 		Object.assign({}, getPatientPopulateOptions(), {
@@ -362,7 +365,7 @@ function getFormBootstrapOptions() {
 		window,
 		console,
 		setTimeout,
-		servicePackage: window.ReceptionistServicePackage,
+		servicePackage: ReceptionistServicePackage,
 		loadServicesForForm,
 		setupAgeCalculation,
 		setupBMICalculation

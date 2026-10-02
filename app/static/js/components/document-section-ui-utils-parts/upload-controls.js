@@ -1,6 +1,7 @@
 import { QLPKConfirmationDialog } from '../../shared/confirmation-dialog.js';
 import { ReceptionistDocumentAttachmentList } from '../../receptionist/document-attachment-list.js';
 import { ReceptionistDocumentAttachmentUtils } from '../../receptionist/document-attachment-utils.js';
+import { ReceptionistDocumentAttachmentControls } from '../../receptionist/document-attachment-controls.js';
 
 function getDocument(options = {}) {
 	return options.document || window.document;
@@ -114,7 +115,7 @@ function bindDocumentUploadControls(options = {}) {
 				return;
 			}
 			const files = Array.from(e.target.files || []);
-			const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+			const isCurrentContext = ReceptionistDocumentAttachmentControls.createContextGuard(options);
 			if (hasCurrentPatient()) {
 				for (const f of files) {
 					if (!isCurrentContext()) break;
@@ -228,7 +229,7 @@ async function deleteDraftDocument(docId, options = {}) {
 
 	const getDocuments = () => options.getUploadedDocuments?.() || [];
 	const target = getDocuments().find(item => String(item.id) === String(docId));
-	const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+	const isCurrentContext = ReceptionistDocumentAttachmentControls.createContextGuard(options);
 	if (!target || !isCurrentContext()) return false;
 	const confirmed = await confirmDocumentDelete(options);
 	if (!confirmed || !isCurrentContext() || !ensureEditingAllowed() || !getDocuments().includes(target)) return false;
@@ -279,7 +280,7 @@ async function uploadAttachmentForCurrentPatient(file, options = {}) {
 	}
 
 	if (typeof options.uploadFile !== 'function') return false;
-	const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+	const isCurrentContext = ReceptionistDocumentAttachmentControls.createContextGuard(options);
 	if (!isCurrentContext()) return false;
 	return options.uploadFile(file, currentPatientId, { isDraft: false, showToast: true, isCurrentContext });
 }
@@ -340,7 +341,7 @@ function renderSharedDocumentList(options = {}) {
 	return true;
 }
 async function loadAttachmentsForCurrentPatient(options = {}) {
-	return window.ReceptionistDocumentAttachmentControls.loadAttachmentsForCurrentPatient({
+	return ReceptionistDocumentAttachmentControls.loadAttachmentsForCurrentPatient({
 		...options,
 		renderDocumentsList: options.renderDocumentsList || options.renderAttachmentsList
 	});

@@ -8,11 +8,12 @@ import { byId, delegate, el, on, replace } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const ROLE_LABELS = { admin: 'Quản trị viên', doctor: 'Bác sĩ', PSYCHOLOGIST: 'Tâm lý gia', staff: 'Nhân viên', cashier: 'Thu ngân' };
 const state = { users: [], groups: [], selectedUserId: null, selectedGroupIds: [], userFilter: '', groupFilter: '', revision: 0, ready: false };
 
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 const saveButton = () => byId('savePermissionBtn');
 const heading = text => el('div', { class: 'fw-bold mt-2 mb-1 permission-tree-heading' }, text);

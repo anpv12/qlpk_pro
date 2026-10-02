@@ -8,6 +8,11 @@ import { ReceptionistDuplicatePatientModal } from './receptionist/duplicate-pati
 import { ReceptionistPageCoreUtils } from './receptionist/page-core-utils.js';
 import { ReceptionistPageSessionBootstrap } from './receptionist/page-session-bootstrap.js';
 import { ReceptionistPatientVitalsHistory } from './receptionist/patient-vitals-history.js';
+import { ReceptionistFormCalculations } from './receptionist/form-calculations.js';
+import { ReceptionistProfileAutocomplete } from './receptionist/profile-autocomplete.js';
+import { ReceptionistServicePackage } from './receptionist/service-package-selection.js';
+import { ReferralSourceControl } from './referral-source-control.js';
+import { setDatepickerValue } from './datepicker-init.js';
 
 // Receptionist intake workspace
 let currentPatientId = null;
@@ -58,8 +63,8 @@ function resetAppointmentFormRuntimeState() {
 function setDefaultAppointmentDateTime() {
 	const today = new Date().toISOString().split('T')[0];
 	const appointmentDateEl = document.getElementById('appointmentDate');
-	if (appointmentDateEl && window.setDatepickerValue) {
-		window.setDatepickerValue(appointmentDateEl, today);
+	if (appointmentDateEl && setDatepickerValue) {
+		setDatepickerValue(appointmentDateEl, today);
 	} else if (appointmentDateEl) {
 		appointmentDateEl.value = today;
 	}
@@ -135,7 +140,7 @@ function loadDoctorsForForm() {
 function loadServicesForForm() {
 	return ReceptionistCatalogLoaders.loadServicesForForm({
 		showCustomToast,
-		servicePackage: window.ReceptionistServicePackage,
+		servicePackage: ReceptionistServicePackage,
 		setServices: services => {
 			allServices = services || [];
 		}
@@ -156,29 +161,29 @@ function getFormCalculationOptions() {
 
 // Helper function: Tạm thời tắt event listener tính tuổi
 function temporarilyDisableAgeCalculation() {
-	window.ReceptionistFormCalculations.temporarilyDisableAgeCalculation(getFormCalculationOptions());
+	ReceptionistFormCalculations.temporarilyDisableAgeCalculation(getFormCalculationOptions());
 }
 
 // Helper function: Bật lại event listener tính tuổi
 function reEnableAgeCalculation() {
-	window.ReceptionistFormCalculations.reEnableAgeCalculation(getFormCalculationOptions());
+	ReceptionistFormCalculations.reEnableAgeCalculation(getFormCalculationOptions());
 }
 
 // Helper function: Format date string to ISO format (YYYY-MM-DD)
 
 // Helper function: Set date of birth and calculate age (ưu tiên age từ API)
 function setDateOfBirthAndAge(dateOfBirth, ageFromAPI = null) {
-	window.ReceptionistFormCalculations.setDateOfBirthAndAge(dateOfBirth, ageFromAPI, getFormCalculationOptions());
+	ReceptionistFormCalculations.setDateOfBirthAndAge(dateOfBirth, ageFromAPI, getFormCalculationOptions());
 }
 
 // Auto-calculate age when date of birth changes
 function setupAgeCalculation() {
-	window.ReceptionistFormCalculations.setupAgeCalculation(getFormCalculationOptions());
+	ReceptionistFormCalculations.setupAgeCalculation(getFormCalculationOptions());
 }
 
 // Auto-calculate BMI when weight or height changes
 function setupBMICalculation() {
-	window.ReceptionistFormCalculations.setupBMICalculation(getFormCalculationOptions());
+	ReceptionistFormCalculations.setupBMICalculation(getFormCalculationOptions());
 }
 
 // ================= Address draft auto-save (cache) & edit auto-update =================
@@ -189,8 +194,8 @@ const PAGE_LOAD_ID_KEY = 'receptionist:page_load_id';
 
 function startReceptionistPage() {
 	document.addEventListener('DOMContentLoaded', () => {
-		if (window.ReferralSourceControl) {
-			window.ReferralSourceControl.bind({ document });
+		if (ReferralSourceControl) {
+			ReferralSourceControl.bind({ document });
 		}
 		ReceptionistPageSessionBootstrap.bootstrapPageSession({
 			document,
@@ -206,7 +211,7 @@ function startReceptionistPage() {
 
 // Initialize autocomplete for personal info fields
 function initializeAutocomplete() {
-	window.ReceptionistProfileAutocomplete.initializeAutocomplete({ document });
+	ReceptionistProfileAutocomplete.initializeAutocomplete({ document });
 }
 
 // Setup autocomplete for a field

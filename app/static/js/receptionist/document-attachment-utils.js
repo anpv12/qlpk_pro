@@ -1,3 +1,5 @@
+import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
+
 function getWindow(options) {
 	return options && options.window ? options.window : window;
 }
@@ -258,7 +260,7 @@ function downloadDraftDocument(docId, options = {}) {
 async function deleteDraftDocument(docId, options = {}) {
 	const getDocuments = () => options.getUploadedDocuments?.() || [];
 	const target = getDocuments().find(item => String(item.id) === String(docId));
-	const isCurrentContext = window.ReceptionistDocumentAttachmentControls.createContextGuard(options);
+	const isCurrentContext = ReceptionistDocumentAttachmentControls.createContextGuard(options);
 	if (!target || !isCurrentContext()) return false;
 	const showConfirmationDialog = options.showConfirmationDialog || options.confirmDelete;
 	if (typeof showConfirmationDialog !== 'function') return false;

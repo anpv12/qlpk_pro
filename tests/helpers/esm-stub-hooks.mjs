@@ -10,11 +10,15 @@ export async function load(url, context, nextLoad) {
     const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
     if (!url.startsWith(JS_ROOT) || (query && !/^graph=\d+$/.test(query))) return nextLoad(url, context);
     const source = readFileSync(fileURLToPath(url), 'utf8');
-    const names = [...source.matchAll(/^export const ([\w$]+)/gm)].map(match => match[1]);
+    const names = [...new Set([
+        ...[...source.matchAll(/^export (?:const|let|class|(?:async )?function\*?) ([\w$]+)/gm)].map(match => match[1]),
+        ...[...source.matchAll(/^export \{([^}]*)\};?$/gm)].flatMap(match => match[1].split(',').map(part => part.trim().split(/\s+as\s+/).pop()).filter(Boolean))
+    ])];
     if (!names.length) return nextLoad(url, context);
     const real = JSON.stringify(url + (query ? '&' : '?') + 'qlpk-real');
     const lines = [
         `export * from ${real};`,
+        // Explicit named exports below shadow the star re-export of the same names.
         `import * as real from ${real};`,
         'const proxies = {};',
         'const pick = (name) => { const win = globalThis.window; const stub = win && Object.prototype.hasOwnProperty.call(win, name) ? win[name] : undefined; return stub !== undefined && stub !== proxies[name] ? stub : real[name]; };',

@@ -10,8 +10,9 @@ import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 import { QLPKPagination } from './clinic-pagination.js';
 import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const normalize = value => QLPKSearchNormalization?.normalizeSearchText(value) || String(value || '').toLowerCase().trim();
 export const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 

@@ -1,3 +1,5 @@
+import { QLPKUserFeedback } from './user-feedback.js';
+
 function resolveVariant(options = {}) {
 	if (options.variant) return options.variant;
 	const buttonClass = String(options.confirmButtonClass || '');
@@ -76,7 +78,7 @@ function confirmDelete(text, options = {}) {
 		text,
 		confirmText: 'Xóa',
 		variant: 'danger',
-		showToast: (type, message) => window.QLPKUserFeedback?.show(type, message),
+		showToast: (type, message) => QLPKUserFeedback?.show(type, message),
 		...options
 	});
 }

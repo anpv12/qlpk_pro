@@ -64,4 +64,4 @@ moduleState.api = {
 	createFormDomAdapter: createFormDomAdapter
 };
 
-window.ClinicalFormDomUtils = moduleState.api;
+export const ClinicalFormDomUtils = moduleState.api;

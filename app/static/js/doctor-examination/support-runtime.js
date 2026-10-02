@@ -1,3 +1,6 @@
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+import { setDatepickerValue } from '../datepicker-init.js';
+
 (function (window, document) {
 	'use strict';
 
@@ -189,8 +192,8 @@
 
 	function setDateTimePickerValue(element, value, triggerChange = false) {
 		if (!element) return;
-		if (element._flatpickr && typeof window.setDatepickerValue === 'function') {
-			window.setDatepickerValue(element, value || null, triggerChange);
+		if (element._flatpickr && typeof setDatepickerValue === 'function') {
+			setDatepickerValue(element, value || null, triggerChange);
 		} else if (element._flatpickr) {
 			element._flatpickr.setDate(value || null, triggerChange);
 		} else {
@@ -211,7 +214,7 @@
 		if (!response) {
 			return {
 				code: 'network.unavailable',
-				message: window.QLPKUserFeedback?.resolveError(
+				message: QLPKUserFeedback?.resolveError(
 					{ status: 0 },
 					{ fallback: fallbackMessage }
 				) || fallbackMessage,
@@ -230,8 +233,8 @@
 
 		const feedbackError = { status: response.status, responseJSON: payload };
 		return {
-			code: window.QLPKUserFeedback?.codeOf(feedbackError) || textOf(payload.code),
-			message: window.QLPKUserFeedback?.resolveError(
+			code: QLPKUserFeedback?.codeOf(feedbackError) || textOf(payload.code),
+			message: QLPKUserFeedback?.resolveError(
 				feedbackError,
 				{ fallback: fallbackMessage }
 			) || fallbackMessage,

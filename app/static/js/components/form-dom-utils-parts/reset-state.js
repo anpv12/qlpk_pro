@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
 import { clearAgeField, clearPlaceholderValues, getDocument, getElementValue, resetAutocompleteValues, resetDomField, resetDomFields, safeSetValue, setDomValue, updateElements } from './collect-payloads.js';
+import { ReferralSourceControl } from '../../referral-source-control.js';
 
 function resetWorkflowVisitFields(doc, options) {
 	const scope = { document: doc };
@@ -76,7 +77,7 @@ function getReferralSourceControl(context = {}) {
 	if (typeof context.getReferralSourceControl === 'function') {
 		return context.getReferralSourceControl();
 	}
-	return context.referralSourceControl || window.ReferralSourceControl;
+	return context.referralSourceControl || ReferralSourceControl;
 }
 function createFormDomAdapter(context = {}) {
 	function isReferralSourceField(elementId) {

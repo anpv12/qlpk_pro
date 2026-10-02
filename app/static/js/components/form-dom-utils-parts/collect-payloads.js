@@ -1,6 +1,8 @@
 import { moduleState } from './state.js';
 import { getReferralSourceControl } from './reset-state.js';
 import { SidebarUserInfoUi } from '../sidebar-user-info-ui.js';
+import { ClinicalVitalCalculationUtils } from '../vital-calculation-utils.js';
+import { OccupationAutocomplete } from '../../occupation-autocomplete.js';
 
 function getDocument(context = {}) {
 	return context.document || window.document;
@@ -252,7 +254,7 @@ function reportMissingOccupation(options) {
 function initializeOccupationAutocomplete(options = {}) {
 	const doc = getDocument(options);
 	const win = options.window || window;
-	const AutocompleteCtor = options.OccupationAutocomplete || win.OccupationAutocomplete;
+	const AutocompleteCtor = options.OccupationAutocomplete || OccupationAutocomplete;
 	const inputId = options.inputId || 'occupation';
 	const dropdownId = options.dropdownId || 'occupationDropdown';
 	const occupationInput = doc.getElementById(inputId);
@@ -307,7 +309,7 @@ function initializeDocumentSectionShell(documentSectionAdapter) {
 function initializeWorkflowFormShell(options = {}) {
 	if (typeof options.loadProvinces === 'function') options.loadProvinces();
 
-	const vitalUtils = options.vitalUtils || window.ClinicalVitalCalculationUtils;
+	const vitalUtils = options.vitalUtils || ClinicalVitalCalculationUtils;
 	if (vitalUtils && typeof vitalUtils.setupAgeCalculation === 'function') {
 		vitalUtils.setupAgeCalculation({ document: getDocument(options) });
 	}

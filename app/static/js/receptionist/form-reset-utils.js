@@ -1,3 +1,7 @@
+import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
+import { ReceptionistPatientRelativesTable } from './patient-relatives-table.js';
+import { ReferralSourceControl } from '../referral-source-control.js';
+
 function getDocument(options = {}) {
 	return options.document || window.document;
 }
@@ -73,8 +77,7 @@ function setCurrentPatientId(value, options = {}) {
 }
 
 function clearRelativeTable(options = {}) {
-	const win = getWindow(options);
-	const clearTable = options.clearRelativeTable || win.ReceptionistPatientRelativesTable.clear;
+	const clearTable = options.clearRelativeTable || ReceptionistPatientRelativesTable.clear;
 	const clearedInstance = clearTable(options.relativeTableInstance);
 
 	if (typeof options.setRelativeTableInstance === 'function') {
@@ -102,13 +105,12 @@ function resetReceptionistState(options = {}) {
 
 function clearSharedFields(options = {}) {
 	const opts = options || {};
-	const win = getWindow(opts);
 	const doc = getDocument(opts);
-	if (!win.QLPKPatientIntakeForm || typeof win.QLPKPatientIntakeForm.clear !== 'function') {
+	if (!QLPKPatientIntakeForm || typeof QLPKPatientIntakeForm.clear !== 'function') {
 		throw new Error('Shared patient intake component is not available');
 	}
 
-	win.QLPKPatientIntakeForm.clear({ document: doc });
+	QLPKPatientIntakeForm.clear({ document: doc });
 	clearAddressSelects(opts);
 	clearElementValue('familyHistory', opts);
 	clearElementValue('addressSummary', opts);
@@ -139,9 +141,8 @@ function resetFormToDefault(options = {}) {
 
 	fieldsToReset.forEach(fieldId => resetElement(fieldId, options));
 
-	const win = getWindow(options);
-	if (win.ReferralSourceControl) {
-		win.ReferralSourceControl.setValue('', { document: getDocument(options) });
+	if (ReferralSourceControl) {
+		ReferralSourceControl.setValue('', { document: getDocument(options) });
 	}
 
 	clearElementValue('serviceType', options);

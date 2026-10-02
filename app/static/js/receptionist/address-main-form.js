@@ -402,7 +402,7 @@ function bindAddressFieldChanges(options = {}) {
 	}
 }
 
-window.ReceptionistAddressMainForm = {
+export const ReceptionistAddressMainForm = {
 	buildFullAddressFromParts,
 	getMainAddressFormValues,
 	loadProvinces,

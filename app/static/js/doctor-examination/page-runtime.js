@@ -1,3 +1,5 @@
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+
 (function (window) {
 	'use strict';
 
@@ -33,7 +35,7 @@
 	}
 
 	function showCustomToast(type, message) {
-		return window.QLPKUserFeedback?.show(type, message);
+		return QLPKUserFeedback?.show(type, message);
 	}
 
 	const runtime = {

@@ -1,5 +1,7 @@
 import { el, replace } from './shared/dom.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { initDatepickerWithValue } from './datepicker-init.js';
 /**
  * Joint Exam Manager - Module quản lý "Người đi khám cùng"
  * DRY: Dùng chung cho receptionist, doctor, psychologist
@@ -58,7 +60,7 @@ class JointExamManager {
 		// Utility dependencies
 		this.showToast = options.showToast
 			|| window.showCustomToast
-			|| ((type, msg) => window.QLPKUserFeedback?.show(type, msg));
+			|| ((type, msg) => QLPKUserFeedback?.show(type, msg));
 		this.apiCall = options.apiCall || fetch;
 		this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
 
@@ -350,7 +352,7 @@ class JointExamManager {
 		});
 
 		// Init Flatpickr for dynamic date input
-		window.initDatepickerWithValue?.(tr.querySelector('#jointExamDateInput'), defaultDate);
+		initDatepickerWithValue?.(tr.querySelector('#jointExamDateInput'), defaultDate);
 	}
 
 	/**

@@ -9,10 +9,11 @@ import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { bindImportExport } from './icd-management/import-export.js';
 import { QLPKPagination } from './components/clinic-pagination.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const state = { page: 1, pageSize: 10, search: '', group: '', currentId: null, editMode: false, saving: false, revision: 0 };
 const FORM_FIELDS = '#addICDForm input, #addICDForm textarea, #editICDForm input, #editICDForm textarea';
-export const showToast = (message, type = 'success') => window.QLPKUserFeedback?.show(type, message);
+export const showToast = (message, type = 'success') => QLPKUserFeedback?.show(type, message);
 const modal = id => window.bootstrap.Modal.getOrCreateInstance(byId(id));
 const setShown = (node, shown) => { node.style.display = shown ? '' : 'none'; };
 const busy = show => byId('icdTableBody').setAttribute('aria-busy', String(show));

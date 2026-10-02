@@ -4,6 +4,7 @@ import { bindCardEvents, buildAnswerRow, buildGrid, reindexBadges, save } from '
 import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 import { QLPKConfirmationDialog } from '../shared/confirmation-dialog.js';
 import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 function normalizeSearchText(value) {
 	return QLPKSearchNormalization?.normalizeSearchText(value)
@@ -34,7 +35,7 @@ function setSaveButtonIdle(btn = saveButton()) {
 	replace(btn, el('i', { class: 'bi bi-check2 sc-save-icon' }), ' Lưu');
 }
 function showToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+	return QLPKUserFeedback?.show(type, message);
 }
 function renderPerformerOptions(selectedId = moduleState.state.defaultPerformerId) {
 	const select = surveyPerformerInput();
@@ -147,7 +148,7 @@ async function close(force = false) {
 			text: 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?',
 			confirmText: 'Đóng',
 			variant: 'warning',
-			showToast: (type, message) => window.QLPKUserFeedback?.show(type, message)
+			showToast: (type, message) => QLPKUserFeedback?.show(type, message)
 		});
 		if (!confirmed) return;
 	}

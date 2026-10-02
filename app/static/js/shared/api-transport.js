@@ -1,3 +1,7 @@
+import { QLPKBrowserSession } from './browser-session.js';
+import { QLPKBrowserSessionActions } from './browser-session-actions.js';
+import { QLPKUserFeedback } from './user-feedback.js';
+
 (function (window, document) {
 	'use strict';
 
@@ -78,7 +82,7 @@
 		} catch {
 			const current = binding.owner.snapshot();
 			if (['anonymous', 'expired'].includes(current.status)) window.location.href = '/login';
-			else window.QLPKUserFeedback?.show('error', 'Chưa thể xác minh phiên đăng nhập. Vui lòng tải lại trang.');
+			else QLPKUserFeedback?.show('error', 'Chưa thể xác minh phiên đăng nhập. Vui lòng tải lại trang.');
 			return false;
 		}
 	}
@@ -124,11 +128,11 @@
 
 	function useCookieSession(options = {}) {
 		if (cookieSession) return cookieSession;
-		if (!window.QLPKBrowserSession || !window.QLPKBrowserSessionActions) {
+		if (!QLPKBrowserSession || !QLPKBrowserSessionActions) {
 			throw new Error('Chưa nạp bộ quản lý phiên trình duyệt.');
 		}
-		const owner = window.QLPKBrowserSession.create({ fetch: nativeFetch, channel: options.channel });
-		const actions = window.QLPKBrowserSessionActions.create({ owner, fetch: nativeFetch, locks: options.locks });
+		const owner = QLPKBrowserSession.create({ fetch: nativeFetch, channel: options.channel });
+		const actions = QLPKBrowserSessionActions.create({ owner, fetch: nativeFetch, locks: options.locks });
 		// Public pages (login, QR verify, patient survey) call public APIs without a signed-in session.
 		cookieSession = Object.freeze({ owner, actions, allowAnonymous: options.allowAnonymous === true });
 		return cookieSession;

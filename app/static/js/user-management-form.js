@@ -2,9 +2,10 @@
 // calendar colour swatches. The page module owns the list and passes the shared state in.
 import { byId } from './shared/dom.js';
 import { requestJson } from './shared/http-json.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const DEFAULT_AVATAR = '/static/assets/images_doctor.jpg';
-const toast = (type, message) => window.QLPKUserFeedback?.show(type, message);
+const toast = (type, message) => QLPKUserFeedback?.show(type, message);
 const field = name => byId('userForm').querySelector(`[name='${name}']`);
 // Mirrors jQuery show()/hide(): the stylesheet hides the licence link by default, so showing sets its inline display.
 const setShown = (node, shown, display = '') => { node.style.display = shown ? display : 'none'; };

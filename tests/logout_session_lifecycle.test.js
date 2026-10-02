@@ -31,7 +31,7 @@ function harness() {
         QLPKRealtimeClient: { stop() { log.push('stop'); } },
         QLPKUserFeedback: { show(type, message) { log.push({ type, message }); } }
     };
-    const context = vm.createContext({ window, document, Promise,
+    const context = vm.createContext({ window, document, Promise, QLPKUserFeedback: window.QLPKUserFeedback,
         AbortSignal: { timeout: () => ({}) },
         localStorage: { getItem: key => storage.get(key) || null, removeItem(key) { storage.delete(key); log.push(`remove:${key}`); } },
         fetch(url, options) { assert.equal(url, '/auth/logout'); assert.equal(options.method, 'POST'); requestCount++; return pending; }

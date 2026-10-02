@@ -1,4 +1,5 @@
 import { QLPKIcdAutocomplete } from '../components/icd-autocomplete.js';
+import { ClinicalIcdDataLoader } from '../components/icd-data-loader.js';
 
 const instances = {
 	add: null,
@@ -16,7 +17,7 @@ function resolveIcdLimit(limit, query) {
 }
 
 function loadICDData(query = '', options = {}) {
-	const loader = window.ClinicalIcdDataLoader?.loadICDData;
+	const loader = ClinicalIcdDataLoader?.loadICDData;
 	if (typeof loader !== 'function') return Promise.resolve([]);
 	return loader(query, {
 			limit: resolveIcdLimit(options.limit, query),

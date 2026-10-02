@@ -1,3 +1,5 @@
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+
 /* global currentAppointmentId */
 (function () {
 	function formatDateDisplay(value) {
@@ -26,7 +28,7 @@
 			window.showCustomToast(type, message);
 			return;
 		}
-		window.QLPKUserFeedback?.show(type, message);
+		QLPKUserFeedback?.show(type, message);
 	}
 
 	function getCurrentAppointmentId() {

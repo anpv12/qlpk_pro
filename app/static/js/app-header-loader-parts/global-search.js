@@ -1,6 +1,7 @@
 import { moduleState } from './state.js';
 import { clearGlobalSearchResults, closeGlobalSearchPanel, getPasswordModalElements, globalSearchApiHeaders, globalSearchElements, globalSearchPatientId, isGlobalSearchPatientItem, itemAction, itemActions, openPasswordModal, resetPasswordModal, setGlobalSearchPanelOpen, setGlobalSearchStatus, submitPasswordChange } from './assets-and-session.js';
 import { getActiveWorkspaceWindow } from './header-buttons.js';
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
 
 function createGlobalSearchRow(item, action, flatIndex) {
 	const itemType = item && item.type ? String(item.type).trim().toLowerCase() : '';
@@ -437,7 +438,7 @@ async function logout() {
 		}
 		await clearConfirmedLogout({}, () => window.QLPKApiTransport.getAuthHeader() === token);
 	} catch (error) {
-		window.QLPKUserFeedback?.show('error', moduleState.confirmedLogoutCleanup
+		QLPKUserFeedback?.show('error', moduleState.confirmedLogoutCleanup
 			? 'Đã đăng xuất trên máy chủ nhưng chưa dọn xong nháp cục bộ. Vui lòng thử lại.'
 			: 'Chưa thể xác nhận đăng xuất. Vui lòng thử lại.');
 	} finally {

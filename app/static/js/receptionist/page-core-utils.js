@@ -1,3 +1,5 @@
+import { QLPKUserFeedback } from '../shared/user-feedback.js';
+
 function getFetch(options) {
 	return options && options.fetch ? options.fetch : window.fetch.bind(window);
 }
@@ -49,7 +51,7 @@ function alignToastToWorkspaceTabs(toast, options = {}) {
 }
 
 function showCustomToast(type, message, options = {}) {
-	return window.QLPKUserFeedback?.show(type, message, options);
+	return QLPKUserFeedback?.show(type, message, options);
 }
 
 export const ReceptionistPageCoreUtils = {

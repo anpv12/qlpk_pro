@@ -10,9 +10,10 @@ import { byId, delegate, el, icon, on, replace } from './shared/dom.js';
 import { HttpError, requestJson } from './shared/http-json.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const state = { currentFolderId: null, isUserAdmin: false };
-const alertError = (message, type = 'error') => window.QLPKUserFeedback?.show(type, message);
+const alertError = (message, type = 'error') => QLPKUserFeedback?.show(type, message);
 const openDocModal = selector => document.querySelector(selector).classList.add('doc-modal-open');
 const closeDocModal = selector => document.querySelector(selector).classList.remove('doc-modal-open');
 const spinner = () => el('i', { class: 'spinner-border spinner-border-sm' });

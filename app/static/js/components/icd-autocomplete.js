@@ -1,3 +1,5 @@
+import { ClinicalIcdDataLoader } from './icd-data-loader.js';
+
 const text = value => value == null ? '' : String(value).trim();
 const label = item => [text(item?.icd_code), text(item?.disease_name)].filter(Boolean).join(' - ');
 
@@ -13,7 +15,7 @@ class QLPKIcdAutocomplete extends window.QLPKAutocompleteField {
 				if (options.selectionKey === 'code') return text(item?.icd_code).toUpperCase() || text(item?.id);
 				return text(item?.id);
 			},
-			loadOptions: (query, page) => window.ClinicalIcdDataLoader.loadICDPage(query, {
+			loadOptions: (query, page) => ClinicalIcdDataLoader.loadICDPage(query, {
 				...page,
 				getAuthHeader: options.getAuthHeader,
 				throwOnError: true,

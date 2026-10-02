@@ -8,6 +8,7 @@ import { byId, delegate, el, icon, replace } from './shared/dom.js';
 import { bindExamStatsChartInteractions, buildExamStatsChartOption, buildICDChartOption } from './dashboard/charts.js';
 import { emptyState, examDetailRows, icdDetailRows, referralDetailRows, renderAppointments, renderReferralSources, renderStaffOnline } from './dashboard/panels.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 const state = { charts: {} };
 const fmtISO = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -154,7 +155,7 @@ async function exportExcel(kind) {
 	try {
 		const response = await fetch(config.url());
 		if (!response.ok) {
-			window.QLPKUserFeedback?.show('error', config.failed);
+			QLPKUserFeedback?.show('error', config.failed);
 			return;
 		}
 		const link = el('a', { href: URL.createObjectURL(await response.blob()) });
@@ -166,7 +167,7 @@ async function exportExcel(kind) {
 		URL.revokeObjectURL(link.href);
 	} catch (error) {
 		console.error(config.log, error);
-		window.QLPKUserFeedback?.show('error', config.failed);
+		QLPKUserFeedback?.show('error', config.failed);
 	} finally {
 		if (button) {
 			button.disabled = false;

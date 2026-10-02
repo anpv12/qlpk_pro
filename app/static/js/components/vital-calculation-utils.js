@@ -35,4 +35,4 @@ moduleState.api = {
 	initVitalSignsTab: initVitalSignsTab
 };
 
-window.ClinicalVitalCalculationUtils = moduleState.api;
+export const ClinicalVitalCalculationUtils = moduleState.api;

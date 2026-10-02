@@ -1,4 +1,9 @@
 import { QLPKComponentDomScope } from './component-dom-scope.js';
+import { ReceptionistAddressMainForm } from '../receptionist/address-main-form.js';
+import { ReceptionistFormCalculations } from '../receptionist/form-calculations.js';
+import { ReceptionistPatientAddressPopulate } from '../receptionist/patient-address-populate.js';
+import { ReceptionistProfileAutocomplete } from '../receptionist/profile-autocomplete.js';
+import { initDatepickers, setDatepickerValue } from '../datepicker-init.js';
 
 const PATIENT_FIELD_IDS = [
 	'patientId', 'fullName', 'gender', 'dateOfBirth', 'age', 'phoneNumber', 'nickname',
@@ -40,8 +45,8 @@ function setValue(doc, elementId, value) {
 		element.checked = normalizeBoolean(value);
 		return true;
 	}
-	if (element._flatpickr && typeof window.setDatepickerValue === 'function') {
-		window.setDatepickerValue(element, value || null, false);
+	if (element._flatpickr && typeof setDatepickerValue === 'function') {
+		setDatepickerValue(element, value || null, false);
 		return true;
 	}
 	element.value = value == null ? '' : String(value);
@@ -119,8 +124,8 @@ function parseDateValue(value) {
 }
 
 function calculatePregnancyWeek(expectedDeliveryDate) {
-	if (window.ReceptionistFormCalculations && typeof window.ReceptionistFormCalculations.calculatePregnancyWeek === 'function') {
-		return window.ReceptionistFormCalculations.calculatePregnancyWeek(expectedDeliveryDate);
+	if (ReceptionistFormCalculations && typeof ReceptionistFormCalculations.calculatePregnancyWeek === 'function') {
+		return ReceptionistFormCalculations.calculatePregnancyWeek(expectedDeliveryDate);
 	}
 	if (!expectedDeliveryDate) return null;
 
@@ -250,10 +255,10 @@ function populate(payload = {}, options = {}) {
 	if (reExaminationCheck) reExaminationCheck.checked = appointment.appointment_category === 'RE_EXAMINATION';
 	updatePregnancyControls({ document: doc });
 
-	if (options.syncAddressHierarchy && window.ReceptionistPatientAddressPopulate &&
-		typeof window.ReceptionistPatientAddressPopulate.applyAddressWithHierarchy === 'function') {
+	if (options.syncAddressHierarchy && ReceptionistPatientAddressPopulate &&
+		typeof ReceptionistPatientAddressPopulate.applyAddressWithHierarchy === 'function') {
 		const addressOptions = options.addressOptions || {};
-		return window.ReceptionistPatientAddressPopulate.applyAddressWithHierarchy(patient, {
+		return ReceptionistPatientAddressPopulate.applyAddressWithHierarchy(patient, {
 			...addressOptions,
 			isCurrentLoad: () => options.isCurrentLoad?.() !== false && addressOptions.isCurrentLoad?.() !== false,
 			document: doc,
@@ -305,8 +310,8 @@ function collect(options = {}) {
 }
 
 function buildAddress(doc) {
-	if (window.ReceptionistAddressMainForm && typeof window.ReceptionistAddressMainForm.getMainAddressFormValues === 'function') {
-		return window.ReceptionistAddressMainForm.getMainAddressFormValues({ document: doc }).address || '';
+	if (ReceptionistAddressMainForm && typeof ReceptionistAddressMainForm.getMainAddressFormValues === 'function') {
+		return ReceptionistAddressMainForm.getMainAddressFormValues({ document: doc }).address || '';
 	}
 	return [
 		getValue(doc, 'addressDetail'),
@@ -415,12 +420,12 @@ function bind(options = {}) {
 	const doc = getDocument(options);
 	bindInlineDetailPanels(options);
 	bindPregnancyControls(options);
-	if (typeof window.initDatepickers === 'function') window.initDatepickers('.js-datepicker');
-	if (window.ReceptionistProfileAutocomplete && typeof window.ReceptionistProfileAutocomplete.initializeAutocomplete === 'function') {
-		window.ReceptionistProfileAutocomplete.initializeAutocomplete({ document: doc });
+	if (typeof initDatepickers === 'function') initDatepickers('.js-datepicker');
+	if (ReceptionistProfileAutocomplete && typeof ReceptionistProfileAutocomplete.initializeAutocomplete === 'function') {
+		ReceptionistProfileAutocomplete.initializeAutocomplete({ document: doc });
 	}
-	if (window.ReceptionistAddressMainForm && typeof window.ReceptionistAddressMainForm.bindAddressFieldChanges === 'function') {
-		window.ReceptionistAddressMainForm.bindAddressFieldChanges({ document: doc, apiCall: options.apiCall });
+	if (ReceptionistAddressMainForm && typeof ReceptionistAddressMainForm.bindAddressFieldChanges === 'function') {
+		ReceptionistAddressMainForm.bindAddressFieldChanges({ document: doc, apiCall: options.apiCall });
 	}
 }
 

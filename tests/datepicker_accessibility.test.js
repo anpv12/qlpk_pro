@@ -24,7 +24,7 @@ function initialize({ attributes = {}, labels = [], placeholder = '', altAttribu
     let config;
     const window = {};
     const initialized = [];
-    vm.runInNewContext(fs.readFileSync('app/static/js/datepicker-init.js', 'utf8'), {
+    runScriptFile('app/static/js/datepicker-init.js', vm.createContext({
         window, HTMLElement: Element, Event,
         document: { readyState: 'loading', addEventListener() {}, body: {} },
         flatpickr(element, options) {
@@ -32,7 +32,7 @@ function initialize({ attributes = {}, labels = [], placeholder = '', altAttribu
             initialized.push(element.value);
             options.onReady([], '', { element, altInput, clear() {} });
         }
-    });
+    }));
     if (presetValue === undefined) window.initDatepickers(source);
     else window.initDatepickerWithValue(source, presetValue);
     return { source, altInput, config, initialized };
@@ -76,6 +76,6 @@ test('initDatepickerWithValue writes the date-only value before Flatpickr initia
     for (const file of ['relative-table.js', 'joint-exam-manager.js']) {
         const source = readScriptSource(`app/static/js/${file}`);
         assert.doesNotMatch(source, /includes\('T'\)/, `${file} must not split datetimes before initialising a datepicker`);
-        assert.match(source, /window\.initDatepickerWithValue\?\.\(/);
+        assert.match(source, /(?:window\.)?initDatepickerWithValue\??\.?\(/);
     }
 });

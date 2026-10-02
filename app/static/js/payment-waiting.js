@@ -15,6 +15,7 @@ import { editPayment, loadExaminationDetailModal } from './payment-waiting/detai
 import { deletePayment, returnToAppointment, returnToDoctor, returnToPsychologist, returnToReceptionist } from './payment-waiting/invoice.js';
 import { QLPKPdfPreview } from './shared/pdf-preview.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
+import { QLPKUserFeedback } from './shared/user-feedback.js';
 
 // Payment Waiting Management JavaScript
 state.currentPage = 1;
@@ -59,7 +60,7 @@ function getSafeApiErrorMessage(error, fallback = 'Không thể xử lý lúc n�
 	let normalized = { status: 0 };
 	if (error instanceof HttpError) normalized = { status: error.status, responseJSON: error.data };
 	else if (error?.status !== undefined) normalized = error;
-	return window.QLPKUserFeedback?.resolveError(normalized, { fallback }) || fallback;
+	return QLPKUserFeedback?.resolveError(normalized, { fallback }) || fallback;
 }
 
 async function openInvoiceWindow(examinationId) {
@@ -184,7 +185,7 @@ function bindEvents() {
 
 // Show custom toast
 function showCustomToast(type, message) {
-	return window.QLPKUserFeedback?.show(type, message);
+	return QLPKUserFeedback?.show(type, message);
 }
 
 export { getSafeApiErrorMessage, isExaminationConfirmed, isInvoiceLocked, isPaymentPaid, openInvoiceWindow, perPage, showCustomToast, toVietnameseGender };
