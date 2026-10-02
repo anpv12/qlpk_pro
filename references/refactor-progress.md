@@ -15,8 +15,15 @@
   root 13px), 12 màu cứng → token, cssText → setProperty; `css_id_selector`/
   `css_hard_font_size` sửa cách đo (thuộc tính trong ngoặc kép, `font-size: 0`).
   Còn: 43 `!important`, 97 class Bootstrap action thô.
-- Mục 3 chưa làm: module hóa script cổ điển/biến toàn cục, jQuery, innerHTML, markup trùng
-  ở trang quản trị.
+- Mục 3 (đang làm, 03/10/2026): jQuery 0; chỗ chèn HTML bằng chuỗi còn 1 (`renderDocumentMarkup`, chỉ cho
+  tài liệu in); thẻ `<script>` classic của app 163 → 0 (partial runtime là `shared/runtime.js`, mỗi entry
+  import script dùng chung theo thứ tự cũ); `window.*` 144 → 40 (module export + import; chỉ đổi khi mọi trang
+  đã nạp owner trước user, hoặc owner là module thuần). Gate mới: `window_read_findings` cấm đọc
+  `window.X`/`globalThis.X` không ai gán. Còn: global trạng thái trang (`currentPatientId`, `currentPatientData`,
+  `currentExaminationId`, `modalSelectedPatient`, `occupationAutocomplete`), setter tâm lý gia, API ranh giới
+  shell/iframe, file non-ESM, markup trùng ở trang quản trị.
+- QA mục 3: so base/new trên 2 bản sao DB đồng nhất (`createdb -T`), 31 trang smoke + ~60 kịch bản thao tác;
+  kịch bản QA lấy API qua `import()` (kèm `?v=`) thay vì `window.*`.
 - Kiểm chứng: base/new trên 2 bản sao DB — GET 4.440 request, 12 bộ ghi + bộ route mới,
   32 trang computed style, 27 trang tương tác + 10 kịch bản thao tác sâu (payload ghi trùng).
 
