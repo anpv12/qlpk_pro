@@ -6,9 +6,6 @@
 	function getDocument(options) {
 		return options && options.document ? options.document : window.document;
 	}
-	function getJQuery(options) {
-		return options && options.$ ? options.$ : window.$;
-	}
 	function calculateAge(dateOfBirth) {
 		if (!dateOfBirth) return '';
 
@@ -72,26 +69,33 @@
 		el.textContent = '';
 	}
 	function setupAgeCalculation(options = {}) {
-		const $ = getJQuery(options);
-		$('#dateOfBirth').on('change input', function () {
-			const dateOfBirth = $(this).val();
-			const age = calculateAge(dateOfBirth);
-			$('#age').val(age ? age : '');
-		});
+		const doc = getDocument(options);
+		const dateOfBirthEl = doc.getElementById('dateOfBirth');
+		if (!dateOfBirthEl) return;
+		const updateAge = () => {
+			const age = calculateAge(dateOfBirthEl.value);
+			const ageEl = doc.getElementById('age');
+			if (ageEl) ageEl.value = age ? age : '';
+		};
+		dateOfBirthEl.addEventListener('change', updateAge);
+		dateOfBirthEl.addEventListener('input', updateAge);
 	}
 	function setupBMICalculation(options = {}) {
-		const $ = getJQuery(options);
-		$('#weight, #height').on('input', function () {
-			const weight = parseFloat($('#weight').val()) || 0;
-			const height = parseFloat($('#height').val()) || 0;
+		const doc = getDocument(options);
+		const fieldValue = id => doc.getElementById(id)?.value;
+		const onInput = function () {
+			const weight = parseFloat(fieldValue('weight')) || 0;
+			const height = parseFloat(fieldValue('height')) || 0;
 			const bmi = calculateBMI(weight, height);
-			$('#bmi').val(bmi);
+			const bmiEl = doc.getElementById('bmi');
+			if (bmiEl) bmiEl.value = bmi;
 			updateBMIClassification(options);
 
 			if (bmi > 0 && typeof options.autoSaveBMI === 'function') {
 				options.autoSaveBMI(bmi);
 			}
-		});
+		};
+		['weight', 'height'].forEach(id => doc.getElementById(id)?.addEventListener('input', onInput));
 	}
 	function updateVitalSignsAxes(chart) {
 		if (!chart) return;
@@ -459,7 +463,6 @@
 
 	Object.assign(moduleParts, {
 		getDocument,
-		getJQuery,
 		calculateAge,
 		calculateBMI,
 		classifyBMI,

@@ -40,10 +40,15 @@
 		}
 	}
 
+	function delegate(documentRef, types, selector, handler) {
+		types.forEach(type => documentRef.addEventListener(type, event => {
+			const target = event.target && typeof event.target.closest === 'function' ? event.target.closest(selector) : null;
+			if (target) handler.call(target, event);
+		}));
+	}
+
 	function bindRealtimeUpdates(options = {}) {
-		const $ = options.$ || window.jQuery || window.$;
 		const documentRef = options.document || window.document;
-		if (typeof $ !== 'function') return false;
 
 		const updateFieldAndRefresh = (field, value) => {
 			const selectedPatient = typeof options.getSelectedPatient === 'function' ? options.getSelectedPatient() : null;
@@ -54,32 +59,25 @@
 			return true;
 		};
 
-		$(documentRef).on('change', '#maritalStatus', function () {
+		delegate(documentRef, ['change'], '#maritalStatus', function () {
 			updateFieldAndRefresh('marital_status', this.value);
 		});
 
-		$(documentRef).on('change', '#modalMaritalStatus', function () {
+		delegate(documentRef, ['change'], '#modalMaritalStatus', function () {
 			const value = this.value;
 			const mainElement = documentRef.getElementById('maritalStatus');
 			if (mainElement && mainElement.value !== value) mainElement.value = value;
 			updateFieldAndRefresh('marital_status', value);
 		});
 
-		$(documentRef).on('change input', '#educationLevel', function () {
+		delegate(documentRef, ['change', 'input'], '#educationLevel', function () {
 			updateFieldAndRefresh('education_level', this.value);
 		});
 
-		$(documentRef).on('change input', '#modalEducationLevel', function () {
+		delegate(documentRef, ['change', 'input'], '#modalEducationLevel', function () {
 			const value = this.value;
 			const mainElement = documentRef.getElementById('educationLevel');
 			if (mainElement && mainElement.value !== value) mainElement.value = value;
-			updateFieldAndRefresh('education_level', value);
-		});
-
-		$(documentRef).on('autocomplete-select', '#modalEducationLevel', function (event, selectedValue) {
-			const value = selectedValue || this.value;
-			const mainElement = documentRef.getElementById('educationLevel');
-			if (mainElement) mainElement.value = value;
 			updateFieldAndRefresh('education_level', value);
 		});
 

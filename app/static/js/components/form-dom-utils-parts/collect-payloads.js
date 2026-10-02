@@ -198,8 +198,19 @@
 			maxLength: Object.prototype.hasOwnProperty.call(options, 'maxLength') ? options.maxLength : 3
 		});
 	}
+	const namespacedListeners = new WeakMap();
+
+	function rebindNamespaced(element, events, handler) {
+		if (!element) return;
+		const registry = namespacedListeners.get(element) || namespacedListeners.set(element, new Map()).get(element);
+		events.split(/\s+/).filter(Boolean).forEach(eventName => {
+			registry.get(eventName)?.abort();
+			const binding = new AbortController();
+			registry.set(eventName, binding);
+			element.addEventListener(eventName.split('.')[0], handler, { signal: binding.signal });
+		});
+	}
 	function resolvePatientAutoSaveValue(element, field, context = {}) {
-		const jquery = context.$ || window.jQuery || window.$;
 		if (typeof field.getValue === 'function') {
 			return field.getValue(element, context);
 		}
@@ -213,11 +224,11 @@
 			const getter = context.getElementValue || ((elementId) => getElementValue(elementId, '', context));
 			return getter('referralSource');
 		}
-		return jquery ? jquery(element).val() : element?.value;
+		return element?.value;
 	}
 	function bindPatientFormAutoSaveFields(options = {}) {
-		const jquery = options.$ || window.jQuery || window.$;
-		if (!jquery || typeof options.autoSaveField !== 'function') return false;
+		if (typeof options.autoSaveField !== 'function') return false;
+		const doc = getDocument(options);
 
 		const referralSourceControl = moduleParts.getReferralSourceControl(options);
 		if (referralSourceControl && typeof referralSourceControl.bind === 'function') {
@@ -228,14 +239,14 @@
 		fields.forEach(field => {
 			if (!field || !field.selector || !field.fieldName) return;
 			const events = field.events || 'blur.patientAutoSave';
-			jquery(field.selector).off(events).on(events, function () {
+			doc.querySelectorAll(field.selector).forEach(element => rebindNamespaced(element, events, function () {
 				if (field.valueResolver === 'referralSource' && referralSourceControl && typeof referralSourceControl.syncVisibility === 'function') {
 					referralSourceControl.syncVisibility({ document: getDocument(options) });
 				}
 				const value = resolvePatientAutoSaveValue(this, field, options);
 				if (field.skipEmpty && !value) return;
 				options.autoSaveField(field.fieldName, value);
-			});
+			}));
 		});
 
 		return true;
@@ -249,7 +260,6 @@
 	function initializeOccupationAutocomplete(options = {}) {
 		const doc = getDocument(options);
 		const win = options.window || window;
-		const jquery = options.$ || win.jQuery || win.$;
 		const AutocompleteCtor = options.OccupationAutocomplete || win.OccupationAutocomplete;
 		const inputId = options.inputId || 'occupation';
 		const dropdownId = options.dropdownId || 'occupationDropdown';
@@ -264,18 +274,18 @@
 		win.occupationAutocomplete = null;
 		win.occupationAutocomplete = new AutocompleteCtor(inputId, dropdownId);
 
-		if (jquery && typeof options.autoSaveField === 'function') {
-			bindOccupationAutoSave(jquery, win, inputId, options.autoSaveField);
+		if (typeof options.autoSaveField === 'function') {
+			bindOccupationAutoSave(occupationInput, win, options.autoSaveField);
 		}
 
 		return true;
 	}
 
-	function bindOccupationAutoSave(jquery, win, inputId, autoSaveField) {
-		jquery(`#${inputId}`).off('blur.patientAutoSave change.patientAutoSave').on('blur.patientAutoSave change.patientAutoSave', function () {
+	function bindOccupationAutoSave(occupationInput, win, autoSaveField) {
+		rebindNamespaced(occupationInput, 'blur.patientAutoSave change.patientAutoSave', function () {
 			const value = (win.occupationAutocomplete && win.occupationAutocomplete.getValue)
 				? win.occupationAutocomplete.getValue()
-				: jquery(this).val();
+				: this.value;
 			autoSaveField('occupation', value);
 		});
 	}
@@ -307,11 +317,10 @@
 
 		const vitalUtils = options.vitalUtils || window.ClinicalVitalCalculationUtils;
 		if (vitalUtils && typeof vitalUtils.setupAgeCalculation === 'function') {
-			vitalUtils.setupAgeCalculation({ $: options.$ });
+			vitalUtils.setupAgeCalculation({ document: getDocument(options) });
 		}
 		if (vitalUtils && typeof vitalUtils.setupBMICalculation === 'function') {
 			vitalUtils.setupBMICalculation({
-				$: options.$,
 				document: getDocument(options),
 				getLastBMIValue: options.getLastBMIValue,
 				autoSaveBMI: options.autoSaveBMI
@@ -327,7 +336,6 @@
 			initializeOccupationAutocomplete({
 				document: getDocument(options),
 				window: options.window || window,
-				$: options.$,
 				console: options.console,
 				autoSaveField: options.autoSaveField,
 				...options.occupationOptions
@@ -336,7 +344,6 @@
 
 		initializeDocumentSectionShell(options.documentSectionAdapter);
 		bindPatientFormAutoSaveSafely({
-			$: options.$,
 			document: getDocument(options),
 			getElementValue: options.getElementValue,
 			autoSaveField: options.autoSaveField,
@@ -377,7 +384,6 @@
 			initializeOccupationAutocomplete({
 				document: doc,
 				window: options.window || window,
-				$: options.$,
 				console: options.console,
 				autoSaveField: options.autoSaveField,
 				...options.occupationOptions
@@ -392,7 +398,6 @@
 		}
 
 		bindPatientFormAutoSaveSafely({
-			$: options.$,
 			document: doc,
 			getElementValue: options.getElementValue,
 			autoSaveField: options.autoSaveField,

@@ -60,17 +60,16 @@
 		};
 	}
 
-	function bindRealtimeWhenReady(adapter, $, document) {
-		if ($ && typeof $(document).ready === 'function') {
-			$(document).ready(() => adapter.bindRealtimeUpdates());
+	function bindRealtimeWhenReady(adapter, document) {
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', () => adapter.bindRealtimeUpdates(), { once: true });
 		} else {
-			adapter.bindRealtimeUpdates();
+			window.setTimeout(() => adapter.bindRealtimeUpdates());
 		}
 	}
 
 	function create(options = {}) {
 		const document = options.document || window.document;
-		const $ = options.$ || window.jQuery || window.$;
 		const getAppointments = options.getAppointments || (() => []);
 		const getCurrentPatientData = options.getCurrentPatientData || (() => window.currentPatientData);
 		const getCurrentAppointmentId = options.getCurrentAppointmentId || (() => null);
@@ -119,7 +118,6 @@
 
 			const medicalRecordRealtimeAdapter = window.PsychologistMedicalRecordRealtimeUtils.createMedicalRecordRealtimeAdapter({
 				document,
-				$,
 				console,
 				getSelectedPatient: () => modalSearchState.get('selectedPatient'),
 				syncWindowState: () => modalPatientSearchFlow.syncWindowState(),
@@ -129,7 +127,7 @@
 			});
 			window.updateMedicalRecordTab = medicalRecordRealtimeAdapter.updateMedicalRecordTab;
 
-			bindRealtimeWhenReady(medicalRecordRealtimeAdapter, $, document);
+			bindRealtimeWhenReady(medicalRecordRealtimeAdapter, document);
 
 			appointmentCopyFormPreparer = window.ModalPatientSearchUi.createAppointmentCopyFormPreparer({
 				clearExaminationLayout: options.clearExaminationLayout,

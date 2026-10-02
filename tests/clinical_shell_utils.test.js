@@ -107,24 +107,34 @@ test('page TLG không báo lỗi lưu ca cũ trên ca mới', async () => {
 });
 
 function loadScript(file) {
-  const win = { console, setTimeout: () => null, localStorage: null };
+  const win = { console, setTimeout: () => null, localStorage: null, AbortController };
   win.window = win;
   const context = vm.createContext(win);
   runScriptFile(file, context);
   return win;
 }
 
-function createElement(id) {
-  return { id, value: '', textContent: '', innerHTML: '', disabled: false, checked: false, classList: { add() {}, remove() {} } };
+function createElement(id, log) {
+  return {
+    id, value: '', textContent: '', innerHTML: '', disabled: false, checked: false, classList: { add() {}, remove() {} },
+    listeners: [],
+    addEventListener(type, handler, options = {}) {
+      this.listeners.push({ type, handler, signal: options.signal });
+      if (log) log.push(`listen:${id}:${type}`);
+    }
+  };
 }
 
-function createDocument(ids) {
-  const elements = new Map(ids.map(id => [id, createElement(id)]));
+function createDocument(ids, log) {
+  const elements = new Map(ids.map(id => [id, createElement(id, log)]));
   return {
     elements,
     getElementById(id) { return elements.get(id) || null; },
     querySelector() { return null; },
-    querySelectorAll() { return []; }
+    querySelectorAll(selector) {
+      const match = /^#([\w-]+)$/.exec(selector);
+      return match && elements.has(match[1]) ? [elements.get(match[1])] : [];
+    }
   };
 }
 
@@ -228,20 +238,14 @@ test('ClinicalFormDomUtils và ClinicalPageCoreUtils vẫn expose mọi API tran
 
 test('initializeWorkflowPageShell giữ thứ tự reset → sidebar → loaders → adapters → tác vụ hoãn', () => {
   const win = loadScript(FORM_DOM_UTILS);
-  const doc = createDocument(['age', 'occupation', 'occupationDropdown']);
-  doc.elements.get('age').value = '33';
   const log = [];
+  const doc = createDocument(['age', 'occupation', 'occupationDropdown', 'fullName'], log);
+  doc.elements.get('age').value = '33';
   const timers = [];
   function OccupationAutocomplete(inputId, dropdownId) { log.push(`occupation:${inputId}/${dropdownId}`); }
-  const jquery = selector => ({
-    off() { return this; },
-    on(events) { log.push(`bind:${selector}:${events}`); return this; },
-    val() { return ''; }
-  });
 
   const result = win.ClinicalFormDomUtils.initializeWorkflowPageShell({
     document: doc,
-    $: jquery,
     window: win,
     setTimeout: (fn, delay) => timers.push([fn, delay]),
     resetFormToDefault: () => log.push('resetFormToDefault'),
@@ -260,17 +264,21 @@ test('initializeWorkflowPageShell giữ thứ tự reset → sidebar → loaders
   });
 
   assert.equal(result, true);
-  assert.deepEqual(log.slice(0, 7), [
+  assert.deepEqual(log.slice(0, 8), [
     'resetFormToDefault',
     'sidebar:true',
     'loadProvinces',
     'loadAppointments:waiting:2',
     'occupation:occupation/occupationDropdown',
-    'bind:#occupation:blur.patientAutoSave change.patientAutoSave',
+    'listen:occupation:blur',
+    'listen:occupation:change',
     'initializeDocumentUpload'
   ]);
-  assert.equal(log[7], 'addressDraft:function');
-  assert.ok(log.includes('bind:#fullName:blur.patientAutoSave'), 'auto-save form bệnh nhân phải được bind');
+  assert.equal(log[8], 'addressDraft:function');
+  assert.ok(log.includes('listen:fullName:blur'), 'auto-save form bệnh nhân phải được bind');
+  const occupationListeners = doc.elements.get('occupation').listeners;
+  assert.deepEqual(occupationListeners.filter(entry => !entry.signal.aborted).map(entry => entry.type), ['blur', 'change'],
+    'bind lại cùng namespace patientAutoSave phải thay listener cũ, không cộng dồn');
   assert.deepEqual(timers.map(timer => timer[1]), [100, 100]);
 
   timers.forEach(([fn]) => fn());

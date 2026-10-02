@@ -307,7 +307,6 @@
 		});
 		adapter.setupMainAddressChangeHandlers = () => setupMainAddressChangeHandlers({
 			...baseOptions(),
-			$: options.$ || window.$,
 			loadDistricts: adapter.loadDistricts,
 			loadWards: adapter.loadWards
 		});

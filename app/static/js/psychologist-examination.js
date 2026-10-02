@@ -221,7 +221,6 @@ function collectFormData() {
 // Initialize form
 function initializeForm() {
 	window.ClinicalFormDomUtils.initializeWorkflowFormShell({
-		$,
 		document,
 		window,
 		console,
@@ -299,7 +298,6 @@ window.deleteDocument = documentSectionAdapter.deleteDocument;
 function initializePage() {
 	window.ClinicalFormDomUtils.initializeWorkflowPageShell({
 		document,
-		$,
 		window,
 		console,
 		setTimeout,
@@ -377,7 +375,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 	window.QLPKPsychologistPatientHistoryBridge.create({
 		document,
-		$,
 		apiCall,
 		showToast: window.showCustomToast,
 		showConfirmationDialog: options => window.QLPKConfirmationDialog.confirm(options),
