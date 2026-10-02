@@ -192,7 +192,7 @@ installers.push(function (inst, outer) {
 		inst.STATE.syncNameDropdownGeometry = inst.bindNameDropdownGeometry(doc, input, dropdown);
 		return Boolean(inst.STATE.autocomplete);
 	}
-	function renderActionButton(action, title, attrs = {}) {
+	function buildActionButton(action, title, attrs = {}) {
 		const iconSystem = outer.REGISTRY.get('iconSystem');
 		if (iconSystem && typeof iconSystem.createActionButton === 'function') {
 			return iconSystem.createActionButton({
@@ -230,7 +230,7 @@ installers.push(function (inst, outer) {
 		return (items || []).map(item => normalizeRow(item));
 	}
 
-	Object.assign(inst, { setupNameAutocomplete, renderActionButton, normalizeRow, mapServerRows });
+	Object.assign(inst, { setupNameAutocomplete, buildActionButton, normalizeRow, mapServerRows });
 });
 installers.push(function (inst, outer) {
 	function buildSavePayload() {
@@ -323,8 +323,8 @@ installers.push(function (inst) {
 				createEl('td', null, inst.formatDate(row.scheduled_for)),
 				createEl('td', null, createEl('span', { class: `qlpk-status doctor-indications-status ${status.className || ''}` }, status.label || row.status || 'Chuyển thực hiện')),
 				createEl('td', null,
-					inst.renderActionButton('edit', locked ? 'Không thể sửa chỉ định đã hoàn thành' : 'Sửa chỉ định', { 'data-doctor-indication-action': 'edit', 'data-doctor-indication-id': row.tempId, disabled: Boolean(locked) }),
-					inst.renderActionButton('delete', 'Xóa chỉ định', { 'data-doctor-indication-action': 'delete', 'data-doctor-indication-id': row.tempId })
+					inst.buildActionButton('edit', locked ? 'Không thể sửa chỉ định đã hoàn thành' : 'Sửa chỉ định', { 'data-doctor-indication-action': 'edit', 'data-doctor-indication-id': row.tempId, disabled: Boolean(locked) }),
+					inst.buildActionButton('delete', 'Xóa chỉ định', { 'data-doctor-indication-action': 'delete', 'data-doctor-indication-id': row.tempId })
 				)
 			);
 		}));

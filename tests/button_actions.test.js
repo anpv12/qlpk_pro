@@ -13,16 +13,20 @@ const read = name => readCssSource(path.join(root, name));
 const css = read('app/static/css/shared/button-actions.css');
 
 test('shared action renderer uses explicit roles, not displayed labels', () => {
-    const window = {};
+    const { document } = require('./helpers/fake-dom').createWindow();
+    const window = { document };
     vm.runInNewContext(read('app/static/js/shared/icon-system.js'), { window });
+    const icons = window.QLPKIconSystem;
     for (const [action, role] of Object.entries({ add: 'execute', save: 'execute', view: 'view', edit: 'edit', delete: 'danger', cancel: 'neutral', download: 'neutral' })) {
-        const rendered = window.QLPKIconSystem.renderActionButton({ action, label: 'Arbitrary label' });
-        assert.ok(rendered.includes(`data-qlpk-button="${role}"`));
-        assert.ok(rendered.includes('data-qlpk-button-variant="soft"'));
+        const button = icons.createActionButton({ action, label: 'Arbitrary label' });
+        assert.equal(button.getAttribute('data-qlpk-button'), role);
+        assert.equal(button.getAttribute('data-qlpk-button-variant'), 'soft');
     }
-    assert.match(window.QLPKIconSystem.renderActionButton({ action: 'edit', buttonRole: 'view' }), /data-qlpk-button="view"/);
-    assert.match(window.QLPKIconSystem.renderIconTextButton({ action: 'save' }), /data-qlpk-button-variant="soft"/);
-    assert.match(window.QLPKIconSystem.renderIconTextButton({ action: 'save', buttonVariant: 'solid' }), /data-qlpk-button-variant="solid"/);
+    assert.equal(icons.createActionButton({ action: 'edit', buttonRole: 'view' }).getAttribute('data-qlpk-button'), 'view');
+    assert.equal(icons.createIconTextButton({ action: 'save' }).getAttribute('data-qlpk-button-variant'), 'soft');
+    assert.equal(icons.createIconTextButton({ action: 'save', buttonVariant: 'solid' }).getAttribute('data-qlpk-button-variant'), 'solid');
+    assert.equal(icons.createIconTextButton({ action: 'save', label: '<b>x</b>' }).textContent, '<b>x</b>');
+    assert.equal(Object.keys(icons).some(name => name.startsWith('render')), false);
 });
 
 test('single color owner maps every role and preserves geometry', () => {

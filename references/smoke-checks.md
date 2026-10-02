@@ -1269,7 +1269,7 @@ owner của đơn thuốc/chỉ định/dịch vụ.
 - [ ] Tab trạng thái danh sách lịch đổi active tab và reload đúng danh sách.
 - [ ] Bảng danh sách tiếp nhận render đúng STT, ngày giờ, bác sĩ, trạng thái và các nút sửa/chuyển khám/hủy lịch; badge count trạng thái vẫn cập nhật đúng.
 - [ ] `python3 scripts/check_receptionist_fe_contract.py` đạt; không có quick-search/modal/hidden-control cũ, ICD legacy hoặc raw Bootstrap action button quay lại trong scope lễ tân.
-- [ ] Các action lặp trong danh sách chờ, tài liệu đính kèm và người thân liên kết dùng semantic icon action (`QLPKIconSystem.renderActionButton()` / `.qlpk-icon-action--*`), không dùng lại `btn-outline-primary`, `btn-outline-danger` hoặc `btn-success` để tô màu action.
+- [ ] Các action lặp trong danh sách chờ, tài liệu đính kèm và người thân liên kết dùng semantic icon action (`QLPKIconSystem.createActionButton()` / `.qlpk-icon-action--*`), không dùng lại `btn-outline-primary`, `btn-outline-danger` hoặc `btn-success` để tô màu action.
 - [ ] Bộ lọc danh sách chờ theo tên bệnh nhân, bác sĩ/TLG và ngày hẹn vẫn reload đúng danh sách; nút làm mới reset cả filter UI và state.
 - [ ] Nút phân trang, chọn số dòng/trang và nút refresh danh sách lịch vẫn hoạt động đúng.
 - [ ] Màn lễ tân không còn render vùng tìm bệnh nhân riêng bên trái, không còn asset `receptionist/patient-search.js`, và không còn controls local `patientSearch/searchPatientBtn/selectPatientBtn/clearSearchBtn`.

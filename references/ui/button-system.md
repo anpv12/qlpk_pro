@@ -77,7 +77,7 @@ Mặc định nền sáng; container lồng dùng `light` để reset nếu nằ
 `dark`. Không tự dò màu bằng JS hoặc hardcode class màn hình trong owner chung.
 Template/DOM renderer mới phải khai báo thuộc tính ngay lúc tạo nút.
 
-`renderIconTextButton` mặc định soft; truyền `buttonVariant: 'solid'` khi là
+`createIconTextButton` mặc định soft; truyền `buttonVariant: 'solid'` khi là
 hành động chính. Modal xác nhận dùng chung nhận role tường minh ở tham số thứ
 tư: `CustomModal.confirm(message, title, 'warning', 'danger')` cho xóa/hủy
 nguy hiểm; không dò chữ “xóa” trong message để quyết định màu.

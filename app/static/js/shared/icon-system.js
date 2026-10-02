@@ -58,19 +58,6 @@
 		pricing: 'bi-currency-dollar', warnings: 'bi-exclamation-triangle'
 	};
 
-	function renderSectionIcon(section, options = {}) {
-		return renderIcon(SECTION_ICONS[section] || ACTION_ICONS.info, {className: 'qlpk-section-icon', ...options});
-	}
-
-	function escapeHtml(value) {
-		return String(value == null ? '' : value)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
-	}
-
 	function getActionIcon(action) {
 		return ACTION_ICONS[action] || ACTION_ICONS.info;
 	}
@@ -87,55 +74,7 @@
 		return FILE_ICONS[kind] || FILE_ICONS.file;
 	}
 
-	function renderIcon(iconClass, options = {}) {
-		const label = options.label ? ` aria-label="${escapeHtml(options.label)}"` : ' aria-hidden="true"';
-		const extraClass = options.className ? ` ${escapeHtml(options.className)}` : '';
-		return `<i class="bi ${escapeHtml(iconClass)}${extraClass}"${label}></i>`;
-	}
-
-	function renderActionIcon(action, options = {}) {
-		return renderIcon(getActionIcon(action), options);
-	}
-
-	function renderAttributes(attrs = {}) {
-		return Object.keys(attrs)
-			.filter(key => attrs[key] !== false && attrs[key] != null)
-			.map(key => attrs[key] === true
-				? ` ${escapeHtml(key)}`
-				: ` ${escapeHtml(key)}="${escapeHtml(attrs[key])}"`)
-			.join('');
-	}
-
-	function renderActionButton(options = {}) {
-		const action = options.action || 'view';
-		const label = options.label || options.title || action;
-		const title = options.title || label;
-		const className = options.className ? ` ${escapeHtml(options.className)}` : '';
-		const attrs = Object.assign({}, options.attrs || {}, {
-			type: options.type || 'button',
-			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
-			'data-qlpk-button-variant': 'soft',
-			title,
-			'aria-label': label
-		});
-		return `<button class="btn btn-sm qlpk-icon-action qlpk-icon-action--${escapeHtml(action)}${className}"${renderAttributes(attrs)}>${renderActionIcon(action)}</button>`;
-	}
-
-	function renderIconTextButton(options = {}) {
-		const action = options.action || 'add';
-		const label = options.label || options.title || action;
-		const title = options.title || label;
-		const className = options.className ? ` ${escapeHtml(options.className)}` : '';
-		const attrs = Object.assign({}, options.attrs || {}, {
-			type: options.type || 'button',
-			'data-qlpk-button': options.buttonRole || BUTTON_ROLES[action] || 'neutral',
-			'data-qlpk-button-variant': options.buttonVariant || 'soft',
-			title
-		});
-		return `<button class="qlpk-icon-text-button qlpk-icon-text-button--${escapeHtml(action)}${className}"${renderAttributes(attrs)}>${renderActionIcon(action, { className: 'qlpk-button-icon' })}<span>${escapeHtml(label)}</span></button>`;
-	}
-
-	// Node builders: same markup as the render* string helpers, built as elements (data never parsed as HTML).
+	// Node builders: icons and action buttons are built as elements (data never parsed as HTML).
 	function createNode(tag, className, attrs = {}) {
 		const node = window.document.createElement(tag);
 		node.className = className;
@@ -190,36 +129,16 @@
 		return button;
 	}
 
-	function renderFeedbackIcon(type, options = {}) {
-		return renderIcon(getFeedbackIcon(type), options);
-	}
-
-	function renderSourceIcon(source, options = {}) {
-		return renderIcon(getSourceIcon(source), options);
-	}
-
-	function renderFileIcon(kind, options = {}) {
-		return renderIcon(getFileIcon(kind), options);
-	}
-
 	window.QLPKIconSystem = {
 		ACTION_ICONS,
 		FEEDBACK_ICONS,
 		SOURCE_ICONS,
 		FILE_ICONS,
 		SECTION_ICONS,
-		renderSectionIcon,
 		getActionIcon,
 		getFeedbackIcon,
 		getSourceIcon,
 		getFileIcon,
-		renderIcon,
-		renderActionIcon,
-		renderActionButton,
-		renderIconTextButton,
-		renderFeedbackIcon,
-		renderSourceIcon,
-		renderFileIcon,
 		createIcon,
 		createActionIcon,
 		createActionButton,
