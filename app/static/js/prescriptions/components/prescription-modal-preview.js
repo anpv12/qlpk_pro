@@ -1,3 +1,4 @@
+import { buildPrescriptionScreenHTML } from '../shared/prescription-document-template.js';
 import { el, renderDocumentMarkup, replace } from '../../shared/dom.js';
 
 const PRESCRIPTION_PAGE_COLORS = {
@@ -10,10 +11,12 @@ function missingDependency(name) {
 	return new Error(`Thiếu helper preview đơn thuốc từ modal: ${name}`);
 }
 
-function resolveFunction(deps, dependencyName, globalName = dependencyName) {
-	const candidate = deps[dependencyName] || window[globalName];
+const DEFAULT_DEPENDENCIES = { buildPrescriptionScreenHTML };
+
+function resolveFunction(deps, dependencyName) {
+	const candidate = deps[dependencyName] || DEFAULT_DEPENDENCIES[dependencyName];
 	if (typeof candidate !== 'function') {
-		throw missingDependency(globalName);
+		throw missingDependency(dependencyName);
 	}
 	return candidate;
 }

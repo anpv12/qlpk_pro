@@ -70,18 +70,11 @@ function ensureModuleLoaded(path, isReady) {
 	return import(`${path}?v=${getAppVersion()}`).catch(() => {});
 }
 function ensureWorkspaceRuntime() {
-	return ensureScriptLoaded(
-		moduleState.ICON_SYSTEM_PATH,
-		'qlpk-icon-system',
-		() => !!window.QLPKIconSystem
-	).then(() => ensureScriptLoaded(
-		moduleState.NAVIGATION_CONFIG_PATH,
-		'qlpk-navigation-config',
-		() => !!window.QLPKNavigationConfig
-	)).then(() => ensureModuleLoaded(
+	// Icon system and navigation config are imported statically by the header and the workspace shell.
+	return ensureModuleLoaded(
 		moduleState.WORKSPACE_TABS_PATH,
 		() => !!window.QLPKWorkspaceShell
-	)).then(() => ensureScriptLoaded(
+	).then(() => ensureScriptLoaded(
 		moduleState.SOCKET_IO_CLIENT_PATH,
 		'qlpk-socket-io-client',
 		() => typeof window.io === 'function'

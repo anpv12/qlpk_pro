@@ -1,5 +1,6 @@
 import { moduleState } from './state.js';
 import { QLPKSearchNormalization } from '../../shared/search-normalization.js';
+import { QLPKNavigationConfig } from '../navigation.config.js';
 
 function captureAccess() {
 	const owner = window.QLPKApiTransport?.session?.owner;
@@ -24,8 +25,8 @@ function normalizeLauncherSearchText(value) {
 			.trim();
 }
 function getConfigItems() {
-	return (window.QLPKNavigationConfig && Array.isArray(window.QLPKNavigationConfig.items))
-		? window.QLPKNavigationConfig.items
+	return (QLPKNavigationConfig && Array.isArray(QLPKNavigationConfig.items))
+		? QLPKNavigationConfig.items
 		: [];
 }
 function readPermissions() {

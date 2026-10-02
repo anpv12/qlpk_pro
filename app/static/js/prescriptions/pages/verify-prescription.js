@@ -7,6 +7,7 @@ import '../shared/prescription-document-template.js';
 import '../components/prescription-preview-scaler.js';
 import { byId, el, renderDocumentMarkup, replace } from '../../shared/dom.js';
 import { createPrescriptionPreviewScaler } from '../components/prescription-preview-scaler.js';
+import { buildPrescriptionPreviewHTML, getClinicInfoConfig } from '../shared/prescription-document-template.js';
 
 function banner(icon, text, sub) {
 	return el('div', { class: 'verify-banner invalid' }, el('span', { class: 'icon' }, icon), el('span', { class: 'text' }, text), el('div', { class: 'sub' }, sub));
@@ -35,7 +36,7 @@ function verificationBadge(prescriptionData) {
 function documentOptions(data) {
 	const diagnosisText = data.diagnosis_text || data.diagnosis || '';
 	return {
-		clinicInfo: window.getClinicInfoConfig(),
+		clinicInfo: getClinicInfoConfig(),
 		patient: data.patient || {},
 		history: { examination_date: data.examination_date, doctor: data.doctor },
 		examinationDetail: { diagnosis: diagnosisText, benh_kem_theo: data.benh_kem_theo, weight: data.weight, loi_dan: data.loi_dan },
@@ -52,7 +53,7 @@ function documentOptions(data) {
 
 function renderVerifiedPrescription(data) {
 	replace(byId('bannerArea'));
-	const area = renderDocumentMarkup(byId('prescriptionPreviewArea'), window.buildPrescriptionPreviewHTML(documentOptions(data)));
+	const area = renderDocumentMarkup(byId('prescriptionPreviewArea'), buildPrescriptionPreviewHTML(documentOptions(data)));
 	const previewContainer = area.querySelector('.prescription-preview');
 	if (!previewContainer) return;
 	previewContainer.appendChild(verificationBadge(data));

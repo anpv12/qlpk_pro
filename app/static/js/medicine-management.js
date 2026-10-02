@@ -23,6 +23,7 @@ import { loadImportLedger, switchImportTab } from './medicines/management-import
 import { QLPKSearchNormalization } from './shared/search-normalization.js';
 import { QLPKRealtimePageHooks } from './realtime-page-hooks.js';
 import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { QLPKIconSystem } from './shared/icon-system.js';
 
 // Medicine Management JavaScript
 
@@ -87,7 +88,7 @@ function configureMedicineComponents() {
 
 document.addEventListener('DOMContentLoaded', () => {
 	configureMedicineComponents();
-	const icons = window.QLPKIconSystem;
+	const icons = QLPKIconSystem;
 	document.querySelectorAll('[data-medicine-icon]').forEach(element => {
 		replace(element, decorativeIcon(`${icons.SECTION_ICONS[element.dataset.medicineIcon] || icons.ACTION_ICONS.info} qlpk-section-icon`));
 	});

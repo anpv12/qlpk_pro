@@ -1,3 +1,4 @@
+import { RelativeLinkHandler } from '../relative-link-handler.js';
 function getWindow(options = {}) {
 	return options.window || window;
 }
@@ -24,8 +25,7 @@ function initializeForm(options = {}) {
 }
 
 function registerRelativeLinkResolver(options = {}) {
-	const win = getWindow(options);
-	const relativeLinkHandler = options.relativeLinkHandler || win.RelativeLinkHandler;
+	const relativeLinkHandler = options.relativeLinkHandler || RelativeLinkHandler;
 	const openRelativePatient = options.openRelativePatient;
 	if (!relativeLinkHandler || typeof openRelativePatient !== 'function') return;
 

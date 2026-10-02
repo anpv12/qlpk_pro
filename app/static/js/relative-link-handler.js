@@ -51,4 +51,5 @@ const RelativeLinkHandler = (() => {
 })();
 
 RelativeLinkHandler.init();
-window.RelativeLinkHandler = RelativeLinkHandler;
+
+export { RelativeLinkHandler };

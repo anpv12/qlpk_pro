@@ -77,12 +77,11 @@ function createPageCoreAdapter(options = {}) {
 	return adapter;
 }
 function bindBootstrapRelativeTable(options, context) {
-	const { actionButtonsUi, doc, targetWindow } = context;
+	const { actionButtonsUi, doc } = context;
 	let relativeTableInstance = null;
 	if (actionButtonsUi && typeof actionButtonsUi.initRelativeTable === 'function') {
 		relativeTableInstance = actionButtonsUi.initRelativeTable({
 			document: doc,
-			window: targetWindow,
 			...(options.relativeTableOptions || {})
 		});
 	}

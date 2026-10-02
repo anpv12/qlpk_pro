@@ -1,4 +1,7 @@
+import { RelativeLinkHandler } from '../relative-link-handler.js';
 import { PsychologistMedicalRecordRealtimeUtils } from './medical-record-realtime-utils.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
+import { ModalPatientSearchUi } from '../components/modal-patient-search-ui.js';
 
 function buildHistoryContextOptions(options, accessors) {
 	const { formatDisplayDate } = accessors;
@@ -17,12 +20,12 @@ function buildHistoryContextOptions(options, accessors) {
 		lockForm: options.lockForm,
 		activeStatuses: ['PSYCHOLOGIST_EXAM', 'WAITING_TRANSFER'],
 		getHistoryDescription: exam => exam.psychologist_summary || '',
-		formatHistoryDate: date => (window.formatDateDisplay
-			? window.formatDateDisplay(date)
+		formatHistoryDate: date => (getPageDateFormatter()
+			? getPageDateFormatter()(date)
 			: formatDisplayDate(date)),
 		getExaminationStatusBadgeClass: options.getExaminationStatusBadgeClass,
 		getExaminationStatusText: options.getExaminationStatusText,
-		getFormatDate: () => window.formatDateDisplay || formatDisplayDate,
+		getFormatDate: () => getPageDateFormatter() || formatDisplayDate,
 		resetFormToDefault: options.resetFormToDefault,
 		loadAppointments: options.loadAppointments
 	};
@@ -72,7 +75,7 @@ function create(options = {}) {
 	const getAppointments = options.getAppointments || (() => []);
 	const getCurrentPatientData = options.getCurrentPatientData || (() => null);
 	const getCurrentAppointmentId = options.getCurrentAppointmentId || (() => null);
-	const getFormatDateDisplay = options.getFormatDateDisplay || (() => window.formatDateDisplay || null);
+	const getFormatDateDisplay = options.getFormatDateDisplay || (() => getPageDateFormatter() || null);
 	const formatDisplayDate = options.formatDisplayDate || getFormatDateDisplay();
 
 	let patientHistoryModal = null;
@@ -125,7 +128,7 @@ function create(options = {}) {
 
 		bindRealtimeWhenReady(medicalRecordRealtimeAdapter, document);
 
-		appointmentCopyFormPreparer = window.ModalPatientSearchUi.createAppointmentCopyFormPreparer({
+		appointmentCopyFormPreparer = ModalPatientSearchUi.createAppointmentCopyFormPreparer({
 			clearExaminationLayout: options.clearExaminationLayout,
 			setCurrentAppointmentId: options.setCurrentAppointmentId,
 			modalElement: patientSearchModalElement
@@ -137,7 +140,8 @@ function create(options = {}) {
 			deleteHistory: modalSearchContext.deleteFlow?.deleteHistory,
 			loadPatient: options.loadPatient,
 			isFormLocked: options.isFormLocked,
-			unlockForm: options.unlockForm
+			unlockForm: options.unlockForm,
+			relativeLinkHandler: RelativeLinkHandler
 		});
 
 		return {

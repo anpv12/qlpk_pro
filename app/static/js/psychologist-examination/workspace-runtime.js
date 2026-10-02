@@ -1,10 +1,11 @@
+import { QLPKDoctorPageRuntime } from '../doctor-examination/page-runtime.js';
 import { PsychologistWorkspaceUi } from './workspace-ui.js';
 import { QLPKPsychologistComponentConfig } from '../components/psychologist-component-config.js';
 import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
 import { state } from './page-state.js';
 
 const REGISTRY = window.QLPKDoctorModuleRegistry;
-const PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
+const PAGE_RUNTIME = QLPKDoctorPageRuntime;
 if (!REGISTRY || !PAGE_RUNTIME) throw new Error('Thiếu runtime dùng chung cho màn Tâm lý gia');
 
 const config = QLPKPsychologistComponentConfig || {};

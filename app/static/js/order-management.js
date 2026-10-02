@@ -15,6 +15,8 @@ import { deleteOrder } from './orders/order-management-actions.js';
 import { initializePage } from './orders/order-management-init.js';
 import { ClinicalOrderStatusUtils } from './orders/order-status-utils.js';
 import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { getPageDateFormatter } from './shared/page-date-format.js';
+import { QLPKIconSystem } from './shared/icon-system.js';
 
 // Order Management - Quản lý chỉ định CLS
 
@@ -136,8 +138,8 @@ function formatDisplayDate(dateString) {
 		const date = new Date(dateString);
 		if (isNaN(date.getTime())) return '—';
 
-		// Dùng window.formatDateDisplay cho phần ngày
-		const datePart = window.formatDateDisplay(date);
+		// Dùng formatter ngày của trang cho phần ngày
+		const datePart = getPageDateFormatter()(date);
 
 		// Thêm phần giờ
 		const hours = String(date.getHours()).padStart(2, '0');
@@ -155,7 +157,7 @@ function formatDateOnly(dateString) {
 	try {
 		const date = new Date(dateString);
 		if (isNaN(date.getTime())) return '—';
-		return window.formatDateDisplay(date);
+		return getPageDateFormatter()(date);
 	} catch (e) {
 		return dateString;
 	}
@@ -244,7 +246,7 @@ function renderOrdersTable(orders) {
 		return;
 	}
 
-	const icons = window.QLPKIconSystem;
+	const icons = QLPKIconSystem;
 	replace(tbody, orders.map((order, index) => {
 		const patient = order.patient || {};
 		const doctor = order.doctor || {};

@@ -1,4 +1,5 @@
 import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
+import { QLPKIconSystem } from '../shared/icon-system.js';
 
 function getWindow(options) {
 	return options && options.window ? options.window : window;
@@ -54,8 +55,8 @@ function getFileKind(fileType, filename) {
 
 function getFileIcon(fileType, filename) {
 	const kind = getFileKind(fileType, filename);
-	if (window.QLPKIconSystem && typeof window.QLPKIconSystem.getFileIcon === 'function') {
-		return window.QLPKIconSystem.getFileIcon(kind);
+	if (QLPKIconSystem && typeof QLPKIconSystem.getFileIcon === 'function') {
+		return QLPKIconSystem.getFileIcon(kind);
 	}
 	const iconMap = {
 		pdf: 'bi-file-earmark-pdf-fill',

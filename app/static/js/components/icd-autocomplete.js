@@ -1,10 +1,11 @@
 import { ClinicalIcdDataLoader } from './icd-data-loader.js';
+import { QLPKAutocompleteField } from './autocomplete-field.js';
 
 const text = value => value == null ? '' : String(value).trim();
 const label = item => [text(item?.icd_code), text(item?.disease_name)].filter(Boolean).join(' - ');
 
 // ICD supplies its data contract; the shared field owns all UI and lifecycle.
-class QLPKIcdAutocomplete extends window.QLPKAutocompleteField {
+class QLPKIcdAutocomplete extends QLPKAutocompleteField {
 	constructor(root, options = {}) {
 		super(root, {
 			limit: 100,

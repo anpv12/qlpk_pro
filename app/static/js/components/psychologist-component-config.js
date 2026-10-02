@@ -1,3 +1,4 @@
+import { QLPKDoctorPageRuntime } from '../doctor-examination/page-runtime.js';
 import { state as psychologistPageState } from '../psychologist-examination/page-state.js';
 const PSYCHOLOGIST_HISTORY_ROOT = 'psychologistHistoryPanel';
 const PSYCHOLOGIST_INTAKE_ROOT = 'psychologistReceptionistIntakePanel';
@@ -6,11 +7,11 @@ const PSYCHOLOGIST_CLINICAL_ROOT = 'psychologistClinicalDecisionPanel';
 // The inline history feature files are ESM modules.  They must attach to the
 // psychologist root before their actions are registered, then be initialized
 // by the psychologist workspace runtime once all feature actions exist.
-window.QLPKMedicalHistoryBootstrapConfig = {
+const medicalHistoryBootstrapConfig = {
 	root: `#${PSYCHOLOGIST_HISTORY_ROOT}`,
 		rootId: PSYCHOLOGIST_HISTORY_ROOT,
 	autoInit: false,
-	pageRuntime: window.QLPKDoctorPageRuntime || null,
+	pageRuntime: QLPKDoctorPageRuntime,
 	workbenchRootSelector: '.inline-tien-su--doctor-flat',
 	isLoading: () => Boolean(psychologistPageState.isLoadingExaminationData),
 	getPatientId: () => psychologistPageState.currentPatientId || null,
@@ -34,6 +35,7 @@ window.QLPKMedicalHistoryBootstrapConfig = {
 
 const config = Object.freeze({
 	role: 'psychologist',
+	history: medicalHistoryBootstrapConfig,
 	workspaceRootId: 'psychologistClinicalWorkspace',
 	defaultSectionId: 'psychologistClinicalDecisionPanel',
 	sections: Object.freeze([

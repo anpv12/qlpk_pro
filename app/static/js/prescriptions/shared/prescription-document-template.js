@@ -306,9 +306,6 @@ function buildPrescriptionPreviewHTML({
 }
 
 if (typeof window !== 'undefined') {
-	window.getClinicInfoConfig = getClinicInfoConfig;
-	window.buildPrescriptionPreviewHTML = buildPrescriptionPreviewHTML;
-	window.buildPrescriptionScreenHTML = buildPrescriptionScreenHTML;
 	window.QLPKDoctorModuleRegistry?.register?.('prescriptionDocumentTemplate', Object.freeze({
 		getClinicInfoConfig,
 		buildPrescriptionPreviewHTML,
@@ -319,3 +316,4 @@ if (typeof window !== 'undefined') {
 	});
 }
 
+export { buildPrescriptionPreviewHTML, buildPrescriptionScreenHTML, getClinicInfoConfig };

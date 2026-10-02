@@ -1,3 +1,4 @@
+import { buildPrescriptionPreviewHTML } from '../shared/prescription-document-template.js';
 import { PrescriptionTypeContract } from '../shared/prescription-type-contract.js';
 import { QLPKPdfPreview } from '../../shared/pdf-preview.js';
 
@@ -165,7 +166,7 @@ function installPrintDocumentFns1(ctx) {
 	function resolvePreviewBuilder(input = {}) {
 		const builder = input.buildPrescriptionPreviewHTML
 			|| ctx.options.buildPrescriptionPreviewHTML
-			|| window.buildPrescriptionPreviewHTML;
+			|| buildPrescriptionPreviewHTML;
 		if (typeof builder !== 'function') {
 			throw new Error('Thiếu mẫu tài liệu đơn thuốc dùng chung');
 		}

@@ -1,5 +1,6 @@
 import { QLPKWaitingQueueCardUi } from '../components/waiting-queue-card-ui.js';
 import { QLPKWorkflowTwoPane } from '../components/workflow-two-pane.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 function getDocument(options) {
 	return options && options.document ? options.document : window.document;
@@ -125,7 +126,7 @@ function getTotalPages(options) {
 }
 
 function getFormatDateDisplay(options) {
-	return options.formatDateDisplay || window.formatDateDisplay || function (value) { return value || ''; };
+	return options.formatDateDisplay || getPageDateFormatter() || function (value) { return value || ''; };
 }
 
 function hideSeverityTooltip() {

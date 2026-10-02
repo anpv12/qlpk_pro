@@ -1,3 +1,4 @@
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 const STATUS_TEXT = {
 	SCHEDULED: 'Chờ xác nhận',
 	CONFIRMED: 'Đã xác nhận',
@@ -15,7 +16,7 @@ const STATUS_ICON = {
 function formatDate(dateStr) {
 	if (!dateStr) return '';
 	const date = new Date(dateStr);
-	return window.formatDateDisplay(date);
+	return getPageDateFormatter()(date);
 }
 
 function formatTime(dateTimeStr) {

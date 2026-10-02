@@ -2,6 +2,7 @@ import { el, replace } from '../shared/dom.js';
 import { state } from './order-management-state.js';
 import { RESULT_FILE_EXTENSIONS, RESULT_FILE_MAX_BYTES, apiCall, formatDateOnly, showConfirmDialog, showCustomToast } from '../order-management.js';
 import { loadOrderDetail } from './order-management-detail.js';
+import { QLPKIconSystem } from '../shared/icon-system.js';
 
 // Render result files
 function renderResultFiles(files) {
@@ -17,7 +18,7 @@ function renderResultFiles(files) {
 	if (files.length === 0) {
 		replace(listContainer, el('div', { class: 'om-file-empty' }, 'Chưa có file đính kèm'));
 	} else {
-		const icons = window.QLPKIconSystem;
+		const icons = QLPKIconSystem;
 		const filesList = files.map(file => {
             const ext = (file.original_filename || file.filename || '').split('.').pop().toUpperCase();
             let badgeClass = 'qlpk-status--neutral';

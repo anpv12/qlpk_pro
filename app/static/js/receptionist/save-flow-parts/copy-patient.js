@@ -1,3 +1,4 @@
+import { JointExamManager } from '../../joint-exam-manager.js';
 import { state } from '../page-state.js';
 import { safeSetValue } from '../save-flow.js';
 import { MEDICAL_DRAFT_KEY, PAGE_LOAD_ID_KEY, allServices, apiCall, beginReceptionistLoad, reEnableAgeCalculation, receptionistLoadState, setCurrentPatientId, setDateOfBirthAndAge, setupAgeCalculation, showCustomToast, temporarilyDisableAgeCalculation } from '../../receptionist-new.js';
@@ -25,7 +26,7 @@ function getPatientPopulateOptions() {
 		allServices,
 		document,
 		RelativeTableManager: RelativeTableManager,
-		JointExamManager: window.JointExamManager,
+		JointExamManager,
 		bootstrap: window.bootstrap,
 		window
 	};

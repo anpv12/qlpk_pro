@@ -108,7 +108,7 @@ function createExaminationDeleteFlowAdapter(options = {}) {
 			deleteExamination: deleteCore,
 			currentAppointmentId: getCurrentAppointmentId(),
 			onSuccess: async () => {
-				const patientSearchUi = window.ModalPatientSearchUi;
+				const patientSearchUi = window.QLPKDoctorModuleRegistry?.get?.('modalPatientSearchUi');
 				const patientId = patientSearchUi && typeof patientSearchUi.resolveModalPatientId === 'function'
 					? patientSearchUi.resolveModalPatientId(
 						resolveAdapterValue(options.getModalCurrentPatientId, options.modalCurrentPatientId),

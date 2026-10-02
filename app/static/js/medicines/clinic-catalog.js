@@ -1,5 +1,6 @@
 import { MedicinePriceEditor } from './price-editor.js';
 import { QLPKRealtimePageHooks } from '../realtime-page-hooks.js';
+import { QLPKAutocompleteField } from '../components/autocomplete-field.js';
 
 // Page callbacks set by the entry: openExisting(id) edits a medicine already in stock,
 // packagingChanged() refreshes the packaging summary after DAV defaults fill the form.
@@ -289,7 +290,7 @@ function payload(data) {
 export const ClinicMedicineCatalog = {configure: options => Object.assign(hooks, options), reset, setExisting, payload};
 document.addEventListener('DOMContentLoaded', () => {
     el('davChangeButton').addEventListener('click', changeSelection);
-    autocomplete = new window.QLPKAutocompleteField(el('davSearchField'), {
+    autocomplete = new QLPKAutocompleteField(el('davSearchField'), {
         multiple: false, limit: 12, emptyQueryLimit: 12, searchDebounceMs: 250,
         isEnabled: () => !existing && !el('davSearchControls').hidden,
         getLabel: item => [item.name, item.strength].filter(Boolean).join(' · '),

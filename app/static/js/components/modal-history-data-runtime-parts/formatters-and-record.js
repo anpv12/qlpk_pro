@@ -1,3 +1,4 @@
+import { getClinicInfoConfig } from '../../prescriptions/shared/prescription-document-template.js';
 import { moduleState } from './state.js';
 import { clinicInfo } from '../../clinic-config.js';
 
@@ -115,12 +116,10 @@ function formatSignatureDate(value) {
 	return `Ngày ${date.getDate()} tháng ${date.getMonth() + 1} năm ${date.getFullYear()}`;
 }
 function getClinicInfo() {
-	if (typeof window.getClinicInfoConfig === 'function') {
-		try {
-			return window.getClinicInfoConfig();
-		} catch (error) {
-			console.error('Không tải được cấu hình phòng khám:', error);
-		}
+	try {
+		return getClinicInfoConfig();
+	} catch (error) {
+		console.error('Không tải được cấu hình phòng khám:', error);
 	}
 	return clinicInfo || {};
 }

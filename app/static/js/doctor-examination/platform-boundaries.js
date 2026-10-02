@@ -1,3 +1,4 @@
+import { TransferModal } from '../transfer-modal-dry.js';
 import { ClinicalOrderAutocompleteUtils } from '../orders/order-autocomplete-utils.js';
 import { ClinicalOrderSelectionStateUtils } from '../orders/order-selection-state-utils.js';
 import { ClinicalOrderStatusUtils } from '../orders/order-status-utils.js';
@@ -8,6 +9,8 @@ import { ReceptionistDocumentAttachmentList } from '../receptionist/document-att
 import { ReceptionistDocumentAttachmentUtils } from '../receptionist/document-attachment-utils.js';
 import { ClinicalIcdDataLoader } from '../components/icd-data-loader.js';
 import { ReceptionistDocumentAttachmentControls } from '../receptionist/document-attachment-controls.js';
+import { QLPKAutocompleteField } from '../components/autocomplete-field.js';
+import { QLPKIconSystem } from '../shared/icon-system.js';
 
 (function (window) {
 	'use strict';
@@ -24,8 +27,8 @@ import { ReceptionistDocumentAttachmentControls } from '../receptionist/document
 	}
 
 	register('confirmationDialog', QLPKConfirmationDialog, { owner: 'shared/feedback' });
-	register('transferModal', window.TransferModal, { owner: 'shared/transfer-modal' });
-	register('iconSystem', window.QLPKIconSystem, { owner: 'shared/icons' });
+	register('transferModal', TransferModal, { owner: 'shared/transfer-modal' });
+	register('iconSystem', QLPKIconSystem, { owner: 'shared/icons' });
 	register('orderStatusUtils', ClinicalOrderStatusUtils, { owner: 'shared/orders' });
 	register('orderSelectionStateUtils', ClinicalOrderSelectionStateUtils, { owner: 'shared/orders' });
 	register('orderAutocompleteUtils', ClinicalOrderAutocompleteUtils, { owner: 'shared/orders' });
@@ -33,18 +36,9 @@ import { ReceptionistDocumentAttachmentControls } from '../receptionist/document
 	register('documentAttachmentList', ReceptionistDocumentAttachmentList, { owner: 'shared/documents' });
 	register('documentAttachmentControls', ReceptionistDocumentAttachmentControls, { owner: 'shared/documents' });
 	register('icdAutocomplete', QLPKIcdAutocomplete, { owner: 'shared/icd' });
-	register('autocompleteField', window.QLPKAutocompleteField, { owner: 'shared/autocomplete' });
+	register('autocompleteField', QLPKAutocompleteField, { owner: 'shared/autocomplete' });
 	register('icdDataLoader', ClinicalIcdDataLoader, { owner: 'shared/icd' });
 	register('prescriptionPrintDocument', PrescriptionPrintDocument, { owner: 'shared/prescription-print' });
-	register('doctorPrescriptionPrint', window.createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
-	// The template module registers itself; this only covers a page where it already ran.
-	if (typeof window.buildPrescriptionPreviewHTML === 'function') {
-		register('prescriptionDocumentTemplate', {
-			getClinicInfoConfig: window.getClinicInfoConfig,
-			buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML,
-			buildPrescriptionScreenHTML: window.buildPrescriptionScreenHTML
-		}, { owner: 'shared/prescription-document' });
-	}
 
 	window.QLPKDoctorModuleRegistry.register('doctorPlatformBoundaries', Object.freeze({
 		register,

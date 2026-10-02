@@ -46,7 +46,7 @@ function renderJointExamActionButton(action, className, title, attrs = {}) {
  * @param {Function} options.onReloadFamilyMembers - Callback khi cần reload "Người thân liên kết"
  * @param {Function} options.showToast - Hàm hiển thị toast (default: showCustomToast)
  * @param {Function} options.apiCall - Hàm gọi API (default: fetch)
- * @param {Function} options.formatDateDisplay - Hàm format date (default: window.formatDateDisplay)
+ * @param {Function} options.formatDateDisplay - Hàm format date (default: the page date formatter)
  */
 class JointExamManager {
 	constructor(options = {}) {
@@ -59,7 +59,6 @@ class JointExamManager {
 
 		// Utility dependencies
 		this.showToast = options.showToast
-			|| window.showCustomToast
 			|| ((type, msg) => QLPKUserFeedback?.show(type, msg));
 		this.apiCall = options.apiCall || fetch;
 		this.formatDateDisplay = options.formatDateDisplay || this._defaultFormatDateDisplay;
@@ -428,10 +427,5 @@ class JointExamManager {
 	}
 
 }
-
-// Export
-window.JointExamManager = JointExamManager;
-
-
 
 export { JointExamManager, renderJointExamActionButton, confirmJointExamDelete };

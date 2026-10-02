@@ -1,4 +1,5 @@
 import { bindDocumentUploadControls, bindNotesUploadButton, deleteDraftDocument, downloadDraftDocument, ensureDocumentEditingAllowed, handleDraftFileUpload, loadAttachmentsForCurrentPatient, renderSharedDocumentList, setDocumentSectionLockState, updateNotesAttachmentCount, uploadAttachmentForCurrentPatient, uploadDraftDocumentsForPatient, uploadFileToPatient } from './upload-controls.js';
+import { getPageDateFormatter } from '../../shared/page-date-format.js';
 
 function installDocumentSection1(ctx) {
 	const getUploadedDocuments = () => typeof ctx.options.getUploadedDocuments === 'function' ? ctx.options.getUploadedDocuments() : [];
@@ -190,7 +191,7 @@ function createExaminationDocumentSectionAdapter(options = {}) {
 	const formatDraftDate = typeof options.formatDraftDate === 'function'
 		? options.formatDraftDate
 		: documentItem => {
-			if (window.formatDateDisplay) return window.formatDateDisplay(documentItem.uploadDate);
+			if (getPageDateFormatter()) return getPageDateFormatter()(documentItem.uploadDate);
 			if (typeof options.formatDisplayDate === 'function') return options.formatDisplayDate(documentItem.uploadDate);
 			return documentItem.uploadDate || '';
 		};

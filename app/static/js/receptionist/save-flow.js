@@ -1,3 +1,4 @@
+import { TransferModal } from '../transfer-modal-dry.js';
 import { state } from './page-state.js';
 import { DOCUMENT_DRAFT_KEY, allAppointments, allServices, apiCall, beginReceptionistLoad, buildReceptionistConfirmOptions, currentPage, currentPatientId, isSubmitting, loadAppointments, loadServicesForForm, receptionistLoadState, refreshReceptionistAfterSuccessfulSave, savePatientDataInternal, setCurrentPatientId, setupAgeCalculation, setupBMICalculation, showCustomToast, showDuplicatePatientModal, showReceptionistValidationError, updateStatusCounts, validateReceptionistFormData } from '../receptionist-new.js';
 import { highlightAppointmentDateTimeFields, jointExamManagerInstance, renderDocumentsList, savePendingJointExamList, uploadFile } from './medical-data-and-documents.js';
@@ -296,13 +297,7 @@ function applyLoadedAppointment(appointment) {
 
 // ===== MODAL CHUYỂN KHÁM =====
 async function transferAppointment(appointmentId) {
-	if (!window.TransferModal || typeof window.TransferModal.openWithErrorHandling !== 'function') {
-		console.error('TransferModal module chưa được load.');
-		showCustomToast('error', 'Không thể mở chức năng chuyển khám. Vui lòng tải lại trang.');
-		return;
-	}
-
-	window.TransferModal.openWithErrorHandling([appointmentId], 'receptionist', function () {
+	TransferModal.openWithErrorHandling([appointmentId], 'receptionist', function () {
 		loadAppointments(state.currentStatus, currentPage);
 		updateStatusCounts();
 	});

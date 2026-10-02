@@ -1,3 +1,4 @@
+import { PARTS } from './modal-patient-search-parts.js';
 import { moduleState } from './modal-patient-search-state-parts/state.js';
 import { applyAutoSelectAfterSearch, applyAutoSelectAfterSearchForFlow, buildAppointmentPostLoadState, buildAutoSelectAfterSearchState, buildCopyHistoryPatientLoadState, buildHistoryTabStateFromStore, buildLinkedRelativePatientState, buildNoSearchResultsState, buildPatientSelectionFlowState, buildResetModalState, buildSelectedPatientState, buildSinglePatientSearchState, callIfFunction, callOption, copyPatientToFormFlow, createAppointmentCopyFormPreparer, createModalSearchStateStore, hasAppointmentContext, loadCopiedPatientFallback, loadCopiedPatientWithAppointmentContext, loadCopyHistoryPatient, loadFlowExaminationForm, loadOptionalAppointmentPart, prepareAppointmentCopyForm, resetModalStateForFlow, resolveModalPatientId, resolvePatientAtIndex, resolvePatientIdentity, resolveWorkflowModalElements, runAppointmentPatientFlow, runSafeAsyncCallback, runSafeCallback, setFlowLoading } from './modal-patient-search-state-parts/copy-flow.js';
 import { openLinkedRelativePatientSearch, selectAppointmentPatientFlow, selectPatientForModalFlow } from './modal-patient-search-state-parts/select-flow.js';
@@ -5,7 +6,7 @@ import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 import { ModalPatientSearchData } from './modal-patient-search-data.js';
 
-moduleState.PARTS = window.QLPKModalPatientSearchParts || (window.QLPKModalPatientSearchParts = {});
+moduleState.PARTS = PARTS;
 moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
 moduleState.resolveUi = (name, fallback) => moduleState.REGISTRY?.get?.(name) || fallback;
 moduleState.getTabsUi = options => options?.tabsUi || moduleState.resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);

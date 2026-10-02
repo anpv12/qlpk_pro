@@ -10,6 +10,7 @@ import { AppointmentManagementStatusFormatUtils } from './status-format-utils.js
 import { AppointmentManagementPageActionsUtils } from './page-actions-utils.js';
 import { hideModal } from '../shared/dom-query.js';
 import { QLPKAppointmentCalendar } from '../components/appointment-calendar.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 // Kiểm tra lịch trống, cảnh báo trùng, làm mới view, thống kê, xuất Excel.
 
 // Hàm kiểm tra bác sĩ có rảnh không cho drag & drop
@@ -157,7 +158,7 @@ function showPatientDuplicateWarning(response, appointmentData) {
 	AppointmentManagementPatientDuplicateWarningUtils.showPatientDuplicateWarning({
 		response,
 		appointmentData,
-		formatDateDisplay: window.formatDateDisplay,
+		formatDateDisplay: getPageDateFormatter(),
 		onConfirm: function () {
 			appointmentData.confirm_update_patient = true;
 

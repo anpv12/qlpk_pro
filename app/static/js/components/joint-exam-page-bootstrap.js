@@ -1,73 +1,17 @@
-import { QLPKUserFeedback } from '../shared/user-feedback.js';
+import { JointExamManager } from '../joint-exam-manager.js';
+import { QLPKDoctorPageRuntime } from '../doctor-examination/page-runtime.js';
 
-/* global currentAppointmentId */
-(function () {
-	function formatDateDisplay(value) {
-		const pageRuntime = window.QLPKDoctorPageRuntime;
-		if (pageRuntime && typeof pageRuntime.formatDateDisplay === 'function') {
-			return pageRuntime.formatDateDisplay(value);
-		}
-		if (!value) return '';
-		if (value.includes('/')) return value;
-		try {
-			const date = new Date(value);
-			if (Number.isNaN(date.getTime())) return '';
-			return date.toLocaleDateString('vi-VN');
-		} catch {
-			return '';
-		}
-	}
-
-	function showToast(type, message) {
-		const pageRuntime = window.QLPKDoctorPageRuntime;
-		if (pageRuntime && typeof pageRuntime.showCustomToast === 'function') {
-			pageRuntime.showCustomToast(type, message);
-			return;
-		}
-		if (window.showCustomToast) {
-			window.showCustomToast(type, message);
-			return;
-		}
-		QLPKUserFeedback?.show(type, message);
-	}
-
-	function getCurrentAppointmentId() {
-		if (window.QLPKCurrentAppointment && typeof window.QLPKCurrentAppointment.getId === 'function') {
-			return window.QLPKCurrentAppointment.getId();
-		}
-		if (typeof currentAppointmentId !== 'undefined') {
-			return currentAppointmentId;
-		}
-		return null;
-	}
-
-	function getApiCall() {
-		const pageRuntime = window.QLPKDoctorPageRuntime;
-		if (pageRuntime && typeof pageRuntime.apiCall === 'function') {
-			return pageRuntime.apiCall;
-		}
-		if (window.QLPKCurrentAppointment && typeof window.QLPKCurrentAppointment.apiCall === 'function') {
-			return window.QLPKCurrentAppointment.apiCall;
-		}
-		return fetch;
-	}
-
-	function reloadFamilyMembers() {
-		if (window.relativeTableInstance) {
-			window.relativeTableInstance.reload();
-		}
-	}
-
-	document.addEventListener('DOMContentLoaded', function () {
-		if (typeof window.JointExamManager === 'undefined') return;
-
-		const manager = new window.JointExamManager({
-			getAppointmentId: getCurrentAppointmentId,
-			getContextToken: () => window.QLPKCurrentAppointment?.getContextToken?.(),
-			onReloadFamilyMembers: reloadFamilyMembers,
-			showToast,
-			apiCall: getApiCall(),
-			formatDateDisplay,
+// Joint-exam modal of the doctor and psychologist pages. Each page entry mounts it with its accessors:
+// getAppointmentId(), getContextToken() and, where the page owns a relatives table, getRelativeTable().
+export function mountJointExamPage(page = {}) {
+	function start() {
+		const manager = new JointExamManager({
+			getAppointmentId: () => page.getAppointmentId?.() ?? null,
+			getContextToken: () => page.getContextToken?.(),
+			onReloadFamilyMembers: () => page.getRelativeTable?.()?.reload(),
+			showToast: (type, message) => QLPKDoctorPageRuntime.showCustomToast(type, message),
+			apiCall: QLPKDoctorPageRuntime.apiCall,
+			formatDateDisplay: value => QLPKDoctorPageRuntime.formatDateDisplay(value),
 		});
 
 		manager.init();
@@ -80,5 +24,8 @@ import { QLPKUserFeedback } from '../shared/user-feedback.js';
 				manager.load();
 			});
 		}
-	});
-})();
+	}
+
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+	else start();
+}

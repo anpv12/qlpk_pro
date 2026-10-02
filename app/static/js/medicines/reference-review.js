@@ -1,4 +1,5 @@
 // Page callbacks set by the entry: onLinked() refreshes the medicine lists after a link is saved.
+import { QLPKAutocompleteField } from '../components/autocomplete-field.js';
 const hooks = { onLinked() {} };
 
 export function configureReferenceReview(options) {
@@ -253,7 +254,7 @@ export function openMedicineReferenceReview(id) {
 document.addEventListener('DOMContentLoaded', () => {
     const root = el('medicineReferenceReviewModal');
     modal = window.bootstrap.Modal.getOrCreateInstance(root);
-    autocomplete = new window.QLPKAutocompleteField(el('medicineReviewField'), {
+    autocomplete = new QLPKAutocompleteField(el('medicineReviewField'), {
         multiple: false, limit: 12, emptyQueryLimit: 12, searchDebounceMs: 250,
         isEnabled: () => medicineId != null && !!savedPreview && choosing && !saving,
         getLabel: item => [item.name, item.strength].filter(Boolean).join(' · '),

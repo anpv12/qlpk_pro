@@ -96,9 +96,6 @@ function initRelativeTable(options = {}) {
 		...(options.tableOptions || {})
 	});
 
-	if (options.exposeGlobal !== false) {
-		(options.window || window).relativeTableInstance = instance;
-	}
 	return instance;
 }
 function bindTabPrintButtons(options = {}) {

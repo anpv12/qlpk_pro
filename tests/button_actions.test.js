@@ -16,7 +16,7 @@ const css = read('app/static/css/shared/button-actions.css');
 test('shared action renderer uses explicit roles, not displayed labels', () => {
     const { document } = require('./helpers/fake-dom').createWindow();
     const window = { document };
-    runScriptFile('app/static/js/shared/icon-system.js', (c => vm.isContext(c) ? c : vm.createContext(c))({ window }));
+    runScriptFile('app/static/js/shared/icon-system.js', vm.createContext({ window, document }));
     const icons = window.QLPKIconSystem;
     for (const [action, role] of Object.entries({ add: 'execute', save: 'execute', view: 'view', edit: 'edit', delete: 'danger', cancel: 'neutral', download: 'neutral' })) {
         const button = icons.createActionButton({ action, label: 'Arbitrary label' });

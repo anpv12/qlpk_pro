@@ -1,12 +1,13 @@
+import { PARTS } from './modal-patient-search-parts.js';
 import { el, replace } from '../shared/dom.js';
 import { emptyState } from '../shared/empty-state.js';
 import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 (function (window) {
 	'use strict';
 
-	const PARTS = window.QLPKModalPatientSearchParts || (window.QLPKModalPatientSearchParts = {});
 	const REGISTRY = window.QLPKDoctorModuleRegistry;
 	const resolveUi = (name, fallback) => REGISTRY?.get?.(name) || fallback;
 	const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
@@ -71,7 +72,7 @@ import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 
 	function getDateFormatter(formatDateDisplay) {
 		if (typeof formatDateDisplay === 'function') return formatDateDisplay;
-		if (typeof window.formatDateDisplay === 'function') return window.formatDateDisplay;
+		if (typeof getPageDateFormatter() === 'function') return getPageDateFormatter();
 		return value => value || '';
 	}
 
@@ -430,16 +431,17 @@ import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 			bound.tabs = tabsUi.bindShownTabEvents(options.tabs, options.updateContent);
 		}
 
-		bound.relativeResolver = bindRelativeLinkResolver(options.openLinkedRelative);
+		bound.relativeResolver = bindRelativeLinkResolver(options.openLinkedRelative, options.relativeLinkHandler);
 		return bound;
 	}
 
-	function bindRelativeLinkResolver(openLinkedRelative) {
-		if (!window.RelativeLinkHandler || typeof window.RelativeLinkHandler.registerResolver !== 'function') {
+	// Pages that load the relative-link handler pass it in; others have no linked-relative navigation.
+	function bindRelativeLinkResolver(openLinkedRelative, relativeLinkHandler) {
+		if (!relativeLinkHandler || typeof relativeLinkHandler.registerResolver !== 'function') {
 			return false;
 		}
 		if (typeof openLinkedRelative !== 'function') return false;
-		window.RelativeLinkHandler.registerResolver(patientId => openLinkedRelative(patientId));
+		relativeLinkHandler.registerResolver(patientId => openLinkedRelative(patientId));
 		return true;
 	}
 

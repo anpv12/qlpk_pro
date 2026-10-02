@@ -73,11 +73,7 @@ function createFixture() {
 	const window = {
 		Element: FakeElement,
 		HTMLInputElement: FakeElement,
-		QLPKDoctorModuleRegistry: registry,
-		QLPKMedicalHistoryBootstrapConfig: {
-			root: '#doctorHistoryPanel',
-			rootId: 'doctorHistoryPanel'
-		}
+		QLPKDoctorModuleRegistry: registry
 	};
 	window.window = window;
 

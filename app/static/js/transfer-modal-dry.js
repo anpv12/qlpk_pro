@@ -323,7 +323,4 @@ const TransferModal = {
 	openWithErrorHandling
 };
 
-// Classic page scripts (receptionist/psychologist workspaces) reach the modal through window.TransferModal.
-window.TransferModal = TransferModal;
-
 export { TransferModal, captureAuthContext, mapRoleToDatabase };

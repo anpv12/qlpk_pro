@@ -1,6 +1,8 @@
 import { el } from '../shared/dom.js';
 import { ReceptionistDocumentAttachmentUtils } from './document-attachment-utils.js';
 import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
+import { QLPKIconSystem } from '../shared/icon-system.js';
 
 const actionStates = new WeakMap();
 
@@ -42,13 +44,13 @@ function getUploadedDocuments(options) {
 }
 
 function formatDate(value, options) {
-	const formatDateDisplay = options.formatDateDisplay || window.formatDateDisplay || (date => date || '');
+	const formatDateDisplay = options.formatDateDisplay || getPageDateFormatter() || (date => date || '');
 	return formatDateDisplay(value) || '--';
 }
 
 function buildActionButton(action, title, attrs) {
-	if (!window.QLPKIconSystem || typeof window.QLPKIconSystem.createActionButton !== 'function') return null;
-	return window.QLPKIconSystem.createActionButton({ action, title, label: title, attrs });
+	if (!QLPKIconSystem || typeof QLPKIconSystem.createActionButton !== 'function') return null;
+	return QLPKIconSystem.createActionButton({ action, title, label: title, attrs });
 }
 
 function buildEmptyState() {

@@ -367,7 +367,7 @@ async function copyHistoryToFormFlow(options = {}) {
 			options.setCurrentAppointmentId(historyCopyLoadState.appointmentId);
 		}
 
-		const patientSearchUi = window.ModalPatientSearchUi;
+		const patientSearchUi = window.QLPKDoctorModuleRegistry?.get?.('modalPatientSearchUi');
 		const historyPatientLoadState = patientSearchUi && typeof patientSearchUi.loadCopyHistoryPatient === 'function'
 			? await patientSearchUi.loadCopyHistoryPatient(options.selectedPatient, { apiCall: options.apiCall })
 			: { fullPatient: options.selectedPatient || null };

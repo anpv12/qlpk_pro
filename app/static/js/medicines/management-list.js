@@ -6,6 +6,7 @@ import { getUserFacingResponseMessage, medicinePageSize, setElementVisible, show
 import { updateDashboard } from './management-overview.js';
 import { formatStockDisplay, showStockDetail } from './management-stock.js';
 import { openMedicineReferenceReview } from './reference-review.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 // Load categories from API
 
@@ -339,9 +340,9 @@ function formatCurrency(amount) {
 function formatDate(dateString) {
 	if (!dateString) return '-';
 
-	// Dùng window.formatDateDisplay nếu có
-	if (typeof window.formatDateDisplay === 'function') {
-		return window.formatDateDisplay(dateString);
+	// Dùng formatter ngày của trang nếu có
+	if (typeof getPageDateFormatter() === 'function') {
+		return getPageDateFormatter()(dateString);
 	}
 
 	// Fallback: format thủ công với zero-padding

@@ -19,6 +19,7 @@ import { ReceptionistMedicalInfoDraft } from './medical-info-draft.js';
 import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
 import { ReceptionistDocumentAttachmentControls } from './document-attachment-controls.js';
 import { ReceptionistPatientRelativesTable } from './patient-relatives-table.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 // Load patient medical data from API
 async function loadPatientMedicalData(patientId) {
@@ -266,7 +267,7 @@ function resetFormToDefault() {
 let jointExamManagerInstance = null;
 
 const receptionistFormatters = ReceptionistFormatters || {};
-const formatDateDisplay = receptionistFormatters.formatDateDisplay || window.formatDateDisplay || (value => value || '');
+const formatDateDisplay = receptionistFormatters.formatDateDisplay || getPageDateFormatter() || (value => value || '');
 
 // Lấy appointment ID hiện tại
 function getCurrentAppointmentId() {

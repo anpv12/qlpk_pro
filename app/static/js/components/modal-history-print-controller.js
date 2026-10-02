@@ -1,3 +1,4 @@
+import { buildPrescriptionPreviewHTML } from '../prescriptions/shared/prescription-document-template.js';
 import { PrescriptionPrintDocument } from '../prescriptions/components/prescription-print-document.js';
 import { QLPKPdfPreview } from '../shared/pdf-preview.js';
 
@@ -256,7 +257,7 @@ function createPrescriptionPrintDocument(options, doc, openWindow) {
 	return factory({
 		document: doc,
 		openWindow,
-		buildPrescriptionPreviewHTML: window.buildPrescriptionPreviewHTML
+		buildPrescriptionPreviewHTML
 	});
 }
 

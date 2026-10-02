@@ -1,4 +1,5 @@
 import { el, icon } from '../shared/dom.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 const COMPARISON_FIELDS = [
 	{ key: 'full_name', label: 'Tên', isDate: false },
@@ -11,7 +12,7 @@ const COMPARISON_FIELDS = [
 
 function getFormatDateDisplay(formatDateDisplay) {
 	if (typeof formatDateDisplay === 'function') return formatDateDisplay;
-	if (typeof window.formatDateDisplay === 'function') return window.formatDateDisplay;
+	if (typeof getPageDateFormatter() === 'function') return getPageDateFormatter();
 	return value => value || 'N/A';
 }
 

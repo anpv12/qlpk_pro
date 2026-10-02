@@ -1,3 +1,4 @@
+import { PARTS } from './modal-patient-search-parts.js';
 import { createHistoryDeleteFlow, installSearchFlow1, pickFlowPassthroughOptions } from './modal-patient-search-ui-parts/search-flow-installers.js';
 import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
@@ -17,7 +18,6 @@ const {
 	fetchAppointmentRelatives, buildAppointmentHistoryFetchers, extractLatestAppointment,
 	buildLatestAppointmentState, buildAppointmentPatientFallback, loadPatientForAppointment
 } = DATA;
-const PARTS = window.QLPKModalPatientSearchParts;
 if (!PARTS || typeof PARTS.bindRelativeLinkResolver !== 'function' || typeof PARTS.selectPatientForModalFlow !== 'function') {
 	throw new Error('Thiếu các phần của ModalPatientSearchUi');
 }
@@ -364,7 +364,8 @@ function runSearchFlow5(ctx) {
 		resetModal: ctx.flow.reset,
 		tabs: ctx.options.tabs,
 		updateContent: ctx.flow.updateContent,
-		openLinkedRelative: ctx.flow.openLinkedRelative
+		openLinkedRelative: ctx.flow.openLinkedRelative,
+		relativeLinkHandler: bindOptions.relativeLinkHandler
 	});
 }
 
@@ -463,5 +464,5 @@ const api = {
 	bindRelativeLinkResolver,
 	createPatientSearchModalFlowAdapter
 };
-window.ModalPatientSearchUi = Object.freeze(api);
-window.QLPKDoctorModuleRegistry?.register?.('modalPatientSearchUi', window.ModalPatientSearchUi);
+export const ModalPatientSearchUi = Object.freeze(api);
+window.QLPKDoctorModuleRegistry?.register?.('modalPatientSearchUi', ModalPatientSearchUi);

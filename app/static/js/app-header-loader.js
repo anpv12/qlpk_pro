@@ -13,8 +13,6 @@ moduleState.FEEDBACK_TOKENS_STYLESHEET_PATH = '/static/css/shared/feedback-token
 moduleState.FEEDBACK_TOKENS_STYLESHEET_ID = 'qlpk-feedback-tokens-style';
 moduleState.HEADER_STYLESHEET_PATH = '/static/css/components/app-header.css';
 moduleState.HEADER_STYLESHEET_ID = 'qlpk-app-header-style';
-moduleState.ICON_SYSTEM_PATH = '/static/js/shared/icon-system.js';
-moduleState.NAVIGATION_CONFIG_PATH = '/static/js/app-shell/navigation.config.js';
 // Workspace tabs is split: parts first, entry last.
 moduleState.WORKSPACE_TABS_PATH = '/static/js/app-shell/workspace-tabs.js';
 moduleState.SOCKET_IO_CLIENT_PATH = '/static/vendor/socket.io/socket.io.min.js';

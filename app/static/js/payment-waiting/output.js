@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { byId, setVisible } from '../shared/dom.js';
 import { requestJson } from '../shared/http-json.js';
 import { openInvoiceWindow, showCustomToast } from '../payment-waiting.js';
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 
 // Export payment data
 async function exportPaymentData() {
@@ -49,8 +50,8 @@ function formatDateTime(dateString) {
 	if (isNaN(date.getTime())) return '';
 
 	const fallbackDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-	const dateFormatted = typeof window.formatDateDisplay === 'function'
-		? window.formatDateDisplay(date)
+	const dateFormatted = typeof getPageDateFormatter() === 'function'
+		? getPageDateFormatter()(date)
 		: fallbackDate;
 
 	// Thêm phần giờ

@@ -1,3 +1,4 @@
+import { setPageDateFormatter } from '../shared/page-date-format.js';
 function escapeHtml(text) {
 	if (!text) return '';
 	const div = document.createElement('div');
@@ -66,4 +67,4 @@ export const ReceptionistFormatters = Object.freeze({
 	toInputDate
 });
 
-window.formatDateDisplay = formatDateDisplay;
+setPageDateFormatter(formatDateDisplay);

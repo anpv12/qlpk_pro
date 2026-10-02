@@ -1,5 +1,6 @@
 // Utility functions để tránh trùng lặp code
 import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { setPageDateFormatter } from './shared/page-date-format.js';
 
 const AppointmentUtils = {
 	// Hàm format datetime
@@ -145,6 +146,6 @@ const AppointmentUtils = {
 
 // Export cho sử dụng global
 
-window.formatDateDisplay = AppointmentUtils.formatDateDisplay;
+setPageDateFormatter(AppointmentUtils.formatDateDisplay);
 
 export { AppointmentUtils };

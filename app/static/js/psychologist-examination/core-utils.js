@@ -1,3 +1,4 @@
+import { getPageDateFormatter } from '../shared/page-date-format.js';
 function toNumber(value, fallback = 0) {
 	const num = Number(value);
 	return Number.isFinite(num) ? num : fallback;
@@ -35,8 +36,8 @@ function formatDateInput(value) {
 
 function formatDisplayDate(value) {
 	if (!value) return '';
-	if (typeof window.formatDateDisplay === 'function') {
-		return window.formatDateDisplay(value);
+	if (typeof getPageDateFormatter() === 'function') {
+		return getPageDateFormatter()(value);
 	}
 	if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		const [year, month, day] = value.split('-');

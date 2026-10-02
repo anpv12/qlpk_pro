@@ -1,6 +1,8 @@
 import { el, replace } from './shared/dom.js';
 import { QLPKConfirmationDialog } from './shared/confirmation-dialog.js';
 import { QLPKUserFeedback } from './shared/user-feedback.js';
+import { getPageDateFormatter } from './shared/page-date-format.js';
+import { QLPKIconSystem } from './shared/icon-system.js';
 const API_BASE = '/api/family-members';
 let instanceCounter = 0;
 
@@ -43,12 +45,8 @@ const confirmDialog = async (message) => {
 };
 
 const formatDateDisplay = (value) => {
-	const pageRuntime = window.QLPKDoctorPageRuntime;
-	if (pageRuntime && typeof pageRuntime.formatDateDisplay === 'function') {
-		return pageRuntime.formatDateDisplay(value);
-	}
-	if (typeof window.formatDateDisplay === 'function') {
-		return window.formatDateDisplay(value);
+	if (typeof getPageDateFormatter() === 'function') {
+		return getPageDateFormatter()(value);
 	}
 	// Formatter nội bộ cho các trang chưa nạp formatter chung.
 	if (!value) return '';
@@ -95,13 +93,13 @@ const toInputDate = (value) => {
 };
 
 const renderRelativeActionButton = (action, className, title) => {
-	if (!window.QLPKIconSystem || typeof window.QLPKIconSystem.createActionButton !== 'function') return null;
-	return window.QLPKIconSystem.createActionButton({ action, title, label: title, className });
+	if (!QLPKIconSystem || typeof QLPKIconSystem.createActionButton !== 'function') return null;
+	return QLPKIconSystem.createActionButton({ action, title, label: title, className });
 };
 
 const renderAddRelativeButton = () => {
-	if (window.QLPKIconSystem && typeof window.QLPKIconSystem.createIconTextButton === 'function') {
-		return window.QLPKIconSystem.createIconTextButton({
+	if (QLPKIconSystem && typeof QLPKIconSystem.createIconTextButton === 'function') {
+		return QLPKIconSystem.createIconTextButton({
 			action: 'add',
 			label: 'Thêm người thân',
 			className: 'btn-add-relative relative-table-add-btn'

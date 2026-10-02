@@ -1,3 +1,4 @@
+import { JointExamManager } from '../joint-exam-manager.js';
 function getDocument(options) {
 	return options && options.document ? options.document : window.document;
 }
@@ -7,7 +8,7 @@ function getBootstrap(options) {
 }
 
 function getJointExamManagerClass(options) {
-	return options && options.JointExamManager ? options.JointExamManager : window.JointExamManager;
+	return options && options.JointExamManager ? options.JointExamManager : JointExamManager;
 }
 
 function createManager(currentInstance, options) {

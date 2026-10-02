@@ -1,3 +1,4 @@
+import { QLPKDoctorPageRuntime } from './page-runtime.js';
 import { QLPKComponentDomScope } from '../components/component-dom-scope.js';
 
 let currentContext = null;
@@ -42,7 +43,7 @@ function createStateBridge(target) {
 function create(options = {}) {
 	const sourceDocument = options.document || document;
 	const registry = options.registry || window.QLPKDoctorModuleRegistry;
-	const runtime = options.runtime || window.QLPKDoctorPageRuntime;
+	const runtime = options.runtime || QLPKDoctorPageRuntime;
 	const config = options.config || registry?.get?.('doctorComponentConfig') || {};
 	const scopeFactory = options.scopeFactory || QLPKComponentDomScope;
 	const stateObject = options.stateObject || null;

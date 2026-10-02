@@ -1,4 +1,5 @@
 import { el } from '../shared/dom.js';
+import { QLPKIconSystem } from '../shared/icon-system.js';
 
 // Waiting-queue / appointment cards built as nodes (patient data is never parsed as HTML).
 
@@ -215,7 +216,7 @@ function buildStatusBadge(statusText, statusClass, statusBadgeClass) {
 
 function buildActionButton(action, title, attrs = {}, className = '') {
 	const buttonClass = joinClasses('qlpk-waiting-card__action', `qlpk-waiting-card__action--${action}`, className);
-	const iconSystem = window.QLPKIconSystem;
+	const iconSystem = QLPKIconSystem;
 	if (iconSystem && typeof iconSystem.createActionButton === 'function') {
 		return iconSystem.createActionButton({ action, title, label: title, attrs, className: buttonClass });
 	}

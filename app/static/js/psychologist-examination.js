@@ -20,6 +20,12 @@ import { ClinicalVitalCalculationUtils } from './components/vital-calculation-ut
 import { OccupationAutocomplete } from './occupation-autocomplete.js';
 import { ReferralSourceControl } from './referral-source-control.js';
 import { state as psychologistPageState } from './psychologist-examination/page-state.js';
+import { QLPKDoctorPageRuntime } from './doctor-examination/page-runtime.js';
+import { mountJointExamPage } from './components/joint-exam-page-bootstrap.js';
+import { getPageDateFormatter } from './shared/page-date-format.js';
+import { ModalPatientSearchUi } from './components/modal-patient-search-ui.js';
+
+const { showCustomToast } = QLPKDoctorPageRuntime;
 
 let currentPatientId = null;
 let currentPatientData = null;
@@ -88,8 +94,6 @@ function apiCall(url, options = {}) {
 	return pageCoreAdapter.apiCall(url, options);
 }
 
-// Read by the shared joint-exam bootstrap (same contract as the doctor page).
-window.QLPKCurrentAppointment = { getId: () => currentAppointmentId, getContextToken: () => psychologistPageState.contextToken, apiCall };
 
 const addressHierarchyAdapter = ClinicalAddressHierarchyUtils.createAddressHierarchyAdapter({
 	document,
@@ -147,9 +151,9 @@ const psychologistWaitingListAdapter = ClinicalExaminationWaitingListUi.createWa
 	setCurrentPage: nextPage => { currentPage = nextPage; },
 	setTotalPages: nextTotalPages => { totalPages = nextTotalPages; },
 	updatePagination: () => pageCoreAdapter.updatePagination(),
-	formatDateDisplay: date => window.formatDateDisplay ? window.formatDateDisplay(date) : formatDisplayDate(date),
+	formatDateDisplay: date => getPageDateFormatter() ? getPageDateFormatter()(date) : formatDisplayDate(date),
 	calculateAge: ClinicalVitalCalculationUtils.calculateAge,
-	showError: () => window.showCustomToast('error', 'Lỗi khi tải danh sách lịch hẹn')
+	showError: () => showCustomToast('error', 'Lỗi khi tải danh sách lịch hẹn')
 });
 
 async function loadAppointments(status = 'psychologist_exam', page = 1) {
@@ -189,7 +193,7 @@ async function savePatientDataInternal(formData) {
 		getCurrentAppointmentId: () => appointmentId,
 		buildAppointmentPayload: data => ClinicalFormDomUtils.buildAppointmentClinicalUpdatePayload(data),
 		setCurrentPatientId,
-		showToast: window.showCustomToast,
+		showToast: showCustomToast,
 		afterPatientSaved: (patientResult, patientData) => {
 			const selectedModalPatient = patientHistory?.getSelectedPatient();
 			if (selectedModalPatient) {
@@ -270,7 +274,7 @@ let uploadInitialized = false;
 let notesAttachmentChip = null;
 
 const documentFileAdapter = ClinicalDocumentFileUtils.createDocumentFileAdapter({
-	showError: message => window.showCustomToast('error', message)
+	showError: message => showCustomToast('error', message)
 });
 
 const documentSectionAdapter = ClinicalDocumentSectionUiUtils.createExaminationDocumentSectionAdapter({
@@ -286,7 +290,7 @@ const documentSectionAdapter = ClinicalDocumentSectionUiUtils.createExaminationD
 	getFileIcon: fileType => documentFileAdapter.getFileIcon(fileType),
 	formatFileSize: bytes => documentFileAdapter.formatFileSize(bytes),
 	formatDisplayDate,
-	showToast: (type, message) => window.showCustomToast(type, message),
+	showToast: (type, message) => showCustomToast(type, message),
 	showConfirmationDialog: options => QLPKConfirmationDialog.confirm(options),
 	console,
 	getIsLocked: () => isFormLocked,
@@ -394,13 +398,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 	patientHistory = QLPKPsychologistPatientHistoryBridge.create({
 		document,
 		apiCall,
-		showToast: window.showCustomToast,
+		showToast: showCustomToast,
 		showConfirmationDialog: options => QLPKConfirmationDialog.confirm(options),
 		formatDisplayDate,
 		getAppointments: () => allAppointments,
 		getCurrentPatientData: () => currentPatientData,
 		getCurrentAppointmentId: () => currentAppointmentId,
-		getFormatDateDisplay: () => window.formatDateDisplay || formatDisplayDate,
+		getFormatDateDisplay: () => getPageDateFormatter() || formatDisplayDate,
 		setLoadingState: value => { isLoadingExaminationData = value; },
 		setCurrentAppointmentId: value => { currentAppointmentId = value; },
 		setCurrentPatientId,
@@ -419,9 +423,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 	// Print preview and queue management removed - not needed for psychologist examination page
 });
+mountJointExamPage({
+	getAppointmentId: () => currentAppointmentId,
+	getContextToken: () => psychologistPageState.contextToken,
+	getRelativeTable: () => psychologistRelativeTableInstance
+});
 // Chọn bệnh nhân từ card
 async function selectPatientCard(appointmentId) {
-	return window.ModalPatientSearchUi.selectAppointmentPatientFlow(appointmentId, {
+	return ModalPatientSearchUi.selectAppointmentPatientFlow(appointmentId, {
 		apiCall,
 		appointments: allAppointments,
 		setCurrentAppointmentId: value => { currentAppointmentId = value; },

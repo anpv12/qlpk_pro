@@ -1,9 +1,11 @@
+import { mountJointExamPage } from './components/joint-exam-page-bootstrap.js';
+import { QLPKDoctorPageRuntime } from './doctor-examination/page-runtime.js';
 import { moduleState } from './doctor-examination-parts/state.js';
 import { bindRealtimeRefresh, initializeWaitingQueue } from './doctor-examination-parts/patient-load-and-init.js';
 import { reloadCurrentAppointment } from './doctor-examination-parts/queue-and-view-mode.js';
 import { QLPKDoctorComponentContext } from './doctor-examination/component-context.js';
 
-moduleState.PAGE_RUNTIME = window.QLPKDoctorPageRuntime;
+moduleState.PAGE_RUNTIME = QLPKDoctorPageRuntime;
 if (!moduleState.PAGE_RUNTIME) throw new Error('Thiếu Doctor page runtime');
 moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
 if (!moduleState.REGISTRY) throw new Error('Thiếu Doctor module registry');
@@ -51,6 +53,10 @@ moduleState.patientHistoryModal = null;
 
 moduleState.ORDER_REALTIME_TYPES = ['order.changed', 'survey.changed', 'realtime.resynced'];
 
+mountJointExamPage({
+	getAppointmentId: () => moduleState.state.currentAppointmentId,
+	getContextToken: () => moduleState.state.loadToken
+});
 moduleState.DOM.addEventListener('DOMContentLoaded', async () => {
 	if (!await moduleState.ensureSession()) return;
 	initializeWaitingQueue();
@@ -68,10 +74,3 @@ moduleState.DOM.defaultView?.addEventListener('pagehide', () => {
 	moduleState.COMPONENT_CONTEXT_API.clearCurrent?.(moduleState.COMPONENT_CONTEXT);
 });
 
-window.QLPKCurrentAppointment = {
-	getId: () => moduleState.state.currentAppointmentId,
-	getPatientId: () => moduleState.state.currentPatientId,
-	isLoading: () => moduleState.state.isLoadingExaminationData,
-	getContextToken: () => moduleState.state.loadToken,
-	apiCall: moduleState.apiCall
-};
