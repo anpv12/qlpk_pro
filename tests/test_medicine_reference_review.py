@@ -17,7 +17,7 @@ def reviewer(case, monkeypatch):
     db, med, _, _, client, _ = case
     actor = db.query(User).filter_by(role=UserRole.ADMIN, is_active=True).first()
     assert actor
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='admin'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='admin', is_active=True))
     return db, med, client, actor.id
 
 
@@ -126,7 +126,7 @@ def test_review_enforces_real_inventory_permission(case, monkeypatch):
     actor = User(username='QA-review-'+str(med.id), full_name='QA', hashed_password='unused', role=UserRole.STAFF, is_active=True)
     db.add(actor)
     db.flush()
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='admin'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='admin', is_active=True))
     url = f'/api/medicines/{med.id}/reference-review'
     assert client.get(url).status_code == 403
     assert client.post(url, json={}).status_code == 403

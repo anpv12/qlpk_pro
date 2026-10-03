@@ -15,6 +15,7 @@ from app.models.medicine_transaction import MedicineTransaction
 from app.models.user import User
 from app.models.appointment import Appointment
 from app.modules.prescriptions.services.stock_service import apply_prescription_batch_stock_deltas
+from module_parts import setattr_all
 
 pytestmark = pytest.mark.skipif(os.environ.get('QLPK_RUN_DB_TESTS') != '1', reason='Opt-in rollback tests')
 
@@ -37,10 +38,11 @@ def case(monkeypatch):
             def scoped_db():
                 child = Session(bind=conn, join_transaction_mode='create_savepoint')
                 yield child
+            # Split modules (app.api.medicine_dashboard, ...) bind their own get_db: patch every part.
             for module in (auth, medicines, batches, ledger):
-                monkeypatch.setattr(module, 'get_db', scoped_db)
+                setattr_all(monkeypatch, module, 'get_db', scoped_db)
             for module in (medicines, batches):
-                monkeypatch.setattr(module, 'emit_inventory_changed', lambda *args, **kwargs: None)
+                setattr_all(monkeypatch, module, 'emit_inventory_changed', lambda *args, **kwargs: None)
             monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor, role='admin', is_active=True))
             app = Flask(__name__)
             app.register_blueprint(medicines.medicine_router, url_prefix='/api')

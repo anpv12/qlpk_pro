@@ -74,7 +74,7 @@ def test_menu_permission_for_non_admin(reviewer, monkeypatch):
                  role=UserRole.DOCTOR, is_active=True)
     db.add(actor)
     db.flush()
-    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='doctor'))
+    monkeypatch.setattr(auth, 'get_current_user', lambda token: SimpleNamespace(id=actor.id, role='doctor', is_active=True))
     batch = missing_batch(db, medicine)
     assert client.post(f'/api/medicine-batches/{batch.id}/import-price', json={'import_price':1000}).status_code == 403
     group = Group(code='QA-'+uuid4().hex[:12], name='QA-cost-'+uuid4().hex, permissions='["ql-kho-thuoc"]')

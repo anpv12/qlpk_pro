@@ -373,7 +373,13 @@
 
 ## Validation Strategy
 
-There is no discovered test suite in this repository snapshot.
+Test suites: `python3 -m pytest -q tests` (Python) and `node --test tests/*.test.js` (frontend modules).
+Database tests run inside an outer transaction that is rolled back. `tests/conftest.py` turns them on when
+`DATABASE_URL` points at a local PostgreSQL that answers (the user allows the local `qlpk_db`, 2026-10-03);
+`QLPK_RUN_DB_TESTS=0` skips them, `QLPK_RUN_DB_TESTS=1` forces them. While they run, a real `COMMIT` on the app
+engine is refused before it reaches the database and fails that test, so the suite cannot change local data —
+patch every `get_db` the request touches (split modules: `tests/module_parts.py` `setattr_all`, plus
+`app.api.auth.get_db`, which `require_auth` uses for `last_login`) with a savepoint session.
 
 Use `references/smoke-checks.md` for workflow-specific validation checklists.
 

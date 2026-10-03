@@ -211,6 +211,7 @@ def test_generate_validates_template_and_only_repairs_empty_snapshots(case, monk
         finally:
             child.close()
     setattr_all(monkeypatch,api, 'get_db', scoped_db)
+    monkeypatch.setattr(auth, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: admin)
     setattr_all(monkeypatch,api, 'emit_order_changed', lambda *args, **kwargs: None)
     setattr_all(monkeypatch,api, 'emit_survey_changed', lambda *args, **kwargs: None)
@@ -325,7 +326,7 @@ def test_http_submit_failure_rolls_back_and_reader_does_not_write(case,monkeypat
         child=Session(bind=db.connection(),join_transaction_mode='create_savepoint',expire_on_commit=False)
         try: yield child
         finally: child.close()
-    for module in (responses,sessions,orders_api): monkeypatch.setattr(module,'get_db',scoped_db)
+    for module in (auth,responses,sessions,orders_api): monkeypatch.setattr(module,'get_db',scoped_db)
     monkeypatch.setattr(auth,'get_current_user',lambda token:admin)
     setattr_all(monkeypatch,sessions,'_emit_survey_completion_notifications',lambda *args:None)
     app=Flask(__name__)
@@ -449,6 +450,7 @@ def test_session_status_restores_link_and_qr_without_generation_cache(case, monk
         finally:
             child.close()
     setattr_all(monkeypatch,sessions, 'get_db', scoped_db)
+    monkeypatch.setattr(auth, 'get_db', scoped_db)
     monkeypatch.setattr(auth, 'get_current_user', lambda token: admin)
     setattr_all(monkeypatch,sessions, 'emit_order_changed', lambda *args, **kwargs: None)
     setattr_all(monkeypatch,sessions, 'emit_survey_changed', lambda *args, **kwargs: None)
