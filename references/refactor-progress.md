@@ -25,8 +25,10 @@
     lại là đoạn form/modal Bootstrap ≤11 dòng có nội dung khác nhau. HTML render trùng bản gốc (so cả autoescape).
   - Checker theo macro: `template_source.expanded_source` nối cả `{% from/import/extends %}`; kiểm id trùng đọc
     cả trang đã render; test node đọc trang dựng từ macro qua `scripts/template_source.py` (in JSON trang render).
-- Mục 4 (CSS) xong: px → rem (2688 độ dài, giữ px ở 3 trang root 13px), màu cứng → token, `cssText` →
-  `setProperty`, `!important` 43 → 0, class Bootstrap action thô 97 → 0 (`data-qlpk-button` sở hữu mọi nút).
+- Mục 4 (CSS) xong: px → rem (6115 → 978, đổi chính xác ở root 16px; 978 px còn lại nằm trong stylesheet mà
+  3 trang đặt root 13px — tạo mẫu khảo sát, quản lý mẫu khảo sát, danh sách hóa đơn — cùng nạp, ratchet `css_px`),
+  màu cứng → token (`css_hard_color` 0), `cssText` → `setProperty`, `!important` 43 → 0, class Bootstrap action
+  thô 97 → 0 (`data-qlpk-button` sở hữu mọi nút).
 - Mục 5 (Python) xong: 141 import thừa, 11 biến thừa, 35 schema chết (4 file) đã gỡ; `api_error_boundary`
   (`app/utils/api_error_contract.py`) thay 332 khối catch-all chép tay; không còn `except Exception` nuốt lỗi
   (gate BLE001); mọi hàm Python McCabe ≤10. 03/10/2026 gỡ thêm phần chết còn sót: 5 wrapper tương thích không
