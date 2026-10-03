@@ -22,16 +22,6 @@ def _get_patient_referral_source_key(patient):
     return get_referral_source_key(patient)
 
 
-def _parse_dashboard_date_range(default_days=6):
-    from datetime import date, timedelta, datetime as dt
-
-    today = date.today()
-    from_str = request.args.get('from_date', (today - timedelta(days=default_days)).isoformat())
-    to_str = request.args.get('to_date', today.isoformat())
-    start = dt.strptime(from_str, '%Y-%m-%d')
-    end = dt.combine(dt.strptime(to_str, '%Y-%m-%d').date(), dt.max.time())
-    return from_str, to_str, start, end
-
 def _parse_referral_source_date_range():
     from datetime import date, datetime as dt
 

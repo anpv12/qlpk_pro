@@ -40,15 +40,6 @@ def safe_int(value):
         return None
 
 
-def date_to_text(value) -> str:
-    if not value:
-        return ''
-    try:
-        return value.strftime('%d/%m/%Y')
-    except (AttributeError, TypeError, ValueError):
-        return str(value)
-
-
 def datetime_to_text(value) -> str:
     if not value:
         return ''

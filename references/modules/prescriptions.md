@@ -281,7 +281,7 @@ gồm nhiều lần nhập của cùng lô, giữ giá vốn từng lần nhập
 - `app/modules/prescriptions/services/re_examination_service.py`: owner policy đọc/plan/apply lịch tái khám của Doctor. `plan_re_examination` khóa gốc và lịch con, xác định unchanged/create/update/cancel; `apply_re_examination_plan` chỉ flush. `save_service` commit/rollback đơn, kho, lô, movement, lịch và examination cùng nhau. Hàm `sync_re_examination_after_prescription_save` chỉ còn integrations sau commit, gọi owner Calendar dùng chung; unchanged bỏ qua toàn bộ. Các màn đặt lịch khác giữ workflow riêng, không thay đổi API của Lễ tân trong đợt này.
 - `app/modules/prescriptions/view_models/public_prescription.py`: view model public prescription verify.
 - `app/modules/prescriptions/view_models/print_prescription.py`: internal view model cho print/preview đơn thuốc theo appointment, gom patient/history/examinationDetail/examinationDetailsBySection/prescriptionData/relatives bằng contract backend, trong đó diagnosis/benh_kem_theo là display text và `*_ids` giữ raw ICD IDs.
-- `app/modules/prescriptions/public_api.py` và `app/modules/prescriptions/view_model.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
+- Wrapper cũ `app/modules/prescriptions/public_api.py` và `app/modules/prescriptions/view_model.py` đã gỡ (03/10/2026, không còn caller); import thẳng `api/public.py` và `view_models/`.
 - Shim `app/api/prescription.py` đã xóa ngày26/09/2026 vì không còn importer; `main.py` đăng ký internal API trực tiếp từ module path mới.
 - `app/templates/verify-prescription.html`: template verify hiện còn ở thư mục Jinja hiện tại để giữ path ổn định.
 - `app/static/css/prescriptions/pages/verify-prescription.css`: CSS riêng của page QR verify, tách khỏi inline template.

@@ -95,9 +95,3 @@ def get_examination_stats(user):
     finally:
         if db is not None:
             db.close()
-
-
-def get_status_text(status):
-    """Backward-compatible status text helper."""
-    from app.modules.examinations.view_models.management import get_examination_status_text
-    return get_examination_status_text(status)

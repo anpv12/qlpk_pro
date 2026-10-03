@@ -351,7 +351,7 @@ giữ trong runtime/payload để edit, restore và backend phân biệt dữ li
 Tab Khảo sát của màn quản lý chỉ định cũng dùng `chi_dinh.survey_template_id`
 làm nguồn mẫu duy nhất. Nó chỉ hiển thị mẫu đã gắn ở dạng read-only; không cho
 đổi sang mẫu khác từ tab này và chỉ lọc kết quả thuộc đúng template đó.
-- `app/api/chi_dinh.py`: wrapper tương thích cho import path cũ, không đặt logic mới ở đây.
+- Wrapper cũ `app/api/chi_dinh.py` đã gỡ (03/10/2026, không còn caller); import thẳng `app/modules/orders/api/chi_dinh.py`.
 - `main.py`: register blueprint từ module path mới nhưng giữ nguyên URL prefix.
 
 ## Mapping Phase 5
