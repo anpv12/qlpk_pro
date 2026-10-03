@@ -51,14 +51,6 @@ export function focusFirst(selector) {
     document.querySelector(selector)?.focus();
 }
 
-export function clearChildren(selector) {
-    all(selector).forEach(node => node.replaceChildren());
-}
-
-export function removeAll(selector) {
-    all(selector).forEach(node => node.remove());
-}
-
 export function showModal(selector) {
     const node = document.querySelector(selector);
     if (node) window.bootstrap.Modal.getOrCreateInstance(node).show();
@@ -91,16 +83,5 @@ export function rebindDelegate(root, type, selector, key, handler) {
     rebind(root, type, `${key}|${selector}`, event => {
         const match = event.target instanceof Element ? event.target.closest(selector) : null;
         if (match && root.contains(match)) handler.call(match, event);
-    });
-}
-
-export function unbind(target, type, key) {
-    nodesOf(target).forEach(node => {
-        const listeners = bound.get(node);
-        const id = `${type}|${key}`;
-        if (listeners?.has(id)) {
-            node.removeEventListener(type, listeners.get(id));
-            listeners.delete(id);
-        }
     });
 }
