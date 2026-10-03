@@ -1,5 +1,6 @@
 import { QLPKComponentDomScope } from './component-dom-scope.js';
 import { ReferralSourceControl } from '../referral-source-control.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const VISIT_FIELD_IDS = [
 	'mainReason',
@@ -129,4 +130,4 @@ const api = {
 	defaults: mergeConfig()
 };
 export const QLPKPatientVisitInfoForm = api;
-window.QLPKDoctorModuleRegistry?.register?.('patientVisitInfoForm', api);
+QLPKDoctorModuleRegistry.register('patientVisitInfoForm', api);

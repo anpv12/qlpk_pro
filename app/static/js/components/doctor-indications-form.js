@@ -1,9 +1,10 @@
 import { installers as modelAndRenderInstallers } from './doctor-indications-form-parts/model-and-render.js';
 import { installers as actionsAndLoadingInstallers } from './doctor-indications-form-parts/actions-and-loading.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const installers = [...modelAndRenderInstallers, ...actionsAndLoadingInstallers];
 
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
 const RUNTIME = REGISTRY.get('supportRuntime');
 if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');

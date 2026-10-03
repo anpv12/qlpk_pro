@@ -1,10 +1,9 @@
-(function () {
+function syncAppVersion() {
 	const versionMeta = document.querySelector('meta[name="qlpk-app-version"]');
 	const serverAppVersion = versionMeta ? versionMeta.getAttribute('content') : '';
 
 	if (!serverAppVersion) return;
 
-	window.APP_VERSION = serverAppVersion;
 
 	const currentAppVersion = localStorage.getItem('APP_VERSION');
 
@@ -35,4 +34,8 @@
 		localStorage.setItem(key, value);
 	});
 	localStorage.setItem('APP_VERSION', serverAppVersion);
-})();
+}
+
+syncAppVersion();
+
+export { syncAppVersion };

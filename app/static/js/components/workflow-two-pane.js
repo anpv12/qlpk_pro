@@ -1,3 +1,5 @@
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
+
 function getDocument(options) {
 	return options && options.document ? options.document : document;
 }
@@ -67,4 +69,4 @@ export const QLPKWorkflowTwoPane = Object.freeze({
 	activate,
 	bind
 });
-window.QLPKDoctorModuleRegistry?.register?.('workflowTwoPane', QLPKWorkflowTwoPane);
+QLPKDoctorModuleRegistry.register('workflowTwoPane', QLPKWorkflowTwoPane);

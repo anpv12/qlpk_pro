@@ -5,9 +5,10 @@ import { openLinkedRelativePatientSearch, selectAppointmentPatientFlow, selectPa
 import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 import { ModalPatientSearchData } from './modal-patient-search-data.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 moduleState.PARTS = PARTS;
-moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
+moduleState.REGISTRY = QLPKDoctorModuleRegistry;
 moduleState.resolveUi = (name, fallback) => moduleState.REGISTRY?.get?.(name) || fallback;
 moduleState.getTabsUi = options => options?.tabsUi || moduleState.resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
 moduleState.getHistoryListUi = options => options?.historyListUi || moduleState.resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);

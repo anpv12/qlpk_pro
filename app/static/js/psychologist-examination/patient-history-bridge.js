@@ -2,6 +2,7 @@ import { RelativeLinkHandler } from '../relative-link-handler.js';
 import { PsychologistMedicalRecordRealtimeUtils } from './medical-record-realtime-utils.js';
 import { getPageDateFormatter } from '../shared/page-date-format.js';
 import { ModalPatientSearchUi } from '../components/modal-patient-search-ui.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 function buildHistoryContextOptions(options, accessors) {
 	const { formatDisplayDate } = accessors;
@@ -94,7 +95,7 @@ function create(options = {}) {
 	}
 
 	function bind() {
-		const patientModalContract = window.QLPKDoctorModuleRegistry.require('patientModalContract');
+		const patientModalContract = QLPKDoctorModuleRegistry.require('patientModalContract');
 		patientHistoryModal = patientModalContract.getOrCreate({
 			document,
 			apiCall: options.apiCall,

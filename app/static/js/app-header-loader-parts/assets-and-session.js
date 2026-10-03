@@ -1,9 +1,7 @@
 import { moduleState } from './state.js';
 import { hasHeaderSession } from './header-buttons.js';
+import { getAppVersion } from '../shared/app-version.js';
 
-function getAppVersion() {
-	return window.APP_VERSION || localStorage.getItem('APP_VERSION') || Date.now();
-}
 function isEmbeddedWorkspacePage() {
 	try {
 		return window.self !== window.top || new URLSearchParams(window.location.search).get('embed') === '1';
@@ -78,9 +76,8 @@ function ensureWorkspaceRuntime() {
 		moduleState.SOCKET_IO_CLIENT_PATH,
 		'qlpk-socket-io-client',
 		() => typeof window.io === 'function'
-	)).then(() => ensureScriptLoaded(
+	)).then(() => ensureModuleLoaded(
 		moduleState.REALTIME_CLIENT_PATH,
-		'qlpk-realtime-client',
 		() => !!window.QLPKRealtimeClient
 	));
 }

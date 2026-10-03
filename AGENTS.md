@@ -42,7 +42,7 @@ This repository is the QLPK clinic-management application. Agents working here m
 ## Project Shape
 
 - Backend: Flask, SQLAlchemy, PostgreSQL, Alembic.
-- Frontend: Jinja templates, Bootstrap, jQuery, plain JavaScript.
+- Frontend: Jinja templates (shared page macros in `app/templates/partials/`), Bootstrap, plain JavaScript ES modules (no jQuery).
 - Entry point: `main.py` initializes the app, creates DB tables, and registers blueprints.
 - Main workflow files: `app/api/appointment.py`, `app/api/examination*.py`, `app/static/js/doctor-examination.js`, `app/static/js/receptionist-new.js`, `app/static/js/psychologist-examination.js`.
 - Target organization and phased backlog live in `so-do-to-chuc.md`; treat it as the roadmap for gradual domain/workflow-first structure.

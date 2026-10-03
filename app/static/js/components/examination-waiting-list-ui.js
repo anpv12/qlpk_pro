@@ -1,5 +1,6 @@
 import { QLPKSearchNormalization } from '../shared/search-normalization.js';
 import { QLPKWaitingQueueCardUi } from './waiting-queue-card-ui.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 function getDocument(options) {
 	return options && options.document ? options.document : window.document;
@@ -313,4 +314,4 @@ export const ClinicalExaminationWaitingListUi = Object.freeze({
 	bindStatusTabs,
 	bindPatientSearchInput
 });
-window.QLPKDoctorModuleRegistry?.register?.('examinationWaitingListUi', ClinicalExaminationWaitingListUi);
+QLPKDoctorModuleRegistry.register('examinationWaitingListUi', ClinicalExaminationWaitingListUi);

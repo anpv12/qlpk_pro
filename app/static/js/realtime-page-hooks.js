@@ -1,3 +1,5 @@
+import { QLPKDoctorModuleRegistry } from './doctor-examination/module-registry.js';
+
 function normalizeTypes(types) {
 	return new Set((Array.isArray(types) ? types : [types]).filter(Boolean));
 }
@@ -45,4 +47,4 @@ function register(options = {}) {
 }
 
 export const QLPKRealtimePageHooks = Object.freeze({ register });
-window.QLPKDoctorModuleRegistry?.register?.('realtimePageHooks', QLPKRealtimePageHooks);
+QLPKDoctorModuleRegistry.register('realtimePageHooks', QLPKRealtimePageHooks);

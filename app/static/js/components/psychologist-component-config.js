@@ -1,5 +1,6 @@
 import { QLPKDoctorPageRuntime } from '../doctor-examination/page-runtime.js';
 import { state as psychologistPageState } from '../psychologist-examination/page-state.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 const PSYCHOLOGIST_HISTORY_ROOT = 'psychologistHistoryPanel';
 const PSYCHOLOGIST_INTAKE_ROOT = 'psychologistReceptionistIntakePanel';
 const PSYCHOLOGIST_CLINICAL_ROOT = 'psychologistClinicalDecisionPanel';
@@ -9,7 +10,7 @@ const PSYCHOLOGIST_CLINICAL_ROOT = 'psychologistClinicalDecisionPanel';
 // by the psychologist workspace runtime once all feature actions exist.
 const medicalHistoryBootstrapConfig = {
 	root: `#${PSYCHOLOGIST_HISTORY_ROOT}`,
-		rootId: PSYCHOLOGIST_HISTORY_ROOT,
+	rootId: PSYCHOLOGIST_HISTORY_ROOT,
 	autoInit: false,
 	pageRuntime: QLPKDoctorPageRuntime,
 	workbenchRootSelector: '.inline-tien-su--doctor-flat',
@@ -89,7 +90,7 @@ const config = Object.freeze({
 });
 
 export const QLPKPsychologistComponentConfig = config;
-window.QLPKDoctorModuleRegistry?.register?.('psychologistComponentConfig', config, {
+QLPKDoctorModuleRegistry.register('psychologistComponentConfig', config, {
 	owner: 'psychologist/base',
 	version: 1
 });

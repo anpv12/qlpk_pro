@@ -9,7 +9,7 @@
 - Mọi lát workflow đang làm hoặc vừa handoff phải được ghi ở đúng owner tài liệu trong cùng scope: runtime/component/data contract vào workflow map hoặc inventory, trạng thái đang làm và QA vào `references/refactor-progress.md`. Không để tài liệu tiếp tục mô tả shell, owner, UI hoặc lifecycle đã không còn đúng với source runtime.
 - Do not ask for approval after only describing a problem. Provide a concrete Proposed Solution, Scope To Confirm, and QA Plan first.
 - Before every code/file change request, briefly restate what you understand and the exact scope, then wait for explicit user approval (`ok`, `làm đi`, `triển khai`, or equivalent) before editing or running mutating actions. Treat this as mandatory even when the requested change looks small.
-- Read existing code before proposing or editing. Let the current Flask/Jinja/jQuery structure drive the solution.
+- Read existing code before proposing or editing. Let the current Flask/Jinja/ES-module structure drive the solution.
 - Before proposing, mocking, or changing workflow UI, read `references/business-map.md`, `references/ui/information-architecture.md`, `references/ui/design-from-data-checklist.md`, and the screen workflow/data-inventory maps under `references/workflows/` when they exist.
 - Prefer small, reversible changes. Avoid broad refactors unless they are required for the requested behavior.
 - Do not revert, overwrite, or delete user work. If a file has unrelated changes, work around them.
@@ -40,7 +40,7 @@
 ## Frontend Rules
 
 - Autocomplete field: dùng owner chung theo `references/ui/autocomplete-field.md`; nguồn dữ liệu chỉ là adapter. Không tạo dropdown/chips/lifecycle riêng cho từng màn. Migrate autocomplete legacy theo scope được duyệt.
-- Frontend stack is Jinja + Bootstrap + jQuery + plain JavaScript. Do not introduce a SPA framework.
+- Frontend stack is Jinja + Bootstrap + plain JavaScript ES modules (no jQuery since 2026-10). Do not introduce a SPA framework.
 - Workflow UI must be designed from actor/task and data owner, not from isolated database fields. For every new or changed UI block, identify the business task, source API, canonical owner table, editable/read-only state, component owner, clear/reset owner, and whether the information is visible immediately, collapsed, modal-only, or not shown. If a workflow has a data inventory, every visible field must trace back to it or the inventory must be updated first.
 - Reuse existing CSS files and DRY components before adding new styles. Shared UI primitives must have one owner: app header, dry/sidebar navigation, workspace shell/tabs/app launcher, common controls, shared modals, typography/colors/spacing tokens, and repeated layout patterns belong under the shared/template/component/app-shell layers. Pages may compose/configure these primitives and add workflow-private styles, but must not copy shared HTML/CSS/JS into many templates or create page-local clones of common controls.
 - Do not treat CSS/HTML fixes as cosmetic guessing. Before changing FE, inspect the current DOM, owner file, cascade order, selector specificity, token source, and JS/runtime classes involved. Make a code-evidence-based judgment, then fix the owner or contract. Do not use stacked overrides, duplicated selectors, page-local patches for shared primitives, or `!important` as the default solution; `!important` is allowed only when overriding a third-party/library rule or an existing legacy rule cannot be removed in the same safe slice, and the reason must be obvious from nearby code or the final report.

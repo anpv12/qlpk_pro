@@ -1,6 +1,7 @@
 import { prescriptionFormEscape, prescriptionFormUsage, prescriptionMedicineTitle } from './prescription-form-text.js';
 import { buildMohContactHtml, buildMohDateLine, buildMohHeaderHtml, buildMohMedicineRows, buildMohPatientSectionHtml, buildMohPeriodsHtml, buildMohSignatureHtml, buildMohTreatmentHtml, resolvePrescriptionFormType } from './prescription-document-template-parts/moh-form.js';
 import { clinicInfo } from '../../clinic-config.js';
+import { QLPKDoctorModuleRegistry } from '../../doctor-examination/module-registry.js';
 // Shared Prescription Template Helpers
 // ============================================
 // ============================================
@@ -306,7 +307,7 @@ function buildPrescriptionPreviewHTML({
 }
 
 if (typeof window !== 'undefined') {
-	window.QLPKDoctorModuleRegistry?.register?.('prescriptionDocumentTemplate', Object.freeze({
+	QLPKDoctorModuleRegistry.register('prescriptionDocumentTemplate', Object.freeze({
 		getClinicInfoConfig,
 		buildPrescriptionPreviewHTML,
 		buildPrescriptionScreenHTML

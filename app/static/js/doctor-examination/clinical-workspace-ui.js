@@ -1,9 +1,10 @@
 import { installers as domAndStateInstallers } from './clinical-workspace-ui-parts/dom-and-state.js';
 import { installers as eventBindingInstallers } from './clinical-workspace-ui-parts/event-binding.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
 const installers = [...domAndStateInstallers, ...eventBindingInstallers];
 
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
 const RUNTIME = REGISTRY.get('supportRuntime');
 if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');
@@ -170,29 +171,29 @@ function create(options = {}) {
 	inst.MAIN_CHANGES = RUNTIME.createChangeTracker(inst.STATE, { revisionKey: 'mainRevision', dirtyKey: 'mainDirty' });
 	inst.clinicalForm = null;
 
-assignWorkspaceCollaborators(inst, options);
+	assignWorkspaceCollaborators(inst, options);
 
 	inst.clinicalForm = REGISTRY.get('clinicalExaminationForm').create({
-	config: inst.COMPONENT_CONFIG.clinical || {},
-	getDocument,
-	getElement: inst.getElement,
-	getValue: inst.getValue,
-	setValue: inst.setValue,
-	textOf,
-	hasValue,
-	syncDirtyState: inst.syncClinicalDirtyState,
-	isLoading: () => inst.STATE.isLoading && inst.STATE.isLoading(),
-	apiCall: (...args) => inst.STATE.apiCall(...args)
-});
+		config: inst.COMPONENT_CONFIG.clinical || {},
+		getDocument,
+		getElement: inst.getElement,
+		getValue: inst.getValue,
+		setValue: inst.setValue,
+		textOf,
+		hasValue,
+		syncDirtyState: inst.syncClinicalDirtyState,
+		isLoading: () => inst.STATE.isLoading && inst.STATE.isLoading(),
+		apiCall: (...args) => inst.STATE.apiCall(...args)
+	});
 
-inst.saveControllerFactory = resolveSaveControllerFactory(options, inst.COMPONENT_CONFIG);
-if (!inst.saveControllerFactory || typeof inst.saveControllerFactory.create !== 'function') {
-	throw new Error('Thiếu workspace save controller');
-}
-inst.workspaceSaveController = createWorkspaceSaveController(inst);
+	inst.saveControllerFactory = resolveSaveControllerFactory(options, inst.COMPONENT_CONFIG);
+	if (!inst.saveControllerFactory || typeof inst.saveControllerFactory.create !== 'function') {
+		throw new Error('Thiếu workspace save controller');
+	}
+	inst.workspaceSaveController = createWorkspaceSaveController(inst);
 
-inst.instance = buildWorkspaceInstance(inst);
-return inst.instance;
+	inst.instance = buildWorkspaceInstance(inst);
+	return inst.instance;
 }
 
 function getOrCreate(options = {}) {

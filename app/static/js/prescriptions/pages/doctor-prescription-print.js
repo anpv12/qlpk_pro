@@ -1,5 +1,6 @@
 import { buildPrescriptionPreviewHTML, getClinicInfoConfig } from '../shared/prescription-document-template.js';
 import { PrescriptionPrintDocument } from '../components/prescription-print-document.js';
+import { QLPKDoctorModuleRegistry } from '../../doctor-examination/module-registry.js';
 
 function createDoctorPrescriptionPrint(deps = {}) {
 	let printDocument = null;
@@ -80,6 +81,6 @@ function createDoctorPrescriptionPrint(deps = {}) {
 	return { printMainPrescription };
 }
 
-window.QLPKDoctorModuleRegistry?.register?.('doctorPrescriptionPrint', createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
+QLPKDoctorModuleRegistry.register('doctorPrescriptionPrint', createDoctorPrescriptionPrint, { owner: 'shared/prescription-print' });
 
 export { createDoctorPrescriptionPrint };

@@ -1,6 +1,7 @@
 import { el } from '../../shared/dom.js';
 import { buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadSuccessState, deleteQuickSearchExaminationFlow, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, renderState, resolveElement, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveSelectedIndex } from './list-state.js';
 import { setActiveHistoryRow } from './list-bindings.js';
+import { QLPKDoctorModuleRegistry } from '../../doctor-examination/module-registry.js';
 
 function buildQuickDeleteConfirmState(appointment, options = {}) {
 	return {
@@ -108,7 +109,7 @@ function createExaminationDeleteFlowAdapter(options = {}) {
 			deleteExamination: deleteCore,
 			currentAppointmentId: getCurrentAppointmentId(),
 			onSuccess: async () => {
-				const patientSearchUi = window.QLPKDoctorModuleRegistry?.get?.('modalPatientSearchUi');
+				const patientSearchUi = QLPKDoctorModuleRegistry.get('modalPatientSearchUi');
 				const patientId = patientSearchUi && typeof patientSearchUi.resolveModalPatientId === 'function'
 					? patientSearchUi.resolveModalPatientId(
 						resolveAdapterValue(options.getModalCurrentPatientId, options.modalCurrentPatientId),

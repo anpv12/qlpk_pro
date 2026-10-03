@@ -1,6 +1,7 @@
 import { moduleState } from './state.js';
 import { QLPKSearchNormalization } from '../../shared/search-normalization.js';
 import { QLPKNavigationConfig } from '../navigation.config.js';
+import { getServerAppVersion } from '../../shared/app-version.js';
 
 function captureAccess() {
 	const owner = window.QLPKApiTransport?.session?.owner;
@@ -254,7 +255,7 @@ function isHomeHref(href) {
 	return normalizedPathname(href || currentHref()) === '/index.html';
 }
 function getWorkspaceAppVersion() {
-	return localStorage.getItem('APP_VERSION') || window.APP_VERSION || '';
+	return localStorage.getItem('APP_VERSION') || getServerAppVersion();
 }
 function toEmbedHref(href) {
 	const url = new URL(normalizeHref(href), window.location.origin);

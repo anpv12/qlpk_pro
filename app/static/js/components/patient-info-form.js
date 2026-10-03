@@ -5,6 +5,7 @@ import { ReceptionistFormCalculations } from '../receptionist/form-calculations.
 import { ReceptionistPatientAddressPopulate } from '../receptionist/patient-address-populate.js';
 import { ReceptionistProfileAutocomplete } from '../receptionist/profile-autocomplete.js';
 import { initDatepickers, setDatepickerValue } from '../datepicker-init.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const PATIENT_FIELD_IDS = [
 	'patientId', 'fullName', 'gender', 'dateOfBirth', 'age', 'phoneNumber', 'nickname',
@@ -384,7 +385,7 @@ function setExpectedDeliveryMinDate(options = {}) {
 	if (!ngayDuSinh) return;
 	const today = new Date();
 	const value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-		ngayDuSinh.setAttribute('min', value);
+	ngayDuSinh.setAttribute('min', value);
 	if (ngayDuSinh._flatpickr) ngayDuSinh._flatpickr.set('minDate', value);
 }
 
@@ -445,4 +446,4 @@ const api = {
 	defaults: mergeConfig()
 };
 export const QLPKPatientInfoForm = api;
-window.QLPKDoctorModuleRegistry?.register?.('patientInfoForm', api);
+QLPKDoctorModuleRegistry.register('patientInfoForm', api);

@@ -1,5 +1,6 @@
 // Selection-only modal. Prescription form owns patient context, draft and save.
 import { QLPKAppointmentCalendar as calendarPresentation } from '../components/appointment-calendar.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 let calendarAssets;
 function loadCalendarAssets() {
 	if (window.FullCalendar) return Promise.resolve();
@@ -31,21 +32,21 @@ function installReExamCalendarFns1(ctx) {
 	const value = () => el('date').value && el('time').value ? `${el('date').value} ${el('time').value}` : '';
 
 	function selectedIdentity() {
-        const service = ctx.choiceFields.service.getSelected()[0];
-        return { doctor_id: Number(ctx.choiceFields.doctor.getSelected()[0].id), service_id: service.kind === 'service' ? Number(service.id) : null,
-            package_id: service.kind === 'package' ? Number(service.id) : null };
-    }
+		const service = ctx.choiceFields.service.getSelected()[0];
+		return { doctor_id: Number(ctx.choiceFields.doctor.getSelected()[0].id), service_id: service.kind === 'service' ? Number(service.id) : null,
+			package_id: service.kind === 'package' ? Number(service.id) : null };
+	}
 
 	function populateSelection(result, saved) {
-        const chosen = saved || result.selection;
-        const kind = chosen?.package_id ? 'package' : 'service';
-        const serviceId = chosen?.package_id || chosen?.service_id;
-        ctx.choiceFields.service.setSelected(result.services.filter(item => item.kind === kind && Number(item.id) === Number(serviceId)));
-        ctx.choiceFields.doctor.setSelected(result.doctors.filter(item => Number(item.id) === Number(chosen?.doctor_id)));
-    }
+		const chosen = saved || result.selection;
+		const kind = chosen?.package_id ? 'package' : 'service';
+		const serviceId = chosen?.package_id || chosen?.service_id;
+		ctx.choiceFields.service.setSelected(result.services.filter(item => item.kind === kind && Number(item.id) === Number(serviceId)));
+		ctx.choiceFields.doctor.setSelected(result.doctors.filter(item => Number(item.id) === Number(chosen?.doctor_id)));
+	}
 
 	function initializeChoices() {
-		const Autocomplete = window.QLPKDoctorModuleRegistry.require('autocompleteField');
+		const Autocomplete = QLPKDoctorModuleRegistry.require('autocompleteField');
 		const normalize = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
 		for (const [name, collection] of [['service', 'services'], ['doctor', 'doctors']]) {
 			ctx.choiceFields[name] = new Autocomplete(el(`${name}-field`), {

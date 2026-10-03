@@ -2,6 +2,7 @@ import { moduleState } from './modal-medical-history-list-ui-parts/state.js';
 import { buildExaminationDetailUrl, buildExaminationIdUrl, buildHistoryCopyLoadState, buildHistoryListUrl, buildHistoryLoadErrorState, buildHistoryLoadFinishState, buildHistoryLoadStartState, buildHistoryLoadStateHandlers, buildHistoryLoadSuccessState, buildQuickDeleteFlowState, buildSelectedHistoryState, buildState, copyHistoryToFormFlow, deleteQuickSearchExaminationFlow, extractExaminationId, extractHistoryExaminations, getAppointmentPatientName, isCurrentAppointmentMatch, loadCopiedHistoryWithPatient, renderState, resolveAppointmentById, resolveAppointmentExaminationId, resolveCopyHistorySelection, resolveHistoryAppointmentId, resolveHistoryAtIndex, resolveQuickDeleteExaminationId, resolveQuickDeleteSelection, resolveSelectableHistoryIndex, resolveSelectedIndex, selectHistoryForModalFlow, selectHistoryRow } from './modal-medical-history-list-ui-parts/list-state.js';
 import { buildDeleteConfirmationDialogOptions, buildDeleteConfirmationText, buildDeleteExaminationCatchMessage, buildDeleteExaminationRequestOptions, buildDeleteExaminationUrl, buildHistoryDeleteConfirmState, buildHistoryDeleteFlowState, buildHistoryRow, buildQuickDeleteConfirmState, buildVisitBadge, cleanupSweetAlertDialog, createExaminationDeleteFlowAdapter, deleteExaminationCore, deleteHistoryExaminationFlow, formatVisitDateText, isExaminingStatus, loadAndRenderHistoryList, renderHistoryList, renderHistoryListWithActiveRow, resolveDeleteExaminationErrorMessage } from './modal-medical-history-list-ui-parts/delete-flow.js';
 import { bindHistoryListActions, bindHistoryListClick, setActiveHistoryRow } from './modal-medical-history-list-ui-parts/list-bindings.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 moduleState.api = {
 	buildState: buildState,
@@ -60,4 +61,4 @@ moduleState.api = {
 	bindHistoryListActions: bindHistoryListActions
 };
 export const ModalMedicalHistoryListUi = Object.freeze(moduleState.api);
-window.QLPKDoctorModuleRegistry?.register?.('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
+QLPKDoctorModuleRegistry.register('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);

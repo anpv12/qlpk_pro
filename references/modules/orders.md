@@ -2,11 +2,11 @@
 
 ### Màn Quản lý chỉ định tách file (2026-09-28, lát69)
 
-- `order-management.js` là lõi (config DASS, state, `apiCall`, dialog, bảng
-  danh sách); phần còn lại là classic script `orders/order-management-{detail,
-  survey,survey-results,files,actions,init,survey-level}.js`, nạp đúng thứ tự
-  template, chỉ khai báo top-level; bootstrap `initializePage` ở slice cuối.
-  Tham chiếu chéo khai báo bằng `/* global */`/`/* exported */`.
+- `order-management.js` là lõi (config DASS, `apiCall`, dialog, bảng danh
+  sách); phần còn lại là ES module `orders/order-management-{detail,survey,
+  survey-results,files,actions,init,survey-level}.js` import lẫn nhau, state
+  dùng chung ở `orders/order-management-state.js`; bootstrap `initializePage`
+  ở `order-management-init.js` (cập nhật 03/10/2026: không còn classic script).
 - `loadOrderSurvey` tách: `loadOrderSurveyForTemplate` → `resolveSurveyExaminationId`
   → `loadIndicationSurveyTemplates` → `loadSurveySessionStatus` →
   `loadExaminationSurveyResponses`; giữ thứ tự request và kiểm `isCurrent()`.

@@ -1,5 +1,6 @@
 import { QLPKPatientInfoForm } from './patient-info-form.js';
 import { QLPKPatientVisitInfoForm } from './patient-visit-info-form.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const DEFAULT_CONFIG = {
 	id: 'patient-intake',
@@ -7,9 +8,9 @@ const DEFAULT_CONFIG = {
 	visit: { layoutMode: 'receptionist', rootId: '', strictRoot: false },
 	relatives: { ariaLabel: 'Người thân liên kết' },
 	documents: {
-	sectionId: 'patientDocumentsSection',
-	headingId: 'patientDocumentsSectionHeading',
-	title: 'Danh sách tập tin đính kèm'
+		sectionId: 'patientDocumentsSection',
+		headingId: 'patientDocumentsSectionHeading',
+		title: 'Danh sách tập tin đính kèm'
 	}
 };
 
@@ -120,4 +121,4 @@ const api = {
 	defaults: mergeConfig()
 };
 export const QLPKPatientIntakeForm = api;
-window.QLPKDoctorModuleRegistry?.register?.('patientIntakeForm', api);
+QLPKDoctorModuleRegistry.register('patientIntakeForm', api);

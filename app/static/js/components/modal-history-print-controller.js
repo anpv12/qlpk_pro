@@ -1,6 +1,7 @@
 import { buildPrescriptionPreviewHTML } from '../prescriptions/shared/prescription-document-template.js';
 import { PrescriptionPrintDocument } from '../prescriptions/components/prescription-print-document.js';
 import { QLPKPdfPreview } from '../shared/pdf-preview.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const TARGETS = Object.freeze({
 	'prescription-content': {
@@ -357,4 +358,4 @@ function create(options = {}) {
 }
 
 export const ModalHistoryPrintController = Object.freeze({ TARGETS, create });
-window.QLPKDoctorModuleRegistry?.register?.('modalHistoryPrintController', ModalHistoryPrintController);
+QLPKDoctorModuleRegistry.register('modalHistoryPrintController', ModalHistoryPrintController);

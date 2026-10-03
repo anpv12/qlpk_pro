@@ -1,5 +1,6 @@
 import { QLPKUserFeedback } from '../shared/user-feedback.js';
 import { setPageDateFormatter } from '../shared/page-date-format.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
 function getAuthHeader() {
 	return window.QLPKApiTransport.getAuthHeader();
@@ -44,7 +45,7 @@ const runtime = {
 	showCustomToast
 };
 
-window.QLPKDoctorModuleRegistry?.register?.('pageRuntime', runtime, {
+QLPKDoctorModuleRegistry.register('pageRuntime', runtime, {
 	owner: 'doctor/base',
 	version: 2
 });

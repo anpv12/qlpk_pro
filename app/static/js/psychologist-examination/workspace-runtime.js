@@ -3,8 +3,9 @@ import { PsychologistWorkspaceUi } from './workspace-ui.js';
 import { QLPKPsychologistComponentConfig } from '../components/psychologist-component-config.js';
 import { QLPKPatientIntakeForm } from '../components/patient-intake-form.js';
 import { state } from './page-state.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 const PAGE_RUNTIME = QLPKDoctorPageRuntime;
 if (!REGISTRY || !PAGE_RUNTIME) throw new Error('Thiếu runtime dùng chung cho màn Tâm lý gia');
 
@@ -169,7 +170,7 @@ async function loadAppointment(appointmentId, options = {}) {
 	setCurrentAppointment(numericAppointmentId);
 	try {
 		const response = await apiCall(`/api/appointments/${numericAppointmentId}/edit`);
-			if (!response?.ok) throw new Error('appointment-load-failed');
+		if (!response?.ok) throw new Error('appointment-load-failed');
 		const payload = await response.json();
 		if (loadToken !== state.contextToken) return { status: 'stale' };
 
@@ -221,7 +222,7 @@ async function saveHistory() {
 	const revision = history.getSaveRevision?.();
 	const contextToken = state.contextToken;
 	const response = await apiCall(`/api/appointments/${state.currentAppointmentId}`, {
-			method: 'PUT',
+		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(history.getSavePayload?.() || {})
 	});
@@ -316,7 +317,7 @@ async function complete() {
 		if (saved.status !== 'saved') return saved;
 		if (contextToken !== state.contextToken) return { status: 'stale' };
 		const examResponse = await apiCall(`/api/examination-id/${appointmentId}`);
-			if (!examResponse?.ok) throw new Error('examination-lookup-failed');
+		if (!examResponse?.ok) throw new Error('examination-lookup-failed');
 		const examData = await examResponse.json();
 		if (contextToken !== state.contextToken) return { status: 'stale' };
 		if (!examData.examination_id) throw new Error('missing-examination-id');

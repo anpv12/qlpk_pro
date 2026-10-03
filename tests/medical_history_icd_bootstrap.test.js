@@ -1,19 +1,11 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
 const { loadSupportRuntime } = require('./helpers/doctor-registry');
+const { runScriptFile } = require('./helpers/module-source');
 
-const read = relativePath => fs.readFileSync(
-	path.join(__dirname, '..', relativePath),
-	'utf8'
-);
 
-const medicalHistoryFormSource = read('app/static/js/components/medical-history-form.js');
-const icdBridgeSource = read('app/static/js/doctor-examination/medical-history-icd-bridge.js');
-const medicalHistoryBridgeSource = read('app/static/js/doctor-examination/medical-history-bridge.js');
 
 class FakeElement {}
 
@@ -85,14 +77,15 @@ async function main() {
 	const { context, createdComponents } = fixture;
 
 	// The shared form must only create its instance.  Its workflow bridge owns init().
-	vm.runInNewContext(medicalHistoryFormSource, context);
+	const sandbox = vm.createContext(context);
+	runScriptFile('app/static/js/components/medical-history-form.js', sandbox);
 	const form = context.window.QLPKDoctorModuleRegistry.get('medicalHistoryForm');
 	assert.ok(form);
 	assert.equal(form.getActive().state.initialized, false);
 
 	// Loading the bridge after the form must still create both ICD controls.
-	vm.runInNewContext(icdBridgeSource, context);
-	vm.runInNewContext(medicalHistoryBridgeSource, context);
+	runScriptFile('app/static/js/doctor-examination/medical-history-icd-bridge.js', sandbox);
+	runScriptFile('app/static/js/doctor-examination/medical-history-bridge.js', sandbox);
 
 	const active = form.getActive();
 	assert.equal(active.state.initialized, true);

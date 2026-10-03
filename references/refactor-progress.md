@@ -1,31 +1,45 @@
 # QLPK Refactor Progress
 
-## Nợ kỹ thuật mục 3–6 (đợt 2) — 30/09/2026
+## Nợ kỹ thuật mục 3–6 (đợt 2) — 30/09 → 03/10/2026
 
-- Mục 5 (Python) xong: 141 import thừa, 11 biến thừa, 35 schema chết (4 file) đã gỡ.
-  `api_error_boundary` (`app/utils/api_error_contract.py`) thay 332 khối catch-all chép tay,
-  giữ nguyên payload 500 (đối chiếu từng route bằng exception thật), log traceback.
-  Không còn `except Exception` nuốt lỗi (gate BLE001 trong `check_code_health.py`).
-  Mọi hàm Python McCabe ≤10 (gate hạ 15 → 10).
-- Mục 6 (file lớn) xong: Python/JS/template ≤500 dòng (gate `MAX_LINES = 500`, thêm
-  template). JS tách `<entry>-parts/` theo manifest (nạp trước entry) hoặc continuation;
-  helper test/script mở rộng cả parts lẫn continuation. Template ghép partial, HTML render
-  giống từng byte.
-- Mục 4 (một phần): px → rem (6115 → 978; phần còn lại thuộc stylesheet của 3 trang đặt
-  root 13px), 12 màu cứng → token, cssText → setProperty; `css_id_selector`/
-  `css_hard_font_size` sửa cách đo (thuộc tính trong ngoặc kép, `font-size: 0`).
-  Còn: 43 `!important`, 97 class Bootstrap action thô.
-- Mục 3 (đang làm, 03/10/2026): jQuery 0; chỗ chèn HTML bằng chuỗi còn 1 (`renderDocumentMarkup`, chỉ cho
-  tài liệu in); thẻ `<script>` classic của app 163 → 0 (partial runtime là `shared/runtime.js`, mỗi entry
-  import script dùng chung theo thứ tự cũ); `window.*` 144 → 40 (module export + import; chỉ đổi khi mọi trang
-  đã nạp owner trước user, hoặc owner là module thuần). Gate mới: `window_read_findings` cấm đọc
-  `window.X`/`globalThis.X` không ai gán. Còn: global trạng thái trang (`currentPatientId`, `currentPatientData`,
-  `currentExaminationId`, `modalSelectedPatient`, `occupationAutocomplete`), setter tâm lý gia, API ranh giới
-  shell/iframe, file non-ESM, markup trùng ở trang quản trị.
-- QA mục 3: so base/new trên 2 bản sao DB đồng nhất (`createdb -T`), 31 trang smoke + ~60 kịch bản thao tác;
-  kịch bản QA lấy API qua `import()` (kèm `?v=`) thay vì `window.*`.
-- Kiểm chứng: base/new trên 2 bản sao DB — GET 4.440 request, 12 bộ ghi + bộ route mới,
-  32 trang computed style, 27 trang tương tác + 10 kịch bản thao tác sâu (payload ghi trùng).
+- Mục 3 (frontend) xong 03/10/2026:
+  - jQuery 0; thẻ `<script>` classic của app 163 → 0 (`shared/runtime.js` là partial runtime, mỗi entry import
+    script dùng chung theo thứ tự cũ); mọi file JS của app là ES module, trừ `flatpickr-vn.js` (locale UMD của
+    thư viện, giữ nguyên); `QLPKDoctorModuleRegistry` là export của `doctor-examination/module-registry.js`.
+  - Chỗ chèn HTML bằng chuỗi còn 1, có chủ đích: `renderDocumentMarkup` (`shared/dom.js`), chỉ cho tài liệu in.
+  - `window.*` 144 → 8 (ratchet `MAX_WINDOW_GLOBALS = 8`; gate `window_read_findings` cấm đọc global không ai
+    gán). 8 global còn lại là ranh giới, không phải trạng thái trang:
+    - platform, do `shared/runtime.js` → `shared/api-transport.js` cài trước mọi module trang: `fetch` (bọc để
+      mọi request mang phiên cookie), `QLPKApiTransport`;
+    - năng lực shell nạp lười (sidebar/header chỉ nạp ở khung trên cùng; nơi dùng kiểm tra có/không thay vì
+      import để không kéo shell vào trang nhúng): `QLPKAppHeader`, `QLPKWorkspaceShell`, `QLPKRealtimeClient`,
+      `ShortcutManager`;
+    - giữa các frame (đọc qua `window` của frame khác): `QLPKDoctorWorkspaceLeaveGuard` (shell hỏi iframe bác sĩ
+      trước khi đóng tab), `QLPKGlobalSearchActions` (ô tìm kiếm header gọi vào trang đang mở).
+  - Template: khung trang dùng chung — `partials/page-head.html` (`page_head`), `partials/admin-page-assets.html`
+    (`admin_page_assets`), `partials/app-shell.html` (`app_shell`, footer quản trị tuỳ chọn),
+    `partials/admin-page-header.html`, `partials/exam-queue-pane.html`, `layouts/legal-page.html`, modal lịch hẹn
+    thêm/sửa từ một macro, modal import Excel. Trùng lặp markup (jscpd, ≥5 dòng/50 token) 9,8% → 2,6%; phần còn
+    lại là đoạn form/modal Bootstrap ≤11 dòng có nội dung khác nhau. HTML render trùng bản gốc (so cả autoescape).
+  - Checker theo macro: `template_source.expanded_source` nối cả `{% from/import/extends %}`; kiểm id trùng đọc
+    cả trang đã render; test node đọc trang dựng từ macro qua `scripts/template_source.py` (in JSON trang render).
+- Mục 4 (CSS) xong: px → rem (2688 độ dài, giữ px ở 3 trang root 13px), màu cứng → token, `cssText` →
+  `setProperty`, `!important` 43 → 0, class Bootstrap action thô 97 → 0 (`data-qlpk-button` sở hữu mọi nút).
+- Mục 5 (Python) xong: 141 import thừa, 11 biến thừa, 35 schema chết (4 file) đã gỡ; `api_error_boundary`
+  (`app/utils/api_error_contract.py`) thay 332 khối catch-all chép tay; không còn `except Exception` nuốt lỗi
+  (gate BLE001); mọi hàm Python McCabe ≤10. 03/10/2026 gỡ thêm phần chết còn sót: 5 wrapper tương thích không
+  còn caller (`app/api/chi_dinh.py`, `app/services/appointment_query_service.py`,
+  `app/services/appointment_view_model_service.py`, `app/modules/prescriptions/public_api.py`,
+  `app/modules/prescriptions/view_model.py`), schema trùng `app/schemas/service.py`, 3 helper không ai gọi,
+  import thừa trong `main.py`. ruff F (import/biến thừa, tên chưa định nghĩa) = 0 cho `app/` và `main.py`.
+- Mục 6 (file lớn) xong: mọi file Python/JS/template/CSS của app ≤500 dòng (gate `MAX_LINES`/`MAX_CSS_LINES`);
+  file tách đặt tên theo chủ đề.
+- Ngoài phạm vi, không đụng: mục 1 (305 test cần DB đang skip), mục 2 (API token khảo sát; trùng lặp trong
+  `app/api/survey_*.py` để nguyên), mục 7 (worker Google Calendar). Chưa sửa 24 cảnh báo ruff B (B904 raise
+  thiếu `from`, B007, B010) — không thuộc định nghĩa mục 5.
+- QA: so base/new trên 2 bản sao DB đồng nhất (`createdb -T`), smoke 31 trang + bộ kịch bản thao tác (85 kịch
+  bản ở lát cuối); kịch bản QA lấy API qua `import()` (kèm `?v=`) thay vì `window.*`. Khác biệt còn lại chỉ là
+  nhiễu đã biết: thứ tự danh sách bác sĩ/người dùng, id ngẫu nhiên của câu hỏi khảo sát.
 
 ## Dọn nợ kỹ thuật mục 1–6 — 30/09/2026
 

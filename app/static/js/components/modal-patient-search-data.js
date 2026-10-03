@@ -1,8 +1,9 @@
 // Data adapters for the shared patient-search modal: URLs, fetches and payload
 // shapes. No DOM, no modal state; the UI owner composes these.
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
-const resolveUi = (name, fallback) => window.QLPKDoctorModuleRegistry?.get?.(name) || fallback;
+const resolveUi = (name, fallback) => QLPKDoctorModuleRegistry.get(name) || fallback;
 const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
 
 function buildSearchErrorState() {
@@ -242,4 +243,4 @@ export const ModalPatientSearchData = Object.freeze({
 	buildAppointmentPatientFallback,
 	loadPatientForAppointment
 });
-window.QLPKDoctorModuleRegistry?.register?.('modalPatientSearchData', ModalPatientSearchData, { owner: 'shared/patient-modal' });
+QLPKDoctorModuleRegistry.register('modalPatientSearchData', ModalPatientSearchData, { owner: 'shared/patient-modal' });

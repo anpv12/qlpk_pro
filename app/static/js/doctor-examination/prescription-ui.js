@@ -2,6 +2,7 @@ import { installers as stateAndQuantitiesInstallers } from './prescription-ui-pa
 import { installers as renderingAndLoadInstallers } from './prescription-ui-parts/rendering-and-load.js';
 import { installers as inputAndBindingInstallers } from './prescription-ui-parts/input-and-binding.js';
 import { createReExaminationCalendar } from './re-examination-calendar.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
 const installers = [...stateAndQuantitiesInstallers, ...renderingAndLoadInstallers, ...inputAndBindingInstallers];
 
@@ -47,7 +48,7 @@ const DEPENDENCY_MODULES = {
 };
 
 function resolveDependencies(options) {
-	const registry = window.QLPKDoctorModuleRegistry;
+	const registry = QLPKDoctorModuleRegistry;
 	const RUNTIME = options.runtime || registry.require('supportRuntime');
 	if (!RUNTIME) throw new Error('Thiếu prescription support runtime');
 	const resolved = Object.fromEntries(Object.entries(DEPENDENCY_MODULES).map(([key, name]) => [key, options[key] || registry?.get(name)]));
@@ -62,7 +63,7 @@ function runPrescriptionUiSetup1(ctx) {
 	const outer = { createReExaminationCalendar };
 	installers.forEach(install => install(ctx.inst, outer));
 	ctx.inst.config = ctx.options.config || {};
-	ctx.inst.registry = window.QLPKDoctorModuleRegistry;
+	ctx.inst.registry = QLPKDoctorModuleRegistry;
 	({ RUNTIME: ctx.inst.RUNTIME, model: ctx.inst.MODEL, rows: ctx.inst.ROWS, history: ctx.inst.HISTORY, reExam: ctx.inst.REEXAM, medicineSearch: ctx.inst.MEDICINE_SEARCH } = resolveDependencies(ctx.options));
 	ctx.inst.dom = { ...DEFAULT_DOM, ...(ctx.inst.config.dom || {}) };
 	ctx.inst.endpoints = { ...DEFAULT_ENDPOINTS, ...(ctx.inst.config.endpoints || {}) };
@@ -82,43 +83,43 @@ function runPrescriptionUiSetup1(ctx) {
 	({ PRESCRIPTION_USAGE_MODES: ctx.inst.PRESCRIPTION_USAGE_MODES, PRESCRIPTION_USAGE_NOTE_MODES: ctx.inst.PRESCRIPTION_USAGE_NOTE_MODES, normalizePrescriptionType: ctx.inst.normalizePrescriptionType, ensurePrescriptionUsageMode: ctx.inst.ensurePrescriptionUsageMode, normalizeUsageNoteMode: ctx.inst.normalizeUsageNoteMode, parseDoseValue: ctx.inst.parseDoseValue, parseMedicineDays: ctx.inst.parseMedicineDays, formatDoseValue: ctx.inst.formatDoseValue, roundPrescriptionQuantity: ctx.inst.roundPrescriptionQuantity, normalizeSchedulePayload: ctx.inst.normalizeSchedulePayload, calculatePrescriptionQuantity: ctx.inst.calculatePrescriptionQuantity, buildMedicineUsageNote: ctx.inst.buildMedicineUsageNote, parseMedicineUsage: ctx.inst.parseMedicineUsage, buildMedicineUsagePayload: ctx.inst.buildMedicineUsagePayload, parseGlobalUsageInstructions: ctx.inst.parseGlobalUsageInstructions, buildGlobalUsageInstructions: ctx.inst.buildGlobalUsageInstructions, calculateReExaminationDateTime: ctx.inst.calculateReExaminationDateTime, buildDateTimeInputValue: ctx.inst.buildDateTimeInputValue, parseDateTimeInputValue: ctx.inst.parseDateTimeInputValue } = ctx.inst.MODEL);
 	ctx.inst.reExaminationCalendar = null;
 	ctx.inst.STATE = {
-	reExaminationDraftDateTime: '',
-	reExaminationDraftSelection: null,
-	bound: false,
-	contextToken: 0,
-	appointmentId: null,
-	appointmentDate: null,
-	patientId: null,
-	document: null,
-	isLoading: null,
-	prescriptionRows: [],
-	prescriptionLoaded: false,
-	prescriptionDirty: false,
-	prescriptionRevision: 0,
-	prescriptionSaving: false,
-	prescriptionUsageMode: 'time_slots',
-	preservedGlobalUsage: '',
-	prescriptionCodesByType: {},
-	reExaminationAppointmentId: null,
-	reExaminationDateTime: '',
-	reExaminationStatus: null,
-	reExaminationSnapshot: null,
-	reExaminationError: '',
-	prescriptionHistory: [],
-	prescriptionHistoryLoaded: false,
-	prescriptionHistoryPanelOpen: false,
-	prescriptionHistorySelectedIndex: 0,
-	nextPrescriptionRowId: 1
-};
+		reExaminationDraftDateTime: '',
+		reExaminationDraftSelection: null,
+		bound: false,
+		contextToken: 0,
+		appointmentId: null,
+		appointmentDate: null,
+		patientId: null,
+		document: null,
+		isLoading: null,
+		prescriptionRows: [],
+		prescriptionLoaded: false,
+		prescriptionDirty: false,
+		prescriptionRevision: 0,
+		prescriptionSaving: false,
+		prescriptionUsageMode: 'time_slots',
+		preservedGlobalUsage: '',
+		prescriptionCodesByType: {},
+		reExaminationAppointmentId: null,
+		reExaminationDateTime: '',
+		reExaminationStatus: null,
+		reExaminationSnapshot: null,
+		reExaminationError: '',
+		prescriptionHistory: [],
+		prescriptionHistoryLoaded: false,
+		prescriptionHistoryPanelOpen: false,
+		prescriptionHistorySelectedIndex: 0,
+		nextPrescriptionRowId: 1
+	};
 	ctx.inst.CHANGES = ctx.inst.RUNTIME.createChangeTracker(ctx.inst.STATE, { revisionKey: 'prescriptionRevision', dirtyKey: 'prescriptionDirty' });
 	ctx.inst.SEARCH = ctx.inst.MEDICINE_SEARCH.create({
-	requestJson: ctx.inst.requestJson,
-	getEndpoint: query => (typeof ctx.inst.endpoints.medicines === 'function'
-		? ctx.inst.endpoints.medicines(query)
-		: (ctx.inst.endpoints.medicines || `/api/medicines/?search=${encodeURIComponent(query)}&per_page=8`)),
-	getDocument: () => ctx.inst.STATE.document || document,
-	isRowCurrent: row => ctx.inst.findPrescriptionRow(row.uid) === row
-});
+		requestJson: ctx.inst.requestJson,
+		getEndpoint: query => (typeof ctx.inst.endpoints.medicines === 'function'
+			? ctx.inst.endpoints.medicines(query)
+			: (ctx.inst.endpoints.medicines || `/api/medicines/?search=${encodeURIComponent(query)}&per_page=8`)),
+		getDocument: () => ctx.inst.STATE.document || document,
+		isRowCurrent: row => ctx.inst.findPrescriptionRow(row.uid) === row
+	});
 	ctx.inst.printController = null;
 	ctx.inst.PRESCRIPTION_TIME_SLOT_FIELDS = ['morning', 'noon', 'afternoon', 'evening'];
 	ctx.inst.PRESCRIPTION_SCHEDULE_FIELDS = ['qtyPerTime', 'timesPerDay', ...ctx.inst.PRESCRIPTION_TIME_SLOT_FIELDS];
@@ -126,36 +127,36 @@ function runPrescriptionUiSetup1(ctx) {
 
 function runPrescriptionUiSetup2(ctx) {
 	ctx.inst.PRESCRIPTION_FIELD_HANDLERS = new Map([
-	['name', ctx.inst.applyPrescriptionNameInput],
-	['quantity', () => false],
-	['unit', (doc, row, target) => {
-		if (!row.isExternal) return false;
-		row.unit = target.value.trim();
-		return true;
-	}],
-	['unitPrice', (doc, row, target) => {
-		row.unitPrice = Math.max(0, ctx.inst.toNumber(target.value, 0));
-		ctx.inst.updatePrescriptionRowTotal(doc, row);
-		return true;
-	}],
-	['prescriptionType', (doc, row, target) => {
-		row.prescriptionType = ctx.inst.normalizePrescriptionType(target.value);
-		return true;
-	}],
-	['qtyPerTime', (doc, row, target) => {
-		ctx.inst.ensureRowSchedule(doc, row).times_per_day.qty_per_time = Math.max(0.001, ctx.inst.parseDoseValue(target.value, 1) || 1);
-		return true;
-	}],
-	['timesPerDay', (doc, row, target) => {
-		ctx.inst.ensureRowSchedule(doc, row).times_per_day.times_per_day = Math.max(1, ctx.inst.toNumber(target.value, 1));
-		return true;
-	}],
-	['usageNote', (doc, row, target) => {
-		row.usageNote = target.value;
-		row.usageNoteMode = ctx.inst.PRESCRIPTION_USAGE_NOTE_MODES.MANUAL;
-		return true;
-	}]
-]);
+		['name', ctx.inst.applyPrescriptionNameInput],
+		['quantity', () => false],
+		['unit', (doc, row, target) => {
+			if (!row.isExternal) return false;
+			row.unit = target.value.trim();
+			return true;
+		}],
+		['unitPrice', (doc, row, target) => {
+			row.unitPrice = Math.max(0, ctx.inst.toNumber(target.value, 0));
+			ctx.inst.updatePrescriptionRowTotal(doc, row);
+			return true;
+		}],
+		['prescriptionType', (doc, row, target) => {
+			row.prescriptionType = ctx.inst.normalizePrescriptionType(target.value);
+			return true;
+		}],
+		['qtyPerTime', (doc, row, target) => {
+			ctx.inst.ensureRowSchedule(doc, row).times_per_day.qty_per_time = Math.max(0.001, ctx.inst.parseDoseValue(target.value, 1) || 1);
+			return true;
+		}],
+		['timesPerDay', (doc, row, target) => {
+			ctx.inst.ensureRowSchedule(doc, row).times_per_day.times_per_day = Math.max(1, ctx.inst.toNumber(target.value, 1));
+			return true;
+		}],
+		['usageNote', (doc, row, target) => {
+			row.usageNote = target.value;
+			row.usageNoteMode = ctx.inst.PRESCRIPTION_USAGE_NOTE_MODES.MANUAL;
+			return true;
+		}]
+	]);
 }
 
 function create(options = {}) {
@@ -164,23 +165,23 @@ function create(options = {}) {
 	runPrescriptionUiSetup1(ctx);
 	runPrescriptionUiSetup2(ctx);
 	return {
-	bind: ctx.inst.bind,
-	clear: ctx.inst.clear,
-	load: ctx.inst.load,
-	save: ctx.inst.savePrescription,
-	getDraftSnapshot: ctx.inst.getDraftSnapshot,
-	restoreDraftSnapshot: ctx.inst.restoreDraftSnapshot,
-	hasUnsavedChanges: ctx.inst.hasUnsavedChanges,
-	isLoading: () => Boolean(ctx.inst.STATE.isLoading && ctx.inst.STATE.isLoading()),
-	getLatestPreviousVisitSnapshot: ctx.inst.getLatestPreviousVisitSnapshot,
-	isReExaminationLocked: ctx.inst.isReExaminationLocked,
-	getPrescriptionCodesByType: () => ({ ...ctx.inst.STATE.prescriptionCodesByType }),
-	getConfig: () => ({ ...ctx.inst.config, dom: { ...ctx.inst.dom }, endpoints: { ...ctx.inst.endpoints } }),
-	getState: () => ctx.inst.STATE
-};
+		bind: ctx.inst.bind,
+		clear: ctx.inst.clear,
+		load: ctx.inst.load,
+		save: ctx.inst.savePrescription,
+		getDraftSnapshot: ctx.inst.getDraftSnapshot,
+		restoreDraftSnapshot: ctx.inst.restoreDraftSnapshot,
+		hasUnsavedChanges: ctx.inst.hasUnsavedChanges,
+		isLoading: () => Boolean(ctx.inst.STATE.isLoading && ctx.inst.STATE.isLoading()),
+		getLatestPreviousVisitSnapshot: ctx.inst.getLatestPreviousVisitSnapshot,
+		isReExaminationLocked: ctx.inst.isReExaminationLocked,
+		getPrescriptionCodesByType: () => ({ ...ctx.inst.STATE.prescriptionCodesByType }),
+		getConfig: () => ({ ...ctx.inst.config, dom: { ...ctx.inst.dom }, endpoints: { ...ctx.inst.endpoints } }),
+		getState: () => ctx.inst.STATE
+	};
 }
 
-const doctorConfig = window.QLPKDoctorModuleRegistry.require('doctorComponentConfig');
+const doctorConfig = QLPKDoctorModuleRegistry.require('doctorComponentConfig');
 const doctorInstance = create({
 	config: doctorConfig.prescription || {}
 });
@@ -199,7 +200,7 @@ function getOrCreate(options = {}) {
 
 const doctorRoot = document.getElementById(doctorConfig.prescription?.rootId || DEFAULT_DOM.workspace);
 if (doctorRoot) instances.set(doctorRoot, doctorInstance);
-window.QLPKDoctorModuleRegistry.register('prescriptionForm', { create, getOrCreate }, {
+QLPKDoctorModuleRegistry.register('prescriptionForm', { create, getOrCreate }, {
 	owner: 'doctor/prescription',
 	version: 2
 });

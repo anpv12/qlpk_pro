@@ -1,14 +1,12 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(
-  path.join(__dirname, '..', 'app/static/js/doctor-examination/patient-history-bridge.js'),
-  'utf8'
-);
+const { runScriptFile } = require('./helpers/module-source');
+
+const SOURCE_PATH = path.join(__dirname, '..', 'app/static/js/doctor-examination/patient-history-bridge.js');
 
 async function main() {
   const registrations = new Map();
@@ -40,7 +38,7 @@ async function main() {
   const window = { QLPKDoctorModuleRegistry: registry };
   const document = { getElementById() { return null; } };
 
-  vm.runInNewContext(source, { window, document });
+  runScriptFile(SOURCE_PATH, vm.createContext({ window, document }));
   const registration = registrations.get('patientHistoryBridge');
   assert.ok(registration);
   assert.deepEqual([...registration.metadata.dependencies], ['patientModalContract']);

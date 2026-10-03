@@ -1,11 +1,12 @@
 import { moduleState } from './draft-recovery-parts/state.js';
 import { bind, captureDraft, clearContext, clearCurrentUserDrafts, queueCapture, setContext } from './draft-recovery-parts/capture-and-bind.js';
 import { discardCurrent, rebaseAfterSave } from './draft-recovery-parts/snapshot.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
-moduleState.RUNTIME = window.QLPKDoctorModuleRegistry.get('supportRuntime');
+moduleState.RUNTIME = QLPKDoctorModuleRegistry.get('supportRuntime');
 if (!moduleState.RUNTIME) throw new Error('Thiếu Doctor support runtime');
-moduleState.POLICY = window.QLPKDoctorModuleRegistry.get('draftRecoveryPolicy');
-moduleState.STORE = window.QLPKDoctorModuleRegistry.get('draftRecoveryStore');
+moduleState.POLICY = QLPKDoctorModuleRegistry.get('draftRecoveryPolicy');
+moduleState.STORE = QLPKDoctorModuleRegistry.get('draftRecoveryStore');
 if (!moduleState.POLICY || !moduleState.STORE) throw new Error('Thiếu policy/store của bản nháp Doctor');
 ({ DRAFT_SCHEMA_VERSION: moduleState.DRAFT_SCHEMA_VERSION, clone: moduleState.clone, isTransientClinicalControlId: moduleState.isTransientClinicalControlId, sameValue: moduleState.sameValue, resolveDraftRecord: moduleState.resolveDraftRecord } = moduleState.POLICY);
 ({ DRAFT_TTL_MS: moduleState.DRAFT_TTL_MS, draftKey: moduleState.draftKey, readRecord: moduleState.readRecord, writeRecord: moduleState.writeRecord, deleteRecord: moduleState.deleteRecord, deleteRecordIfMatches: moduleState.deleteRecordIfMatches, replaceRecordIfMatches: moduleState.replaceRecordIfMatches, purgeExpiredRecords: moduleState.purgeExpiredRecords, deleteUserRecords: moduleState.deleteUserRecords } = moduleState.STORE);
@@ -63,7 +64,7 @@ moduleState.PRESCRIPTION_SETUP_CONTROLS = [
 ];
 moduleState.RE_EXAM_CONTROL_KEYS = ['reExamEnabled', 'reExamDateTime', 'reExamSelection'];
 
-window.QLPKDoctorModuleRegistry.register('draftRecovery', {
+QLPKDoctorModuleRegistry.register('draftRecovery', {
 	bind: bind,
 	setContext: setContext,
 	clearContext: clearContext,

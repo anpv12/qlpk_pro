@@ -1,3 +1,5 @@
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
+
 function resolveRoot(doc, rootId) {
 	if (!rootId) return doc;
 	return doc.getElementById(rootId) || null;
@@ -75,7 +77,7 @@ function createScopedComponent(options = {}, config = {}, handlers = {}) {
 }
 
 export const QLPKComponentDomScope = Object.freeze({ create, resolveRoot, mergeScopedConfig, resolveScopedDocument, createScopedComponent });
-window.QLPKDoctorModuleRegistry?.register?.('componentDomScope', QLPKComponentDomScope, {
+QLPKDoctorModuleRegistry.register('componentDomScope', QLPKComponentDomScope, {
 	owner: 'shared/dom-scope',
 	version: 2
 });

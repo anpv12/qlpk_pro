@@ -1,4 +1,5 @@
 import { RelativeTableManager } from '../relative-table.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 function getDocument(options) {
 	return options && options.document ? options.document : window.document;
@@ -84,4 +85,4 @@ export const ReceptionistPatientRelativesTable = Object.freeze({
 	initialize,
 	bindInitialLoad
 });
-window.QLPKDoctorModuleRegistry?.register?.('patientRelativesTable', ReceptionistPatientRelativesTable);
+QLPKDoctorModuleRegistry.register('patientRelativesTable', ReceptionistPatientRelativesTable);

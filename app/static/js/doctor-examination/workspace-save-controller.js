@@ -1,4 +1,5 @@
 import { installWorkspaceSaveFns1, installWorkspaceSaveFns2, installWorkspaceSaveFns3, installWorkspaceSaveFns4, installWorkspaceSaveFns5, installWorkspaceSaveFns6, installWorkspaceSaveFns7 } from './workspace-save-controller-parts/save-installers.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
 const PASSTHROUGH_OPTION_KEYS = ['state', 'mainChanges', 'getDocument', 'textOf', 'valueOf', 'apiCall', 'isLoading', 'collect', 'saveClinicalDetails', 'hasUnsavedChanges', 'syncDirtyState', 'getSupportModules', 'getMedicalHistory', 'getClinicalForm', 'setWorkspaceSavePhase', 'setBusy', 'showToast', 'afterSave', 'afterComplete'];
 
@@ -140,7 +141,7 @@ function create(options = {}) {
 	PASSTHROUGH_OPTION_KEYS.forEach(key => { ctx[key] = options[key]; });
 	if (!ctx.mainChanges) throw new Error('Thiếu tracker thay đổi của vùng Khám');
 	ctx.getContext = options.getContext || (() => null);
-	ctx.registry = options.registry || window.QLPKDoctorModuleRegistry;
+	ctx.registry = options.registry || QLPKDoctorModuleRegistry;
 	ctx.readResponseError = options.readResponseError || ctx.registry?.get?.('supportRuntime')?.readResponseError;
 	ctx.getDraftRecovery = options.getDraftRecovery || (() => ctx.registry?.get?.('draftRecovery'));
 
@@ -163,7 +164,7 @@ function create(options = {}) {
 	return { saveNow: ctx.saveNow, saveWorkspace: ctx.saveWorkspace, resolveUnsavedChanges: ctx.resolveUnsavedChanges, completeNow: ctx.completeNow };
 }
 
-window.QLPKDoctorModuleRegistry.register('workspaceSaveController', { create }, {
+QLPKDoctorModuleRegistry.register('workspaceSaveController', { create }, {
 	owner: 'doctor/workspace',
 	version: 2
 });

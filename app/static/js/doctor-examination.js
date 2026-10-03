@@ -4,10 +4,11 @@ import { moduleState } from './doctor-examination-parts/state.js';
 import { bindRealtimeRefresh, initializeWaitingQueue } from './doctor-examination-parts/patient-load-and-init.js';
 import { reloadCurrentAppointment } from './doctor-examination-parts/queue-and-view-mode.js';
 import { QLPKDoctorComponentContext } from './doctor-examination/component-context.js';
+import { QLPKDoctorModuleRegistry } from './doctor-examination/module-registry.js';
 
 moduleState.PAGE_RUNTIME = QLPKDoctorPageRuntime;
 if (!moduleState.PAGE_RUNTIME) throw new Error('Thiếu Doctor page runtime');
-moduleState.REGISTRY = window.QLPKDoctorModuleRegistry;
+moduleState.REGISTRY = QLPKDoctorModuleRegistry;
 if (!moduleState.REGISTRY) throw new Error('Thiếu Doctor module registry');
 moduleState.COMPONENT_CONFIG = moduleState.REGISTRY.require('doctorComponentConfig');
 moduleState.SUPPORT_RUNTIME = moduleState.REGISTRY.get('supportRuntime');

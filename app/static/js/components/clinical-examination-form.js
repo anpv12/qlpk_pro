@@ -1,6 +1,7 @@
 import { installClinicalForm3, installClinicalForm4, installClinicalForm5, installClinicalForm6 } from './clinical-examination-form-parts/form-installers.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
 const DETAILS = REGISTRY.get('clinicalDetails');
 const RUNTIME = REGISTRY.get('supportRuntime');

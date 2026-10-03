@@ -1,7 +1,8 @@
 import { el, replace } from '../shared/dom.js';
 import { DEFAULT_CONFIG, installServicesFormFns7 } from './doctor-services-form-parts/defaults-and-summary.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 if (!REGISTRY) throw new Error('Thiếu Doctor module registry');
 const RUNTIME = REGISTRY.get('supportRuntime');
 if (!RUNTIME) throw new Error('Thiếu Doctor support runtime');

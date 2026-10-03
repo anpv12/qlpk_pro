@@ -1,4 +1,5 @@
 import { moduleState } from './state.js';
+import { QLPKDoctorModuleRegistry } from '../module-registry.js';
 
 function getDocument(options = {}) {
 	return moduleState.RUNTIME.getDocument({ document: options.document || moduleState.STATE.document });
@@ -15,13 +16,13 @@ function getCurrentUserId() {
 	}
 }
 function getClinicalWorkspace() {
-	return window.QLPKDoctorModuleRegistry.get('clinicalWorkspace') || null;
+	return QLPKDoctorModuleRegistry.get('clinicalWorkspace') || null;
 }
 function getSupportModules() {
-	return window.QLPKDoctorModuleRegistry.get('supportModulesUi') || null;
+	return QLPKDoctorModuleRegistry.get('supportModulesUi') || null;
 }
 function getMedicalHistory() {
-	return window.QLPKDoctorModuleRegistry.get('medicalHistoryBridge') || null;
+	return QLPKDoctorModuleRegistry.get('medicalHistoryBridge') || null;
 }
 function isDirty() {
 	const workspace = getClinicalWorkspace();
@@ -56,10 +57,10 @@ function clearRestoredMarkers(doc) {
 	});
 }
 function getClinicalWorkspaceUi() {
-	return window.QLPKDoctorModuleRegistry.get('clinicalWorkspace') || null;
+	return QLPKDoctorModuleRegistry.get('clinicalWorkspace') || null;
 }
 function getHistoryWorkbenchActions() {
-	return window.QLPKDoctorModuleRegistry.get('medicalHistoryForm')?.getActive?.()?.actions || null;
+	return QLPKDoctorModuleRegistry.get('medicalHistoryForm')?.getActive?.()?.actions || null;
 }
 function getFirstVisibleElement(doc, selectors, root = doc) {
 	return String(selectors || '').split(',').map(selector => selector.trim()).filter(Boolean)

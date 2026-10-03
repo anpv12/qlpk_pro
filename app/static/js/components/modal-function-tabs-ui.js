@@ -2,6 +2,7 @@ import { emptyState } from '../shared/empty-state.js';
 import { MedicalRecordHistoryTabUi } from './medical-record-history-tab-ui.js';
 import { PrescriptionHistoryTabUi } from './prescription-history-tab-ui.js';
 import { ServiceHistoryTabUi } from './service-history-tab-ui.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 const TAB_CONFIG = {
 	prescription: {
@@ -69,7 +70,7 @@ function renderTabError(tabKey, message) {
 	const container = getTabContentElement(tabKey);
 	if (container) container.replaceChildren(buildTabError(message));
 	console.error(`[ModalFunctionTabsUi] ${tabKey}: ${message}`);
-		return { state: 'dependencyError', key: tabKey, error: message };
+	return { state: 'dependencyError', key: tabKey, error: message };
 }
 
 function clearHistoryTabContent(options = {}) {
@@ -120,11 +121,11 @@ function dispatchTabRender(tab, renderers = {}) {
 		const result = renderer();
 		if (result && typeof result.catch === 'function') {
 			result.catch(error => console.error(`[ModalFunctionTabsUi] render ${key} failed:`, error));
-			}
+		}
 	} catch (error) {
 		console.error(`[ModalFunctionTabsUi] render ${key} failed:`, error);
-		}
-		return { handled: true, key };
+	}
+	return { handled: true, key };
 }
 
 function dispatchActiveTabRender(options = {}) {
@@ -375,4 +376,4 @@ const api = {
 	bindShownTabEvents
 };
 export const ModalFunctionTabsUi = Object.freeze(api);
-window.QLPKDoctorModuleRegistry?.register?.('modalFunctionTabsUi', ModalFunctionTabsUi);
+QLPKDoctorModuleRegistry.register('modalFunctionTabsUi', ModalFunctionTabsUi);

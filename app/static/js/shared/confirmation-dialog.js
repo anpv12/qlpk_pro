@@ -1,4 +1,5 @@
 import { QLPKUserFeedback } from './user-feedback.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 function resolveVariant(options = {}) {
 	if (options.variant) return options.variant;
@@ -29,12 +30,12 @@ function buildDialogOptions(options, variant, extra) {
 		customClass: {
 			container: 'qlpk-confirm-container',
 			popup: `qlpk-confirm-dialog qlpk-confirm-dialog--${variant}`,
-				icon: 'qlpk-confirm-dialog__icon',
+			icon: 'qlpk-confirm-dialog__icon',
 			title: 'qlpk-confirm-dialog__title',
 			htmlContainer: 'qlpk-confirm-dialog__text',
 			actions: 'qlpk-confirm-dialog__actions',
 			confirmButton: `qlpk-confirm-dialog__button qlpk-confirm-dialog__button--${variant}`,
-				cancelButton: GHOST_BUTTON_CLASS,
+			cancelButton: GHOST_BUTTON_CLASS,
 			...(extra.showDenyButton ? { denyButton: GHOST_BUTTON_CLASS } : {})
 		}
 	};
@@ -84,7 +85,7 @@ function confirmDelete(text, options = {}) {
 }
 
 export const QLPKConfirmationDialog = Object.freeze({ confirm, choose, confirmDelete });
-window.QLPKDoctorModuleRegistry?.register?.('confirmationDialog', QLPKConfirmationDialog, {
+QLPKDoctorModuleRegistry.register('confirmationDialog', QLPKConfirmationDialog, {
 	owner: 'shared/feedback',
 	version: 2
 });

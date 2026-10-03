@@ -4,456 +4,453 @@ import { emptyState } from '../shared/empty-state.js';
 import { ModalFunctionTabsUi } from './modal-function-tabs-ui.js';
 import { ModalMedicalHistoryListUi } from './modal-medical-history-list-ui.js';
 import { getPageDateFormatter } from '../shared/page-date-format.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
-(function (window) {
-	'use strict';
+const REGISTRY = QLPKDoctorModuleRegistry;
+const resolveUi = (name, fallback) => REGISTRY?.get?.(name) || fallback;
+const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
+const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
 
-	const REGISTRY = window.QLPKDoctorModuleRegistry;
-	const resolveUi = (name, fallback) => REGISTRY?.get?.(name) || fallback;
-	const getTabsUi = options => options?.tabsUi || resolveUi('modalFunctionTabsUi', ModalFunctionTabsUi);
-	const getHistoryListUi = options => options?.historyListUi || resolveUi('modalMedicalHistoryListUi', ModalMedicalHistoryListUi);
+function resolveElement(elementOrId) {
+	if (!elementOrId) return null;
+	return typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+}
 
-	function resolveElement(elementOrId) {
-		if (!elementOrId) return null;
-		return typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
-	}
+function getBootstrapModalApi() {
+	if (window.bootstrap && window.bootstrap.Modal) return window.bootstrap.Modal;
+	if (typeof bootstrap !== 'undefined' && bootstrap.Modal) return bootstrap.Modal;
+	return null;
+}
 
-	function getBootstrapModalApi() {
-		if (window.bootstrap && window.bootstrap.Modal) return window.bootstrap.Modal;
-		if (typeof bootstrap !== 'undefined' && bootstrap.Modal) return bootstrap.Modal;
+function showBootstrapModal(modalOrId, options = {}) {
+	const modalEl = resolveElement(modalOrId || 'patientSearchModal');
+	if (!modalEl) {
+		if (options.missingMessage) console.warn(options.missingMessage);
 		return null;
 	}
+	const Modal = getBootstrapModalApi();
+	if (!Modal) return null;
+	const instance = Modal.getOrCreateInstance(modalEl);
+	instance.show();
+	return instance;
+}
 
-	function showBootstrapModal(modalOrId, options = {}) {
-		const modalEl = resolveElement(modalOrId || 'patientSearchModal');
-		if (!modalEl) {
-			if (options.missingMessage) console.warn(options.missingMessage);
-			return null;
-		}
-		const Modal = getBootstrapModalApi();
-		if (!Modal) return null;
-		const instance = Modal.getOrCreateInstance(modalEl);
-		instance.show();
-		return instance;
+function hideBootstrapModal(modalOrId) {
+	const modalEl = resolveElement(modalOrId || 'patientSearchModal');
+	if (!modalEl) return null;
+	const Modal = getBootstrapModalApi();
+	if (!Modal) return null;
+	const instance = Modal.getInstance(modalEl);
+	if (instance) instance.hide();
+	return instance;
+}
+
+const SEARCH_STATES = {
+	error: { modifiers: ['search', 'error'], icon: 'bi-exclamation-triangle', title: 'Lỗi tải danh sách bệnh nhân', description: 'Vui lòng thử lại thao tác tìm kiếm' },
+	emptySearch: { modifiers: ['search'], icon: 'bi-search', title: 'Nhập tên hoặc mã hồ sơ để tìm kiếm bệnh nhân', description: 'Kết quả tìm kiếm sẽ hiển thị tại đây' },
+	noPatientHistory: { modifiers: ['history'], icon: 'bi-person', iconClass: 'patient-search-modal__empty-icon--sm', title: 'Vui lòng chọn bệnh nhân', description: 'Lịch sử khám sẽ hiển thị theo hồ sơ đã chọn' }
+};
+
+function buildState(state) {
+	return SEARCH_STATES[state] ? emptyState(SEARCH_STATES[state]) : null;
+}
+
+function renderState(containerOrId, state) {
+	const container = resolveElement(containerOrId);
+	if (!container) return null;
+	const node = buildState(state);
+	replace(container, node);
+	return node;
+}
+
+function ensureHighlightStyles() {
+	// CSS is owned by patient-search-modal.css; keep this function for legacy callers.
+	return true;
+}
+
+function getDateFormatter(formatDateDisplay) {
+	if (typeof formatDateDisplay === 'function') return formatDateDisplay;
+	if (typeof getPageDateFormatter() === 'function') return getPageDateFormatter();
+	return value => value || '';
+}
+
+function getPatientSearchText(patient) {
+	if (!patient) return '';
+	return patient.patient_code || patient.full_name || '';
+}
+
+function resolvePresetSearch(options = {}) {
+	const input = resolveElement(options.searchInput || 'modalPatientSearch');
+	if (options.shouldPrefill && options.currentPatientData) {
+		const query = getPatientSearchText(options.currentPatientData);
+		if (input) input.value = query;
+		return {
+			query,
+			prefillPatientId: options.currentPatientData.id || null
+		};
 	}
 
-	function hideBootstrapModal(modalOrId) {
-		const modalEl = resolveElement(modalOrId || 'patientSearchModal');
-		if (!modalEl) return null;
-		const Modal = getBootstrapModalApi();
-		if (!Modal) return null;
-		const instance = Modal.getInstance(modalEl);
-		if (instance) instance.hide();
-		return instance;
-	}
-
-	const SEARCH_STATES = {
-		error: { modifiers: ['search', 'error'], icon: 'bi-exclamation-triangle', title: 'Lỗi tải danh sách bệnh nhân', description: 'Vui lòng thử lại thao tác tìm kiếm' },
-		emptySearch: { modifiers: ['search'], icon: 'bi-search', title: 'Nhập tên hoặc mã hồ sơ để tìm kiếm bệnh nhân', description: 'Kết quả tìm kiếm sẽ hiển thị tại đây' },
-		noPatientHistory: { modifiers: ['history'], icon: 'bi-person', iconClass: 'patient-search-modal__empty-icon--sm', title: 'Vui lòng chọn bệnh nhân', description: 'Lịch sử khám sẽ hiển thị theo hồ sơ đã chọn' }
+	return {
+		query: input ? input.value.trim() : '',
+		prefillPatientId: null
 	};
+}
 
-	function buildState(state) {
-		return SEARCH_STATES[state] ? emptyState(SEARCH_STATES[state]) : null;
+function openSearchModalWithPreset(options = {}) {
+	const modal = showBootstrapModal(options.modal || options.modalElement || 'patientSearchModal', {
+		missingMessage: options.missingMessage
+	});
+	if (!modal) return null;
+	if (typeof options.reset === 'function') options.reset();
+	return {
+		modal,
+		presetSearch: resolvePresetSearch({
+			searchInput: options.searchInput,
+			shouldPrefill: options.shouldPrefill,
+			currentPatientData: options.currentPatientData
+		})
+	};
+}
+
+function buildOpenSearchModalState(openResult) {
+	if (!openResult || !openResult.presetSearch) return null;
+	return {
+		prefillPatientId: openResult.presetSearch.prefillPatientId,
+		query: openResult.presetSearch.query || '',
+		shouldPrefill: false
+	};
+}
+
+function openSearchModalAndFetch(options = {}) {
+	const openResult = openSearchModalWithPreset(options);
+	const openState = buildOpenSearchModalState(openResult);
+	if (!openState) return null;
+	if (typeof options.setPrefillPatientId === 'function') {
+		options.setPrefillPatientId(openState.prefillPatientId);
+	}
+	if (typeof options.fetchSearch === 'function') {
+		options.fetchSearch(openState.query);
+	}
+	if (typeof options.setShouldPrefill === 'function') {
+		options.setShouldPrefill(openState.shouldPrefill);
+	}
+	return openState;
+}
+
+function buildPatientRow({ patient, index, selectedPatient, formatDateDisplay, showPatientAction = true }) {
+	const isActive = selectedPatient && selectedPatient.id === patient.id;
+	const formatDate = getDateFormatter(formatDateDisplay);
+	const dateColumnClass = showPatientAction ? 'col-2' : 'col-3';
+	const phoneColumnClass = showPatientAction ? 'col-2' : 'col-3';
+	return el('div', { class: `row border-bottom py-2 align-items-center modal-patient-item${isActive ? ' modal-patient-item-active' : ''}`, 'data-index': index },
+		el('div', { class: 'col-2 text-center patient-search-modal__patient-code' }, patient.patient_code || ''),
+		el('div', { class: 'col-4 text-center patient-search-modal__patient-name' }, patient.full_name || ''),
+		el('div', { class: `${dateColumnClass} text-center` }, patient.date_of_birth ? formatDate(patient.date_of_birth) : ''),
+		el('div', { class: `${phoneColumnClass} text-center` }, patient.phone || ''),
+		showPatientAction ? el('div', { class: 'col-2 text-center' },
+			el('button', { 'data-qlpk-button': 'view', 'data-qlpk-button-variant': 'soft', class: 'btn btn-sm patient-search-modal__patient-action', 'data-action': 'copy', 'data-index': index, title: 'Xem lại' },
+				el('i', { class: 'bi bi-eye' }))) : null
+	);
+}
+
+function syncPatientActionColumn(containerOrId, showPatientAction) {
+	const container = resolveElement(containerOrId || 'modalSearchResults');
+	const headerCell = container
+		?.closest('.patient-search-modal__results-card')
+		?.querySelector('.patient-search-modal__table-head-row > :last-child');
+	if (!headerCell) return null;
+	headerCell.hidden = !showPatientAction;
+	return headerCell;
+}
+
+function renderSearchResults(options = {}) {
+	const container = resolveElement(options.container || 'modalSearchResults');
+	if (!container) return '';
+	const showPatientAction = options.showPatientAction !== false;
+	syncPatientActionColumn(container, showPatientAction);
+
+	if (options.isError) {
+		return renderState(container, 'error');
 	}
 
-	function renderState(containerOrId, state) {
-		const container = resolveElement(containerOrId);
-		if (!container) return null;
-		const node = buildState(state);
-		replace(container, node);
-		return node;
+	const patients = Array.isArray(options.patients) ? options.patients : [];
+	if (!patients.length) {
+		return renderState(container, 'emptySearch');
 	}
 
-	function ensureHighlightStyles() {
-		// CSS is owned by patient-search-modal.css; keep this function for legacy callers.
-		return true;
+	const rows = patients.map((patient, index) => buildPatientRow({
+		patient,
+		index,
+		selectedPatient: options.selectedPatient,
+		formatDateDisplay: options.formatDateDisplay,
+		showPatientAction
+	}));
+	replace(container, rows);
+	return rows;
+}
+
+function resolveAutoSelectIndex(options = {}) {
+	const patients = Array.isArray(options.patients) ? options.patients : [];
+	if (!patients.length) return -1;
+
+	let targetIndex = -1;
+	if (options.prefillPatientId) {
+		targetIndex = patients.findIndex(patient => patient.id === options.prefillPatientId);
 	}
-
-	function getDateFormatter(formatDateDisplay) {
-		if (typeof formatDateDisplay === 'function') return formatDateDisplay;
-		if (typeof getPageDateFormatter() === 'function') return getPageDateFormatter();
-		return value => value || '';
+	if (targetIndex < 0 && options.selectedPatient) {
+		targetIndex = patients.findIndex(patient => patient.id === options.selectedPatient.id);
 	}
+	return targetIndex < 0 ? 0 : targetIndex;
+}
 
-	function getPatientSearchText(patient) {
-		if (!patient) return '';
-		return patient.patient_code || patient.full_name || '';
-	}
+function renderHistoryNoPatient(containerOrId = 'modalMedicalHistory') {
+	return renderState(containerOrId, 'noPatientHistory');
+}
 
-	function resolvePresetSearch(options = {}) {
-		const input = resolveElement(options.searchInput || 'modalPatientSearch');
-		if (options.shouldPrefill && options.currentPatientData) {
-			const query = getPatientSearchText(options.currentPatientData);
-			if (input) input.value = query;
-			return {
-				query,
-				prefillPatientId: options.currentPatientData.id || null
-			};
-		}
+function setSelectButtonEnabled(enabled, buttonOrId = 'selectPatientFromModal') {
+	const button = resolveElement(buttonOrId);
+	if (button) button.disabled = !enabled;
+	return button;
+}
 
-		return {
-			query: input ? input.value.trim() : '',
-			prefillPatientId: null
-		};
-	}
+function setActivePatientRow(index, options = {}) {
+	const activeClass = options.activeClass || 'modal-patient-item-active';
+	document.querySelectorAll(options.rowSelector || '.modal-patient-item').forEach(item => item.classList.remove(activeClass));
+	const row = document.querySelector(`${options.rowSelector || '.modal-patient-item'}[data-index="${index}"]`);
+	if (row) row.classList.add(activeClass);
+	return row;
+}
 
-	function openSearchModalWithPreset(options = {}) {
-		const modal = showBootstrapModal(options.modal || options.modalElement || 'patientSearchModal', {
-			missingMessage: options.missingMessage
-		});
-		if (!modal) return null;
-		if (typeof options.reset === 'function') options.reset();
-		return {
-			modal,
-			presetSearch: resolvePresetSearch({
-				searchInput: options.searchInput,
-				shouldPrefill: options.shouldPrefill,
-				currentPatientData: options.currentPatientData
-			})
-		};
-	}
+function selectAppointmentCard(appointmentId, options = {}) {
+	const rowSelector = options.rowSelector || '.qlpk-waiting-card';
+	const activeClass = options.activeClass || 'selected';
+	const cards = Array.from(document.querySelectorAll(rowSelector));
+	cards.forEach(card => {
+		card.classList.remove(activeClass);
+	});
+	const selectedCard = cards.find(card => String(card.dataset.appointmentId || '') === String(appointmentId));
+	if (selectedCard) selectedCard.classList.add(activeClass);
+	return selectedCard;
+}
 
-	function buildOpenSearchModalState(openResult) {
-		if (!openResult || !openResult.presetSearch) return null;
-		return {
-			prefillPatientId: openResult.presetSearch.prefillPatientId,
-			query: openResult.presetSearch.query || '',
-			shouldPrefill: false
-		};
-	}
+function applySelectedPatientUi(index, options = {}) {
+	const row = setActivePatientRow(index, options);
+	const button = setSelectButtonEnabled(true, options.selectButton || 'selectPatientFromModal');
+	return { row, button };
+}
 
-	function openSearchModalAndFetch(options = {}) {
-		const openResult = openSearchModalWithPreset(options);
-		const openState = buildOpenSearchModalState(openResult);
-		if (!openState) return null;
-		if (typeof options.setPrefillPatientId === 'function') {
-			options.setPrefillPatientId(openState.prefillPatientId);
-		}
-		if (typeof options.fetchSearch === 'function') {
-			options.fetchSearch(openState.query);
-		}
-		if (typeof options.setShouldPrefill === 'function') {
-			options.setShouldPrefill(openState.shouldPrefill);
-		}
-		return openState;
-	}
+function applyNoSearchResultsUi(options = {}) {
+	const historyHtml = renderHistoryNoPatient(options.medicalHistory || 'modalMedicalHistory');
+	const button = setSelectButtonEnabled(false, options.selectButton || 'selectPatientFromModal');
+	return { historyHtml, button };
+}
 
-	function buildPatientRow({ patient, index, selectedPatient, formatDateDisplay, showPatientAction = true }) {
-		const isActive = selectedPatient && selectedPatient.id === patient.id;
-		const formatDate = getDateFormatter(formatDateDisplay);
-		const dateColumnClass = showPatientAction ? 'col-2' : 'col-3';
-		const phoneColumnClass = showPatientAction ? 'col-2' : 'col-3';
-		return el('div', { class: `row border-bottom py-2 align-items-center modal-patient-item${isActive ? ' modal-patient-item-active' : ''}`, 'data-index': index },
-			el('div', { class: 'col-2 text-center patient-search-modal__patient-code' }, patient.patient_code || ''),
-			el('div', { class: 'col-4 text-center patient-search-modal__patient-name' }, patient.full_name || ''),
-			el('div', { class: `${dateColumnClass} text-center` }, patient.date_of_birth ? formatDate(patient.date_of_birth) : ''),
-			el('div', { class: `${phoneColumnClass} text-center` }, patient.phone || ''),
-			showPatientAction ? el('div', { class: 'col-2 text-center' },
-				el('button', { 'data-qlpk-button': 'view', 'data-qlpk-button-variant': 'soft', class: 'btn btn-sm patient-search-modal__patient-action', 'data-action': 'copy', 'data-index': index, title: 'Xem lại' },
-					el('i', { class: 'bi bi-eye' }))) : null
-		);
-	}
+function applySinglePatientSearchUi(patient, options = {}) {
+	const searchInput = resolveElement(options.searchInput || 'modalPatientSearch');
+	if (searchInput) searchInput.value = getPatientSearchText(patient);
+	const button = setSelectButtonEnabled(true, options.selectButton || 'selectPatientFromModal');
+	return { searchInput, button };
+}
 
-	function syncPatientActionColumn(containerOrId, showPatientAction) {
-		const container = resolveElement(containerOrId || 'modalSearchResults');
-		const headerCell = container
-			?.closest('.patient-search-modal__results-card')
-			?.querySelector('.patient-search-modal__table-head-row > :last-child');
-		if (!headerCell) return null;
-		headerCell.hidden = !showPatientAction;
-		return headerCell;
-	}
+function showHistoryButton(buttonOrId = 'historyBtn') {
+	const button = resolveElement(buttonOrId);
+	if (!button) return null;
+	button.removeAttribute('style');
+	button.classList.add('patient-search-modal__history-button-visible');
+	button.classList.remove('d-none', 'visually-hidden');
+	return button;
+}
 
-	function renderSearchResults(options = {}) {
-		const container = resolveElement(options.container || 'modalSearchResults');
-		if (!container) return '';
-		const showPatientAction = options.showPatientAction !== false;
-		syncPatientActionColumn(container, showPatientAction);
+function resetModalDom(options = {}) {
+	setSelectButtonEnabled(false, options.selectButton || 'selectPatientFromModal');
 
-		if (options.isError) {
-			return renderState(container, 'error');
-		}
+	const searchInput = resolveElement(options.searchInput || 'modalPatientSearch');
+	if (searchInput) searchInput.value = '';
 
-		const patients = Array.isArray(options.patients) ? options.patients : [];
-		if (!patients.length) {
-			return renderState(container, 'emptySearch');
-		}
+	renderState(options.searchResults || 'modalSearchResults', 'emptySearch');
+	renderHistoryNoPatient(options.medicalHistory || 'modalMedicalHistory');
+}
 
-		const rows = patients.map((patient, index) => buildPatientRow({
-			patient,
-			index,
-			selectedPatient: options.selectedPatient,
-			formatDateDisplay: options.formatDateDisplay,
-			showPatientAction
-		}));
-		replace(container, rows);
-		return rows;
-	}
+function bindSearchInput(inputOrId, onSearch) {
+	const input = resolveElement(inputOrId || 'modalPatientSearch');
+	if (!input || typeof onSearch !== 'function') return null;
 
-	function resolveAutoSelectIndex(options = {}) {
-		const patients = Array.isArray(options.patients) ? options.patients : [];
-		if (!patients.length) return -1;
-
-		let targetIndex = -1;
-		if (options.prefillPatientId) {
-			targetIndex = patients.findIndex(patient => patient.id === options.prefillPatientId);
-		}
-		if (targetIndex < 0 && options.selectedPatient) {
-			targetIndex = patients.findIndex(patient => patient.id === options.selectedPatient.id);
-		}
-		return targetIndex < 0 ? 0 : targetIndex;
-	}
-
-	function renderHistoryNoPatient(containerOrId = 'modalMedicalHistory') {
-		return renderState(containerOrId, 'noPatientHistory');
-	}
-
-	function setSelectButtonEnabled(enabled, buttonOrId = 'selectPatientFromModal') {
-		const button = resolveElement(buttonOrId);
-		if (button) button.disabled = !enabled;
-		return button;
-	}
-
-	function setActivePatientRow(index, options = {}) {
-		const activeClass = options.activeClass || 'modal-patient-item-active';
-		document.querySelectorAll(options.rowSelector || '.modal-patient-item').forEach(item => item.classList.remove(activeClass));
-		const row = document.querySelector(`${options.rowSelector || '.modal-patient-item'}[data-index="${index}"]`);
-		if (row) row.classList.add(activeClass);
-		return row;
-	}
-
-	function selectAppointmentCard(appointmentId, options = {}) {
-		const rowSelector = options.rowSelector || '.qlpk-waiting-card';
-		const activeClass = options.activeClass || 'selected';
-		const cards = Array.from(document.querySelectorAll(rowSelector));
-		cards.forEach(card => {
-			card.classList.remove(activeClass);
-		});
-		const selectedCard = cards.find(card => String(card.dataset.appointmentId || '') === String(appointmentId));
-		if (selectedCard) selectedCard.classList.add(activeClass);
-		return selectedCard;
-	}
-
-	function applySelectedPatientUi(index, options = {}) {
-		const row = setActivePatientRow(index, options);
-		const button = setSelectButtonEnabled(true, options.selectButton || 'selectPatientFromModal');
-		return { row, button };
-	}
-
-	function applyNoSearchResultsUi(options = {}) {
-		const historyHtml = renderHistoryNoPatient(options.medicalHistory || 'modalMedicalHistory');
-		const button = setSelectButtonEnabled(false, options.selectButton || 'selectPatientFromModal');
-		return { historyHtml, button };
-	}
-
-	function applySinglePatientSearchUi(patient, options = {}) {
-		const searchInput = resolveElement(options.searchInput || 'modalPatientSearch');
-		if (searchInput) searchInput.value = getPatientSearchText(patient);
-		const button = setSelectButtonEnabled(true, options.selectButton || 'selectPatientFromModal');
-		return { searchInput, button };
-	}
-
-	function showHistoryButton(buttonOrId = 'historyBtn') {
-		const button = resolveElement(buttonOrId);
-		if (!button) return null;
-		button.removeAttribute('style');
-		button.classList.add('patient-search-modal__history-button-visible');
-		button.classList.remove('d-none', 'visually-hidden');
-		return button;
-	}
-
-	function resetModalDom(options = {}) {
-		setSelectButtonEnabled(false, options.selectButton || 'selectPatientFromModal');
-
-		const searchInput = resolveElement(options.searchInput || 'modalPatientSearch');
-		if (searchInput) searchInput.value = '';
-
-		renderState(options.searchResults || 'modalSearchResults', 'emptySearch');
-		renderHistoryNoPatient(options.medicalHistory || 'modalMedicalHistory');
-	}
-
-	function bindSearchInput(inputOrId, onSearch) {
-		const input = resolveElement(inputOrId || 'modalPatientSearch');
-		if (!input || typeof onSearch !== 'function') return null;
-
-		input.addEventListener('input', event => {
+	input.addEventListener('input', event => {
+		onSearch(input.value.trim(), event);
+	});
+	input.addEventListener('keypress', event => {
+		if (event.key === 'Enter') {
+			event.preventDefault();
 			onSearch(input.value.trim(), event);
-		});
-		input.addEventListener('keypress', event => {
-			if (event.key === 'Enter') {
-				event.preventDefault();
-				onSearch(input.value.trim(), event);
-			}
-		});
-		return input;
-	}
+		}
+	});
+	return input;
+}
 
-	function bindPatientResultsClick(containerOrId, options = {}) {
-		const container = resolveElement(containerOrId || 'modalSearchResults');
-		if (!container) return null;
+function bindPatientResultsClick(containerOrId, options = {}) {
+	const container = resolveElement(containerOrId || 'modalSearchResults');
+	if (!container) return null;
 
-		container.addEventListener('click', event => {
-			const target = event.target;
-			if (!target || typeof target.closest !== 'function') return;
-			const row = target.closest(options.rowSelector || '.modal-patient-item');
-			if (!row) return;
-			const index = Number(row.dataset.index);
-			if (Number.isNaN(index)) return;
+	container.addEventListener('click', event => {
+		const target = event.target;
+		if (!target || typeof target.closest !== 'function') return;
+		const row = target.closest(options.rowSelector || '.modal-patient-item');
+		if (!row) return;
+		const index = Number(row.dataset.index);
+		if (Number.isNaN(index)) return;
 
-			const actionEl = target.closest('[data-action]');
-			const action = actionEl ? actionEl.getAttribute('data-action') : null;
-			if (action === 'copy') {
-				event.stopPropagation();
-				if (typeof options.onCopy === 'function') options.onCopy(index, event);
-				return;
-			}
-			if (typeof options.onSelect === 'function') options.onSelect(index, event);
-		});
-		return container;
-	}
+		const actionEl = target.closest('[data-action]');
+		const action = actionEl ? actionEl.getAttribute('data-action') : null;
+		if (action === 'copy') {
+			event.stopPropagation();
+			if (typeof options.onCopy === 'function') options.onCopy(index, event);
+			return;
+		}
+		if (typeof options.onSelect === 'function') options.onSelect(index, event);
+	});
+	return container;
+}
 
-	function bindModalHidden(modalOrId, onHidden) {
-		const modal = resolveElement(modalOrId || 'patientSearchModal');
-		if (!modal || typeof onHidden !== 'function') return null;
-		modal.addEventListener('hidden.bs.modal', event => onHidden(event));
-		return modal;
-	}
+function bindModalHidden(modalOrId, onHidden) {
+	const modal = resolveElement(modalOrId || 'patientSearchModal');
+	if (!modal || typeof onHidden !== 'function') return null;
+	modal.addEventListener('hidden.bs.modal', event => onHidden(event));
+	return modal;
+}
 
-	function bindSelectButton(buttonOrId, onSelect) {
-		const button = resolveElement(buttonOrId || 'selectPatientFromModal');
-		if (!button || typeof onSelect !== 'function') return null;
-		button.addEventListener('click', event => onSelect(event));
-		return button;
-	}
+function bindSelectButton(buttonOrId, onSelect) {
+	const button = resolveElement(buttonOrId || 'selectPatientFromModal');
+	if (!button || typeof onSelect !== 'function') return null;
+	button.addEventListener('click', event => onSelect(event));
+	return button;
+}
 
-	function bindSelectPatientFromModalButton(buttonOrId, options = {}) {
-		return bindSelectButton(buttonOrId, async event => {
-			const selectedPatient = typeof options.getSelectedPatient === 'function'
-				? options.getSelectedPatient()
-				: null;
-			if (!selectedPatient) return;
+function bindSelectPatientFromModalButton(buttonOrId, options = {}) {
+	return bindSelectButton(buttonOrId, async event => {
+		const selectedPatient = typeof options.getSelectedPatient === 'function'
+			? options.getSelectedPatient()
+			: null;
+		if (!selectedPatient) return;
 
-			if (typeof options.loadPatient === 'function') {
-				await options.loadPatient(selectedPatient, event);
-			}
-			hideBootstrapModal(options.modal);
+		if (typeof options.loadPatient === 'function') {
+			await options.loadPatient(selectedPatient, event);
+		}
+		hideBootstrapModal(options.modal);
 
-			const locked = typeof options.isFormLocked === 'function'
-				? options.isFormLocked()
-				: Boolean(options.isFormLocked);
-			if (locked && typeof options.unlockForm === 'function') {
-				options.unlockForm();
-			}
-
-			if (typeof options.showToast === 'function') {
-				options.showToast('success', options.successMessage || 'Đã chọn bệnh nhân');
-			}
-		});
-	}
-
-	function bindOpenButtons(options = {}) {
-		const bound = {};
-		const searchButton = resolveElement(options.searchButton);
-		if (searchButton && typeof options.onSearchOpen === 'function') {
-			searchButton.addEventListener('click', event => options.onSearchOpen(event));
-			bound.searchButton = searchButton;
+		const locked = typeof options.isFormLocked === 'function'
+			? options.isFormLocked()
+			: Boolean(options.isFormLocked);
+		if (locked && typeof options.unlockForm === 'function') {
+			options.unlockForm();
 		}
 
-		const historyButton = resolveElement(options.historyButton);
-		if (historyButton && typeof options.onHistoryOpen === 'function') {
-			historyButton.addEventListener('click', event => options.onHistoryOpen(event));
-			bound.historyButton = historyButton;
+		if (typeof options.showToast === 'function') {
+			options.showToast('success', options.successMessage || 'Đã chọn bệnh nhân');
 		}
-		return bound;
+	});
+}
+
+function bindOpenButtons(options = {}) {
+	const bound = {};
+	const searchButton = resolveElement(options.searchButton);
+	if (searchButton && typeof options.onSearchOpen === 'function') {
+		searchButton.addEventListener('click', event => options.onSearchOpen(event));
+		bound.searchButton = searchButton;
 	}
 
-	function bindSearchModalOpenButtons(options = {}) {
-		const setShouldPrefill = value => {
-			if (typeof options.setShouldPrefill === 'function') options.setShouldPrefill(value);
-		};
-		const open = event => {
-			if (typeof options.open === 'function') options.open(event);
-		};
-		return bindOpenButtons({
-			searchButton: options.searchButton,
-			historyButton: options.historyButton,
-			onSearchOpen(event) {
-				setShouldPrefill(false);
-				open(event);
-			},
-			onHistoryOpen(event) {
-				setShouldPrefill(true);
-				open(event);
-			}
-		});
+	const historyButton = resolveElement(options.historyButton);
+	if (historyButton && typeof options.onHistoryOpen === 'function') {
+		historyButton.addEventListener('click', event => options.onHistoryOpen(event));
+		bound.historyButton = historyButton;
 	}
+	return bound;
+}
 
-	function bindPatientSearchModalFlowControls(options = {}) {
-		const bound = {};
-		bound.openButtons = bindSearchModalOpenButtons({
-			searchButton: options.searchButton,
-			historyButton: options.historyButton,
-			setShouldPrefill: options.setShouldPrefill,
-			open: options.open
-		});
-
-		bound.searchInput = bindSearchInput(options.searchInput, (query, event) => {
-			if (typeof options.fetchSearch === 'function') options.fetchSearch(query, event);
-		});
-		bound.resultsClick = bindPatientResultsClick(options.resultsContainer, {
-			onCopy: options.copyPatient,
-			onSelect: options.selectPatient
-		});
-
-		const historyListUi = getHistoryListUi(options);
-		if (historyListUi && typeof historyListUi.bindHistoryListActions === 'function') {
-			bound.historyList = historyListUi.bindHistoryListActions(options.historyContainer, {
-				onSelect: options.selectHistory,
-				copyHistory: options.copyHistory,
-				deleteHistory: options.deleteHistory,
-				showToast: options.showToast
-			});
+function bindSearchModalOpenButtons(options = {}) {
+	const setShouldPrefill = value => {
+		if (typeof options.setShouldPrefill === 'function') options.setShouldPrefill(value);
+	};
+	const open = event => {
+		if (typeof options.open === 'function') options.open(event);
+	};
+	return bindOpenButtons({
+		searchButton: options.searchButton,
+		historyButton: options.historyButton,
+		onSearchOpen(event) {
+			setShouldPrefill(false);
+			open(event);
+		},
+		onHistoryOpen(event) {
+			setShouldPrefill(true);
+			open(event);
 		}
+	});
+}
 
-		bound.selectButton = bindSelectPatientFromModalButton(options.selectButton, {
-			getSelectedPatient: options.getSelectedPatient,
-			loadPatient: options.loadPatient,
-			modal: options.modal,
-			isFormLocked: options.isFormLocked,
-			unlockForm: options.unlockForm,
+function bindPatientSearchModalFlowControls(options = {}) {
+	const bound = {};
+	bound.openButtons = bindSearchModalOpenButtons({
+		searchButton: options.searchButton,
+		historyButton: options.historyButton,
+		setShouldPrefill: options.setShouldPrefill,
+		open: options.open
+	});
+
+	bound.searchInput = bindSearchInput(options.searchInput, (query, event) => {
+		if (typeof options.fetchSearch === 'function') options.fetchSearch(query, event);
+	});
+	bound.resultsClick = bindPatientResultsClick(options.resultsContainer, {
+		onCopy: options.copyPatient,
+		onSelect: options.selectPatient
+	});
+
+	const historyListUi = getHistoryListUi(options);
+	if (historyListUi && typeof historyListUi.bindHistoryListActions === 'function') {
+		bound.historyList = historyListUi.bindHistoryListActions(options.historyContainer, {
+			onSelect: options.selectHistory,
+			copyHistory: options.copyHistory,
+			deleteHistory: options.deleteHistory,
 			showToast: options.showToast
 		});
-		bound.hidden = bindModalHidden(options.modal, options.resetModal);
-
-		const tabsUi = getTabsUi(options);
-		if (tabsUi && typeof tabsUi.bindShownTabEvents === 'function') {
-			bound.tabs = tabsUi.bindShownTabEvents(options.tabs, options.updateContent);
-		}
-
-		bound.relativeResolver = bindRelativeLinkResolver(options.openLinkedRelative, options.relativeLinkHandler);
-		return bound;
 	}
 
-	// Pages that load the relative-link handler pass it in; others have no linked-relative navigation.
-	function bindRelativeLinkResolver(openLinkedRelative, relativeLinkHandler) {
-		if (!relativeLinkHandler || typeof relativeLinkHandler.registerResolver !== 'function') {
-			return false;
-		}
-		if (typeof openLinkedRelative !== 'function') return false;
-		relativeLinkHandler.registerResolver(patientId => openLinkedRelative(patientId));
-		return true;
-	}
-
-	Object.assign(PARTS, {
-		resolveElement, getBootstrapModalApi, showBootstrapModal, hideBootstrapModal, buildState,
-		renderState, ensureHighlightStyles, getDateFormatter, getPatientSearchText,
-		resolvePresetSearch, openSearchModalWithPreset, buildOpenSearchModalState, openSearchModalAndFetch,
-		buildPatientRow, syncPatientActionColumn, renderSearchResults, resolveAutoSelectIndex,
-		renderHistoryNoPatient, setSelectButtonEnabled, setActivePatientRow, selectAppointmentCard,
-		showHistoryButton, resetModalDom, applySelectedPatientUi, applyNoSearchResultsUi,
-		applySinglePatientSearchUi, bindSearchInput, bindPatientResultsClick, bindModalHidden,
-		bindSelectButton, bindSelectPatientFromModalButton, bindOpenButtons, bindSearchModalOpenButtons,
-		bindPatientSearchModalFlowControls, bindRelativeLinkResolver
+	bound.selectButton = bindSelectPatientFromModalButton(options.selectButton, {
+		getSelectedPatient: options.getSelectedPatient,
+		loadPatient: options.loadPatient,
+		modal: options.modal,
+		isFormLocked: options.isFormLocked,
+		unlockForm: options.unlockForm,
+		showToast: options.showToast
 	});
-})(window);
+	bound.hidden = bindModalHidden(options.modal, options.resetModal);
+
+	const tabsUi = getTabsUi(options);
+	if (tabsUi && typeof tabsUi.bindShownTabEvents === 'function') {
+		bound.tabs = tabsUi.bindShownTabEvents(options.tabs, options.updateContent);
+	}
+
+	bound.relativeResolver = bindRelativeLinkResolver(options.openLinkedRelative, options.relativeLinkHandler);
+	return bound;
+}
+
+// Pages that load the relative-link handler pass it in; others have no linked-relative navigation.
+function bindRelativeLinkResolver(openLinkedRelative, relativeLinkHandler) {
+	if (!relativeLinkHandler || typeof relativeLinkHandler.registerResolver !== 'function') {
+		return false;
+	}
+	if (typeof openLinkedRelative !== 'function') return false;
+	relativeLinkHandler.registerResolver(patientId => openLinkedRelative(patientId));
+	return true;
+}
+
+Object.assign(PARTS, {
+	resolveElement, getBootstrapModalApi, showBootstrapModal, hideBootstrapModal, buildState,
+	renderState, ensureHighlightStyles, getDateFormatter, getPatientSearchText,
+	resolvePresetSearch, openSearchModalWithPreset, buildOpenSearchModalState, openSearchModalAndFetch,
+	buildPatientRow, syncPatientActionColumn, renderSearchResults, resolveAutoSelectIndex,
+	renderHistoryNoPatient, setSelectButtonEnabled, setActivePatientRow, selectAppointmentCard,
+	showHistoryButton, resetModalDom, applySelectedPatientUi, applyNoSearchResultsUi,
+	applySinglePatientSearchUi, bindSearchInput, bindPatientResultsClick, bindModalHidden,
+	bindSelectButton, bindSelectPatientFromModalButton, bindOpenButtons, bindSearchModalOpenButtons,
+	bindPatientSearchModalFlowControls, bindRelativeLinkResolver
+});

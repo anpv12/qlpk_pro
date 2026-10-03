@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const sourcePath = path.join(root, 'app/static/js/doctor-examination/draft-recovery-policy.js');
-const source = fs.readFileSync(sourcePath, 'utf8');
+const { runScriptFile } = require(path.join(root, 'tests/helpers/module-source'));
 
 const modules = {};
 const windowStub = {
 	QLPKDoctorModuleRegistry: { register(name, value) { modules[name] = value; }, get: name => modules[name] || null }
 };
-vm.runInNewContext(source, { window: windowStub, console }, { filename: sourcePath });
+runScriptFile(sourcePath, vm.createContext({ window: windowStub, console }));
 const policy = modules.draftRecoveryPolicy;
 if (!policy) throw new Error('Không tìm thấy owner draftRecoveryPolicy');
 

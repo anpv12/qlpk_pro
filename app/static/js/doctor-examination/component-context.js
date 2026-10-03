@@ -1,5 +1,6 @@
 import { QLPKDoctorPageRuntime } from './page-runtime.js';
 import { QLPKComponentDomScope } from '../components/component-dom-scope.js';
+import { QLPKDoctorModuleRegistry } from './module-registry.js';
 
 let currentContext = null;
 
@@ -42,7 +43,7 @@ function createStateBridge(target) {
 
 function create(options = {}) {
 	const sourceDocument = options.document || document;
-	const registry = options.registry || window.QLPKDoctorModuleRegistry;
+	const registry = options.registry || QLPKDoctorModuleRegistry;
 	const runtime = options.runtime || QLPKDoctorPageRuntime;
 	const config = options.config || registry?.get?.('doctorComponentConfig') || {};
 	const scopeFactory = options.scopeFactory || QLPKComponentDomScope;
@@ -65,7 +66,7 @@ function create(options = {}) {
 	function getModule(name, required = false) {
 		const module = registry?.get?.(name) || null;
 		if (!module && required) throw new Error(`Thiếu Doctor module: ${name}`);
-			return module;
+		return module;
 	}
 
 	function getDocument(scopeOptions = {}) {
@@ -97,7 +98,7 @@ function create(options = {}) {
 		const missing = requiredModules.filter(name => !getModule(name));
 		if (missing.length) {
 			const error = new Error(`Thiếu Doctor modules: ${missing.join(', ')}`);
-				error.missingModules = missing;
+			error.missingModules = missing;
 			throw error;
 		}
 		return true;
@@ -139,6 +140,6 @@ function clearCurrent(context) {
 
 const api = Object.freeze({ create, setCurrent, getCurrent, clearCurrent });
 export const QLPKDoctorComponentContext = api;
-if (window.QLPKDoctorModuleRegistry?.register) {
-	window.QLPKDoctorModuleRegistry.register('doctorComponentContext', api);
+if (QLPKDoctorModuleRegistry.register) {
+	QLPKDoctorModuleRegistry.register('doctorComponentContext', api);
 }

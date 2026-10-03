@@ -1,5 +1,6 @@
 import { el } from '../shared/dom.js';
 import { QLPKIconSystem } from '../shared/icon-system.js';
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
 
 // Waiting-queue / appointment cards built as nodes (patient data is never parsed as HTML).
 
@@ -348,4 +349,4 @@ export const QLPKWaitingQueueCardUi = Object.freeze({
 	formatPatientCodeText,
 	formatPatientGenderText
 });
-window.QLPKDoctorModuleRegistry?.register?.('waitingQueueCardUi', QLPKWaitingQueueCardUi);
+QLPKDoctorModuleRegistry.register('waitingQueueCardUi', QLPKWaitingQueueCardUi);

@@ -1,5 +1,6 @@
 import { buildPrescriptionScreenHTML } from '../shared/prescription-document-template.js';
 import { el, renderDocumentMarkup, replace } from '../../shared/dom.js';
+import { QLPKDoctorModuleRegistry } from '../../doctor-examination/module-registry.js';
 
 const PRESCRIPTION_PAGE_COLORS = {
 	'BASIC': { accent: '#00897B', label: 'Đơn Cơ bản' },
@@ -127,7 +128,7 @@ function createPrescriptionModalPreview(deps = {}) {
 }
 
 const controller = createPrescriptionModalPreview();
-window.QLPKDoctorModuleRegistry?.register?.('prescriptionModalPreview', Object.freeze({
+QLPKDoctorModuleRegistry.register('prescriptionModalPreview', Object.freeze({
 	create: createPrescriptionModalPreview,
 	getController: () => controller
 }), {

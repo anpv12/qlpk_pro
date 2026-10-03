@@ -1,6 +1,4 @@
-(function (window, document) {
-	'use strict';
-
+function bootstrapBrowserSession() {
 	const transport = window.QLPKApiTransport;
 	if (!transport || transport.session) return;
 	const script = document.querySelector('script[data-qlpk-session]');
@@ -30,4 +28,8 @@
 		if (!publicPage && ['anonymous', 'expired'].includes(current.status)) redirectToLogin();
 	});
 	binding.owner.bootstrap().catch(() => {});
-})(window, document);
+}
+
+bootstrapBrowserSession();
+
+export { bootstrapBrowserSession };

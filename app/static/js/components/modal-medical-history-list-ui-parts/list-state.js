@@ -2,6 +2,7 @@ import { emptyState } from '../../shared/empty-state.js';
 import { setActiveHistoryRow } from './list-bindings.js';
 import { buildQuickDeleteConfirmState } from './delete-flow.js';
 import { ModalFunctionTabsUi } from '../modal-function-tabs-ui.js';
+import { QLPKDoctorModuleRegistry } from '../../doctor-examination/module-registry.js';
 
 function resolveElement(elementOrId) {
 	if (!elementOrId) return null;
@@ -367,7 +368,7 @@ async function copyHistoryToFormFlow(options = {}) {
 			options.setCurrentAppointmentId(historyCopyLoadState.appointmentId);
 		}
 
-		const patientSearchUi = window.QLPKDoctorModuleRegistry?.get?.('modalPatientSearchUi');
+		const patientSearchUi = QLPKDoctorModuleRegistry.get('modalPatientSearchUi');
 		const historyPatientLoadState = patientSearchUi && typeof patientSearchUi.loadCopyHistoryPatient === 'function'
 			? await patientSearchUi.loadCopyHistoryPatient(options.selectedPatient, { apiCall: options.apiCall })
 			: { fullPatient: options.selectedPatient || null };

@@ -1,6 +1,8 @@
+import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
+
 const INSTANCE_PROPERTY = '_qlpkPatientHistoryModalInstance';
 const TRIGGER_PROPERTY = '_qlpkPatientHistoryModalTrigger';
-const REGISTRY = window.QLPKDoctorModuleRegistry;
+const REGISTRY = QLPKDoctorModuleRegistry;
 
 function resolveElement(value, doc = document) {
 	if (!value) return null;
@@ -10,7 +12,7 @@ function resolveElement(value, doc = document) {
 
 function requireDependency(value, label) {
 	if (!value) throw new Error(`Thiếu ${label} cho Patient History Modal`);
-		return value;
+	return value;
 }
 
 function createDataRuntime(options = {}) {
