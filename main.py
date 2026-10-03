@@ -8,11 +8,7 @@ from app.core.security_config import validate_security_config
 validate_security_config(settings)
 
 from app.core.database import engine
-from app.models import Base, User, Patient, Appointment
-from app.models.occupation import Occupation
-from app.models.sexual_orientation import SexualOrientation
-from app.models.administrative_region import AdministrativeRegion
-from app.models.administrative_unit import AdministrativeUnit
+from app.models import Base
 from app.utils.api_error_contract import attach_stable_error_code
 from app.core.http_cache import versioned_static_cache_control
 from app.core.security_headers import apply_security_headers, uses_insecure_default_secret
@@ -78,7 +74,6 @@ from app.realtime import init_realtime, socketio
 import logging
 import os
 import time
-import psycopg2
 from sqlalchemy.exc import OperationalError
 
 def init_database():
@@ -101,7 +96,7 @@ def init_database():
             break
         except OperationalError as e:
             if "does not exist" in str(e):
-                print(f"Database does not exist, waiting for PostgreSQL to be ready...")
+                print("Database does not exist, waiting for PostgreSQL to be ready...")
             else:
                 print(f"Database connection failed: {e}")
 
@@ -285,7 +280,7 @@ def check_allowed_host():
     if host not in allowed_domains:
         return jsonify({
             'error': 'Access denied',
-            'message': f'Vui lòng truy cập đúng đường dẫn: https://qlpk.io.vn'
+            'message': 'Vui lòng truy cập đúng đường dẫn: https://qlpk.io.vn'
         }), 403
     
     return None
