@@ -2,6 +2,7 @@ import { buildPrescriptionPreviewHTML } from '../prescriptions/shared/prescripti
 import { PrescriptionPrintDocument } from '../prescriptions/components/prescription-print-document.js';
 import { QLPKPdfPreview } from '../shared/pdf-preview.js';
 import { QLPKDoctorModuleRegistry } from '../doctor-examination/module-registry.js';
+import { writeWindowDocument } from '../shared/dom.js';
 
 const TARGETS = Object.freeze({
 	'prescription-content': {
@@ -68,10 +69,7 @@ function openPrintWindow(title, openWindow) {
 	}
 	const printWindow = openWindow('', '_blank');
 	if (!printWindow) throw new Error('Trình duyệt đã chặn cửa sổ in');
-	printWindow.document.open();
-	printWindow.document.write(buildLoadingDocument(title));
-	printWindow.document.close();
-	return printWindow;
+	return writeWindowDocument(printWindow, buildLoadingDocument(title));
 }
 
 const PRINT_DOCUMENT_STYLE = `<style>
@@ -174,13 +172,11 @@ function writePrintDocument(printWindow, options) {
 
 function writePrintError(printWindow, title, message) {
 	if (!printWindow || printWindow.closed) return;
-	printWindow.document.open();
-	printWindow.document.write(`<!DOCTYPE html>
+	writeWindowDocument(printWindow, `<!DOCTYPE html>
 			<html lang="vi">
 			<head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
 			<body><h1>Không thể chuẩn bị tài liệu in</h1><p>${escapeHtml(message)}</p></body>
 			</html>`);
-	printWindow.document.close();
 }
 
 function resolveSelection(stateStore) {

@@ -1,3 +1,5 @@
+import { writeWindowDocument } from './dom.js';
+
 async function inlineVerificationImages(document) {
     for (const image of document.querySelectorAll('img')) {
         const source = new URL(image.getAttribute('src') || '', window.location.origin);
@@ -46,9 +48,7 @@ async function render(tab, html) {
         return tab;
     } catch (error) {
         if (!tab.closed) {
-            tab.document.open();
-            tab.document.write('<!doctype html><meta charset="utf-8"><title>Không thể tạo PDF</title><p>Không thể tạo PDF. Vui lòng đóng tab và thử lại.</p>');
-            tab.document.close();
+            writeWindowDocument(tab, '<!doctype html><meta charset="utf-8"><title>Không thể tạo PDF</title><p>Không thể tạo PDF. Vui lòng đóng tab và thử lại.</p>');
         }
         throw error;
     }

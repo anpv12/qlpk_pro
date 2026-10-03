@@ -34,7 +34,7 @@ class Metric:
 
 
 MAX_JQUERY = 0
-MAX_HTML_SINKS = 1
+MAX_HTML_SINKS = 2
 MAX_CLASSIC_SCRIPTS = 0
 
 METRICS = [
@@ -196,11 +196,12 @@ METRICS = [
 	),
 	Metric(
 		name="js_html_string_sinks",
-		pattern=r"\.innerHTML\s*\+?=(?!=)|\.outerHTML\s*=(?!=)|insertAdjacentHTML\s*\(|\.html\s*\(\s*[^)\s]",
+		pattern=r"\.innerHTML\s*\+?=(?!=)|\.outerHTML\s*=(?!=)|insertAdjacentHTML\s*\(|\.html\s*\(\s*[^)\s]|\.document\.write(?:ln)?\s*\(",
 		roots=("app/static/js",),
 		suffixes=(".js",),
 		max_count=MAX_HTML_SINKS,
-		description="Debt item 3: HTML-string rendering is locked and only decreases; build nodes with shared/dom.js el().",
+		description="Debt item 3 (done 03/10/2026): the only HTML-string sinks are shared/dom.js renderDocumentMarkup (printable "
+		"documents) and writeWindowDocument (print/preview windows); build page UI with shared/dom.js el().",
 	),
 	Metric(
 		name="html_classic_page_scripts",

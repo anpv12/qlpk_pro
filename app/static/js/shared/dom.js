@@ -75,3 +75,12 @@ export function renderDocumentMarkup(node, documentHtml) {
 	node.innerHTML = documentHtml;
 	return node;
 }
+
+// The sanctioned sink for a separate print/preview window: replaces its whole document with a static loading or
+// error page, or a printable document from the builders above (callers escape every interpolated value).
+export function writeWindowDocument(targetWindow, documentHtml) {
+	targetWindow.document.open();
+	targetWindow.document.write(documentHtml);
+	targetWindow.document.close();
+	return targetWindow;
+}

@@ -6,7 +6,7 @@ import './datepicker-init.js';
 import './custom-modal.js';
 import './realtime-page-hooks.js';
 import { state } from './payment-waiting/state.js';
-import { byId, debounce, delegate, on } from './shared/dom.js';
+import { byId, debounce, delegate, on, writeWindowDocument } from './shared/dom.js';
 import { HttpError } from './shared/http-json.js';
 import { applyFilters, changePage, loadPaymentData, performSearch, updateSelectedItems } from './payment-waiting/list.js';
 import { exportPaymentData, printInvoice, printInvoices } from './payment-waiting/output.js';
@@ -70,9 +70,7 @@ async function openInvoiceWindow(examinationId) {
 		return;
 	}
 
-	invoiceWindow.document.open();
-	invoiceWindow.document.write('<!doctype html><html><head><title>Đang tải hóa đơn</title></head><body>Đang tải hóa đơn...</body></html>');
-	invoiceWindow.document.close();
+	writeWindowDocument(invoiceWindow, '<!doctype html><html><head><title>Đang tải hóa đơn</title></head><body>Đang tải hóa đơn...</body></html>');
 
 	try {
 		const response = await window.fetch(`/payment-waiting/invoice/${encodeURIComponent(examinationId)}`);

@@ -6,7 +6,9 @@
   - jQuery 0; thẻ `<script>` classic của app 163 → 0 (`shared/runtime.js` là partial runtime, mỗi entry import
     script dùng chung theo thứ tự cũ); mọi file JS của app là ES module, trừ `flatpickr-vn.js` (locale UMD của
     thư viện, giữ nguyên); `QLPKDoctorModuleRegistry` là export của `doctor-examination/module-registry.js`.
-  - Chỗ chèn HTML bằng chuỗi còn 1, có chủ đích: `renderDocumentMarkup` (`shared/dom.js`), chỉ cho tài liệu in.
+  - Chỗ chèn HTML bằng chuỗi chỉ còn 2 helper có chủ đích trong `shared/dom.js`: `renderDocumentMarkup` (tài liệu
+    in dựng sẵn) và `writeWindowDocument` (trang chờ/lỗi/tài liệu trong cửa sổ in, xem trước PDF; thay 4 chỗ
+    `document.write` rải rác). Gate `js_html_string_sinks` (`MAX_HTML_SINKS = 2`) đếm cả `document.write`.
   - `window.*` 144 → 8 (ratchet `MAX_WINDOW_GLOBALS = 8`; gate `window_read_findings` cấm đọc global không ai
     gán). 8 global còn lại là ranh giới, không phải trạng thái trang:
     - platform, do `shared/runtime.js` → `shared/api-transport.js` cài trước mọi module trang: `fetch` (bọc để
