@@ -197,7 +197,7 @@ def import_excel(user):
         added_count = 0
         skipped_count = 0
         
-        for index, row in df.iterrows():
+        for _, row in df.iterrows():
             ten_hoat_chat = str(row[name_col]).strip() if pd.notna(row[name_col]) else ''
             if not ten_hoat_chat or ten_hoat_chat.lower() == 'nan':
                 continue

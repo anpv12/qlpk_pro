@@ -24,8 +24,8 @@ TERMINAL_GOOGLE_TOKEN_ERRORS = {
 
 
 def _set_connection_credential_error(connection, reason: str, terminal: bool = False) -> None:
-    setattr(connection, '_qlpk_calendar_credential_error', reason)
-    setattr(connection, '_qlpk_calendar_credential_terminal', terminal)
+    connection._qlpk_calendar_credential_error = reason
+    connection._qlpk_calendar_credential_terminal = terminal
 
 
 def _clear_connection_credential_error(connection) -> None:

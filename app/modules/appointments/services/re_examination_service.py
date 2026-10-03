@@ -179,8 +179,8 @@ def _create_re_examination_appointment(
             f"{re_examination_date} {re_examination_time}",
             '%Y-%m-%d %H:%M'
         )
-    except ValueError:
-        raise ReExaminationError(invalid_datetime_message, 400)
+    except ValueError as error:
+        raise ReExaminationError(invalid_datetime_message, 400) from error
 
     if re_examination_datetime <= datetime.now():
         raise ReExaminationError(past_datetime_message, 400)

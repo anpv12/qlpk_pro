@@ -1,5 +1,17 @@
 # QLPK Refactor Progress
 
+## Test database + cảnh báo Python (đợt 3) — 03/10/2026
+
+- 305 test cần PostgreSQL (rollback-only) chạy mặc định trên `qlpk_db` local (user cho phép): `tests/conftest.py`
+  bật khi `DATABASE_URL` là server local đang chạy (`QLPK_RUN_DB_TESTS=0` để tắt) và chặn mọi COMMIT thật trên
+  engine của app (test đó fail, không ghi được vào DB). Fixture được cập nhật theo các module đã tách
+  (`setattr_all` cho `get_db` của `medicine_dashboard`...), user giả có `is_active`, test HTTP khảo sát chỉ định
+  patch cả `auth.get_db` (ghi `last_login`). Kết quả: 1267 passed, 0 skipped; hash nội dung 60 bảng `qlpk_db`
+  trùng bản sao lưu trước khi chạy (`/Users/mac/qlpk-db-backups/qlpk_db-before-dbtests-20261003-163533.dump`).
+- 24 cảnh báo flake8-bugbear về 0: B904 (19 chỗ `raise` trong `except` thêm `from exc`), B007 (3 biến vòng
+  lặp không dùng → `_`), B010 (2 `setattr` tên hằng → gán trực tiếp). Gate `bugbear_findings()` trong
+  `scripts/check_code_health.py` giữ ở 0 (cùng 24 vị trí ruff báo; `setattr` trong lambda được phép như ruff).
+
 ## Nợ kỹ thuật mục 3–6 (đợt 2) — 30/09 → 03/10/2026
 
 - Mục 3 (frontend) xong 03/10/2026:

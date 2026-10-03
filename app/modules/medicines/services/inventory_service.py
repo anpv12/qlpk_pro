@@ -32,8 +32,8 @@ def parse_quantity(value: Any, field: str, *, allow_zero: bool = True) -> Decima
         raise InventoryValidationError(f"{field} là bắt buộc")
     try:
         quantity = Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError):
-        raise InventoryValidationError(f"{field} không hợp lệ")
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise InventoryValidationError(f"{field} không hợp lệ") from exc
     if not quantity.is_finite() or quantity < ZERO or (not allow_zero and quantity == ZERO):
         comparator = "lớn hơn 0" if not allow_zero else "không được âm"
         raise InventoryValidationError(f"{field} {comparator}")

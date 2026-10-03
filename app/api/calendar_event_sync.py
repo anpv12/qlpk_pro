@@ -118,7 +118,7 @@ def verify_events(user: User):
         results = _verify_appointment_events(appointment_ids, connections, events_by_appt, users)
 
         # Tổng hợp sync_status từ trạng thái Bác sĩ và Lễ tân
-        for appt_id_str, result in results.items():
+        for _, result in results.items():
             doctor_status = result.get('doctor_verified')  # True/False/None
             receptionist_status = result.get('receptionist_verified')  # True/False/None
 

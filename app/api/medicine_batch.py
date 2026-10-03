@@ -381,16 +381,16 @@ def _normalize_import_order_items(data, db):
             raise InventoryValidationError(f"Dòng {index + 1}: medicine_id là bắt buộc")
         try:
             medicine_id = int(item['medicine_id'])
-        except (TypeError, ValueError):
-            raise InventoryValidationError(f"Dòng {index + 1}: medicine_id không hợp lệ")
+        except (TypeError, ValueError) as exc:
+            raise InventoryValidationError(f"Dòng {index + 1}: medicine_id không hợp lệ") from exc
         if not db.query(Medicine.id).filter(Medicine.id == medicine_id).first():
             raise LookupError(f"Dòng {index + 1}: Không tìm thấy thuốc")
         if not item.get('expiry_date'):
             raise InventoryValidationError(f"Dòng {index + 1}: Hạn sử dụng là bắt buộc")
         try:
             expiry_date = datetime.strptime(item['expiry_date'], '%Y-%m-%d').date()
-        except (TypeError, ValueError):
-            raise InventoryValidationError(f"Dòng {index + 1}: Định dạng hạn sử dụng không hợp lệ")
+        except (TypeError, ValueError) as exc:
+            raise InventoryValidationError(f"Dòng {index + 1}: Định dạng hạn sử dụng không hợp lệ") from exc
         quantity = parse_quantity(item.get('quantity'), f"Dòng {index + 1}: Số lượng nhập", allow_zero=False)
         batch_number = str(item.get('batch_number') or '').strip()
         if 'remaining_quantity' in item:

@@ -209,8 +209,8 @@ def plan_re_examination(db, appointment_id, data, *, user_id=None):
     raw_time = data.get('re_examination_time') or '09:00'
     try:
         requested = datetime.strptime(f'{raw_date} {raw_time}', '%Y-%m-%d %H:%M') if raw_date else None
-    except (ValueError, TypeError):
-        raise ReExaminationValidationError('Ngày giờ tái khám không hợp lệ.', schedule=state)
+    except (ValueError, TypeError) as exc:
+        raise ReExaminationValidationError('Ngày giờ tái khám không hợp lệ.', schedule=state) from exc
     desired = requested.strftime('%Y-%m-%d %H:%M') if requested else ''
     snapshot = data.get('re_examination_snapshot')
     if snapshot is not None and not isinstance(snapshot, dict):

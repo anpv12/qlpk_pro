@@ -72,8 +72,8 @@ def resolve_catalog_service(
 ) -> Service:
     try:
         normalized_id = int(service_id)
-    except (TypeError, ValueError):
-        raise AppointmentServiceValidationError("service_id là bắt buộc.")
+    except (TypeError, ValueError) as exc:
+        raise AppointmentServiceValidationError("service_id là bắt buộc.") from exc
 
     service = db.query(Service).filter(Service.id == normalized_id).first()
     if not service:
@@ -93,8 +93,8 @@ def _percentage(value: Any, field_label: str) -> Decimal:
 def _quantity(value: Any) -> int:
     try:
         quantity = int(value)
-    except (TypeError, ValueError):
-        raise AppointmentServiceValidationError("Số lượng dịch vụ phải là số nguyên dương.")
+    except (TypeError, ValueError) as exc:
+        raise AppointmentServiceValidationError("Số lượng dịch vụ phải là số nguyên dương.") from exc
     if quantity < 1:
         raise AppointmentServiceValidationError("Số lượng dịch vụ phải lớn hơn hoặc bằng 1.")
     return quantity

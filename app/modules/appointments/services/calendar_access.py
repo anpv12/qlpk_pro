@@ -47,8 +47,8 @@ def calendar_date_range(start, end):
         if not 0 <= (last - first).days <= 365:
             raise ValueError()
         return first, last + timedelta(days=1)
-    except (ValueError, OverflowError):
-        raise CalendarAccessError('Chọn khoảng ngày hợp lệ, tối đa 366 ngày (YYYY-MM-DD)')
+    except (ValueError, OverflowError) as exc:
+        raise CalendarAccessError('Chọn khoảng ngày hợp lệ, tối đa 366 ngày (YYYY-MM-DD)') from exc
 
 
 def prepare_calendar_batch(db, actor, appointment_ids, *, write=False):

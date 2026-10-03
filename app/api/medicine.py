@@ -329,8 +329,8 @@ def review_medicine_reference(user, medicine_id):
                     reference_id = int(reference_id)
                     if reference_id <= 0:
                         raise ValueError()
-                except ValueError:
-                    raise CatalogValidationError('Hãy chọn thuốc hợp lệ trong danh mục.')
+                except ValueError as exc:
+                    raise CatalogValidationError('Hãy chọn thuốc hợp lệ trong danh mục.') from exc
             return jsonify(review_preview(db, medicine, reference_id))
         confirm_reference(db, medicine, request.get_json(silent=True), user.id)
         db.commit()

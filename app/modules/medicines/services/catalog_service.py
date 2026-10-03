@@ -112,8 +112,8 @@ def nonnegative_number(value, field, *, integer=False, default=None):
         return default
     try:
         number = Decimal(str(value))
-    except (InvalidOperation, ValueError):
-        raise CatalogValidationError(f'{label} không hợp lệ.')
+    except (InvalidOperation, ValueError) as exc:
+        raise CatalogValidationError(f'{label} không hợp lệ.') from exc
     if not number.is_finite() or number < 0 or (integer and number != number.to_integral_value()):
         raise CatalogValidationError(f'{label} phải là ' + ('số nguyên không âm.' if integer else 'số không âm.'))
     if not integer and number.as_tuple().exponent < -2:

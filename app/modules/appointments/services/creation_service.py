@@ -211,7 +211,7 @@ def _normalize_appointment_creation_payload(db, data):
     try:
         normalize_re_examination_metadata(db, data, default_category=AppointmentCategory.NEW.value)
     except ReExaminationMetadataValidationError as exc:
-        raise AppointmentCreationValidationError(exc.detail, 400)
+        raise AppointmentCreationValidationError(exc.detail, 400) from exc
 
     _normalize_service_package_payload(data)
 
@@ -243,7 +243,7 @@ def _validate_appointment_create_data(data):
         }
         return AppointmentCreate(**appointment_schema_data)
     except Exception as exc:
-        raise AppointmentCreationValidationError(f'Invalid appointment data: {str(exc)}', 400)
+        raise AppointmentCreationValidationError(f'Invalid appointment data: {str(exc)}', 400) from exc
 
 
 def _parse_appointment_create_date(appt_create_data):
@@ -253,7 +253,7 @@ def _parse_appointment_create_date(appt_create_data):
     try:
         return parse_appointment_date(appt_create_data.appointment_date.isoformat())
     except ValueError as exc:
-        raise AppointmentCreationValidationError(str(exc), 400)
+        raise AppointmentCreationValidationError(str(exc), 400) from exc
 
 
 def _ensure_no_duplicate_appointment(db, data, appt_create_data, appt_date, duration_minutes):

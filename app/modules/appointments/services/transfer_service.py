@@ -42,8 +42,8 @@ def parse_transfer_request(data):
         to_person_id = int(to_person_id)
         if any(value <= 0 or value > 2147483647 for value in [*appointment_ids, to_person_id]):
             raise ValueError()
-    except (TypeError, ValueError):
-        raise AppointmentTransferValidationError("Lượt khám hoặc người nhận không hợp lệ")
+    except (TypeError, ValueError) as exc:
+        raise AppointmentTransferValidationError("Lượt khám hoặc người nhận không hợp lệ") from exc
     if not isinstance(to_role, str) or normalize_transfer_role(to_role) not in {'doctor', 'psychologist', 'receptionist'}:
         raise AppointmentTransferValidationError('Nhóm nhận chuyển khám không hợp lệ')
     return appointment_ids, normalize_transfer_role(to_role), to_person_id

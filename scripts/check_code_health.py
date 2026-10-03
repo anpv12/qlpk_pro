@@ -9,6 +9,8 @@
   McCabe complexity (same counting as ruff C901) at or under MAX_PY_COMPLEXITY.
 - No app Python handler catches Exception/BaseException (or bare except) silently: it must
   re-raise or log with the traceback (logger.exception / exc_info=True), as ruff BLE001 requires.
+- App Python has no flake8-bugbear B904 (raise in except without from), B007 (unused loop variable) or
+  B010 (setattr with a constant name) findings.
 - Every page template/partial stays at or under MAX_LINES; large ones compose partials via {% include %}.
 - Every app stylesheet (vendor excluded) stays at or under MAX_CSS_LINES; large sheets are split by
   topic into <stem>/ and the entry keeps the @import order (the cascade order).
@@ -20,6 +22,7 @@ from __future__ import annotations
 
 import ast
 import json
+import keyword
 import re
 import shutil
 import subprocess
@@ -249,8 +252,53 @@ def eslint_findings() -> list[str] | None:
     return findings
 
 
+def _raises_in_handler(nodes):
+    """Raise statements of an except body, excluding nested functions/classes and nested except handlers."""
+    stack = list(nodes)
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef, ast.ExceptHandler)):
+            continue
+        if isinstance(node, ast.Raise):
+            yield node
+        stack.extend(ast.iter_child_nodes(node))
+
+
+def _bugbear_node_findings(node: ast.AST) -> list[tuple[int, str]]:
+    if isinstance(node, ast.ExceptHandler):
+        return [(raise_node.lineno, "B904 raise trong except thiếu `from err`/`from None`")
+                for raise_node in _raises_in_handler(node.body)
+                if raise_node.exc is not None and raise_node.cause is None
+                and not (isinstance(raise_node.exc, ast.Name) and raise_node.exc.id == node.name)]
+    if isinstance(node, (ast.For, ast.AsyncFor)):
+        targets = {name.id for name in ast.walk(node.target) if isinstance(name, ast.Name)}
+        used = {name.id for stmt in node.body for name in ast.walk(stmt) if isinstance(name, ast.Name) and isinstance(name.ctx, ast.Load)}
+        return [(node.lineno, f"B007 biến vòng lặp `{name}` không dùng (đặt `_`)") for name in sorted(targets - used) if not name.startswith("_")]
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "setattr" and len(node.args) == 3
+            and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str)
+            and node.args[1].value.isidentifier() and not keyword.iskeyword(node.args[1].value)):
+        return [(node.lineno, "B010 setattr với tên hằng (gán thuộc tính trực tiếp)")]
+    return []
+
+
+def bugbear_findings() -> list[str]:
+    """flake8-bugbear/ruff B904, B007, B010 stay at zero in app Python (fixed 03/10/2026)."""
+    findings = []
+    for path in source_files():
+        if path.suffix != ".py":
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        # A lambda cannot assign an attribute, so setattr with a constant name stays allowed there (as in ruff).
+        in_lambda = {id(child) for lam in ast.walk(tree) if isinstance(lam, ast.Lambda) for child in ast.walk(lam.body)}
+        for node in ast.walk(tree):
+            if id(node) in in_lambda and isinstance(node, ast.Call):
+                continue
+            findings += [f"{path.relative_to(ROOT)}:{line}: {message}" for line, message in _bugbear_node_findings(node)]
+    return findings
+
+
 def main() -> int:
-    failures = oversized() + oversized_templates() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + window_global_findings() + window_read_findings()
+    failures = oversized() + oversized_templates() + oversized_stylesheets() + python_function_findings() + blind_except_findings() + bugbear_findings() + window_global_findings() + window_read_findings()
     lint = eslint_findings()
     if lint is None:
         print("[SKIP] eslint không có sẵn; chỉ kiểm kích thước file")

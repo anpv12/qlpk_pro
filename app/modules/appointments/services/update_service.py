@@ -124,7 +124,7 @@ def apply_appointment_admin_updates(db, appointment, appointment_id, data, logge
     try:
         normalize_re_examination_metadata(db, data, current_appointment=appointment)
     except ReExaminationMetadataValidationError as exc:
-        raise AppointmentAdminValidationError(exc.detail)
+        raise AppointmentAdminValidationError(exc.detail) from exc
     normalize_service_package_payload(data)
     ensure_appointment_status_update_allowed(appointment, data)
 
@@ -159,7 +159,7 @@ def apply_appointment_date_update(appointment, data):
     try:
         new_appointment_date = parse_appointment_date(appt_date_str)
     except ValueError as exc:
-        raise AppointmentAdminValidationError(str(exc))
+        raise AppointmentAdminValidationError(str(exc)) from exc
 
     if appointment.appointment_date != new_appointment_date:
         appointment.appointment_date = new_appointment_date
@@ -301,7 +301,7 @@ def apply_validated_appointment_update_fields(appointment, update_fields, logger
                 sorted(update_fields.keys()),
                 type(exc).__name__,
             )
-        raise AppointmentAdminValidationError(f'Invalid update data: {str(exc)}')
+        raise AppointmentAdminValidationError(f'Invalid update data: {str(exc)}') from exc
 
 
 def apply_selected_target_duration_update(db, appointment, data, old_service_id, old_package_id, logger=None):

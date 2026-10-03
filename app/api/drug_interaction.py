@@ -315,7 +315,7 @@ def import_di_excel(user):
             s = str(val).strip()
             return '' if s.lower() == 'nan' else s
 
-        for index, row in df.iterrows():
+        for _, row in df.iterrows():
             hc1_raw = safe_str(row[hc1_col])
             hc2_raw = safe_str(row[hc2_col])
 

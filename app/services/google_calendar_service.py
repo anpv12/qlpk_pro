@@ -262,7 +262,7 @@ class GoogleCalendarService:
                         raise CalendarEventRetired() from get_error
                     raise
                 if existing.get('status') == 'cancelled':
-                    raise CalendarEventRetired()
+                    raise CalendarEventRetired() from error
                 if existing.get('extendedProperties', {}).get('private') != marker:
                     return False
                 service.events().patch(calendarId='primary', eventId=event_id, body=event).execute()

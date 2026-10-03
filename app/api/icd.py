@@ -22,8 +22,8 @@ def _parse_pagination_params():
     try:
         skip = int(request.args.get('skip', 0))
         limit = int(request.args.get('limit', DEFAULT_PAGE_SIZE))
-    except (TypeError, ValueError):
-        raise ValueError('Tham số phân trang ICD không hợp lệ')
+    except (TypeError, ValueError) as exc:
+        raise ValueError('Tham số phân trang ICD không hợp lệ') from exc
 
     if skip < 0 or limit < 1 or limit > MAX_PAGE_SIZE:
         raise ValueError(
