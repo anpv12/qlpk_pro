@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý Tài liệu</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Quản lý Tài liệu', sweetalert=true) }}
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-modal.css?v={{ app_version }}">
 	<link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
@@ -18,10 +11,7 @@
 	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
 </head>
 <body class="qlpk-clinic-page document-management-page">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content">
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell() %}
 				<header class="page-header qlpk-clinic-header">
 					<h1 class="qlpk-clinic-title "><i class="bi bi-folder-symlink"></i> Tài liệu phòng khám</h1>
 				</header>
@@ -89,9 +79,7 @@
 						</div>
 					</div>
 				</div>
-			</main>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Modal Quản lý Thư mục -->
 	<div class="config-overlay doc-modal-layer" id="folderModal">

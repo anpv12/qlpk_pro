@@ -1,33 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý dịch vụ</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-  <link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
-  {% include 'partials/brand-theme.html' %}
-	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-
-  <script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
-	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+	{% from 'partials/page-head.html' import page_head with context %}{% from 'partials/admin-page-assets.html' import admin_page_assets with context %}{{ page_head('Quản lý dịch vụ', sweetalert=true) }}
+	{{ admin_page_assets(roboto=true, xlsx=true) }}
 
 </head>
 <body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
-<div class="container-fluid p-0">
-  <div class="row g-0">
-    <div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-    <main class="col-md-10 main-content">
-      <div class="header-bar qlpk-clinic-header header-padding">
-        <div class="d-flex justify-content-between">
-          <div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title page-title">Dịch vụ</h1>
-<p class="qlpk-clinic-subtitle">Quản lý danh mục và thông tin dịch vụ</p></div>
+{% from 'partials/app-shell.html' import app_shell %}{% call app_shell() %}
+      {% from 'partials/admin-page-header.html' import admin_page_header %}{% call admin_page_header('Dịch vụ', 'Quản lý danh mục và thông tin dịch vụ') %}
           <div class="d-flex gap-2">
             <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" class="btn btn-outline-success" data-crud-action="export-template">
               <i class="bi bi-download me-2"></i>Xuất mẫu
@@ -39,8 +19,7 @@
               <i class="bi bi-plus-circle me-2"></i>Thêm dịch vụ
             </button>
           </div>
-        </div>
-      </div>
+      {% endcall %}
 
       <div class="card shadow-sm rounded-4">
         <div class="card-header d-flex justify-content-between align-items-center service-card-header">
@@ -75,9 +54,7 @@
 {% include 'partials/clinic-pagination.html' %}
         </div>
       </div>
-    </main>
-  </div>
-</div>
+{% endcall %}
 
 <!-- Modal thêm dịch vụ -->
 <div class="modal fade qlpk-add-service-modal" id="addServiceModal" tabindex="-1">
@@ -213,39 +190,6 @@
 <script type="module" src="/static/js/service-management.js?v={{ app_version }}"></script>
 
 <!-- Modal Import -->
-<div class="modal fade" id="importModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Import dịch vụ</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="importFile" class="form-label">Chọn file Excel (.xlsx)</label>
-          <input type="file" class="form-control" id="importFile" accept=".xlsx,.xls">
-          <div class="form-text">File phải có định dạng Excel với các cột: Tên dịch vụ, Danh mục, Đơn giá (VNĐ), Thời gian (phút), Mô tả, Trạng thái</div>
-        </div>
-        <div class="alert alert-info">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong>Hướng dẫn:</strong>
-          <ul class="mb-0 mt-2">
-            <li>Tải mẫu file bằng nút "Xuất mẫu"</li>
-            <li>Điền dữ liệu theo mẫu</li>
-            <li>Danh mục phải tồn tại trong hệ thống</li>
-            <li>Đơn giá: số nguyên (VD: 500000)</li>
-            <li>Thời gian: số phút (VD: 60)</li>
-            <li>Trạng thái: "Kích hoạt" hoặc "Không kích hoạt"</li>
-            <li>Upload file để import</li>
-          </ul>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-        <button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" data-crud-action="import">Import</button>
-      </div>
-    </div>
-  </div>
-</div>
+{% from 'components/_excel_import_modal.html' import excel_import_modal %}{{ excel_import_modal('Import dịch vụ', 'Tên dịch vụ, Danh mục, Đơn giá (VNĐ), Thời gian (phút), Mô tả, Trạng thái', ['Danh mục phải tồn tại trong hệ thống', 'Đơn giá: số nguyên (VD: 500000)', 'Thời gian: số phút (VD: 60)', 'Trạng thái: "Kích hoạt" hoặc "Không kích hoạt"'], 'data-crud-action') }}
 </body>
 </html> 

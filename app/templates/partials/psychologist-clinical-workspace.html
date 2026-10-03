@@ -41,21 +41,7 @@
 		</button>
 	</div>
 
-	<div class="qlpk-workflow-two-pane__queue" id="psychologistQueuePane"
-		data-workflow-pane-content="queue" role="tabpanel">
-		<div class="qlpk-queue-panel qlpk-queue-panel--exam" id="vung1Card" data-psychologist-component="waiting-queue">
-			{% set queue_title = 'Danh sách chờ khám' %}
-			{% set queue_search_id = 'patientSearch' %}
-			{% include 'partials/waiting-queue-header.html' %}
-			<div class="qlpk-queue-panel__body">
-				<div id="waitingListTableBody" class="qlpk-queue-panel__list"></div>
-				<div id="appointmentsEmptyState" class="qlpk-queue-panel__empty exam-initially-hidden">
-					<i class="bi bi-inbox qlpk-queue-panel__empty-icon" aria-hidden="true"></i>
-					<p class="qlpk-queue-panel__empty-text">Chưa có lịch hẹn nào</p>
-				</div>
-			</div>
-		</div>
-	</div>
+	{% from 'partials/exam-queue-pane.html' import exam_queue_pane %}{{ exam_queue_pane('psychologistQueuePane', 'psychologist') }}
 
 	<section class="doctor-exam-surface qlpk-workflow-two-pane__main is-active"
 		id="psychologistMainPane" data-psychologist-component="exam-surface"

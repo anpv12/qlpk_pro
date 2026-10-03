@@ -1,0 +1,56 @@
+{#- Public legal page (privacy policy, terms of service): shared head, header, contact card and footer. -#}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ legal.heading }} - QLPK</title>
+    <meta name="description" content="{{ legal.description }}">
+  {% include 'partials/brand-theme.html' %}
+  <link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/css/pages/{{ legal.page }}.css?v={{ app_version }}">
+</head>
+<body>
+    <header class="page-header">
+        <div class="logo-area">
+            <div class="logo-icon">🏥</div>
+            <span class="logo-text">QLPK</span>
+        </div>
+        <h1>{{ legal.heading }}</h1>
+        <p class="subtitle">Hệ thống Quản lý Phòng khám Tâm lý</p>
+    </header>
+
+    <div class="container">
+        <div class="content-card">
+            <div class="last-updated">
+                📅 Cập nhật lần cuối: {{ legal.updated }}
+            </div>
+{% block legal_content %}{% endblock %}
+
+            <div class="contact-section">
+                <h3>📬 Liên hệ</h3>
+                <p>Nếu bạn có bất kỳ câu hỏi nào về {{ legal.topic }} này, vui lòng liên hệ:</p>
+                <div class="contact-item">
+                    <span class="icon">🏥</span>
+                    <span><strong>Hệ thống Quản lý Phòng khám Tâm lý (QLPK)</strong></span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">🌐</span>
+                    <a href="https://qlpk.io.vn">https://qlpk.io.vn</a>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">📧</span>
+                    <a href="mailto:support@qlpk.io.vn">support@qlpk.io.vn</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 QLPK - Hệ thống Quản lý Phòng khám Tâm lý. All rights reserved.</p>
+        <p class="{{ legal.footer_note }}">
+            <a href="/privacy-policy">Chính sách bảo mật</a> &nbsp;|&nbsp; <a href="/terms-of-service">Điều khoản dịch vụ</a>
+        </p>
+    </footer>
+</body>
+</html>

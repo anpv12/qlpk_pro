@@ -2,46 +2,17 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý nhóm phân quyền</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-
-	<!-- Flatpickr CSS -->
-	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
-  {% include 'partials/brand-theme.html' %}
-	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/pages/group-management.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-
-	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
-
-	<!-- Flatpickr JS -->
-	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
-
-	<!-- Utils and Datepicker Init -->
-
-	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+	{% from 'partials/page-head.html' import page_head with context %}{% from 'partials/admin-page-assets.html' import admin_page_assets with context %}{{ page_head('Quản lý nhóm phân quyền') }}
+	{{ admin_page_assets(page_css='group-management', flatpickr=true) }}
 
 </head>
 
 <body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content">
-				<div class="header-bar qlpk-clinic-header header-padding">
-					<div class="d-flex justify-content-between">
-						<div class="qlpk-clinic-header-copy"><h2 class="qlpk-clinic-title page-title">Nhóm phân quyền</h2>
-<p class="qlpk-clinic-subtitle">Quản lý các nhóm và quyền truy cập trong phòng khám</p></div>
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell(footer=true) %}
+				{% from 'partials/admin-page-header.html' import admin_page_header %}{% call admin_page_header('Nhóm phân quyền', 'Quản lý các nhóm và quyền truy cập trong phòng khám', heading='h2') %}
 						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary" id="addGroupBtn"><i class="bi bi-plus-lg"></i> Thêm mới nhóm
 							quyền</button>
-					</div>
-				</div>
+				{% endcall %}
 				<form class="filter-bar mt-2 mb-3" id="groupFilterForm" role="search">
 					<input type="search" class="form-control gm-filter-search" id="searchInput" aria-label="Tìm nhóm quyền" placeholder="Nhập mã, tên hoặc mô tả nhóm quyền">
 					<button data-qlpk-button="view" data-qlpk-button-variant="soft" type="submit" class="btn btn-primary qlpk-search-btn" id="searchBtn">Tìm kiếm</button>
@@ -64,17 +35,7 @@
 					</table>
 				</div>
 				{% with pagination_class='qlpk-pagination--standalone' %}{% include 'partials/clinic-pagination.html' %}{% endwith %}
-			</main>
-		</div>
-		<div class="footer-bar">
-			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
-			<div class="contact">
-				<span>Hỗ trợ: <b>0938549609</b></span>
-				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
-				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
-			</div>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Modal Thêm/Sửa nhóm quyền -->
 	<div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">

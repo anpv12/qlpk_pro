@@ -2,15 +2,7 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý mẫu khảo sát</title>
-	<meta name="description" content="Quản lý mẫu khảo sát tâm lý — QLPK Pro">
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Quản lý mẫu khảo sát', description='Quản lý mẫu khảo sát tâm lý — QLPK Pro') }}
 	<link href="/static/vendor/roboto/roboto.css"
 		rel="stylesheet">
   {% include 'partials/brand-theme.html' %}

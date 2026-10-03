@@ -1,9 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const { loadPage, flush, Event } = require('./helpers/esm-page');
+const { renderedTemplate } = require('./helpers/template-source');
 
-const template = fs.readFileSync('app/templates/permission-management.html', 'utf8');
+const template = renderedTemplate('permission-management.html');
 const MAIN = template.slice(template.indexOf('<main'), template.indexOf('</main>') + 7);
 
 async function setup() {

@@ -1,31 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phân quyền User</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-  <link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  {% include 'partials/brand-theme.html' %}
-  <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/css/pages/permission-management.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-  <script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
-	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+	{% from 'partials/page-head.html' import page_head with context %}{% from 'partials/admin-page-assets.html' import admin_page_assets with context %}{{ page_head('Phân quyền User') }}
+	{{ admin_page_assets(page_css='permission-management') }}
 </head>
 <body class="qlpk-admin-page qlpk-clinic-page">
-<div class="container-fluid p-0">
-  <div class="row g-0">
-    <div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-    <main class="col-md-10 main-content">
-      <div class="header-bar qlpk-clinic-header">
-        <div class="d-flex justify-content-between">
-          <div class="qlpk-clinic-header-copy"><h2 class="qlpk-clinic-title page-title">Phân quyền</h2>
-<p class="qlpk-clinic-subtitle">Chọn tài khoản và thiết lập nhóm quyền truy cập</p></div>
-        </div>
-      </div>
+{% from 'partials/app-shell.html' import app_shell %}{% call app_shell() %}
+      {% from 'partials/admin-page-header.html' import admin_page_header %}{% call admin_page_header('Phân quyền', 'Chọn tài khoản và thiết lập nhóm quyền truy cập', heading='h2', padded=false) %}
+      {% endcall %}
       <div class="row g-4 qlpk-admin-section">
         <div class="col-md-6">
           <div class="card shadow-sm rounded-4 p-3 h-100">
@@ -53,9 +35,7 @@
           </div>
         </div>
       </div>
-    </main>
-  </div>
-</div>
+{% endcall %}
 
 <script type="module" src="/static/js/permission-management.js?v={{ app_version }}"></script>
 </body>

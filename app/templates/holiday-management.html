@@ -2,54 +2,21 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý ngày lễ</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-	<link href="/static/vendor/roboto/roboto.css"
-		rel="stylesheet">
-
-	<!-- Flatpickr CSS -->
-	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
-  {% include 'partials/brand-theme.html' %}
-	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/css/pages/holiday-management.css?v={{ app_version }}">
-	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
-
-	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
-	<script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
-
-	<!-- Flatpickr JS -->
-	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
-
-	<!-- Utils and Datepicker Init -->
-
-	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+	{% from 'partials/page-head.html' import page_head with context %}{% from 'partials/admin-page-assets.html' import admin_page_assets with context %}{{ page_head('Quản lý ngày lễ', sweetalert=true) }}
+	{{ admin_page_assets(page_css='holiday-management', roboto=true, flatpickr=true, xlsx=true) }}
 
 </head>
 
 <body class="qlpk-admin-page qlpk-clinic-page qlpk-data-tables">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content">
-				<div class="header-bar qlpk-clinic-header header-padding">
-					<div class="d-flex justify-content-between">
-						<div class="qlpk-clinic-header-copy"><h1 class="qlpk-clinic-title page-title">Ngày lễ</h1>
-<p class="qlpk-clinic-subtitle">Quản lý danh sách ngày nghỉ lễ của phòng khám</p></div>
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell() %}
+				{% from 'partials/admin-page-header.html' import admin_page_header %}{% call admin_page_header('Ngày lễ', 'Quản lý danh sách ngày nghỉ lễ của phòng khám') %}
 						<div class="d-flex gap-2">
 							<button data-qlpk-button="execute" data-qlpk-button-variant="solid" class="btn btn-primary add-btn" data-bs-toggle="modal"
 								data-bs-target="#addHolidayModal">
 								<i class="bi bi-plus-circle me-2"></i>Thêm ngày lễ
 							</button>
 						</div>
-					</div>
-				</div>
+				{% endcall %}
 
 				<div class="card shadow-sm rounded-4">
 					<div class="card-header catalog-card-header d-flex justify-content-between align-items-center">
@@ -83,9 +50,7 @@
 {% include 'partials/clinic-pagination.html' %}
 					</div>
 				</div>
-			</main>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Modal thêm ngày lễ -->
 	<div class="modal fade" id="addHolidayModal" tabindex="-1">

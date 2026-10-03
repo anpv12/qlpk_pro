@@ -1,0 +1,10 @@
+{#- Admin page header: title + subtitle on the left, the call body (action buttons) on the right. heading='h2' where the page already used h2; padded=false drops header-padding. -#}
+{% macro admin_page_header(title, subtitle, heading='h1', padded=true) -%}
+				<div class="header-bar qlpk-clinic-header{% if padded %} header-padding{% endif %}">
+					<div class="d-flex justify-content-between">
+						<div class="qlpk-clinic-header-copy"><{{ heading }} class="qlpk-clinic-title page-title">{{ title }}</{{ heading }}>
+<p class="qlpk-clinic-subtitle">{{ subtitle }}</p></div>
+{{ caller() }}
+					</div>
+				</div>
+{%- endmacro %}

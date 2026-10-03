@@ -1,0 +1,372 @@
+{% from 'components/_icd_autocomplete.html' import render_icd_autocomplete %}
+{# Add and edit appointment modals of appointment-management: one layout, "add"/"edit" id prefixes and edit-only actions. #}
+{% macro appointment_editor_modal(edit) %}{% set p = 'edit' if edit else 'add' %}<!-- Modal {{ 'Chỉnh sửa' if edit else 'Thêm' }} lịch hẹn -->
+	<div class="modal fade qlpk-{{ p }}-appointment-modal" id="{{ p }}AppointmentModal" tabindex="-1" aria-labelledby="{{ p }}AppointmentModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable appointment-editor-dialog">
+			<div class="modal-content appointment-modal-content-rounded{{ ' appointment-modal-content-tall' if edit }} appointment-editor-shell">
+				<div class="modal-header appointment-editor-header">
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="appointment-editor-nav-button" data-bs-dismiss="modal" aria-label="Quay lại">
+						<i class="bi bi-chevron-left"></i>
+					</button>
+					<div class="appointment-editor-title">
+						<span class="appointment-editor-title-icon appointment-editor-title-icon--schedule" aria-hidden="true">
+							<i class="bi bi-calendar-{{ 'check' if edit else 'plus' }}"></i>
+						</span>
+						<div>
+							<h5 class="modal-title" id="{{ p }}AppointmentModalLabel">{{ 'CHỈNH SỬA LỊCH HẸN' if edit else 'THÊM LỊCH HẸN' }}</h5>
+							<p>{{ 'Cập nhật thông tin lịch hẹn và thông tin bệnh nhân' if edit else 'Tạo lịch hẹn mới và thông tin bệnh nhân' }}</p>
+						</div>
+					</div>
+					<div class="appointment-editor-header-actions">
+{% if edit %}
+						<button data-qlpk-button="execute" data-qlpk-button-variant="soft" class="btn appointment-button appointment-editor-action appointment-editor-action--mail" type="button" id="sendEmailReminderBtn">
+							<i class="bi bi-envelope"></i>Gửi email
+							</button>
+
+						<button data-qlpk-button="danger" data-qlpk-button-variant="soft" class="btn appointment-button appointment-editor-action appointment-editor-action--danger" type="button" id="editDeleteAppointmentBtn"
+								title="Ẩn lịch hẹn khỏi danh sách và đánh dấu đã hủy">
+							<i class="bi bi-trash3"></i>Xóa/ẩn lịch hẹn
+							</button>
+
+						<div class="dropdown status-flag-dropdown appointment-editor-status-dropdown">
+							<button class="btn appointment-button appointment-editor-action appointment-editor-action--status dropdown-toggle" type="button" id="editStatusFlag"
+									data-bs-toggle="dropdown" aria-expanded="false">
+								<i class="bi bi-clock"></i>Chờ xác nhận
+								</button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" href="#" data-edit-appointment-status="SCHEDULED">
+											<span class="qlpk-status appointment-status-chip appointment-status-chip-spaced appointment-status-scheduled">Chờ xác
+												nhận</span>
+										</a></li>
+									<li><a class="dropdown-item" href="#" data-edit-appointment-status="CONFIRMED">
+											<span class="qlpk-status appointment-status-chip appointment-status-chip-spaced appointment-status-confirmed">Đã xác
+												nhận</span>
+										</a></li>
+									<li><a class="dropdown-item" href="#" data-edit-appointment-status="NO_SHOW">
+											<span class="qlpk-status appointment-status-chip appointment-status-chip-spaced appointment-status-no-show">Không
+												đến</span>
+										</a></li>
+								</ul>
+						</div>
+{% endif %}
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="appointment-editor-close-button" data-bs-dismiss="modal" aria-label="Đóng">
+							<i class="bi bi-x-lg"></i>
+						</button>
+					</div>
+				</div>
+
+				<div class="modal-body appointment-modal-body{{ ' appointment-modal-body-scroll' if edit }} appointment-editor-body">
+					<form id="{{ p }}AppointmentForm">
+{% if edit %}						<!-- Search bệnh nhân -->
+{% endif %}
+						<div class="appointment-editor-layout">
+							<aside class="appointment-editor-sidebar" aria-label="Tóm tắt lịch hẹn{{ '' if edit else ' mới' }}">
+								<section class="appointment-editor-profile-card">
+									<div class="appointment-editor-profile-hero">
+										<div class="appointment-editor-avatar" aria-hidden="true">
+											<i class="bi bi-person-fill"></i>
+										</div>
+										<h6 id="{{ p }}SummaryName">{{ 'Bệnh nhân' if edit else 'Bệnh nhân mới' }}</h6>
+										<span id="{{ p }}SummaryDobAge">Chưa có ngày sinh</span>
+									</div>
+									<div class="appointment-editor-summary">
+										<h6>TÓM TẮT LỊCH HẸN</h6>
+										<div class="appointment-editor-summary-list">
+											<div class="appointment-editor-summary-item">
+												<span class="appointment-editor-summary-icon appointment-editor-summary-icon--schedule"><i class="bi bi-calendar-check"></i></span>
+												<div><span>Ngày hẹn</span><strong id="{{ p }}SummaryDate">Chưa chọn</strong></div>
+											</div>
+											<div class="appointment-editor-summary-item">
+												<span class="appointment-editor-summary-icon appointment-editor-summary-icon--time"><i class="bi bi-clock"></i></span>
+												<div><span>Giờ hẹn</span><strong id="{{ p }}SummaryTime">Chưa chọn</strong></div>
+											</div>
+											<div class="appointment-editor-summary-item">
+												<span class="appointment-editor-summary-icon appointment-editor-summary-icon--doctor"><i class="bi bi-person-badge"></i></span>
+												<div><span>Bác sĩ khám</span><strong id="{{ p }}SummaryDoctor">Chưa chọn</strong></div>
+											</div>
+											<div class="appointment-editor-summary-item">
+												<span class="appointment-editor-summary-icon appointment-editor-summary-icon--category"><i class="bi bi-arrow-clockwise"></i></span>
+												<div><span>Loại hẹn</span><strong id="{{ p }}SummaryCategory">Khám mới</strong></div>
+											</div>
+											<div class="appointment-editor-summary-item">
+												<span class="appointment-editor-summary-icon appointment-editor-summary-icon--status"><i class="bi bi-info-circle"></i></span>
+												<div><span>Trạng thái</span><strong id="{{ p }}SummaryStatus" class="qlpk-status appointment-status-chip appointment-status-scheduled">Chờ xác nhận</strong></div>
+											</div>
+										</div>
+									</div>
+									<div class="appointment-editor-reminder">
+										<i class="bi bi-bell"></i>
+										<div>
+											<strong>Nhắc nhở</strong>
+											<span>Kiểm tra thông tin trước khi {{ 'cập nhật' if edit else 'lưu' }} lịch hẹn.</span>
+										</div>
+									</div>
+								</section>
+							</aside>
+							<!-- Form duy nhất -->
+							<div class="form-content appointment-editor-form-grid">
+							<!-- Hàng 1: Thông tin lịch hẹn | Thông tin y tế -->
+							<div class="row appointment-modal-grid-row">
+								<!-- Cột trái: Thông tin lịch hẹn -->
+								<div class="col-md-6">
+									<div class="card appointment-modal-section-card">
+										<div class="card-header appointment-form-section-header appointment-form-section-header--schedule">
+											<h6 class="appointment-section-title"><i class="bi bi-calendar-check appointment-icon-leading--sm"></i>Thông tin
+												lịch hẹn</h6>
+										</div>
+										<div class="card-body appointment-modal-section-body">
+											<div class="row appointment-modal-row">
+												<div class="col-6">
+													<label for="{{ p }}AppointmentDate"
+														class="form-label appointment-form-label">Ngày hẹn <span
+															class="appointment-required-mark">*</span></label>
+													<input type="text"
+														class="form-control form-control-sm js-datepicker"
+														id="{{ p }}AppointmentDate"{% if not edit %} data-default-date="today"{% endif %} required>
+													<div class="invalid-feedback appointment-field-feedback">Vui lòng chọn ngày hẹn</div>
+												</div>
+												<div class="col-6">
+													<label for="{{ p }}AppointmentTime"
+														class="form-label appointment-form-label">Giờ hẹn <span
+															class="appointment-required-mark">*</span></label>
+													<input type="time" class="form-control form-control-sm"
+														id="{{ p }}AppointmentTime" required>
+													<div class="invalid-feedback appointment-field-feedback">Vui lòng chọn giờ hẹn</div>
+												</div>
+											</div>
+											<div class="row appointment-modal-row">
+												<div class="col-{{ 12 if edit else 6 }}">
+													<label for="{{ p }}Doctor" class="form-label appointment-form-label">Bác sĩ
+														khám <span class="appointment-required-mark">*</span></label>
+													<select class="form-select form-select-sm" id="{{ p }}Doctor" required>
+														<option value="">Chọn bác sĩ</option>
+													</select>
+													<div class="invalid-feedback appointment-field-feedback">Vui lòng chọn bác sĩ</div>
+												</div>
+{% if edit %}
+												<input type="hidden" id="editStatus" value="SCHEDULED">
+{% else %}
+												<div class="col-6">
+													<label for="addStatus" class="form-label appointment-form-label">Trạng
+														thái</label>
+													<select class="form-select form-select-sm" id="addStatus">
+														<option value="SCHEDULED" selected>Chờ xác nhận</option>
+														<option value="CONFIRMED">Đã xác nhận</option>
+													</select>
+												</div>
+{% endif %}
+											</div>
+
+											<!-- Loại hẹn - Khám mới/Tái khám -->
+											<div class="appointment-modal-field-row">
+												<label class="form-label appointment-form-label appointment-form-label--compact">Loại hẹn <span
+														class="appointment-required-mark">*</span></label>
+												<div class="appointment-modal-choice-group">
+													<div class="form-check">
+														<input class="form-check-input" type="radio"
+															name="{{ 'editAppointmentCategory' if edit else 'appointmentCategory' }}" id="{{ 'editCategoryNew' if edit else 'categoryNew' }}"
+															value="NEW" checked>
+														<label class="form-check-label appointment-form-choice" for="{{ 'editCategoryNew' if edit else 'categoryNew' }}">
+															<i class="bi bi-plus-circle appointment-icon-leading--sm"></i>Khám mới
+														</label>
+													</div>
+													<div class="form-check">
+														<input class="form-check-input" type="radio"
+															name="{{ 'editAppointmentCategory' if edit else 'appointmentCategory' }}" id="{{ 'editCategoryReExam' if edit else 'categoryReExam' }}"
+															value="RE_EXAMINATION">
+														<label class="form-check-label appointment-form-choice" for="{{ 'editCategoryReExam' if edit else 'categoryReExam' }}">
+															<i class="bi bi-arrow-clockwise appointment-icon-leading--sm"></i>Tái khám
+														</label>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Cột phải: Thông tin y tế -->
+								<div class="col-md-6">
+									<div class="card appointment-modal-section-card">
+										<div class="card-header appointment-form-section-header appointment-form-section-header--clinical">
+											<h6 class="appointment-section-title"><i class="bi bi-heart-pulse appointment-icon-leading--sm"></i>Thông tin y tế
+											</h6>
+										</div>
+										<div class="card-body appointment-modal-section-body">
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}MedicalHistorySearch"
+													class="form-label appointment-form-label">Tiền căn bệnh</label>
+									{{ render_icd_autocomplete(
+										mode=p,
+										input_id=p ~ 'MedicalHistorySearch',
+										tags_id=p ~ 'MedicalHistoryTags',
+										list_id=p ~ 'MedicalHistoryList',
+										input_class='form-control form-control-sm',
+										placeholder='Gõ tên bệnh hoặc mã ICD...'
+									) }}
+										</div>
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}Allergies" class="form-label appointment-form-label">Dị
+													ứng</label>
+												<input type="text" class="form-control form-control-sm"
+													id="{{ p }}Allergies" placeholder="Nhập các dị ứng...">
+											</div>
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}CurrentMedication"
+													class="form-label appointment-form-label">Thuốc đang dùng</label>
+												<input type="text" class="form-control form-control-sm"
+													id="{{ p }}CurrentMedication" placeholder="Nhập thuốc đang sử dụng...">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Hàng 2: Thông tin bệnh nhân | Dịch vụ & Gói khám -->
+							<div class="row appointment-modal-grid-row appointment-modal-grid-row--stacked">
+								<!-- Cột trái: Thông tin bệnh nhân -->
+								<div class="col-md-6">
+									<div class="card appointment-modal-section-card">
+										<div class="card-header appointment-form-section-header appointment-form-section-header--patient">
+											<h6 class="appointment-section-title"><i class="bi bi-person appointment-icon-leading--sm"></i>Thông tin bệnh nhân
+											</h6>
+										</div>
+										<div class="card-body appointment-modal-section-body">
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}PatientName" class="form-label appointment-form-label">Họ và
+													tên <span class="appointment-required-mark">*</span></label>
+												<input type="text" class="form-control form-control-sm"
+													id="{{ p }}PatientName" required>
+												<div class="invalid-feedback appointment-field-feedback">Vui lòng nhập họ và tên</div>
+											</div>
+											<div class="row">
+												<div class="col-6 appointment-modal-field-row">
+													<label for="{{ p }}PatientPhone"
+														class="form-label appointment-form-label">Số điện thoại</label>
+													<input type="tel" class="form-control form-control-sm"
+														id="{{ p }}PatientPhone">
+												</div>
+												<div class="col-6 appointment-modal-field-row">
+													<label for="{{ p }}PatientCCCD"
+														class="form-label appointment-form-label">CCCD</label>
+													<input type="text" class="form-control form-control-sm"
+														id="{{ p }}PatientCCCD" name="id_number" placeholder="Nhập số CCCD"
+														maxlength="12">
+												</div>
+											</div>
+											<div class="row appointment-modal-row">
+												<div class="col-6">
+													<label for="{{ p }}PatientEmail"
+														class="form-label appointment-form-label">Email</label>
+													<input type="email" class="form-control form-control-sm"
+														id="{{ p }}PatientEmail" placeholder="example@email.com">
+													<div class="invalid-feedback appointment-field-feedback">Vui lòng nhập email hợp lệ</div>
+												</div>
+												<div class="col-6">
+													<label for="{{ p }}PatientDOB"
+														class="form-label appointment-form-label">Ngày sinh</label>
+													<input type="text"
+														class="form-control form-control-sm js-datepicker"
+														id="{{ p }}PatientDOB">
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Cột phải: Dịch vụ & Gói khám -->
+								<div class="col-md-6">
+									<div class="card appointment-modal-section-card">
+										<div class="card-header appointment-form-section-header appointment-form-section-header--service">
+											<h6 class="appointment-section-title"><i class="bi bi-bag appointment-icon-leading--sm"></i>Dịch vụ & Gói khám</h6>
+										</div>
+										<div class="card-body appointment-modal-section-body">
+											<!-- Radio buttons - luôn hiển thị -->
+											<div class="appointment-modal-field-row">
+												<div class="appointment-modal-inline-options">
+													<label class="form-label appointment-form-label appointment-form-label--compact">Loại khám <span
+															class="appointment-required-mark">*</span></label>
+													<div class="appointment-modal-choice-group">
+														<div class="form-check">
+															<input class="form-check-input" type="radio"
+																name="{{ 'editAppointmentType' if edit else 'appointmentType' }}" id="{{ 'editTypeService' if edit else 'typeService' }}"
+																value="service" checked>
+															<label class="form-check-label appointment-form-choice" for="{{ 'editTypeService' if edit else 'typeService' }}">
+																<i class="bi bi-gear appointment-icon-leading--sm"></i>Theo dịch vụ
+															</label>
+														</div>
+														<div class="form-check">
+															<input class="form-check-input" type="radio"
+																name="{{ 'editAppointmentType' if edit else 'appointmentType' }}" id="{{ 'editTypePackage' if edit else 'typePackage' }}"
+																value="package">
+															<label class="form-check-label appointment-form-choice" for="{{ 'editTypePackage' if edit else 'typePackage' }}">
+																<i class="bi bi-box appointment-icon-leading--sm"></i>Theo gói
+															</label>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<!-- Service dropdown -->
+											<div class="appointment-modal-field-row" id="{{ 'editServiceSelection' if edit else 'serviceSelection' }}">
+												<div class="autocomplete-wrapper">
+													<input type="text" class="form-control form-control-sm"
+														id="{{ p }}Service" placeholder="Gõ để tìm dịch vụ..."
+														autocomplete="off" required>
+													<input type="hidden" id="{{ p }}ServiceId">
+													<div class="autocomplete-dropdown" id="{{ p }}ServiceDropdown"></div>
+												</div>
+												<div class="invalid-feedback appointment-field-feedback">Vui lòng chọn dịch vụ</div>
+											</div>
+											<div class="appointment-modal-field-row appointment-hidden" id="{{ 'editPackageSelection' if edit else 'packageSelection' }}">
+												<label for="{{ p }}Package" class="form-label appointment-form-label">Gói dịch
+													vụ <span class="appointment-required-mark">*</span></label>
+												<select class="form-select form-select-sm" id="{{ p }}Package">
+													<option value="">Chọn gói</option>
+												</select>
+												<div class="invalid-feedback appointment-field-feedback">Vui lòng chọn gói</div>
+											</div>
+
+											{% if edit %}<!-- Hidden input để lưu duration_minutes -->
+{% endif %}											<input type="hidden" id="{{ p }}Duration" name="duration_minutes" value="60">
+
+											<!-- Lý do chính đến khám -->
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}MainReason" class="form-label appointment-form-label">Lý do
+													chính đến khám</label>
+												<input type="text" class="form-control form-control-sm"
+													id="{{ p }}MainReason" placeholder="Nhập lý do chính...">
+											</div>
+
+											<!-- Triệu chứng -->
+											<div class="appointment-modal-field-row">
+												<label for="{{ p }}Symptoms" class="form-label appointment-form-label">Triệu
+													chứng</label>
+												<input type="text" class="form-control form-control-sm"
+													id="{{ p }}Symptoms" placeholder="Nhập triệu chứng...">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						</div>
+					</form>
+				</div>
+
+				<!-- Footer với navigation -->
+				<div class="modal-footer appointment-modal-footer appointment-modal-footer--between{{ ' appointment-footer-flush' if edit }} appointment-editor-footer">
+					<div class="appointment-editor-footer-left">
+						<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn appointment-button appointment-button--neutral appointment-button--lg" data-bs-dismiss="modal">
+							<i class="bi bi-x-lg appointment-icon-leading"></i>Hủy
+						</button>
+					</div>
+					<div class="appointment-editor-footer-right">
+						<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn appointment-button appointment-button--success appointment-button--lg" id="{{ 'editSubmitBtn' if edit else 'submitForm' }}">
+							<i class="bi bi-check-lg appointment-icon-leading"></i>{{ 'Cập nhật lịch hẹn' if edit else 'Lưu lịch hẹn' }}
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endmacro %}

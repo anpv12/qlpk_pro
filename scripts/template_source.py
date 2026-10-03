@@ -4,8 +4,9 @@ Pages share markup through parameterised partials (``{% set x = {...} %}`` then
 ``{% include 'partials/...' %}``), so reading a page file alone misses the
 assets and markup it really serves.
 
-- ``expanded_source(path)``: the page text with every include inlined right
-  after its ``{% include %}`` tag (the tag is kept so owner counts still work).
+- ``expanded_source(path)``: the page text with every referenced template inlined right
+  after its tag: ``{% include %}``, ``{% extends %}`` and the macro files of ``{% from ... import %}`` /
+  ``{% import %}`` (the tag is kept so owner counts still work; each file once per reference).
 - ``rendered_page(path)``: the page rendered by Jinja with a stub context, i.e.
   the HTML the browser receives, with partial parameters resolved.
 """
@@ -20,7 +21,7 @@ import jinja2
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "app" / "templates"
-INCLUDE = re.compile(r"""\{%-?\s*include\s+['"]([^'"]+)['"][^%]*-?%\}""")
+INCLUDE = re.compile(r"""\{%-?\s*(?:include|extends|from|import)\s+['"]([^'"]+)['"][^%]*-?%\}""")
 STUB_CONTEXT = {"app_version": "", "qlpk_public_page": False}
 
 
@@ -48,3 +49,12 @@ def rendered_page(path: Path, templates: Path = TEMPLATES) -> str:
     templates = Path(templates).resolve()
     name = Path(path).resolve().relative_to(templates).as_posix()
     return _environment(templates).get_template(name).render(**STUB_CONTEXT)
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+
+    # JSON {template name: rendered HTML} for the named page templates (all pages when none are given).
+    names = sys.argv[1:] or sorted(page.name for page in TEMPLATES.glob("*.html"))
+    json.dump({name: rendered_page(TEMPLATES / name) for name in names}, sys.stdout, ensure_ascii=False)

@@ -3,14 +3,7 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý tủ thuốc</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Quản lý tủ thuốc', sweetalert=true) }}
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
 	<link id="qlpk-icon-tokens-style" rel="stylesheet" href="/static/css/shared/icon-tokens.css?v={{ app_version }}">
@@ -25,10 +18,7 @@
 </head>
 
 <body class="medicine-management-page qlpk-data-tables qlpk-clinic-page">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content mm-main-content-shell">
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell(main_class='col-md-10 main-content mm-main-content-shell', footer=true) %}
 				<!-- Tiêu đề chính -->
 				<div class="mm-page-header qlpk-clinic-header">
 					<div class="mm-page-header-copy">
@@ -143,17 +133,7 @@
 						</nav>
 					</div>
 				</div>
-			</main>
-		</div>
-		<div class="footer-bar">
-			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
-			<div class="contact">
-				<span>Hỗ trợ: <b>0938549609</b></span>
-				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
-				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
-			</div>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Modal Thêm/Sửa Thuốc -->
 	<div class="modal fade qlpk-medicine-reference-review-modal" id="medicineReferenceReviewModal" tabindex="-1" aria-labelledby="medicineReferenceReviewTitle" aria-hidden="true">

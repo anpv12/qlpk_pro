@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from module_source import read_source  # noqa: E402
+from template_source import expanded_source  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,7 +87,7 @@ def check_runtime(errors: list[str]) -> None:
 
 def check_templates(errors: list[str]) -> None:
     for path in sorted(TEMPLATES.glob("*.html")):
-        source = path.read_text(encoding="utf-8", errors="ignore")
+        source = expanded_source(path)
         if any(marker in source for marker in INTERACTIVE_MARKERS) and RUNTIME_INCLUDE not in source:
             fail(errors, f"interactive template missing feedback runtime: {path.relative_to(ROOT)}")
         for marker in LEGACY_RENDERER_MARKERS:

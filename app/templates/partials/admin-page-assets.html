@@ -1,0 +1,26 @@
+{#- Admin/catalog page assets after page_head, in cascade order: brand theme, shared admin shell, page sheet, admin UI, Bootstrap JS, optional XLSX/flatpickr, clinic workspace. -#}
+{% macro admin_page_assets(page_css='', roboto=false, flatpickr=false, xlsx=false) -%}
+{%- if roboto %}
+	<link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
+{%- endif %}
+{%- if flatpickr %}
+	<link rel="stylesheet" href="/static/vendor/flatpickr@4.6.13/flatpickr.min.css">
+{%- endif %}
+	{% include 'partials/brand-theme.html' %}
+{%- if flatpickr %}
+	<link rel="stylesheet" href="/static/css/flatpickr-custom.css?v={{ app_version }}">
+{%- endif %}
+	<link rel="stylesheet" href="/static/css/shared/admin-management-shell.css?v={{ app_version }}">
+{%- if page_css %}
+	<link rel="stylesheet" href="/static/css/pages/{{ page_css }}.css?v={{ app_version }}">
+{%- endif %}
+	<link rel="stylesheet" href="/static/css/shared/admin-management-ui.css?v={{ app_version }}">
+	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
+{%- if xlsx %}
+	<script src="/static/vendor/xlsx@0.18.5/xlsx.full.min.js"></script>
+{%- endif %}
+{%- if flatpickr %}
+	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
+{%- endif %}
+	<link rel="stylesheet" href="/static/css/shared/clinic-workspace.css?v={{ app_version }}">
+{%- endmacro %}

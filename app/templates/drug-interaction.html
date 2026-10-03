@@ -2,14 +2,7 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<script src="/static/vendor/sweetalert2@11.26.25/sweetalert2.all.min.js"></script>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Tương tác thuốc</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Tương tác thuốc', sweetalert=true) }}
 	<link href="/static/vendor/roboto/roboto.css"
 		rel="stylesheet">
 
@@ -24,10 +17,7 @@
 </head>
 
 <body class="qlpk-admin-page qlpk-clinic-page">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content di-main-content">
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell(main_class='col-md-10 main-content di-main-content') %}
 				<div class="qlpk-admin-page-header qlpk-clinic-header">
 					<h1 class="qlpk-clinic-title">Tương tác thuốc</h1>
 					<p class="qlpk-admin-page-subtitle qlpk-clinic-subtitle">Quản lý các cặp hoạt chất và hướng dẫn xử trí tương tác</p>
@@ -72,9 +62,7 @@
 {% include 'partials/clinic-pagination.html' %}
 				</div>
 
-			</main>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Modal thêm/sửa -->
 	<div class="modal fade" id="diModal" tabindex="-1">

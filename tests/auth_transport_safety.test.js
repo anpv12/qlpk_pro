@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { runScriptFile } = require('./helpers/module-source');
+const { renderedTemplate, renderedTemplateNames } = require('./helpers/template-source');
 
 function harness(baseURI = 'https://clinic.test/page') {
     const requests = [];
@@ -162,12 +163,11 @@ test('every page module runs after the canonical transport runtime', () => {
     const partial = fs.readFileSync('app/templates/partials/user-feedback-runtime.html', 'utf8');
     assert.match(partial, /<script type="module" src="\/static\/js\/shared\/runtime\.js/);
     assert.match(fs.readFileSync('app/static/js/shared/runtime.js', 'utf8'), /import '\.\/api-transport\.js';/);
-    for (const filename of fs.readdirSync('app/templates').filter(name => name.endsWith('.html'))) {
-        const source = fs.readFileSync(`app/templates/${filename}`, 'utf8');
-        const firstModule = source.search(/<script type="module"/);
-        if (firstModule < 0 || source.includes('{% include \'partials/catalog-dictionary-page.html\' %}')) continue;
-        const include = source.indexOf("include 'partials/user-feedback-runtime.html'");
-        assert.ok(include >= 0 && include < firstModule, filename);
+    for (const filename of renderedTemplateNames()) {
+        const html = renderedTemplate(filename);
+        const firstModule = html.search(/<script type="module"/);
+        if (firstModule < 0) continue;
+        assert.equal(html.indexOf('<script type="module" src="/static/js/shared/runtime.js'), firstModule, filename);
     }
     assert.doesNotMatch(fs.readFileSync('app/static/js/utils.js', 'utf8'), /window\.fetch\s*=|ajaxSend\(/);
 });

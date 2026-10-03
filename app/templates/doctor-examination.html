@@ -2,13 +2,7 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Bác sĩ khám bệnh</title>
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Bác sĩ khám bệnh') }}
 	<link href="/static/vendor/roboto/roboto.css" rel="stylesheet">
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/shared/typography.css?v={{ app_version }}">
@@ -44,10 +38,7 @@
 </head>
 
 <body data-doctor-ui="true">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content">
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell() %}
 				<div class="doctor-workspace qlpk-workflow-two-pane" data-doctor-component="workspace" data-workflow-two-pane data-workflow-default-pane="main">
 					<div class="qlpk-workflow-two-pane__switch" role="tablist" aria-label="Chuyển vùng bác sĩ">
 						<button type="button" class="qlpk-workflow-two-pane__switch-btn is-active"
@@ -62,20 +53,7 @@
 						</button>
 					</div>
 
-					<div class="qlpk-workflow-two-pane__queue" id="doctorQueuePane" data-workflow-pane-content="queue" role="tabpanel">
-						<div class="qlpk-queue-panel qlpk-queue-panel--exam" id="vung1Card" data-doctor-component="waiting-queue">
-							{% set queue_title = 'Danh sách chờ khám' %}
-							{% set queue_search_id = 'patientSearch' %}
-							{% include 'partials/waiting-queue-header.html' %}
-							<div class="qlpk-queue-panel__body">
-								<div id="waitingListTableBody" class="qlpk-queue-panel__list"></div>
-								<div id="appointmentsEmptyState" class="qlpk-queue-panel__empty exam-initially-hidden">
-									<i class="bi bi-inbox qlpk-queue-panel__empty-icon" aria-hidden="true"></i>
-									<p class="qlpk-queue-panel__empty-text">Chưa có lịch hẹn nào</p>
-								</div>
-							</div>
-						</div>
-					</div>
+					{% from 'partials/exam-queue-pane.html' import exam_queue_pane %}{{ exam_queue_pane('doctorQueuePane', 'doctor') }}
 
 					<section class="doctor-exam-surface qlpk-workflow-two-pane__main is-active" id="doctorMainPane" data-doctor-component="exam-surface" data-workflow-pane-content="main" role="tabpanel" aria-label="Khu vực khám bệnh">
 						<div class="doctor-exam-surface__inner" id="doctorExamSurface">
@@ -88,9 +66,7 @@
 						</div>
 					</section>
 				</div>
-			</main>
-		</div>
-	</div>
+	{% endcall %}
 
 	{% include 'partials/patient-search-modal.html' %}
 	{% include 'partials/joint-exam-modal.html' %}

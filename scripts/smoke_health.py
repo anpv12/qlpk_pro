@@ -182,19 +182,33 @@ def check_duplicate_html_attrs() -> list[str]:
     return errors
 
 def check_duplicate_html_ids() -> list[str]:
+    """Literal ids repeated inside one template file, and ids repeated in a rendered page (partials and macros
+    resolved, so ids built from macro parameters are checked with their real values)."""
     errors: list[str] = []
-    id_pattern = re.compile(r"\bid\s*=\s*['\"]([^'\"]+)['\"]", re.I)
+    id_pattern = re.compile(r"\bid\s*=\s*(?:\"([^\"]+)\"|'([^']+)')", re.I)
     for base in [ROOT / "app" / "templates", ROOT / "app" / "static" / "templates"]:
         for path in iter_files(base, "*.html"):
             ids_by_line: dict[str, list[int]] = {}
             text = path.read_text(errors="ignore")
             for match in id_pattern.finditer(text):
-                value = match.group(1)
+                value = match.group(1) or match.group(2)
+                if "{{" in value or "{%" in value:
+                    continue
                 line = text.count("\n", 0, match.start()) + 1
                 ids_by_line.setdefault(value, []).append(line)
             for value, lines in sorted(ids_by_line.items()):
                 if len(lines) > 1:
                     errors.append(f"{rel(path)}: duplicate id '{value}' at lines {', '.join(map(str, lines))}")
+    for path in iter_files(ROOT / "app" / "templates", "*.html"):
+        if path.parent != ROOT / "app" / "templates":
+            continue
+        counts: dict[str, int] = {}
+        for match in id_pattern.finditer(rendered_page(path)):
+            value = match.group(1) or match.group(2)
+            counts[value] = counts.get(value, 0) + 1
+        repeated = sorted(value for value, count in counts.items() if count > 1)
+        if repeated:
+            errors.append(f"{rel(path)} (rendered): duplicate ids {', '.join(repeated)}")
     return errors
 
 

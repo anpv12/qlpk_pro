@@ -1,0 +1,9 @@
+{# Admin page footer; set footer_help_link=false to omit the help link. #}
+		<div class="footer-bar">
+			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
+			<div class="contact">
+				<span>Hỗ trợ: <b>0938549609</b></span>
+				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
+				{% if footer_help_link is not defined or footer_help_link %}<a href="#" class="help-link">Hướng dẫn sử dụng</a>{% endif %}
+			</div>
+		</div>

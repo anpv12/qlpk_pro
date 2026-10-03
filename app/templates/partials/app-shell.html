@@ -1,0 +1,14 @@
+{#- App page frame: sidebar slot (filled by the sidebar loader) + main column. Page content is the call body; footer=true adds the admin footer bar. -#}
+{% macro app_shell(main_class='col-md-10 main-content', main_id='', footer=false, footer_help_link=true) -%}
+	<div class="container-fluid p-0">
+		<div class="row g-0">
+			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
+			<main class="{{ main_class }}"{% if main_id %} id="{{ main_id }}"{% endif %}>
+{{ caller() }}
+			</main>
+		</div>
+{%- if footer %}
+		{% include 'partials/admin-footer-bar.html' %}
+{%- endif %}
+	</div>
+{%- endmacro %}

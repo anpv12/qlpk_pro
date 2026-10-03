@@ -1,0 +1,34 @@
+{# Excel import modal of the catalog admin pages (#importModal/#importFile). The page JS owns the import action. #}
+{% macro excel_import_modal(title, columns, rules, action_attr) %}
+	<div class="modal fade" id="importModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><i class="bi bi-upload me-2"></i>{{ title }}</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="importFile" class="form-label">Chọn file Excel (.xlsx)</label>
+						<input type="file" class="form-control" id="importFile" accept=".xlsx,.xls">
+						<div class="form-text">File phải có định dạng Excel với các cột: {{ columns }}</div>
+					</div>
+					<div class="alert alert-info">
+						<i class="bi bi-info-circle me-2"></i>
+						<strong>Hướng dẫn:</strong>
+						<ul class="mb-0 mt-2">
+							<li>Tải mẫu file bằng nút "Xuất mẫu"</li>
+							<li>Điền dữ liệu theo mẫu</li>
+							{% for rule in rules %}<li>{{ rule }}</li>
+							{% endfor %}<li>Upload file để import</li>
+						</ul>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button data-qlpk-button="neutral" data-qlpk-button-variant="soft" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button data-qlpk-button="execute" data-qlpk-button-variant="solid" type="button" class="btn btn-primary" {{ action_attr }}="import">Import</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endmacro %}

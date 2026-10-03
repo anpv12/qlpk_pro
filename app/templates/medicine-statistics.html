@@ -2,14 +2,7 @@
 <html lang="vi">
 
 <head>
-	{% include 'partials/user-feedback-runtime.html' %}
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Thống kê Thuốc</title>
-	<meta name="description" content="Trang thống kê thuốc - Phòng khám Sơn Tâm">
-	<meta name="qlpk-app-version" content="{{ app_version }}">
-	<link href="/static/vendor/bootstrap@5.3.2/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	{% from 'partials/page-head.html' import page_head with context %}{{ page_head('Thống kê Thuốc', description='Trang thống kê thuốc - Phòng khám Sơn Tâm') }}
   {% include 'partials/brand-theme.html' %}
 	<link rel="stylesheet" href="/static/css/custom-animations.css?v={{ app_version }}">
 	<script src="/static/vendor/bootstrap@5.3.2/js/bootstrap.bundle.min.js"></script>
@@ -19,10 +12,7 @@
 </head>
 
 <body class="qlpk-data-tables">
-	<div class="container-fluid p-0">
-		<div class="row g-0">
-			<div id="sidebar-container" class="col-md-2 qlpk-shell-sidebar"></div>
-			<main class="col-md-10 main-content">
+	{% from 'partials/app-shell.html' import app_shell %}{% call app_shell(footer=true) %}
 				<!-- Bộ lọc -->
 				<div class="filter-card">
 					<div class="row g-3 align-items-end">
@@ -320,17 +310,7 @@
 					</div>
 
 				</div>
-			</main>
-		</div>
-		<div class="footer-bar">
-			<div>© Bản quyền thuộc Phòng khám Sơn Tâm</div>
-			<div class="contact">
-				<span>Hỗ trợ: <b>0938549609</b></span>
-				<span><i class="bi bi-envelope"></i> sontamclinic@gmail.com</span>
-				<a href="#" class="help-link">Hướng dẫn sử dụng</a>
-			</div>
-		</div>
-	</div>
+	{% endcall %}
 
 	<!-- Load Flatpickr -->
 	<script src="/static/vendor/flatpickr@4.6.13/flatpickr.min.js"></script>
